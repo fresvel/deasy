@@ -1,0 +1,46 @@
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+
+\usepackage{tcolorbox}
+\usepackage{graphicx}
+\definecolor{darkcol}{RGB}{ 7, 7, 100 }
+\definecolor{greencol}{RGB}{ 7, 200, 100 }
+\usepackage{tabularx}
+
+
+\usepackage{geometry}
+\geometry{
+ a4paper,
+ total={160mm,247mm},
+ left=25mm,
+ top=0mm,
+ %top=25mm
+ }
+
+% Configuración de estilo para comandos en consola
+
+
+
+\newtcolorbox{consolebox}{
+    colback=darkcol,
+    colupper=white,
+    colframe=greencol,
+    %sharp corners,
+    boxrule=1pt,
+    left=10pt,
+    right=10pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily\fontsize{12}{14}\selectfont,
+}
+
+
+\usepackage{array}
+
+\input{Preambulo/header} %geometry top 0
+
