@@ -7,6 +7,7 @@ const empleadoSchema=new mongoose.Schema({
         ref: "Usuario",
         required: true
     },
+
     titulos:[{
         titulo:{
             type: String,
@@ -33,6 +34,7 @@ const empleadoSchema=new mongoose.Schema({
         }
 
     }],
+
     experiencia:{
         docente:[{
             institucion:{
@@ -101,6 +103,7 @@ const empleadoSchema=new mongoose.Schema({
             }
         }]
     },
+
     capacitacion:{
         especialidad:[{
             tema:{
@@ -167,6 +170,7 @@ const empleadoSchema=new mongoose.Schema({
         }],
 
     },
+
 
     investigacion:{
         articulos:[{
@@ -247,6 +251,7 @@ const empleadoSchema=new mongoose.Schema({
             }
         }]
     },
+
     ponencias:[{
         titulo:{
             type: String,
@@ -262,6 +267,7 @@ const empleadoSchema=new mongoose.Schema({
             enum: ["Enviado", "Revisado", "Aprobado"]
         }
     }],
+
     tesis:[{
         ies:{
             type: String,
@@ -288,6 +294,7 @@ const empleadoSchema=new mongoose.Schema({
             enum: ["Enviado", "Revisado", "Aprobado"]
         }
     }],
+
     vinculacion:[{
         proyecto:{
             type: String,
@@ -303,17 +310,20 @@ const empleadoSchema=new mongoose.Schema({
             enum: ["Enviado", "Revisado", "Aprobado"]
         }
     }],
+
     relacion:{
         estado:{
             type: String,
             required: true,
             enum:["Postulante","Contratado","Desvinculado", "Licenciado"]
         },
+
         dedicacion:{ //requerido si es diferente de postulante
             type: String,
             required: true,
             enum:["Tiempo Completo","Tiempo Parcial"]
         },
+        
         contrato:{
             type: String,
             required: true,
@@ -337,6 +347,7 @@ const empleadoSchema=new mongoose.Schema({
                 ref: "Informe"
             }
         },
+
         docencia:{
             programa:{
                 type: mongoose.Schema.Types.ObjectId,

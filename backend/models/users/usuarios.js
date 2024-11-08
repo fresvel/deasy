@@ -5,19 +5,23 @@ const userSchema =new mongoose.Schema({
         type:String,
         required:true
     },
+
     cedula:{
         type:String,
         required:true,
         unique:true
     },
+
     nombre:{
         type:String,
         required:true,
     },
+
     apellido:{
         type:String,
         required:true,
     },
+
     email:{
         type:String,
         required:true,
@@ -30,6 +34,7 @@ const userSchema =new mongoose.Schema({
             message: props => `${props.value} no es un correo electrónico válido.`
           }
     },
+    
     correo:{ //Institucional
         type: String,
         validate: {
