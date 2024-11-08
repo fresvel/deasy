@@ -38,7 +38,6 @@ const emit=defineEmits(["onclick"])
 
 const onClick=(item)=>{
   emit("onclick", item)
-
 }
 
 

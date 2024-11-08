@@ -2,6 +2,7 @@ module.exports = {
   env: {
     browser: true,
     es2021: true, // Asegúrate de que sea al menos 2020
+    node:true
   },
   extends: [
     'eslint:recommended',
