@@ -4,11 +4,9 @@
         <div class="ui label">
           {{ label }}                    
         </div>
-        <input 
-          :type="type" 
-          :placeholder="placeholder" 
+        <datepicker   
           :value="input"
-          @input="updateValue"
+          @date="updateValue"
         />
       </div>
     </div>
@@ -16,6 +14,8 @@
   
   <script setup>
   import { ref, watch, defineProps, defineEmits } from 'vue';
+  import Datepicker from 'vuejs3-datepicker'
+
   
   const props = defineProps({
     label: {

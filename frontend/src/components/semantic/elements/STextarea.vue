@@ -4,12 +4,15 @@
         <div class="ui label">
           {{ label }}                    
         </div>
-        <input 
+        <textarea
           :type="type" 
           :placeholder="placeholder" 
           :value="input"
           @input="updateValue"
-        />
+          cols="1000"
+          rows="3"
+          style="border-color: rgba(10, 10, 10, 0.1); border-radius:5px"
+        ></textarea>
       </div>
     </div>
   </template>

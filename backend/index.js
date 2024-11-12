@@ -1,7 +1,7 @@
 import "dotenv/config"
 import express  from "express";
 import report_router from "./routes/report_router.js";
-import users_router from "./routes/users_router.js";
+import users_router from "./routes/auth_router.js";
 import cors from "cors"
 import "./database/mongoose.js"
 import cookieParser from "cookie-parser"

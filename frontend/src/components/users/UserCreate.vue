@@ -127,7 +127,7 @@
 
 import SHeader from "@/components/main/SHeader.vue"
 import SMenu from "@/components/main/SMenu.vue"
-import SMessage from "@/components/main/SMessage.vue"
+import SMessage from "@/components/main/SNotify.vue"
 import SInput from '../semantic/elements/SInput.vue';
 import { escountries } from '@/composable/countries';
 import axios from 'axios';

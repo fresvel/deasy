@@ -1,9 +1,7 @@
 <template>
-<div class="three  wide column  stretched" v-show="show">
+<div class="three  wide column  stretched" v-if="show">
     <div class="ui inverted vertical menu smenu fluid" >
-        <a v-for="(item, index) in menu" :key="index" 
-              :class="item.active ? 'item active' : 'item'" 
-              @click="onClick(item.label)">{{ item.label }}</a>
+      <slot></slot>
     </div>
 </div>
 
@@ -11,22 +9,9 @@
 
 <script setup>
 
-import {defineProps, defineEmits} from "vue"
+import {defineProps, /*defineEmits*/} from "vue"
 
 defineProps({
-  menu: [
-    {
-      label:{
-        type: String,
-      },
-      path:{
-        type: String,
-      },
-      func:{
-        type: Function,
-      }
-    }
-],
 show: {
     type: Boolean,
     default: true,
@@ -34,13 +19,14 @@ show: {
   
 })
 
+/*
 const emit=defineEmits(["onclick"])
 
 const onClick=(item)=>{
   emit("onclick", item)
-
 }
 
+*/
 </script>
 
 <style scoped>

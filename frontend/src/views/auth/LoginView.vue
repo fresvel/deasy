@@ -1,5 +1,11 @@
 <template>
-    <div class="login-container">
+
+<s-header @onclick="handleHeader">
+    <router-link to="/login" class="item active large right aligned">Login</router-link>
+    <router-link to="/register" class="item large">Register</router-link>         
+</s-header>
+
+<div class="login-container">
             <div class="ui container login-form">
                 <div class="ui blue header  center aligned">Iniciar Sesión</div>
                 <h4 class="ui header blue center aligned" style="margin-top: -15px;">DEASY PUCESE </h4>
@@ -33,27 +39,24 @@
                     </div>
                   </div>
                   <div class="ui vertical divider">
-                    Or
+                    O
                   </div>
                 </div>
     
                 <div v-if="errorMessage" class="ui negative message">
                       <i class="close icon" @click="clearToast"></i>
-                      <div class="header">Error</div>
+                      <div class="h1">Error</div>
                       <p>{{ errorMessage }}</p>
                 </div>
-    
-    
             </div>
-    
     </div>
     
-    </template>
+</template>
     
-    <script setup>
-    //import axios from 'axios';
+<script setup>
     import { ref } from 'vue';
     import axios from 'axios';
+    import SHeader from '@/components/main/SHeader.vue';
     
     const cedula = ref("")
     const password = ref("")
@@ -62,22 +65,18 @@
     
     
     const loginFunction =async() =>{
-      
-    console.log(email.value);
-    console.log(password.value);
-    console.log(cedula.value);
     try {
-            const url="http://localhost:3000/easym/v1/users/login"
-            const body ={
-              email:email.value,
-              cedula:cedula.value,
-              password:password.value
-            }
-            //await axios.post('http://localhost:3000/easym/v1/users/login', {email:email.value, username:username.value, password:password.value} )
-            const res=await axios.post(url, body,{ withCredentials: true })
-            console.log(res.data)
+        const url="http://localhost:3000/easym/v1/users/login"
+        const body ={
+            email:email.value,
+            cedula:cedula.value,
+            password:password.value
+        }
+        const res=await axios.post(url, body,{ withCredentials: true })
+        console.log(res.data)
+        window.location="http://localhost:8080/"
     
-    //      window.open(res.data, '_blank');
+          //window.open(res.data, '_blank');
     
         } catch (error) {
             console.log(error.message)
@@ -90,8 +89,7 @@
     
     const clearToast=()=>{
       errorMessage.value=""
-    }
-    
+    }    
     </script>
     
     <style scoped>
@@ -106,12 +104,13 @@
                 align-items: center;
             }
             .login-form {
-                width: 35%;
+                width: 40%;
                 max-width: 200px;
-                padding: 2rem;
+                padding:2rem;
                 background-color: white;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
                 border-radius: 10px;
+                margin-top: -100px;
             }
             .login-form h2 {
                 text-align: center;

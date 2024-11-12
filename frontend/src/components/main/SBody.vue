@@ -19,18 +19,18 @@ const props=defineProps({
         type: Boolean,
         default: false
     },
-    showmessage: {
+    shownotify: {
         type: Boolean,
         default: false
     }
 })
 
 const contentClass= computed(()=>{
-    if (props.showmenu&&props.showmessage) {
+    if (props.showmenu&&props.shownotify) {
         return "eleven wide column stretched"
-    }else if (!props.showmenu&&!props.showmessage) {
+    }else if (!props.showmenu&&!props.shownotify) {
         return "sixteen wide column stretched"
-    }else if (props.showmenu&&!props.showmessage) {
+    }else if (props.showmenu&&!props.shownotify) {
         return "thirteen wide column stretched"
     }else{
         return "fourteen wide column stretched"

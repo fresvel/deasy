@@ -15,7 +15,7 @@
 
     <s-body
     :showmenu="vmenu"
-    :showmessage="vnotify"
+    :shownotify="vnotify"
     >
     <LogrosCordinador></LogrosCordinador>
     </s-body>
@@ -35,7 +35,7 @@
 import { ref} from 'vue';
 import SHeader from '../main/SHeader.vue';
 import SMenu from '../main/SMenu.vue';
-import SMessage from '../main/SMessage.vue';
+import SMessage from '../main/SNotify.vue';
 import SBody from '../main/SBody.vue';
 import LogrosCordinador from "../informes/LogrosCordinador.vue"
 
