@@ -3,10 +3,16 @@
 <div class="ui grid" id="navbar">
       <div class="sixteen wide column">
         <div class="ui inverted segment" id="hmenu">
-            <div class="ui inverted secondary menu">
-              <a v-for="(item, index) in menu" :key="index" 
+            <div class="ui inverted secondary menu flex">
+              <a class="item large" @click="onClick('User')">
+                <img class="avatar" src="/images/avatar.png" alt="User Avatar">
+              </a>
+              <slot></slot>
+            <!--  <a v-for="(item, index) in menu" :key="index" 
               :class="item.active ? 'item active' : 'item'" 
               @click="onClick(item.label)">{{ item.label }}</a>
+            -->
+            
             </div>
         </div>
       </div>
@@ -53,6 +59,10 @@ const onClick=(item)=>{
       background-color:$col-header;
   
   
-  }
+}
+
+.avatar{
+  border-radius: 10px;
+}
 
 </style>

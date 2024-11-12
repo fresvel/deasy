@@ -1,17 +1,13 @@
 <template>
 
-    <s-header/>
-    
-    
-      
-      
-    
-    <div class="ui grid">
-    
-    
-    <s-menu/>
+<s-header @onclick="handleHeader">
+    <router-link to="/login" class="item active large right aligned">Login</router-link>
+    <router-link to="/register" class="item large">Register</router-link>         
+</s-header>
+
+    <div class="ui grid flex center aligned middle aligned segment">
         
-          <div :class="contentClass">
+          <div >
               <div class="ui segment">
     
     
@@ -41,13 +37,15 @@
                             label="Contraseña"
                             placeholder="Ingrese la contraseña"
                             v-model="newuser.password"
+                            type="password"
                         />
                     </div>
                     <div class="seven wide column center">
                         <SInput
+                            type="password"
                             label="Contraseña"
                             placeholder="Confirmar la contraseña"
-                            v-model="newuser.password"
+                            v-model="newuser.repassword"
                         />
                     </div>
     
@@ -115,7 +113,7 @@
               </div>
           </div>
         
-    <s-message/>
+
           
     </div>
       
@@ -123,56 +121,17 @@
     
     </template>
     
-    <script setup>
-    
-    import SHeader from "@/components/main/SHeader.vue"
-    import SMenu from "@/components/main/SMenu.vue"
-    import SMessage from "@/components/main/SMessage.vue"
+    <script setup>   
+
     import SInput from '@/components/semantic/elements/SInput.vue';
     import { escountries } from '@/composable/countries';
     import axios from 'axios';
-    import { ref, computed } from 'vue';
-    
-    
-    /** %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-    
-    
-    /**+++++++++++++++++++++++++++++ */
-    
-    //import SHeader from '../main/SHeader.vue';
-    //import SSelect from '../semantic/elements/SmSelect.vue';
-    
-    /**+++++++++++++++++++++++++++++ */
-    
-      
-      const vmenu = ref(true);
-      const vnotify = ref(true);
-    
-      /*
-      const toggleVmenu = () => {
-            vmenu.value = !vmenu.value;
-      };
-      
-      const toggleNotify = () => {
-        vnotify.value = !vnotify.value;
-        };
-    */
-    const contentClass= computed(()=>{
-        if (vmenu.value&&vnotify.value) {
-            return "eleven wide stretched column"
-        }else if (!vmenu.value&&!vnotify.value) {
-            return "sixteen wide stretched column"
-        }else if (vmenu.value&&!vnotify.value) {
-            return "thirteen wide stretched column"
-        }else{
-            return "fourteen wide stretched column"
-        }
-    })
-    
-    
+    import { ref } from 'vue';
+    import SHeader from '@/components/main/SHeader.vue';
     const newuser= ref({
         cedula:"",
         password:"",
+        repassword:"",
         nombre:"",
         apellido:"",
         email:"",

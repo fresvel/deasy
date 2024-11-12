@@ -14,11 +14,17 @@
 
 </script>
     
-<style scoped lang="scss">
+<style lang="scss">
 
   #app{
       height: 100vh;
   }
+
+  .large{
+    font-size: large;
+  }
+
+
 
 </style>
     
