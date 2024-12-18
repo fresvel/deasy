@@ -17,7 +17,7 @@ export const dailc_va=(tables, surveys)=>{
 
 const create_latexTable = (promedios, nivel) => { //Recibe un objeto con los Json de las calificaciones
 
-    let latexTable = `\\small\n\\begin{tabularx}{\\textwidth}{|p{2.5cm}|p{2.5cm}|X|X|X|X|}\n\\hline\n`;
+    let latexTable =`\\small\n\\begin{tabularx}{\\textwidth}{|p{2.5cm}|p{2.5cm}|X|X|X|X|}\n\\hline\n`;
     latexTable += `\\multicolumn{6}{|X|}{\\textbf{Nivel: ${nivel} }}\\\\\\hline`
     latexTable += `\\textbf{Materia} & \\textbf{Docente} & \\textbf{Estudiantes} & \\textbf{Aprobados} & \\textbf{Promedio} & \\textbf{\\%Supera el Promedio} \\\\ \\hline\n`;
   

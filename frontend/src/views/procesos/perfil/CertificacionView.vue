@@ -18,6 +18,7 @@
                     <table class="ui compact celled definition table">
                         <thead>
                         <tr>
+                            <th></th>
                             <th class="text-left">
                                 TEMA
                             </th>
@@ -40,15 +41,15 @@
                         </thead>
                         <tbody>
                         <tr>
+                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
                             <td>Ingeniero en Electrónica y Comunicaciones</td>
                             <td>Universidad Técnica de Ambato</td>
                             <td>40</td>
                             <td>23-07-2024</td>
                             <td>23-07-2024</td>
                             <td>
-                                <BtnDelete/>
-                                <BtnEdit/>
-                                <BtnSera/>
+                                <BtnDelete @onpress="clickBtndelete"/>
+                                <BtnEdit @onpress="clickBtnedit"/>
                             </td>
                         </tr>
                         </tbody>
@@ -87,23 +88,18 @@ onMounted(() => {
     }
 });
 
+const clickBtnsera = () => {
+    alert("Acción de BtnSera")
+};
 
-/*
-titulo:{type: Striewg,},
-    ies:{type: String,},
-    nivel:{type: String,required: true,
-        enum:["Técnico","Tecnólogo","Grado", "Maestría", "Maestría Tecnológica", "Diplomado","Doctorado", "Posdoctorado"]
-    },
-    sreg:{type: String},//Número de registro en senescyt
-    campo_amplio:{type: String},
-    tipo:{type: String, required: true,
-        enum:["Presencial","Semipresencial","Virtual", "Híbrido"]
-    },
-    pais:{type: String, default:"Ecuador"},
-    sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"], default: "Enviado"
-    }
+const clickBtndelete = () => {
+    alert("Acción de BtnDelete")
+}
 
-*/
+const clickBtnedit = () => {
+    alert("Acción de BtnEdit")
+}
+
 </script>
 
 <style scoped lang="scss">

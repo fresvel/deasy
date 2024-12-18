@@ -67,7 +67,7 @@
 import {ref} from "vue"
 import SInput from '@/components/semantic/elements/SInput.vue';
 import STextarea from '@/components/semantic/elements/STextarea.vue'
-import { escountries } from '@/composable/countries';
+//import { escountries } from '@/composable/countries';
 import SSelect from "@/components/semantic/elements/SSelect.vue";
 //import Datepicker from 'vuejs3-datepicker'
 import SDate from "@/components/semantic/elements/SDate.vue";

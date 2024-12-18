@@ -122,6 +122,7 @@ const proyectoSchema = new mongoose.Schema({
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 })
 
+
 const dossierSchema=new mongoose.Schema({
     
     usuario:{
