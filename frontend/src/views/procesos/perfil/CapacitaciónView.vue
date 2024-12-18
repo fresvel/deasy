@@ -21,6 +21,7 @@
                     <table class="ui compact celled definition table">
                         <thead>
                         <tr>
+                            <th></th>
                             <th class="text-left">
                                 TEMA
                             </th>
@@ -46,6 +47,7 @@
                         </thead>
                         <tbody>
                         <tr>
+                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
                             <td>Ingeniero en Electrónica y Comunicaciones</td>
                             <td>Universidad Técnica de Ambato</td>
                             <td>40</td>
@@ -53,16 +55,8 @@
                             <td>23-07-2024</td>
                             <td>Participacción</td>
                             <td>
-                                <button 
-                                @click="removeRow(index, level)"
-                                class="ui negative button">
-                                <i class="remove icon"></i>
-                                </button>
-                                <button 
-                                @click="removeRow(index, level)"
-                                class="ui editar button">
-                                <i class="edit icon"></i>
-                                </button>
+                                <BtnDelete @onpress="clickBtndelete"/>
+                                <BtnEdit @onpress="clickBtnedit"/>
                             </td>
                         </tr>
                         </tbody>
@@ -77,6 +71,7 @@
                     <table class="ui compact celled definition table">
                         <thead>
                         <tr>
+                            <th></th>
                             <th class="text-left">
                                 TEMA
                             </th>
@@ -102,6 +97,7 @@
                         </thead>
                         <tbody>
                         <tr>
+                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
                             <td>Ingeniero en Electrónica y Comunicaciones</td>
                             <td>Universidad Técnica de Ambato</td>
                             <td>40</td>
@@ -109,16 +105,8 @@
                             <td>23-07-2024</td>
                             <td>Participacción</td>
                             <td>
-                                <button 
-                                @click="removeRow(index, level)"
-                                class="ui negative button">
-                                <i class="remove icon"></i>
-                                </button>
-                                <button 
-                                @click="removeRow(index, level)"
-                                class="ui editar button">
-                                <i class="edit icon"></i>
-                                </button>
+                                <BtnDelete @onpress="clickBtndelete"/>
+                                <BtnEdit @onpress="clickBtnedit"/>
                             </td>
                         </tr>
                         </tbody>
@@ -142,6 +130,9 @@
 <script setup>
 import {ref, onMounted} from "vue"
 import AgregarCapacitacion from "./AgregarCapacitacion.vue";
+import BtnDelete from "@/components/database/BtnDelete.vue";
+import BtnEdit from "@/components/database/BtnEdit.vue";
+import BtnSera from "@/components/database/BtnSera.vue";
 const modal = ref(null);
 
 const openModal = () => {

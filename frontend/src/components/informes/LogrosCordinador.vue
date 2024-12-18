@@ -170,7 +170,7 @@ const onfileChange =() => {
 
 
 const generarReporte = async()=>{
-await service.generarReporte()
+await service.informeparcialTutorias()
 console.log(surveys)
 }
 

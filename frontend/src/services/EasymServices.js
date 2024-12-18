@@ -16,6 +16,8 @@ class EasymServices {
      
     }
 
+
+
     getEasymdata() {
         return {
             csv_input:this.csv_input, 
@@ -30,6 +32,24 @@ class EasymServices {
     }
     getEasysurveys(){
         return this.surveys
+    }
+
+    async informeparcialTutorias(){
+     try {
+        
+        const url="http://localhost:3000/easym/v1/tutorias/parcial"
+        const formdata=new FormData();
+        formdata.append('file',this.csv_input.value.files[0]);
+        console.log(this.csv_input.value.files[0])
+
+        const res=await axios.post(url,formdata, {headers: {'Content-Type': 'multipart/form-data'}})
+
+        console.log(res.data)
+
+     } catch (error) {
+        confirm(error.message)
+        console.log(this.csv_input.value)
+     }   
     }
 
     async generarReporte(){

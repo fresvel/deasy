@@ -2,6 +2,7 @@ import "dotenv/config"
 import express  from "express";
 import report_router from "./routes/report_router.js";
 import users_router from "./routes/auth_router.js";
+import tutorias_router from "./routes/tutorias_router.js";
 import cors from "cors"
 import "./database/mongoose.js"
 import cookieParser from "cookie-parser"
@@ -34,7 +35,7 @@ app.use(cookieParser())
 app.use("/easym/v1/report",report_router)
 app.use("/easym/v1/users",users_router)
 
-
+app.use("/easym/v1/tutorias",tutorias_router)
 
 app.use(express.static("public"));
 
