@@ -7,7 +7,8 @@ class EasymServices {
     constructor() {
      
         
-        this.csv_input=ref(null)
+        this.file_grades=ref(null)
+        this.file_tutorias=ref(null)
         this.levels=ref({})
         this.surveys=ref({})
         this.informe=ref({})
@@ -20,7 +21,8 @@ class EasymServices {
 
     getEasymdata() {
         return {
-            csv_input:this.csv_input, 
+            file_grades:this.file_grades,
+            file_tutorias:this.file_tutorias, 
             levels:this.levels, 
             surveys:this.surveys
         }
@@ -39,8 +41,9 @@ class EasymServices {
         
         const url="http://localhost:3000/easym/v1/tutorias/parcial"
         const formdata=new FormData();
-        formdata.append('file',this.csv_input.value.files[0]);
-        console.log(this.csv_input.value.files[0])
+        formdata.append('file',this.file_grades.value.files[0]);
+        formdata.append('tutorias',this.file_tutorias.value.files[0]);
+        console.log(this.file_grades.value.files[0])
 
         const res=await axios.post(url,formdata, {headers: {'Content-Type': 'multipart/form-data'}})
 
@@ -48,7 +51,7 @@ class EasymServices {
 
      } catch (error) {
         confirm(error.message)
-        console.log(this.csv_input.value)
+        console.log(this.file_grades.value)
      }   
     }
 
@@ -56,8 +59,8 @@ class EasymServices {
         try {
             const url="http://localhost:3000/easym/v1/report/logrosc.web"
             const formdata= new FormData();
-            formdata.append('file',this.csv_input.value.files[0]);
-            console.log(this.csv_input.value.files[0])
+            formdata.append('file',this.file_grades.value.files[0]);
+            console.log(this.file_grades.value.files[0])
 
             const res=await axios.post(url,formdata, {headers: {'Content-Type': 'multipart/form-data'}})
             
@@ -70,7 +73,7 @@ class EasymServices {
     
         } catch (error) {
             console.log(error.message)
-            console.log(this.csv_input.value)
+            console.log(this.file_grades.value)
         }    
     }
     

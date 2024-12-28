@@ -35,12 +35,7 @@
         :showmenu="vmenu"
         :shownotify="vnotify"
         >
-        <TitulosView v-if="selected==='Formación'"></TitulosView>
-        <LaboralView v-else-if="selected==='Experiencia'"></LaboralView>
-        <ReferenciasView v-else-if="selected==='Referencias'"></ReferenciasView>
-        <CapacitaciónView v-else-if="selected==='Capacitación'"></CapacitaciónView>
-        <CertificacionView v-else-if="selected==='Certificación'"></CertificacionView>
-
+        <FirmarPdf></FirmarPdf>
 
         </s-body>
         
@@ -63,11 +58,9 @@
     import SBody from '@/components/main/SBody.vue';
     import SHeader from '@/components/main/SHeader.vue';
     import UserProfile from '@/components/general/UserProfile.vue';
-    import TitulosView from './TitulosView.vue';
-    import LaboralView from './LaboralView.vue';
-    import ReferenciasView from './ReferenciasView.vue';
-    import CapacitaciónView from './CapacitaciónView.vue';
-    import CertificacionView from './CertificacionView.vue';
+    import FirmarPdf from './FirmarPdf.vue';
+
+
     const vmenu = ref(true);
     const vnotify = ref(true);
     const selected= ref("Formación")

@@ -7,7 +7,7 @@ const empty_grades={}
 const reporte_estudiantes={}
 const reporte_niveles={}
 
-export const getlowGrades = (filepath) =>{
+export const getlowGrades = (filepath, type="parcial_2") =>{
     return new Promise((resolve, reject) =>{
         csvtojson({delimiter:';'})
         .fromFile(filepath)
@@ -17,22 +17,68 @@ export const getlowGrades = (filepath) =>{
         .then(()=>{
 
             try {
-                for (let key in csvobj){
-                    if (csvobj[key].nota_parcial_1<30){
-                        if (csvobj[key].nota_parcial_1==='')
-    
-                            empty_grades[key]=csvobj[key];
-                        else
-                            low_grades[key]={
-                                id_estudiante:csvobj[key].id_banner_estudiante,
-                                materia:csvobj[key].titulo_curso,
-                                estudiante:csvobj[key].nombres_completos_estudiante,
-                                docente:csvobj[key].nombres_completos_docente,
-                                nivel:csvobj[key].NIVEL,
-                                nota:csvobj[key].nota_parcial_1,
-                                nrc:csvobj[key].NRC
-                            };
+
+                if (type==='parcial_1'){
+                    for (let key in csvobj){
+                        if (csvobj[key].nota_parcial_1<30){
+                            if (csvobj[key].nota_parcial_1==='')
+        
+                                empty_grades[key]=csvobj[key];
+                            else
+                                low_grades[key]={
+                                    id_estudiante:csvobj[key].id_banner_estudiante,
+                                    materia:csvobj[key].titulo_curso,
+                                    estudiante:csvobj[key].nombres_completos_estudiante,
+                                    docente:csvobj[key].nombres_completos_docente,
+                                    nivel:csvobj[key].NIVEL,
+                                    nota1:csvobj[key].nota_parcial_1,
+                                    nota2:'--',
+                                    suma:csvobj[key].nota_parcial_1,
+                                    nrc:csvobj[key].NRC
+                                };
+                        }
                     }
+                }else if (type==='parcial_2'){
+                    for (let key in csvobj){
+                        if (Number(csvobj[key].nota_parcial_1)+Number(csvobj[key].nota_parcial_2)<60){
+                            if (csvobj[key].nota_parcial_1===''||csvobj[key].nota_parcial_2==='')
+        
+                                empty_grades[key]=csvobj[key];
+                            else
+                                low_grades[key]={
+                                    id_estudiante:csvobj[key].id_banner_estudiante,
+                                    materia:csvobj[key].titulo_curso,
+                                    estudiante:csvobj[key].nombres_completos_estudiante,
+                                    docente:csvobj[key].nombres_completos_docente,
+                                    nivel:csvobj[key].NIVEL,
+                                    nota1:csvobj[key].nota_parcial_1,
+                                    nota2:csvobj[key].nota_parcial_2,
+                                    suma:Number(csvobj[key].nota_parcial_1)+Number(csvobj[key].nota_parcial_2),
+                                    nrc:csvobj[key].NRC
+                                };
+                        }
+                    }
+                }else if (type==='final'){
+                    for (let key in csvobj){
+                        if (Number(csvobj[key].nota_final)>30||Number(csvobj[key].nota_exam_final)<20){
+                            if (csvobj[key].nota_final===''||csvobj[key].nota_exam_final==='')
+        
+                                empty_grades[key]=csvobj[key];
+                            else
+                                low_grades[key]={
+                                    id_estudiante:csvobj[key].id_banner_estudiante,
+                                    materia:csvobj[key].titulo_curso,
+                                    estudiante:csvobj[key].nombres_completos_estudiante,
+                                    docente:csvobj[key].nombres_completos_docente,
+                                    nivel:csvobj[key].NIVEL,
+                                    nota1:csvobj[key].nota_final,
+                                    nota2:csvobj[key].nota_exam_final,
+                                    suma:"Reprobado",
+                                    nrc:csvobj[key].NRC
+                                };
+                        }
+                    }
+
                 }
     
                 let niveles= Object.values(low_grades).map(line => line.nivel);
@@ -121,12 +167,12 @@ const renderLatexesreport=async (objreport)=>{
 
 
 const latexTableestudiantes=(arraytable, title) => {
-    let latexTable =`\\small\n\\begin{tabularx}{\\textwidth}{|p{5cm}|p{7cm}|X|}\n\\hline\n`;
-    latexTable += `\\multicolumn{3}{|p{\\dimexpr\\textwidth-2\\tabcolsep-2\\arrayrulewidth}|}{\\textbf{Estudiante: ${title} }}\\\\\\hline\n`
-    latexTable += `\\textbf{Materia} & \\textbf{Docente} & \\textbf{Calificación} \\\\ \\hline\n`;
+    let latexTable =`\\small\n\\begin{tabularx}{\\textwidth}{|p{5cm}|p{7cm}|X|X|X|}\n\\hline\n`;
+    latexTable += `\\multicolumn{5}{|p{\\dimexpr\\textwidth-2\\tabcolsep-2\\arrayrulewidth}|}{\\textbf{Estudiante: ${title} }}\\\\\\hline\n`
+    latexTable += `\\textbf{Materia} & \\textbf{Docente} & \\textbf{N1} & \\textbf{N2} & \\textbf{R} \\\\ \\hline\n`;
   
     arraytable.forEach(item => {
-      latexTable += `${item.materia} & ${item.docente}  & ${item.nota} \\\\ \\hline\n`;
+      latexTable += `${item.materia} & ${item.docente}  & ${item.nota1} & ${item.nota2}& ${item.suma} \\\\ \\hline\n`;
     });
   
     latexTable += `\\end{tabularx}\\vspace{10mm}\n`;

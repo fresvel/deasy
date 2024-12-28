@@ -4,7 +4,7 @@
     :class="btnseraClass"
     >
     <font-awesome-icon :icon="btnseraIcon" class="icon" />
-    <span class="tooltip">{{ btnseraMessage }}</span>
+        <span class="tooltip">{{ btnseraMessage }}</span>
     </a>
 
 </template>
@@ -94,24 +94,6 @@ const onclick=()=>{
     color: rgba(255, 20, 30, 0.85);
 }
 
-
-.tooltip {
-  visibility: hidden; /* Inicialmente oculto */
-  position: absolute;
-  bottom: 100%; /* Lo coloca justo encima del botón */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 150, 83, 0.85);
-  color: #fff;
-  padding: 5px;
-  height:100%;
-  font-family: Arial, sans-serif; /* Aquí defines la fuente */
-  border-radius: 3px;
-  font-size: 16px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
 
 .tooltip {
   visibility: hidden; /* Inicialmente oculto */

@@ -49,8 +49,13 @@
       </div>
       <div class="three wide column">
         <div class="ui labeled large fluid  input">
-          <input type="file" id="fileInput" style="display: none;" v-on:change="onfileChange()" name="file" ref="csv_input">
-          <label for="fileInput" class="ui teal large fluid button">{{csv_filename}}</label>
+          <input type="file" id="file_grades" style="display: none;" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
+          <label for="file_grades" class="ui teal large fluid button">{{csv_grades}}</label>
+       </div>
+       <br>
+       <div class="ui labeled large fluid  input">
+          <input type="file" id="file_tutorias" style="display: none;" v-on:change="onfileChange('tutorias')" name="file_t" ref="file_tutorias">
+          <label for="file_tutorias" class="ui teal large fluid button">{{csv_tutorias}}</label>
        </div>
       </div>
     </div>
@@ -146,9 +151,12 @@ import EasymServices from '@/services/EasymServices';
 const service= new EasymServices()
 const levels=service.getEasymdata().levels;
 const surveys=service.getEasymdata().surveys;
-const csv_input = service.getEasymdata().csv_input;
+const file_grades = service.getEasymdata().file_grades;
+const file_tutorias = service.getEasymdata().file_tutorias;
 
-const csv_filename = ref("Subir CSV");
+
+const csv_grades = ref("Calificaciones");
+const csv_tutorias = ref("Tutorías");
 
 const informe=ref({
   header:{
@@ -161,11 +169,21 @@ const informe=ref({
 
 
 
-const onfileChange =() => {
+const onfileChange =(type) => {
   
-  csv_filename.value = csv_input.value.files[0].name;  
-  console.log(csv_input.value.files);
+  console.log(type);
+  if(type == 'grades'){
+   console.log(file_grades);
+    csv_grades.value = file_grades.value.files[0].name;
+    console.log("2");
+  } else if(type == 'tutorias'){
+    console.log("3");
+    csv_tutorias.value = file_tutorias.value.files[0].name;
+    console.log("4");
+  }
+  console.log("5");
 
+  
 }
 
 

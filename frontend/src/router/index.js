@@ -6,12 +6,14 @@ import IndexPage from "../views/auth/IndexPage.vue";
 import AuthView from "@/views/AuthView.vue";
 import Perfil from "@/views/procesos/perfil/PerfilView.vue";
 import AgregarFormacion from "@/views/procesos/perfil/TitulosView.vue";
+import FirmarPdf from "@/views/procesos/funciones/FirmarView.vue";
 const routes = [
   {
     path: "/",
     name: "index",
     component: IndexPage
   },
+  
   {
     path: "/auth",
     name: "auth",
@@ -43,6 +45,12 @@ const routes = [
     path: "/informes/docentes/logros",
     name: "iplogros",
     component: InformePlogros,
+  },
+
+  {
+    path: "/firmar",
+    name: "firmar",
+    component: FirmarPdf,
   }
 
 ]
