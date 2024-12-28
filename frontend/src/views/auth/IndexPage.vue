@@ -26,8 +26,8 @@
     :showmenu="vmenu"
     :shownotify="vnotify"
     >
-    <router-view v-if="1==1"></router-view>
-    <router-link :to="{name:login}"></router-link>
+    <router-view v-if="1==1">Hola</router-view>
+    <router-link :to="{name:login}"> Mundo </router-link>
     </s-body>
 
   

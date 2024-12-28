@@ -6,10 +6,13 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 // Importar los íconos específicos que deseas utilizar
-import { faEdit, faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck} from '@fortawesome/free-solid-svg-icons';
+import {    faEdit, faCheck, faTrash, faCertificate, 
+            faCheckDouble, faSquareCheck, faForward,
+            faBackward} from '@fortawesome/free-solid-svg-icons';
 
 // Agregar íconos a la biblioteca
-library.add(faEdit, faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck);
+library.add(faEdit, faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck,faForward,
+    faBackward);
 
 
 const app=createApp(App)
