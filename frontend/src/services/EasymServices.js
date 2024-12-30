@@ -60,7 +60,9 @@ class EasymServices {
             const url="http://localhost:3000/easym/v1/report/logrosc.web"
             const formdata= new FormData();
             formdata.append('file',this.file_grades.value.files[0]);
+            console.log("File");
             console.log(this.file_grades.value.files[0])
+            
 
             const res=await axios.post(url,formdata, {headers: {'Content-Type': 'multipart/form-data'}})
             

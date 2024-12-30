@@ -2,10 +2,13 @@ import { renderLogros } from "../helpers/render_logros.js";
 
 export const logroscWeb= async(req, res)=>{
 
+  console.log("Controlador logros Web: ")
   console.log(req.uid)
+
   
   if (!req.file) {
-    return res.status(400).json({error: 'No file uploaded.'});
+    console.log("Control error: no file");
+    return res.status(404).json({error: 'No file uploaded.'});
   }
   try {
     const json_logros=await renderLogros(req.file.path)

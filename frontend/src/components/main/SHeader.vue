@@ -5,7 +5,7 @@
         <div class="ui inverted segment" id="hmenu">
             <div class="ui inverted secondary menu flex">
               <a class="item large" @click="onClick('User')">
-                <img class="avatar" src="/images/avatar.png" alt="User Avatar">
+                <img class="menulogo" src="/images/menu.svg" alt="User Avatar">
               </a>
               <slot></slot>
             <!--  <a v-for="(item, index) in menu" :key="index" 
@@ -61,7 +61,7 @@ const onClick=(item)=>{
   
 }
 
-.avatar{
+.menulogo{
   border-radius: 10px;
 }
 
