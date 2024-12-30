@@ -22,9 +22,11 @@
 </div>
 
 <div class="ui grid">
-    <div class="row fluid centered">
-        <div style="position: relative;" id="v-pdf">
-            <canvas class="segment ui ten wide column" id="pdfCanvas" style="cursor: crosshair;"></canvas>
+    <div class="row">
+        <div class="segment ui column fluid centered" id="col-pdf">
+          <div style="position: relative;" id="v-pdf">
+            <canvas  id="pdfCanvas" style="cursor: crosshair;"></canvas>
+          </div>
         </div>        
     </div>
     <div class="row">
@@ -39,10 +41,11 @@
   import { onMounted } from 'vue';
   import * as pdfjsLib from "pdfjs-dist/webpack"; // Usa esta línea para Webpack
   
-  let canvas, pdfViewer, ctx, pageInfo;
+  let canvas, pdfViewer, ctx, pageInfo, colPdf;
   let pdfDoc = null;
   let currentPage = 1;
   let viewport = null;
+  let pdfScale = 1.75; 
 
 
   
@@ -55,7 +58,9 @@
     ctx = canvas.getContext('2d');
     const coordinatesDisplay = document.getElementById('coordinates');
     pageInfo = document.getElementById('pageInfo');
-  
+    colPdf=document.getElementById("col-pdf");
+
+
     const loadingTask = pdfjsLib.getDocument(pdfUrl);
     loadingTask.promise.then(pdf => {
       pdfDoc = pdf;
@@ -70,13 +75,16 @@
     pdfViewer.addEventListener('mousedown', event => {
      
     const rect = pdfViewer.getBoundingClientRect();
+
+    console.log("Vw"+pdfViewer.offsetWidth);
+    console.log("Cv"+canvas.offsetWidth); 
       console.log(rect)
 
       const ofx=rect.left + window.scrollX;
       const ofy=rect.top + window.scrollY;
       console.log(ofx, ofy);
 
-      startX = event.pageX- ofx;
+      startX = event.pageX - ofx;
       startY = event.pageY - ofy;
 
       const signbox=document.getElementById('signbox');
@@ -91,7 +99,6 @@
       box.id="signbox";
       box.style.height = `0px`;
       box.style.position='absolute'
-      box.style.background="white"
       box.style.border= "2px dashed blue";
       box.style.position= "absolute";
       box.style.background="rgba(0, 255, 0, 0.3)";
@@ -125,10 +132,10 @@
         box.style.height = `${height}px`;
 
         
-        const x1 = left;
-        const y1 = rect.height-top; // Ajuste para coordenada cartesiana
-        const x2 = right;
-        const y2 = rect.height-bottom;
+        const x1 = left/pdfScale;
+        const y1 = (rect.height-top)/pdfScale; // Ajuste para coordenada cartesiana
+        const x2 = right/pdfScale;
+        const y2 = (rect.height-bottom)/pdfScale;
 
         coordinatesDisplay.textContent = `Coordenadas Cartesianas: Superior Izquierda (x1=${x1}, y1=${y1}), Inferior Derecha (x2=${x2}, y2=${y2})`;
       });
@@ -146,12 +153,17 @@
 
   const  renderPage=(pageNum)=> {
     pdfDoc.getPage(pageNum).then(page => {
-      viewport = page.getViewport({ scale: 1.75 });
+
+      viewport = page.getViewport({ scale: pdfScale });
       canvas.width = viewport.width;
       canvas.height = viewport.height;
+      colPdf.style.width=`fit-content`
       pdfViewer.style.width = `${viewport.width}px`;
       pdfViewer.style.height = `${viewport.height}px`;
-  
+      
+
+
+
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport,
