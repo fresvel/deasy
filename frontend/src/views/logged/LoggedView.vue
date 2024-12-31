@@ -48,7 +48,8 @@
             <CertificacionView v-else-if="selmenu==='Certificación'"></CertificacionView>
         </div>
         <div v-else-if="headmenu=='Academia'">
-            <LogrosView v-if="selmenu=='Logros'"></LogrosView>
+            <IndexAcademia v-if="selmenu=='index'"></IndexAcademia>
+            <LogrosView v-else-if="selmenu=='Logros'"></LogrosView>
             <TutoriasView v-else-if="selmenu==='Tutorías'"></TutoriasView>
         </div>
         <div v-else-if="headmenu=='Firmar'">
@@ -84,6 +85,7 @@
     import CapacitaciónView from './perfil/CapacitaciónView.vue';
     import CertificacionView from './perfil/CertificacionView.vue';
 
+    import IndexAcademia from './academia/IndexAcademia.vue';
     import LogrosView from './academia/LogrosView.vue';
     import TutoriasView from './academia/TutoriasView.vue';
 
@@ -219,7 +221,7 @@
                         //func:toggleNotify
                     }
                 ]
-                selmenu.value="Logros";
+                selmenu.value="index";
                 break;
             case 'Investigación':
                 selmenu.value="Investigación";
