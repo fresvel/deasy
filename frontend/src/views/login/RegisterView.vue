@@ -1,18 +1,13 @@
 <template>
 
-<s-header @onclick="handleHeader">
-    <router-link to="/login" class="item active large right aligned">Login</router-link>
-    <router-link to="/register" class="item large">Register</router-link>         
-</s-header>
+<LoginHeader></LoginHeader>
 
     <div class="ui grid flex center aligned middle aligned segment">
         
           <div >
-              <div class="ui segment">
+              <div class="ui segment" style="margin: 4%;">
     
-    
-                
-                <div class="grid ui container">
+                <div class="grid ui container" >
                     <div class="sixteen wide column center">
                         <h2 class="ui blue header  center aligned">Crear Usuario</h2>
                         <h4 class="ui header blue center aligned" style="margin-top: -15px;">DEASY PUCESE </h4>
@@ -122,12 +117,12 @@
     </template>
     
     <script setup>   
-
+    import LoginHeader from './LoginHeader.vue';
     import SInput from '@/components/semantic/elements/SInput.vue';
     import { escountries } from '@/composable/countries';
     import axios from 'axios';
     import { ref } from 'vue';
-    import SHeader from '@/components/main/SHeader.vue';
+
     const newuser= ref({
         cedula:"",
         password:"",

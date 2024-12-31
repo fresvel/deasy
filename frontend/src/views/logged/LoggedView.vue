@@ -40,7 +40,7 @@
         >
 
 
-        <div v-if="headmenu=='Perfil'">
+        <div v-if="headmenu=='Perfil'" id="validar">
             <TitulosView v-if="selmenu==='Formación'"></TitulosView>
             <LaboralView v-else-if="selmenu==='Experiencia'"></LaboralView>
             <ReferenciasView v-else-if="selmenu==='Referencias'"></ReferenciasView>

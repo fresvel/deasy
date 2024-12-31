@@ -1,11 +1,8 @@
 <template>
 
-<div class="ui grid flex center aligned middle aligned segment">
-        
-        
-            <div class="ui segment">
+<div class="ui grid flex center aligned middle segment">
               
-              <div class="grid ui container">
+              <div class="grid ui container" style="margin-bottom: 2%;">
                 <div class="fourteen wide column center">
                     <h2 class="ui  header   left aligned">Referencias </h2>
                 </div>
@@ -140,9 +137,7 @@
                   
               </div>
   
-  
-            </div>
-    
+      
 </div>
 
 

@@ -10,8 +10,6 @@ const router=new Router();
 
 const upload=multer({dest:"uploads", filename:"hello"})
 
-
-
 router.post('/logrosc.web',/*validateToken, validateFile, upload.single('file'),*/ upload.single('file'), logroscWeb)
 router.post('/logrosc.pdf', /*validateToken,*/ logroscJslatex, logroscPdf)
 
