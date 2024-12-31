@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory} from "vue-router";
 import Login from "../views/login/LoginView.vue";
 import Register from "../views/login/RegisterView.vue";
-import InformePlogros from "../views/informes/programas/LogrosView.vue";
 import IndexPage from "../views/logged/LoggedView.vue";
 import AuthView from "@/views/AuthView.vue";
 import Perfil from "@/views/procesos/perfil/PerfilView.vue";
@@ -41,12 +40,6 @@ const routes = [
     name: "formacion",
     component: AgregarFormacion
   },
-  {
-    path: "/informes/docentes/logros",
-    name: "iplogros",
-    component: InformePlogros,
-  },
-
   {
     path: "/firmar",
     name: "firmar",

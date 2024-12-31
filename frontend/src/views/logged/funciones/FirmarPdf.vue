@@ -1,6 +1,6 @@
 <template>
   
-<h1>Fimar Documento</h1>
+<h1>Fimar Documentos</h1>
 <div class="ui fluid centered grid">
   <div class="row">
     <div class="column">

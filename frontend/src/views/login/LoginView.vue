@@ -1,9 +1,6 @@
 <template>
 
-<s-header @onclick="handleHeader">
-    <router-link to="/login" class="item active large right aligned">Login</router-link>
-    <router-link to="/register" class="item large">Register</router-link>         
-</s-header>
+<LoginHeader></LoginHeader>
 
 <div class="login-container">
             <div class="ui container login-form">
@@ -56,7 +53,7 @@
 <script setup>
     import { ref } from 'vue';
     import axios from 'axios';
-    import SHeader from '@/components/main/SHeader.vue';
+    import LoginHeader from './LoginHeader.vue';
     
     const cedula = ref("")
     const password = ref("")
