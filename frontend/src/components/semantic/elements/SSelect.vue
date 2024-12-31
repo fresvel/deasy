@@ -6,8 +6,13 @@
       <div class="ui label">
         {{label}}
       </div>
-      <select class="ui compact selection dropdown" v-model="selSelect" style="width: 100%;">
-        <option v-for="(option, index) in options " :key="index"  :value="option"> {{ option }} </option>
+      <select 
+          class="ui compact selection dropdown" 
+          v-model="vselect" 
+          @change="selSelect"
+          style="width: 100%;"
+      >
+          <option v-for="(option, index) in options " :key="index"  :value="option"> {{ option }} </option>
       </select>
   </div>
 </div>
@@ -21,7 +26,7 @@ import { defineProps, defineEmits, ref } from 'vue';
       required: true
     },
     options: {
-      type: [String],
+      type: Array,
       required: true
     }
   })
@@ -29,8 +34,7 @@ import { defineProps, defineEmits, ref } from 'vue';
   const emit=defineEmits(["fromselect"])
 
     const vselect=ref("")
-    const selSelect = (event) => {
-      vselect.value = event.target.value    
+    const selSelect = () => {    
       emit('fromselect', vselect.value)  
     }  
 </script>

@@ -50,6 +50,7 @@
   function updateValue(event) {
     emit('update:modelValue', event.target.value);
   }
+
   </script>
   
   <style scoped>
