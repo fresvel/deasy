@@ -1,6 +1,5 @@
 import csvtojson from 'csvtojson';
-import { getllamaSurvey } from '../utils/llama.js';
-const csvFile = 'Reporte.csv';
+import { getllamaSurvey } from '../../../utils/llama.js';
 const csvobj = {};
 
 export const renderLogros = (file) => {

@@ -1,6 +1,6 @@
-import { Usuario } from "../models/users/usuarios.js";
+import { Usuario } from "../../models/users/usuarios.js";
 import bcrypt from "bcrypt";
-import { generateToken, generateRefreshToken } from "../utils/login/generate_token.js";
+import { generateToken, generateRefreshToken } from "../../utils/login/generate_token.js";
 
 export const loginUser = async (req, res) =>{
 

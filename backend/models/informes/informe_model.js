@@ -1,57 +1,58 @@
 import mongoose from "mongoose";
 
-const informe =new mongoose.Schema(
+const informeSchema =new mongoose.Schema(
     {
         code: {
             type: String,
             required: true,
             unique: true
         },
-        template: {
-            type: mongoose.Schema.Types.ObjectId,
+        status:{
+            type: String,
             required: true,
-            ref: "Template"
+            enum:["Inicial","Guardado","Elaborado","Revisado","Aprobado"],
+            default: "Inicial"
         },
+        /*template: { evaluate with process
+            type: mongoose.Schema.Types.ObjectId,
+            required: true, //informe con elementos vacíos
+            ref: "Template"
+        },*/
         content:{
             type: Object,
             required: true
         },
         props:{
-            owners:{
-                type: [mongoose.Schema.Types.ObjectId],
-                ref: "User"
-            },
             author:{
                 type: mongoose.Schema.Types.ObjectId,
-                required: true,
+                //required: true,
                 ref: "User"
             },
-            programas:{
-                type: [mongoose.Schema.Types.ObjectId],
+            program:{
+                type: mongoose.Schema.Types.ObjectId,
                 ref: "Programa",
                 required:true
             },
+            year:{
+                type:Number,
+                required:true
+            },
             period:{
-                year:{
-                    type:Number,
-                    required:true
-                },
-                ciclo:{
-                    type: String,
-                    required:true,
-                    enum:["Primer Periodo Ordinario","Segundo Periodo Ordinario"]
-                }},
-            refers:{
-                type:[mongoose.Schema.Types.ObjectId],
-                ref: "Informe"
+                type: String,
+                required:true,
+                enum:["Primer Periodo Ordinario","Segundo Periodo Ordinario"]
+            },
+            process:{
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Proceso",
+                required: true
             },
             url:{
                 type: String,
-                required: true,
                 unique: true
             }
         },
-        era:{
+        /*era:{
             made:{
                 name:{
                     type: String,
@@ -94,6 +95,9 @@ const informe =new mongoose.Schema(
                     required: true
                 }
             },
-        },
+        },*/
     }
 )
+
+
+export const Informe=new mongoose.model("Informe",informeSchema);

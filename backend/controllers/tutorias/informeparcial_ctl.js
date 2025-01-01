@@ -1,5 +1,5 @@
 import {getlowGrades} from "../../services/tutorias/getgrades_service.js"
-
+import { deleteFile } from "../../utils/files.js";
 export const informe_parcial =async (req, res)=>{
 
     if (!req.file) {
@@ -9,7 +9,7 @@ export const informe_parcial =async (req, res)=>{
         console.log("TESTING");
         console.log(req.file.path)
         const result=await getlowGrades(req.file.path)
-        
+        deleteFile(req.file.path)
         res.json(result);
         
     } catch (error) {

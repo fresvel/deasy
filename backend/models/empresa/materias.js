@@ -1,4 +1,3 @@
-import { configDotenv } from "dotenv";
 import mongoose from "mongoose";
 
 const materiasSchema=new mongoose.Schema({

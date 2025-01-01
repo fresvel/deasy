@@ -79,4 +79,4 @@ const programaSchema = new mongoose.Schema(
         }
     });
 
-export const Programa=new mongoose.model('Programa', programaSchema);
+export const Program=new mongoose.model('Programa', programaSchema);
