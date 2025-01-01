@@ -1,5 +1,8 @@
 <template>
 
+
+
+
 <div class="ui grid">
     <div class="row">
         <div class="sixteen wide column">
@@ -7,7 +10,7 @@
             <div class="row">
                 <s-select
                 label="Programa"
-                :options="programas"
+                :options="allprograms"
                 @fromselect="selProgram"
                 />
 
@@ -35,19 +38,39 @@
 
 </div>
 
+<LogrosView v-if="1==1"></LogrosView>
+
 </template>
 
 
 <script setup>
-import {ref} from 'vue'
+import {ref, defineProps} from 'vue'
 import SSelect from '@/components/semantic/elements/SSelect.vue';
 import SInput from '@/components/semantic/elements/SInput.vue';
+import EasymServices from '@/services/EasymServices';
+
+import LogrosView from './LogrosView.vue';
+
+const props=defineProps({
+    area:{
+        type:String,
+        required: true
+    },
+    perfil:{
+        type:String,
+        required: true
+    }
+})
+
+const service = new EasymServices();
+service.getEasymPrograms()
+
+const allprograms=service.getEasymdata().programs;
 
 const today= new Date();
 const thisyear= today.getFullYear().toString();
 
-const programas = ref(['Tecnologías de la Información', 'Programa2', 'Programa3', 'Programa4'])
-const periodos= ref(['Primer Periodo', 'Segundo Periodo'])
+const periodos= ref([{name:'Primer Periodo', value:'01'}, {name:'Segundo Periodo', value:'02'}])
 const anio= ref(thisyear);
 
 
@@ -71,10 +94,15 @@ const onanioChange=(value)=>{
 
 const onparamsChange=()=>{
     if(program!=""&&period!=""){
-    console.log("throw function")
-    console.log(program)
-    console.log(period)
-    console.log(anio.value)
+        const process={code:"ac_cca_logros"} //Obtener posterior desde la base de datos
+        console.log(program)
+        console.log(period)
+        console.log(anio.value)
+        console.log(props.area)
+        console.log(props.perfil)
+        console.log(process.code)
+
+        //Aquí se debe llamar al servicio para obtener los logros
 }
 }
 

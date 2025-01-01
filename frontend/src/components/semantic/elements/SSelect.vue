@@ -12,7 +12,7 @@
           @change="selSelect"
           style="width: 100%;"
       >
-          <option v-for="(option, index) in options " :key="index"  :value="option"> {{ option }} </option>
+      <option v-for="(option, index) in options " :key="index"  :value="option.value"> {{ option.name }} </option>
       </select>
   </div>
 </div>
@@ -35,7 +35,7 @@ import { defineProps, defineEmits, ref } from 'vue';
 
     const vselect=ref("")
     const selSelect = () => {    
-      emit('fromselect', vselect.value)  
+      emit('fromselect', vselect.value)
     }  
 </script>
 

@@ -1,8 +1,12 @@
 import "dotenv/config"
 import express  from "express";
-import report_router from "./routes/report_router.js";
+import academia_router from "./routes/academia_router.js";
 import users_router from "./routes/auth_router.js";
 import tutorias_router from "./routes/tutorias_router.js";
+import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
+
+import program_router from "./routes/program_router.js";
+import area_router from "./routes/area_router.js";
 import cors from "cors"
 import "./database/mongoose.js"
 import cookieParser from "cookie-parser"
@@ -32,10 +36,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser())
 
-app.use("/easym/v1/report",report_router)
+app.use("/easym/v1/academia",academia_router)
 app.use("/easym/v1/users",users_router)
-
 app.use("/easym/v1/tutorias",tutorias_router)
+
+app.use("/easym/v1/admin",admin_router)
+
+app.use("/easym/v1/program",program_router)
+
+app.use("/easym/v1/area",area_router)
 
 app.use(express.static("public"));
 

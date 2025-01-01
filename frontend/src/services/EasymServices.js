@@ -12,7 +12,9 @@ class EasymServices {
         this.levels=ref({})
         this.surveys=ref({})
         this.informe=ref({})
-     
+
+        this.programs=ref([])
+        this.areas=ref([])
 
      
     }
@@ -24,7 +26,10 @@ class EasymServices {
             file_grades:this.file_grades,
             file_tutorias:this.file_tutorias, 
             levels:this.levels, 
-            surveys:this.surveys
+            surveys:this.surveys,
+
+            programs:this.programs,
+            areas:this.areas,
         }
     }
 
@@ -35,6 +40,7 @@ class EasymServices {
     getEasysurveys(){
         return this.surveys
     }
+
 
     async informeparcialTutorias(){
      try {
@@ -57,7 +63,7 @@ class EasymServices {
 
     async generarReporte(){
         try {
-            const url="http://localhost:3000/easym/v1/report/logrosc.web"
+            const url="http://localhost:3000/easym/v1/academia/co/logros.web"
             const formdata= new FormData();
             formdata.append('file',this.file_grades.value.files[0]);
             console.log("File");
@@ -81,7 +87,7 @@ class EasymServices {
     
     async obtenerReporte(){
       try {
-            const url="http://localhost:3000/easym/v1/report/logrosc.pdf"
+            const url="http://localhost:3000/easym/v1/academia/co/logros.pdf"
             
             this.informe.value.content={tables:this.levels.value, surveys:this.surveys.value}
             const res=await axios.post(url,this.informe.value)
@@ -92,6 +98,33 @@ class EasymServices {
             console.log(error.message)
         }
     }
+
+    async getEasymPrograms(){
+        try {
+            const url="http://localhost:3000/easym/v1/program"
+            const res=await axios.get(url)
+            this.programs.value=res.data.map(programa => {
+                const {code, ...resto}=programa
+                return {...resto, value: code}
+            })
+        } catch (error) {
+            console.log(error.message)
+            
+        }
+
+    }
+
+    async getEasymAreas(){
+        try {
+            const url="http://localhost:3000/easym/v1/area"
+            const res=await axios.get(url)
+            this.areas.value=res.data
+        } catch (error) {
+            console.log(error.message)
+            
+        }
+    }
+
 
 }
 

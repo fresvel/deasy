@@ -18,7 +18,7 @@
 
 
 import { compileLatexjs } from '../utils/latex.js';
-import { Template } from '../models/templates.js';
+import { Template } from '../models/informes/templates.js';
 import { dailc_va } from '../templates/javascript/dailc_va.js';
 
 
@@ -32,7 +32,7 @@ export const logroscJslatex= async(req, res, next)=>{
     //console.log(tables)
     console.log(req.body)
 
-    const template=await Template.find({code:"dailc_v1"})
+    const ftemplate=await Template.find({code:"dailc_v1"})
     //const functions=template[0].functions
 
     

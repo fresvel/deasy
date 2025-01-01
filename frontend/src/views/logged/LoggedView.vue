@@ -1,17 +1,20 @@
 <template>  
 
     <s-header @onclick="onClick('Menu')">
-        <a class="item large" @click="onheadClick('Perfil')">
+        <a class="item large" @click="onheadClick({name:'Perfil'})">
             <img class="avatar" src="/images/avatar.png" alt="User Avatar">
         </a>
-        <a class="item active large" @click="onheadClick('Academia')">Academia</a>
-        <a to="/auth" class="item large" @click="onheadClick('Investigación')">Investigación</a>
-        <a class="item  large" @click="onheadClick('Vinculación')">Vinculación</a>
-        <a class="item large left aligned" @click="onheadClick('Internacionalización')">Internacionalización</a>
+
+        <a class="item large" 
+        v-for="(area, index) in areas" :key="index"
+        :class="{'active':area.active==true}" 
+        @click="onheadClick(area)">{{ area.name}}</a>
+
+        
         <router-link to="/logout" class="item  large right aligned">
             <img class="avatar" src="/images/logout.svg" alt="User Avatar">
         </router-link>              
-        <a class="item large" @click="onheadClick('Firmar')"> 
+        <a class="item large" @click="onheadClick({name:'Firmar'})"> 
             <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
         </a>
         <a class="item large" @click="onClick('Message')">
@@ -40,20 +43,20 @@
         >
 
 
-        <div v-if="headmenu=='Perfil'" id="validar">
-            <TitulosView v-if="selmenu==='Formación'"></TitulosView>
-            <LaboralView v-else-if="selmenu==='Experiencia'"></LaboralView>
-            <ReferenciasView v-else-if="selmenu==='Referencias'"></ReferenciasView>
-            <CapacitaciónView v-else-if="selmenu==='Capacitación'"></CapacitaciónView>
-            <CertificacionView v-else-if="selmenu==='Certificación'"></CertificacionView>
+        <div v-if="area=='Perfil'" id="validar">
+            <TitulosView v-if="process==='Formación'"></TitulosView>
+            <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
+            <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
+            <CapacitaciónView v-else-if="process==='Capacitación'"></CapacitaciónView>
+            <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
         </div>
-        <div v-else-if="headmenu=='Academia'">
-            <IndexAcademia v-if="selmenu=='index'"></IndexAcademia>
-            <LogrosView v-else-if="selmenu=='Logros'"></LogrosView>
-            <TutoriasView v-else-if="selmenu==='Tutorías'"></TutoriasView>
+        <div v-else-if="area=='Academia'" id="Academiadiv">
+            <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
+            <LogrosView v-else-if="process=='Logros'"></LogrosView>
+            <TutoriasView v-else-if="process==='Tutorías'"></TutoriasView>
         </div>
-        <div v-else-if="headmenu=='Firmar'">
-            <FirmarPdf v-if="headmenu=='Firmar'"></FirmarPdf>
+        <div v-else-if="area=='Firmar'">
+            <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
         </div>
 
         
@@ -92,11 +95,17 @@
     import FirmarPdf from './funciones/FirmarPdf.vue';
 
 
+    import EasymServices from '@/services/EasymServices';
+
+    const service = new EasymServices();
+
+    service.getEasymAreas()
+    const areas =service.getEasymdata().areas
     const vmenu = ref(true);
     const vnotify = ref(true);
-    const selmenu= ref("Formación")
+    const process= ref("Formación")
 
-    const headmenu= ref("Perfil")
+    const area= ref("Perfil")
     
     
     const toggleVmenu = () => {
@@ -151,7 +160,7 @@
         for (const el of mainmenu.value){
             if(el.label === item){
                 el.active =true;
-                selmenu.value=el.label;
+                process.value=el.label;
                 //el.func()
             }else{
                 el.active = false;
@@ -161,8 +170,18 @@
     
 
     const onheadClick=(item)=>{
-        headmenu.value=item;
-        switch(item){
+        area.value=item.name;
+        for (let el of areas.value){
+            if(el.code === item.code){
+                el.active = true;
+            } else{
+                el.active = false;
+            }
+        }
+
+
+
+        switch(item.name){
             case 'Perfil':
                 mainmenu.value=[
                     {
@@ -191,9 +210,10 @@
                         //func:toggleNotify
                     }
                 ]
-                selmenu.value="Formación";
+                process.value="Formación";
                 break;
             case 'Academia':
+                console.log("Academia detected")
                 mainmenu.value=[
                     {
                         label: 'Logros',
@@ -221,19 +241,22 @@
                         //func:toggleNotify
                     }
                 ]
-                selmenu.value="index";
+                process.value="index";
                 break;
             case 'Investigación':
-                selmenu.value="Investigación";
+                mainmenu.value=[]
+                process.value="Investigación";
                 break;
             case 'Vinculación':
-                selmenu.value="Vinculación";
+                mainmenu.value=[]
+                process.value="Vinculación";
                 break;
             case 'Internacionalización':
-                selmenu.value="Internacionalización";
+                mainmenu.value=[]
+                process.value="Internacionalización";
                 break;
             case 'Firmar':
-                selmenu.value="Firmar";
+                process.value="Firmar";
                 break;
             case 'Message':
                 break;
@@ -241,6 +264,8 @@
                 break;
         }
     }
+
+
       
       
     </script>
