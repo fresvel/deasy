@@ -18,7 +18,18 @@
     font-size: large;
   }
 
+  .medium{
+    font-size: medium;
+  }
 
+  .Large{
+    font-size: x-large;
+  }
+
+
+  .LARGE{
+    font-size: xx-large;
+  }
 
 </style>
     

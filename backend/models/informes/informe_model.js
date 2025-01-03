@@ -7,6 +7,10 @@ const informeSchema =new mongoose.Schema(
             required: true,
             unique: true
         },
+        desc:{
+            type: String,
+            required: true,
+        },
         status:{
             type: String,
             required: true,
@@ -22,36 +26,10 @@ const informeSchema =new mongoose.Schema(
             type: Object,
             required: true
         },
-        props:{
-            author:{
-                type: mongoose.Schema.Types.ObjectId,
-                //required: true,
-                ref: "User"
-            },
-            program:{
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Programa",
-                required:true
-            },
-            year:{
-                type:Number,
-                required:true
-            },
-            period:{
-                type: String,
-                required:true,
-                enum:["Primer Periodo Ordinario","Segundo Periodo Ordinario"]
-            },
-            process:{
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Proceso",
-                required: true
-            },
-            url:{
-                type: String,
-                unique: true
-            }
-        },
+        url:{
+            type: String,
+            unique: true
+        }
         /*era:{
             made:{
                 name:{

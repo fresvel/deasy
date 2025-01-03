@@ -1,5 +1,6 @@
 <template>
-    <div class="five wide column segment ui">
+  <div class="column" :class="wideClass">
+    <div class="segment ui">
       <div class="ui labeled large fluid input">
         <div class="ui label">
           {{ label }}                    
@@ -12,10 +13,11 @@
         />
       </div>
     </div>
+  </div>
   </template>
   
   <script setup>
-  import { ref, watch, defineProps, defineEmits } from 'vue';
+  import { ref, watch, defineProps, defineEmits, computed } from 'vue';
   
   const props = defineProps({
     label: {
@@ -33,9 +35,15 @@
     type:{
       type: String,
       default: 'text'
+    },
+    wide:{
+      type: String,
     }
   });
   
+
+  const wideClass = computed(()=>props.wide? `${props.wide} wide` : '')
+
   const emit = defineEmits(['update:modelValue']);
   
   // Inicializa el valor del input con props.modelValue

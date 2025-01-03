@@ -1,7 +1,7 @@
 <template>
 
-
-<div class="five wide column segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
+<div class="column" :class="wideClass">
+<div class="segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
   <div class="ui labeled large fluid input">
       <div class="ui label">
         {{label}}
@@ -16,11 +16,12 @@
       </select>
   </div>
 </div>
+</div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref } from 'vue';
-  defineProps( {
+import { defineProps, defineEmits, ref, computed} from 'vue';
+  const props=defineProps( {
     label: {
       type: String,
       required: true
@@ -28,8 +29,13 @@ import { defineProps, defineEmits, ref } from 'vue';
     options: {
       type: Array,
       required: true
+    },
+    wide:{
+      type: String,
     }
   })
+
+  const wideClass = computed(() => props.wide? `${props.wide} wide` : "")
 
   const emit=defineEmits(["fromselect"])
 

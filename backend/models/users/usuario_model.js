@@ -25,7 +25,10 @@ const validarCorreo={
     message: props => `${props.value} no es un correo electrónico institucional válido o ya está en uso.`
   }
 
-const roles={ type:String, enum:["Docente", "Administrativo", "Estudiante", "Autoridad","Coordinador de Área", "Coordinador de Carrera"]}
+const perfil={ 
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Perfil',
+}
 
 const userSchema =new mongoose.Schema({
     cedula:{type:String, required:true, unique:true},
@@ -41,7 +44,7 @@ const userSchema =new mongoose.Schema({
         email:{type: Boolean, default: false}
     },
     status:{type: String, enum: ["Inactivo", "Activo", "Verificado", "Reportado"], default: "Inactivo"},
-    roles:[roles]
+    perfiles:[perfil]
 });
 
 export const Usuario = mongoose.model('Usuario', userSchema);

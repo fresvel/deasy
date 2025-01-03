@@ -29,12 +29,24 @@
         <s-menu :show="vmenu">
 
             <UserProfile photo="/images/avatar.png" username="Homero Velasteguí"> </UserProfile>
-            <a class="item large"> Coordinación</a>
-            <a v-for="(item, index) of mainmenu" :key="index" 
-                :class="item.active ? 'item active' : 'item'" 
-                @click="onmenuClick(item.label)">{{ item.label }}
+            <a class="large item labeled" style="text-align: center;">
+                Coordinación          
             </a>
-            <a class="item large"> Docencia</a>
+
+            
+    
+
+            <a v-for="(item, index) of mainmenu" :key="index"
+            
+                class="right medium item labeled"
+                :class="item.active ? 'item active' : ''" 
+                @click="onmenuClick(item.label)">
+                {{ item.label }}
+                    <div class="ui left pointing blue label">
+                        <div class="medium">{{ index }}</div>
+                    </div>
+            </a>
+            <a class="item large" style="text-align: center;"> Docencia</a>
         </s-menu>
     
         <s-body
@@ -50,9 +62,9 @@
             <CapacitaciónView v-else-if="process==='Capacitación'"></CapacitaciónView>
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
         </div>
-        <div v-else-if="area=='Academia'" id="Academiadiv">
+        <div v-else-if="area=='Academia'">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
-            <LogrosView v-else-if="process=='Logros'"></LogrosView>
+            <LogrosView v-else-if="process=='Logros Académicos'"></LogrosView>
             <TutoriasView v-else-if="process==='Tutorías'"></TutoriasView>
         </div>
         <div v-else-if="area=='Firmar'">
@@ -88,7 +100,7 @@
     import CapacitaciónView from './perfil/CapacitaciónView.vue';
     import CertificacionView from './perfil/CertificacionView.vue';
 
-    import IndexAcademia from './academia/IndexAcademia.vue';
+    import IndexAcademia from './academia/AcademiaView.vue';
     import LogrosView from './academia/LogrosView.vue';
     import TutoriasView from './academia/TutoriasView.vue';
 
@@ -216,7 +228,7 @@
                 console.log("Academia detected")
                 mainmenu.value=[
                     {
-                        label: 'Logros',
+                        label: 'Logros Académicos',
                         active: true,
                         //body: '',
                     },

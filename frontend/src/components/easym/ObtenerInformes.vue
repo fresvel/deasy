@@ -1,44 +1,41 @@
 <template>
 
-
-
-
-<div class="ui grid">
-    <div class="row">
-        <div class="sixteen wide column">
-        <div class="ui grid">
-            <div class="row">
-                <s-select
-                label="Programa"
-                :options="allprograms"
-                @fromselect="selProgram"
-                />
-
-                <s-input
-                :modelValue="anio"
-                label="Año"
-                type="number"
-                placeholder=""
-                @update:modelValue="onanioChange"
-                />
-
-                <s-select
-                label="Ciclo Académico"
-                :options="periodos"
-                @fromselect="selPeriod"
-                />
-
-            </div>
-
-        </div>
+<div class="ui right aligned grid">
+  
+  <div class="center aligned column row">
     
     
-        </div>
-    </div>
+        <s-select
+            label="Ciclo Académico"
+            :options="periodos"
+            @fromselect="selPeriod"
+            wide="five"
+        />
+    
+        <s-input
+            :modelValue="anio"
+            label="Año"
+            type="number"
+            placeholder=""
+            @update:modelValue="onanioChange"
+            wide="six"
+        />
+        <s-select
+            class="column"
+            label="Programa"
+            :options="allprograms"
+            @fromselect="selProgram"
+            wide="five"
+        />
+    
+  </div>
+  
 
 </div>
 
-<LogrosView v-if="1==1"></LogrosView>
+
+
+
 
 </template>
 
@@ -49,14 +46,13 @@ import SSelect from '@/components/semantic/elements/SSelect.vue';
 import SInput from '@/components/semantic/elements/SInput.vue';
 import EasymServices from '@/services/EasymServices';
 
-import LogrosView from './LogrosView.vue';
 
 const props=defineProps({
-    area:{
+    process:{
         type:String,
         required: true
     },
-    perfil:{
+    url:{
         type:String,
         required: true
     }
@@ -94,13 +90,11 @@ const onanioChange=(value)=>{
 
 const onparamsChange=()=>{
     if(program!=""&&period!=""){
-        const process={code:"ac_cca_logros"} //Obtener posterior desde la base de datos
         console.log(program)
         console.log(period)
         console.log(anio.value)
-        console.log(props.area)
-        console.log(props.perfil)
-        console.log(process.code)
+        console.log(props.process)
+        
 
         //Aquí se debe llamar al servicio para obtener los logros
 }
