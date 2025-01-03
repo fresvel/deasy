@@ -139,7 +139,7 @@
     const createnewUser=async()=>{
         
         try {
-            const ulr="http://localhost:3000/easym/v1/users/register"
+            const ulr="http://localhost:3000/easym/v1/users"
             const ret=await axios.post(ulr, newuser.value)
             alert(ret.data)
         } catch (error) {

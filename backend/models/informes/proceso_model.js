@@ -20,8 +20,8 @@ const procesSchema = new mongoose.Schema({
         required: true
     },
     perfil:{ //Rendering area in menu of frontend
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Perfil",
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "Perfil",  //Analizar la pisibilidad de que sea un array -- subdirecciones
         required: true
     },
     created:{
