@@ -19,10 +19,16 @@
                   Número
                   </th>
                   <th class="text-left">
-                  Informe
+                  Actividad
+                  </th>
+                  <th class="text-left">
+                  Vencimiento
                   </th>
                   <th class="text-left">
                   Estado
+                  </th>
+                  <th>
+                  Periodo
                   </th>
                   <th class="text-left">
                   Acción
@@ -30,10 +36,12 @@
               </tr>
               </thead>
               <tbody>
-              <tr v-for="(item, index) in filteredInformes" :key="index">
+              <tr v-for="(item, index) in props.tareas" :key="index">
                   <td>{{ index }}</td>
-                  <td>{{ item.desc }}</td>
-                  <td>{{ item.status }}</td>
+                  <td>{{ item.process.name}}</td>
+                  <td>{{ String(item.fecha_inicio).substring(0,10) }}</td>
+                  <td>{{ item.estatus }}</td>
+                  <td>{{ item.year+"-"+item.period }}</td>
                   <td>
                     <button 
                     @click="removeRow(index, level)"
@@ -66,8 +74,10 @@
 
 <script setup>
 import ObtenerInformes from '@/components/easym/ObtenerInformes.vue';
-import {ref, computed} from 'vue'
-const informes = ref([
+import {defineProps, onMounted} from 'vue'
+
+
+/*const informes = ref([
   { desc: 'Logros académicos 2024 II', status: 'Aprobado' },
   { desc: 'Informe 2', status: 'Elaborado' },
   { desc: 'Informe 3', status: 'Aprobado' },
@@ -75,6 +85,17 @@ const informes = ref([
 
 const filteredInformes = computed(()=>{
     return informes.value.filter((informe)=>informe.status!='Aprobado')
+})*/
+
+const props= defineProps({
+    tareas:{
+        type:Array,
+        required:true
+    }
+})
+
+onMounted(()=>{
+    console.log('mounted', props.tareas)
 })
 
 </script>

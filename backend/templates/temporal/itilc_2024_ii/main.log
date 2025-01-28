@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2024.8.28)  11 JAN 2025 21:28
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2024.8.28)  28 JAN 2025 17:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -414,8 +414,8 @@ File: l3backend-pdftex.def 2021-03-18 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count283
 \l__pdf_internal_box=\box67
 )
-(../../../public/tutoriasp01_2024_ii.aux)
-\openout1 = `tutoriasp01_2024_ii.aux'.
+(./main.aux)
+\openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 6.
 LaTeX Font Info:    ... okay on input line 6.
@@ -431,8 +431,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 6.
 LaTeX Font Info:    ... okay on input line 6.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 6.
 LaTeX Font Info:    ... okay on input line 6.
-
-(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+ (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count284
 \scratchdimen=\dimen256
@@ -496,27 +495,127 @@ Underfull \hbox (badness 10000) in alignment at lines 25--25
  []
 
 ) (./Contenido/Content.tex
-Overfull \hbox (15.0pt too wide) in paragraph at lines 25--1
+Underfull \hbox (badness 5548) in paragraph at lines 12--12
+[]|\OT1/cmr/bx/n/9 %Supera el
+ []
+
+
+Underfull \hbox (badness 1107) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 BUSTOS VERA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 VELASTEGUI
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 IZURI-ETA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 HOMERO
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 POSLIGUA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 FLO-RES KLE-
+ []
+
+
+Underfull \hbox (badness 3333) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 Sistemas Op-er-a-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 CARVAJAL
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 CAR-VA-JAL
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 HIDALGO
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 SOLORZANO
+ []
+
+
+Underfull \hbox (badness 1028) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 Habilidades Pro-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 DIA JAIME
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 Tutor^^S^^Pas de
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 VELASTEGUI
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 IZURI-ETA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 HOMERO
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 25--13
 [][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 25--1
+Underfull \hbox (badness 10000) in paragraph at lines 35--35
+[]|\OT1/cmr/bx/n/9 Cargo: Co-or-di-nadora de
+ []
 
+) (./Contenido/Footer.tex
+Overfull \hbox (15.0pt too wide) in paragraph at lines 35--1
+[][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2--55
+Underfull \hbox (badness 10000) in paragraph at lines 35--1
 
  []
 
 <Preambulo/header.png, id=4, 1328.965pt x 237.88875pt>
 File: Preambulo/header.png Graphic file (type png)
 <use Preambulo/header.png>
-Package pdftex.def Info: Preambulo/header.png  used on input line 55.
+Package pdftex.def Info: Preambulo/header.png  used on input line 1.
 (pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
+
+Underfull \hbox (badness 5203) has occurred while \output is active
+[]\OT1/cmr/m/n/10 Tecnolog^^S^^Pa en De-sar-rol-llo de
+ []
+
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 55.
+(Font)              <7> on input line 1.
 
 Overfull \hbox (56.90552pt too wide) has occurred while \output is active
  []| $[]$|
@@ -524,88 +623,39 @@ Overfull \hbox (56.90552pt too wide) has occurred while \output is active
 
 [1{/usr/share/texlive/texmf-dist/fonts/map/pdftex/updmap/pdftex.map}
 
- <./Preambulo/header.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 56--118
-
- []
-
-File: Preambulo/header.png Graphic file (type png)
-<use Preambulo/header.png>
-Package pdftex.def Info: Preambulo/header.png  used on input line 118.
-(pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
-
-Overfull \hbox (56.90552pt too wide) has occurred while \output is active
- []| $[]$|
- []
-
-[2]
-Underfull \hbox (badness 10000) in paragraph at lines 119--171
-
- []
-
-File: Preambulo/header.png Graphic file (type png)
-<use Preambulo/header.png>
-Package pdftex.def Info: Preambulo/header.png  used on input line 171.
-(pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
-
-Overfull \hbox (56.90552pt too wide) has occurred while \output is active
- []| $[]$|
- []
-
-[3]
-Underfull \hbox (badness 10000) in paragraph at lines 172--187
-
- []
-
-) (./Contenido/Footer.tex
-Underfull \hbox (badness 10000) in paragraph at lines 188--1
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 188--1
-
- []
-
-File: Preambulo/header.png Graphic file (type png)
-<use Preambulo/header.png>
-Package pdftex.def Info: Preambulo/header.png  used on input line 1.
-(pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
-
-Overfull \hbox (56.90552pt too wide) has occurred while \output is active
- []| $[]$|
- []
-
-[4])
+ <./Preambulo/header.png>])
 File: Preambulo/header.png Graphic file (type png)
 <use Preambulo/header.png>
 Package pdftex.def Info: Preambulo/header.png  used on input line 15.
 (pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
 
+Underfull \hbox (badness 5203) has occurred while \output is active
+[]\OT1/cmr/m/n/10 Tecnolog^^S^^Pa en De-sar-rol-llo de
+ []
+
+
 Overfull \hbox (56.90552pt too wide) has occurred while \output is active
  []| $[]$|
  []
 
-[5] (../../../public/tutoriasp01_2024_ii.aux) ) 
+[2] (./main.aux) ) 
 Here is how much of TeX's memory you used:
- 13556 strings out of 481008
- 263669 string characters out of 5909439
- 577169 words of memory out of 5000000
- 30527 multiletter control sequences out of 15000+600000
+ 13548 strings out of 481008
+ 263380 string characters out of 5909439
+ 564139 words of memory out of 5000000
+ 30521 multiletter control sequences out of 15000+600000
  408298 words of font info for 43 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 91i,15n,91p,466b,328s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share/texlive/texmf-dist/f
-onts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/t
-ype1/public/amsfonts/cm/cmbx9.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
-blic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmr9.pfb>
-Output written on ../../../public/tutoriasp01_2024_ii.pdf (5 pages, 100807 byte
-s).
+ 91i,15n,91p,560b,328s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></
+usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb>
+Output written on main.pdf (2 pages, 93025 bytes).
 PDF statistics:
- 46 PDF objects out of 1000 (max. 8388607)
- 31 compressed objects within 1 object stream
+ 37 PDF objects out of 1000 (max. 8388607)
+ 25 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  18 words of extra memory for PDF output out of 10000 (max. 10000000)
 
