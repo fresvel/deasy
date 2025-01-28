@@ -15,6 +15,7 @@ class EasymServices {
 
         this.programs=ref([])
         this.areas=ref([])
+        this.tareas=ref([])
 
      
     }
@@ -30,6 +31,7 @@ class EasymServices {
 
             programs:this.programs,
             areas:this.areas,
+            tareas:this.tareas,
         }
     }
 
@@ -124,6 +126,23 @@ class EasymServices {
             
         }
     }
+
+    async getTareasPendientes(user){
+        try {
+            console.log(user)
+            const url="http://localhost:3000/easym/v1/tarea/pendiente?usuario=1804326534"
+            const res=await axios.get(url)
+            this.tareas.value=res.data
+            console.log("Petición de tareas")
+            console.log(res.data)
+            return res.data
+        } catch (error) {
+            console.log("Petición de tareas")
+            console.log(error.message)
+            console.log(error.response.data.message)            
+        }
+    }
+
 
 
 }

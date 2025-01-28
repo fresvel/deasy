@@ -95,13 +95,25 @@ export const getTareas = (req, res) => {
 
 export const getTareaspendientes = async(req, res) => {
     console.log("Buscando Tareas Pendientes");
-    
-    const users = await Usuario.find({cedula: req.body.usuario})
-    if (!users||users.length ===0) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
+    console.log("Parameters");
+    console.log(req.query);
+    try {
+            
+        const users = await Usuario.find({cedula: req.query.usuario})
+        if (!users||users.length ===0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+        const tareas = await Tarea.find({
+            usuario: users[0]._id,
+            estatus: "Pendiente",
+        }).populate("process", "name desc");
+        if (!tareas || tareas.length === 0) {
+            return res.status(404).json({ message: "Ninguna tarea pendiente encontrada" });
+        }
+        res.json(tareas);
+    } catch (error) {
+        console.log("Error Buscando Tareas Pendientes");
+        console.error(error.message);
+        res.status(500).json({ message: error.message });
     }
-    const tareas = await Usuario.find({
-        usuario: users[0]._id,
-        estatus: "Pendiente",
-    });
 }

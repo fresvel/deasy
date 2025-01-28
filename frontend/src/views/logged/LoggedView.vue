@@ -64,14 +64,14 @@
         </div>
         <div v-else-if="area=='Academia'">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
-            <LogrosView v-else-if="process=='Logros Académicos'"></LogrosView>
+            <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
             <TutoriasView v-else-if="process==='Tutorías'"></TutoriasView>
         </div>
         <div v-else-if="area=='Firmar'">
             <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
         </div>
 
-        
+        <LogrosView2></LogrosView2>
 
         </s-body>
         
@@ -102,6 +102,8 @@
 
     import IndexAcademia from './academia/AcademiaView.vue';
     import LogrosView from './academia/LogrosView.vue';
+    import LogrosView2 from './academia/LogrosView2.vue';
+
     import TutoriasView from './academia/TutoriasView.vue';
 
     import FirmarPdf from './funciones/FirmarPdf.vue';
@@ -112,7 +114,9 @@
     const service = new EasymServices();
 
     service.getEasymAreas()
+    service.getTareasPendientes("1804326534")
     const areas =service.getEasymdata().areas
+    const tareas=service.getEasymdata().tareas
     const vmenu = ref(true);
     const vnotify = ref(true);
     const process= ref("Formación")
