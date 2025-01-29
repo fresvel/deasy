@@ -467,4 +467,175 @@ e
 * h-part:(L,W,R)=(71.13188pt, 455.24408pt, 71.13191pt)
 * v-part:(T,H,B)=(0.0pt, 702.78307pt, 142.26378pt)
 * \paperwidth=597.50787pt
-* \paperheight=845.0
+* \paperheight=845.04684pt
+* \textwidth=455.24408pt
+* \textheight=702.78307pt
+* \oddsidemargin=-1.1381pt
+* \evensidemargin=-1.1381pt
+* \topmargin=-109.26999pt
+* \headheight=85.35826pt
+* \headsep=25.0pt
+* \topskip=10.0pt
+* \footskip=30.0pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+(./Contenido/Header.tex
+Underfull \hbox (badness 10000) in alignment at lines 25--25
+[][][] 
+ []
+
+) (./Contenido/Content.tex
+Underfull \hbox (badness 5548) in paragraph at lines 12--12
+[]|\OT1/cmr/bx/n/9 %Supera el
+ []
+
+
+Underfull \hbox (badness 1107) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 BUSTOS VERA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 VELASTEGUI
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 IZURI-ETA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 HOMERO
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 POSLIGUA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 FLO-RES KLE-
+ []
+
+
+Underfull \hbox (badness 3333) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 Sistemas Op-er-a-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 CARVAJAL
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 CAR-VA-JAL
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 HIDALGO
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 SOLORZANO
+ []
+
+
+Underfull \hbox (badness 1028) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 Habilidades Pro-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 DIA JAIME
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 Tutor^^S^^Pas de
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/9 VELASTEGUI
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 IZURI-ETA
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+\OT1/cmr/m/n/9 HOMERO
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 25--13
+[][]
+ []
+
+
+Underfull \hbox (badness 5548) in paragraph at lines 29--29
+[]|\OT1/cmr/bx/n/9 %Supera el
+ []
+
+<Preambulo/header.png, id=4, 1328.965pt x 237.88875pt>
+File: Preambulo/header.png Graphic file (type png)
+<use Preambulo/header.png>
+Package pdftex.def Info: Preambulo/header.png  used on input line 32.
+(pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 32.
+
+Overfull \hbox (56.90552pt too wide) has occurred while \output is active
+ []| $[]$|
+ []
+
+[1{/usr/share/texlive/texmf-dist/fonts/map/pdftex/updmap/pdftex.map}
+
+ <./Preambulo/header.png>]
+
+! LaTeX Error: There's no line here to end.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.34 \vspace
+            {1cm}\\\small
+? 
+! Emergency stop.
+ ...                                              
+                                                  
+l.34 \vspace
+            {1cm}\\\small
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+ 
+Here is how much of TeX's memory you used:
+ 13550 strings out of 481008
+ 263615 string characters out of 5909439
+ 563166 words of memory out of 5000000
+ 30525 multiletter control sequences out of 15000+600000
+ 408298 words of font info for 43 fonts, out of 8000000 for 9000
+ 14 hyphenation exceptions out of 8191
+ 91i,15n,91p,560b,328s stack positions out of 5000i,500n,10000p,200000b,80000s
+!  ==> Fatal error occurred, no output PDF file produced!
