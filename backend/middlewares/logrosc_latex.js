@@ -28,19 +28,13 @@ export const logroscJslatex= async(req, res, next)=>{
     
     const tables=req.body.content.tables;
     const surveys=req.body.content.surveys;
-    //console.log("Tables")
-    //console.log(tables)
-    console.log(req.body)
-
-    const ftemplate=await Template.find({code:"dailc_v1"})
-    //const functions=template[0].functions
-
+    console.log("New report required");
+    const report_template=await Template.find({code:"dailc_v1"}) //Note implemted yet
     
-
-
 
     /**Preproceso con base de datos */
     const latexfile=fntemplates["dailc_va"](tables, surveys)
+    console.log(latexfile)
     
     try {
       await compileLatexjs({name:"itilc_2024_ii",content:latexfile}); // Invoca la función y espera a que se complete
