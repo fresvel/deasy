@@ -159,6 +159,9 @@ class LatexTranspiler {
     }
 }
 
+export default LatexTranspiler
+
+/** 
 // Ejemplo de uso
 const jsonObj = [
     { "type": "section", "title": "Sección 1", "content": "Contenido de la sección 1" },
@@ -174,3 +177,4 @@ const jsonObj = [
 
 const transpiler = new LatexTranspiler(jsonObj);
 console.log(transpiler.render());
+*/

@@ -8,14 +8,11 @@
 
 \usepackage{tcolorbox}
 \usepackage{graphicx}
+\graphicspath{{Images/}}
 \definecolor{darkcol}{RGB}{ 7, 7, 100 }
 \definecolor{greencol}{RGB}{ 7, 200, 100 }
 \usepackage{tabularx}
 
-\usepackage{multirow}
-\usepackage{cellspace}
-\usepackage{tabularray}
-\usepackage{tlbr}
 
 \usepackage{geometry}
 \geometry{
@@ -46,5 +43,18 @@
 
 \usepackage{array}
 
-\input{Preambulo/header} %geometry top 0
+\input{Preamble/header} %geometry top 0
 
+
+
+% %--------------------------------------------------------------------------
+% %         Bibliographie 
+% %--------------------------------------------------------------------------
+\RequirePackage[
+%backend=biber,
+backend=bibtex,
+style = ieee,
+%sorting=none,
+%citestyle=authortitle
+]{biblatex}
+\addbibresource{Document/references.bib}
