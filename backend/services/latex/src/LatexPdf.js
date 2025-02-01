@@ -1,7 +1,57 @@
-import LatexBuilder from "./builder/LatexBuilder.js";
 import LatexEditor from "./editor/LatexEditor.js";
 
 const llamar=async () => {
+
+
+
+    const tableData = {
+        headers: [
+            { content: "Materia", props: { multicolumn: false, multirow: false } },
+            { content: "Docente", props: { multicolumn: false, multirow: false } },
+            { content: "Nota 1", props: { multicolumn: false, multirow: false } },
+            { content: "Nota 2", props: { multicolumn: false, multirow: false } },
+            { content: "Resultado", props: { multicolumn: false, multirow: false } }
+        ],
+        rows: [
+            [
+                { content: "Álgebra Lineal", props: { multicolumn: false, multirow: false } },
+                { content: "José Luis Carvajal", props: { multicolumn: false, multirow: false } },
+                { content: "14", props: { multicolumn: 2, multirow: false } },
+                {},
+                { content: "37", props: { multicolumn: false, multirow: false } }
+            ],
+            [
+                { content: "Matemática Básica", props: { multicolumn: false, multirow: false } },
+                { content: "Ángel Anchundia", props: { multicolumn: false, multirow: false } },
+                { content: "26", props: { multicolumn: false, multirow: false } },
+                { content: "1", props: { multicolumn: false, multirow: false } },
+                { content: "27", props: { multicolumn: false, multirow: false } }
+            ],
+            [
+                { content: "Algoritmos y Pseudocódigo", props: { multicolumn: false, multirow: false } },
+                { content: "Adrián Vargas", props: { multicolumn: false, multirow: false } },
+                {content: "Adrián Vargas", props: { multicolumn: false, multirow: false } },
+                { content: "21", props: { multicolumn: false, multirow: false } },
+                { content: "49", props: { multicolumn: false, multirow: false } }
+            ],
+            [
+                { content: "Comunicación Oral", props: { multicolumn: false, multirow: false } },
+                { content: "Jairon Caballero", props: { multicolumn: false, multirow: false } },
+                { content: "0", props: { multicolumn: false, multirow: false } },
+                { content: "0", props: { multicolumn: false, multirow: false } },
+                { content: "0", props: { multicolumn: false, multirow: false } }
+            ],
+            [
+                { content: "Tecnologías de la Información", props: { multicolumn: false, multirow: false } },
+                { content: "Manuel Nevárez", props: { multicolumn: false, multirow: false } },
+                { content: "10", props: { multicolumn: false, multirow: false } },
+                { content: "0", props: { multicolumn: false, multirow: false } },
+                { content: "10", props: { multicolumn: false, multirow: false } }
+            ]
+        ],
+        title: "Reporte de Calificaciones",
+        caption: "Tabla que muestra las calificaciones de los estudiantes en diversas materias"
+    };
         
         const modules={
             header:[{}],
@@ -10,7 +60,7 @@ const llamar=async () => {
                 { "type": "subsection", "title": "Subsección 1.1", "content": "Contenido de la subsección 1.1" },
                 { "type": "subsubsection", "title": "Subsubsección 1.1.1", "content": "Contenido de la subsubsección 1.1.1" },
                 { "type": "text", "content": "Este es un pálkjdjjhkajhdharrafo de texto que va después de la subsubsección." },
-                { "type": "table", "headers": ["Header 1", "Header 2", "Header 3"],"title":"Titulo largo para escribir", "rows": [["A1", "B1", "C1"], ["A2", "B2", "C2"]], "caption": "Descripción de la tabla"},
+                { "type": "table", "headers": tableData.headers,"title":"Titulo largo para escribir", "rows": tableData.rows, "caption": "Descripción de la tabla"},
                 { "type": "figure", "path": "image.png", "caption": "Figura 1. Ejemplo de imagen" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },

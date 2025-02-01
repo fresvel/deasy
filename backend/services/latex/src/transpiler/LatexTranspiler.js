@@ -1,72 +1,9 @@
-class LatexElement {
-    constructor(content) {
-        this.content = content || '';
-    }
+import { Section, Subsection, Text, Subsubsection } from "./document/LatexSections.js";
+import LatexFigure from "./document/LatexFigure.js";
+import LatexTable from "./document/LatexTable.js";
 
-    render() {
-        return '';
-    }
 
-    formatContent(content) {
-        return content.replace(/\n{2,}/g, '\n')        
-        //.replace(/\n/g, '\\newline\n')
-        .replace(/%/g, "\\%")
-        .replace(/#/g, "\\#")
-        .replace(/_/g, "\\_")
-        .replace(/\$/g, "\\$")
-        .replace(/&/g, "\\&")
-        .replace(/{/g, "\\{")
-        .replace(/}/g, "\\}")
-        .replace(/\^/g, "\\^{}")
-        .replace(/~/g, "\\textasciitilde{}")
-        //.replace(/\\/g, "\\textbackslash{}")
-        .replace(/\|/g, "\\textbar{}");;
-    }
-}
-
-class Section extends LatexElement {
-    constructor(title, content) {
-        super(content);
-        this.title = title;
-    }
-
-    render() {
-        return `\\section{${this.title}}\n${this.formatContent(this.content)}\n`;
-    }
-}
-
-class Subsection extends LatexElement {
-    constructor(title, content) {
-        super(content);
-        this.title = title;
-    }
-
-    render() {
-        return `\\subsection{${this.title}}\n${this.formatContent(this.content)}\n`;
-    }
-}
-
-class Subsubsection extends LatexElement {
-    constructor(title, content) {
-        super(content);
-        this.title = title;
-    }
-
-    render() {
-        return `\\subsubsection{${this.title}}\n${this.formatContent(this.content)}\n`;
-    }
-}
-
-class Text extends LatexElement {
-    constructor(content) {
-        super(content);
-    }
-
-    render() {
-        return this.formatContent(this.content)+'\n';
-    }
-}
-
+/*
 class LatexTable {
     constructor(headers, rows, title = "", caption = "") {
         this.headers = headers;
@@ -111,18 +48,8 @@ class LatexTable {
             `\\end{table}\n`;
     }
 }
+*/
 
-class Figure extends LatexElement {
-    constructor(path, caption) {
-        super();
-        this.path = path;
-        this.caption = caption;
-    }
-
-    render() {
-        return `\\begin{figure}[h!]\n\\centering\n\\includegraphics[width=0.8\\textwidth]{${this.path}}\n\\caption{${this.caption}}\n\\end{figure}\n`;
-    }
-}
 
 class LatexTranspiler {
     constructor(jsonObj) {
@@ -140,9 +67,10 @@ class LatexTranspiler {
             case 'text':
                 return new Text(item.content);
             case 'table':
+                console.log(item)
                 return new LatexTable(item.headers, item.rows, item.title, item.caption);
             case 'figure':
-                return new Figure(item.path, item.caption);
+                return new LatexFigure(item.path, item.caption);
             default:
                 return null;
         }
