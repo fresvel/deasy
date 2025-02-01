@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2024.8.28)  29 JAN 2025 10:33
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2024.8.28)  31 JAN 2025 08:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -386,220 +386,600 @@ Package: array 2020/10/01 v2.5c Tabular extension package (FMi)
 \TX@cols=\count279
 \TX@ftn=\toks33
 )
-(/usr/share/texlive/texmf-dist/tex/latex/geometry/geometry.sty
-Package: geometry 2020/01/02 v5.9 Page Geometry
-
-(/usr/share/texlive/texmf-dist/tex/generic/iftex/ifvtex.sty
-Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
-
-(/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty
-Package: iftex 2020/03/06 v1.0d TeX engine tests
-))
-\Gm@cnth=\count280
-\Gm@cntv=\count281
-\c@Gm@tempcnt=\count282
-\Gm@bindingoffset=\dimen192
-\Gm@wd@mp=\dimen193
-\Gm@odd@mp=\dimen194
-\Gm@even@mp=\dimen195
-\Gm@layoutwidth=\dimen196
-\Gm@layoutheight=\dimen197
-\Gm@layouthoffset=\dimen198
-\Gm@layoutvoffset=\dimen199
-\Gm@dimlist=\toks34
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty
+Package: multirow 2021/03/15 v2.8 Span multiple rows of a table
+\multirow@colwidth=\skip61
+\multirow@cntb=\count280
+\multirow@dima=\skip62
+\bigstrutjot=\dimen192
 )
-(./Preambulo/header.tex))
+(./cellspace.sty
+Package: cellspace 2022/01/04 v1.9.0 Spacing table cells (JN)
+ (/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty
+Package: ifthen 2014/09/29 v1.1c Standard LaTeX ifthen package (DPC)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/tools/calc.sty
+Package: calc 2017/05/25 v4.3 Infix arithmetic (KKT,FJ)
+\calc@Acount=\count281
+\calc@Bcount=\count282
+\calc@Adimen=\dimen193
+\calc@Bdimen=\dimen194
+\calc@Askip=\skip63
+\calc@Bskip=\skip64
+LaTeX Info: Redefining \setlength on input line 80.
+LaTeX Info: Redefining \addtolength on input line 81.
+\calc@Ccount=\count283
+\calc@Cskip=\skip65
+)
+(/usr/share/texlive/texmf-dist/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2020/11/20 v2.8 package option processing (HA)
+
+(/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkeyval.tex
+(/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkvutils.tex
+\XKV@toks=\toks34
+\XKV@tempa@toks=\toks35
+)
+\XKV@depth=\count284
+File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
+))
+\cellspacetoplimit=\dimen195
+\cellspacebottomlimit=\dimen196
+\cellspace@firstht=\dimen197
+\cellspace@lastdp=\dimen198
+)
+(./tabularray.sty (/usr/share/texlive/texmf-dist/tex/latex/l3kernel/expl3.sty
+Package: expl3 2021-02-18 L3 programming layer (loader) 
+
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2021-03-18 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count283
+\l__color_backend_stack_int=\count285
 \l__pdf_internal_box=\box67
-)
-(./main.aux)
-\openout1 = `main.aux'.
-
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 6.
-LaTeX Font Info:    ... okay on input line 6.
- (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
-[Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count284
-\scratchdimen=\dimen256
-\scratchbox=\box68
-\nofMPsegments=\count285
-\nofMParguments=\count286
-\everyMPshowfont=\toks35
-\MPscratchCnt=\count287
-\MPscratchDim=\dimen257
-\MPnumerator=\count288
-\makeMPintoPDFobject=\count289
-\everyMPtoPDFconversion=\toks36
-) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
-Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
-Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
-85.
-
-(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
-File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
-e
 ))
-\c@lstlisting=\count290
+Package: tabularray 2024-02-16 v2024A Typeset tabulars and arrays with LaTeX3
 
-*geometry* driver: auto-detecting
-*geometry* detected driver: pdftex
-*geometry* verbose mode - [ preamble ] result:
-* driver: pdftex
-* paper: a4paper
-* layout: <same size as paper>
-* layoutoffset:(h,v)=(0.0pt,0.0pt)
-* modes: 
-* h-part:(L,W,R)=(71.13188pt, 455.24408pt, 71.13191pt)
-* v-part:(T,H,B)=(0.0pt, 702.78307pt, 142.26378pt)
-* \paperwidth=597.50787pt
-* \paperheight=845.04684pt
-* \textwidth=455.24408pt
-* \textheight=702.78307pt
-* \oddsidemargin=-1.1381pt
-* \evensidemargin=-1.1381pt
-* \topmargin=-109.26999pt
-* \headheight=85.35826pt
-* \headsep=25.0pt
-* \topskip=10.0pt
-* \footskip=30.0pt
-* \marginparwidth=65.0pt
-* \marginparsep=11.0pt
-* \columnsep=10.0pt
-* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
-* \hoffset=0.0pt
-* \voffset=0.0pt
-* \mag=1000
-* \@twocolumnfalse
-* \@twosidefalse
-* \@mparswitchfalse
-* \@reversemarginfalse
-* (1in=72.27pt=25.4mm, 1cm=28.453pt)
-
-(./Contenido/Header.tex
-Underfull \hbox (badness 10000) in alignment at lines 25--25
-[][][] 
- []
-
-) (./Contenido/Content.tex
-Overfull \hbox (15.0pt too wide) in paragraph at lines 25--1
-[][]
- []
+LaTeX3 Info: Defining command \TblrParboxRestore with sig. '' on line 46.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 25--1
-
- []
+LaTeX3 Info: Defining command \TblrAlignBoth with sig. '' on line 55.
 
 
-LaTeX Warning: File `path/to/image.jpg' not found on input line 21.
+LaTeX3 Info: Defining command \TblrAlignLeft with sig. '' on line 57.
 
 
-! Package pdftex.def Error: File `path/to/image.jpg' not found: using draft set
-ting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.21 ...cs[width=0.8\textwidth]{path/to/image.jpg}
-                                                  
-? 
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
+LaTeX3 Info: Defining command \TblrAlignCenter with sig. '' on line 59.
 
 
-Underfull \hbox (badness 8056) in paragraph at lines 42--42
-[]|[]\OT1/cmr/m/n/10 Algebra Lin-
- []
+LaTeX3 Info: Defining command \TblrAlignRight with sig. '' on line 61.
+
+\l__tblr_a_int=\count286
+\l__tblr_c_int=\count287
+\l__tblr_r_int=\count288
+\l__tblr_d_dim=\dimen199
+\l__tblr_h_dim=\dimen256
+\l__tblr_o_dim=\dimen257
+\l__tblr_p_dim=\dimen258
+\l__tblr_q_dim=\dimen259
+\l__tblr_r_dim=\dimen260
+\l__tblr_s_dim=\dimen261
+\l__tblr_t_dim=\dimen262
+\l__tblr_v_dim=\dimen263
+\l__tblr_w_dim=\dimen264
+\l__tblr_a_box=\box68
+\l__tblr_b_box=\box69
+\l__tblr_c_box=\box70
+\l__tblr_d_box=\box71
+\g__tblr_table_count_int=\count289
+\c@rownum=\count290
+\c@colnum=\count291
+\c@rowcount=\count292
+\c@colcount=\count293
+
+LaTeX3 Info: Defining command \therownum with sig. '' on line 159.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 42--42
-[]|\OT1/cmr/m/n/10 Matem^^Satica
- []
+LaTeX3 Info: Defining command \thecolnum with sig. '' on line 160.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 42--42
-[]|[]\OT1/cmr/m/n/10 Angel An-
- []
+LaTeX3 Info: Defining command \therowcount with sig. '' on line 161.
 
 
-Underfull \hbox (badness 4416) in paragraph at lines 42--42
-[]|\OT1/cmr/m/n/10 Algoritmos y
- []
+LaTeX3 Info: Defining command \thecolcount with sig. '' on line 162.
+
+\abovesep=\dimen265
+\belowsep=\dimen266
+\leftsep=\dimen267
+\rightsep=\dimen268
+\g_tblr_level_int=\count294
+\g__tblr_data_row_key_count_int=\count295
+\g__tblr_data_column_key_count_int=\count296
+\g__tblr_data_cell_key_count_int=\count297
+\g__tblr_array_int=\count298
+\l__tblr_key_count_int=\count299
+\l__tblr_key_quotient_int=\count300
+\l__tblr_key_quotient_two_int=\count301
+\l__tblr_key_remainder_int=\count302
+\g__tblr_data_str_value_count_int=\count303
+
+LaTeX3 Info: Defining command \NewChildSelector with sig. 'mO{0}om' on line
+(LaTeX3)     837.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 42--42
-[]|\OT1/cmr/m/n/10 Comunicaci^^Son
- []
+LaTeX3 Info: Defining command \__tblr_child_selector_odd:w with sig. 'O{}' on
+(LaTeX3)     line 879.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 42--42
-[]|\OT1/cmr/m/n/10 Jairon Ca-
- []
+LaTeX3 Info: Defining command \__tblr_child_selector_even:w with sig. 'O{}' on
+(LaTeX3)     line 889.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 42--42
-[]|\OT1/cmr/m/n/10 Manuel
- []
+LaTeX3 Info: Defining command \NewTableCommand with sig. 'mO{0}om' on line
+(LaTeX3)     1017.
 
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+LaTeX3 Info: Defining command \__tblr_table_command_empty:w with sig. '' on
+(LaTeX3)     line 1048.
 
-) (./Contenido/Footer.tex)
-<Preambulo/header.png, id=4, 1328.965pt x 237.88875pt>
-File: Preambulo/header.png Graphic file (type png)
-<use Preambulo/header.png>
-Package pdftex.def Info: Preambulo/header.png  used on input line 15.
-(pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
 
-Overfull \hbox (56.90552pt too wide) has occurred while \output is active
- []| $[]$|
- []
+LaTeX3 Info: Defining command \SetHlines with sig. 'omm' on line 1053.
 
-[1{/usr/share/texlive/texmf-dist/fonts/map/pdftex/updmap/pdftex.map}
 
- <./Preambulo/header.png>]
-File: Preambulo/header.png Graphic file (type png)
-<use Preambulo/header.png>
-Package pdftex.def Info: Preambulo/header.png  used on input line 15.
-(pdftex.def)             Requested size: 317.90364pt x 56.9055pt.
+LaTeX3 Info: Defining command \SetHline with sig. 'omm' on line 1054.
 
-Overfull \hbox (56.90552pt too wide) has occurred while \output is active
- []| $[]$|
- []
 
-[2] (./main.aux) ) 
+LaTeX3 Info: Defining command \SetVlines with sig. 'omm' on line 1055.
+
+
+LaTeX3 Info: Defining command \SetVline with sig. 'omm' on line 1056.
+
+
+LaTeX3 Info: Defining command \SetCells with sig. 'om' on line 1057.
+
+
+LaTeX3 Info: Defining command \SetCell with sig. 'om' on line 1058.
+
+
+LaTeX3 Info: Defining command \SetRows with sig. 'om' on line 1059.
+
+
+LaTeX3 Info: Defining command \SetRow with sig. 'om' on line 1060.
+
+
+LaTeX3 Info: Defining command \SetColumns with sig. 'om' on line 1061.
+
+
+LaTeX3 Info: Defining command \SetColumn with sig. 'om' on line 1062.
+
+
+LaTeX3 Info: Defining command \NewContentCommand with sig. 'mO{0}om' on line
+(LaTeX3)     1090.
+
+\rulewidth=\dimen269
+
+LaTeX3 Info: Defining command \NewDashStyle with sig. 'mm' on line 1130.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetHlines:w with sig.
+(LaTeX3)     'O{+}mm' on line 1184.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_cline:w with sig. 'O{}m'
+(LaTeX3)     on line 1223.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_hline:w with sig. 'O{}' on
+(LaTeX3)     line 1225.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetHline:w with sig.
+(LaTeX3)     'O{+}mm' on line 1233.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_firsthline:w with sig.
+(LaTeX3)     'O{}' on line 1416.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_lasthline:w with sig.
+(LaTeX3)     'O{}' on line 1421.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetVlines:w with sig.
+(LaTeX3)     'O{+}mm' on line 1427.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_rline:w with sig. 'O{}m'
+(LaTeX3)     on line 1465.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_rline_saved:w with sig.
+(LaTeX3)     'O{}m' on line 1465.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_vline:w with sig. 'O{}' on
+(LaTeX3)     line 1467.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetVline:w with sig.
+(LaTeX3)     'O{+}mm' on line 1475.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_hborder:w with sig. 'm' on
+(LaTeX3)     line 1624.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_hborder_saved:w with sig.
+(LaTeX3)     'm' on line 1624.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_vborder:w with sig. 'm' on
+(LaTeX3)     line 1681.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_vborder_saved:w with sig.
+(LaTeX3)     'm' on line 1681.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetCells:w with sig.
+(LaTeX3)     'O{}m' on line 1727.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetCell:w with sig. 'O{}m'
+(LaTeX3)     on line 1759.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_multicolumn:w with sig.
+(LaTeX3)     'mm' on line 1968.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_multirow:w with sig.
+(LaTeX3)     'O{m}mm' on line 1973.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetColumns:w with sig.
+(LaTeX3)     'O{}m' on line 1983.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetColumn:w with sig.
+(LaTeX3)     'O{}m' on line 2011.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetRows:w with sig. 'O{}m'
+(LaTeX3)     on line 2151.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetRow:w with sig. 'O{}m'
+(LaTeX3)     on line 2179.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_pagebreak:w with sig.
+(LaTeX3)     'O{4}' on line 2318.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_nopagebreak:w with sig.
+(LaTeX3)     'O{4}' on line 2323.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_Q with sig. 'O{}' on
+(LaTeX3)     line 2339.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_Q with sig. 'O{}' on line
+(LaTeX3)     2344.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_Q with sig. 'O{}' on
+(LaTeX3)     line 2351.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_Q with sig. 'O{}' on line 2356.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_| with sig. 'O{}' on
+(LaTeX3)     line 2362.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_| with sig. 'O{}' on line
+(LaTeX3)     2367.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_| with sig. 'O{}' on
+(LaTeX3)     line 2373.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_| with sig. 'O{}' on line 2378.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_> with sig. 'O{}m'
+(LaTeX3)     on line 2394.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_> with sig. 'O{}m' on line
+(LaTeX3)     2399.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_> with sig. 'O{}m' on
+(LaTeX3)     line 2413.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_> with sig. 'O{}m' on line 2418.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_< with sig. 'O{}m'
+(LaTeX3)     on line 2435.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_< with sig. 'O{}m' on line
+(LaTeX3)     2440.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_< with sig. 'O{}m' on
+(LaTeX3)     line 2457.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_< with sig. 'O{}m' on line 2462.
+
+
+LaTeX3 Info: Defining command \NewColumnType with sig. 'mO{0}om' on line 2482.
+
+
+LaTeX3 Info: Defining command \NewRowType with sig. 'mO{0}om' on line 2488.
+
+
+LaTeX3 Info: Defining command \NewColumnRowType with sig. 'mO{0}om' on line
+(LaTeX3)     2496.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_l with sig. '' on line 2521.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_l with sig. '' on line 2521.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_c with sig. '' on line 2522.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_c with sig. '' on line 2522.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_r with sig. '' on line 2523.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_r with sig. '' on line 2523.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_j with sig. '' on line 2524.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_j with sig. '' on line 2524.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_t with sig. 'm' on line 2526.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_p with sig. 'm' on line 2527.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_m with sig. 'm' on line 2528.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_b with sig. 'm' on line 2529.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_h with sig. 'm' on line 2530.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_f with sig. 'm' on line 2531.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_t with sig. 'm' on line 2533.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_p with sig. 'm' on line 2534.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_m with sig. 'm' on line 2535.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_b with sig. 'm' on line 2536.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_h with sig. 'm' on line 2537.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_f with sig. 'm' on line 2538.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_X with sig. 'O{}' on line
+(LaTeX3)     2540.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_X with sig. 'O{}' on line 2540.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_! with sig. 'm' on line 2542.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_! with sig. 'm' on line 2542.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_@ with sig. 'm' on line 2543.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_@ with sig. 'm' on line 2543.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_* with sig. 'mm' on line 2544.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_* with sig. 'mm' on line 2544.
+
+
+LaTeX3 Info: Defining command \SetTblrInner with sig. 'O{tblr}m' on line 2632.
+
+
+LaTeX3 Info: Defining command \SetTblrOuter with sig. 'O{tblr}m' on line 2641.
+
+
+LaTeX3 Info: Defining command \NewTblrEnviron with sig. 'm' on line 2653.
+
+
+LaTeX3 Info: Defining environment 'tblr' with sig. 'O{c}m+b' on line 2656.
+
+
+LaTeX3 Info: Defining environment 'longtblr' with sig. 'O{c}m+b' on line 2657.
+
+
+LaTeX3 Info: Defining environment 'talltblr' with sig. 'O{c}m+b' on line 2659.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_RowBefore@AddBelowSep:w
+(LaTeX3)     with sig. 'O{}' on line 2837.
+
+
+LaTeX3 Info: Defining command
+(LaTeX3)     \__tblr_table_command_RowBefore@AddBelowSep_saved:w with sig.
+(LaTeX3)     'O{}' on line 2837.
+
+
+LaTeX3 Info: Defining command \NewTblrTheme with sig. 'm+m' on line 3189.
+
+\l__tblr_strut_dp_dim=\dimen270
+\l__tblr_strut_ht_dim=\dimen271
+\g__tblr_cell_wd_dim=\dimen272
+\g__tblr_cell_ht_dim=\dimen273
+\g__tblr_cell_head_dim=\dimen274
+\g__tblr_cell_foot_dim=\dimen275
+
+LaTeX3 Info: Defining command \__tblr_fake_color_command:w with sig. 'om' on
+(LaTeX3)     line 3748.
+
+\l__column_target_dim=\dimen276
+
+LaTeX3 Info: Defining command \SetTblrStyle with sig. 'm+m' on line 4657.
+
+
+LaTeX3 Info: Defining command \DefTblrTemplate with sig. 'mm+m' on line 4731.
+
+
+LaTeX3 Info: Defining command \SetTblrTemplate with sig. 'mm' on line 4752.
+
+
+LaTeX3 Info: Defining command \GetTblrStyle with sig. 'mm' on line 4764.
+
+
+LaTeX3 Info: Defining command \UseTblrFont with sig. 'm' on line 4769.
+
+
+LaTeX3 Info: Defining command \UseTblrColor with sig. 'm' on line 4777.
+
+
+LaTeX3 Info: Defining command \UseTblrAlign with sig. 'm' on line 4783.
+
+
+LaTeX3 Info: Defining command \UseTblrHang with sig. 'm' on line 4797.
+
+
+LaTeX3 Info: Defining command \UseTblrIndent with sig. 'm' on line 4806.
+
+
+LaTeX3 Info: Defining command \ExpTblrTemplate with sig. 'mm' on line 4817.
+
+
+LaTeX3 Info: Defining command \UseTblrTemplate with sig. 'mm' on line 4827.
+
+
+LaTeX3 Info: Defining command \MapTblrNotes with sig. '+m' on line 4837.
+
+
+LaTeX3 Info: Defining command \MapTblrRemarks with sig. '+m' on line 4847.
+
+
+LaTeX3 Info: Defining command \InsertTblrText with sig. 'm' on line 4852.
+
+
+LaTeX3 Info: Defining command \InsertTblrMore with sig. 'm' on line 4857.
+
+\l__tblr_caption_box=\box72
+\l__tblr_caption_left_box=\box73
+
+LaTeX3 Info: Defining command \TblrNote with sig. 'm' on line 5147.
+
+\l__tblr_row_head_box=\box74
+\l__tblr_row_foot_box=\box75
+\l__tblr_row_head_foot_dim=\dimen277
+\tablewidth=\dimen278
+\l__tblr_table_firsthead_box=\box76
+\l__tblr_table_middlehead_box=\box77
+\l__tblr_table_lasthead_box=\box78
+\l__tblr_table_firstfoot_box=\box79
+\l__tblr_table_middlefoot_box=\box80
+\l__tblr_table_lastfoot_box=\box81
+\l__tblr_remain_height_dim=\dimen279
+\l__tblr_long_from_int=\count304
+\l__tblr_long_to_int=\count305
+\l__tblr_curr_i_int=\count306
+\l__tblr_prev_i_int=\count307
+\l__tblr_table_page_int=\count308
+\l__tblr_table_head_box=\box82
+\l__tblr_table_foot_box=\box83
+\l__tblr_table_head_foot_dim=\dimen280
+\l__tblr_table_head_body_foot_dim=\dimen281
+\l__tblr_table_box=\box84
+\l__tblr_table_hlines_box=\box85
+\l__tblr_hline_box=\box86
+\l__tblr_row_box=\box87
+\l__tblr_col_o_wd_dim=\dimen282
+\l__tblr_col_b_wd_dim=\dimen283
+\l__tblr_hline_leftskip_dim=\dimen284
+\l__tblr_hline_rightskip_dim=\dimen285
+\l__tblr_row_ht_dim=\dimen286
+\l__tblr_row_dp_dim=\dimen287
+\l__tblr_row_abovesep_dim=\dimen288
+\l__tblr_row_belowsep_dim=\dimen289
+\l__tblr_row_vlines_box=\box88
+\l__tblr_vline_box=\box89
+\l__tblr_cell_box=\box90
+\l__row_upper_dim=\dimen290
+\l__row_lower_dim=\dimen291
+\l__row_vpace_dim=\dimen292
+\l__tblr_vline_aboveskip_dim=\dimen293
+\l__tblr_vline_belowskip_dim=\dimen294
+\l__tblr_cell_wd_dim=\dimen295
+\l__tblr_cell_ht_dim=\dimen296
+
+LaTeX3 Info: Defining command \SetTblrTracing with sig. 'm' on line 6801.
+
+
+LaTeX3 Info: Defining command \LogTblrTracing with sig. 'm' on line 6913.
+
+
+LaTeX3 Info: Defining command \NewTblrLibrary with sig. 'mm' on line 7038.
+
+
+LaTeX3 Info: Defining command \UseTblrLibrary with sig. 'm' on line 7047.
+
+\l__tblr_diag_box=\box91
+)
+
+! LaTeX Error: File `tlbr.sty' not found.
+
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
+! Emergency stop.
+<read *> 
+         
+l.19 ^^M
+        
+End of file on the terminal!
+
+ 
 Here is how much of TeX's memory you used:
- 13578 strings out of 481008
- 263777 string characters out of 5909439
- 554139 words of memory out of 5000000
- 30538 multiletter control sequences out of 15000+600000
- 407554 words of font info for 41 fonts, out of 8000000 for 9000
+ 14650 strings out of 481008
+ 300001 string characters out of 5909439
+ 573298 words of memory out of 5000000
+ 31650 multiletter control sequences out of 15000+600000
+ 403430 words of font info for 27 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 91i,15n,91p,466b,326s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx1
-2.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><
-/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/sh
-are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on main.pdf (2 pages, 89785 bytes).
-PDF statistics:
- 37 PDF objects out of 1000 (max. 8388607)
- 25 compressed objects within 1 object stream
- 0 named destinations out of 1000 (max. 500000)
- 18 words of extra memory for PDF output out of 10000 (max. 10000000)
-
+ 91i,0n,91p,466b,263s stack positions out of 5000i,500n,10000p,200000b,80000s
+!  ==> Fatal error occurred, no output PDF file produced!

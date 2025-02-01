@@ -1,0 +1,809 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2024.8.28)  29 JAN 2025 20:35
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**test.tex
+(./test.tex
+LaTeX2e <2020-10-01> patch level 4
+L3 programming layer <2021-02-18>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2020/04/10 v1.4m Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo
+File: size10.clo 2020/04/10 v1.4m Standard LaTeX file (size option)
+)
+\c@part=\count179
+\c@section=\count180
+\c@subsection=\count181
+\c@subsubsection=\count182
+\c@paragraph=\count183
+\c@subparagraph=\count184
+\c@figure=\count185
+\c@table=\count186
+\abovecaptionskip=\skip47
+\belowcaptionskip=\skip48
+\bibindent=\dimen138
+) (./tabularray.sty
+(/usr/share/texlive/texmf-dist/tex/latex/l3kernel/expl3.sty
+Package: expl3 2021-02-18 L3 programming layer (loader) 
+
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2021-03-18 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count187
+\l__pdf_internal_box=\box47
+))
+Package: tabularray 2024-02-16 v2024A Typeset tabulars and arrays with LaTeX3
+
+LaTeX3 Info: Defining command \TblrParboxRestore with sig. '' on line 46.
+
+
+LaTeX3 Info: Defining command \TblrAlignBoth with sig. '' on line 55.
+
+
+LaTeX3 Info: Defining command \TblrAlignLeft with sig. '' on line 57.
+
+
+LaTeX3 Info: Defining command \TblrAlignCenter with sig. '' on line 59.
+
+
+LaTeX3 Info: Defining command \TblrAlignRight with sig. '' on line 61.
+
+\l__tblr_a_int=\count188
+\l__tblr_c_int=\count189
+\l__tblr_r_int=\count190
+\l__tblr_d_dim=\dimen139
+\l__tblr_h_dim=\dimen140
+\l__tblr_o_dim=\dimen141
+\l__tblr_p_dim=\dimen142
+\l__tblr_q_dim=\dimen143
+\l__tblr_r_dim=\dimen144
+\l__tblr_s_dim=\dimen145
+\l__tblr_t_dim=\dimen146
+\l__tblr_v_dim=\dimen147
+\l__tblr_w_dim=\dimen148
+\l__tblr_a_box=\box48
+\l__tblr_b_box=\box49
+\l__tblr_c_box=\box50
+\l__tblr_d_box=\box51
+\g__tblr_table_count_int=\count191
+\c@rownum=\count192
+\c@colnum=\count193
+\c@rowcount=\count194
+\c@colcount=\count195
+
+LaTeX3 Info: Defining command \therownum with sig. '' on line 159.
+
+
+LaTeX3 Info: Defining command \thecolnum with sig. '' on line 160.
+
+
+LaTeX3 Info: Defining command \therowcount with sig. '' on line 161.
+
+
+LaTeX3 Info: Defining command \thecolcount with sig. '' on line 162.
+
+\abovesep=\dimen149
+\belowsep=\dimen150
+\leftsep=\dimen151
+\rightsep=\dimen152
+\g_tblr_level_int=\count196
+\g__tblr_data_row_key_count_int=\count197
+\g__tblr_data_column_key_count_int=\count198
+\g__tblr_data_cell_key_count_int=\count199
+\g__tblr_array_int=\count266
+\l__tblr_key_count_int=\count267
+\l__tblr_key_quotient_int=\count268
+\l__tblr_key_quotient_two_int=\count269
+\l__tblr_key_remainder_int=\count270
+\g__tblr_data_str_value_count_int=\count271
+
+LaTeX3 Info: Defining command \NewChildSelector with sig. 'mO{0}om' on line
+(LaTeX3)     837.
+
+
+LaTeX3 Info: Defining command \__tblr_child_selector_odd:w with sig. 'O{}' on
+(LaTeX3)     line 879.
+
+
+LaTeX3 Info: Defining command \__tblr_child_selector_even:w with sig. 'O{}' on
+(LaTeX3)     line 889.
+
+
+LaTeX3 Info: Defining command \NewTableCommand with sig. 'mO{0}om' on line
+(LaTeX3)     1017.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_empty:w with sig. '' on
+(LaTeX3)     line 1048.
+
+
+LaTeX3 Info: Defining command \SetHlines with sig. 'omm' on line 1053.
+
+
+LaTeX3 Info: Defining command \SetHline with sig. 'omm' on line 1054.
+
+
+LaTeX3 Info: Defining command \SetVlines with sig. 'omm' on line 1055.
+
+
+LaTeX3 Info: Defining command \SetVline with sig. 'omm' on line 1056.
+
+
+LaTeX3 Info: Defining command \SetCells with sig. 'om' on line 1057.
+
+
+LaTeX3 Info: Defining command \SetCell with sig. 'om' on line 1058.
+
+
+LaTeX3 Info: Defining command \SetRows with sig. 'om' on line 1059.
+
+
+LaTeX3 Info: Defining command \SetRow with sig. 'om' on line 1060.
+
+
+LaTeX3 Info: Defining command \SetColumns with sig. 'om' on line 1061.
+
+
+LaTeX3 Info: Defining command \SetColumn with sig. 'om' on line 1062.
+
+
+LaTeX3 Info: Defining command \NewContentCommand with sig. 'mO{0}om' on line
+(LaTeX3)     1090.
+
+\rulewidth=\dimen153
+
+LaTeX3 Info: Defining command \NewDashStyle with sig. 'mm' on line 1130.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetHlines:w with sig.
+(LaTeX3)     'O{+}mm' on line 1184.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_cline:w with sig. 'O{}m'
+(LaTeX3)     on line 1223.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_hline:w with sig. 'O{}' on
+(LaTeX3)     line 1225.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetHline:w with sig.
+(LaTeX3)     'O{+}mm' on line 1233.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_firsthline:w with sig.
+(LaTeX3)     'O{}' on line 1416.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_firsthline_saved:w with
+(LaTeX3)     sig. 'O{}' on line 1416.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_lasthline:w with sig.
+(LaTeX3)     'O{}' on line 1421.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_lasthline_saved:w with
+(LaTeX3)     sig. 'O{}' on line 1421.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetVlines:w with sig.
+(LaTeX3)     'O{+}mm' on line 1427.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_rline:w with sig. 'O{}m'
+(LaTeX3)     on line 1465.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_rline_saved:w with sig.
+(LaTeX3)     'O{}m' on line 1465.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_vline:w with sig. 'O{}' on
+(LaTeX3)     line 1467.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetVline:w with sig.
+(LaTeX3)     'O{+}mm' on line 1475.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_hborder:w with sig. 'm' on
+(LaTeX3)     line 1624.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_hborder_saved:w with sig.
+(LaTeX3)     'm' on line 1624.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_vborder:w with sig. 'm' on
+(LaTeX3)     line 1681.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_vborder_saved:w with sig.
+(LaTeX3)     'm' on line 1681.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetCells:w with sig.
+(LaTeX3)     'O{}m' on line 1727.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetCell:w with sig. 'O{}m'
+(LaTeX3)     on line 1759.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_multicolumn:w with sig.
+(LaTeX3)     'mm' on line 1968.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_multirow:w with sig.
+(LaTeX3)     'O{m}mm' on line 1973.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_multirow_saved:w with sig.
+(LaTeX3)     'O{m}mm' on line 1973.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetColumns:w with sig.
+(LaTeX3)     'O{}m' on line 1983.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetColumn:w with sig.
+(LaTeX3)     'O{}m' on line 2011.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetRows:w with sig. 'O{}m'
+(LaTeX3)     on line 2151.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_SetRow:w with sig. 'O{}m'
+(LaTeX3)     on line 2179.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_pagebreak:w with sig.
+(LaTeX3)     'O{4}' on line 2318.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_nopagebreak:w with sig.
+(LaTeX3)     'O{4}' on line 2323.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_Q with sig. 'O{}' on
+(LaTeX3)     line 2339.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_Q with sig. 'O{}' on line
+(LaTeX3)     2344.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_Q with sig. 'O{}' on
+(LaTeX3)     line 2351.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_Q with sig. 'O{}' on line 2356.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_| with sig. 'O{}' on
+(LaTeX3)     line 2362.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_| with sig. 'O{}' on line
+(LaTeX3)     2367.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_| with sig. 'O{}' on
+(LaTeX3)     line 2373.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_| with sig. 'O{}' on line 2378.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_> with sig. 'O{}m'
+(LaTeX3)     on line 2394.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_> with sig. 'O{}m' on line
+(LaTeX3)     2399.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_> with sig. 'O{}m' on
+(LaTeX3)     line 2413.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_> with sig. 'O{}m' on line 2418.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_column_type_< with sig. 'O{}m'
+(LaTeX3)     on line 2435.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_< with sig. 'O{}m' on line
+(LaTeX3)     2440.
+
+
+LaTeX3 Info: Defining command \tblr_primitive_row_type_< with sig. 'O{}m' on
+(LaTeX3)     line 2457.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_< with sig. 'O{}m' on line 2462.
+
+
+LaTeX3 Info: Defining command \NewColumnType with sig. 'mO{0}om' on line 2482.
+
+
+LaTeX3 Info: Defining command \NewRowType with sig. 'mO{0}om' on line 2488.
+
+
+LaTeX3 Info: Defining command \NewColumnRowType with sig. 'mO{0}om' on line
+(LaTeX3)     2496.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_l with sig. '' on line 2521.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_l with sig. '' on line 2521.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_c with sig. '' on line 2522.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_c with sig. '' on line 2522.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_r with sig. '' on line 2523.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_r with sig. '' on line 2523.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_j with sig. '' on line 2524.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_j with sig. '' on line 2524.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_t with sig. 'm' on line 2526.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_p with sig. 'm' on line 2527.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_m with sig. 'm' on line 2528.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_b with sig. 'm' on line 2529.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_h with sig. 'm' on line 2530.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_f with sig. 'm' on line 2531.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_t with sig. 'm' on line 2533.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_p with sig. 'm' on line 2534.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_m with sig. 'm' on line 2535.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_b with sig. 'm' on line 2536.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_h with sig. 'm' on line 2537.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_f with sig. 'm' on line 2538.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_X with sig. 'O{}' on line
+(LaTeX3)     2540.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_X with sig. 'O{}' on line 2540.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_! with sig. 'm' on line 2542.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_! with sig. 'm' on line 2542.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_@ with sig. 'm' on line 2543.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_@ with sig. 'm' on line 2543.
+
+
+LaTeX3 Info: Defining command \tblr_column_type_* with sig. 'mm' on line 2544.
+
+
+LaTeX3 Info: Defining command \tblr_row_type_* with sig. 'mm' on line 2544.
+
+
+LaTeX3 Info: Defining command \SetTblrInner with sig. 'O{tblr}m' on line 2632.
+
+
+LaTeX3 Info: Defining command \SetTblrOuter with sig. 'O{tblr}m' on line 2641.
+
+
+LaTeX3 Info: Defining command \NewTblrEnviron with sig. 'm' on line 2653.
+
+
+LaTeX3 Info: Defining environment 'tblr' with sig. 'O{c}m+b' on line 2656.
+
+
+LaTeX3 Info: Defining environment 'longtblr' with sig. 'O{c}m+b' on line 2657.
+
+
+LaTeX3 Info: Defining environment 'talltblr' with sig. 'O{c}m+b' on line 2659.
+
+
+LaTeX3 Info: Defining command \__tblr_table_command_RowBefore@AddBelowSep:w
+(LaTeX3)     with sig. 'O{}' on line 2837.
+
+
+LaTeX3 Info: Defining command
+(LaTeX3)     \__tblr_table_command_RowBefore@AddBelowSep_saved:w with sig.
+(LaTeX3)     'O{}' on line 2837.
+
+
+LaTeX3 Info: Defining command \NewTblrTheme with sig. 'm+m' on line 3189.
+
+\l__tblr_strut_dp_dim=\dimen154
+\l__tblr_strut_ht_dim=\dimen155
+\g__tblr_cell_wd_dim=\dimen156
+\g__tblr_cell_ht_dim=\dimen157
+\g__tblr_cell_head_dim=\dimen158
+\g__tblr_cell_foot_dim=\dimen159
+
+LaTeX3 Info: Defining command \__tblr_fake_color_command:w with sig. 'om' on
+(LaTeX3)     line 3748.
+
+\l__column_target_dim=\dimen160
+
+LaTeX3 Info: Defining command \SetTblrStyle with sig. 'm+m' on line 4657.
+
+
+LaTeX3 Info: Defining command \DefTblrTemplate with sig. 'mm+m' on line 4731.
+
+
+LaTeX3 Info: Defining command \SetTblrTemplate with sig. 'mm' on line 4752.
+
+
+LaTeX3 Info: Defining command \GetTblrStyle with sig. 'mm' on line 4764.
+
+
+LaTeX3 Info: Defining command \UseTblrFont with sig. 'm' on line 4769.
+
+
+LaTeX3 Info: Defining command \UseTblrColor with sig. 'm' on line 4777.
+
+
+LaTeX3 Info: Defining command \UseTblrAlign with sig. 'm' on line 4783.
+
+
+LaTeX3 Info: Defining command \UseTblrHang with sig. 'm' on line 4797.
+
+
+LaTeX3 Info: Defining command \UseTblrIndent with sig. 'm' on line 4806.
+
+
+LaTeX3 Info: Defining command \ExpTblrTemplate with sig. 'mm' on line 4817.
+
+
+LaTeX3 Info: Defining command \UseTblrTemplate with sig. 'mm' on line 4827.
+
+
+LaTeX3 Info: Defining command \MapTblrNotes with sig. '+m' on line 4837.
+
+
+LaTeX3 Info: Defining command \MapTblrRemarks with sig. '+m' on line 4847.
+
+
+LaTeX3 Info: Defining command \InsertTblrText with sig. 'm' on line 4852.
+
+
+LaTeX3 Info: Defining command \InsertTblrMore with sig. 'm' on line 4857.
+
+\l__tblr_caption_box=\box52
+\l__tblr_caption_left_box=\box53
+
+LaTeX3 Info: Defining command \TblrNote with sig. 'm' on line 5147.
+
+\l__tblr_row_head_box=\box54
+\l__tblr_row_foot_box=\box55
+\l__tblr_row_head_foot_dim=\dimen161
+\tablewidth=\dimen162
+\l__tblr_table_firsthead_box=\box56
+\l__tblr_table_middlehead_box=\box57
+\l__tblr_table_lasthead_box=\box58
+\l__tblr_table_firstfoot_box=\box59
+\l__tblr_table_middlefoot_box=\box60
+\l__tblr_table_lastfoot_box=\box61
+\l__tblr_remain_height_dim=\dimen163
+\l__tblr_long_from_int=\count272
+\l__tblr_long_to_int=\count273
+\l__tblr_curr_i_int=\count274
+\l__tblr_prev_i_int=\count275
+\l__tblr_table_page_int=\count276
+\l__tblr_table_head_box=\box62
+\l__tblr_table_foot_box=\box63
+\l__tblr_table_head_foot_dim=\dimen164
+\l__tblr_table_head_body_foot_dim=\dimen165
+\l__tblr_table_box=\box64
+\l__tblr_table_hlines_box=\box65
+\l__tblr_hline_box=\box66
+\l__tblr_row_box=\box67
+\l__tblr_col_o_wd_dim=\dimen166
+\l__tblr_col_b_wd_dim=\dimen167
+\l__tblr_hline_leftskip_dim=\dimen168
+\l__tblr_hline_rightskip_dim=\dimen169
+\l__tblr_row_ht_dim=\dimen170
+\l__tblr_row_dp_dim=\dimen171
+\l__tblr_row_abovesep_dim=\dimen172
+\l__tblr_row_belowsep_dim=\dimen173
+\l__tblr_row_vlines_box=\box68
+\l__tblr_vline_box=\box69
+\l__tblr_cell_box=\box70
+\l__row_upper_dim=\dimen174
+\l__row_lower_dim=\dimen175
+\l__row_vpace_dim=\dimen176
+\l__tblr_vline_aboveskip_dim=\dimen177
+\l__tblr_vline_belowskip_dim=\dimen178
+\l__tblr_cell_wd_dim=\dimen179
+\l__tblr_cell_ht_dim=\dimen180
+
+LaTeX3 Info: Defining command \SetTblrTracing with sig. 'm' on line 6801.
+
+
+LaTeX3 Info: Defining command \LogTblrTracing with sig. 'm' on line 6913.
+
+
+LaTeX3 Info: Defining command \NewTblrLibrary with sig. 'mm' on line 7038.
+
+
+LaTeX3 Info: Defining command \UseTblrLibrary with sig. 'm' on line 7047.
+
+\l__tblr_diag_box=\box71
+)
+(/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty
+Package: tabularx 2020/01/15 v2.11c `tabularx' package (DPC)
+
+(/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty
+Package: array 2020/10/01 v2.5c Tabular extension package (FMi)
+\col@sep=\dimen181
+\ar@mcellbox=\box72
+\extrarowheight=\dimen182
+\NC@list=\toks15
+\extratabsurround=\skip49
+\backup@length=\skip50
+\ar@cellbox=\box73
+)
+\TX@col@width=\dimen183
+\TX@old@table=\dimen184
+\TX@old@col=\dimen185
+\TX@target=\dimen186
+\TX@delta=\dimen187
+\TX@cols=\count277
+\TX@ftn=\toks16
+) (./test.aux)
+\openout1 = `test.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+
+LaTeX3 Info: Redefining command \UseTblrColor with sig. 'm' on line 5.
+
+> Step: init table outer spec.
+> Step: parse table options.
+> Step: split table.
+> Step: init table inner spec.
+> Step: parse table inner spec.
+> Step: execute table commands.
+> Step: calculate cell and line sizes.
+
+
+Package tabularray Warning: Table width is too small, need 267.32385pt more!
+
+> Step: build the whole table.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 27.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 27.
+
+Overfull \hbox (282.32385pt too wide) in paragraph at lines 27--28
+[][] 
+ []
+
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+? 
+! Emergency stop.
+<recently read> \endtemplate 
+                             
+l.42 \end{tabularx}
+                   
+End of file on the terminal!
+
+ 
+Here is how much of TeX's memory you used:
+ 2676 strings out of 481008
+ 66560 string characters out of 5909439
+ 404021 words of memory out of 5000000
+ 19934 multiletter control sequences out of 15000+600000
+ 406694 words of font info for 33 fonts, out of 8000000 for 9000
+ 14 hyphenation exceptions out of 8191
+ 67i,8n,99p,220b,822s stack positions out of 5000i,500n,10000p,200000b,80000s
+!  ==> Fatal error occurred, no output PDF file produced!

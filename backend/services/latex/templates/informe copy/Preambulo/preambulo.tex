@@ -12,10 +12,6 @@
 \definecolor{greencol}{RGB}{ 7, 200, 100 }
 \usepackage{tabularx}
 
-\usepackage{multirow}
-\usepackage{cellspace}
-\usepackage{tabularray}
-\usepackage{tlbr}
 
 \usepackage{geometry}
 \geometry{
@@ -48,3 +44,16 @@
 
 \input{Preambulo/header} %geometry top 0
 
+
+
+% %--------------------------------------------------------------------------
+% %         Bibliographie 
+% %--------------------------------------------------------------------------
+\RequirePackage[
+%backend=biber,
+backend=bibtex,
+style = ieee,
+%sorting=none,
+%citestyle=authortitle
+]{biblatex}
+\addbibresource{Contenido/references.bib}
