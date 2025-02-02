@@ -1,6 +1,6 @@
-import LatexElement from "../LatexElement.js";
+import LatexComponet from "../../LatexComponet.js";
 
-class LatexFigure extends LatexElement {
+class LatexFigure extends LatexComponet {
     constructor(path, caption) {
         super();
         this.path = path;
