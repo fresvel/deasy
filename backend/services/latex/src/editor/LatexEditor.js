@@ -1,7 +1,8 @@
 import fs from 'fs-extra';
 import path from 'path';
 import LatexBuilder from "../builder/LatexBuilder.js";
-import LatexTranspiler from '../transpiler/LatexTranspiler.js';
+import LatexDocument from '../transpiler/document/LatexDocument.js';
+import LatexHeader from '../transpiler/header/LatexHeader.js';
 
 class LatexEditor extends LatexBuilder {
     constructor(report_json) {
@@ -36,13 +37,14 @@ class LatexEditor extends LatexBuilder {
         }
     }
 
-    async writeFileHeader(){
-        return ''
+    async writeFileHeader(data_blocks){
+        const header = new LatexHeader(data_blocks)
+        return header.render()
     }
 
     async writeFileBody(data_blocks){
-        const transpiler = new LatexTranspiler(data_blocks);
-        return transpiler.render();
+        const document = new LatexDocument(data_blocks);
+        return document.render();
     }
 
     async writeFileFooter(){

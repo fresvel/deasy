@@ -4,8 +4,13 @@ class LatexjsLibrary {
     constructor() {
     }
 
+    set_dates(days) {
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+        return date.toISOString().substring(0, 10);
+    }
+
     create_latexEra(json_era) {
-        const datestr = new Date().toISOString().substring(0, 10);
         return {
             headers: [
                 { content: "ELABORADO POR:",props: { multicolumn: false, multirow: false } },
@@ -14,9 +19,9 @@ class LatexjsLibrary {
             ],
             rows: [
                 [
-                    { content: `Firma: \\newline \\newline \\newline \\newline`,props: { multicolumn: false, multirow: false } },
-                    { content: "Firma:", props: { multicolumn: false, multirow: false } },
-                    { content: "Firma:", props: { multicolumn: false, multirow: false } },
+                    { content: `Firma: \\textcolor{white}{\\$era-e\\$} \\newline \\newline \\newline \\newline`,props: { multicolumn: false, multirow: false } },
+                    { content: "Firma: \\textcolor{white}{\\$era-r\\$} ", props: { multicolumn: false, multirow: false } },
+                    { content: "Firma: \\textcolor{white}{\\$era-a\\$}", props: { multicolumn: false, multirow: false } },
                 ],
                 [
                     { content: `Nombre: ${json_era.made.name}`, props: { multicolumn: false, multirow: false } },
@@ -29,32 +34,37 @@ class LatexjsLibrary {
                     { content: `Cargo: ${json_era.approved.cargo}`, props: { multicolumn: false, multirow: false } },
                 ],
                 [
-                    { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
-                    { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
-                    { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
+                    { content: `Fecha: ${this.set_dates(0)}`, props: { multicolumn: false, multirow: false } },
+                    { content: `Fecha: ${this.set_dates(7)}`, props: { multicolumn: false, multirow: false } },
+                    { content: `Fecha: ${this.set_dates(14)}`, props: { multicolumn: false, multirow: false } },
                 ],
             ],
         }; 
 
     }
+
+    create_base_header(json_header){
+        return `
+        \\def\\programa{${json_header.programa}}
+        \\def\\periodo{${json_header.periodo}}
+        \\def\\titulo{\\textbf{${json_header.titulo}}}
+        
+        \\begin{center}
+        \\Large\\titulo\\\\     
+        \\end{center}
+        
+        \\large
+        \\begin{tabularx}{\\textwidth}{ p{20mm} p{8.7cm} p{4cm}}
+        
+        \\textbf{Carrera:} & \\programa & \\raggedleft\\textbf{Semestre:} \\periodo \\\\
+        \\end{tabularx}\\vspace{10mm}
+        \\renewcommand{\\arraystretch}{1.5}
+        \\noindent
+        `;
+        }
+        
     
 
     
 }
-
-export const create_latexEra=() => { //recibe un objeto
-
-    const latexEra=`\\begin{tabularx}{\\textwidth}{|X|X|X|}
-    \\hline
-    \\textbf{ELABORADO POR:} & \\textbf{REVISADO POR:} & \\textbf{APROBADO POR:} \\\\ \\hline
-    Firma: & Firma: & Firma:\\\\
-    &&\\\\
-    &&\\\\
-    &&\\\\ \\hline
-    \\textbf{Nombre: Homero Velasteguí} & \\textbf{Nombre: Manuel Nevarez} & \\textbf{Nombre: Pablo Pico Valencia PhD.} \\\\ \\hline
-    \\textbf{Cargo: Coordinador Carrera} & \\textbf{Cargo: Consejo de Escuela} & \\textbf{Cargo: Director Académico} \\\\ \\hline
-    \\textbf{Fecha: 9/3/2024} & \\textbf{Fecha: 9/3/2024} & \\textbf{Fecha: 9/3/2024} \\\\ \\hline
-    \\end{tabularx}\n`
-    
-    return latexEra
-}
+export default LatexjsLibrary

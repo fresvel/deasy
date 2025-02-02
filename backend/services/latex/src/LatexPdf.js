@@ -1,8 +1,14 @@
 import LatexEditor from "./editor/LatexEditor.js";
 
+import LatexjsLibrary from "../../latexjslib/src/LatexjsLibrary.js";
+
+import { LatexText } from "./transpiler/document/elements/LatexSections.js";
+
+
+
 const llamar=async () => {
 
-
+    const latextext=new LatexText();
 
     const tableData = {
         headers: [
@@ -56,8 +62,8 @@ const llamar=async () => {
 
     const json_era = {
         made: {
-            name: "José Angel",
-            cargo: "Director de Aula"
+            name: "Homero Velasteguí",
+            cargo: "Coordinador de Carrera"
         },
         reviewed: {
             name: "María Isabella",
@@ -68,45 +74,32 @@ const llamar=async () => {
             cargo: "Coordinador de Tecnologías de la Información"
         }
     }
-    const datestr = new Date().toISOString().substring(0, 10);
 
-    const era_table = {
-        headers: [
-            { content: "ELABORADO POR:",props: { multicolumn: false, multirow: false } },
-            { content: "REVISADO POR:", props: { multicolumn: false, multirow: false } },
-            { content: "APROBADO POR:", props: { multicolumn: false, multirow: false } },
-        ],
-        rows: [
-            [
-                { content: `Firma: \\newline \\newline \\newline \\newline`,props: { multicolumn: false, multirow: false } },
-                { content: "Firma:", props: { multicolumn: false, multirow: false } },
-                { content: "Firma:", props: { multicolumn: false, multirow: false } },
-            ],
-            [
-                { content: `Nombre: ${json_era.made.name}`, props: { multicolumn: false, multirow: false } },
-                { content: `Nombre: ${json_era.reviewed.name}`, props: { multicolumn: false, multirow: false } },
-                { content: `Nombre: ${json_era.approved.name}`, props: { multicolumn: false, multirow: false } },
-            ],
-            [
-                { content: `Cargo: ${json_era.made.cargo}`, props: { multicolumn: false, multirow: false } },
-                { content: `Cargo: ${json_era.reviewed.cargo}`, props: { multicolumn: false, multirow: false } },
-                { content: `Cargo: ${json_era.approved.cargo}`, props: { multicolumn: false, multirow: false } },
-            ],
-            [
-                { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
-                { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
-                { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
-            ],
-        ],
-    }; 
+    const header={ 
+        "programa":latextext.formatContent("Tecnología en Desarrollo & de Software"),
+        "periodo":latextext.formatContent("2024-II"),
+        "titulo":latextext.formatContent("Informe de \\ Tutorías")}
+
+
+
+    const latexlib = new LatexjsLibrary();
+
+    const latex_era = latexlib.create_latexEra(json_era);
+
+    const json_header = latexlib.create_base_header(header);
+
+    console.log(json_header);
+
     const modules={
-            header:[{}],
+            header:[
+                {"type":"make", "content":json_header}
+            ],
             body:[
                 { "type": "section", "title": "Sección 1", "content": "Contenido de la sección 1" },
                 { "type": "subsection", "title": "Subsección 1.1", "content": "Contenido de la subsección 1.1" },
                 { "type": "subsubsection", "title": "Subsubsección 1.1.1", "content": "Contenido de la subsubsección 1.1.1" },
                 { "type": "text", "content": "Este es un pálkjdjjhkajhdharrafo de texto que va después de la subsubsección." },
-                { "type": "table", "content":era_table},
+                { "type": "table", "content":latex_era},
                 { "type": "figure", "path": "image.png", "caption": "Figura 1. Ejemplo de imagen" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
@@ -118,7 +111,7 @@ const llamar=async () => {
         
     const informe = {
         "name": "logrosac2024S1",// el filename debe ser único
-        "path": "/home/fresvel/Documentos/Pucese/deasy/backend/services/signflow/informes/ITI/2024/SPO2024/Academia/elaborados",
+        "path": "/home/fresvel/Documentos/Pucese/deasy/backend/services/signflow/informes/ITI/2024/SPO2024/Academia/inicial",
         "modules": modules,
         "template":"informe"
     };

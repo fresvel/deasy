@@ -1,6 +1,6 @@
-import LatexElement from "../LatexElement.js";
+import LatexComponet from "../../LatexComponet.js";
 
-class LatexTabularx extends LatexElement  {
+class LatexTabularx extends LatexComponet  {
     constructor(content) {
         super();
         this.headers = content.headers;
