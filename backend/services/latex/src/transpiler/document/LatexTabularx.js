@@ -1,12 +1,12 @@
 import LatexElement from "../LatexElement.js";
 
-class LatexTable extends LatexElement  {
-    constructor(headers, rows, title = "", caption = "") {
+class LatexTabularx extends LatexElement  {
+    constructor(content) {
         super();
-        this.headers = headers;
-        this.rows = rows;
-        this.title = title;
-        this.caption = caption;
+        this.headers = content.headers;
+        this.rows = content.rows;
+        this.title = content.title;
+        this.caption = content.caption;
     }
 
     generateColumnFormat() {
@@ -82,4 +82,4 @@ class LatexTable extends LatexElement  {
     }
 }
 
-export default LatexTable
+export default LatexTabularx

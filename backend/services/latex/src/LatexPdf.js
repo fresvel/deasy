@@ -53,14 +53,60 @@ const llamar=async () => {
         caption: "Tabla que muestra las calificaciones de los estudiantes en diversas materias"
     };
         
-        const modules={
+
+    const json_era = {
+        made: {
+            name: "José Angel",
+            cargo: "Director de Aula"
+        },
+        reviewed: {
+            name: "María Isabella",
+            cargo: "Profesora de Matemática Básica"
+        },
+        approved: {
+            name: "Pedro Antonio",
+            cargo: "Coordinador de Tecnologías de la Información"
+        }
+    }
+    const datestr = new Date().toISOString().substring(0, 10);
+
+    const era_table = {
+        headers: [
+            { content: "ELABORADO POR:",props: { multicolumn: false, multirow: false } },
+            { content: "REVISADO POR:", props: { multicolumn: false, multirow: false } },
+            { content: "APROBADO POR:", props: { multicolumn: false, multirow: false } },
+        ],
+        rows: [
+            [
+                { content: `Firma: \\newline \\newline \\newline \\newline`,props: { multicolumn: false, multirow: false } },
+                { content: "Firma:", props: { multicolumn: false, multirow: false } },
+                { content: "Firma:", props: { multicolumn: false, multirow: false } },
+            ],
+            [
+                { content: `Nombre: ${json_era.made.name}`, props: { multicolumn: false, multirow: false } },
+                { content: `Nombre: ${json_era.reviewed.name}`, props: { multicolumn: false, multirow: false } },
+                { content: `Nombre: ${json_era.approved.name}`, props: { multicolumn: false, multirow: false } },
+            ],
+            [
+                { content: `Cargo: ${json_era.made.cargo}`, props: { multicolumn: false, multirow: false } },
+                { content: `Cargo: ${json_era.reviewed.cargo}`, props: { multicolumn: false, multirow: false } },
+                { content: `Cargo: ${json_era.approved.cargo}`, props: { multicolumn: false, multirow: false } },
+            ],
+            [
+                { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
+                { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
+                { content: `Fecha: ${datestr}`, props: { multicolumn: false, multirow: false } },
+            ],
+        ],
+    }; 
+    const modules={
             header:[{}],
             body:[
                 { "type": "section", "title": "Sección 1", "content": "Contenido de la sección 1" },
                 { "type": "subsection", "title": "Subsección 1.1", "content": "Contenido de la subsección 1.1" },
                 { "type": "subsubsection", "title": "Subsubsección 1.1.1", "content": "Contenido de la subsubsección 1.1.1" },
                 { "type": "text", "content": "Este es un pálkjdjjhkajhdharrafo de texto que va después de la subsubsección." },
-                { "type": "table", "headers": tableData.headers,"title":"Titulo largo para escribir", "rows": tableData.rows, "caption": "Descripción de la tabla"},
+                { "type": "table", "content":era_table},
                 { "type": "figure", "path": "image.png", "caption": "Figura 1. Ejemplo de imagen" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
@@ -68,14 +114,14 @@ const llamar=async () => {
             ],
             footer:[{}],
             preamble:[{}]
-        }
+    }
         
-        const informe = {
-            "name": "logrosac2024S2",// el filename debe ser único
-            "path": "/home/fresvel/Documentos/Pucese/deasy/backend/services/signflow/informes/ITI/2024/SPO2024/Academia/elaborados",
-            "modules": modules,
-            "template":"informe"
-        };
+    const informe = {
+        "name": "logrosac2024S1",// el filename debe ser único
+        "path": "/home/fresvel/Documentos/Pucese/deasy/backend/services/signflow/informes/ITI/2024/SPO2024/Academia/elaborados",
+        "modules": modules,
+        "template":"informe"
+    };
 
         const latextmp=new LatexEditor(informe)
         //const latextmp=new LatexBuilder(latex_obj.template,latex_obj.name)

@@ -1,6 +1,6 @@
 import { Section, Subsection, Text, Subsubsection } from "./document/LatexSections.js";
 import LatexFigure from "./document/LatexFigure.js";
-import LatexTable from "./document/LatexTable.js";
+import LatexTabularx from "./document/LatexTabularx.js";
 
 
 /*
@@ -67,8 +67,7 @@ class LatexTranspiler {
             case 'text':
                 return new Text(item.content);
             case 'table':
-                console.log(item)
-                return new LatexTable(item.headers, item.rows, item.title, item.caption);
+                return new LatexTabularx(item.content);
             case 'figure':
                 return new LatexFigure(item.path, item.caption);
             default:
