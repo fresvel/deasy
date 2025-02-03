@@ -19,9 +19,9 @@ class LatexjsLibrary {
             ],
             rows: [
                 [
-                    { content: `Firma: \\textcolor{white}{\\$era-e\\$} \\newline \\newline \\newline \\newline`,props: { multicolumn: false, multirow: false } },
-                    { content: "Firma: \\textcolor{white}{\\$era-r\\$} ", props: { multicolumn: false, multirow: false } },
-                    { content: "Firma: \\textcolor{white}{\\$era-a\\$}", props: { multicolumn: false, multirow: false } },
+                    { content: `Firma: \\textcolor{white}{!-era-ela-!} \\newline \\newline \\newline \\newline`,props: { multicolumn: false, multirow: false } },
+                    { content: "Firma: \\textcolor{white}{!-era-rev-!} ", props: { multicolumn: false, multirow: false } },
+                    { content: "Firma: \\textcolor{white}{!-era-apr-!}", props: { multicolumn: false, multirow: false } },
                 ],
                 [
                     { content: `Nombre: ${json_era.made.name}`, props: { multicolumn: false, multirow: false } },

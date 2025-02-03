@@ -99,18 +99,20 @@ const llamar=async () => {
                 { "type": "subsection", "title": "Subsección 1.1", "content": "Contenido de la subsección 1.1" },
                 { "type": "subsubsection", "title": "Subsubsección 1.1.1", "content": "Contenido de la subsubsección 1.1.1" },
                 { "type": "text", "content": "Este es un pálkjdjjhkajhdharrafo de texto que va después de la subsubsección." },
-                { "type": "table", "content":latex_era},
+                //{ "type": "table", "content":latex_era},
                 { "type": "figure", "path": "image.png", "caption": "Figura 1. Ejemplo de imagen" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
                 { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
-                { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" }
+                { "type": "section", "title": "Sección 2", "content": "Contenido de la sección 2" },
+                { "type": "table", "content":latex_era},
+
             ],
             footer:[{}],
             preamble:[{}]
     }
         
     const informe = {
-        "name": "logrosac2024S1",// el filename debe ser único
+        "name": "",// el filename debe ser único -- cuidado con inyección en signflow al crear los campos de firmas-- consultar BD
         "path": "/home/fresvel/Documentos/Pucese/deasy/backend/services/signflow/informes/ITI/2024/SPO2024/Academia/inicial",
         "modules": modules,
         "template":"informe"
