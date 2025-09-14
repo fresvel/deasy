@@ -1,0 +1,49 @@
+// Bootstrap Variables Override
+// Personalización de colores del tema
+
+// Colores principales del proyecto
+$primary: #000a32; // col-header
+$secondary: #6c757d;
+$success: #28a745;
+$info: #006edc; // col-info
+$warning: #ffc107;
+$danger: #ff3232; // col-delete
+$light: #f8f9fa;
+$dark: #212529;
+
+// Colores personalizados
+$gray-custom: rgba(200, 20, 20, 0.5);
+$edit-color: rgba(50, 150, 200, 0.7);
+$hover-color: rgba(100, 100, 100, 0.5);
+$selected-color: rgba(200, 200, 200, 0.5);
+
+// Variables de Bootstrap que podemos personalizar
+$border-radius: 0.375rem;
+$border-radius-sm: 0.25rem;
+$border-radius-lg: 0.5rem;
+
+// Espaciado personalizado
+$spacer: 1rem;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  2: $spacer * 0.5,
+  3: $spacer,
+  4: $spacer * 1.5,
+  5: $spacer * 3,
+  6: $spacer * 4,
+  7: $spacer * 5
+);
+
+// Tipografía
+$font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+$font-size-base: 1rem;
+$line-height-base: 1.5;
+
+// Componentes
+$btn-border-radius: $border-radius;
+$input-border-radius: $border-radius;
+$card-border-radius: $border-radius;
+
+// Importar Bootstrap después de nuestras variables
+@import '~bootstrap/scss/bootstrap';
