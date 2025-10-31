@@ -13,7 +13,7 @@ console.log("loginUser");
     let user = await Usuario.findOne({ cedula: req.body.cedula });
     
     if (!user) {
-        user = await Usuario.findOne({ username: req.body.correo});
+        user = await Usuario.findOne({ email: req.body.email});
     }
 
     if (!user) return res.status(401).send({ message: 'Nombre de usuario o contraseña incorrectos 01', code:401 });

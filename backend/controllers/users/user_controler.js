@@ -1,4 +1,5 @@
 import { Usuario } from "../../models/users/usuario_model.js";
+import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 
 export const createUser=async(req, res)=>{
     console.log("Creando usuario")
@@ -7,6 +8,19 @@ try {
     const ret =await newuser.save()
 
     console.log(ret);
+    
+    // Enviar mensaje de bienvenida por WhatsApp (solo si el bot está listo)
+    if (whatsappBot.isReady && req.body.whatsapp) {
+        try {
+            const userName = `${req.body.nombre} ${req.body.apellido}`;
+            await whatsappBot.sendWelcomeMessage(req.body.whatsapp, userName);
+            console.log(`✅ Mensaje de bienvenida enviado a ${req.body.whatsapp}`);
+        } catch (error) {
+            console.log(`⚠️ No se pudo enviar mensaje de WhatsApp: ${error.message}`);
+            // No fallar el registro si el mensaje no se envía
+        }
+    }
+    
     res.json({result:"ok"})
 } catch (error) {
 

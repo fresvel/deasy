@@ -1,24 +1,21 @@
 <template>
-    <div class="five wide column segment ui">
-      <div class="ui labeled large fluid input">
-        <div class="ui label">
-          {{ label }}                    
-        </div>
+    <div class="col-5">
+      <div class="mb-3">
+        <label :for="textareaId" class="form-label">{{ label }}</label>
         <textarea
-          :type="type" 
+          :id="textareaId"
           :placeholder="placeholder" 
           :value="input"
           @input="updateValue"
-          cols="1000"
+          class="form-control"
           rows="3"
-          style="border-color: rgba(10, 10, 10, 0.1); border-radius:5px"
         ></textarea>
       </div>
     </div>
-  </template>
+</template>
   
   <script setup>
-  import { ref, watch, defineProps, defineEmits } from 'vue';
+  import { ref, watch, defineProps, defineEmits, computed } from 'vue';
   
   const props = defineProps({
     label: {
@@ -40,6 +37,9 @@
   });
   
   const emit = defineEmits(['update:modelValue']);
+  
+  // Generar ID único para el textarea
+  const textareaId = computed(() => `textarea-${Math.random().toString(36).substr(2, 9)}`);
   
   // Inicializa el valor del input con props.modelValue
   const input = ref(props.modelValue);
