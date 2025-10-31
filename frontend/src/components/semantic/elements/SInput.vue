@@ -1,20 +1,18 @@
 <template>
-  <div class="column" :class="wideClass">
-    <div class="segment ui">
-      <div class="ui labeled large fluid input">
-        <div class="ui label">
-          {{ label }}                    
-        </div>
-        <input 
-          :type="type" 
-          :placeholder="placeholder" 
-          :value="input"
-          @input="updateValue"
-        />
-      </div>
+  <div class="col" :class="bootstrapColumnClass">
+    <div class="mb-3">
+      <label :for="inputId" class="form-label">{{ label }}</label>
+      <input 
+        :id="inputId"
+        :type="type" 
+        :placeholder="placeholder" 
+        :value="input"
+        @input="updateValue"
+        class="form-control"
+      />
     </div>
   </div>
-  </template>
+</template>
   
   <script setup>
   import { ref, watch, defineProps, defineEmits, computed } from 'vue';
@@ -42,7 +40,31 @@
   });
   
 
-  const wideClass = computed(()=>props.wide? `${props.wide} wide` : '')
+  // Mapear clases de Semantic UI a Bootstrap
+  const bootstrapColumnClass = computed(() => {
+    const wideMap = {
+      'one': 'col-1',
+      'two': 'col-2', 
+      'three': 'col-3',
+      'four': 'col-4',
+      'five': 'col-5',
+      'six': 'col-6',
+      'seven': 'col-7',
+      'eight': 'col-8',
+      'nine': 'col-9',
+      'ten': 'col-10',
+      'eleven': 'col-11',
+      'twelve': 'col-12',
+      'thirteen': 'col-12',
+      'fourteen': 'col-12',
+      'fifteen': 'col-12',
+      'sixteen': 'col-12'
+    };
+    return props.wide ? wideMap[props.wide] || 'col' : 'col';
+  });
+  
+  // Generar ID único para el input
+  const inputId = computed(() => `input-${Math.random().toString(36).substr(2, 9)}`);
 
   const emit = defineEmits(['update:modelValue']);
   

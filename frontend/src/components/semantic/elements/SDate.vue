@@ -1,19 +1,20 @@
 <template>
-    <div class="five wide column segment ui">
-      <div class="ui labeled large fluid input">
-        <div class="ui label">
-          {{ label }}                    
-        </div>
+    <div class="col-5">
+      <div class="mb-3">
+        <label :for="dateId" class="form-label">{{ label }}</label>
         <datepicker   
+          :id="dateId"
           :value="input"
           @date="updateValue"
+          class="form-control"
+          :placeholder="placeholder"
         />
       </div>
     </div>
-  </template>
+</template>
   
   <script setup>
-  import { ref, watch, defineProps, defineEmits } from 'vue';
+  import { ref, watch, defineProps, defineEmits, computed } from 'vue';
   import Datepicker from 'vuejs3-datepicker'
 
   
@@ -37,6 +38,9 @@
   });
   
   const emit = defineEmits(['update:modelValue']);
+  
+  // Generar ID único para el datepicker
+  const dateId = computed(() => `date-${Math.random().toString(36).substr(2, 9)}`);
   
   // Inicializa el valor del input con props.modelValue
   const input = ref(props.modelValue);
