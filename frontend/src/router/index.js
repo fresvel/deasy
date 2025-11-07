@@ -30,10 +30,13 @@ const routes = [
     path: "/logout",
     name: "logout",
     beforeEnter: (to, from, next) => {
-      // Limpiar cookies/tokens
+      // Limpiar cookies/tokens/datos de usuario
       document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       sessionStorage.clear();
+      
+      console.log('🔓 Sesión cerrada');
       
       // Redirigir al login
       next('/');

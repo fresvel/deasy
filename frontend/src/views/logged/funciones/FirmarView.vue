@@ -23,7 +23,7 @@
     
         <s-menu :show="vmenu">
 
-            <UserProfile photo="/images/avatar.png" username="Homero Velasteguí"> </UserProfile>
+            <UserProfile photo="/images/avatar.png" :username="userFullName"> </UserProfile>
             <a class="item large"> Formación y Experiencia</a>
             <a v-for="(item, index) of menu" :key="index" 
                 :class="item.active ? 'item active' : 'item'" 
@@ -52,7 +52,7 @@
     <script setup>  
     
     
-    import { ref} from 'vue';
+    import { ref, computed, onMounted} from 'vue';
     import SMenu from '@/components/main/SMenu.vue';
     import SMessage from '@/components/main/SNotify.vue';
     import SBody from '@/components/main/SBody.vue';
@@ -60,6 +60,27 @@
     import UserProfile from '@/components/general/UserProfile.vue';
     import FirmarPdf from './FirmarPdf.vue';
 
+    // Obtener datos del usuario desde localStorage
+    const currentUser = ref(null);
+    const userFullName = computed(() => {
+        if (currentUser.value) {
+            return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+        }
+        return 'Usuario';
+    });
+
+    // Cargar datos del usuario
+    onMounted(() => {
+        const userDataString = localStorage.getItem('user');
+        if (userDataString) {
+            try {
+                currentUser.value = JSON.parse(userDataString);
+                console.log('👤 Usuario cargado en FirmarView:', currentUser.value);
+            } catch (error) {
+                console.error('Error al cargar datos del usuario:', error);
+            }
+        }
+    });
 
     const vmenu = ref(true);
     const vnotify = ref(true);

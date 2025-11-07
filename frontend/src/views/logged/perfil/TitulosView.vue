@@ -32,18 +32,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><BtnSera type="reviewed" @onpress="clickBtnsera"/></td>
-              <td>Ingeniero en Electrónica y Comunicaciones</td>
-              <td>Universidad Técnica de Ambato</td>
-              <td>Presencial</td>
-              <td>1011-2023-2327683</td>
-              <td>Tecnologías de la Información y Comunicación</td>
-              <td>Ecuador</td>
+            <tr v-if="titulosTecnicos.length === 0">
+              <td colspan="8" class="text-center text-muted">
+                <p class="my-3">No hay títulos técnicos/tecnológicos registrados</p>
+              </td>
+            </tr>
+            <tr v-for="titulo in titulosTecnicos" :key="titulo._id">
+              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td>{{ titulo.titulo }}</td>
+              <td>{{ titulo.ies }}</td>
+              <td>{{ titulo.tipo }}</td>
+              <td>{{ titulo.sreg || 'N/A' }}</td>
+              <td>{{ titulo.campo_amplio }}</td>
+              <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <BtnDelete @onpress="clickBtndelete"/>
-                  <BtnEdit @onpress="clickBtnedit"/>
+                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
                 </div>
               </td>
             </tr>
@@ -73,18 +78,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><BtnSera type="denied" @onpress="clickBtnsera"/></td>
-              <td>Ingeniero en Electrónica y Comunicaciones</td>
-              <td>Universidad Técnica de Ambato</td>
-              <td>Presencial</td>
-              <td>1011-2023-2327683</td>
-              <td>Tecnologías de la Información y Comunicación</td>
-              <td>Ecuador</td>
+            <tr v-if="titulosGrado.length === 0">
+              <td colspan="8" class="text-center text-muted">
+                <p class="my-3">No hay títulos de grado registrados</p>
+              </td>
+            </tr>
+            <tr v-for="titulo in titulosGrado" :key="titulo._id">
+              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td>{{ titulo.titulo }}</td>
+              <td>{{ titulo.ies }}</td>
+              <td>{{ titulo.tipo }}</td>
+              <td>{{ titulo.sreg || 'N/A' }}</td>
+              <td>{{ titulo.campo_amplio }}</td>
+              <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <BtnDelete @onpress="clickBtndelete"/>
-                  <BtnEdit @onpress="clickBtnedit"/>
+                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
                 </div>
               </td>
             </tr>
@@ -114,18 +124,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-              <td>Ingeniero en Electrónica y Comunicaciones</td>
-              <td>Universidad Técnica de Ambato</td>
-              <td>Presencial</td>
-              <td>1011-2023-2327683</td>
-              <td>Tecnologías de la Información y Comunicación</td>
-              <td>Ecuador</td>
+            <tr v-if="titulosCuartoNivel.length === 0">
+              <td colspan="8" class="text-center text-muted">
+                <p class="my-3">No hay títulos de cuarto nivel registrados</p>
+              </td>
+            </tr>
+            <tr v-for="titulo in titulosCuartoNivel" :key="titulo._id">
+              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td>{{ titulo.titulo }}</td>
+              <td>{{ titulo.ies }}</td>
+              <td>{{ titulo.tipo }}</td>
+              <td>{{ titulo.sreg || 'N/A' }}</td>
+              <td>{{ titulo.campo_amplio }}</td>
+              <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <BtnDelete @onpress="clickBtndelete"/>
-                  <BtnEdit @onpress="clickBtnedit"/>
+                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
                 </div>
               </td>
             </tr>
@@ -154,18 +169,119 @@
 </template>
 
 <script setup>
-import {ref} from "vue"
+import {ref, computed, onMounted} from "vue"
+import axios from 'axios';
 import AgregarTitulo from "./AgregarTitulo.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
 import BtnSera from "@/components/database/BtnSera.vue";
+
 const modal = ref(null);
+const dossier = ref(null);
+const loading = ref(true);
+const currentUser = ref(null);
+
+// Computed properties para agrupar títulos por nivel
+const titulosTecnicos = computed(() => {
+    if (!dossier.value || !dossier.value.titulos) return [];
+    return dossier.value.titulos.filter(t => 
+        t.nivel === 'Técnico' || t.nivel === 'Tecnólogo'
+    );
+});
+
+const titulosGrado = computed(() => {
+    if (!dossier.value || !dossier.value.titulos) return [];
+    return dossier.value.titulos.filter(t => t.nivel === 'Grado');
+});
+
+const titulosCuartoNivel = computed(() => {
+    if (!dossier.value || !dossier.value.titulos) return [];
+    return dossier.value.titulos.filter(t => 
+        t.nivel === 'Maestría' || 
+        t.nivel === 'Maestría Tecnológica' || 
+        t.nivel === 'Diplomado' || 
+        t.nivel === 'Doctorado' || 
+        t.nivel === 'Posdoctorado'
+    );
+});
+
+// Cargar datos del usuario y su dossier
+const loadDossier = async () => {
+    try {
+        loading.value = true;
+        
+        // Obtener usuario del localStorage
+        const userDataString = localStorage.getItem('user');
+        if (!userDataString) {
+            console.error('No hay usuario logueado');
+            return;
+        }
+        
+        currentUser.value = JSON.parse(userDataString);
+        console.log('👤 Usuario cargado:', currentUser.value);
+        
+        // Obtener dossier del backend
+        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}`;
+        const response = await axios.get(url);
+        
+        if (response.data.success) {
+            dossier.value = response.data.data;
+            console.log('📋 Dossier cargado:', dossier.value);
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar dossier:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+// Función para obtener el tipo de estado SERA
+const getSeraType = (sera) => {
+    if (!sera || sera === 'Enviado') return 'pending';
+    if (sera === 'Revisado') return 'reviewed';
+    if (sera === 'Aprobado') return 'certified';
+    return 'denied';
+};
+
+// Función para eliminar título
+const deleteTitulo = async (tituloId) => {
+    if (!confirm('¿Estás seguro de eliminar este título?')) return;
+    
+    try {
+        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}/titulos/${tituloId}`;
+        await axios.delete(url);
+        
+        // Recargar dossier
+        await loadDossier();
+        alert('Título eliminado correctamente');
+    } catch (error) {
+        console.error('Error al eliminar título:', error);
+        alert('Error al eliminar el título');
+    }
+};
+
+// Funciones placeholder (implementar después)
+const clickBtnedit = (titulo) => {
+    console.log('Editar título:', titulo);
+    // TODO: Implementar edición
+};
+
+const clickBtnsera = (titulo) => {
+    console.log('Ver estado SERA:', titulo);
+    // TODO: Implementar visualización de estado
+};
 
 const openModal = () => {
     const modalElement = document.getElementById('tituloModal');
     const modal = new window.bootstrap.Modal(modalElement);
     modal.show();
 };
+
+// Cargar datos al montar el componente
+onMounted(() => {
+    loadDossier();
+});
 
 
 /*

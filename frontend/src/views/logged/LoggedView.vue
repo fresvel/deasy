@@ -28,7 +28,7 @@
     
         <s-menu :show="vmenu">
 
-            <UserProfile photo="/images/avatar.png" username="Homero Velasteguí"> </UserProfile>
+            <UserProfile photo="/images/avatar.png" :username="userFullName"> </UserProfile>
             <a class="large item labeled" style="text-align: center;">
                 Coordinación          
             </a>
@@ -88,7 +88,7 @@
     <script setup>  
     
     
-    import { ref} from 'vue';
+    import { ref, computed, onMounted} from 'vue';
     import SMenu from '@/components/main/SMenu.vue';
     import SMessage from '@/components/main/SNotify.vue';
     import SBody from '@/components/main/SBody.vue';
@@ -113,8 +113,34 @@
 
     const service = new EasymServices();
 
+    // Obtener datos del usuario desde localStorage
+    const currentUser = ref(null);
+    const userFullName = computed(() => {
+        if (currentUser.value) {
+            return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+        }
+        return 'Usuario';
+    });
+
+    // Cargar datos del usuario
+    onMounted(() => {
+        const userDataString = localStorage.getItem('user');
+        if (userDataString) {
+            try {
+                currentUser.value = JSON.parse(userDataString);
+                console.log('👤 Usuario cargado:', currentUser.value);
+                
+                // Cargar tareas con la cédula del usuario
+                if (currentUser.value.cedula) {
+                    service.getTareasPendientes(currentUser.value.cedula);
+                }
+            } catch (error) {
+                console.error('Error al cargar datos del usuario:', error);
+            }
+        }
+    });
+
     service.getEasymAreas()
-    service.getTareasPendientes("1804326534")
     const areas =service.getEasymdata().areas
     const tareas=service.getEasymdata().tareas
     const vmenu = ref(true);

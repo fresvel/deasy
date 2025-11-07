@@ -25,5 +25,20 @@ console.log("loginUser");
     console.log(user);
     generateRefreshToken(user._id, res)
     const { token, expiresIn}=generateToken(user._id)
-    res.json({token, expiresIn});
+    
+    // Devolver token y datos del usuario (sin contraseña)
+    res.json({
+        token, 
+        expiresIn,
+        user: {
+            _id: user._id,
+            cedula: user.cedula,
+            nombre: user.nombre,
+            apellido: user.apellido,
+            email: user.email,
+            whatsapp: user.whatsapp,
+            direccion: user.direccion,
+            pais: user.pais
+        }
+    });
 }
