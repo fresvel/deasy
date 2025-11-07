@@ -9,6 +9,7 @@ import program_router from "./routes/program_router.js";
 import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
+import dossier_router from "./routes/dossier_router.js"
 
 import cors from "cors"
 import "./database/mongoose.js"
@@ -52,6 +53,8 @@ app.use("/easym/v1/area",area_router)
 app.use("/easym/v1/tarea",tarea_router)
 
 app.use("/easym/v1/whatsapp",whatsapp_router)
+
+app.use("/easym/v1/dossier",dossier_router)
 
 app.use(express.static("public"));
 

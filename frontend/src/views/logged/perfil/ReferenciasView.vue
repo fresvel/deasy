@@ -31,17 +31,22 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-              <td>Ingeniero en Electrónica y Comunicaciones</td>
-              <td>Universidad Técnica de Ambato</td>
-              <td>Presencial</td>
-              <td>1011-2023-2327683</td>
-              <td>Tecnologías de la Información y Comunicación</td>
+            <tr v-if="referenciasLaborales.length === 0">
+              <td colspan="7" class="text-center text-muted">
+                <p class="my-3">No hay referencias laborales registradas</p>
+              </td>
+            </tr>
+            <tr v-for="ref in referenciasLaborales" :key="ref._id">
+              <td><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
+              <td>{{ ref.nombre }}</td>
+              <td>{{ ref.cargo_parentesco }}</td>
+              <td>{{ ref.email }}</td>
+              <td>{{ ref.telefono }}</td>
+              <td>{{ ref.institution }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <BtnDelete @onpress="clickBtndelete"/>
-                  <BtnEdit @onpress="clickBtnedit"/>
+                  <BtnDelete @onpress="() => deleteReferencia(ref._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(ref)"/>
                 </div>
               </td>
             </tr>
@@ -68,16 +73,21 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-              <td>Ingeniero en Electrónica y Comunicaciones</td>
-              <td>Universidad Técnica de Ambato</td>
-              <td>Presencial</td>
-              <td>Tecnologías de la Información y Comunicación</td>
+            <tr v-if="referenciasFamiliares.length === 0">
+              <td colspan="6" class="text-center text-muted">
+                <p class="my-3">No hay referencias familiares registradas</p>
+              </td>
+            </tr>
+            <tr v-for="ref in referenciasFamiliares" :key="ref._id">
+              <td><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
+              <td>{{ ref.nombre }}</td>
+              <td>{{ ref.cargo_parentesco }}</td>
+              <td>{{ ref.email }}</td>
+              <td>{{ ref.telefono }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <BtnDelete @onpress="clickBtndelete"/>
-                  <BtnEdit @onpress="clickBtnedit"/>
+                  <BtnDelete @onpress="() => deleteReferencia(ref._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(ref)"/>
                 </div>
               </td>
             </tr>
@@ -103,15 +113,20 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-              <td>Ingeniero en Electrónica y Comunicaciones</td>
-              <td>Universidad Técnica de Ambato</td>
-              <td>Tecnologías de la Información y Comunicación</td>
+            <tr v-if="referenciasPersonales.length === 0">
+              <td colspan="5" class="text-center text-muted">
+                <p class="my-3">No hay referencias personales registradas</p>
+              </td>
+            </tr>
+            <tr v-for="ref in referenciasPersonales" :key="ref._id">
+              <td><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
+              <td>{{ ref.nombre }}</td>
+              <td>{{ ref.email }}</td>
+              <td>{{ ref.telefono }}</td>
               <td>
                 <div class="btn-group" role="group">
-                  <BtnDelete @onpress="clickBtndelete"/>
-                  <BtnEdit @onpress="clickBtnedit"/>
+                  <BtnDelete @onpress="() => deleteReferencia(ref._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(ref)"/>
                 </div>
               </td>
             </tr>
@@ -139,18 +154,106 @@
 </template>
 
 <script setup>
-import {ref} from "vue"
+import {ref, computed, onMounted} from "vue"
+import axios from 'axios';
 import AgregarReferencia from "./AgregarReferencia.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
 import BtnSera from "@/components/database/BtnSera.vue";
+
 const modal = ref(null);
+const dossier = ref(null);
+const loading = ref(true);
+const currentUser = ref(null);
+
+// Computed properties para agrupar referencias por tipo
+const referenciasLaborales = computed(() => {
+    if (!dossier.value || !dossier.value.referencias) return [];
+    return dossier.value.referencias.filter(r => r.tipo === 'laboral');
+});
+
+const referenciasFamiliares = computed(() => {
+    if (!dossier.value || !dossier.value.referencias) return [];
+    return dossier.value.referencias.filter(r => r.tipo === 'familiar');
+});
+
+const referenciasPersonales = computed(() => {
+    if (!dossier.value || !dossier.value.referencias) return [];
+    return dossier.value.referencias.filter(r => r.tipo === 'personal');
+});
+
+// Cargar dossier del usuario
+const loadDossier = async () => {
+    try {
+        loading.value = true;
+        
+        const userDataString = localStorage.getItem('user');
+        if (!userDataString) {
+            console.error('No hay usuario logueado');
+            return;
+        }
+        
+        currentUser.value = JSON.parse(userDataString);
+        
+        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}`;
+        const response = await axios.get(url);
+        
+        if (response.data.success) {
+            dossier.value = response.data.data;
+            console.log('📋 Referencias cargadas:', dossier.value.referencias);
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar referencias:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+// Función para obtener el tipo de estado SERA
+const getSeraType = (sera) => {
+    if (!sera || sera === 'Enviado') return 'pending';
+    if (sera === 'Revisado') return 'reviewed';
+    if (sera === 'Aprobado') return 'certified';
+    return 'denied';
+};
+
+// Función para eliminar referencia
+const deleteReferencia = async (referenciaId) => {
+    if (!confirm('¿Estás seguro de eliminar esta referencia?')) return;
+    
+    try {
+        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}/referencias/${referenciaId}`;
+        await axios.delete(url);
+        
+        await loadDossier();
+        alert('Referencia eliminada correctamente');
+    } catch (error) {
+        console.error('Error al eliminar referencia:', error);
+        alert('Error al eliminar la referencia');
+    }
+};
+
+const clickBtnedit = (ref) => {
+    console.log('Editar referencia:', ref);
+    // TODO: Implementar edición
+};
+
+const clickBtnsera = (ref) => {
+    console.log('Ver estado SERA:', ref);
+    // TODO: Implementar visualización de estado
+};
 
 const openModal = () => {
     const modalElement = document.getElementById('referenciaModal');
     const modal = new window.bootstrap.Modal(modalElement);
     modal.show();
 };
+
+// Cargar datos al montar el componente
+onMounted(() => {
+    loadDossier();
+});
 
 
 /*

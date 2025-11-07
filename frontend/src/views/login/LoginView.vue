@@ -1,209 +1,330 @@
 <template>
-  <LoginHeader></LoginHeader>
-
   <div class="login-container">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-          <div class="card shadow-lg border-0">
-            <div class="card-body p-5">
-              <!-- Header -->
-              <div class="text-center mb-4">
-                <h2 class="text-primary fw-bold">Iniciar Sesión</h2>
-                <h5 class="text-primary mb-4">DEASY PUCESE</h5>
-              </div>
+    <div class="content-wrapper">
+      <div class="text-center mb-5">
+        <div class="title-container">
+          <span class="title-puce">PUCE</span>
+          <span class="title-space">&nbsp;</span>
+          <span class="title-esmeraldas">ESMERALDAS</span>
+        </div>
+        <div class="subtitle">
+          Excelencia academica con sentido humano
+        </div>
+      </div>
 
-              <!-- Login Form -->
-              <form @submit.prevent="loginFunction">
-                <div class="mb-3">
-                  <label for="cedula" class="form-label">Usuario</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <font-awesome-icon icon="user" />
-                    </span>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      id="cedula"
-                      placeholder="Cédula o nombre de usuario" 
-                      v-model="cedula"
-                      required
-                    >
-                  </div>
-                </div>
+      <div class="card login-card">
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <h1 class="login-title">
+              INICIAR SESIÓN
+            </h1>
+            <p class="login-subtitle">
+              Sistema DEASY PUCESE
+            </p>
+          </div>
 
-                <div class="mb-4">
-                  <label for="password" class="form-label">Contraseña</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <font-awesome-icon icon="lock" />
-                    </span>
-                    <input 
-                      type="password" 
-                      class="form-control" 
-                      id="password"
-                      v-model="password"
-                      required
-                    >
-                  </div>
-                </div>
-
-                <div class="d-grid mb-3">
-                  <button type="submit" class="btn btn-primary btn-lg">
-                    Iniciar Sesión
-                  </button>
-                </div>
-              </form>
-
-              <!-- Divider -->
-              <div class="text-center mb-3">
-                <hr class="my-3">
-                <span class="text-muted">O</span>
-                <hr class="my-3">
-              </div>
-
-              <!-- Register Link -->
-              <div class="d-grid">
-                <router-link to="/register" class="btn btn-outline-primary btn-lg">
-                  <font-awesome-icon icon="user-plus" class="me-2" />
-                  Crear Usuario
-                </router-link>
-              </div>
-
-              <!-- Error Message -->
-              <div v-if="errorMessage" class="alert alert-danger mt-4" role="alert">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>Error:</strong> {{ errorMessage }}
-                  </div>
-                  <button type="button" class="btn-close" @click="clearToast"></button>
-                </div>
-              </div>
+          <form @submit.prevent="loginFunction">
+            <div class="mb-4">
+              <label class="form-label-custom" for="cedula">
+                Usuario
+              </label>
+              <input
+                id="cedula"
+                type="text"
+                class="form-control form-control-custom"
+                placeholder="Cédula o nombre de usuario"
+                v-model="cedula"
+                required
+              />
             </div>
+
+            <div class="mb-4">
+              <label class="form-label-custom" for="password">
+                Contraseña
+              </label>
+              <input
+                id="password"
+                type="password"
+                class="form-control form-control-custom"
+                placeholder="Ingresa tu contraseña"
+                v-model="password"
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary-custom w-100 mb-3">
+              Iniciar sesión
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-link forgot-password"
+              @click="handleForgotPassword"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+
+            <router-link to="/register" class="btn btn-outline-custom w-100">
+              Crear usuario
+            </router-link>
+          </form>
+
+          <div
+            v-if="errorMessage"
+            class="alert alert-danger mt-4 error-alert"
+            role="alert"
+          >
+            {{ errorMessage }}
+            <button type="button" class="btn-close" @click="clearToast"></button>
           </div>
         </div>
       </div>
     </div>
   </div>
-    
 </template>
-    
+
 <script setup>
-    import { ref } from 'vue';
-    import axios from 'axios';
-    import LoginHeader from './LoginHeader.vue';
-    
-    const cedula = ref("")
-    const password = ref("")
-    const email = ref("")
-    const errorMessage = ref("")
-    
-    
-    const loginFunction = async() => {
-        try {
-            const url = "http://localhost:3000/easym/v1/users/login"
-            const body = {
-                email: email.value,
-                cedula: cedula.value,
-                password: password.value
-            }
-            const res = await axios.post(url, body, { withCredentials: true })
-            console.log(res.data)
-            
-            // Guardar token en localStorage si existe
-            if (res.data.token) {
-                localStorage.setItem('token', res.data.token);
-            }
-            
-            // Redirigir usando Vue Router en lugar de window.location
-            window.location.href = "/";
-    
-        } catch (error) {
-            console.log(error.message)
-            errorMessage.value = error.response?.data?.message || "Error al iniciar sesión"
-        }
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+
+const cedula = ref('');
+const password = ref('');
+const email = ref('');
+const errorMessage = ref('');
+const router = useRouter();
+
+const loginFunction = async () => {
+  try {
+    const url = 'http://localhost:3000/easym/v1/users/login';
+    const body = {
+      email: email.value,
+      cedula: cedula.value,
+      password: password.value,
+    };
+    const res = await axios.post(url, body, { withCredentials: true });
+    console.log(res.data);
+
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
     }
-    
-    
-    const clearToast=()=>{
-      errorMessage.value=""
-    }    
-    </script>
-    
+
+    if (res.data.user) {
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      console.log('✅ Datos del usuario guardados:', res.data.user);
+    }
+
+    router.push('/dashboard');
+  } catch (error) {
+    console.log(error.message);
+    errorMessage.value = error.response?.data?.message || 'Error al iniciar sesión';
+  }
+};
+
+const clearToast = () => {
+  errorMessage.value = '';
+};
+
+const handleForgotPassword = () => {
+  console.info('Recuperación de contraseña pendiente de implementación');
+};
+</script>
+
 <style scoped>
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
+
 .login-container {
+  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+  width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: 'Montserrat', Helvetica, sans-serif;
+  padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) clamp(3.75rem, vw, 6rem);
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 760px;
+  margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+  padding: 0;
+}
+
+.title-container {
+  font-weight: 400;
+  color: white;
+  font-size: clamp(1.65rem, 4vw, 2.45rem);
+  margin-bottom: 0.5rem;
+  line-height: normal;
+}
+
+.title-puce {
+  font-weight: 700;
+}
+
+.title-space {
+  font-weight: 700;
+  font-size: clamp(2rem, 4.8vw, 3.2rem);
+}
+
+.title-esmeraldas {
+  font-weight: 500;
+  font-size: clamp(1.38rem, 3.6vw, 1.9rem);
+}
+
+.subtitle {
+  font-weight: 400;
+  color: white;
+  font-size: clamp(0.86rem, 2.1vw, 1.05rem);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background-color: #f7f9fc;
+  border-radius: 36px;
+  box-shadow: 0px 4px 17.8px rgba(0, 0, 0, 0.25);
+  border: 0;
+}
+
+.login-card .card-body {
+  padding: clamp(1.4rem, 3.6vw, 1.9rem);
+}
+
+.login-title {
+  font-weight: 700;
+  color: #033164;
+  font-size: clamp(1.42rem, 3.6vw, 1.7rem);
+  margin-bottom: 1rem;
+}
+
+.login-subtitle {
+  font-weight: 500;
+  color: #033164;
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  margin-bottom: 0;
+}
+
+.form-label-custom {
+  font-weight: 500;
+  color: #214a77;
+  font-size: clamp(0.9rem, 2.3vw, 1.05rem);
+  margin-bottom: 0.5rem;
+}
+
+.form-control-custom {
+  width: 100%;
+  height: clamp(2.45rem, 5.6vw, 3.4rem);
+  background-color: white;
+  border-radius: 17px;
+  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  border: 0;
+  font-size: clamp(0.86rem, 2vw, 1rem);
+  padding: 0 1rem;
+}
+
+.form-control-custom:focus {
+  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  border: 0;
+  outline: none;
+}
+
+.btn-primary-custom {
+  width: 100%;
+  height: clamp(2.45rem, 5.6vw, 3.4rem);
+  border-radius: 17px;
+  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+  border: none;
+  font-weight: 700;
+  color: white;
+  font-size: clamp(0.95rem, 2.2vw, 1.2rem);
+}
+
+.btn-primary-custom:hover {
+  opacity: 0.9;
+  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+}
+
+.forgot-password {
+  font-weight: 500;
+  color: #033164;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+  color: #033164;
+}
+
+.btn-outline-custom {
+  width: 100%;
+  height: clamp(2.45rem, 5.6vw, 3.4rem);
+  border-radius: 17px;
+  border: 1px solid #033164;
+  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  background-color: transparent;
+  font-weight: 700;
+  color: #033164;
+  font-size: clamp(0.95rem, 2.2vw, 1.2rem);
   display: flex;
   align-items: center;
-  padding: 2rem 0;
+  justify-content: center;
+  text-decoration: none;
 }
 
-.card {
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
+.btn-outline-custom:hover {
+  background-color: rgba(3, 49, 100, 0.05);
+  color: #033164;
+  border-color: #033164;
 }
 
-.btn-primary {
-  background: linear-gradient(45deg, #000a32, #006edc);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+.error-alert {
+  position: relative;
+  border-radius: 17px;
+  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  font-size: clamp(0.8rem, 1.9vw, 0.95rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 10, 50, 0.3);
+.error-alert .btn-close {
+  filter: invert(1);
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
-.btn-outline-primary {
-  border-color: #000a32;
-  color: #000a32;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
+@media (max-width: 768px) {
+  .title-container {
+    font-size: clamp(2rem, 8vw, 2.25rem);
+  }
 
-.btn-outline-primary:hover {
-  background-color: #000a32;
-  border-color: #000a32;
-  transform: translateY(-2px);
-}
+  .title-space {
+    font-size: clamp(2.5rem, 10vw, 3.125rem);
+  }
 
-.form-control {
-  border-radius: 8px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
-}
+  .title-esmeraldas {
+    font-size: clamp(1.5rem, 7vw, 1.75rem);
+  }
 
-.form-control:focus {
-  border-color: #000a32;
-  box-shadow: 0 0 0 0.2rem rgba(0, 10, 50, 0.25);
-}
+  .subtitle {
+    font-size: clamp(1rem, 5vw, 1.125rem);
+  }
 
-.input-group-text {
-  background-color: #f8f9fa;
-  border: 2px solid #e9ecef;
-  border-right: none;
-  color: #000a32;
-}
-
-.input-group .form-control {
-  border-left: none;
-}
-
-.alert {
-  border-radius: 8px;
-  border: none;
-}
-
-.text-primary {
-  color: #000a32 !important;
-}
-
-.fw-bold {
-  font-weight: 700 !important;
+  .login-card .card-body {
+    padding: clamp(1.5rem, 6vw, 2rem);
+  }
 }
 </style>

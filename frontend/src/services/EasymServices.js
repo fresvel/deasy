@@ -129,17 +129,18 @@ class EasymServices {
 
     async getTareasPendientes(user){
         try {
-            console.log(user)
-            const url="http://localhost:3000/easym/v1/tarea/pendiente?usuario=1234567891"
+            console.log('📋 Obteniendo tareas para usuario:', user)
+            const url=`http://localhost:3000/easym/v1/tarea/pendiente?usuario=${user}`
             const res=await axios.get(url)
             this.tareas.value=res.data
-            console.log("Petición de tareas")
-            console.log(res.data)
+            console.log("✅ Tareas obtenidas:", res.data)
             return res.data
         } catch (error) {
-            console.log("Petición de tareas")
+            console.log("❌ Error al obtener tareas")
             console.log(error.message)
-            console.log(error.response.data.message)            
+            if(error.response) {
+                console.log(error.response.data.message)
+            }
         }
     }
 

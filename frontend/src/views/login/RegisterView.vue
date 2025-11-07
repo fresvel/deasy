@@ -1,342 +1,255 @@
 <template>
-  <LoginHeader></LoginHeader>
+  <div class="register-page">
+    <div class="hero">
+      <div class="hero-title">
+        <span class="hero-puce">PUCE</span>
+        <span class="hero-space">&nbsp;</span>
+        <span class="hero-esmeraldas">ESMERALDAS</span>
+      </div>
+      <p class="hero-subtitle">Excelencia academica con sentido humano</p>
+    </div>
 
-  <div class="register-container">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-9">
-          <div class="card shadow-lg border-0">
-            <div class="card-body p-5">
-              <!-- Header -->
-              <div class="text-center mb-4">
-                <h2 class="text-primary fw-bold">Crear Usuario</h2>
-                <h5 class="text-primary mb-4">DEASY PUCESE</h5>
+    <div class="register-card">
+      <div class="register-card__header text-center">
+        <h1 class="register-title">Crear Usuario</h1>
+        <p class="register-subtitle">Sistema DEASY PUCESE</p>
+      </div>
+
+      <form @submit.prevent="createnewUser" class="register-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="nombre">Nombres</label>
+            <input
+              id="nombre"
+              type="text"
+              class="register-input"
+              placeholder="Nombres completos"
+              v-model="newuser.nombre"
+              required
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="cedula">Cédula o Pasaporte</label>
+            <input
+              id="cedula"
+              type="text"
+              class="register-input"
+              placeholder="Ingrese su número de identificación"
+              v-model="newuser.cedula"
+              required
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="apellido">Apellidos</label>
+            <input
+              id="apellido"
+              type="text"
+              class="register-input"
+              placeholder="Apellidos completos"
+              v-model="newuser.apellido"
+              required
+            />
+          </div>
+
+          <div class="form-field password-field">
+            <label for="password">Contraseña</label>
+            <div class="input-wrapper">
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                class="register-input"
+                id="password"
+                placeholder="Ingresa la contraseña"
+                v-model="newuser.password"
+                @input="validatePassword(newuser.password)"
+                required
+              />
+              <button
+                class="toggle-visibility"
+                type="button"
+                @click="showPassword = !showPassword"
+                :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <font-awesome-icon :icon="showPassword ? 'eye-slash' : 'eye'" />
+              </button>
+            </div>
+
+            <div v-if="newuser.password" class="password-feedback">
+              <div class="password-strength-indicator">
+                <div class="strength-bar">
+                  <div
+                    class="strength-fill"
+                    :class="`bg-${passwordStrengthColor}`"
+                    :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
+                  ></div>
+                </div>
+                <div class="strength-text">
+                  <small :class="`text-${passwordStrengthColor}`">
+                    <strong>{{ passwordStrengthText }}</strong>
+                  </small>
+                </div>
               </div>
 
-              <!-- Register Form -->
-              <form @submit.prevent="createnewUser">
-                <div class="row">
-                  <!-- Nombres -->
-                  <div class="col-md-6 mb-3">
-                    <label for="nombre" class="form-label">Nombres</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="user" />
-                      </span>
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        id="nombre"
-                        placeholder="Nombres completos" 
-                        v-model="newuser.nombre"
-                        required
-                      >
-                    </div>
-                  </div>
-
-                  <!-- Apellidos -->
-                  <div class="col-md-6 mb-3">
-                    <label for="apellido" class="form-label">Apellidos</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="user" />
-                      </span>
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        id="apellido"
-                        placeholder="Apellidos completos" 
-                        v-model="newuser.apellido"
-                        required
-                      >
-                    </div>
-                  </div>
-
-                  <!-- Contraseña -->
-                  <div class="col-md-6 mb-3">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="lock" />
-                      </span>
-                      <input
-                        :type="showPassword ? 'text' : 'password'"
-                        class="form-control"
-                        id="password"
-                        placeholder="Ingrese la contraseña"
-                        v-model="newuser.password"
-                        @input="validatePassword(newuser.password)"
-                        required
-                      >
-                      <button 
-                        class="btn btn-outline-secondary" 
-                        type="button" 
-                        @click="showPassword = !showPassword"
-                        :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                      >
-                        <font-awesome-icon :icon="showPassword ? 'eye-slash' : 'eye'" />
-                      </button>
-                    </div>
-                    
-                    <!-- Indicador de fortaleza de contraseña -->
-                    <div v-if="newuser.password" class="mt-2">
-                      <div class="password-strength-indicator">
-                        <div class="strength-bar">
-                          <div 
-                            class="strength-fill" 
-                            :class="`bg-${passwordStrengthColor}`"
-                            :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
-                          ></div>
-                        </div>
-                        <div class="strength-text">
-                          <small :class="`text-${passwordStrengthColor}`">
-                            <strong>{{ passwordStrengthText }}</strong>
-                          </small>
-                        </div>
-                      </div>
-                      
-                      <!-- Criterios de validación -->
-                      <div class="password-criteria mt-2">
-                        <small class="text-muted">Requisitos:</small>
-                        <ul class="list-unstyled mb-0 mt-1">
-                          <li class="criteria-item" :class="{ 'text-success': passwordStrength.length }">
-                            <font-awesome-icon 
-                              :icon="passwordStrength.length ? 'check-circle' : 'circle'" 
-                              class="me-1"
-                            />
-                            Mínimo 8 caracteres
-                          </li>
-                          <li class="criteria-item" :class="{ 'text-success': passwordStrength.lowercase }">
-                            <font-awesome-icon 
-                              :icon="passwordStrength.lowercase ? 'check-circle' : 'circle'" 
-                              class="me-1"
-                            />
-                            Una letra minúscula
-                          </li>
-                          <li class="criteria-item" :class="{ 'text-success': passwordStrength.uppercase }">
-                            <font-awesome-icon 
-                              :icon="passwordStrength.uppercase ? 'check-circle' : 'circle'" 
-                              class="me-1"
-                            />
-                            Una letra mayúscula
-                          </li>
-                          <li class="criteria-item" :class="{ 'text-success': passwordStrength.number }">
-                            <font-awesome-icon 
-                              :icon="passwordStrength.number ? 'check-circle' : 'circle'" 
-                              class="me-1"
-                            />
-                            Un número
-                          </li>
-                          <li class="criteria-item" :class="{ 'text-info': passwordStrength.special }">
-                            <font-awesome-icon 
-                              :icon="passwordStrength.special ? 'check-circle' : 'circle'" 
-                              class="me-1"
-                            />
-                            Un carácter especial (opcional)
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Confirmar Contraseña -->
-                  <div class="col-md-6 mb-3">
-                    <label for="repassword" class="form-label">Confirmar Contraseña</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="lock" />
-                      </span>
-                      <input
-                        :type="showConfirmPassword ? 'text' : 'password'"
-                        class="form-control"
-                        id="repassword"
-                        placeholder="Confirmar la contraseña"
-                        v-model="newuser.repassword"
-                        @input="validatePasswordMatch()"
-                        required
-                      >
-                      <button 
-                        class="btn btn-outline-secondary" 
-                        type="button" 
-                        @click="showConfirmPassword = !showConfirmPassword"
-                        :title="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-                      >
-                        <font-awesome-icon :icon="showConfirmPassword ? 'eye-slash' : 'eye'" />
-                      </button>
-                    </div>
-                    
-                    <!-- Indicador de coincidencia de contraseñas -->
-                    <div v-if="newuser.repassword" class="mt-2">
-                      <div class="password-match-indicator">
-                        <div class="d-flex align-items-center">
-                          <font-awesome-icon 
-                            :icon="passwordsMatch ? 'check-circle' : 'times-circle'" 
-                            :class="passwordsMatch ? 'text-success' : 'text-danger'"
-                            class="me-2"
-                          />
-                          <small :class="passwordsMatch ? 'text-success' : 'text-danger'">
-                            <strong>{{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}</strong>
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Cédula -->
-                  <div class="col-md-6 mb-3">
-                    <label for="cedula" class="form-label">Cédula o Pasaporte</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="id-card" />
-                      </span>
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        id="cedula"
-                        placeholder="Ingrese su número de Identificación" 
-                        v-model="newuser.cedula"
-                        required
-                      >
-                    </div>
-                  </div>
-
-                  <!-- Email -->
-                  <div class="col-md-6 mb-3">
-                    <label for="email" class="form-label">Correo</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="envelope" />
-                      </span>
-                      <input 
-                        type="email" 
-                        class="form-control" 
-                        id="email"
-                        placeholder="correo_personal@ejemplo.com" 
-                        v-model="newuser.email"
-                        required
-                      >
-                    </div>
-                  </div>
-
-                  <!-- País de Nacimiento -->
-                  <div class="col-md-6 mb-3">
-                    <label for="pais" class="form-label">País de Nacimiento</label>
-                    <div class="input-group">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="globe" />
-                      </span>
-                      <select 
-                        class="form-select" 
-                        id="pais" 
-                        v-model="newuser.pais" 
-                        @change="updatePhonePrefix"
-                        required
-                      >
-                        <option value="">Ecuador</option>
-                        <option v-for="country in countriesData" :key="country.es_name" :value="country.es_name">
-                          {{ country.es_name }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- WhatsApp con prefijo automático -->
-                  <div class="col-md-6 mb-3">
-                    <label for="whatsapp" class="form-label">WhatsApp</label>
-                    <div class="input-group">
-                      <span class="input-group-text phone-prefix">
-                        {{ phonePrefix }}
-                      </span>
-                      <input 
-                        type="tel" 
-                        class="form-control" 
-                        id="whatsapp"
-                        placeholder="987654321" 
-                        v-model="phoneNumber"
-                        @input="updateWhatsappField"
-                      >
-                    </div>
-                    <small class="text-muted">Número completo: {{ newuser.whatsapp }}</small>
-                  </div>
-
-                  <!-- Dirección con Mapa -->
-                  <div class="col-12 mb-3">
-                    <label for="direccion" class="form-label">Dirección</label>
-                    <div class="input-group mb-2">
-                      <span class="input-group-text">
-                        <font-awesome-icon icon="map-marker-alt" />
-                      </span>
-                      <input 
-                        type="text" 
-                        class="form-control" 
-                        id="direccion"
-                        placeholder="Haga clic en el mapa para seleccionar su ubicación" 
-                        v-model="newuser.direccion"
-                        readonly
-                      >
-                      <button 
-                        type="button" 
-                        class="btn btn-outline-primary" 
-                        @click="toggleMap"
-                      >
-                        <font-awesome-icon :icon="showMap ? 'times' : 'map-marked-alt'" />
-                        {{ showMap ? 'Cerrar' : 'Abrir Mapa' }}
-                      </button>
-                    </div>
-                    
-                    <!-- Mini Mapa -->
-                    <div v-if="showMap" class="map-container mb-3">
-                      <div id="map" ref="mapElement" class="leaflet-map"></div>
-                      <small class="text-muted d-block mt-2">
-                        <font-awesome-icon icon="info-circle" class="me-1" />
-                        Haga clic en el mapa para seleccionar su ubicación exacta
-                      </small>
-                    </div>
-                  </div>
-
-                  <!-- Términos y Condiciones -->
-                  <div class="col-12 mb-4">
-                    <div class="form-check">
-                      <input 
-                        class="form-check-input" 
-                        type="checkbox" 
-                        id="terms"
-                        v-model="termsAccepted"
-                        required
-                      >
-                      <label class="form-check-label" for="terms">
-                        Aceptar los <a href="#" class="text-primary">términos y condiciones</a>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Botones -->
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                      <font-awesome-icon icon="user-plus" class="me-2" />
-                      Registrarse
-                    </button>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <router-link to="/" class="btn btn-outline-primary btn-lg w-100">
-                      <font-awesome-icon icon="sign-in-alt" class="me-2" />
-                      Iniciar Sesión
-                    </router-link>
-                  </div>
-                </div>
-
-                <!-- Error Message -->
-                <div v-if="errorMessage" class="alert alert-danger mt-3" role="alert">
-                  <font-awesome-icon icon="exclamation-triangle" class="me-2" />
-                  {{ errorMessage }}
-                </div>
-              </form>
+              <div class="password-criteria">
+                <small class="criteria-label">Requisitos:</small>
+                <ul class="criteria-list">
+                  <li :class="{ 'text-success': passwordStrength.length }">
+                    <font-awesome-icon :icon="passwordStrength.length ? 'check-circle' : 'circle'" />
+                    Mínimo 8 caracteres
+                  </li>
+                  <li :class="{ 'text-success': passwordStrength.lowercase }">
+                    <font-awesome-icon :icon="passwordStrength.lowercase ? 'check-circle' : 'circle'" />
+                    Una letra minúscula
+                  </li>
+                  <li :class="{ 'text-success': passwordStrength.uppercase }">
+                    <font-awesome-icon :icon="passwordStrength.uppercase ? 'check-circle' : 'circle'" />
+                    Una letra mayúscula
+                  </li>
+                  <li :class="{ 'text-success': passwordStrength.number }">
+                    <font-awesome-icon :icon="passwordStrength.number ? 'check-circle' : 'circle'" />
+                    Un número
+                  </li>
+                  <li :class="{ 'text-info': passwordStrength.special }">
+                    <font-awesome-icon :icon="passwordStrength.special ? 'check-circle' : 'circle'" />
+                    Un carácter especial (opcional)
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
+
+          <div class="form-field">
+            <label for="pais">País de Nacimiento</label>
+            <select
+              id="pais"
+              class="register-input"
+              v-model="newuser.pais"
+              @change="updatePhonePrefix"
+              required
+            >
+              <option value="">Ecuador</option>
+              <option v-for="country in countriesData" :key="country.es_name" :value="country.es_name">
+                {{ country.es_name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="whatsapp">WhatsApp</label>
+            <div class="input-wrapper phone">
+              <span class="phone-prefix">{{ phonePrefix }}</span>
+              <input
+                id="whatsapp"
+                type="tel"
+                class="register-input"
+                placeholder="987654321"
+                v-model="phoneNumber"
+                @input="updateWhatsappField"
+              />
+            </div>
+            <small class="helper-text">Número completo: {{ newuser.whatsapp }}</small>
+          </div>
+
+          <div class="form-field password-field">
+            <label for="repassword">Confirmar Contraseña</label>
+            <div class="input-wrapper">
+              <input
+                :type="showConfirmPassword ? 'text' : 'password'"
+                class="register-input"
+                id="repassword"
+                placeholder="Confirma la contraseña"
+                v-model="newuser.repassword"
+                @input="validatePasswordMatch()"
+                required
+              />
+              <button
+                class="toggle-visibility"
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                :title="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <font-awesome-icon :icon="showConfirmPassword ? 'eye-slash' : 'eye'" />
+              </button>
+            </div>
+
+            <div v-if="newuser.repassword" class="password-match">
+              <font-awesome-icon
+                :icon="passwordsMatch ? 'check-circle' : 'times-circle'"
+                :class="passwordsMatch ? 'text-success' : 'text-danger'"
+              />
+              <small :class="passwordsMatch ? 'text-success' : 'text-danger'">
+                <strong>{{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}</strong>
+              </small>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="email">Correo</label>
+            <input
+              id="email"
+              type="email"
+              class="register-input"
+              placeholder="correo_personal@ejemplo.com"
+              v-model="newuser.email"
+              required
+            />
+          </div>
+
+          <div class="form-field span-3">
+            <label for="direccion">Dirección</label>
+            <div class="input-wrapper">
+              <input
+                id="direccion"
+                type="text"
+                class="register-input"
+                placeholder="Haz clic en el mapa para seleccionar tu ubicación"
+                v-model="newuser.direccion"
+                readonly
+              />
+              <button type="button" class="map-toggle" @click="toggleMap">
+                <font-awesome-icon :icon="showMap ? 'times' : 'map-marked-alt'" />
+                {{ showMap ? 'Cerrar mapa' : 'Abrir mapa' }}
+              </button>
+            </div>
+
+            <div v-if="showMap" class="map-container">
+              <div id="map" ref="mapElement" class="leaflet-map"></div>
+              <small class="helper-text">
+                <font-awesome-icon icon="info-circle" />
+                Haz clic en el mapa para seleccionar tu ubicación exacta
+              </small>
+            </div>
+          </div>
+
+          <div class="form-field span-3 terms-field">
+            <label class="terms-checkbox">
+              <input
+                type="checkbox"
+                v-model="termsAccepted"
+                required
+              />
+              <span>Aceptar los <a href="#">términos y condiciones</a></span>
+            </label>
+          </div>
         </div>
-      </div>
+
+        <div class="form-actions">
+          <button type="submit" class="primary-action">
+            <font-awesome-icon icon="user-plus" />
+            Registrar
+          </button>
+          <router-link to="/" class="secondary-action">
+            <font-awesome-icon icon="sign-in-alt" />
+            Iniciar sesión
+          </router-link>
+        </div>
+
+        <div v-if="errorMessage" class="error-banner" role="alert">
+          <font-awesome-icon icon="exclamation-triangle" />
+          <span>{{ errorMessage }}</span>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -368,7 +281,6 @@
 </template>
     
 <script setup>   
-import LoginHeader from './LoginHeader.vue';
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
 import axios from 'axios';
 import { ref, nextTick, onMounted, onUnmounted } from 'vue';
@@ -662,131 +574,375 @@ onMounted(() => {
 </script>
     
 <style scoped>
-.register-container {
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
+
+.register-page {
+  position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: clamp(2rem, 6vw, 4rem) clamp(1rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 2rem 0;
+  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+  font-family: 'Montserrat', Helvetica, sans-serif;
 }
 
-.card {
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
+.hero {
+  text-align: center;
+  color: #ffffff;
+  margin-bottom: clamp(1.5rem, 5vw, 3rem);
 }
 
-.btn-primary {
-  background: linear-gradient(45deg, #000a32, #006edc);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+.hero-title {
+  font-size: clamp(1.65rem, 4.2vw, 2.45rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 10, 50, 0.3);
+.hero-puce {
+  font-weight: 700;
 }
 
-.btn-outline-primary {
-  border-color: #000a32;
-  color: #000a32;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+.hero-space {
+  font-weight: 700;
+  font-size: clamp(2rem, 4.8vw, 3.2rem);
 }
 
-.btn-outline-primary:hover {
-  background-color: #000a32;
-  border-color: #000a32;
-  transform: translateY(-2px);
+.hero-esmeraldas {
+  font-weight: 500;
 }
 
-.form-control, .form-select {
-  border-radius: 8px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
+.hero-subtitle {
+  font-size: clamp(0.86rem, 2.1vw, 1.05rem);
+  margin-top: 0.75rem;
 }
 
-.form-control:focus, .form-select:focus {
-  border-color: #000a32;
-  box-shadow: 0 0 0 0.2rem rgba(0, 10, 50, 0.25);
-}
-
-.input-group-text {
-  background-color: #f8f9fa;
-  border: 2px solid #e9ecef;
-  border-right: none;
-  color: #000a32;
-}
-
-.input-group .form-control, .input-group .form-select {
-  border-left: none;
-}
-
-.phone-prefix {
-  min-width: 70px;
-  justify-content: center;
-  font-weight: 600;
-  background-color: #000a32;
-  color: white;
-  border: 2px solid #000a32;
-}
-
-.form-check-input:checked {
-  background-color: #000a32;
-  border-color: #000a32;
-}
-
-.form-check-input:focus {
-  border-color: #000a32;
-  box-shadow: 0 0 0 0.2rem rgba(0, 10, 50, 0.25);
-}
-
-.alert {
-  border-radius: 8px;
-  border: none;
-}
-
-.text-primary {
-  color: #000a32 !important;
-}
-
-.fw-bold {
-  font-weight: 700 !important;
-}
-
-.text-primary a {
-  color: #006edc !important;
-  text-decoration: none;
-}
-
-.text-primary a:hover {
-  color: #000a32 !important;
-  text-decoration: underline;
-}
-
-/* Estilos para el mapa */
-.map-container {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 15px;
-  background-color: #f8f9fa;
-}
-
-.leaflet-map {
-  height: 400px;
-  width: 100%;
-  border-radius: 8px;
+.register-card {
+  width: min(960px, 100%);
+  background: rgba(247, 249, 252, 0.96);
+  border-radius: 34px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+  padding: clamp(1.8rem, 4.5vw, 2.6rem);
+  position: relative;
   z-index: 1;
 }
 
-/* Estilos para el modal de éxito */
-.modal-content {
-  border-radius: 15px;
+.register-card__header {
+  margin-bottom: clamp(1.25rem, 3.5vw, 2rem);
+}
+
+.register-title {
+  font-size: clamp(1.42rem, 3.6vw, 1.9rem);
+  font-weight: 700;
+  color: #033164;
+  margin-bottom: 0.5rem;
+}
+
+.register-subtitle {
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  color: #033164;
+  margin-bottom: 0;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.3rem, 3.5vw, 2.1rem);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: clamp(0.85rem, 2.4vw, 1.4rem);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  color: #033164;
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.register-input,
+.register-input:focus,
+.register-input:active,
+.register-input:focus-visible {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid rgba(3, 49, 100, 0.18);
+  background-color: #ffffff;
+  padding: 0 1.25rem;
+  font-size: 1rem;
+  color: #033164;
+  transition: all 0.25s ease;
+  box-shadow: 0 3px 10px rgba(3, 49, 100, 0.08);
+}
+
+.register-input:focus {
+  outline: none;
+  border-color: rgba(34, 130, 190, 0.7);
+  box-shadow: 0 0 0 3px rgba(34, 130, 190, 0.18);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-wrapper.phone {
+  gap: 0.75rem;
+}
+
+.phone-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.2rem;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(0, 50, 103, 0.25);
+}
+
+.input-wrapper.phone .register-input {
+  flex: 1;
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 0.9rem;
+  background: transparent;
   border: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  color: #033164;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.toggle-visibility:hover {
+  color: #2282be;
+}
+
+.password-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.password-strength-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.strength-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background-color: rgba(3, 49, 100, 0.1);
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+
+.strength-text {
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.password-criteria {
+  background: #ecf3fb;
+  border-radius: 16px;
+  padding: 0.85rem 1.15rem;
+  border: 1px solid rgba(3, 49, 100, 0.1);
+}
+
+.criteria-label {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(3, 49, 100, 0.7);
+  margin-bottom: 0.35rem;
+}
+
+.criteria-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.criteria-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(3, 49, 100, 0.85);
+}
+
+.criteria-list li .fa-circle {
+  opacity: 0.35;
+}
+
+.password-match {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.helper-text {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: rgba(3, 49, 100, 0.7);
+}
+
+.form-field.span-3 {
+  grid-column: 1 / -1;
+}
+
+.map-toggle {
+  margin-left: 0.75rem;
+  border: 1px solid #2282be;
+  border-radius: 16px;
+  background: transparent;
+  color: #2282be;
+  font-weight: 600;
+  padding: 0.75rem 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.map-toggle:hover {
+  background: rgba(34, 130, 190, 0.12);
+}
+
+.map-container {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 1rem;
+  border: 1px solid rgba(3, 49, 100, 0.12);
+  box-shadow: inset 0 1px 6px rgba(3, 49, 100, 0.08);
+}
+
+.leaflet-map {
+  height: 280px;
+  width: 100%;
+  border-radius: 14px;
+  z-index: 1;
+}
+
+.terms-field {
+  padding-top: 0.5rem;
+}
+
+.terms-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: #033164;
+}
+
+.terms-checkbox input {
+  width: 20px;
+  height: 20px;
+  accent-color: #033164;
+}
+
+.terms-checkbox a {
+  color: #2282be;
+  font-weight: 600;
+}
+
+.terms-checkbox a:hover {
+  text-decoration: underline;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.primary-action,
+.secondary-action {
+  flex: 1 1 220px;
+  min-height: 52px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.primary-action {
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  box-shadow: 0 14px 32px rgba(0, 50, 103, 0.28);
+}
+
+.primary-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(0, 50, 103, 0.34);
+}
+
+.secondary-action {
+  border: 1px solid #033164;
+  color: #033164;
+  background: #ffffff;
+}
+
+.secondary-action:hover {
+  background: rgba(3, 49, 100, 0.1);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(220, 53, 69, 0.14);
+  color: #b02a37;
+  font-weight: 600;
+}
+
+.modal-content {
+  border-radius: 18px;
+  border: none;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
 }
 
 .success-icon {
@@ -804,7 +960,7 @@ onMounted(() => {
 
 @keyframes successPulse {
   0% {
-    transform: scale(0.8);
+    transform: scale(0.85);
     opacity: 0;
   }
   50% {
@@ -831,93 +987,71 @@ onMounted(() => {
   color: #28a745 !important;
 }
 
-/* Estilos para el indicador de fortaleza de contraseña */
-.password-strength-indicator {
-  margin-top: 0.5rem;
+.text-danger {
+  color: #dc3545 !important;
 }
 
-.strength-bar {
-  height: 4px;
-  background-color: #e9ecef;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.strength-fill {
-  height: 100%;
-  transition: all 0.3s ease;
-  border-radius: 2px;
-}
-
-.strength-text {
-  text-align: center;
-}
-
-.password-criteria {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 0.75rem;
-  border: 1px solid #e9ecef;
-}
-
-.criteria-item {
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-  transition: color 0.3s ease;
-}
-
-.criteria-item:last-child {
-  margin-bottom: 0;
-}
-
-.criteria-item.text-success {
-  color: #28a745 !important;
-}
-
-.criteria-item.text-info {
+.text-info {
   color: #17a2b8 !important;
 }
 
-/* Animaciones para los íconos */
-.criteria-item .fa-circle {
-  opacity: 0.3;
+@media (max-width: 992px) {
+  .register-card {
+    border-radius: 28px;
+  }
 }
 
-.criteria-item .fa-check-circle {
-  opacity: 1;
+@media (max-width: 768px) {
+  .register-card {
+    padding: clamp(1.6rem, 5vw, 2.2rem);
+    border-radius: 26px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-toggle {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 0.75rem;
+  }
+
+  .input-wrapper.phone {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .phone-prefix {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
-/* Estilos para los botones de visibilidad de contraseña */
-.btn-outline-secondary {
-  border-color: #6c757d;
-  color: #6c757d;
-  transition: all 0.3s ease;
-}
+@media (max-width: 540px) {
+  .hero-title {
+    font-size: clamp(1.5rem, 7vw, 2.1rem);
+  }
 
-.btn-outline-secondary:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: white;
-}
+  .hero-space {
+    font-size: clamp(1.9rem, 9vw, 2.7rem);
+  }
 
-.btn-outline-secondary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
-}
+  .register-card {
+    border-radius: 22px;
+  }
 
-/* Estilos para el indicador de coincidencia de contraseñas */
-.password-match-indicator {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e9ecef;
-}
+  .register-input,
+  .phone-prefix,
+  .primary-action,
+  .secondary-action {
+    min-height: 50px;
+  }
 
-.password-match-indicator .text-success {
-  color: #28a745 !important;
-}
-
-.password-match-indicator .text-danger {
-  color: #dc3545 !important;
+  .map-toggle {
+    font-size: 0.9rem;
+  }
 }
 </style>
