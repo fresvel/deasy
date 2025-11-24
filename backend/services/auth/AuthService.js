@@ -27,14 +27,17 @@ export default class AuthService {
       throw new AuthenticationError("Nombre de usuario o contraseña incorrectos");
     }
 
-    const isPasswordValid = await this.passwordService.verifyPassword(password, user.password);
+    const storedHash = user.password_hash ?? user.password;
+    const isPasswordValid = await this.passwordService.verifyPassword(password, storedHash);
 
     if (!isPasswordValid) {
       throw new AuthenticationError("Nombre de usuario o contraseña incorrectos");
     }
 
-    this.tokenService.attachRefreshToken(user._id, res);
-    const { token, expiresIn } = this.tokenService.createAccessToken(user._id);
+    const userId = (user.id ?? user._id)?.toString();
+
+    this.tokenService.attachRefreshToken(userId, res);
+    const { token, expiresIn } = this.tokenService.createAccessToken(userId);
 
     return {
       token,
