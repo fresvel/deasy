@@ -25,15 +25,15 @@
 
           <form @submit.prevent="loginFunction">
             <div class="mb-4">
-              <label class="form-label-custom" for="cedula">
+              <label class="form-label-custom" for="identifier">
                 Usuario
               </label>
               <input
-                id="cedula"
+                id="identifier"
                 type="text"
                 class="form-control form-control-custom"
-                placeholder="Cédula o nombre de usuario"
-                v-model="cedula"
+                placeholder="Cédula o correo electrónico"
+                v-model="identifier"
                 required
               />
             </div>
@@ -88,9 +88,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
-const cedula = ref('');
+const identifier = ref('');
 const password = ref('');
-const email = ref('');
 const errorMessage = ref('');
 const router = useRouter();
 
@@ -98,10 +97,22 @@ const loginFunction = async () => {
   try {
     const url = 'http://localhost:3000/easym/v1/users/login';
     const body = {
-      email: email.value,
-      cedula: cedula.value,
       password: password.value,
     };
+
+    const trimmedIdentifier = identifier.value.trim();
+
+    if (trimmedIdentifier.includes('@')) {
+      body.email = trimmedIdentifier;
+    } else {
+      body.cedula = trimmedIdentifier;
+    }
+
+    if (!body.email && !body.cedula) {
+      errorMessage.value = 'Ingresa tu cédula o correo electrónico';
+      return;
+    }
+
     const res = await axios.post(url, body, { withCredentials: true });
     console.log(res.data);
 

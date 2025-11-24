@@ -1,44 +1,38 @@
-import { Usuario } from "../../models/users/usuario_model.js";
-import bcrypt from "bcrypt";
-import { generateToken, generateRefreshToken } from "../../utils/login/generate_token.js";
+import AuthService from "../../services/auth/AuthService.js";
+import AuthenticationError from "../../errors/AuthenticationError.js";
 
-export const loginUser = async (req, res) =>{
+const authService = new AuthService();
 
-console.log("loginUser");
-console.log(req.cookies);
-console.log(req.body);
+export const loginUser = async (req, res) => {
+  try {
+    const credentials = {
+      cedula: req.body?.cedula,
+      email: req.body?.email,
+      password: req.body?.password
+    };
 
-console.log("loginUser");
-
-    let user = await Usuario.findOne({ cedula: req.body.cedula });
-    
-    if (!user) {
-        user = await Usuario.findOne({ email: req.body.email});
+    if (!credentials.password || (!credentials.cedula && !credentials.email)) {
+      return res.status(400).send({
+        message: "Debe proporcionar la contraseña y la cédula o el email",
+        code: 400
+      });
     }
 
-    if (!user) return res.status(401).send({ message: 'Nombre de usuario o contraseña incorrectos 01', code:401 });
-    console.log(user.password);
+    const { token, expiresIn, user } = await authService.login(credentials, res);
 
-    const pass_correcto = await bcrypt.compare(req.body.password, user.password);
-    
-    if (!pass_correcto) return res.status(401).send({ message: 'Nombre de usuario o contraseña incorrectos 02', code:401 });
-    console.log(user);
-    generateRefreshToken(user._id, res)
-    const { token, expiresIn}=generateToken(user._id)
-    
-    // Devolver token y datos del usuario (sin contraseña)
     res.json({
-        token, 
-        expiresIn,
-        user: {
-            _id: user._id,
-            cedula: user.cedula,
-            nombre: user.nombre,
-            apellido: user.apellido,
-            email: user.email,
-            whatsapp: user.whatsapp,
-            direccion: user.direccion,
-            pais: user.pais
-        }
+      token,
+      expiresIn,
+      user
     });
-}
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return res.status(401).send({ message: error.message, code: 401 });
+    }
+
+    console.error("Error en loginUser:", error);
+    res.status(500).send({
+      message: "Error interno al iniciar sesión"
+    });
+  }
+};

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory} from "vue-router";
 import Login from "../views/login/LoginView.vue";
 import Register from "../views/login/RegisterView.vue";
+import DashboardHome from "../views/logged/DashboardHome.vue";
 import IndexPage from "../views/logged/LoggedView.vue";
 
 import FirmarPdf from "@/views/logged/funciones/FirmarView.vue";
@@ -14,6 +15,11 @@ const routes = [
   {
     path: "/dashboard",
     name: "dashboard",
+    component: DashboardHome
+  },
+  {
+    path: "/perfil",
+    name: "perfil",
     component: IndexPage
   },
   {
