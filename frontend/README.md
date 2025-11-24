@@ -1,4 +1,4 @@
-# Puesta en marcha rápida
+# Documentacion Frontend
 
 1. **Instala dependencias**
    ```bash
