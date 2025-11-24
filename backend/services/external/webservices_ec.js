@@ -1,13 +1,24 @@
-const BASE_URL = process.env.WEBSERVICESEC_BASE_URL?.replace(/\/$/, "") || "https://webservices.ec/api";
-const TOKEN = process.env.WEBSERVICESEC_TOKEN;
+const BASE_URL = process.env.WEBSERVICESEC_BASE_URL?.trim().replace(/\/$/, "") || "https://webservices.ec/api";
+const RAW_TOKEN = process.env.WEBSERVICESEC_TOKEN?.trim();
 
-const buildHeaders = () => ({
-  Authorization: `Bearer ${TOKEN}`,
-  Accept: "application/json"
-});
+const resolveAuthorizationHeader = () => {
+  if (!RAW_TOKEN) return null;
+  return RAW_TOKEN.toLowerCase().startsWith("bearer ")
+    ? RAW_TOKEN
+    : `Bearer ${RAW_TOKEN}`;
+};
+
+const buildHeaders = () => {
+  const authorization = resolveAuthorizationHeader();
+  return {
+    Authorization: authorization,
+    Accept: "application/json",
+    "User-Agent": "DEASY Backend (webservices.ec client)"
+  };
+};
 
 const ensureToken = () => {
-  if (!TOKEN) {
+  if (!RAW_TOKEN) {
     const error = new Error("No se ha configurado la variable WEBSERVICESEC_TOKEN");
     error.status = 500;
     throw error;

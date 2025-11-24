@@ -13,6 +13,8 @@ import dossier_router from "./routes/dossier_router.js"
 
 import cors from "cors"
 import "./database/mongoose.js"
+import { assertMariaDBConnection } from "./config/mariadb.js";
+import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -315,7 +317,19 @@ app.use(ROUTES.dossier,dossier_router)
 app.use(express.static("public"));
 
 
-app.listen(PORT, ()=>{
-  console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
-});
+const startServer = async () => {
+  try {
+    await ensureMariaDBDatabase();
+    await assertMariaDBConnection();
+    await ensureMariaDBSchema();
+  } catch (error) {
+    console.error("⚠️  No se pudo inicializar MariaDB:", error.message);
+  }
+
+  app.listen(PORT, ()=>{
+    console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
+  });
+};
+
+startServer();
 

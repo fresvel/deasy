@@ -44,6 +44,25 @@
               required
             />
             <small v-if="cedulaError" class="validation-error">{{ cedulaError }}</small>
+            <div
+              v-if="cedulaValidation.status !== 'idle' && cedulaValidation.message"
+              class="validation-status"
+              :class="`status-${cedulaValidation.status}`"
+            >
+              <font-awesome-icon
+                v-if="cedulaValidation.status === 'success'"
+                icon="check-circle"
+              />
+              <font-awesome-icon
+                v-else-if="cedulaValidation.status === 'error'"
+                icon="times-circle"
+              />
+              <font-awesome-icon
+                v-else
+                icon="info-circle"
+              />
+              <span>{{ cedulaValidation.message }}</span>
+            </div>
           </div>
 
           <div class="form-field">
@@ -158,6 +177,25 @@
             </div>
             <small class="helper-text">Número completo: {{ newuser.whatsapp }}</small>
             <small v-if="whatsappError" class="validation-error">{{ whatsappError }}</small>
+            <div
+              v-if="whatsappValidation.status !== 'idle' && whatsappValidation.message"
+              class="validation-status"
+              :class="`status-${whatsappValidation.status}`"
+            >
+              <font-awesome-icon
+                v-if="whatsappValidation.status === 'success'"
+                icon="check-circle"
+              />
+              <font-awesome-icon
+                v-else-if="whatsappValidation.status === 'error'"
+                icon="times-circle"
+              />
+              <font-awesome-icon
+                v-else
+                icon="info-circle"
+              />
+              <span>{{ whatsappValidation.message }}</span>
+            </div>
           </div>
 
           <div class="form-field password-field">
@@ -334,9 +372,21 @@ const phoneNumber = ref("");
 
 const cedulaError = ref("");
 const whatsappError = ref("");
+const cedulaValidation = ref({ status: "idle", message: "", data: null });
+const whatsappValidation = ref({ status: "idle", message: "", statusCode: null });
+
+const USERS_API_BASE_URL = "http://localhost:3000/easym/v1/users";
+
+let cedulaValidationTimer = null;
+let whatsappValidationTimer = null;
+let cedulaRequestId = 0;
+let whatsappRequestId = 0;
 
 const isCedulaValid = computed(() => newuser.value.cedula.length === 10);
 const isWhatsappValid = computed(() => phoneNumber.value.length === 10);
+const shouldValidateWhatsapp = computed(() => phonePrefix.value === "+593" && isWhatsappValid.value);
+const isCedulaVerified = computed(() => cedulaValidation.value.status === "success");
+const isWhatsappVerified = computed(() => !shouldValidateWhatsapp.value || whatsappValidation.value.status === "success");
 
 // Control del mapa
 const showMap = ref(false);
@@ -374,6 +424,72 @@ const updateWhatsappField = () => {
   newuser.value.whatsapp = phoneNumber.value
     ? phonePrefix.value + phoneNumber.value
     : "";
+};
+
+const resetCedulaValidation = () => {
+  cedulaValidation.value = { status: "idle", message: "", data: null };
+};
+
+const resetWhatsappValidation = (defaultStatus = "idle", message = "") => {
+  whatsappValidation.value = { status: defaultStatus, message, statusCode: null };
+};
+
+const handleCedulaValidation = async (digits, requestId) => {
+  try {
+    const { data } = await axios.get(`${USERS_API_BASE_URL}/validate/cedula/${digits}`);
+    if (requestId !== cedulaRequestId) return;
+
+    if (data.valid) {
+      cedulaValidation.value = {
+        status: "success",
+        message: data.data?.nombreCompleto
+          ? `Titular identificado: ${data.data.nombreCompleto}`
+          : "Cédula válida",
+        data: data.data ?? null
+      };
+    } else {
+      cedulaValidation.value = {
+        status: "error",
+        message: data.message || "La cédula no se encuentra registrada",
+        data: null
+      };
+    }
+  } catch (error) {
+    if (requestId !== cedulaRequestId) return;
+    cedulaValidation.value = {
+      status: "error",
+      message: error.response?.data?.message || error.message || "No se pudo validar la cédula",
+      data: null
+    };
+  }
+};
+
+const handleWhatsappValidation = async (fullNumber, requestId) => {
+  try {
+    const { data } = await axios.get(`${USERS_API_BASE_URL}/validate/whatsapp/${fullNumber}`);
+    if (requestId !== whatsappRequestId) return;
+
+    if (data.valid) {
+      whatsappValidation.value = {
+        status: "success",
+        message: "El número tiene WhatsApp activo",
+        statusCode: data.status
+      };
+    } else {
+      whatsappValidation.value = {
+        status: "error",
+        message: data.message || `Estado reportado: ${data.status || "desconocido"}`,
+        statusCode: data.status || null
+      };
+    }
+  } catch (error) {
+    if (requestId !== whatsappRequestId) return;
+    whatsappValidation.value = {
+      status: "error",
+      message: error.response?.data?.message || error.message || "No se pudo validar el número",
+      statusCode: null
+    };
+  }
 };
 
 // Función para validar contraseña en tiempo real
@@ -428,6 +544,21 @@ watch(() => newuser.value.cedula, (value) => {
     return;
   }
   cedulaError.value = digits.length === 0 || digits.length === 10 ? "" : "La cédula debe tener 10 dígitos";
+
+  if (cedulaValidationTimer) {
+    clearTimeout(cedulaValidationTimer);
+    cedulaValidationTimer = null;
+  }
+
+  if (digits.length === 10) {
+    cedulaValidation.value = { status: "loading", message: "Validando cédula...", data: null };
+    const currentId = ++cedulaRequestId;
+    cedulaValidationTimer = setTimeout(() => handleCedulaValidation(digits, currentId), 400);
+  } else if (digits.length === 0) {
+    resetCedulaValidation();
+  } else {
+    cedulaValidation.value = { status: "warning", message: "La cédula debe tener 10 dígitos", data: null };
+  }
 });
 
 watch(phoneNumber, (value) => {
@@ -438,6 +569,48 @@ watch(phoneNumber, (value) => {
   }
   whatsappError.value = digits.length === 0 || digits.length === 10 ? "" : "El número debe tener 10 dígitos";
   updateWhatsappField();
+
+  if (whatsappValidationTimer) {
+    clearTimeout(whatsappValidationTimer);
+    whatsappValidationTimer = null;
+  }
+
+  if (shouldValidateWhatsapp.value) {
+    const fullNumber = `${phonePrefix.value.replace("+", "")}${digits}`;
+    whatsappValidation.value = { status: "loading", message: "Validando número...", statusCode: null };
+    const currentId = ++whatsappRequestId;
+    whatsappValidationTimer = setTimeout(() => handleWhatsappValidation(fullNumber, currentId), 400);
+  } else if (digits.length === 0) {
+    resetWhatsappValidation();
+  } else if (phonePrefix.value !== "+593") {
+    resetWhatsappValidation("warning", "La validación remota está disponible solo para números de Ecuador (+593).");
+  } else {
+    resetWhatsappValidation("warning", "El número debe tener 10 dígitos para validar WhatsApp.");
+  }
+});
+
+watch(phonePrefix, () => {
+  updateWhatsappField();
+
+  if (phoneNumber.value.length === 0) {
+    resetWhatsappValidation();
+    return;
+  }
+
+  if (shouldValidateWhatsapp.value) {
+    if (whatsappValidationTimer) {
+      clearTimeout(whatsappValidationTimer);
+      whatsappValidationTimer = null;
+    }
+    const fullNumber = `${phonePrefix.value.replace("+", "")}${phoneNumber.value}`;
+    whatsappValidation.value = { status: "loading", message: "Validando número...", statusCode: null };
+    const currentId = ++whatsappRequestId;
+    whatsappValidationTimer = setTimeout(() => handleWhatsappValidation(fullNumber, currentId), 400);
+  } else if (phonePrefix.value !== "+593") {
+    resetWhatsappValidation("warning", "La validación remota está disponible solo para números de Ecuador (+593).");
+  } else {
+    resetWhatsappValidation("warning", "El número debe tener 10 dígitos para validar WhatsApp.");
+  }
 });
 
 // Función para toggle del mapa
@@ -556,6 +729,20 @@ const createnewUser = async() => {
         return;
     }
 
+    if (!isCedulaVerified.value) {
+        errorMessage.value = cedulaValidation.value.status === "loading"
+            ? "Espera a que finalice la validación de la cédula"
+            : "Debes validar la cédula antes de continuar";
+        return;
+    }
+
+    if (!isWhatsappVerified.value) {
+        errorMessage.value = whatsappValidation.value.status === "loading"
+            ? "Espera a que finalice la validación del número de WhatsApp"
+            : "Debes validar el número de WhatsApp antes de continuar";
+        return;
+    }
+
     if (!isCedulaValid.value) {
         errorMessage.value = "La cédula debe tener 10 dígitos";
         return;
@@ -597,6 +784,8 @@ const createnewUser = async() => {
         termsAccepted.value = false;
         cedulaError.value = "";
         whatsappError.value = "";
+        resetCedulaValidation();
+        resetWhatsappValidation();
         
     } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario";
@@ -617,6 +806,12 @@ onUnmounted(() => {
   if (mapInstance) {
     mapInstance.remove();
     mapInstance = null;
+  }
+  if (cedulaValidationTimer) {
+    clearTimeout(cedulaValidationTimer);
+  }
+  if (whatsappValidationTimer) {
+    clearTimeout(whatsappValidationTimer);
   }
 });
 
@@ -884,6 +1079,34 @@ onMounted(() => {
   margin-top: 0.25rem;
   font-size: 0.82rem;
   color: #dc3545;
+}
+
+.validation-status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.validation-status svg {
+  flex-shrink: 0;
+}
+
+.status-success {
+  color: #198754;
+}
+
+.status-error {
+  color: #dc3545;
+}
+
+.status-warning {
+  color: #fd7e14;
+}
+
+.status-loading {
+  color: #0d6efd;
 }
 
 .form-field.span-3 {
