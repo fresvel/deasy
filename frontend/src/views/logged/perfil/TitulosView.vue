@@ -161,7 +161,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <AgregarTitulo></AgregarTitulo>
+        <AgregarTitulo @title-added="handleTituloAdded" />
       </div>
     </div>
   </div>
@@ -169,17 +169,19 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted} from "vue"
+import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
 import AgregarTitulo from "./AgregarTitulo.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
 import BtnSera from "@/components/database/BtnSera.vue";
+import { Modal } from "bootstrap";
 
 const modal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
+let bootstrapModal = null;
 
 // Computed properties para agrupar títulos por nivel
 const titulosTecnicos = computed(() => {
@@ -273,14 +275,30 @@ const clickBtnsera = (titulo) => {
 };
 
 const openModal = () => {
-    const modalElement = document.getElementById('tituloModal');
-    const modal = new window.bootstrap.Modal(modalElement);
-    modal.show();
+    if (!modal.value) {
+        return;
+    }
+    bootstrapModal = Modal.getOrCreateInstance(modal.value);
+    bootstrapModal.show();
+};
+
+const handleTituloAdded = () => {
+    loadDossier();
 };
 
 // Cargar datos al montar el componente
 onMounted(() => {
     loadDossier();
+    window.addEventListener('dossier-updated', loadDossier);
+});
+
+onBeforeUnmount(() => {
+    if (bootstrapModal) {
+        bootstrapModal.hide();
+        bootstrapModal.dispose();
+        bootstrapModal = null;
+    }
+    window.removeEventListener('dossier-updated', loadDossier);
 });
 
 

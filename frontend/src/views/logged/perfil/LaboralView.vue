@@ -1,160 +1,137 @@
 <template>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h2 class="fw-semibold mb-1">Experiencia laboral</h2>
+        <p class="text-muted mb-0">Consulta y registra tu experiencia docente y profesional.</p>
+      </div>
+      <button class="btn btn-primary" @click="openModal">
+        <i class="bi bi-plus-circle me-2"></i>Agregar
+      </button>
+    </div>
 
-<div class="ui grid flex center aligned middle segment">
-              
-              <div class="grid ui container" style="margin-bottom: 2%;">
-                <div class="fourteen wide column center">
-                    <h2 class="ui  header   left aligned">Experiencia Laboral </h2>
-                </div>
-                <div class="two wide column">
-                    <button class="ui blue button large two wide column" @click="openModal()">Agregar</button>
-                </div>
-                
-                
-                <div class="grid ui container">
-                    <div class="ten wide column">
-                        <h3 class="ui  header   left aligned">Experiencia Docente</h3>
-                    </div>
-                    <table class="ui compact celled definition table">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th class="text-left">
-                                INSTITUCIÓN
-                            </th>
-                            <th class="text-left">
-                                CÁTEDRA
-                            </th>
-                            <th class="text-left">
-                                DESDE
-                            </th>
-                            <th class="text-left">
-                                HASTA
-                            </th>
-                            <th class="text-left">
-                                AÑOS
-                            </th>
-                            <th class="text-left">
-                            ACCIÓN
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td><BtnSera type="send" @onpress="clickBtnsera"/></td>
-                            <td>Ingeniero en Electrónica y Comunicaciones</td>
-                            <td>Universidad Técnica de Ambato</td>
-                            <td>Presencial</td>
-                            <td>1011-2023-2327683</td>
-                            <td>Tecnologías de la Información y COmunicación</td>
-                            <td>
-                                <BtnDelete @onpress="clickBtndelete"/>
-                                <BtnEdit @onpress="clickBtnedit"/>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <section class="mb-5">
+      <header class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 mb-0">Experiencia Docente</h3>
+      </header>
 
-                <div class="grid ui container">
-                    <div class="ten wide column">
-                        <h3 class="ui  header   left aligned">Experiencia Profesional</h3>
-                    </div>
-                    <table class="ui compact celled definition table">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th class="text-left">
-                                INSTITUCIÓN
-                            </th>
-                            <th class="text-left">
-                                FUNCIONES
-                            </th>
-                            <th class="text-left">
-                                DESDE
-                            </th>
-                            <th class="text-left">
-                                HASTA
-                            </th>
-                            <th class="text-left">
-                                AÑOS
-                            </th>
-                            <th class="text-left">
-                                ACCIÓN
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-                            <td>Ingeniero en Electrónica y Comunicaciones</td>
-                            <td>Universidad Técnica de Ambato</td>
-                            <td>Presencial</td>
-                            <td>1011-2023-2327683</td>
-                            <td>Tecnologías de la Información y COmunicación</td>
-                            <td>
-                                <BtnDelete @onpress="clickBtndelete"/>
-                                <BtnEdit @onpress="clickBtnedit"/>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                  
-              </div>
-    
-</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Institución</th>
+              <th scope="col">Cátedra / Asignatura</th>
+              <th scope="col">Modalidad</th>
+              <th scope="col">Desde</th>
+              <th scope="col">Hasta</th>
+              <th scope="col" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!experienciaDocente.length">
+              <td colspan="6" class="text-center text-muted py-4">
+                No has registrado experiencia docente todavía.
+              </td>
+            </tr>
+            <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
+              <td>{{ experiencia.institucion }}</td>
+              <td>{{ experiencia.catedra }}</td>
+              <td>{{ experiencia.modalidad }}</td>
+              <td>{{ experiencia.desde }}</td>
+              <td>{{ experiencia.hasta || 'Actualidad' }}</td>
+              <td class="text-end">
+                <BtnEdit @onpress="() => editarExperiencia(experiencia)" class="me-2" />
+                <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
+    <section>
+      <header class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 mb-0">Experiencia profesional</h3>
+      </header>
 
-<!-- Sección de Modales-->
-<div class="ui longer modal" style="width: 75%;" ref="modal">
-  <AgregarExperiencia/>
-</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Institución</th>
+              <th scope="col">Funciones</th>
+              <th scope="col">Modalidad</th>
+              <th scope="col">Desde</th>
+              <th scope="col">Hasta</th>
+              <th scope="col" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!experienciaProfesional.length">
+              <td colspan="6" class="text-center text-muted py-4">
+                No has registrado experiencia profesional todavía.
+              </td>
+            </tr>
+            <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id">
+              <td>{{ experiencia.institucion }}</td>
+              <td>{{ experiencia.funciones }}</td>
+              <td>{{ experiencia.modalidad }}</td>
+              <td>{{ experiencia.desde }}</td>
+              <td>{{ experiencia.hasta || 'Actualidad' }}</td>
+              <td class="text-end">
+                <BtnEdit @onpress="() => editarExperiencia(experiencia)" class="me-2" />
+                <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="modal fade" id="experienciaModal" tabindex="-1" ref="modal" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <AgregarExperiencia />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import {ref, onMounted} from "vue"
+import { ref, onMounted } from "vue";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
-import BtnSera from "@/components/database/BtnSera.vue";
+
+const experienciaDocente = ref([]);
+const experienciaProfesional = ref([]);
+
 const modal = ref(null);
 
 const openModal = () => {
-    $(modal.value).modal('show');
+  const modalElement = modal.value;
+  if (!modalElement) return;
+  const bootstrapModal = new window.bootstrap.Modal(modalElement);
+  bootstrapModal.show();
 };
 
-// Inicializa el modal al montar el componente
 onMounted(() => {
-    if (modal.value) {
-        $(modal.value).modal();
-    }
+  // Aquí se podría cargar la experiencia real desde el backend
 });
 
+const editarExperiencia = (experiencia) => {
+  console.info("Editar experiencia", experiencia);
+};
 
-/*
-titulo:{type: Striewg,},
-    ies:{type: String,},
-    nivel:{type: String,required: true,
-        enum:["Técnico","Tecnólogo","Grado", "Maestría", "Maestría Tecnológica", "Diplomado","Doctorado", "Posdoctorado"]
-    },
-    sreg:{type: String},//Número de registro en senescyt
-    campo_amplio:{type: String},
-    tipo:{type: String, required: true,
-        enum:["Presencial","Semipresencial","Virtual", "Híbrido"]
-    },
-    pais:{type: String, default:"Ecuador"},
-    sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"], default: "Enviado"
-    }
-
-*/
+const eliminarExperiencia = (experiencia) => {
+  console.info("Eliminar experiencia", experiencia);
+};
 </script>
 
-<style scoped lang="scss">
-  .editar{
-    background-color:$col-edit;
-    color: white;
-    margin: 1%;
-  }
-
+<style scoped>
+.table thead th {
+  color: #1d3557;
+  font-weight: 600;
+}
 </style>

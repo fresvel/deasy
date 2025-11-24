@@ -291,6 +291,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser())
+app.use("/uploads", express.static("uploads"));
 
 app.use(DOCS_PATH, swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.get(DOCS_JSON_PATH, (req, res) => {
