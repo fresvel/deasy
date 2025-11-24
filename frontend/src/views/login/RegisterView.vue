@@ -37,8 +37,13 @@
               class="register-input"
               placeholder="Ingrese su número de identificación"
               v-model="newuser.cedula"
+              inputmode="numeric"
+              pattern="\d*"
+              maxlength="10"
+              :class="{ 'is-invalid': cedulaError }"
               required
             />
+            <small v-if="cedulaError" class="validation-error">{{ cedulaError }}</small>
           </div>
 
           <div class="form-field">
@@ -145,10 +150,14 @@
                 class="register-input"
                 placeholder="987654321"
                 v-model="phoneNumber"
-                @input="updateWhatsappField"
+                inputmode="numeric"
+                pattern="\d*"
+                maxlength="10"
+                :class="{ 'is-invalid': whatsappError }"
               />
             </div>
             <small class="helper-text">Número completo: {{ newuser.whatsapp }}</small>
+            <small v-if="whatsappError" class="validation-error">{{ whatsappError }}</small>
           </div>
 
           <div class="form-field password-field">
@@ -283,10 +292,11 @@
 <script setup>   
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
 import axios from 'axios';
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Modal } from 'bootstrap';
 
 // Fix para iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -313,6 +323,7 @@ const router = useRouter();
 const termsAccepted = ref(false);
 const errorMessage = ref("");
 const successModal = ref(null);
+let successModalInstance = null;
 
 // Datos de países
 const countriesData = ref(countries);
@@ -320,6 +331,12 @@ const countriesData = ref(countries);
 // Control de teléfono
 const phonePrefix = ref("+593");
 const phoneNumber = ref("");
+
+const cedulaError = ref("");
+const whatsappError = ref("");
+
+const isCedulaValid = computed(() => newuser.value.cedula.length === 10);
+const isWhatsappValid = computed(() => phoneNumber.value.length === 10);
 
 // Control del mapa
 const showMap = ref(false);
@@ -354,7 +371,9 @@ const updatePhonePrefix = () => {
 
 // Función para actualizar el campo completo de WhatsApp
 const updateWhatsappField = () => {
-  newuser.value.whatsapp = phonePrefix.value + phoneNumber.value;
+  newuser.value.whatsapp = phoneNumber.value
+    ? phonePrefix.value + phoneNumber.value
+    : "";
 };
 
 // Función para validar contraseña en tiempo real
@@ -401,6 +420,25 @@ const validatePasswordMatch = () => {
                           newuser.value.password.length > 0 && 
                           newuser.value.repassword.length > 0;
 };
+
+watch(() => newuser.value.cedula, (value) => {
+  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
+  if (digits !== value) {
+    newuser.value.cedula = digits;
+    return;
+  }
+  cedulaError.value = digits.length === 0 || digits.length === 10 ? "" : "La cédula debe tener 10 dígitos";
+});
+
+watch(phoneNumber, (value) => {
+  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
+  if (digits !== value) {
+    phoneNumber.value = digits;
+    return;
+  }
+  whatsappError.value = digits.length === 0 || digits.length === 10 ? "" : "El número debe tener 10 dígitos";
+  updateWhatsappField();
+});
 
 // Función para toggle del mapa
 const toggleMap = async () => {
@@ -517,6 +555,16 @@ const createnewUser = async() => {
         errorMessage.value = "La contraseña debe cumplir al menos 3 de los siguientes criterios: 8+ caracteres, mayúscula, minúscula, número";
         return;
     }
+
+    if (!isCedulaValid.value) {
+        errorMessage.value = "La cédula debe tener 10 dígitos";
+        return;
+    }
+
+    if (!isWhatsappValid.value) {
+        errorMessage.value = "El número de WhatsApp debe tener 10 dígitos";
+        return;
+    }
     
     try {
         const url = "http://localhost:3000/easym/v1/users"
@@ -524,8 +572,12 @@ const createnewUser = async() => {
         
         // Mostrar modal de éxito
         await nextTick();
-        const modal = new window.bootstrap.Modal(document.getElementById('successModal'));
-        modal.show();
+        if (successModalInstance) {
+            successModalInstance.show();
+        } else if (successModal.value) {
+            successModalInstance = Modal.getOrCreateInstance(successModal.value);
+            successModalInstance.show();
+        }
         
         // Limpiar formulario
         newuser.value = {
@@ -543,6 +595,8 @@ const createnewUser = async() => {
         phoneNumber.value = "";
         phonePrefix.value = "+593";
         termsAccepted.value = false;
+        cedulaError.value = "";
+        whatsappError.value = "";
         
     } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario";
@@ -551,8 +605,8 @@ const createnewUser = async() => {
 
 const goToLogin = () => {
     // Cerrar modal
-    const modal = window.bootstrap.Modal.getInstance(document.getElementById('successModal'));
-    modal.hide();
+    successModalInstance = successModalInstance || (successModal.value ? Modal.getOrCreateInstance(successModal.value) : null);
+    successModalInstance?.hide();
     
     // Redirigir al login
     router.push('/');
@@ -569,6 +623,9 @@ onUnmounted(() => {
 // Inicializar el prefijo telefónico por defecto
 onMounted(() => {
   phonePrefix.value = getPhoneCodeByCountry("Ecuador");
+  if (successModal.value) {
+    successModalInstance = Modal.getOrCreateInstance(successModal.value);
+  }
 });
     
 </script>
@@ -816,6 +873,17 @@ onMounted(() => {
   margin-top: 0.35rem;
   font-size: 0.85rem;
   color: rgba(3, 49, 100, 0.7);
+}
+
+.register-input.is-invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+.validation-error {
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+  color: #dc3545;
 }
 
 .form-field.span-3 {
