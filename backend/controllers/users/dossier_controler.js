@@ -1,42 +1,90 @@
 import { Dossier } from "../../models/users/dossiers.js";
 import { Usuario } from "../../models/users/usuario_model.js";
+import UserRepository from "../../services/auth/UserRepository.js";
+
+const userRepository = new UserRepository();
+
+const findUserRecords = async (cedula) => {
+    const [mariaUser, mongoUser] = await Promise.all([
+        userRepository.findByCedulaOrEmail({ cedula }).catch(() => null),
+        Usuario.findOne({ cedula })
+    ]);
+
+    if (!mariaUser && !mongoUser) {
+        return null;
+    }
+
+    return { mariaUser, mongoUser };
+};
+
+const buildDossierQuery = (cedula, mongoUser) => {
+    const orConditions = [{ cedula }];
+    if (mongoUser?._id) {
+        orConditions.push({ usuario: mongoUser._id });
+    }
+    return orConditions.length > 1 ? { $or: orConditions } : orConditions[0];
+};
+
+const getOrCreateDossier = async (cedula) => {
+    const userRecords = await findUserRecords(cedula);
+    if (!userRecords) {
+        return null;
+    }
+    const { mongoUser } = userRecords;
+
+    const query = buildDossierQuery(cedula, mongoUser);
+    let dossier = await Dossier.findOne(query);
+    let requiresSave = false;
+
+    if (!dossier) {
+        dossier = new Dossier({
+            usuario: mongoUser?._id ?? null,
+            cedula,
+            titulos: [],
+            experiencia: [],
+            referencias: [],
+            formacion: [],
+            certificaciones: [],
+            investigacion: {
+                articulos: [],
+                libros: [],
+                ponencias: [],
+                tesis: [],
+                proyectos: []
+            }
+        });
+        requiresSave = true;
+    } else {
+        if (!dossier.cedula) {
+            dossier.cedula = cedula;
+            requiresSave = true;
+        }
+
+        if (!dossier.usuario && mongoUser?._id) {
+            dossier.usuario = mongoUser._id;
+            requiresSave = true;
+        }
+    }
+
+    if (requiresSave) {
+        await dossier.save();
+    }
+
+    return dossier;
+};
 
 // Obtener o crear dossier del usuario
 export const getDossierByUser = async (req, res) => {
     try {
         const { cedula } = req.params;
         
-        // Buscar usuario por cédula
-        const user = await Usuario.findOne({ cedula });
+        const dossier = await getOrCreateDossier(cedula);
         
-        if (!user) {
+        if (!dossier) {
             return res.status(404).json({ 
                 success: false,
                 message: "Usuario no encontrado" 
             });
-        }
-
-        // Buscar dossier del usuario
-        let dossier = await Dossier.findOne({ usuario: user._id });
-
-        // Si no existe, crear uno vacío
-        if (!dossier) {
-            dossier = new Dossier({
-                usuario: user._id,
-                titulos: [],
-                experiencia: [],
-                referencias: [],
-                formacion: [],
-                certificaciones: [],
-                investigacion: {
-                    articulos: [],
-                    libros: [],
-                    ponencias: [],
-                    tesis: [],
-                    proyectos: []
-                }
-            });
-            await dossier.save();
         }
 
         res.json({
@@ -59,18 +107,12 @@ export const addTitulo = async (req, res) => {
     try {
         const { cedula } = req.params;
         
-        const user = await Usuario.findOne({ cedula });
-        if (!user) {
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
             return res.status(404).json({ 
                 success: false,
                 message: "Usuario no encontrado" 
             });
-        }
-
-        let dossier = await Dossier.findOne({ usuario: user._id });
-        
-        if (!dossier) {
-            dossier = new Dossier({ usuario: user._id });
         }
 
         dossier.titulos.push(req.body);
@@ -97,18 +139,12 @@ export const addExperiencia = async (req, res) => {
     try {
         const { cedula } = req.params;
         
-        const user = await Usuario.findOne({ cedula });
-        if (!user) {
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
             return res.status(404).json({ 
                 success: false,
                 message: "Usuario no encontrado" 
             });
-        }
-
-        let dossier = await Dossier.findOne({ usuario: user._id });
-        
-        if (!dossier) {
-            dossier = new Dossier({ usuario: user._id });
         }
 
         dossier.experiencia.push(req.body);
@@ -135,18 +171,12 @@ export const addReferencia = async (req, res) => {
     try {
         const { cedula } = req.params;
         
-        const user = await Usuario.findOne({ cedula });
-        if (!user) {
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
             return res.status(404).json({ 
                 success: false,
                 message: "Usuario no encontrado" 
             });
-        }
-
-        let dossier = await Dossier.findOne({ usuario: user._id });
-        
-        if (!dossier) {
-            dossier = new Dossier({ usuario: user._id });
         }
 
         dossier.referencias.push(req.body);
@@ -173,20 +203,11 @@ export const updateTitulo = async (req, res) => {
     try {
         const { cedula, tituloId } = req.params;
         
-        const user = await Usuario.findOne({ cedula });
-        if (!user) {
-            return res.status(404).json({ 
-                success: false,
-                message: "Usuario no encontrado" 
-            });
-        }
-
-        const dossier = await Dossier.findOne({ usuario: user._id });
-        
+        const dossier = await getOrCreateDossier(cedula);
         if (!dossier) {
             return res.status(404).json({ 
                 success: false,
-                message: "Dossier no encontrado" 
+                message: "Usuario no encontrado" 
             });
         }
 
@@ -222,20 +243,11 @@ export const deleteTitulo = async (req, res) => {
     try {
         const { cedula, tituloId } = req.params;
         
-        const user = await Usuario.findOne({ cedula });
-        if (!user) {
-            return res.status(404).json({ 
-                success: false,
-                message: "Usuario no encontrado" 
-            });
-        }
-
-        const dossier = await Dossier.findOne({ usuario: user._id });
-        
+        const dossier = await getOrCreateDossier(cedula);
         if (!dossier) {
             return res.status(404).json({ 
                 success: false,
-                message: "Dossier no encontrado" 
+                message: "Usuario no encontrado" 
             });
         }
 
@@ -263,20 +275,11 @@ export const deleteReferencia = async (req, res) => {
     try {
         const { cedula, referenciaId } = req.params;
         
-        const user = await Usuario.findOne({ cedula });
-        if (!user) {
-            return res.status(404).json({ 
-                success: false,
-                message: "Usuario no encontrado" 
-            });
-        }
-
-        const dossier = await Dossier.findOne({ usuario: user._id });
-        
+        const dossier = await getOrCreateDossier(cedula);
         if (!dossier) {
             return res.status(404).json({ 
                 success: false,
-                message: "Dossier no encontrado" 
+                message: "Usuario no encontrado" 
             });
         }
 

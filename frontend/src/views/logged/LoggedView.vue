@@ -2,7 +2,7 @@
 
     <s-header @onclick="onClick('Menu')">
         <a class="item large" @click="onheadClick({name:'Perfil'})">
-            <img class="avatar" src="/images/avatar.png" alt="User Avatar">
+            <img class="avatar" :src="userPhoto" alt="User Avatar">
         </a>
 
         <a class="item large" 
@@ -28,7 +28,12 @@
     
         <s-menu :show="vmenu">
 
-            <UserProfile photo="/images/avatar.png" :username="userFullName"> </UserProfile>
+            <UserProfile
+                :photo="userPhoto"
+                :username="userFullName"
+                :editable="true"
+                @photo-selected="handlePhotoSelected"
+            />
             <a class="large item labeled" style="text-align: center;">
                 Coordinación          
             </a>
@@ -42,8 +47,8 @@
                 :class="item.active ? 'item active' : ''" 
                 @click="onmenuClick(item.label)">
                 {{ item.label }}
-                    <div class="ui left pointing blue label">
-                        <div class="medium">{{ index }}</div>
+                    <div v-if="item.key" class="ui left pointing blue label">
+                        <div class="medium">{{ dossierCounts[item.key] ?? 0 }}</div>
                     </div>
             </a>
             <a class="item large" style="text-align: center;"> Docencia</a>
@@ -88,7 +93,8 @@
     <script setup>  
     
     
-    import { ref, computed, onMounted} from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount} from 'vue';
+import axios from 'axios';
     import SMenu from '@/components/main/SMenu.vue';
     import SMessage from '@/components/main/SNotify.vue';
     import SBody from '@/components/main/SBody.vue';
@@ -112,9 +118,13 @@
     import EasymServices from '@/services/EasymServices';
 
     const service = new EasymServices();
+    const API_BASE_URL = 'http://localhost:3000';
+    const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
     // Obtener datos del usuario desde localStorage
     const currentUser = ref(null);
+    const defaultPhoto = '/images/avatar.png';
+    const userPhoto = ref(defaultPhoto);
     const userFullName = computed(() => {
         if (currentUser.value) {
             return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
@@ -122,22 +132,97 @@
         return 'Usuario';
     });
 
-    // Cargar datos del usuario
+    const resolvePhotoUrl = (value) => {
+        if (!value) {
+            return defaultPhoto;
+        }
+        if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
+            return value;
+        }
+        const sanitized = value.replace(/^\/+/, '');
+        return `${API_BASE_URL.replace(/\/$/, '')}/${sanitized}`;
+    };
+
+    const dossierCounts = ref({
+        formacion: 0,
+        experiencia: 0,
+        referencias: 0,
+        capacitacion: 0,
+        certificacion: 0
+    });
+
+    const buildPerfilMenu = () => ([
+        {
+            label: 'Formación',
+            key: 'formacion',
+            active: true,
+        },
+        {
+            label: 'Experiencia',
+            key: 'experiencia',
+            active: false,
+        },
+        {
+            label: 'Referencias',
+            key: 'referencias',
+            active: false,
+        },
+        {
+            label: 'Capacitación',
+            key: 'capacitacion',
+            active: false,
+        },
+        {
+            label: 'Certificación',
+            key: 'certificacion',
+            active: false,
+        }
+    ]);
+
+    const mainmenu=ref(buildPerfilMenu())
+    
+    
+    const loadDossierCounts = async () => {
+        if (!currentUser.value?.cedula) {
+            return;
+        }
+
+        try {
+            const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
+            const { data } = await axios.get(url);
+            if (data?.success && data?.data) {
+                const dossier = data.data;
+                dossierCounts.value.formacion = dossier.titulos?.length ?? 0;
+                dossierCounts.value.experiencia = dossier.experiencia?.length ?? 0;
+                dossierCounts.value.referencias = dossier.referencias?.length ?? 0;
+                dossierCounts.value.capacitacion = dossier.formacion?.length ?? 0;
+                dossierCounts.value.certificacion = dossier.certificaciones?.length ?? 0;
+            }
+        } catch (error) {
+            console.error('Error al cargar conteos del dossier:', error);
+        }
+    };
+
     onMounted(() => {
         const userDataString = localStorage.getItem('user');
         if (userDataString) {
             try {
                 currentUser.value = JSON.parse(userDataString);
                 console.log('👤 Usuario cargado:', currentUser.value);
+
+                userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
                 
                 // Cargar tareas con la cédula del usuario
                 if (currentUser.value.cedula) {
                     service.getTareasPendientes(currentUser.value.cedula);
+                    loadDossierCounts();
                 }
             } catch (error) {
                 console.error('Error al cargar datos del usuario:', error);
             }
         }
+
+        window.addEventListener('dossier-updated', loadDossierCounts);
     });
 
     service.getEasymAreas()
@@ -158,35 +243,42 @@
         vnotify.value = !vnotify.value;
     };
     
-    const mainmenu=ref([            
-            {
-                label: 'Formación',
-                active: true,
-                //body: '',
-            },
-            {
-                label: 'Experiencia',
-                active: false,
-                //func:toggleVmenu
-            },
-            {
-                label: 'Referencias',
-                active: false,
-                //func:toggleNotify
-            },
-            {
-                label: 'Capacitación',
-                active: false,
-                //func:toggleNotify
-            },
-            {
-                label: 'Certificación',
-                active: false,
-                //func:toggleNotify
-            }])
     
     
-    
+    const handlePhotoSelected = async (file) => {
+        if (!file || !currentUser.value?.cedula) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('photo', file);
+
+            const { data } = await axios.put(
+                `${API_PREFIX}/users/${currentUser.value.cedula}/photo`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            const updatedPhoto = resolvePhotoUrl(data?.user?.photoUrl);
+            if (updatedPhoto) {
+                currentUser.value.photoUrl = data.user.photoUrl;
+                userPhoto.value = updatedPhoto;
+            }
+            localStorage.setItem('user', JSON.stringify(currentUser.value));
+        } catch (error) {
+            console.error('Error al actualizar la foto de perfil:', error);
+        }
+    };
+
+    onBeforeUnmount(() => {
+        window.removeEventListener('dossier-updated', loadDossierCounts);
+    });
+
     const onClick=(item)=>{
         if(item==="Message"){
             toggleNotify();
@@ -225,33 +317,7 @@
 
         switch(item.name){
             case 'Perfil':
-                mainmenu.value=[
-                    {
-                        label: 'Formación',
-                        active: true,
-                        //body: '',
-                    },
-                    {
-                        label: 'Experiencia',
-                        active: false,
-                        //func:toggleVmenu
-                    },
-                    {
-                        label: 'Referencias',
-                        active: false,
-                        //func:toggleNotify
-                    },
-                    {
-                        label: 'Capacitación',
-                        active: false,
-                        //func:toggleNotify
-                    },
-                    {
-                        label: 'Certificación',
-                        active: false,
-                        //func:toggleNotify
-                    }
-                ]
+                mainmenu.value = buildPerfilMenu();
                 process.value="Formación";
                 break;
             case 'Academia':
@@ -259,28 +325,28 @@
                 mainmenu.value=[
                     {
                         label: 'Logros Académicos',
+                        key: null,
                         active: true,
-                        //body: '',
                     },
                     {
                         label: 'Tutorías',
+                        key: null,
                         active: false,
-                        //func:toggleVmenu
                     },
                     {
                         label: 'Horarios',
+                        key: null,
                         active: false,
-                        //func:toggleNotify
                     },
                     {
                         label: 'Gestión',
+                        key: null,
                         active: false,
-                        //func:toggleNotify
                     },
                     {
                         label: 'Eventos',
+                        key: null,
                         active: false,
-                        //func:toggleNotify
                     }
                 ]
                 process.value="index";

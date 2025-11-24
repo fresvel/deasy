@@ -70,7 +70,8 @@ export default class UserRepository {
         userData.verify_whatsapp ??
         userData.verify?.whatsapp ??
         0
-      )
+      ),
+      photo_url: userData.photo_url ?? userData.photoUrl ?? null
     };
 
     const requiredFields = ["cedula", "email", "password_hash", "nombre", "apellido"];
@@ -110,6 +111,7 @@ export default class UserRepository {
       whatsapp: userRow.whatsapp,
       direccion: userRow.direccion,
       pais: userRow.pais,
+      photoUrl: userRow.photo_url ?? userRow.photoUrl ?? null,
       status: userRow.status ?? DEFAULT_STATUS,
       verify: {
         email: Boolean(userRow.verify_email),
@@ -118,5 +120,21 @@ export default class UserRepository {
       createdAt: userRow.created_at ?? userRow.createdAt ?? null,
       updatedAt: userRow.updated_at ?? userRow.updatedAt ?? null
     };
+  }
+
+  async updatePhotoByCedula(cedula, photoUrl) {
+    this.ensurePool();
+
+    if (!cedula) {
+      throw new Error("La cédula es requerida");
+    }
+
+    await this.pool.query(
+      "UPDATE users SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE cedula = ?",
+      [photoUrl, cedula]
+    );
+
+    const updated = await this.findByCedulaOrEmail({ cedula });
+    return this.toPublicUser(updated);
   }
 }

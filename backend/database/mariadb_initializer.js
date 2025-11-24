@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
   status ENUM('Inactivo','Activo','Verificado','Reportado') DEFAULT 'Inactivo',
   verify_email TINYINT(1) DEFAULT 0,
   verify_whatsapp TINYINT(1) DEFAULT 0,
+  photo_url LONGTEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -33,6 +34,16 @@ CREATE TABLE IF NOT EXISTS users (
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+`;
+
+const ADD_PHOTO_COLUMN_SQL = `
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS photo_url LONGTEXT DEFAULT NULL;
+`;
+
+const MODIFY_PHOTO_COLUMN_SQL = `
+ALTER TABLE users
+MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
 `;
 
 export const ensureMariaDBDatabase = async () => {
@@ -66,6 +77,8 @@ export const ensureMariaDBSchema = async () => {
   const connection = await pool.getConnection();
   try {
     await connection.query(CREATE_USERS_TABLE_SQL);
+    await connection.query(ADD_PHOTO_COLUMN_SQL);
+    await connection.query(MODIFY_PHOTO_COLUMN_SQL);
     console.log("✅ Tabla 'users' verificada/creada en MariaDB");
   } finally {
     connection.release();

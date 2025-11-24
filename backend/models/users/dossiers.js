@@ -128,7 +128,12 @@ const dossierSchema=new mongoose.Schema({
     usuario:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Usuario",
-        required: true
+        default: null
+    },
+    cedula:{
+        type: String,
+        index: true,
+        sparse: true
     },
 
     titulos:[tituloSchema],

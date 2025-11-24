@@ -1,101 +1,90 @@
 <template>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h2 class="fw-semibold mb-1">Certificaciones y reconocimientos</h2>
+        <p class="text-muted mb-0">Registra los certificados o reconocimientos relevantes para tu carrera.</p>
+      </div>
+      <button class="btn btn-primary" @click="openModal">
+        <i class="bi bi-plus-circle me-2"></i>Agregar
+      </button>
+    </div>
 
-<div class="ui grid flex center aligned middle segment">
-        
-              <div class="grid ui container" style="margin-bottom: 2%;">
-                <div class="fourteen wide column center">
-                    <h2 class="ui  header   left aligned">Certificaciones y Reconocimientos</h2>
-                </div>
-                <div class="two wide column">
-                    <button class="ui blue button large two wide column" @click="openModal()">Agregar</button>
-                </div>
-                
-                
-                <div class="grid ui container">
-                    <table class="ui compact celled definition table">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th class="text-left">
-                                TEMA
-                            </th>
-                            <th class="text-left">
-                                INSTITUCIÓN
-                            </th>
-                            <th class="text-left">
-                                HORAS
-                            </th>
-                            <th class="text-left">
-                                FECHA
-                            </th>
-                            <th class="text-left">
-                                TIPO
-                            </th>
-                            <th class="text-left">
-                                ACCIÓN
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-                            <td>Ingeniero en Electrónica y Comunicaciones</td>
-                            <td>Universidad Técnica de Ambato</td>
-                            <td>40</td>
-                            <td>23-07-2024</td>
-                            <td>23-07-2024</td>
-                            <td>
-                                <BtnDelete @onpress="clickBtndelete"/>
-                                <BtnEdit @onpress="clickBtnedit"/>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-              </div>
-    
-</div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Certificación</th>
+            <th scope="col">Institución</th>
+            <th scope="col">Horas</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Ámbito</th>
+            <th scope="col" class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="!certificaciones.length">
+            <td colspan="6" class="text-center text-muted py-4">
+              No has registrado certificaciones aún.
+            </td>
+          </tr>
+          <tr v-for="certificacion in certificaciones" :key="certificacion._id">
+            <td>{{ certificacion.titulo }}</td>
+            <td>{{ certificacion.institucion }}</td>
+            <td>{{ certificacion.horas }}</td>
+            <td>{{ certificacion.fecha }}</td>
+            <td>{{ certificacion.ambito }}</td>
+            <td class="text-end">
+              <BtnEdit @onpress="() => editarCertificacion(certificacion)" class="me-2" />
+              <BtnDelete @onpress="() => eliminarCertificacion(certificacion)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-
-<!-- Sección de Modales-->
-<div class="ui longer modal" style="width: 75%;" ref="modal">
-  <AgregarCertificacion/>
-</div>
+    <div class="modal fade" id="certificacionModal" tabindex="-1" ref="modal" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <AgregarCertificacion />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import {ref, onMounted} from "vue"
+import { ref, onMounted } from "vue";
 import AgregarCertificacion from "./AgregarCertificacion.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
-import BtnSera from "@/components/database/BtnSera.vue";
+
+const certificaciones = ref([]);
 const modal = ref(null);
 
 const openModal = () => {
-    $(modal.value).modal('show');
+  const modalElement = modal.value;
+  if (!modalElement) return;
+  const bootstrapModal = new window.bootstrap.Modal(modalElement);
+  bootstrapModal.show();
 };
 
-// Inicializa el modal al montar el componente
 onMounted(() => {
-    if (modal.value) {
-        $(modal.value).modal();
-    }
+  // Aquí se puede cargar la información real desde el backend
 });
 
-const clickBtnsera = () => {
-    alert("Acción de BtnSera")
+const editarCertificacion = (registro) => {
+  console.info("Editar certificación", registro);
 };
 
-const clickBtndelete = () => {
-    alert("Acción de BtnDelete")
-}
-
-const clickBtnedit = () => {
-    alert("Acción de BtnEdit")
-}
-
+const eliminarCertificacion = (registro) => {
+  console.info("Eliminar certificación", registro);
+};
 </script>
 
-<style scoped lang="scss">
-
+<style scoped>
+.table thead th {
+  color: #1d3557;
+  font-weight: 600;
+}
 </style>

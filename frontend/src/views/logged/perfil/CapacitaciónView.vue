@@ -1,151 +1,141 @@
 <template>
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h2 class="fw-semibold mb-1">Formación continua y conferencias</h2>
+        <p class="text-muted mb-0">Registra los eventos de capacitación docente y profesional en los que has participado.</p>
+      </div>
+      <button class="btn btn-primary" @click="openModal">
+        <i class="bi bi-plus-circle me-2"></i>Agregar
+      </button>
+    </div>
 
-<div class="ui grid flex center aligned middle segment">
-              <div class="grid ui container" style="margin-bottom: 2%;">
-                <div class="fourteen wide column center">
-                    <h2 class="ui  header   left aligned">Formación Continua y Conferencias</h2>
-                </div>
-                <div class="two wide column">
-                    <button class="ui blue button large two wide column" @click="openModal()">Agregar</button>
-                </div>
-                
-                
-                <div class="grid ui container">
-                    <div class="ten wide column">
-                        <h3 class="ui  header   left aligned">Capacitación en Área de la Docencia</h3>
-                    </div>
-                    <table class="ui compact celled definition table">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th class="text-left">
-                                TEMA
-                            </th>
-                            <th class="text-left">
-                                INSTITUCIÓN
-                            </th>
-                            <th class="text-left">
-                                HORAS
-                            </th>
-                            <th class="text-left">
-                                FECHA INICIAL
-                            </th>
-                            <th class="text-left">
-                                FECHA FINAL
-                            </th>
-                            <th class="text-left">
-                                TIPO
-                            </th>
-                            <th class="text-left">
-                                ACCIÓN
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-                            <td>Ingeniero en Electrónica y Comunicaciones</td>
-                            <td>Universidad Técnica de Ambato</td>
-                            <td>40</td>
-                            <td>23-07-2024</td>
-                            <td>23-07-2024</td>
-                            <td>Participacción</td>
-                            <td>
-                                <BtnDelete @onpress="clickBtndelete"/>
-                                <BtnEdit @onpress="clickBtnedit"/>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <section class="mb-5">
+      <header class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 mb-0">Capacitación en el área docente</h3>
+      </header>
 
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Tema</th>
+              <th scope="col">Institución</th>
+              <th scope="col">Horas</th>
+              <th scope="col">Inicio</th>
+              <th scope="col">Fin</th>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!capacitacionesDocentes.length">
+              <td colspan="7" class="text-center text-muted py-4">
+                No has registrado capacitación docente.
+              </td>
+            </tr>
+            <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id">
+              <td>{{ capacitacion.tema }}</td>
+              <td>{{ capacitacion.institucion }}</td>
+              <td>{{ capacitacion.horas }}</td>
+              <td>{{ capacitacion.fecha_inicio }}</td>
+              <td>{{ capacitacion.fecha_fin }}</td>
+              <td>{{ capacitacion.tipo }}</td>
+              <td class="text-end">
+                <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" class="me-2" />
+                <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-                <div class="grid ui container">
-                    <div class="ten wide column">
-                        <h3 class="ui  header   left aligned">Capacitación en Profesional</h3>
-                    </div>
-                    <table class="ui compact celled definition table">
-                        <thead>
-                        <tr>
-                            <th></th>
-                            <th class="text-left">
-                                TEMA
-                            </th>
-                            <th class="text-left">
-                                INSTITUCIÓN
-                            </th>
-                            <th class="text-left">
-                                HORAS
-                            </th>
-                            <th class="text-left">
-                                FECHA INICIAL
-                            </th>
-                            <th class="text-left">
-                                FECHA FINAL
-                            </th>
-                            <th class="text-left">
-                                TIPO
-                            </th>
-                            <th class="text-left">
-                                ACCIÓN
-                            </th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td><BtnSera type="certified" @onpress="clickBtnsera"/></td>
-                            <td>Ingeniero en Electrónica y Comunicaciones</td>
-                            <td>Universidad Técnica de Ambato</td>
-                            <td>40</td>
-                            <td>23-07-2024</td>
-                            <td>23-07-2024</td>
-                            <td>Participacción</td>
-                            <td>
-                                <BtnDelete @onpress="clickBtndelete"/>
-                                <BtnEdit @onpress="clickBtnedit"/>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                  
-              </div>    
-</div>
+    <section>
+      <header class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 mb-0">Capacitación profesional</h3>
+      </header>
 
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Tema</th>
+              <th scope="col">Institución</th>
+              <th scope="col">Horas</th>
+              <th scope="col">Inicio</th>
+              <th scope="col">Fin</th>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!capacitacionesProfesionales.length">
+              <td colspan="7" class="text-center text-muted py-4">
+                No has registrado capacitación profesional.
+              </td>
+            </tr>
+            <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id">
+              <td>{{ capacitacion.tema }}</td>
+              <td>{{ capacitacion.institucion }}</td>
+              <td>{{ capacitacion.horas }}</td>
+              <td>{{ capacitacion.fecha_inicio }}</td>
+              <td>{{ capacitacion.fecha_fin }}</td>
+              <td>{{ capacitacion.tipo }}</td>
+              <td class="text-end">
+                <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" class="me-2" />
+                <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-<!-- Sección de Modales-->
-<div class="ui longer modal" style="width: 75%;" ref="modal">
-  <AgregarCapacitacion/>
-</div>
+    <div class="modal fade" id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <AgregarCapacitacion />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import {ref, onMounted} from "vue"
+import { ref, onMounted } from "vue";
 import AgregarCapacitacion from "./AgregarCapacitacion.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
-import BtnSera from "@/components/database/BtnSera.vue";
+
+const capacitacionesDocentes = ref([]);
+const capacitacionesProfesionales = ref([]);
+
 const modal = ref(null);
 
 const openModal = () => {
-    $(modal.value).modal('show');
+  const modalElement = modal.value;
+  if (!modalElement) return;
+  const bootstrapModal = new window.bootstrap.Modal(modalElement);
+  bootstrapModal.show();
 };
 
-// Inicializa el modal al montar el componente
 onMounted(() => {
-    if (modal.value) {
-        $(modal.value).modal();
-    }
+  // Aquí se podría cargar la información real desde el backend
 });
 
+const editarCapacitacion = (registro) => {
+  console.info("Editar capacitación", registro);
+};
 
+const eliminarCapacitacion = (registro) => {
+  console.info("Eliminar capacitación", registro);
+};
 </script>
 
-<style scoped lang="scss">
-  .editar{
-    background-color:$col-edit;
-    color: white;
-    margin: 1%;
-  }
-
+<style scoped>
+.table thead th {
+  color: #1d3557;
+  font-weight: 600;
+}
 </style>
