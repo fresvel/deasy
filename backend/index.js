@@ -31,7 +31,7 @@ const swaggerDefinition = {
   info: {
     title: "DEASY API",
     version: "1.0.0",
-    description: "Documentación de los endpoints de autenticación (registro e inicio de sesión)."
+    description: "Documentación de los endpoints de la API DEASY, incluyendo autenticación y gestión de dossier académico."
   },
   servers: [
     {
@@ -43,6 +43,10 @@ const swaggerDefinition = {
     {
       name: "Auth",
       description: "Operaciones relacionadas con autenticación de usuarios"
+    },
+    {
+      name: "Dossier",
+      description: "Operaciones relacionadas con la gestión del dossier académico del usuario"
     }
   ],
   components: {
@@ -180,6 +184,143 @@ const swaggerDefinition = {
           message: { type: "string", example: "Error al crear el usuario" },
           code: { type: "integer", example: 400 }
         }
+      },
+      TituloRequest: {
+        type: "object",
+        required: ["nivel", "tipo"],
+        properties: {
+          titulo: { type: "string", example: "Ingeniería en Sistemas" },
+          ies: { type: "string", example: "Universidad Técnica" },
+          nivel: {
+            type: "string",
+            enum: ["Técnico", "Tecnólogo", "Grado", "Maestría", "Maestría Tecnológica", "Diplomado", "Doctorado", "Posdoctorado"],
+            example: "Grado"
+          },
+          sreg: { type: "string", description: "Número de registro en SENESCYT", example: "1234567890" },
+          campo_amplio: { type: "string", example: "Ingeniería, Industria y Construcción" },
+          tipo: {
+            type: "string",
+            enum: ["Presencial", "Semipresencial", "Virtual", "Híbrido"],
+            example: "Presencial"
+          },
+          pais: { type: "string", default: "Ecuador", example: "Ecuador" },
+          sera: {
+            type: "string",
+            enum: ["Enviado", "Revisado", "Aprobado"],
+            default: "Enviado",
+            example: "Enviado"
+          }
+        }
+      },
+      ExperienciaRequest: {
+        type: "object",
+        properties: {
+          institucion: { type: "string", example: "Universidad Técnica" },
+          fecha_inicio: { type: "string", format: "date", example: "2020-01-15" },
+          fecha_fin: { type: "string", format: "date", example: "2023-12-31" },
+          funcion_catedra: {
+            type: "array",
+            items: { type: "string" },
+            example: ["Matemáticas", "Programación"]
+          },
+          tipo: {
+            type: "string",
+            enum: ["Docencia", "Profesional"],
+            example: "Docencia"
+          },
+          sera: {
+            type: "string",
+            enum: ["Enviado", "Revisado", "Aprobado"],
+            example: "Enviado"
+          }
+        }
+      },
+      ReferenciaRequest: {
+        type: "object",
+        properties: {
+          nombre: { type: "string", example: "Juan Pérez" },
+          cargo_parentesco: { type: "string", example: "Director Académico", description: "Cargo si es laboral, parentesco si es familiar" },
+          email: { type: "string", format: "email", example: "juan.perez@universidad.edu.ec" },
+          telefono: { type: "string", example: "+593987654321" },
+          institution: { type: "string", example: "Universidad Técnica", description: "Requerido si tipo es 'laboral'" },
+          tipo: {
+            type: "string",
+            enum: ["laboral", "personal", "familiar"],
+            example: "laboral"
+          }
+        }
+      },
+      FormacionRequest: {
+        type: "object",
+        properties: {
+          tema: { type: "string", example: "Metodologías Ágiles" },
+          institution: { type: "string", example: "Instituto de Capacitación" },
+          horas: { type: "integer", example: 40 },
+          fecha_inicio: { type: "string", format: "date", example: "2023-01-10" },
+          fecha_fin: { type: "string", format: "date", example: "2023-01-15" },
+          tipo: {
+            type: "string",
+            enum: ["Docente", "Profesional"],
+            example: "Profesional"
+          },
+          rol: {
+            type: "string",
+            enum: ["Asistencia", "Instructor", "Aprobación"],
+            example: "Asistencia"
+          },
+          pais: { type: "string", default: "Ecuador", example: "Ecuador" },
+          sera: {
+            type: "string",
+            enum: ["Enviado", "Revisado", "Aprobado"],
+            example: "Enviado"
+          }
+        }
+      },
+      CertificacionRequest: {
+        type: "object",
+        properties: {
+          titulo: { type: "string", example: "Certificado en Cloud Computing" },
+          institution: { type: "string", example: "Amazon Web Services" },
+          horas: { type: "integer", example: 80 },
+          fecha: { type: "string", format: "date", example: "2023-06-20" },
+          tipo: {
+            type: "string",
+            enum: ["Nacional", "Internacional"],
+            example: "Internacional"
+          },
+          sera: {
+            type: "string",
+            enum: ["Enviado", "Revisado", "Aprobado"],
+            example: "Enviado"
+          }
+        }
+      },
+      DossierResponse: {
+        type: "object",
+        properties: {
+          success: { type: "boolean", example: true },
+          data: {
+            type: "object",
+            properties: {
+              _id: { type: "string", example: "661f1b34fe5ed4e7a4a3f1c2" },
+              usuario: { type: "string", example: "661f1b34fe5ed4e7a4a3f1c1" },
+              cedula: { type: "string", example: "0954321876" },
+              titulos: { type: "array", items: { $ref: "#/components/schemas/TituloRequest" } },
+              experiencia: { type: "array", items: { $ref: "#/components/schemas/ExperienciaRequest" } },
+              referencias: { type: "array", items: { $ref: "#/components/schemas/ReferenciaRequest" } },
+              formacion: { type: "array", items: { $ref: "#/components/schemas/FormacionRequest" } },
+              certificaciones: { type: "array", items: { $ref: "#/components/schemas/CertificacionRequest" } }
+            }
+          }
+        }
+      },
+      SuccessResponse: {
+        type: "object",
+        properties: {
+          success: { type: "boolean", example: true },
+          message: { type: "string", example: "Operación realizada exitosamente" },
+          data: { type: "object" }
+        }
       }
     }
   },
@@ -251,6 +392,533 @@ const swaggerDefinition = {
           },
           "401": {
             description: "Credenciales incorrectas",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}`]: {
+      get: {
+        tags: ["Dossier"],
+        summary: "Obtener dossier completo del usuario",
+        description: "Obtiene el dossier académico completo del usuario por su cédula. Si no existe, lo crea automáticamente.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Dossier obtenido exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/DossierResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Usuario no encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/titulos`]: {
+      post: {
+        tags: ["Dossier"],
+        summary: "Agregar título académico",
+        description: "Agrega un nuevo título académico al dossier del usuario.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/TituloRequest"
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Título agregado exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Error de validación",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/titulos/{tituloId}`]: {
+      put: {
+        tags: ["Dossier"],
+        summary: "Actualizar título académico",
+        description: "Actualiza un título académico existente en el dossier.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          },
+          {
+            name: "tituloId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID del título a actualizar",
+            example: "661f1b34fe5ed4e7a4a3f1c3"
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/TituloRequest"
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Título actualizado exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Título no encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      delete: {
+        tags: ["Dossier"],
+        summary: "Eliminar título académico",
+        description: "Elimina un título académico del dossier.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          },
+          {
+            name: "tituloId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID del título a eliminar",
+            example: "661f1b34fe5ed4e7a4a3f1c3"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Título eliminado exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Título no encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/experiencia`]: {
+      post: {
+        tags: ["Dossier"],
+        summary: "Agregar experiencia laboral",
+        description: "Agrega una nueva experiencia laboral al dossier del usuario.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ExperienciaRequest"
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Experiencia agregada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Error de validación",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/referencias`]: {
+      post: {
+        tags: ["Dossier"],
+        summary: "Agregar referencia",
+        description: "Agrega una nueva referencia (laboral, personal o familiar) al dossier del usuario.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ReferenciaRequest"
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Referencia agregada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Error de validación",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/referencias/{referenciaId}`]: {
+      delete: {
+        tags: ["Dossier"],
+        summary: "Eliminar referencia",
+        description: "Elimina una referencia del dossier.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          },
+          {
+            name: "referenciaId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID de la referencia a eliminar",
+            example: "661f1b34fe5ed4e7a4a3f1c4"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Referencia eliminada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Referencia no encontrada",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/formacion`]: {
+      post: {
+        tags: ["Dossier"],
+        summary: "Agregar formación/capacitación",
+        description: "Agrega un nuevo registro de formación o capacitación al dossier del usuario.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/FormacionRequest"
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Formación agregada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Error de validación",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/formacion/{formacionId}`]: {
+      delete: {
+        tags: ["Dossier"],
+        summary: "Eliminar formación/capacitación",
+        description: "Elimina un registro de formación o capacitación del dossier.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          },
+          {
+            name: "formacionId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID de la formación a eliminar",
+            example: "661f1b34fe5ed4e7a4a3f1c5"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Formación eliminada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Formación no encontrada",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/certificaciones`]: {
+      post: {
+        tags: ["Dossier"],
+        summary: "Agregar certificación",
+        description: "Agrega una nueva certificación o reconocimiento al dossier del usuario.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CertificacionRequest"
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Certificación agregada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Error de validación",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [`${PATHS.dossier}/{cedula}/certificaciones/{certificacionId}`]: {
+      delete: {
+        tags: ["Dossier"],
+        summary: "Eliminar certificación",
+        description: "Elimina una certificación del dossier.",
+        parameters: [
+          {
+            name: "cedula",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Cédula del usuario",
+            example: "0954321876"
+          },
+          {
+            name: "certificacionId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID de la certificación a eliminar",
+            example: "661f1b34fe5ed4e7a4a3f1c6"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Certificación eliminada exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Certificación no encontrada",
             content: {
               "application/json": {
                 schema: {

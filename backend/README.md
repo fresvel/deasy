@@ -25,3 +25,17 @@
    - Si la conexión a MariaDB está configurada, se registrará la verificación/creación de la base y la tabla.
    - El servidor queda escuchando en `http://localhost:3000/easym/v1/` por defecto.
 
+6. **Accede a la documentación de la API (Swagger)**
+   - Una vez que el servidor esté corriendo, puedes acceder a la documentación interactiva de Swagger en:
+     ```
+     http://localhost:3000/easym/docs
+     ```
+   - También puedes obtener el JSON de la documentación en:
+     ```
+     http://localhost:3000/easym/docs.json
+     ```
+   - La documentación incluye:
+     - **Auth**: Endpoints de autenticación (registro e inicio de sesión)
+     - **Dossier**: Endpoints para gestionar el dossier académico (títulos, experiencia, referencias, formación, certificaciones)
+   - Desde la interfaz de Swagger puedes probar los endpoints directamente, ver los esquemas de datos requeridos y las respuestas esperadas.
+
