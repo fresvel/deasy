@@ -145,8 +145,8 @@
         <h5 class="modal-title" id="referenciaModalLabel">Agregar Referencia</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <AgregarReferencia/>
+          <div class="modal-body">
+        <AgregarReferencia @referencia-added="handleReferenciaAdded" />
       </div>
     </div>
   </div>
@@ -154,8 +154,9 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted} from "vue"
+import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
+import { Modal } from "bootstrap";
 import AgregarReferencia from "./AgregarReferencia.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
@@ -165,6 +166,7 @@ const modal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
+let bootstrapModal = null;
 
 // Computed properties para agrupar referencias por tipo
 const referenciasLaborales = computed(() => {
@@ -245,14 +247,30 @@ const clickBtnsera = (ref) => {
 };
 
 const openModal = () => {
-    const modalElement = document.getElementById('referenciaModal');
-    const modal = new window.bootstrap.Modal(modalElement);
-    modal.show();
+    if (!modal.value) {
+        return;
+    }
+    bootstrapModal = Modal.getOrCreateInstance(modal.value);
+    bootstrapModal.show();
+};
+
+const handleReferenciaAdded = () => {
+    loadDossier();
 };
 
 // Cargar datos al montar el componente
 onMounted(() => {
     loadDossier();
+    window.addEventListener('dossier-updated', loadDossier);
+});
+
+onBeforeUnmount(() => {
+    if (bootstrapModal) {
+        bootstrapModal.hide();
+        bootstrapModal.dispose();
+        bootstrapModal = null;
+    }
+    window.removeEventListener('dossier-updated', loadDossier);
 });
 
 

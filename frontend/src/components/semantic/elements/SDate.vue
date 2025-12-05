@@ -1,12 +1,13 @@
 <template>
-    <div class="col-5">
+    <div class="col-12 col-md-6">
       <div class="mb-3">
         <label :for="dateId" class="form-label">{{ label }}</label>
-        <datepicker   
+        <input
           :id="dateId"
-          :value="input"
-          @date="updateValue"
-          class="form-control"
+          type="date"
+          :value="formattedValue"
+          @input="updateValue"
+          class="form-control form-control-lg"
           :placeholder="placeholder"
         />
       </div>
@@ -14,8 +15,7 @@
 </template>
   
   <script setup>
-  import { ref, watch, defineProps, defineEmits, computed } from 'vue';
-  import Datepicker from 'vuejs3-datepicker'
+  import { defineProps, defineEmits, computed } from 'vue';
 
   
   const props = defineProps({
@@ -25,10 +25,11 @@
     },
     placeholder: {
       type: String,
-      required: true
+      required: false,
+      default: 'Selecciona la fecha'
     },
     modelValue: {
-      type: String,
+      type: [String, Date],
       default: ''
     },
     type:{
@@ -39,24 +40,42 @@
   
   const emit = defineEmits(['update:modelValue']);
   
-  // Generar ID único para el datepicker
+  // Generar ID único para el input
   const dateId = computed(() => `date-${Math.random().toString(36).substr(2, 9)}`);
   
-  // Inicializa el valor del input con props.modelValue
-  const input = ref(props.modelValue);
-  
-  // Actualiza el valor cuando cambian las props
-  watch(() => props.modelValue, (newVal) => {
-    input.value = newVal;
+  // Formatear el valor para el input type="date" (YYYY-MM-DD)
+  const formattedValue = computed(() => {
+    if (!props.modelValue) return '';
+    
+    let date;
+    if (props.modelValue instanceof Date) {
+      date = props.modelValue;
+    } else if (typeof props.modelValue === 'string') {
+      // Si ya está en formato YYYY-MM-DD, usarlo directamente
+      if (/^\d{4}-\d{2}-\d{2}$/.test(props.modelValue)) {
+        return props.modelValue;
+      }
+      date = new Date(props.modelValue);
+      if (isNaN(date.getTime())) return '';
+    } else {
+      return '';
+    }
+    
+    if (isNaN(date.getTime())) return '';
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   });
   
   // Función para manejar los cambios del input
   function updateValue(event) {
-    emit('update:modelValue', event.target.value);
+    const value = event.target.value; // El input type="date" devuelve YYYY-MM-DD
+    emit('update:modelValue', value);
   }
   </script>
   
   <style scoped>
   /* Agrega tus estilos aquí */
   </style>
-  

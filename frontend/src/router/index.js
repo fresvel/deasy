@@ -3,6 +3,8 @@ import Login from "../views/login/LoginView.vue";
 import Register from "../views/login/RegisterView.vue";
 import DashboardHome from "../views/logged/DashboardHome.vue";
 import IndexPage from "../views/logged/LoggedView.vue";
+import { isTokenValid, clearAuthData } from "../utils/tokenUtils.js";
+import axios from "axios";
 
 import FirmarPdf from "@/views/logged/funciones/FirmarView.vue";
 
@@ -35,12 +37,18 @@ const routes = [
   {
     path: "/logout",
     name: "logout",
-    beforeEnter: (to, from, next) => {
-      // Limpiar cookies/tokens/datos de usuario
-      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      sessionStorage.clear();
+    beforeEnter: async (to, from, next) => {
+      try {
+        // Llamar al endpoint de logout del backend para limpiar la cookie del refreshToken
+        const url = 'http://localhost:3000/easym/v1/users/logout';
+        await axios.post(url, {}, { withCredentials: true });
+      } catch (error) {
+        // Si falla, continuar de todas formas para limpiar el frontend
+        console.error('Error al cerrar sesión en el servidor:', error);
+      }
+      
+      // Limpiar cookies/tokens/datos de usuario del frontend
+      clearAuthData();
       
       console.log('🔓 Sesión cerrada');
       
@@ -64,17 +72,27 @@ router.beforeEach((to, from, next) => {
   
   // Si la ruta es pública, permitir acceso
   if (publicRoutes.includes(to.path)) {
-    // Si hay token y está intentando acceder a la raíz (login), redirigir al dashboard
-    if (token && to.path === '/') {
+    // Si hay token válido y está intentando acceder a la raíz (login), redirigir al dashboard
+    if (token && isTokenValid(token) && to.path === '/') {
       next('/dashboard');
       return;
     }
+    
+    // Si el token está expirado, limpiarlo antes de continuar
+    if (token && !isTokenValid(token)) {
+      clearAuthData();
+    }
+    
     next();
     return;
   }
   
-  // Si no hay token y no es una ruta pública, redirigir al login
-  if (!token) {
+  // Si no hay token o está expirado, limpiar y redirigir al login
+  if (!token || !isTokenValid(token)) {
+    if (token) {
+      // El token existe pero está expirado, limpiarlo
+      clearAuthData();
+    }
     next('/');
     return;
   }

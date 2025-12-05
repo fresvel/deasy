@@ -5,7 +5,11 @@
       <p class="text-muted mb-0">Detalla la información principal del evento de formación continua.</p>
     </header>
 
-    <form class="row g-4">
+    <div v-if="errorMessage" class="alert alert-danger mb-3" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <form class="row g-4" @submit.prevent="onSubmit">
       <div class="col-md-6">
         <label for="cap-tema" class="form-label">Tema</label>
         <textarea
@@ -42,13 +46,11 @@
       </div>
 
       <div class="col-md-6">
-        <label class="form-label">Enfoque</label>
+        <label class="form-label">Rol</label>
         <s-select
-          :options="enfoques"
-          v-model="form.enfoque"
-          :multiple="true"
+          :options="['Asistencia', 'Instructor', 'Aprobación']"
+          v-model="form.rol"
         />
-        <small class="text-muted">Puedes seleccionar más de una opción.</small>
       </div>
 
       <div class="col-md-6">
@@ -62,6 +64,7 @@
       <div class="col-md-3">
         <s-date
           label="Inicio"
+          placeholder="Selecciona la fecha"
           v-model="form.fecha_inicio"
         />
       </div>
@@ -69,6 +72,7 @@
       <div class="col-md-3">
         <s-date
           label="Fin"
+          placeholder="Selecciona la fecha"
           v-model="form.fecha_fin"
         />
       </div>
@@ -83,11 +87,12 @@
       </div>
 
       <div class="col-12 d-flex justify-content-end gap-2 mt-3">
-        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel">
+        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
           Cancelar
         </button>
-        <button type="button" class="btn btn-primary btn-lg" @click="onSubmit">
-          Guardar
+        <button type="submit" class="btn btn-primary btn-lg" :disabled="isSubmitting">
+          <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ isSubmitting ? "Guardando..." : "Guardar" }}
         </button>
       </div>
     </form>
@@ -95,24 +100,34 @@
 </template>
 
 <script setup>
-import { reactive } from "vue";
+import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
+import axios from "axios";
 import SInput from "@/components/semantic/elements/SInput.vue";
 import SSelect from "@/components/semantic/elements/SSelect.vue";
 import SDate from "@/components/semantic/elements/SDate.vue";
 import { escountries } from "@/composable/countries";
+
+const emit = defineEmits(["capacitacion-added"]);
 
 const form = reactive({
   tema: "",
   institucion: "",
   institucionPersonalizada: "",
   tipo: "Docente",
-  enfoque: [],
+  rol: "Asistencia",
   pais: "Ecuador",
   fecha_inicio: "",
   fecha_fin: "",
   horas: ""
 });
+
+const currentUser = ref(null);
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+
+const API_BASE_URL = "http://localhost:3000";
+const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
 const instituciones = [
   "Pontificia Universidad Católica del Ecuador",
@@ -123,12 +138,22 @@ const instituciones = [
   "Otra"
 ];
 
-const enfoques = ["Asistencia", "Aprobación", "Instructor"];
+onMounted(() => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    try {
+      currentUser.value = JSON.parse(storedUser);
+    } catch (error) {
+      console.error("No se pudo parsear el usuario en localStorage", error);
+    }
+  }
+});
 
 const closeModal = () => {
   const modalElement = document.getElementById("capacitacionModal");
   if (!modalElement) return;
-  Modal.getInstance(modalElement)?.hide();
+  const modalInstance = Modal.getInstance(modalElement);
+  modalInstance?.hide();
 };
 
 const resetForm = () => {
@@ -136,11 +161,12 @@ const resetForm = () => {
   form.institucion = "";
   form.institucionPersonalizada = "";
   form.tipo = "Docente";
-  form.enfoque = [];
+  form.rol = "Asistencia";
   form.pais = "Ecuador";
   form.fecha_inicio = "";
   form.fecha_fin = "";
   form.horas = "";
+  errorMessage.value = "";
 };
 
 const onCancel = () => {
@@ -148,19 +174,78 @@ const onCancel = () => {
   closeModal();
 };
 
-const onSubmit = () => {
+const buildPayload = () => {
   const payload = {
-    ...form,
-    institucion:
-      form.institucion === "Otra"
-        ? form.institucionPersonalizada
-        : form.institucion,
-    enfoque: form.enfoque.join(", ")
+    tema: form.tema.trim(),
+    institution: form.institucion === "Otra" 
+      ? form.institucionPersonalizada.trim() 
+      : form.institucion,
+    tipo: form.tipo,
+    rol: form.rol,
+    pais: form.pais || "Ecuador",
+    horas: form.horas ? parseInt(form.horas) : 0,
+    sera: "Enviado"
   };
 
-  console.info("Capacitación registrada:", payload);
-  window.dispatchEvent(new Event('dossier-updated'));
-  closeModal();
+  if (form.fecha_inicio) {
+    payload.fecha_inicio = new Date(form.fecha_inicio);
+  }
+  
+  if (form.fecha_fin) {
+    payload.fecha_fin = new Date(form.fecha_fin);
+  }
+
+  return payload;
+};
+
+const validatePayload = (payload) => {
+  if (!payload.tema || payload.tema.trim() === '') {
+    return "Debe indicar el tema de la capacitación.";
+  }
+  if (!payload.institution || payload.institution.trim() === '') {
+    return "Debe indicar la institución.";
+  }
+  if (!form.fecha_inicio || form.fecha_inicio.trim() === '') {
+    return "Debe indicar la fecha de inicio.";
+  }
+  return "";
+};
+
+const onSubmit = async () => {
+  if (isSubmitting.value) {
+    return;
+  }
+
+  if (!currentUser.value?.cedula) {
+    errorMessage.value = "No se encontró la información del usuario.";
+    return;
+  }
+
+  const payload = buildPayload();
+  const validationError = validatePayload(payload);
+  if (validationError) {
+    errorMessage.value = validationError;
+    return;
+  }
+
+  try {
+    isSubmitting.value = true;
+    errorMessage.value = "";
+
+    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/formacion`;
+    await axios.post(url, payload);
+
+    emit("capacitacion-added", payload);
+    window.dispatchEvent(new Event("dossier-updated"));
+    resetForm();
+    closeModal();
+  } catch (error) {
+    console.error("Error al guardar la capacitación:", error);
+    errorMessage.value =
+      error?.response?.data?.message || "No se pudo guardar la capacitación.";
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 

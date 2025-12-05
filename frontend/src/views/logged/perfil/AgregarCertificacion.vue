@@ -5,7 +5,11 @@
       <p class="text-muted mb-0">Ingresa los datos de la certificación o reconocimiento obtenido.</p>
     </header>
 
-    <form class="row g-4">
+    <div v-if="errorMessage" class="alert alert-danger mb-3" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <form class="row g-4" @submit.prevent="onSubmit">
       <div class="col-md-6">
         <label for="cert-tema" class="form-label">Nombre de la certificación</label>
         <textarea
@@ -37,12 +41,12 @@
         <label class="form-label">Ámbito</label>
         <s-select
           :options="['Nacional', 'Internacional']"
-          v-model="form.ambito"
+          v-model="form.tipo"
         />
       </div>
 
       <div class="col-md-4">
-        <s-date label="Fecha de emisión" v-model="form.fecha" />
+        <s-date label="Fecha de emisión" placeholder="Selecciona la fecha" v-model="form.fecha" />
       </div>
 
       <div class="col-md-4">
@@ -66,11 +70,12 @@
       </div>
 
       <div class="col-12 d-flex justify-content-end gap-2 mt-3">
-        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel">
+        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
           Cancelar
         </button>
-        <button type="button" class="btn btn-primary btn-lg" @click="onSubmit">
-          Guardar
+        <button type="submit" class="btn btn-primary btn-lg" :disabled="isSubmitting">
+          <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ isSubmitting ? "Guardando..." : "Guardar" }}
         </button>
       </div>
     </form>
@@ -78,21 +83,31 @@
 </template>
 
 <script setup>
-import { reactive } from "vue";
+import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
+import axios from "axios";
 import SInput from "@/components/semantic/elements/SInput.vue";
 import SSelect from "@/components/semantic/elements/SSelect.vue";
 import SDate from "@/components/semantic/elements/SDate.vue";
+
+const emit = defineEmits(["certificacion-added"]);
 
 const form = reactive({
   titulo: "",
   institucion: "",
   institucionPersonalizada: "",
-  ambito: "Nacional",
+  tipo: "Nacional",
   fecha: "",
   horas: "",
   descripcion: ""
 });
+
+const currentUser = ref(null);
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+
+const API_BASE_URL = "http://localhost:3000";
+const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
 const instituciones = [
   "Pontificia Universidad Católica del Ecuador",
@@ -103,20 +118,33 @@ const instituciones = [
   "Otra"
 ];
 
+onMounted(() => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    try {
+      currentUser.value = JSON.parse(storedUser);
+    } catch (error) {
+      console.error("No se pudo parsear el usuario en localStorage", error);
+    }
+  }
+});
+
 const closeModal = () => {
   const modalElement = document.getElementById("certificacionModal");
   if (!modalElement) return;
-  Modal.getInstance(modalElement)?.hide();
+  const modalInstance = Modal.getInstance(modalElement);
+  modalInstance?.hide();
 };
 
 const resetForm = () => {
   form.titulo = "";
   form.institucion = "";
   form.institucionPersonalizada = "";
-  form.ambito = "Nacional";
+  form.tipo = "Nacional";
   form.fecha = "";
   form.horas = "";
   form.descripcion = "";
+  errorMessage.value = "";
 };
 
 const onCancel = () => {
@@ -124,18 +152,72 @@ const onCancel = () => {
   closeModal();
 };
 
-const onSubmit = () => {
+const buildPayload = () => {
   const payload = {
-    ...form,
-    institucion:
-      form.institucion === "Otra"
-        ? form.institucionPersonalizada
-        : form.institucion
+    titulo: form.titulo.trim(),
+    institution: form.institucion === "Otra" 
+      ? form.institucionPersonalizada.trim() 
+      : form.institucion,
+    tipo: form.tipo,
+    horas: form.horas ? parseInt(form.horas) : 0,
+    sera: "Enviado"
   };
 
-  console.info("Certificación registrada:", payload);
-  window.dispatchEvent(new Event('dossier-updated'));
-  closeModal();
+  if (form.fecha) {
+    payload.fecha = new Date(form.fecha);
+  }
+
+  return payload;
+};
+
+const validatePayload = (payload) => {
+  if (!payload.titulo || payload.titulo.trim() === '') {
+    return "Debe indicar el nombre de la certificación.";
+  }
+  if (!payload.institution || payload.institution.trim() === '') {
+    return "Debe indicar la institución emisora.";
+  }
+  if (!form.fecha || form.fecha.trim() === '') {
+    return "Debe indicar la fecha de emisión.";
+  }
+  return "";
+};
+
+const onSubmit = async () => {
+  if (isSubmitting.value) {
+    return;
+  }
+
+  if (!currentUser.value?.cedula) {
+    errorMessage.value = "No se encontró la información del usuario.";
+    return;
+  }
+
+  const payload = buildPayload();
+  const validationError = validatePayload(payload);
+  if (validationError) {
+    errorMessage.value = validationError;
+    return;
+  }
+
+  try {
+    isSubmitting.value = true;
+    errorMessage.value = "";
+
+    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/certificaciones`;
+    await axios.post(url, payload);
+
+    emit("certificacion-added", payload);
+    window.dispatchEvent(new Event("dossier-updated"));
+    resetForm();
+    closeModal();
+  } catch (error) {
+    console.error("Error al guardar la certificación:", error);
+    errorMessage.value =
+      error?.response?.data?.message || "No se pudo guardar la certificación.";
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 

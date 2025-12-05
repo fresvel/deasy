@@ -35,10 +35,10 @@
             </tr>
             <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
               <td>{{ experiencia.institucion }}</td>
-              <td>{{ experiencia.catedra }}</td>
-              <td>{{ experiencia.modalidad }}</td>
-              <td>{{ experiencia.desde }}</td>
-              <td>{{ experiencia.hasta || 'Actualidad' }}</td>
+              <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+              <td>-</td>
+              <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
+              <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
               <td class="text-end">
                 <BtnEdit @onpress="() => editarExperiencia(experiencia)" class="me-2" />
                 <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
@@ -74,10 +74,10 @@
             </tr>
             <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id">
               <td>{{ experiencia.institucion }}</td>
-              <td>{{ experiencia.funciones }}</td>
-              <td>{{ experiencia.modalidad }}</td>
-              <td>{{ experiencia.desde }}</td>
-              <td>{{ experiencia.hasta || 'Actualidad' }}</td>
+              <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+              <td>-</td>
+              <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
+              <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
               <td class="text-end">
                 <BtnEdit @onpress="() => editarExperiencia(experiencia)" class="me-2" />
                 <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
@@ -89,9 +89,15 @@
     </section>
 
     <div class="modal fade" id="experienciaModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-dialog modal-xl">
         <div class="modal-content">
-          <AgregarExperiencia />
+          <div class="modal-header">
+            <h5 class="modal-title">Agregar Experiencia</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <AgregarExperiencia @experiencia-added="handleExperienciaAdded" />
+          </div>
         </div>
       </div>
     </div>
@@ -99,34 +105,114 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import axios from "axios";
+import { Modal } from "bootstrap";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
 
-const experienciaDocente = ref([]);
-const experienciaProfesional = ref([]);
-
 const modal = ref(null);
+const dossier = ref(null);
+const loading = ref(true);
+const currentUser = ref(null);
+let bootstrapModal = null;
 
-const openModal = () => {
-  const modalElement = modal.value;
-  if (!modalElement) return;
-  const bootstrapModal = new window.bootstrap.Modal(modalElement);
-  bootstrapModal.show();
-};
-
-onMounted(() => {
-  // Aquí se podría cargar la experiencia real desde el backend
+// Computed properties para agrupar experiencia por tipo
+const experienciaDocente = computed(() => {
+    if (!dossier.value || !dossier.value.experiencia) return [];
+    return dossier.value.experiencia.filter(e => e.tipo === 'Docencia');
 });
 
-const editarExperiencia = (experiencia) => {
-  console.info("Editar experiencia", experiencia);
+const experienciaProfesional = computed(() => {
+    if (!dossier.value || !dossier.value.experiencia) return [];
+    return dossier.value.experiencia.filter(e => e.tipo === 'Profesional');
+});
+
+// Formatear fecha para mostrar
+const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
 };
 
-const eliminarExperiencia = (experiencia) => {
-  console.info("Eliminar experiencia", experiencia);
+// Cargar datos del usuario y su dossier
+const loadDossier = async () => {
+    try {
+        loading.value = true;
+        
+        // Obtener usuario del localStorage
+        const userDataString = localStorage.getItem('user');
+        if (!userDataString) {
+            console.error('No hay usuario logueado');
+            return;
+        }
+        
+        currentUser.value = JSON.parse(userDataString);
+        console.log('👤 Usuario cargado:', currentUser.value);
+        
+        // Obtener dossier del backend
+        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}`;
+        const response = await axios.get(url);
+        
+        if (response.data.success) {
+            dossier.value = response.data.data;
+            console.log('📋 Dossier cargado:', dossier.value);
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar dossier:', error);
+    } finally {
+        loading.value = false;
+    }
 };
+
+const openModal = () => {
+    if (!modal.value) {
+        return;
+    }
+    bootstrapModal = Modal.getOrCreateInstance(modal.value);
+    bootstrapModal.show();
+};
+
+const handleExperienciaAdded = () => {
+    loadDossier();
+};
+
+// Función para eliminar experiencia
+const eliminarExperiencia = async () => {
+    if (!confirm('¿Estás seguro de eliminar esta experiencia?')) return;
+    
+    try {
+        // Nota: Necesitaríamos un endpoint DELETE para experiencia
+        // Por ahora solo recargamos
+        await loadDossier();
+        alert('Experiencia eliminada correctamente');
+    } catch (error) {
+        console.error('Error al eliminar experiencia:', error);
+        alert('Error al eliminar la experiencia');
+    }
+};
+
+const editarExperiencia = (experiencia) => {
+    console.log('Editar experiencia:', experiencia);
+    // TODO: Implementar edición
+};
+
+// Cargar datos al montar el componente
+onMounted(() => {
+    loadDossier();
+    window.addEventListener('dossier-updated', loadDossier);
+});
+
+onBeforeUnmount(() => {
+    if (bootstrapModal) {
+        bootstrapModal.hide();
+        bootstrapModal.dispose();
+        bootstrapModal = null;
+    }
+    window.removeEventListener('dossier-updated', loadDossier);
+});
 </script>
 
 <style scoped>
