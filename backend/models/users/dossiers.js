@@ -40,7 +40,7 @@ const referenciaSchema = new mongoose.Schema({
     },
     telefono:{type: String},
     institution:{type: String, required:function(){return this.tipo === "laboral"}, default:""},
-    tipo: {type: String, enum: ["laboral, personal, familiar"]}
+    tipo: {type: String, enum: ["laboral", "personal", "familiar"]}
 });
 
 const formacionSchema = new mongoose.Schema({ 

@@ -179,6 +179,15 @@ export const addReferencia = async (req, res) => {
             });
         }
 
+        // Validar que el tipo de referencia sea válido antes de guardar
+        const tiposValidos = ["laboral", "personal", "familiar"];
+        if (req.body.tipo && !tiposValidos.includes(req.body.tipo)) {
+            return res.status(400).json({ 
+                success: false,
+                message: `Tipo de referencia inválido: "${req.body.tipo}". Debe ser uno de: ${tiposValidos.join(', ')}` 
+            });
+        }
+
         dossier.referencias.push(req.body);
         await dossier.save();
 
@@ -190,6 +199,17 @@ export const addReferencia = async (req, res) => {
 
     } catch (error) {
         console.error('Error al agregar referencia:', error);
+        
+        // Si es un error de validación de Mongoose, dar un mensaje más claro
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(e => e.message).join(', ');
+            return res.status(400).json({ 
+                success: false,
+                message: `Error de validación: ${errors}`,
+                error: error.message 
+            });
+        }
+
         res.status(500).json({ 
             success: false,
             message: 'Error al agregar referencia',
@@ -297,6 +317,134 @@ export const deleteReferencia = async (req, res) => {
         res.status(500).json({ 
             success: false,
             message: 'Error al eliminar referencia',
+            error: error.message 
+        });
+    }
+};
+
+// Agregar formacion (capacitación)
+export const addFormacion = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Usuario no encontrado" 
+            });
+        }
+
+        dossier.formacion.push(req.body);
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: 'Capacitación agregada correctamente',
+            data: dossier
+        });
+
+    } catch (error) {
+        console.error('Error al agregar capacitación:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error al agregar capacitación',
+            error: error.message 
+        });
+    }
+};
+
+// Eliminar formacion (capacitación)
+export const deleteFormacion = async (req, res) => {
+    try {
+        const { cedula, formacionId } = req.params;
+        
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Usuario no encontrado" 
+            });
+        }
+
+        dossier.formacion.pull(formacionId);
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: 'Capacitación eliminada correctamente',
+            data: dossier
+        });
+
+    } catch (error) {
+        console.error('Error al eliminar capacitación:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error al eliminar capacitación',
+            error: error.message 
+        });
+    }
+};
+
+// Agregar certificación
+export const addCertificacion = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Usuario no encontrado" 
+            });
+        }
+
+        dossier.certificaciones.push(req.body);
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: 'Certificación agregada correctamente',
+            data: dossier
+        });
+
+    } catch (error) {
+        console.error('Error al agregar certificación:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error al agregar certificación',
+            error: error.message 
+        });
+    }
+};
+
+// Eliminar certificación
+export const deleteCertificacion = async (req, res) => {
+    try {
+        const { cedula, certificacionId } = req.params;
+        
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Usuario no encontrado" 
+            });
+        }
+
+        dossier.certificaciones.pull(certificacionId);
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: 'Certificación eliminada correctamente',
+            data: dossier
+        });
+
+    } catch (error) {
+        console.error('Error al eliminar certificación:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error al eliminar certificación',
             error: error.message 
         });
     }

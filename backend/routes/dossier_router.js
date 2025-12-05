@@ -18,5 +18,13 @@ router.post('/:cedula/experiencia', dossierController.addExperiencia);
 router.post('/:cedula/referencias', dossierController.addReferencia);
 router.delete('/:cedula/referencias/:referenciaId', dossierController.deleteReferencia);
 
+// Rutas para formacion (capacitación)
+router.post('/:cedula/formacion', dossierController.addFormacion);
+router.delete('/:cedula/formacion/:formacionId', dossierController.deleteFormacion);
+
+// Rutas para certificaciones
+router.post('/:cedula/certificaciones', dossierController.addCertificacion);
+router.delete('/:cedula/certificaciones/:certificacionId', dossierController.deleteCertificacion);
+
 export default router;
 
