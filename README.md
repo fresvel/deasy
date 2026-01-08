@@ -33,7 +33,9 @@ Este repositorio contiene la aplicación web C-DEASY, orientada a la gestión y 
 3. Configurar los archivos de entorno según las instrucciones de cada proyecto.
 
 ## Ejecución/Desarrollo
-- Ver guía y comandos de inicio rápido en los README específicos de cada subcarpeta.
+- Ver guía y comandos de inicio rápido en los README específicos de cada subcarpeta:
+   - [README del Backend](./backend/README.md)
+   - [README del Frontend](./frontend/README.md)
 
 ## Estandarización y Contribución
 - El repositorio implementa organización modular estricta, separación entre lógica backend y presentación frontend, y rutas centralizadas.
@@ -41,4 +43,3 @@ Este repositorio contiene la aplicación web C-DEASY, orientada a la gestión y 
 
 ## Otros Recursos
 - Para integración continua, despliegue o dudas técnicas, consultar los apartados "Deploy/Gestión" y FAQ en los README de `frontend` y `backend`.
-
