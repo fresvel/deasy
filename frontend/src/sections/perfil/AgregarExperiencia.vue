@@ -72,8 +72,8 @@
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
 import axios from "axios";
-import SSelect from "@/components/semantic/elements/SSelect.vue";
-import SDate from "@/components/semantic/elements/SDate.vue";
+import SSelect from "@/components/SSelect.vue";
+import SDate from "@/components/SDate.vue";
 
 const emit = defineEmits(["experiencia-added"]);
 

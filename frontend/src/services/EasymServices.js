@@ -1,5 +1,6 @@
 import {ref} from "vue"
 import axios from "axios"
+import { API_ROUTES } from "./apiConfig";
 
 
 class EasymServices {
@@ -47,7 +48,7 @@ class EasymServices {
     async informeparcialTutorias(){
      try {
         
-        const url="http://localhost:3000/easym/v1/tutorias/parcial"
+        const url=API_ROUTES.INFORME_TUTORIAS
         const formdata=new FormData();
         formdata.append('file',this.file_grades.value.files[0]);
         formdata.append('tutorias',this.file_tutorias.value.files[0]);
@@ -65,7 +66,7 @@ class EasymServices {
 
     async generarReporte(){
         try {
-            const url="http://localhost:3000/easym/v1/academia/co/logros.web"
+            const url=API_ROUTES.GENERAR_REPORTE
             const formdata= new FormData();
             formdata.append('file',this.file_grades.value.files[0]);
             console.log("File");
@@ -89,7 +90,7 @@ class EasymServices {
     
     async obtenerReporte(){
       try {
-            const url="http://localhost:3000/easym/v1/academia/co/logros.pdf"
+            const url=API_ROUTES.OBTENER_REPORTE
             
             this.informe.value.content={tables:this.levels.value, surveys:this.surveys.value}
             const res=await axios.post(url,this.informe.value)
@@ -103,7 +104,7 @@ class EasymServices {
 
     async getEasymPrograms(){
         try {
-            const url="http://localhost:3000/easym/v1/program"
+            const url=API_ROUTES.PROGRAMS
             const res=await axios.get(url)
             this.programs.value=res.data.map(programa => {
                 const {code, ...resto}=programa
@@ -118,7 +119,7 @@ class EasymServices {
 
     async getEasymAreas(){
         try {
-            const url="http://localhost:3000/easym/v1/area"
+            const url=API_ROUTES.AREAS
             const res=await axios.get(url)
             this.areas.value=res.data
         } catch (error) {
@@ -130,7 +131,7 @@ class EasymServices {
     async getTareasPendientes(user){
         try {
             console.log('📋 Obteniendo tareas para usuario:', user)
-            const url=`http://localhost:3000/easym/v1/tarea/pendiente?usuario=${user}`
+            const url=API_ROUTES.TAREAS_PENDIENTES(user)
             const res=await axios.get(url)
             this.tareas.value=res.data
             console.log("✅ Tareas obtenidas:", res.data)

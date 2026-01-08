@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import ObtenerInformes from '@/components/easym/ObtenerInformes.vue';
+import ObtenerInformes from '@/components/ObtenerInformes.vue';
 import {defineProps, onMounted} from 'vue'
 
 

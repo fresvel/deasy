@@ -158,9 +158,9 @@ import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
 import { Modal } from "bootstrap";
 import AgregarReferencia from "./AgregarReferencia.vue";
-import BtnDelete from "@/components/database/BtnDelete.vue";
-import BtnEdit from "@/components/database/BtnEdit.vue";
-import BtnSera from "@/components/database/BtnSera.vue";
+import BtnDelete from "@/components/BtnDelete.vue";
+import BtnEdit from "@/components/BtnEdit.vue";
+import BtnSera from "@/components/BtnSera.vue";
 
 const modal = ref(null);
 const dossier = ref(null);

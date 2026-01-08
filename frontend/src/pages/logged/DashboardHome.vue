@@ -120,11 +120,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import SHeader from '@/components/main/SHeader.vue';
-import SMenu from '@/components/main/SMenu.vue';
-import SBody from '@/components/main/SBody.vue';
-import SMessage from '@/components/main/SNotify.vue';
-import UserProfile from '@/components/general/UserProfile.vue';
+import SHeader from '@/layouts/SHeader.vue';
+import SMenu from '@/layouts/SMenu.vue';
+import SBody from '@/layouts/SBody.vue';
+import SMessage from '@/layouts/SNotify.vue';
+import UserProfile from '@/components/UserProfile.vue';
 
 const router = useRouter();
 const currentUser = ref(null);

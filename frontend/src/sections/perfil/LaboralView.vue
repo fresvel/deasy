@@ -109,8 +109,8 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
-import BtnDelete from "@/components/database/BtnDelete.vue";
-import BtnEdit from "@/components/database/BtnEdit.vue";
+import BtnDelete from "@/components/BtnDelete.vue";
+import BtnEdit from "@/components/BtnEdit.vue";
 
 const modal = ref(null);
 const dossier = ref(null);

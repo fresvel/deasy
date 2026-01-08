@@ -64,7 +64,6 @@
             <TitulosView v-if="process==='Formación'"></TitulosView>
             <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
             <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
-            <CapacitaciónView v-else-if="process==='Capacitación'"></CapacitaciónView>
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
         </div>
         <div v-else-if="area=='Academia'">
@@ -95,24 +94,23 @@
     
 import { ref, computed, onMounted, onBeforeUnmount} from 'vue';
 import axios from 'axios';
-    import SMenu from '@/components/main/SMenu.vue';
-    import SMessage from '@/components/main/SNotify.vue';
-    import SBody from '@/components/main/SBody.vue';
-    import SHeader from '@/components/main/SHeader.vue';
-    import UserProfile from '@/components/general/UserProfile.vue';
-    import TitulosView from './perfil/TitulosView.vue';
-    import LaboralView from './perfil/LaboralView.vue';
-    import ReferenciasView from './perfil/ReferenciasView.vue';
-    import CapacitaciónView from './perfil/CapacitaciónView.vue';
-    import CertificacionView from './perfil/CertificacionView.vue';
+    import SMenu from '@/layouts/SMenu.vue';
+    import SMessage from '@/layouts/SNotify.vue';
+    import SBody from '@/layouts/SBody.vue';
+    import SHeader from '@/layouts/SHeader.vue';
+    import UserProfile from '@/components/UserProfile.vue';
+import TitulosView from '@/sections/perfil/TitulosView.vue';
+import LaboralView from '@/sections/perfil/LaboralView.vue';
+import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
+import CertificacionView from '@/sections/perfil/CertificacionView.vue';
 
-    import IndexAcademia from './academia/AcademiaView.vue';
-    import LogrosView from './academia/LogrosView.vue';
-    import LogrosView2 from './academia/LogrosView2.vue';
+import IndexAcademia from '@/sections/academia/AcademiaView.vue';
+import LogrosView from '@/sections/academia/LogrosView.vue';
+import LogrosView2 from '@/sections/academia/LogrosView2.vue';
 
-    import TutoriasView from './academia/TutoriasView.vue';
+import TutoriasView from '@/sections/academia/TutoriasView.vue';
 
-    import FirmarPdf from './funciones/FirmarPdf.vue';
+import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';

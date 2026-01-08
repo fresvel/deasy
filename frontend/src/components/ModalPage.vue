@@ -100,8 +100,8 @@
 
 <script setup>
 import {ref} from "vue"
-import SInput from '@/components/semantic/elements/SInput.vue';
-import STextarea from '@/components/semantic/elements/STextarea.vue'
+import SInput from '@/components/SInput.vue';
+import STextarea from '@/components/STextarea.vue'
 import { escountries } from '@/composable/countries';
 import SSelect from "../semantic/elements/SSelect.vue";
 

@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory} from "vue-router";
-import Login from "../views/login/LoginView.vue";
-import Register from "../views/login/RegisterView.vue";
-import DashboardHome from "../views/logged/DashboardHome.vue";
-import IndexPage from "../views/logged/LoggedView.vue";
+import Login from "../pages/login/LoginView.vue";
+import Register from "../pages/login/RegisterView.vue";
+import DashboardHome from "../pages/logged/DashboardHome.vue";
+import IndexPage from "../pages/logged/LoggedView.vue";
 import { isTokenValid, clearAuthData } from "../utils/tokenUtils.js";
 import axios from "axios";
 
-import FirmarPdf from "@/views/logged/funciones/FirmarView.vue";
+import FirmarPdf from "../pages/logged/funciones/FirmarView.vue";
 
 const routes = [
   {
