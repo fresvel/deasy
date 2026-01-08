@@ -53,11 +53,11 @@
     
     
     import { ref, computed, onMounted} from 'vue';
-    import SMenu from '@/components/main/SMenu.vue';
-    import SMessage from '@/components/main/SNotify.vue';
-    import SBody from '@/components/main/SBody.vue';
-    import SHeader from '@/components/main/SHeader.vue';
-    import UserProfile from '@/components/general/UserProfile.vue';
+    import SMenu from '@/layouts/SMenu.vue';
+    import SMessage from '@/layouts/SNotify.vue';
+    import SBody from '@/layouts/SBody.vue';
+    import SHeader from '@/layouts/SHeader.vue';
+    import UserProfile from '@/components/UserProfile.vue';
     import FirmarPdf from './FirmarPdf.vue';
 
     // Obtener datos del usuario desde localStorage

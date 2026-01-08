@@ -85,7 +85,7 @@
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
 import axios from "axios";
-import SSelect from "@/components/semantic/elements/SSelect.vue";
+import SSelect from "@/components/SSelect.vue";
 
 const emit = defineEmits(["referencia-added"]);
 

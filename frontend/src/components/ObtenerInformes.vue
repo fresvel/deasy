@@ -42,8 +42,8 @@
 
 <script setup>
 import {ref, defineProps} from 'vue'
-import SSelect from '@/components/semantic/elements/SSelect.vue';
-import SInput from '@/components/semantic/elements/SInput.vue';
+import SSelect from '@/components/SSelect.vue';
+import SInput from '@/components/SInput.vue';
 import EasymServices from '@/services/EasymServices';
 
 

@@ -109,8 +109,8 @@
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
 import axios from "axios";
-import SInput from "@/components/semantic/elements/SInput.vue";
-import SSelect from "@/components/semantic/elements/SSelect.vue";
+import SInput from "@/components/SInput.vue";
+import SSelect from "@/components/SSelect.vue";
 import { escountries } from "@/composable/countries";
 
 const emit = defineEmits(["close-modal", "title-added"]);

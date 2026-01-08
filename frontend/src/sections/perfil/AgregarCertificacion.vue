@@ -1,8 +1,8 @@
 <template>
   <div class="modal-body px-2 px-md-3 py-3">
     <header class="mb-4">
-      <h2 class="modal-title fw-semibold mb-1">Registrar capacitación</h2>
-      <p class="text-muted mb-0">Detalla la información principal del evento de formación continua.</p>
+      <h2 class="modal-title fw-semibold mb-1">Registrar certificación</h2>
+      <p class="text-muted mb-0">Ingresa los datos de la certificación o reconocimiento obtenido.</p>
     </header>
 
     <div v-if="errorMessage" class="alert alert-danger mb-3" role="alert">
@@ -11,18 +11,18 @@
 
     <form class="row g-4" @submit.prevent="onSubmit">
       <div class="col-md-6">
-        <label for="cap-tema" class="form-label">Tema</label>
+        <label for="cert-tema" class="form-label">Nombre de la certificación</label>
         <textarea
-          id="cap-tema"
+          id="cert-tema"
           class="form-control form-control-lg"
           rows="2"
-          v-model="form.tema"
-          placeholder="Nombre del evento o curso"
+          v-model="form.titulo"
+          placeholder="Ej. Certificación en Gestión de Proyectos"
         ></textarea>
       </div>
 
       <div class="col-md-6">
-        <label class="form-label">Institución</label>
+        <label class="form-label">Institución emisora</label>
         <s-select
           :options="instituciones"
           v-model="form.institucion"
@@ -37,53 +37,36 @@
         />
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label">Tipo</label>
+      <div class="col-md-4">
+        <label class="form-label">Ámbito</label>
         <s-select
-          :options="['Docente', 'Profesional']"
+          :options="['Nacional', 'Internacional']"
           v-model="form.tipo"
         />
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label">Rol</label>
-        <s-select
-          :options="['Asistencia', 'Instructor', 'Aprobación']"
-          v-model="form.rol"
-        />
-      </div>
-
-      <div class="col-md-6">
-        <label class="form-label">País</label>
-        <s-select
-          :options="escountries"
-          v-model="form.pais"
-        />
-      </div>
-
-      <div class="col-md-3">
-        <s-date
-          label="Inicio"
-          placeholder="Selecciona la fecha"
-          v-model="form.fecha_inicio"
-        />
-      </div>
-
-      <div class="col-md-3">
-        <s-date
-          label="Fin"
-          placeholder="Selecciona la fecha"
-          v-model="form.fecha_fin"
-        />
+      <div class="col-md-4">
+        <s-date label="Fecha de emisión" placeholder="Selecciona la fecha" v-model="form.fecha" />
       </div>
 
       <div class="col-md-4">
         <s-input
-          label="Duración (horas)"
+          label="Horas o créditos"
           type="number"
           min="0"
           v-model="form.horas"
         />
+      </div>
+
+      <div class="col-12">
+        <label for="cert-descripcion" class="form-label">Descripción (opcional)</label>
+        <textarea
+          id="cert-descripcion"
+          class="form-control form-control-lg"
+          rows="2"
+          v-model="form.descripcion"
+          placeholder="Información adicional relevante"
+        ></textarea>
       </div>
 
       <div class="col-12 d-flex justify-content-end gap-2 mt-3">
@@ -103,23 +86,20 @@
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
 import axios from "axios";
-import SInput from "@/components/semantic/elements/SInput.vue";
-import SSelect from "@/components/semantic/elements/SSelect.vue";
-import SDate from "@/components/semantic/elements/SDate.vue";
-import { escountries } from "@/composable/countries";
+import SInput from "@/components/SInput.vue";
+import SSelect from "@/components/SSelect.vue";
+import SDate from "@/components/SDate.vue";
 
-const emit = defineEmits(["capacitacion-added"]);
+const emit = defineEmits(["certificacion-added"]);
 
 const form = reactive({
-  tema: "",
+  titulo: "",
   institucion: "",
   institucionPersonalizada: "",
-  tipo: "Docente",
-  rol: "Asistencia",
-  pais: "Ecuador",
-  fecha_inicio: "",
-  fecha_fin: "",
-  horas: ""
+  tipo: "Nacional",
+  fecha: "",
+  horas: "",
+  descripcion: ""
 });
 
 const currentUser = ref(null);
@@ -133,8 +113,8 @@ const instituciones = [
   "Pontificia Universidad Católica del Ecuador",
   "Escuela Politécnica Nacional",
   "Universidad Central del Ecuador",
-  "Universidad de las Américas",
-  "Universidad San Francisco de Quito",
+  "Ministerio de Educación",
+  "Organización internacional",
   "Otra"
 ];
 
@@ -150,22 +130,20 @@ onMounted(() => {
 });
 
 const closeModal = () => {
-  const modalElement = document.getElementById("capacitacionModal");
+  const modalElement = document.getElementById("certificacionModal");
   if (!modalElement) return;
   const modalInstance = Modal.getInstance(modalElement);
   modalInstance?.hide();
 };
 
 const resetForm = () => {
-  form.tema = "";
+  form.titulo = "";
   form.institucion = "";
   form.institucionPersonalizada = "";
-  form.tipo = "Docente";
-  form.rol = "Asistencia";
-  form.pais = "Ecuador";
-  form.fecha_inicio = "";
-  form.fecha_fin = "";
+  form.tipo = "Nacional";
+  form.fecha = "";
   form.horas = "";
+  form.descripcion = "";
   errorMessage.value = "";
 };
 
@@ -176,37 +154,31 @@ const onCancel = () => {
 
 const buildPayload = () => {
   const payload = {
-    tema: form.tema.trim(),
+    titulo: form.titulo.trim(),
     institution: form.institucion === "Otra" 
       ? form.institucionPersonalizada.trim() 
       : form.institucion,
     tipo: form.tipo,
-    rol: form.rol,
-    pais: form.pais || "Ecuador",
     horas: form.horas ? parseInt(form.horas) : 0,
     sera: "Enviado"
   };
 
-  if (form.fecha_inicio) {
-    payload.fecha_inicio = new Date(form.fecha_inicio);
-  }
-  
-  if (form.fecha_fin) {
-    payload.fecha_fin = new Date(form.fecha_fin);
+  if (form.fecha) {
+    payload.fecha = new Date(form.fecha);
   }
 
   return payload;
 };
 
 const validatePayload = (payload) => {
-  if (!payload.tema || payload.tema.trim() === '') {
-    return "Debe indicar el tema de la capacitación.";
+  if (!payload.titulo || payload.titulo.trim() === '') {
+    return "Debe indicar el nombre de la certificación.";
   }
   if (!payload.institution || payload.institution.trim() === '') {
-    return "Debe indicar la institución.";
+    return "Debe indicar la institución emisora.";
   }
-  if (!form.fecha_inicio || form.fecha_inicio.trim() === '') {
-    return "Debe indicar la fecha de inicio.";
+  if (!form.fecha || form.fecha.trim() === '') {
+    return "Debe indicar la fecha de emisión.";
   }
   return "";
 };
@@ -232,17 +204,17 @@ const onSubmit = async () => {
     isSubmitting.value = true;
     errorMessage.value = "";
 
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/formacion`;
+    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/certificaciones`;
     await axios.post(url, payload);
 
-    emit("capacitacion-added", payload);
+    emit("certificacion-added", payload);
     window.dispatchEvent(new Event("dossier-updated"));
     resetForm();
     closeModal();
   } catch (error) {
-    console.error("Error al guardar la capacitación:", error);
+    console.error("Error al guardar la certificación:", error);
     errorMessage.value =
-      error?.response?.data?.message || "No se pudo guardar la capacitación.";
+      error?.response?.data?.message || "No se pudo guardar la certificación.";
   } finally {
     isSubmitting.value = false;
   }
