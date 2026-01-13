@@ -1,24 +1,27 @@
-# frontend
+# Documentacion Frontend
 
-## Project setup
-```
-npm install
-```
+1. **Instala dependencias**
+   ```bash
+   npm install
+   ```
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+2. **Configura el archivo `.env` (si aplicara)**
+   - El proyecto no usa variables de entorno por defecto.
+   - Si necesitas apuntar a otro backend, edita las URLs directamente en `src/services/EasymServices.js` o crea tu propio `.env` siguiendo la convención de Vue CLI.
 
-### Compiles and minifies for production
-```
-npm run build
-```
+3. **Lanza el servidor de desarrollo**
+   ```bash
+   npm run serve
+   ```
+   Queda expuesto en `http://localhost:8080/` (por defecto).
 
-### Lints and fixes files
-```
-npm run lint
-```
+4. **Compila para producción**
+   ```bash
+   npm run build
+   ```
+   Los archivos generados se guardan en `dist/`.
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+5. **Opcional: lint**
+   ```bash
+   npm run lint
+   ```

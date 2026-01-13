@@ -3,3 +3,8 @@ node_modules
 borrador
 output
 build
+
+# WhatsApp Sessions
+whatsapp-sessions/
+.wwebjs_auth/
+.wwebjs_cache/
