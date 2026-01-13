@@ -12,7 +12,7 @@
     
     <div class="sixteen wide column">
     
-      <table class="ui compact celled definition table">
+      <table class="table table-institutional table-striped table-hover align-middle">
               <thead>
               <tr>
                   <th class="text-left">
@@ -100,6 +100,3 @@ onMounted(()=>{
 
 </script>
 
-<style scoped>
-
-</style>

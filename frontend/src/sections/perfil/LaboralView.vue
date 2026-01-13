@@ -1,92 +1,102 @@
 <template>
   <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+
+
+    <div class="profile-section-header">
       <div>
-        <h2 class="fw-semibold mb-1">Experiencia laboral</h2>
-        <p class="text-muted mb-0">Consulta y registra tu experiencia docente y profesional.</p>
+        <h2 class="text-start profile-section-title">Experiencia laboral</h2>
       </div>
-      <button class="btn btn-primary" @click="openModal">
-        <i class="bi bi-plus-circle me-2"></i>Agregar
-      </button>
+      <div class="profile-section-actions">
+        <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
+          <font-awesome-icon icon="plus" class="me-2" />
+          Agregar
+        </button>
+      </div>
     </div>
 
-    <section class="mb-5">
-      <header class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">Experiencia Docente</h3>
-      </header>
-
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th scope="col">Institución</th>
-              <th scope="col">Cátedra / Asignatura</th>
-              <th scope="col">Modalidad</th>
-              <th scope="col">Desde</th>
-              <th scope="col">Hasta</th>
-              <th scope="col" class="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!experienciaDocente.length">
-              <td colspan="6" class="text-center text-muted py-4">
-                No has registrado experiencia docente todavía.
-              </td>
-            </tr>
-            <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
-              <td>{{ experiencia.institucion }}</td>
-              <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-              <td>-</td>
-              <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
-              <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-              <td class="text-end">
-                <BtnEdit @onpress="() => editarExperiencia(experiencia)" class="me-2" />
-                <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="text-start mb-3">Experiencia Docente</h3>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover table-institutional align-middle">
+            <thead >
+              <tr>
+                <th width="5%"></th>
+                <th class="text-start">INSTITUCIÓN</th>
+                <th class="text-start">CÁTEDRA / ASIGNATURA</th>
+                <th class="text-start">MODALIDAD</th>
+                <th class="text-start">DESDE</th>
+                <th class="text-start">HASTA</th>
+                <th class="text-start">ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="!experienciaDocente.length">
+                <td colspan="7" class="text-center text-muted">
+                  <p class="my-3">No has registrado experiencia docente todavía.</p>
+                </td>
+              </tr>
+              <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
+                <td><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td>{{ experiencia.institucion }}</td>
+                <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+                <td>-</td>
+                <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
+                <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
+                    <BtnEdit @onpress="() => editarExperiencia(experiencia)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <section>
-      <header class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">Experiencia profesional</h3>
-      </header>
-
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th scope="col">Institución</th>
-              <th scope="col">Funciones</th>
-              <th scope="col">Modalidad</th>
-              <th scope="col">Desde</th>
-              <th scope="col">Hasta</th>
-              <th scope="col" class="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!experienciaProfesional.length">
-              <td colspan="6" class="text-center text-muted py-4">
-                No has registrado experiencia profesional todavía.
-              </td>
-            </tr>
-            <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id">
-              <td>{{ experiencia.institucion }}</td>
-              <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-              <td>-</td>
-              <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
-              <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-              <td class="text-end">
-                <BtnEdit @onpress="() => editarExperiencia(experiencia)" class="me-2" />
-                <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="text-start mb-3">Experiencia profesional</h3>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover table-institutional align-middle">
+            <thead >
+              <tr>
+                <th width="5%"></th>
+                <th class="text-start">INSTITUCIÓN</th>
+                <th class="text-start">FUNCIONES</th>
+                <th class="text-start">MODALIDAD</th>
+                <th class="text-start">DESDE</th>
+                <th class="text-start">HASTA</th>
+                <th class="text-start">ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="!experienciaProfesional.length">
+                <td colspan="7" class="text-center text-muted">
+                  <p class="my-3">No has registrado experiencia profesional todavía.</p>
+                </td>
+              </tr>
+              <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id">
+                <td><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td>{{ experiencia.institucion }}</td>
+                <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+                <td>-</td>
+                <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
+                <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
+                    <BtnEdit @onpress="() => editarExperiencia(experiencia)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </section>
+    </div>
 
     <div class="modal fade" id="experienciaModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="modal-dialog modal-xl">
@@ -111,6 +121,7 @@ import { Modal } from "bootstrap";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
+import BtnSera from "@/components/BtnSera.vue";
 
 const modal = ref(null);
 const dossier = ref(null);
@@ -128,6 +139,13 @@ const experienciaProfesional = computed(() => {
     if (!dossier.value || !dossier.value.experiencia) return [];
     return dossier.value.experiencia.filter(e => e.tipo === 'Profesional');
 });
+
+const getSeraType = (sera) => {
+    if (!sera || sera === 'Enviado') return 'pending';
+    if (sera === 'Revisado') return 'reviewed';
+    if (sera === 'Aprobado') return 'certified';
+    return 'denied';
+};
 
 // Formatear fecha para mostrar
 const formatDate = (date) => {
@@ -215,9 +233,3 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
-.table thead th {
-  color: #1d3557;
-  font-weight: 600;
-}
-</style>

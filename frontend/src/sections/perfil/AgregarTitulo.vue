@@ -272,37 +272,37 @@ const onSubmit = async () => {
 
 <style scoped>
 .modal-title {
-  color: #062b57;
+  color: var(--brand-navy);
 }
 
 .form-label {
   font-weight: 600;
-  color: #1d3557;
+  color: var(--brand-ink);
 }
 
 .form-control,
 .form-select,
 .form-control:focus {
-  border-radius: 0.8rem;
-  color: #1b1b1b;
+  border-radius: var(--radius-md);
+  color: var(--brand-navy);
 }
 
 .form-control:focus,
 .form-select:focus {
-  box-shadow: 0 0 0 0.2rem rgba(33, 104, 169, 0.25);
-  border-color: #2168a9;
-  color: #1b1b1b;
+  box-shadow: 0 0 0 0.2rem rgba(var(--brand-accent-rgb), 0.25);
+  border-color: var(--brand-accent);
+  color: var(--brand-navy);
 }
 
 .form-select option {
-  color: #1b1b1b;
+  color: var(--brand-navy);
 }
 
 .btn-primary {
   border-radius: 0.75rem;
   padding: 0.6rem 1.8rem;
   font-weight: 600;
-  background: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  background: var(--brand-gradient);
   border: none;
 }
 

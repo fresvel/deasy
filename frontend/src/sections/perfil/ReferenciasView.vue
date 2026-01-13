@@ -1,11 +1,11 @@
 <template>
 <div class="container-fluid py-4">
-  <div class="row mb-4">
-    <div class="col-10">
-      <h2 class="text-start mb-0">Referencias</h2>
+  <div class="profile-section-header">
+    <div>
+      <h2 class="text-start profile-section-title">Referencias</h2>
     </div>
-    <div class="col-2 text-end">
-      <button class="btn btn-primary btn-lg" @click="openModal()">
+    <div class="profile-section-actions">
+      <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal()">
         <font-awesome-icon icon="plus" class="me-2" />
         Agregar
       </button>
@@ -18,8 +18,8 @@
     <div class="col-12">
       <h3 class="text-start mb-3">Referencias Laborales</h3>
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
+        <table class="table table-striped table-hover table-institutional align-middle">
+          <thead >
             <tr>
               <th width="5%"></th>
               <th class="text-start">REFERENCIA</th>
@@ -61,8 +61,8 @@
     <div class="col-12">
       <h3 class="text-start mb-3">Referencias Familiares</h3>
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
+        <table class="table table-striped table-hover table-institutional align-middle">
+          <thead >
             <tr>
               <th width="5%"></th>
               <th class="text-start">REFERENCIA</th>
@@ -102,8 +102,8 @@
     <div class="col-12">
       <h3 class="text-start mb-3">Referencias Personales</h3>
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
+        <table class="table table-striped table-hover table-institutional align-middle">
+          <thead >
             <tr>
               <th width="5%"></th>
               <th class="text-start">REFERENCIA</th>
@@ -292,11 +292,3 @@ titulo:{type: Striewg,},
 */
 </script>
 
-<style scoped lang="scss">
-  .editar{
-    background-color:$col-edit;
-    color: white;
-    margin: 1%;
-  }
-
-</style>

@@ -1,12 +1,12 @@
 <template>
 <div class="container-fluid py-4">
-  <div class="row mb-4">
-    <div class="col-10">
-      <h2 class="text-start mb-0">Formación Profesional</h2>
+  <div class="profile-section-header">
+    <div>
+      <h2 class="text-start profile-section-title">Formación Profesional</h2>
     </div>
-    <div class="col-2 text-end">
-      <button class="btn btn-primary btn-lg" @click="openModal()">
-        <font-awesome-icon icon="plus" class="me-2" />
+    <div class="profile-section-actions">
+      <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal()">
+        <font-awesome-icon icon="plus" class="me-2"/>
         Agregar
       </button>
     </div>
@@ -18,8 +18,8 @@
     <div class="col-12">
       <h3 class="text-start mb-3">Títulos Técnicos y Tecnológicos</h3>
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
+        <table class="table table-striped table-hover align-middle table-institutional">
+          <thead >
             <tr>
               <th width="5%"></th>
               <th class="text-start">TÍTULO</th>
@@ -64,8 +64,8 @@
     <div class="col-12">
       <h3 class="text-start mb-3">Títulos de Grado</h3>
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
+        <table class="table table-striped table-hover align-middle table-institutional">
+          <thead >
             <tr>
               <th width="5%"></th>
               <th class="text-start">TÍTULO</th>
@@ -110,8 +110,8 @@
     <div class="col-12">
       <h3 class="text-start mb-3">Títulos de Cuarto Nivel</h3>
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-dark">
+        <table class="table table-striped table-hover align-middle table-institutional">
+          <thead >
             <tr>
               <th width="5%"></th>
               <th class="text-start">TÍTULO</th>
@@ -319,11 +319,3 @@ titulo:{type: Striewg,},
 
 */
 </script>
-
-<style scoped lang="scss">
-  .editar{
-    background-color:$col-edit;
-    color: white;
-    margin: 1%;
-  }
-</style>

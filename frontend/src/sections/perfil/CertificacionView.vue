@@ -1,19 +1,21 @@
 <template>
   <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="profile-section-header">
       <div>
-        <h2 class="fw-semibold mb-1">Certificaciones y reconocimientos</h2>
-        <p class="text-muted mb-0">Registra los certificados o reconocimientos relevantes para tu carrera.</p>
+        <h2 class="profile-section-title mb-1">Certificaciones y reconocimientos</h2>
+        <p class="profile-section-subtitle">Registra los certificados o reconocimientos relevantes para tu carrera.</p>
       </div>
-      <button class="btn btn-primary btn-lg" @click="openModal">
-        <font-awesome-icon icon="plus" class="me-2" />
-        Agregar
-      </button>
+      <div class="profile-section-actions">
+        <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
+          <font-awesome-icon icon="plus" class="me-2" />
+          Agregar
+        </button>
+      </div>
     </div>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
+      <table class="table table-hover align-middle table-institutional table-striped">
+        <thead >
           <tr>
             <th scope="col">Certificación</th>
             <th scope="col">Institución</th>
@@ -156,9 +158,9 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .table thead th {
-  color: #1d3557;
+  color: var(--brand-ink);
   font-weight: 600;
 }
 </style>

@@ -49,12 +49,12 @@
           </div>
           <div class="three wide column">
             <div class="ui labeled large fluid  input">
-              <input type="file" id="file_grades" style="display: none;" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
+              <input type="file" id="file_grades" class="file-input-hidden" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
               <label for="file_grades" class="ui teal large fluid button">{{csv_grades}}</label>
            </div>
            <br>
            <div class="ui labeled large fluid  input">
-              <input type="file" id="file_tutorias" style="display: none;" v-on:change="onfileChange('tutorias')" name="file_t" ref="file_tutorias">
+              <input type="file" id="file_tutorias" class="file-input-hidden" v-on:change="onfileChange('tutorias')" name="file_t" ref="file_tutorias">
               <label for="file_tutorias" class="ui teal large fluid button">{{csv_tutorias}}</label>
            </div>
           </div>
@@ -74,7 +74,7 @@
             </div>
           </div>
         
-          <table class="ui compact celled definition table">
+          <table class="table table-institutional table-striped table-hover align-middle">
                   <thead>
                   <tr>
                       <th class="text-left">
@@ -119,15 +119,15 @@
         </div>
     
         <div class="ten wide column ui form">
-          <textarea v-model="surveys[level]" rows="10" class="large" style="font-size: 1.25em; text-align: justify"></textarea>
+          <textarea v-model="surveys[level]" rows="10" class="large summary-textarea"></textarea>
         </div>
         <div class="six wide column ui form">
     
-        <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un promt personalizado" rows="7" class="large" style="font-size: 1.25em; text-align: justify"></textarea>
-        <button @click="removeRow(index, level)" class="ui blue button large" style="margin: 2%;">
+        <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un promt personalizado" rows="7" class="large summary-textarea"></textarea>
+        <button @click="removeRow(index, level)" class="ui blue button large action-button">
             Analizar Promt
         </button>
-        <button @click="removeRow(index, level)" class="ui blue button large" style="margin: 2%;">
+        <button @click="removeRow(index, level)" class="ui blue button large action-button">
             Analizar Tabla
         </button>
         </div>
@@ -204,5 +204,16 @@
     </script>
     
     <style scoped>
-    
+    .file-input-hidden {
+      display: none;
+    }
+
+    .summary-textarea {
+      font-size: 1.25em;
+      text-align: justify;
+    }
+
+    .action-button {
+      margin: 2%;
+    }
     </style>

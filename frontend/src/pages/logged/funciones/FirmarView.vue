@@ -151,13 +151,4 @@
       
       
     </script>
-          
-    <style scoped>
     
-    
-    
-      
-      
-    
-    </style>
-          

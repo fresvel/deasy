@@ -17,8 +17,8 @@
       </header>
 
       <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
+        <table class="table table-hover align-middle table-institutional table-striped">
+          <thead >
             <tr>
               <th scope="col">Tema</th>
               <th scope="col">Institución</th>
@@ -58,8 +58,8 @@
       </header>
 
       <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
+        <table class="table table-hover align-middle table-institutional table-striped">
+          <thead >
             <tr>
               <th scope="col">Tema</th>
               <th scope="col">Institución</th>

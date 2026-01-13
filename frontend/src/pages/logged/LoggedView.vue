@@ -34,7 +34,7 @@
                 :editable="true"
                 @photo-selected="handlePhotoSelected"
             />
-            <a class="large item labeled" style="text-align: center;">
+            <a class="large item labeled menu-section-title">
                 Coordinación          
             </a>
 
@@ -51,7 +51,7 @@
                         <div class="medium">{{ dossierCounts[item.key] ?? 0 }}</div>
                     </div>
             </a>
-            <a class="item large" style="text-align: center;"> Docencia</a>
+            <a class="item large menu-section-title"> Docencia</a>
         </s-menu>
     
         <s-body
@@ -377,11 +377,10 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     </script>
           
     <style scoped>
-    
-    
-    
-      
-      
-    
+    .menu-section-title {
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
     </style>
           

@@ -11,6 +11,3 @@ import LogrosView from './LogrosView.vue';
 
 </script>
 
-<style scoped>
-
-</style>

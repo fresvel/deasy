@@ -85,7 +85,7 @@
             </button>
           </header>
 
-          <table class="ui celled table">
+          <table class="table table-institutional table-striped table-hover align-middle">
             <thead>
               <tr>
                 <th>Sección</th>
@@ -232,12 +232,9 @@ const toggleNotify = () => {
 <style scoped>
 .dashboard-page {
   min-height: 100vh;
-  background: #f0f2f8;
+  background: #f1f5fb;
 }
 
-.ui.grid {
-  margin: 0;
-}
 
 .avatar {
   width: 38px;
@@ -246,8 +243,8 @@ const toggleNotify = () => {
 }
 
 .overview-card {
-  background: linear-gradient(90deg, #16245a 0%, #2f52c0 100%);
-  color: #ffffff;
+  background: var(--brand-gradient);
+  color: var(--brand-white);
   border-radius: 22px;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -255,7 +252,7 @@ const toggleNotify = () => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
-  box-shadow: 0 18px 32px rgba(16, 28, 74, 0.25);
+  box-shadow: var(--brand-shadow-strong);
 }
 
 .overview-card h1 {
@@ -277,10 +274,10 @@ const toggleNotify = () => {
 }
 
 .summary-card {
-  background: #ffffff;
+  background: var(--brand-white);
   padding: 1.5rem;
   border-radius: 18px;
-  box-shadow: 0 14px 32px rgba(16, 28, 74, 0.12);
+  box-shadow: var(--brand-shadow);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -302,14 +299,14 @@ const toggleNotify = () => {
 .summary-count {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #16245a;
+  color: var(--brand-navy);
 }
 
 .table-card {
-  background: #ffffff;
+  background: var(--brand-white);
   border-radius: 18px;
   padding: 1.75rem;
-  box-shadow: 0 12px 28px rgba(16, 28, 74, 0.15);
+  box-shadow: var(--brand-shadow);
 }
 
 .table-card header {
@@ -329,37 +326,37 @@ const toggleNotify = () => {
 }
 
 .status--warning {
-  background: #f59e0b;
+  background: var(--state-warning);
 }
 
 .status--danger {
-  background: #dc2626;
+  background: var(--state-danger);
 }
 
 .status--success {
-  background: #16a34a;
+  background: var(--state-success);
 }
 
 .primary-btn {
-  background: linear-gradient(90deg, #0d1b4d 0%, #1f3fa9 100%);
-  color: #ffffff;
+  background: var(--brand-gradient);
+  color: var(--brand-white);
   border: none;
   border-radius: 999px;
   padding: 0.75rem 1.75rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 12px 26px rgba(16, 28, 74, 0.22);
+  box-shadow: 0 12px 26px rgba(var(--brand-primary-rgb), 0.22);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(16, 28, 74, 0.28);
+  box-shadow: 0 16px 32px rgba(var(--brand-primary-rgb), 0.28);
 }
 
 .secondary-btn {
-  background: rgba(16, 28, 74, 0.08);
-  color: #10214a;
+  background: rgba(var(--brand-primary-rgb), 0.08);
+  color: var(--brand-navy);
   border: none;
   border-radius: 999px;
   padding: 0.5rem 1.25rem;
@@ -368,8 +365,8 @@ const toggleNotify = () => {
 }
 
 .tiny-btn {
-  background: #1f3fa9;
-  color: #ffffff;
+  background: var(--brand-gradient);
+  color: var(--brand-white);
   border: none;
   border-radius: 999px;
   padding: 0.35rem 0.85rem;
@@ -379,7 +376,7 @@ const toggleNotify = () => {
 
 .link-btn {
   background: transparent;
-  color: #1f3fa9;
+  color: var(--brand-accent);
   border: none;
   font-weight: 600;
   cursor: pointer;
@@ -396,4 +393,3 @@ const toggleNotify = () => {
   }
 }
 </style>
-
