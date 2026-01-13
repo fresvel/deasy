@@ -9,8 +9,8 @@
         <span class="tooltip">Página Anterior</span>
       </button>
     </div>
-    <div class="column" style="display: flex; justify-content: center; align-items: center;">
-      <span ref="pageInfo" class="ui button" style="background-color: rgba(0, 110, 220, 0.1);"></span>
+    <div class="column page-info-column">
+      <span ref="pageInfo" class="ui button page-info-button"></span>
     </div>
     <div class="column">
       <button @click="nextPageBtn" class="btnav">
@@ -22,8 +22,8 @@
 
   <div class="row">
         <div class="segment ui column" ref="colPdf">
-          <div style="position: relative;" ref="pdfViewer">
-            <canvas  ref="pdfCanvas" style="cursor: crosshair;"></canvas>
+          <div class="pdf-viewer" ref="pdfViewer">
+            <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
           </div>
         </div>        
   </div>
@@ -91,10 +91,7 @@
       box.style.width = `0px`;
       box.id="signbox";
       box.style.height = `0px`;
-      box.style.position='absolute'
-      box.style.border= "2px dashed blue";
-      box.style.position= "absolute";
-      box.style.background="rgba(0, 255, 0, 0.3)";
+      box.style.position = 'absolute';
     
 
       pdfViewer.value.appendChild(box);
@@ -184,15 +181,32 @@
   
   <style scoped>
 
-    canvas {
-      border: 1px solid black;
-      cursor: pointer;
+    .page-info-column {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .page-info-button {
+      background-color: var(--brand-info-soft);
+      color: var(--brand-navy);
+      border-radius: var(--radius-md);
+    }
+
+    .pdf-viewer {
       position: relative;
     }
+
+    .pdf-canvas {
+      border: 1px solid var(--brand-navy);
+      cursor: crosshair;
+      position: relative;
+    }
+
     .box {
-      border: 2px dashed blue;
+      border: 2px dashed var(--brand-accent);
       position: absolute;
-      background-color: rgba(0, 255, 0, 0.3);
+      background-color: rgba(var(--brand-accent-rgb), 0.25);
     }
 
   .btnav {
@@ -205,7 +219,8 @@
     cursor: pointer;
     font-size: 2em;
     font-weight: bold;
-    color: rgba(34, 150, 243, 0.9);
+    color: var(--brand-accent);
+    --tooltip-bg: var(--brand-accent);
     transition: color 0.3s ease-in-out;
     position: relative; /* Necesario para posicionar el tooltip */
 }
@@ -216,11 +231,11 @@
   bottom: 100%; /* Lo coloca justo encima del botón */
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(34, 150, 243, 0.9);
-  color: #fff;
+  background-color: var(--tooltip-bg);
+  color: var(--brand-white);
   padding: 5px;
   height:100%;
-  font-family: Arial, sans-serif; /* Aquí defines la fuente */
+  font-family: var(--font-base);
   border-radius: 3px;
   font-size: 16px;
   white-space: nowrap;

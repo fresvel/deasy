@@ -55,13 +55,4 @@
     
         
     </script>
-          
-    <style scoped>
     
-    
-    
-      
-      
-    
-    </style>
-          

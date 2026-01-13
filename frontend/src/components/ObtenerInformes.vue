@@ -102,6 +102,3 @@ const onparamsChange=()=>{
 
 </script>
 
-<style scoped>
-
-</style>

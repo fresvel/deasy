@@ -27,6 +27,7 @@
   --radius-lg: 34px;
   --radius-md: 16px;
   --radius-sm: 12px;
+  --radius-button: 14px;
 
   --input-height: 52px;
   --font-base: 'Montserrat', Helvetica, sans-serif;
@@ -81,8 +82,13 @@ a:hover {
 }
 
 .btn {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-button);
   font-weight: 700;
+}
+
+.btn-lg,
+.btn-sm {
+  border-radius: var(--radius-button);
 }
 
 .btn-primary {
@@ -105,6 +111,69 @@ a:hover {
   background: rgba(3, 49, 100, 0.08);
   color: var(--brand-navy);
   border-color: var(--brand-navy);
+}
+
+.profile-add-btn {
+  border-radius: 10px;
+  padding: 0.65rem 1.75rem;
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-section-title {
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+.profile-section-subtitle {
+  margin-bottom: 0;
+  color: var(--brand-muted);
+}
+
+.profile-section-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.table.align-middle > :not(caption) > * > * {
+  vertical-align: middle;
+}
+
+.table-institutional {
+  border: 1px solid rgba(3, 49, 100, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--brand-white);
+}
+
+.table-institutional thead {
+  background: linear-gradient(90deg, rgba(var(--brand-primary-rgb), 0.12) 0%, rgba(var(--brand-accent-rgb), 0.12) 100%);
+}
+
+.table-institutional thead th {
+  color: var(--brand-ink);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(3, 49, 100, 0.18);
+}
+
+.table-institutional tbody tr {
+  border-color: rgba(3, 49, 100, 0.12);
+}
+
+.table-institutional.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(var(--brand-primary-rgb), 0.03);
+}
+
+.table-institutional tbody tr:hover {
+  background: rgba(var(--brand-accent-rgb), 0.08);
 }
 
 .alert-danger {

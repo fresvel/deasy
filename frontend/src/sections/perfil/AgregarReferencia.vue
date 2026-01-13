@@ -210,19 +210,19 @@ const onSubmit = async () => {
 
 <style scoped>
 .modal-title {
-  color: #062b57;
+  color: var(--brand-navy);
 }
 
 .form-label {
   font-weight: 600;
-  color: #1d3557;
+  color: var(--brand-ink);
 }
 
 .btn-primary {
   border-radius: 0.75rem;
   padding: 0.6rem 1.8rem;
   font-weight: 600;
-  background: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  background: var(--brand-gradient);
   border: none;
 }
 
