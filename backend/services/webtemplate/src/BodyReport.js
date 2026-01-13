@@ -7,7 +7,7 @@ import { LatexText } from "../../latex/src/transpiler/document/elements/LatexSec
 import Groq from 'groq-sdk';
 
 const groq = new Groq({
-    apiKey: process.env['GROQ_API_KEY'], // This is the default and can be omitted
+    apiKey: process.env.GROQ_KEY, // This is the default and can be omitted
 });
 
 

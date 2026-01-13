@@ -1,7 +1,7 @@
 import Groq from 'groq-sdk';
 
 const groq = new Groq({
-    apiKey: process.env.GROQ_KEY//process.env['GROQ_API_KEY'], // This is the default and can be omitted
+    apiKey: process.env.GROQ_KEY, // This is the default and can be omitted
 });
 
 export const  getllamaSurvey=async(notas)=> { //recibir tipo y datos
