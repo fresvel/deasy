@@ -5,13 +5,14 @@ import user_router from "./routes/user_router.js";
 import tutorias_router from "./routes/tutorias_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 
-import program_router from "./routes/program_router.js";
-import area_router from "./routes/area_router.js";
-import tarea_router from "./routes/tarea_router.js"
-
 import cors from "cors"
 import "./database/mongoose.js"
 import cookieParser from "cookie-parser"
+
+import program_router from "./routes/program_router.js";
+import area_router from "./routes/area_router.js";
+import tarea_router from "./routes/tarea_router.js"
+import webtemplate from "./routes/webtemplate_router.js"
 
 const app = express();
 
@@ -49,6 +50,8 @@ app.use("/easym/v1/program",program_router)
 app.use("/easym/v1/area",area_router)
 
 app.use("/easym/v1/tarea",tarea_router)
+
+app.use("/easym/v1/webtemplate",webtemplate)
 
 app.use(express.static("public"));
 

@@ -5,3 +5,6 @@ borrador
 output
 build
 passfile
+*.pem
+*.p12
+passfile
