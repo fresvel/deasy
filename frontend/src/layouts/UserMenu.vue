@@ -81,10 +81,10 @@ import UserProfile from "@/components/UserProfile.vue";
     <style scoped>
     
     
-    .smenu {
-        height: 100vh;
-        margin-top: 13px;
-        background-color:rgb(0, 0, 15, 0.85);
-    }
+.smenu {
+    height: 100vh;
+    margin-top: 13px;
+    background-color: rgba(var(--brand-primary-rgb), 0.92);
+}
     
     </style>

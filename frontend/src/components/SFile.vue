@@ -1,15 +1,14 @@
 <template>
     <div 
-        class="ui labeled large segment input grid" 
+        class="ui labeled large segment input grid file-dropzone" 
         @dragover.prevent 
         @drop="onFileDrop"
-        style="border: 2px dashed #00b5ad; padding: 20px; cursor: pointer;"
     >
 
         <div class="sixteen wide column">
             <input 
                 type="file" 
-                style="display: none;" 
+                class="file-input-hidden"
                 v-on:change="onFileChange" 
                 name="file" 
                 ref="csv_input"
@@ -31,8 +30,7 @@
                             v-model="file.name" 
                             @blur="stopRenaming(index)" 
                             @keyup.enter="stopRenaming(index)"
-                            class="ui input"
-                            style="max-width: 300px; margin-right: 10px;"
+                            class="ui input file-rename-input"
                         />
                     
                         <BtnDelete
@@ -97,6 +95,24 @@ const stopRenaming = (index) => {
 </script>
 
 <style scoped>
+.file-dropzone {
+    border: 2px dashed var(--brand-accent);
+    padding: 20px;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    background: var(--brand-surface-alt);
+    box-shadow: var(--brand-shadow-soft);
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+.file-rename-input {
+    max-width: 300px;
+    margin-right: 10px;
+}
+
 /* Estilos opcionales para la lista de archivos cargados */
 .files .item {
     display: flex;

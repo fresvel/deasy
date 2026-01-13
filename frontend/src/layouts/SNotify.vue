@@ -23,7 +23,7 @@ defineProps({
 <style scoped>
 
 .notify{
-    background-color: rgb(74, 140, 255, 0.5);
+    background-color: rgba(var(--brand-accent-rgb), 0.2);
     height: 100vh;
     margin-top: 13px;
 }

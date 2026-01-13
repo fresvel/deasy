@@ -51,11 +51,9 @@
         margin-bottom: -41px;
   }
   
-  #hmenu{
-        background-color:$col-header;
-    
-    
-  }
+#hmenu {
+  background: var(--brand-gradient);
+}
   
   .menulogo{
     border-radius: 10px;

@@ -42,7 +42,7 @@
 
             <div class="sixteen wide column">
                 <h2>Regístrate</h2>
-                <p style="margin-top: -15px;">Usario Pucese</p>
+                <p class="subtitle">Usario Pucese</p>
                 
 
             </div>
@@ -108,7 +108,7 @@
                     />
                 </div>
                 <div class="seven wide column center">
-                    <div class="five wide column segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
+                    <div class="five wide column segment ui theme-info-panel">
                         <div class="ui labeled large fluid input">
                             <div class="ui label">
                             País de Nacimiento
@@ -120,10 +120,10 @@
                     </div>
                 </div>
                 <div class="seven wide column center">
-                    <div class="five wide column segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
+                    <div class="five wide column segment ui theme-info-panel">
                         <div class="ui labeled large fluid input">
                             <div class="ui label">
-                                Aceptar los <a href="" style="color: rgba(20, 100, 240, 0.9);">términos y condiciones</a> 
+                                Aceptar los <a href="" class="theme-link">términos y condiciones</a> 
                             </div>
                             <input  type="checkbox">
                         </div>
@@ -230,15 +230,15 @@ const createnewUser=async()=>{
       margin-bottom: -45px;
   }
   
-  #mainmenu {
+#mainmenu {
       height: 100vh;
       margin-top: 10px;
-      background-color:rgb(0, 0, 15, 0.85);
+      background-color: rgba(var(--brand-primary-rgb), 0.92);
   }
   
   .mainmenu {
       margin-top: 13px;
-      background-color:rgb(0, 0, 15, 0.85);
+      background-color: rgba(var(--brand-primary-rgb), 0.92);
   }
   
   #vmenu {
@@ -249,14 +249,11 @@ const createnewUser=async()=>{
       display: none;
   }
   .notify{
-      background-color: rgb(74, 140, 255, 0.5);
-      ;
+      background-color: rgba(var(--brand-accent-rgb), 0.2);
   }
   
   #hmenu{
-      background-color:rgb(0, 10, 50, 0.9);
-  
-  
+      background: var(--brand-gradient);
   }
   
   #content {
@@ -275,6 +272,10 @@ const createnewUser=async()=>{
 }
 
 .link{
-    color: rgba(0, 100, 220, 0.5);
+    color: var(--brand-accent);
+}
+
+.subtitle {
+    margin-top: -15px;
 }
 </style>

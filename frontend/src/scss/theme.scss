@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
+
+:root {
+  --brand-primary: #003267;
+  --brand-accent: #2282be;
+  --brand-navy: #033164;
+  --brand-ink: #214a77;
+  --brand-surface: #f7f9fc;
+  --brand-surface-alt: #ecf3fb;
+  --brand-info-soft: rgba(34, 130, 190, 0.12);
+  --brand-white: #ffffff;
+  --brand-border: rgba(3, 49, 100, 0.18);
+  --brand-muted: rgba(3, 49, 100, 0.7);
+  --brand-shadow-strong: 0 20px 40px rgba(0, 0, 0, 0.22);
+  --brand-shadow: 0 4px 17.8px rgba(0, 0, 0, 0.25);
+  --brand-shadow-soft: 0 3px 10px rgba(3, 49, 100, 0.08);
+  --brand-gradient: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  --brand-primary-rgb: 0, 50, 103;
+  --brand-accent-rgb: 34, 130, 190;
+
+  --state-success: #28a745;
+  --state-danger: #dc3545;
+  --state-warning: #fd7e14;
+  --state-info: #17a2b8;
+  --state-gold: #d4af37;
+
+  --radius-lg: 34px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+
+  --input-height: 52px;
+  --font-base: 'Montserrat', Helvetica, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  color: var(--brand-navy);
+  background-color: #f1f5fb;
+}
+
+a {
+  color: var(--brand-accent);
+}
+
+a:hover {
+  color: #1a6ea1;
+}
+
+.card {
+  border-radius: var(--radius-lg);
+  border: 0;
+  box-shadow: var(--brand-shadow);
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--brand-ink);
+}
+
+.form-control,
+.form-select {
+  min-height: var(--input-height);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--brand-shadow-soft);
+  font-size: 1rem;
+  color: var(--brand-navy);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(34, 130, 190, 0.7);
+  box-shadow: 0 0 0 3px rgba(34, 130, 190, 0.18);
+}
+
+.btn {
+  border-radius: var(--radius-md);
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: var(--brand-gradient);
+  border: none;
+  box-shadow: 0 6px 16px rgba(0, 50, 103, 0.25);
+}
+
+.btn-primary:hover {
+  background: var(--brand-gradient);
+  opacity: 0.92;
+}
+
+.btn-outline-primary {
+  border-color: var(--brand-navy);
+  color: var(--brand-navy);
+}
+
+.btn-outline-primary:hover {
+  background: rgba(3, 49, 100, 0.08);
+  color: var(--brand-navy);
+  border-color: var(--brand-navy);
+}
+
+.alert-danger {
+  border-radius: var(--radius-md);
+}
+
+.theme-info-panel {
+  background-color: var(--brand-info-soft);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(3, 49, 100, 0.1);
+}
+
+.theme-soft-panel {
+  background-color: var(--brand-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(3, 49, 100, 0.1);
+  box-shadow: var(--brand-shadow-soft);
+}
+
+.theme-link {
+  color: var(--brand-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.theme-link:hover {
+  text-decoration: underline;
+}
