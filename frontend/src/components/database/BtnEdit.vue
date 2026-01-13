@@ -3,13 +3,20 @@
       @click="onclick" 
       class="btnedit">
       <i class="edit icon"></i>
-      <span class="tooltip">Editar Registro</span>
+      <span class="tooltip">{{props.tooltip}}</span>
     </button>
   </template>
 <script setup>
-import { defineEmits } from 'vue';
+import { defineProps, defineEmits } from 'vue';
 
+const props = defineProps({
+  tooltip:{
+    type: String,
+    default: 'Editar'
+  }
+})
 const emit =defineEmits(["onpress"])
+
 
 const onclick=()=>{
     emit("onpress")

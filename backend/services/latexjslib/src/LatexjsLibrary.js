@@ -61,7 +61,7 @@ class LatexjsLibrary {
         \\renewcommand{\\arraystretch}{1.5}
         \\noindent
         `;
-        }
+    }
         
     
 

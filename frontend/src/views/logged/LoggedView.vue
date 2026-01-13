@@ -54,7 +54,6 @@
         :shownotify="vnotify"
         >
 
-
         <div v-if="area=='Perfil'" id="validar">
             <TitulosView v-if="process==='Formación'"></TitulosView>
             <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
@@ -72,6 +71,7 @@
         </div>
 
         <LogrosView2></LogrosView2>
+        <WebTemplate></WebTemplate>
 
         </s-body>
         
@@ -111,8 +111,11 @@
 
     import EasymServices from '@/services/EasymServices';
 
-    const service = new EasymServices();
 
+    import WebTemplate from './informes/WebTemplate.vue';
+
+    const service = new EasymServices();
+    
     service.getEasymAreas()
     service.getTareasPendientes("1804326534")
     const areas =service.getEasymdata().areas
@@ -282,7 +285,7 @@
     }
 
 
-      
+
       
     </script>
           

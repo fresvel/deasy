@@ -80,6 +80,8 @@ class QRCodeGenerator {
   }
 }
 
+
+
 // Ejemplo de uso
 const qrGenerator = new QRCodeGenerator('/home/fresvel/Documentos/Pucese/deasy/backend/services/signflow/testing/firma.png', 'Homero Javier Velasteguí Izurieta');
 qrGenerator.generate();

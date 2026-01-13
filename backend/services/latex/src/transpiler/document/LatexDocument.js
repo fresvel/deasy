@@ -1,4 +1,4 @@
-import { Section,Subsection, LatexText, Subsubsection } from "./elements/LatexSections.js";
+import { Section,Subsection, LatexText, Subsubsection, LatexParagraph } from "./elements/LatexSections.js";
 import LatexFigure from "./elements/LatexFigure.js";
 import LatexTabularx from "./elements/LatexTabularx.js";
 
@@ -21,6 +21,8 @@ class LatexDocument {
                 return new LatexTabularx(item.content);
             case 'figure':
                 return new LatexFigure(item.path, item.caption);
+            case 'paragraph':
+                return new LatexParagraph(item.title, item.content);
             default:
                 return null;
         }

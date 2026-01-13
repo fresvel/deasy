@@ -3,14 +3,20 @@
     @click="onclick"
     class="btndelete">
     <font-awesome-icon icon="trash" class="icon" />
-    <span class="tooltip">Eliminar Registro</span>
+    <span class="tooltip">{{ props.message }}</span>
   </a>
 
 </template>
 
 <script setup>
-import { defineEmits } from 'vue';
+import { defineProps, defineEmits } from 'vue';
 
+const props = defineProps({
+  message:{
+    type: String,
+    default: "Eliminar",
+  }
+})
 const emit =defineEmits(["onpress"])
 
 const onclick=()=>{
@@ -32,7 +38,7 @@ const onclick=()=>{
     cursor: pointer;
     font-size: 2em;
     font-weight: bold;
-    color: #FF5722;
+    color: #CC1111;
     transition: color 0.3s ease-in-out;
 }
 
@@ -42,7 +48,7 @@ const onclick=()=>{
   bottom: 100%; /* Lo coloca justo encima del botón */
   left: 50%;
   transform: translateX(-50%);
-  background-color: #FF5722;
+  background-color: rgba(204,17,17,0.9);
   color: #fff;
   padding: 5px;
   height:100%;
