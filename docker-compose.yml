@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: deasy-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: deasy_root
+      MARIADB_DATABASE: deasy
+      MARIADB_USER: deasy
+      MARIADB_PASSWORD: deasy
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+  mongodb:
+    image: mongo:7
+    container_name: deasy-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mariadb_data:
+  mongodb_data:
