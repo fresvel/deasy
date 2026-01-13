@@ -49,7 +49,7 @@ const clickRegister=()=>{
 </script>
 <style scoped>
 .navbar {
-  background: linear-gradient(45deg, #000a32, #006edc) !important;
+  background: var(--brand-gradient) !important;
   box-shadow: 0 2px 10px rgba(0, 10, 50, 0.3);
 }
 
@@ -76,14 +76,14 @@ const clickRegister=()=>{
 
 .btn-light {
   background-color: rgba(255, 255, 255, 0.9);
-  color: #000a32;
+  color: var(--brand-primary);
   border: none;
   transition: all 0.3s ease;
 }
 
 .btn-light:hover {
   background-color: white;
-  color: #000a32;
+  color: var(--brand-primary);
   transform: translateY(-1px);
 }
 

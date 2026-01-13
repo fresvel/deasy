@@ -78,20 +78,25 @@ const onclick=()=>{
     font-size: 2em;
     font-weight: bold;
     transition: color 0.3s ease-in-out;
+    --tooltip-bg: var(--brand-accent);
 }
 
 .sera-send{
-    color: rgba(100, 83, 180, 0.85);
+    color: var(--brand-accent);
+    --tooltip-bg: var(--brand-accent);
 }
 .sera-review{
-    color: rgba(0, 150, 83, 0.85);
+    color: var(--state-success);
+    --tooltip-bg: var(--state-success);
 }
 .sera-certified{
-    color: rgba(212, 175, 55, 1);
+    color: var(--state-gold);
+    --tooltip-bg: var(--state-gold);
 }
 
 .sera-denied{
-    color: rgba(255, 20, 30, 0.85);
+    color: var(--state-danger);
+    --tooltip-bg: var(--state-danger);
 }
 
 
@@ -101,11 +106,11 @@ const onclick=()=>{
   bottom: 100%; /* Lo coloca justo encima del botón */
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 150, 83, 0.85);
-  color: #fff;
+  background-color: var(--tooltip-bg);
+  color: var(--brand-white);
   padding: 5px;
   height:100%;
-  font-family: Arial, sans-serif; /* Aquí defines la fuente */
+  font-family: var(--font-base);
   border-radius: 3px;
   font-size: 16px;
   white-space: nowrap;

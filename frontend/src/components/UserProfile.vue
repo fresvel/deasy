@@ -101,8 +101,8 @@ const onFileChange = (event) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.45);
-    color: #fff;
+    background-color: rgba(var(--brand-primary-rgb), 0.55);
+    color: var(--brand-white);
     font-weight: 500;
     font-size: 0.95rem;
     opacity: 0;

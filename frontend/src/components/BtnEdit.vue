@@ -35,7 +35,8 @@ const onclick=()=>{
     cursor: pointer;
     font-size: 2em;
     font-weight: bold;
-    color: rgba(34, 150, 243, 0.9);
+    color: var(--brand-accent);
+    --tooltip-bg: var(--brand-accent);
     transition: color 0.3s ease-in-out;
     position: relative; /* Necesario para posicionar el tooltip */
 }
@@ -46,11 +47,11 @@ const onclick=()=>{
   bottom: 100%; /* Lo coloca justo encima del botón */
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(34, 150, 243, 0.9);
-  color: #fff;
+  background-color: var(--tooltip-bg);
+  color: var(--brand-white);
   padding: 5px;
   height:100%;
-  font-family: Arial, sans-serif; /* Aquí defines la fuente */
+  font-family: var(--font-base);
   border-radius: 3px;
   font-size: 16px;
   white-space: nowrap;

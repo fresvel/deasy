@@ -11,9 +11,7 @@
 </script>
 
 <style scoped lang="scss">
-@import "@/scss/_variables.scss";
-
 .modal-header {
-    background-color: $col-info !important;
+    background-color: var(--brand-info-soft) !important;
 }
 </style>

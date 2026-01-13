@@ -1,6 +1,6 @@
 <template>
  <i class="close icon"></i>
-  <div class="header" style="background-color: rgba(0, 110, 220, 0.1);" >
+  <div class="header modal-header">
     Profile Picture
   </div>
 
@@ -24,12 +24,12 @@
               />
           </div>
           <div class="eight wide column">
-            <div class="five wide column segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
+            <div class="five wide column segment ui modal-panel">
               <div class="ui labeled large fluid input">
                   <div class="ui label">
                   País de Emisión
                   </div>
-                  <select class="ui compact selection dropdown" v-model="newuser.pais" style="width: 100%;">
+                  <select class="ui compact selection dropdown dropdown-full" v-model="newuser.pais">
                       <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
                   </select>
               </div>
@@ -43,7 +43,7 @@
               />
           </div>
           <div class="eight wide column">
-            <div class="five wide column segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
+            <div class="five wide column segment ui modal-panel">
               <div class="ui labeled large fluid input">
                   <div class="ui label">
                   Tipo
@@ -56,7 +56,7 @@
           </div>
 
           <div class="eight wide column">
-            <div class="five wide column segment ui" style="background-color: rgba(0, 110, 220, 0.1);">
+            <div class="five wide column segment ui modal-panel">
               <div class="ui labeled large fluid input">
                   <div class="ui label">
                   Nivel
@@ -121,5 +121,16 @@ const newuser= ref({
 </script>
 
 <style scoped>
+.modal-header {
+  background-color: var(--brand-info-soft);
+}
 
+.modal-panel {
+  background-color: var(--brand-info-soft);
+  border-radius: var(--radius-md);
+}
+
+.dropdown-full {
+  width: 100%;
+}
 </style>

@@ -142,17 +142,15 @@ const handleForgotPassword = () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
-
 .login-container {
-  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+  background: var(--brand-gradient);
   width: 100%;
   min-height: 100vh;
   position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  font-family: 'Montserrat', Helvetica, sans-serif;
+  font-family: var(--font-base);
   padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) clamp(3.75rem, vw, 6rem);
 }
 
@@ -199,9 +197,9 @@ const handleForgotPassword = () => {
 .login-card {
   width: 100%;
   max-width: 400px;
-  background-color: #f7f9fc;
+  background-color: var(--brand-surface);
   border-radius: 36px;
-  box-shadow: 0px 4px 17.8px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--brand-shadow);
   border: 0;
 }
 
@@ -211,21 +209,21 @@ const handleForgotPassword = () => {
 
 .login-title {
   font-weight: 700;
-  color: #033164;
+  color: var(--brand-navy);
   font-size: clamp(1.42rem, 3.6vw, 1.7rem);
   margin-bottom: 1rem;
 }
 
 .login-subtitle {
   font-weight: 500;
-  color: #033164;
+  color: var(--brand-navy);
   font-size: clamp(0.95rem, 2.4vw, 1.15rem);
   margin-bottom: 0;
 }
 
 .form-label-custom {
   font-weight: 500;
-  color: #214a77;
+  color: var(--brand-ink);
   font-size: clamp(0.9rem, 2.3vw, 1.05rem);
   margin-bottom: 0.5rem;
 }
@@ -235,14 +233,14 @@ const handleForgotPassword = () => {
   height: clamp(2.45rem, 5.6vw, 3.4rem);
   background-color: white;
   border-radius: 17px;
-  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--brand-shadow-soft);
   border: 0;
   font-size: clamp(0.86rem, 2vw, 1rem);
   padding: 0 1rem;
 }
 
 .form-control-custom:focus {
-  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--brand-shadow-soft);
   border: 0;
   outline: none;
 }
@@ -251,8 +249,8 @@ const handleForgotPassword = () => {
   width: 100%;
   height: clamp(2.45rem, 5.6vw, 3.4rem);
   border-radius: 17px;
-  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
-  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+  box-shadow: var(--brand-shadow-soft);
+  background: var(--brand-gradient);
   border: none;
   font-weight: 700;
   color: white;
@@ -261,12 +259,12 @@ const handleForgotPassword = () => {
 
 .btn-primary-custom:hover {
   opacity: 0.9;
-  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
+  background: var(--brand-gradient);
 }
 
 .forgot-password {
   font-weight: 500;
-  color: #033164;
+  color: var(--brand-navy);
   font-size: clamp(0.9rem, 2vw, 1rem);
   text-decoration: none;
   display: block;
@@ -275,18 +273,18 @@ const handleForgotPassword = () => {
 
 .forgot-password:hover {
   text-decoration: underline;
-  color: #033164;
+  color: var(--brand-navy);
 }
 
 .btn-outline-custom {
   width: 100%;
   height: clamp(2.45rem, 5.6vw, 3.4rem);
   border-radius: 17px;
-  border: 1px solid #033164;
-  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--brand-navy);
+  box-shadow: var(--brand-shadow-soft);
   background-color: transparent;
   font-weight: 700;
-  color: #033164;
+  color: var(--brand-navy);
   font-size: clamp(0.95rem, 2.2vw, 1.2rem);
   display: flex;
   align-items: center;
@@ -296,14 +294,14 @@ const handleForgotPassword = () => {
 
 .btn-outline-custom:hover {
   background-color: rgba(3, 49, 100, 0.05);
-  color: #033164;
-  border-color: #033164;
+  color: var(--brand-navy);
+  border-color: var(--brand-navy);
 }
 
 .error-alert {
   position: relative;
   border-radius: 17px;
-  box-shadow: 0px 0px 4px 1px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--brand-shadow-soft);
   font-size: clamp(0.8rem, 1.9vw, 0.95rem);
   display: flex;
   align-items: center;

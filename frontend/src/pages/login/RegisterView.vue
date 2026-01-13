@@ -696,8 +696,6 @@ onMounted(() => {
 </script>
     
 <style scoped>
-@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
-
 .register-page {
   position: relative;
   min-height: 100vh;
@@ -705,13 +703,13 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(90deg, rgba(0, 50, 103, 1) 0%, rgba(34, 130, 190, 1) 100%);
-  font-family: 'Montserrat', Helvetica, sans-serif;
+  background: var(--brand-gradient);
+  font-family: var(--font-base);
 }
 
 .hero {
   text-align: center;
-  color: #ffffff;
+  color: var(--brand-white);
   margin-bottom: clamp(1.5rem, 5vw, 3rem);
 }
 
@@ -744,7 +742,7 @@ onMounted(() => {
   width: min(960px, 100%);
   background: rgba(247, 249, 252, 0.96);
   border-radius: 34px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--brand-shadow-strong);
   padding: clamp(1.8rem, 4.5vw, 2.6rem);
   position: relative;
   z-index: 1;
@@ -757,13 +755,13 @@ onMounted(() => {
 .register-title {
   font-size: clamp(1.42rem, 3.6vw, 1.9rem);
   font-weight: 700;
-  color: #033164;
+  color: var(--brand-navy);
   margin-bottom: 0.5rem;
 }
 
 .register-subtitle {
   font-size: clamp(0.95rem, 2.4vw, 1.15rem);
-  color: #033164;
+  color: var(--brand-navy);
   margin-bottom: 0;
 }
 
@@ -783,7 +781,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  color: #033164;
+  color: var(--brand-navy);
 }
 
 .form-field label {
@@ -798,13 +796,13 @@ onMounted(() => {
   width: 100%;
   min-height: 52px;
   border-radius: 16px;
-  border: 1px solid rgba(3, 49, 100, 0.18);
+  border: 1px solid var(--brand-border);
   background-color: #ffffff;
   padding: 0 1.25rem;
   font-size: 1rem;
-  color: #033164;
+  color: var(--brand-navy);
   transition: all 0.25s ease;
-  box-shadow: 0 3px 10px rgba(3, 49, 100, 0.08);
+  box-shadow: var(--brand-shadow-soft);
 }
 
 .register-input:focus {
@@ -831,8 +829,8 @@ onMounted(() => {
   padding: 0 1.2rem;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(90deg, #003267 0%, #2282be 100%);
-  color: #ffffff;
+  background: var(--brand-gradient);
+  color: var(--brand-white);
   font-weight: 700;
   box-shadow: 0 6px 16px rgba(0, 50, 103, 0.25);
 }
@@ -846,7 +844,7 @@ onMounted(() => {
   right: 0.9rem;
   background: transparent;
   border: none;
-  color: #033164;
+  color: var(--brand-navy);
   font-size: 1.1rem;
   cursor: pointer;
   display: inline-flex;
@@ -856,7 +854,7 @@ onMounted(() => {
 }
 
 .toggle-visibility:hover {
-  color: #2282be;
+  color: var(--brand-accent);
 }
 
 .password-feedback {
@@ -892,7 +890,7 @@ onMounted(() => {
 }
 
 .password-criteria {
-  background: #ecf3fb;
+  background: var(--brand-surface-alt);
   border-radius: 16px;
   padding: 0.85rem 1.15rem;
   border: 1px solid rgba(3, 49, 100, 0.1);
@@ -901,7 +899,7 @@ onMounted(() => {
 .criteria-label {
   display: block;
   font-size: 0.8rem;
-  color: rgba(3, 49, 100, 0.7);
+  color: var(--brand-muted);
   margin-bottom: 0.35rem;
 }
 
@@ -937,7 +935,7 @@ onMounted(() => {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.85rem;
-  color: rgba(3, 49, 100, 0.7);
+  color: var(--brand-muted);
 }
 
 .register-input.is-invalid {
@@ -985,10 +983,10 @@ onMounted(() => {
 
 .map-toggle {
   margin-left: 0.75rem;
-  border: 1px solid #2282be;
+  border: 1px solid var(--brand-accent);
   border-radius: 16px;
   background: transparent;
-  color: #2282be;
+  color: var(--brand-accent);
   font-weight: 600;
   padding: 0.75rem 1.4rem;
   display: inline-flex;
@@ -1027,17 +1025,17 @@ onMounted(() => {
   align-items: center;
   gap: 0.75rem;
   font-size: 0.95rem;
-  color: #033164;
+  color: var(--brand-navy);
 }
 
 .terms-checkbox input {
   width: 20px;
   height: 20px;
-  accent-color: #033164;
+  accent-color: var(--brand-navy);
 }
 
 .terms-checkbox a {
-  color: #2282be;
+  color: var(--brand-accent);
   font-weight: 600;
 }
 
@@ -1069,8 +1067,8 @@ onMounted(() => {
 
 .primary-action {
   border: none;
-  color: #ffffff;
-  background: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  color: var(--brand-white);
+  background: var(--brand-gradient);
   box-shadow: 0 14px 32px rgba(0, 50, 103, 0.28);
 }
 
@@ -1080,9 +1078,9 @@ onMounted(() => {
 }
 
 .secondary-action {
-  border: 1px solid #033164;
-  color: #033164;
-  background: #ffffff;
+  border: 1px solid var(--brand-navy);
+  color: var(--brand-navy);
+  background: var(--brand-white);
 }
 
 .secondary-action:hover {
@@ -1145,15 +1143,15 @@ onMounted(() => {
 }
 
 .text-success {
-  color: #28a745 !important;
+  color: var(--state-success) !important;
 }
 
 .text-danger {
-  color: #dc3545 !important;
+  color: var(--state-danger) !important;
 }
 
 .text-info {
-  color: #17a2b8 !important;
+  color: var(--state-info) !important;
 }
 
 @media (max-width: 992px) {
