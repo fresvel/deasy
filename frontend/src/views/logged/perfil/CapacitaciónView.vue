@@ -20,6 +20,7 @@
         <table class="table table-hover align-middle table-institutional table-striped">
           <thead >
             <tr>
+              <th width="5%"></th>
               <th scope="col">Tema</th>
               <th scope="col">Institución</th>
               <th scope="col">Horas</th>
@@ -31,11 +32,12 @@
           </thead>
           <tbody>
             <tr v-if="!capacitacionesDocentes.length">
-              <td colspan="7" class="text-center text-muted py-4">
+              <td colspan="8" class="text-center text-muted py-4">
                 No has registrado capacitación docente.
               </td>
             </tr>
             <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id">
+              <td><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
               <td>{{ capacitacion.tema }}</td>
               <td>{{ capacitacion.institution }}</td>
               <td>{{ capacitacion.horas || 'N/A' }}</td>
@@ -43,8 +45,10 @@
               <td>{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td>{{ capacitacion.rol || 'N/A' }}</td>
               <td class="text-end">
-                <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" class="me-2" />
-                <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
+                <div class="btn-group" role="group">
+                  <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
+                  <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" />
+                </div>
               </td>
             </tr>
           </tbody>
@@ -61,6 +65,7 @@
         <table class="table table-hover align-middle table-institutional table-striped">
           <thead >
             <tr>
+              <th width="5%"></th>
               <th scope="col">Tema</th>
               <th scope="col">Institución</th>
               <th scope="col">Horas</th>
@@ -72,11 +77,12 @@
           </thead>
           <tbody>
             <tr v-if="!capacitacionesProfesionales.length">
-              <td colspan="7" class="text-center text-muted py-4">
+              <td colspan="8" class="text-center text-muted py-4">
                 No has registrado capacitación profesional.
               </td>
             </tr>
             <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id">
+              <td><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
               <td>{{ capacitacion.tema }}</td>
               <td>{{ capacitacion.institution }}</td>
               <td>{{ capacitacion.horas || 'N/A' }}</td>
@@ -84,8 +90,10 @@
               <td>{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td>{{ capacitacion.rol || 'N/A' }}</td>
               <td class="text-end">
-                <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" class="me-2" />
-                <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
+                <div class="btn-group" role="group">
+                  <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
+                  <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" />
+                </div>
               </td>
             </tr>
           </tbody>
@@ -117,9 +125,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
-import AgregarCapacitacion from "./AgregarCapacitacion.vue";
-import BtnDelete from "@/components/database/BtnDelete.vue";
-import BtnEdit from "@/components/database/BtnEdit.vue";
+import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
+import BtnDelete from "@/components/BtnDelete.vue";
+import BtnEdit from "@/components/BtnEdit.vue";
+import BtnSera from "@/components/BtnSera.vue";
 import LogrosView2 from "@/sections/academia/LogrosView2.vue";
 
 const modal = ref(null);
@@ -144,6 +153,12 @@ const formatDate = (date) => {
     if (!date) return '';
     const d = new Date(date);
     return d.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
+};
+
+const getSeraType = (sera) => {
+    if (sera === "Aprobado") return "approved";
+    if (sera === "Revisado") return "review";
+    return "pending";
 };
 
 // Cargar datos del usuario y su dossier
