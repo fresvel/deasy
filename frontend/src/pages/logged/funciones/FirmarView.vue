@@ -17,7 +17,7 @@
                 <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
             </router-link>
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
-                <img class="avatar" src="/images/message.svg" alt="User Avatar">
+                <font-awesome-icon icon="bell" class="avatar" />
             </button>
         </div>
     
@@ -29,7 +29,14 @@
         <s-menu :show="vmenu">
 
             <UserProfile photo="/images/avatar.png" :username="userFullName" />
-            <div class="menu-section-title text-white">Formación y Experiencia</div>
+            <button
+              class="menu-section-title text-white w-100"
+              type="button"
+              @click="showFormacion = !showFormacion"
+            >
+              Formación y Experiencia
+            </button>
+            <div v-show="showFormacion">
             <div class="list-group list-group-flush">
               <button v-for="(item, index) of menu" :key="index"
                 class="list-group-item list-group-item-action"
@@ -38,6 +45,7 @@
                 @click="onmenuClick(item.label)">
                 {{ item.label }}
               </button>
+            </div>
             </div>
         </s-menu>
     
@@ -95,6 +103,7 @@
     const vmenu = ref(true);
     const vnotify = ref(true);
     const selected= ref("Formación")
+    const showFormacion = ref(true);
     
     
     const toggleVmenu = () => {

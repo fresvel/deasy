@@ -18,12 +18,13 @@ import {    faEdit, faCheck, faTrash, faCertificate,
             faGlobe, faCheckCircle, faExclamationTriangle,
             faSignInAlt, faEye, faEyeSlash, faTimesCircle,
             faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle} from '@fortawesome/free-solid-svg-icons';
+import { faBell } from '@fortawesome/free-solid-svg-icons';
 
 // Agregar íconos a la biblioteca
 library.add(faEdit, faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck,faForward,
     faBackward, faUser, faLock, faUserPlus, faIdCard, faEnvelope, 
     faPhone, faMapMarkerAlt, faGlobe, faCheckCircle, faExclamationTriangle, faSignInAlt,
-    faEye, faEyeSlash, faTimesCircle, faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle);
+    faEye, faEyeSlash, faTimesCircle, faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle, faBell);
 
 
 const app=createApp(App)

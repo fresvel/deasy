@@ -3,6 +3,7 @@
   <div class="profile-section-header">
     <div>
       <h2 class="text-start profile-section-title">Referencias</h2>
+      <p class="profile-section-subtitle">Agrega referencias laborales, familiares y personales.</p>
     </div>
     <div class="profile-section-actions">
       <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal()">
@@ -291,4 +292,3 @@ titulo:{type: Striewg,},
 
 */
 </script>
-

@@ -1,5 +1,5 @@
 <template>
-  <div class="col-lg-3 col-md-4" v-if="props.show">
+  <div class="col-lg-2 col-md-3" v-if="props.show">
     <div class="smenu">
       <UserProfile photo="/images/avatar.png" :username="props.username" />
 

@@ -26,7 +26,7 @@
                 <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
             </button>
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
-                <img class="avatar" src="/images/message.svg" alt="User Avatar">
+                <font-awesome-icon icon="bell" class="avatar" />
             </button>
         </div>
     </s-header>
@@ -42,10 +42,15 @@
                 :editable="true"
                 @photo-selected="handlePhotoSelected"
             />
-            <div class="menu-section-title text-white">
-                Coordinación          
-            </div>
+            <button
+              class="menu-section-title text-white w-100"
+              type="button"
+              @click="showCoordinacion = !showCoordinacion"
+            >
+                Coordinación
+            </button>
 
+            <div v-show="showCoordinacion">
             <div class="list-group list-group-flush">
               <button v-for="(item, index) of mainmenu" :key="index"
                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
@@ -58,7 +63,16 @@
                 </span>
               </button>
             </div>
-            <div class="menu-section-title text-white">Docencia</div>
+            </div>
+
+            <button
+              class="menu-section-title text-white w-100"
+              type="button"
+              @click="showDocencia = !showDocencia"
+            >
+              Docencia
+            </button>
+            <div v-show="showDocencia"></div>
         </s-menu>
     
         <s-body
@@ -81,8 +95,6 @@
         <div v-else-if="area=='Firmar'">
             <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
         </div>
-
-        <LogrosView2></LogrosView2>
 
         </s-body>
         
@@ -113,7 +125,6 @@ import CertificacionView from '@/sections/perfil/CertificacionView.vue';
 
 import IndexAcademia from '@/sections/academia/AcademiaView.vue';
 import LogrosView from '@/sections/academia/LogrosView.vue';
-import LogrosView2 from '@/sections/academia/LogrosView2.vue';
 
 import TutoriasView from '@/sections/academia/TutoriasView.vue';
 
@@ -238,6 +249,8 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const process= ref("Formación")
 
     const area= ref("Perfil")
+    const showCoordinacion = ref(true);
+    const showDocencia = ref(false);
     
     
     const toggleVmenu = () => {
