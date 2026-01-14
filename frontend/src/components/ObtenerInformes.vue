@@ -1,36 +1,27 @@
 <template>
 
-<div class="ui right aligned grid">
-  
-  <div class="center aligned column row">
-    
-    
-        <s-select
-            label="Ciclo Académico"
-            :options="periodos"
-            @fromselect="selPeriod"
-            wide="five"
-        />
-    
-        <s-input
-            :modelValue="anio"
-            label="Año"
-            type="number"
-            placeholder=""
-            @update:modelValue="onanioChange"
-            wide="six"
-        />
-        <s-select
-            class="column"
-            label="Programa"
-            :options="allprograms"
-            @fromselect="selProgram"
-            wide="five"
-        />
-    
-  </div>
-  
+<div class="row g-3 justify-content-end align-items-end">
+    <s-select
+        label="Ciclo Académico"
+        :options="periodos"
+        @fromselect="selPeriod"
+        wide="five"
+    />
 
+    <s-input
+        :modelValue="anio"
+        label="Año"
+        type="number"
+        placeholder=""
+        @update:modelValue="onanioChange"
+        wide="six"
+    />
+    <s-select
+        label="Programa"
+        :options="allprograms"
+        @fromselect="selProgram"
+        wide="five"
+    />
 </div>
 
 
@@ -101,4 +92,3 @@ const onparamsChange=()=>{
 }
 
 </script>
-

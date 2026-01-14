@@ -1,77 +1,64 @@
 <template>
 
-    <div class="ui grid">
+    <div class="row align-items-center g-3 mb-4">
     
-      <div class="eight wide column">
+      <div class="col-lg-6">
         <h1>Informe de Logros Académicos</h1>
       </div>
     
-      <div class="eight wide right aligned column">
+      <div class="col-lg-6 text-lg-end">
           
-        <button class="ui blue button large" @click="generarReporte()">Revisar</button>
-        <button class="ui blue button large">Guardar</button>
-        <button class="ui blue button large" @click="obtenerReporte()">Enviar</button>
+        <button class="btn btn-primary me-2" @click="generarReporte()">Revisar</button>
+        <button class="btn btn-outline-primary me-2">Guardar</button>
+        <button class="btn btn-primary" @click="obtenerReporte()">Enviar</button>
         
     
       </div>
     
       
       
-      <div class="sixteen wide column">
-        <div class="ui grid">
-          <div class="five wide column">
-            <div class="ui labeled large fluid input">
-              <div class="ui label">
-                Carrera
-              </div>
-              <input type="text" placeholder="mysite.com" v-model="informe.header.programa">
+      <div class="col-12">
+        <div class="row g-3">
+          <div class="col-lg-5">
+            <div class="input-group">
+              <span class="input-group-text">Carrera</span>
+              <input type="text" class="form-control" placeholder="mysite.com" v-model="informe.header.programa">
            </div>
           </div>
-          <div class="five wide column">
-            <div class="ui labeled large fluid input">
-              <div class="ui label">
-                Ciclo Académico
-              </div>
-              <select class="ui compact selection dropdown" v-model="informe.header.periodo.ciclo">
+          <div class="col-lg-5">
+            <div class="input-group">
+              <span class="input-group-text">Ciclo Académico</span>
+              <select class="form-select" v-model="informe.header.periodo.ciclo">
                 <option selected="" value="" ></option>
                 <option value="I">Primer Periodo</option>
                 <option value="II">Segundo Periodo</option>
               </select>
            </div>
           </div>
-          <div class="three wide column">
-            <div class="ui labeled large fluid  input">
-              <div class="ui label">
-                Año
-              </div>
-              <input type="number" placeholder="Año" v-model="informe.header.periodo.anio">
+          <div class="col-lg-2">
+            <div class="input-group">
+              <span class="input-group-text">Año</span>
+              <input type="number" class="form-control" placeholder="Año" v-model="informe.header.periodo.anio">
            </div>
           </div>
-          <div class="three wide column">
-            <div class="ui labeled large fluid  input">
-              <input type="file" id="file_grades" class="file-input-hidden" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
-              <label for="file_grades" class="ui teal large fluid button">{{csv_grades}}</label>
-           </div>
-           <br>
-           <div class="ui labeled large fluid  input">
+          <div class="col-lg-3">
+            <input type="file" id="file_grades" class="file-input-hidden" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
+            <label for="file_grades" class="btn btn-outline-primary w-100">{{csv_grades}}</label>
+           <div class="mt-2">
               <input type="file" id="file_tutorias" class="file-input-hidden" v-on:change="onfileChange('tutorias')" name="file_t" ref="file_tutorias">
-              <label for="file_tutorias" class="ui teal large fluid button">{{csv_tutorias}}</label>
+              <label for="file_tutorias" class="btn btn-outline-primary w-100">{{csv_tutorias}}</label>
            </div>
           </div>
         </div>
-    
-    
       </div>
     </div>
     
     
-    <div v-for="(table, level) in levels" :key="level" class="ui grid">
+    <div v-for="(table, level) in levels" :key="level" class="row g-3 mb-4">
     
-        <div class="sixteen wide column">
-          <div class="ui info message">
-            <div class="header">
-              Nivel {{ level }}
-            </div>
+        <div class="col-12">
+          <div class="alert alert-info mb-3">
+            <strong>Nivel {{ level }}</strong>
           </div>
         
           <table class="table table-institutional table-striped table-hover align-middle">
@@ -108,7 +95,7 @@
                       <td>
                         <button 
                         @click="removeRow(index, level)"
-                        class="ui negative button">
+                        class="btn btn-outline-danger btn-sm">
                             Eliminar {{ index }}-{{ level }}
                         </button>
                       </td>
@@ -118,16 +105,16 @@
         
         </div>
     
-        <div class="ten wide column ui form">
-          <textarea v-model="surveys[level]" rows="10" class="large summary-textarea"></textarea>
+        <div class="col-lg-8">
+          <textarea v-model="surveys[level]" rows="10" class="form-control summary-textarea"></textarea>
         </div>
-        <div class="six wide column ui form">
+        <div class="col-lg-4">
     
-        <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un promt personalizado" rows="7" class="large summary-textarea"></textarea>
-        <button @click="removeRow(index, level)" class="ui blue button large action-button">
+        <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un promt personalizado" rows="7" class="form-control summary-textarea"></textarea>
+        <button @click="removeRow(index, level)" class="btn btn-primary w-100 action-button">
             Analizar Promt
         </button>
-        <button @click="removeRow(index, level)" class="ui blue button large action-button">
+        <button @click="removeRow(index, level)" class="btn btn-outline-primary w-100 action-button">
             Analizar Tabla
         </button>
         </div>

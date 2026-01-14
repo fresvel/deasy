@@ -1,40 +1,44 @@
 <template>
+  <nav id="hmenu" class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center gap-3 w-100">
+        <button class="btn btn-link text-white p-0" type="button" @click="onClick('menu')">
+          <img class="menulogo avatar" src="/images/menu.svg" alt="User Avatar">
+        </button>
+        <button
+          v-if="props.avatar.enable"
+          class="btn btn-link text-white p-0"
+          type="button"
+          @click="onClick('perfil')"
+        >
+          <img class="avatar" :src="props.avatar.src" alt="User Avatar">
+        </button>
 
-<div class="ui grid" id="navbar">
-      <div class="sixteen wide column">
-        <div class="ui inverted segment" id="hmenu">
-            <div class="ui inverted secondary menu flex">
-              <a class="item large" @click="onClick('menu')">
-                <img class="menulogo" src="/images/menu.svg" alt="User Avatar">
-              </a>
-              <a v-if="props.avatar.enable" class="item large" @click="onClick('perfil')">
-                  <img class="avatar" :src="props.avatar.src" alt="User Avatar">
-              </a>
+        <div class="navbar-nav flex-row flex-wrap align-items-center gap-2 ms-auto">
+          <router-link
+            v-for="(area, index) in props.areas"
+            :key="index"
+            class="nav-link text-white px-2"
+            :to="`/${area.route}`"
+            :class="{ active: area.active === true }"
+            @click="onClick(area.name)"
+          >
+            {{ area.name }}
+          </router-link>
 
-
-              <router-link v-for="(area, index) in props.areas" :key="index"
-              class="item large"
-              :to="`/${area.route}`"
-              :class="{'active':area.active==true}" 
-              @click="onClick(area.name)">{{ area.name}}
-              </router-link>
-
-              <router-link to="/logout" class="item  large right aligned">
-                  <img class="avatar" src="/images/logout.svg" alt="User Avatar">
-              </router-link>
-              <a class="item large" @click="onClick('signer')"> 
-                <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
-              </a>
-              <a class="item large" @click="onClick('message')">
-                <img class="avatar" src="/images/message.svg" alt="User Avatar">
-              </a>
-            
-            </div>
+          <router-link to="/logout" class="nav-link text-white px-2 ms-lg-3">
+            <img class="avatar" src="/images/logout.svg" alt="User Avatar">
+          </router-link>
+          <button class="btn btn-link text-white p-0" type="button" @click="onClick('signer')">
+            <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
+          </button>
+          <button class="btn btn-link text-white p-0" type="button" @click="onClick('message')">
+            <img class="avatar" src="/images/message.svg" alt="User Avatar">
+          </button>
         </div>
       </div>
-</div>
-
-
+    </div>
+  </nav>
 </template>
 
 <script setup>
@@ -80,16 +84,16 @@ const onClick=(item)=>{
 
 <style scoped lang="scss">
 
-#navbar {
-      margin-bottom: -41px;
-}
-
 #hmenu {
   background: var(--brand-gradient);
 }
 
 .menulogo{
   border-radius: 10px;
+}
+
+.nav-link.active {
+  font-weight: 600;
 }
 
 </style>

@@ -2,33 +2,43 @@
 
   
     <s-header @onclick="onClick('Menu')">
-        <router-link to="/" class="item active large" @click="onClick('Academia')">Academia</router-link>
-        <router-link to="/auth" class="item large">Investigación</router-link>
-        <router-link to="/" class="item  large" >Vinculación</router-link>
-        <router-link to="/auth" class="item large left aligned">Internacionalización</router-link>
-        <router-link to="/logout" class="item  large right aligned">
-            <img class="avatar" src="/images/logout.svg" alt="User Avatar">
-        </router-link>              
-        <router-link to="/firmar" class="item large"> 
-            <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
-        </router-link>
-        <a class="item large" @click="onClick('Message')">
-            <img class="avatar" src="/images/message.svg" alt="User Avatar">
-        </a>
+        <div class="header-left">
+            <router-link to="/" class="nav-link text-white" @click="onClick('Academia')">Academia</router-link>
+            <router-link to="/auth" class="nav-link text-white">Investigación</router-link>
+            <router-link to="/" class="nav-link text-white">Vinculación</router-link>
+            <router-link to="/auth" class="nav-link text-white">Internacionalización</router-link>
+        </div>
+
+        <div class="header-right">
+            <router-link to="/logout" class="nav-link text-white ms-lg-3">
+                <img class="avatar" src="/images/logout.svg" alt="User Avatar">
+            </router-link>              
+            <router-link to="/firmar" class="nav-link text-white"> 
+                <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
+            </router-link>
+            <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
+                <img class="avatar" src="/images/message.svg" alt="User Avatar">
+            </button>
+        </div>
     
     </s-header>
     
       
-      <div class="ui grid">
+      <div class="row g-3">
     
         <s-menu :show="vmenu">
 
-            <UserProfile photo="/images/avatar.png" :username="userFullName"> </UserProfile>
-            <a class="item large"> Formación y Experiencia</a>
-            <a v-for="(item, index) of menu" :key="index" 
-                :class="item.active ? 'item active' : 'item'" 
-                @click="onmenuClick(item.label)">{{ item.label }}
-            </a>
+            <UserProfile photo="/images/avatar.png" :username="userFullName" />
+            <div class="menu-section-title text-white">Formación y Experiencia</div>
+            <div class="list-group list-group-flush">
+              <button v-for="(item, index) of menu" :key="index"
+                class="list-group-item list-group-item-action"
+                :class="{ active: item.active }"
+                type="button"
+                @click="onmenuClick(item.label)">
+                {{ item.label }}
+              </button>
+            </div>
         </s-menu>
     
         <s-body

@@ -7,7 +7,7 @@
 />
 
           
-<div class="ui grid">
+<div class="row g-3">
 
 <user-menu 
 :show="show_menu"

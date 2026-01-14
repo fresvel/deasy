@@ -1,11 +1,11 @@
 <template>
     <div 
-        class="ui labeled large segment input grid file-dropzone" 
+        class="row g-3 file-dropzone" 
         @dragover.prevent 
         @drop="onFileDrop"
     >
 
-        <div class="sixteen wide column">
+        <div class="col-12">
             <input 
                 type="file" 
                 class="file-input-hidden"
@@ -14,15 +14,15 @@
                 ref="csv_input"
                 multiple
             />
-            <label for="csv_input" class="ui large fluid button">
+            <label for="csv_input" class="btn btn-primary w-100">
                 {{ props.files.length > 0 ? props.files.map(file => file.name).join('\n') : 'Arrastra y suelta archivos o selecciona' }}
             </label>
         </div>
     
-        <div class="sixteen wide column">
-            <div v-if="props.files.length > 0" class="ui fluid files segment">
-                <div v-for="(file, index) in props.files" :key="index" class="item ">
-                    
+        <div class="col-12">
+            <div v-if="props.files.length > 0" class="files card">
+                <div class="card-body">
+                    <div v-for="(file, index) in props.files" :key="index" class="item">
                         <span v-if="!file.isRenaming">{{ file.name }}</span>
                         <input 
                             v-else 
@@ -30,22 +30,18 @@
                             v-model="file.name" 
                             @blur="stopRenaming(index)" 
                             @keyup.enter="stopRenaming(index)"
-                            class="ui input file-rename-input"
+                            class="form-control file-rename-input"
                         />
-                    
                         <BtnDelete
                         @click="removeFile(index)"
                         />
                         <BtnEdit 
                         @click="startRenaming(index)" v-if="!file.isRenaming"
                         />
+                    </div>
                 </div>
             </div>
         </div>
-
-
-
-    
 </div>  
 
 

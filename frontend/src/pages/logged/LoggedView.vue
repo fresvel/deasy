@@ -1,30 +1,38 @@
 <template>  
 
     <s-header @onclick="onClick('Menu')">
-        <a class="item large" @click="onheadClick({name:'Perfil'})">
-            <img class="avatar" :src="userPhoto" alt="User Avatar">
-        </a>
+        <div class="header-left">
+            <button class="nav-link text-white p-0" type="button" @click="onheadClick({name:'Perfil'})">
+                <img class="avatar" :src="userPhoto" alt="User Avatar">
+            </button>
 
-        <a class="item large" 
-        v-for="(area, index) in areas" :key="index"
-        :class="{'active':area.active==true}" 
-        @click="onheadClick(area)">{{ area.name}}</a>
+            <button
+            class="nav-link text-white"
+            v-for="(area, index) in areas"
+            :key="index"
+            :class="{'active':area.active==true}"
+            type="button"
+            @click="onheadClick(area)"
+            >
+              {{ area.name}}
+            </button>
+        </div>
 
-        
-        <router-link to="/logout" class="item  large right aligned">
-            <img class="avatar" src="/images/logout.svg" alt="User Avatar">
-        </router-link>              
-        <a class="item large" @click="onheadClick({name:'Firmar'})"> 
-            <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
-        </a>
-        <a class="item large" @click="onClick('Message')">
-            <img class="avatar" src="/images/message.svg" alt="User Avatar">
-        </a>
-    
+        <div class="header-right">
+            <router-link to="/logout" class="nav-link text-white">
+                <img class="avatar" src="/images/logout.svg" alt="User Avatar">
+            </router-link>              
+            <button class="nav-link text-white p-0" type="button" @click="onheadClick({name:'Firmar'})"> 
+                <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
+            </button>
+            <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
+                <img class="avatar" src="/images/message.svg" alt="User Avatar">
+            </button>
+        </div>
     </s-header>
     
       
-      <div class="ui grid">
+      <div class="row g-3">
     
         <s-menu :show="vmenu">
 
@@ -34,24 +42,23 @@
                 :editable="true"
                 @photo-selected="handlePhotoSelected"
             />
-            <a class="large item labeled menu-section-title">
+            <div class="menu-section-title text-white">
                 Coordinación          
-            </a>
+            </div>
 
-            
-    
-
-            <a v-for="(item, index) of mainmenu" :key="index"
-            
-                class="right medium item labeled"
-                :class="item.active ? 'item active' : ''" 
+            <div class="list-group list-group-flush">
+              <button v-for="(item, index) of mainmenu" :key="index"
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                :class="{ active: item.active }"
+                type="button"
                 @click="onmenuClick(item.label)">
-                {{ item.label }}
-                    <div v-if="item.key" class="ui left pointing blue label">
-                        <div class="medium">{{ dossierCounts[item.key] ?? 0 }}</div>
-                    </div>
-            </a>
-            <a class="item large menu-section-title"> Docencia</a>
+                <span>{{ item.label }}</span>
+                <span v-if="item.key" class="badge bg-primary rounded-pill">
+                  {{ dossierCounts[item.key] ?? 0 }}
+                </span>
+              </button>
+            </div>
+            <div class="menu-section-title text-white">Docencia</div>
         </s-menu>
     
         <s-body

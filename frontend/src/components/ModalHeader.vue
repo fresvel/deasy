@@ -1,5 +1,5 @@
 <template>
- <i class="close icon"></i>
+ <button type="button" class="btn-close" aria-label="Close"></button>
   <div class="header modal-header">
     <slot></slot>
   </div>

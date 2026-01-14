@@ -1,51 +1,57 @@
 <template>
   <div class="dashboard-page">
     <s-header @onclick="handleHeaderToggle">
-      <a class="item large" @click="navigateTo('perfil')" title="Ir al perfil">
-        <img class="avatar" src="/images/avatar.png" alt="Perfil" />
-      </a>
+      <div class="header-left">
+        <button class="nav-link text-white p-0" type="button" @click="navigateTo('perfil')" title="Ir al perfil">
+          <img class="avatar" src="/images/avatar.png" alt="Perfil" />
+        </button>
 
-      <a
-        v-for="item in headerAreas"
-        :key="item.code"
-        class="item large"
-        :class="{ active: item.active }"
-        @click="switchArea(item)"
-      >
-        {{ item.name }}
-      </a>
+        <button
+          v-for="item in headerAreas"
+          :key="item.code"
+          class="nav-link text-white"
+          :class="{ active: item.active }"
+          type="button"
+          @click="switchArea(item)"
+        >
+          {{ item.name }}
+        </button>
+      </div>
 
-      <router-link to="/logout" class="item large right aligned" title="Cerrar sesión">
-        <img class="avatar" src="/images/logout.svg" alt="Cerrar sesión" />
-      </router-link>
+      <div class="header-right">
+        <router-link to="/logout" class="nav-link text-white ms-lg-3" title="Cerrar sesión">
+          <img class="avatar" src="/images/logout.svg" alt="Cerrar sesión" />
+        </router-link>
 
-      <a class="item large" @click="navigateTo('firmar')" title="Firmar documentos">
-        <img class="avatar" src="/images/pen_line.svg" alt="Firmar" />
-      </a>
+        <button class="nav-link text-white p-0" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
+          <img class="avatar" src="/images/pen_line.svg" alt="Firmar" />
+        </button>
 
-      <a class="item large" @click="toggleNotify" title="Notificaciones">
-        <img class="avatar" src="/images/message.svg" alt="Notificaciones" />
-      </a>
+        <button class="nav-link text-white p-0" type="button" @click="toggleNotify" title="Notificaciones">
+          <img class="avatar" src="/images/message.svg" alt="Notificaciones" />
+        </button>
+      </div>
     </s-header>
 
-    <div class="ui grid">
+    <div class="row g-3">
       <s-menu :show="showMenu">
         <UserProfile photo="/images/avatar.png" :username="userFullName" />
-        <a class="large item labeled center">Coordinación</a>
+        <div class="menu-section-title text-white">Coordinación</div>
 
-        <a
-          v-for="item in quickStats"
-          :key="item.label"
-          class="right medium item labeled"
-          @click="navigateTo(item.route)"
-        >
-          {{ item.label }}
-          <div class="ui left pointing blue label">
-            <div class="medium">{{ item.count }}</div>
-          </div>
-        </a>
+        <div class="list-group list-group-flush">
+          <button
+            v-for="item in quickStats"
+            :key="item.label"
+            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+            type="button"
+            @click="navigateTo(item.route)"
+          >
+            <span>{{ item.label }}</span>
+            <span class="badge bg-primary rounded-pill">{{ item.count }}</span>
+          </button>
+        </div>
 
-        <a class="item large center">Docencia</a>
+        <div class="menu-section-title text-white">Docencia</div>
       </s-menu>
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">

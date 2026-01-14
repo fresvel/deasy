@@ -1,18 +1,18 @@
 <template>
   
 <h1>Fimar Documento</h1>
-<div class="ui fluid centered grid">
-  <div class="row">
-    <div class="column">
+<div class="container-fluid">
+  <div class="row align-items-center justify-content-center g-3">
+    <div class="col-auto">
       <button @click="prevPageBtn" class="btnav">
         <font-awesome-icon icon="backward" class="icon" />
         <span class="tooltip">Página Anterior</span>
       </button>
     </div>
-    <div class="column page-info-column">
-      <span ref="pageInfo" class="ui button page-info-button"></span>
+    <div class="col-auto page-info-column">
+      <span ref="pageInfo" class="page-info-button"></span>
     </div>
-    <div class="column">
+    <div class="col-auto">
       <button @click="nextPageBtn" class="btnav">
         <font-awesome-icon icon="forward" class="icon" />
         <span class="tooltip">Página Siguiente</span>
@@ -20,15 +20,21 @@
     </div>
   </div>
 
-  <div class="row">
-        <div class="segment ui column" ref="colPdf">
-          <div class="pdf-viewer" ref="pdfViewer">
-            <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
+  <div class="row mt-3">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body p-2" ref="colPdf">
+              <div class="pdf-viewer" ref="pdfViewer">
+                <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
+              </div>
+            </div>
           </div>
         </div>        
   </div>
   <div class="row">
-        <p class="column" ref="coordinatesDisplay">Haz clic y arrastra para dibujar cuadros. Cada cuadro queda fijado.</p>
+        <p class="col-12 text-center mt-3" ref="coordinatesDisplay">
+          Haz clic y arrastra para dibujar cuadros. Cada cuadro queda fijado.
+        </p>
   </div>
 
 </div>
@@ -191,6 +197,8 @@
       background-color: var(--brand-info-soft);
       color: var(--brand-navy);
       border-radius: var(--radius-md);
+      padding: 0.45rem 0.9rem;
+      display: inline-block;
     }
 
     .pdf-viewer {

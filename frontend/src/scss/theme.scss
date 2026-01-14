@@ -120,6 +120,13 @@ a:hover {
   font-weight: 400;
 }
 
+.navbar .avatar {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  margin: 10px;
+}
+
 .profile-section-header {
   display: flex;
   align-items: flex-start;
