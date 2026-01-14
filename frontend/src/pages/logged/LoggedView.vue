@@ -85,6 +85,7 @@
             <TitulosView v-if="process==='Formación'"></TitulosView>
             <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
             <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
+            <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
         </div>
         <div v-else-if="area=='Academia'">
@@ -122,6 +123,7 @@ import TitulosView from '@/sections/perfil/TitulosView.vue';
 import LaboralView from '@/sections/perfil/LaboralView.vue';
 import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
 import CertificacionView from '@/sections/perfil/CertificacionView.vue';
+import CapacitacionView from '@/views/logged/perfil/CapacitaciónView.vue';
 
 import IndexAcademia from '@/sections/academia/AcademiaView.vue';
 import LogrosView from '@/sections/academia/LogrosView.vue';
