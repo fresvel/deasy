@@ -1,11 +1,11 @@
 <template>
   <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="profile-section-header">
       <div>
-        <h2 class="fw-semibold mb-1">Formación continua y conferencias</h2>
-        <p class="text-muted mb-0">Registra los eventos de capacitación docente y profesional en los que has participado.</p>
+        <h2 class="profile-section-title mb-1">Formación continua y conferencias</h2>
+        <p class="profile-section-subtitle">Registra los eventos de capacitación docente y profesional en los que has participado.</p>
       </div>
-      <button class="btn btn-primary btn-lg" @click="openModal">
+      <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
         <font-awesome-icon icon="plus" class="me-2" />
         Agregar
       </button>
@@ -93,6 +93,10 @@
       </div>
     </section>
 
+    <section class="mt-5">
+      <LogrosView2 />
+    </section>
+
     <div class="modal fade" id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -116,6 +120,7 @@ import { Modal } from "bootstrap";
 import AgregarCapacitacion from "./AgregarCapacitacion.vue";
 import BtnDelete from "@/components/database/BtnDelete.vue";
 import BtnEdit from "@/components/database/BtnEdit.vue";
+import LogrosView2 from "@/sections/academia/LogrosView2.vue";
 
 const modal = ref(null);
 const dossier = ref(null);

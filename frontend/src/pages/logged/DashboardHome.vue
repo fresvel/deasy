@@ -28,7 +28,7 @@
         </button>
 
         <button class="nav-link text-white p-0" type="button" @click="toggleNotify" title="Notificaciones">
-          <img class="avatar" src="/images/message.svg" alt="Notificaciones" />
+          <font-awesome-icon icon="bell" class="avatar" />
         </button>
       </div>
     </s-header>
@@ -36,8 +36,15 @@
     <div class="row g-3">
       <s-menu :show="showMenu">
         <UserProfile photo="/images/avatar.png" :username="userFullName" />
-        <div class="menu-section-title text-white">Coordinación</div>
+        <button
+          class="menu-section-title text-white w-100"
+          type="button"
+          @click="showCoordinacion = !showCoordinacion"
+        >
+          Coordinación
+        </button>
 
+        <div v-show="showCoordinacion">
         <div class="list-group list-group-flush">
           <button
             v-for="item in quickStats"
@@ -50,8 +57,16 @@
             <span class="badge bg-primary rounded-pill">{{ item.count }}</span>
           </button>
         </div>
+        </div>
 
-        <div class="menu-section-title text-white">Docencia</div>
+        <button
+          class="menu-section-title text-white w-100"
+          type="button"
+          @click="showDocencia = !showDocencia"
+        >
+          Docencia
+        </button>
+        <div v-show="showDocencia"></div>
       </s-menu>
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">
@@ -142,7 +157,9 @@ const userFullName = computed(() => {
 });
 
 const showMenu = ref(true);
-const showNotify = ref(false);
+  const showNotify = ref(false);
+  const showCoordinacion = ref(true);
+  const showDocencia = ref(false);
 
 const headerAreas = ref([
   { code: 'perfil', name: 'Perfil', active: true, route: 'perfil' },

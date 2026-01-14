@@ -5,6 +5,7 @@
     <div class="profile-section-header">
       <div>
         <h2 class="text-start profile-section-title">Experiencia laboral</h2>
+        <p class="profile-section-subtitle">Detalla tu experiencia docente y profesional.</p>
       </div>
       <div class="profile-section-actions">
         <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
@@ -232,4 +233,3 @@ onBeforeUnmount(() => {
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
-

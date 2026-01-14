@@ -23,13 +23,13 @@ const props=defineProps({
 
 const contentClass = computed(() => {
     if (props.showmenu && props.shownotify) {
-        return "col-lg-7 col-md-6 col-12";
+        return "col-lg-8 col-md-6 col-12";
     }
     if (!props.showmenu && !props.shownotify) {
         return "col-12";
     }
     if (props.showmenu && !props.shownotify) {
-        return "col-lg-9 col-md-8 col-12";
+        return "col-lg-10 col-md-9 col-12";
     }
     return "col-lg-10 col-md-9 col-12";
 });
@@ -41,6 +41,7 @@ const contentClass = computed(() => {
   .content-panel {
       min-height: 100vh;
       padding: 0.75rem;
+      font-size: 0.2rem;
   }
 
 </style>

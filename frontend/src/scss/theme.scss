@@ -124,7 +124,12 @@ a:hover {
   width: 50px;
   height: 50px;
   object-fit: contain;
-  margin: 10px;
+  color: #c6c9c5;
+}
+
+.navbar .header-icon {
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .profile-section-header {
@@ -133,6 +138,8 @@ a:hover {
   justify-content: space-between;
   gap: 1.25rem;
   margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(3, 49, 100, 0.15);
+  padding-bottom: 0.75rem;
 }
 
 .profile-section-title {
@@ -143,6 +150,8 @@ a:hover {
 .profile-section-subtitle {
   margin-bottom: 0;
   color: var(--brand-muted);
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
 .profile-section-actions {
@@ -150,8 +159,18 @@ a:hover {
   justify-content: flex-end;
 }
 
+.profile-section-header + .row h3,
+.profile-section-header + .row + .row h3,
+.profile-section-header + .row + .row + .row h3 {
+  font-size: 1.2rem;
+}
+
 .table.align-middle > :not(caption) > * > * {
   vertical-align: middle;
+}
+
+.table {
+  font-size: 0.95rem;
 }
 
 .table-institutional {
@@ -183,6 +202,12 @@ a:hover {
   background: rgba(var(--brand-accent-rgb), 0.08);
 }
 
+.table-responsive {
+  border-bottom: 1px solid rgba(3, 49, 100, 0.12);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
 .alert-danger {
   border-radius: var(--radius-md);
 }
@@ -208,4 +233,25 @@ a:hover {
 
 .theme-link:hover {
   text-decoration: underline;
+}
+
+.menu-section-title {
+  background: #3a3f46;
+  color: var(--brand-white);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  margin: 0.5rem 0;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.menu-section-title + .list-group,
+.menu-section-title + .accordion {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 0.35rem 0.5rem;
 }

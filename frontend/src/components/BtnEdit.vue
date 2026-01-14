@@ -2,7 +2,7 @@
     <button 
       @click="onclick" 
       class="btnedit">
-      <i class="edit icon"></i>
+      <font-awesome-icon icon="edit" class="icon" />
       <span class="tooltip">{{props.tooltip}}</span>
     </button>
   </template>
