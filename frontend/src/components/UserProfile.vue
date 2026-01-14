@@ -1,31 +1,31 @@
 <template>
-<div class="four wide column">
-    <div class="ui card">
-        <div
-            class="image"
-            :class="{ editable }"
-            @click="handleImageClick"
+  <div class="user-profile">
+    <div class="card">
+      <div
+        class="image"
+        :class="{ editable }"
+        @click="handleImageClick"
+      >
+        <img :src="displayPhoto" alt="User Avatar">
+        <div v-if="editable" class="image-overlay">
+          <span>Seleccionar foto</span>
+        </div>
+        <input
+          v-if="editable"
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          class="file-input"
+          @change="onFileChange"
         >
-            <img :src="displayPhoto" alt="User Avatar">
-            <div v-if="editable" class="image-overlay">
-                <span>Seleccionar foto</span>
-            </div>
-            <input
-                v-if="editable"
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                class="file-input"
-                @change="onFileChange"
-            >
+      </div>
+      <div class="card-body">
+        <div class="card-title mb-0">
+          {{ username }}
         </div>
-        <div class="content">
-            <div class="header">
-                {{ username }}
-            </div>
-        </div>
+      </div>
     </div>
-</div>
+  </div>
 </template>
 
 <script setup>
@@ -74,6 +74,16 @@ const onFileChange = (event) => {
 
 .userphoto{
     border-radius: 109px;
+}
+
+.user-profile .card {
+    background: var(--brand-white);
+    border-radius: var(--radius-md);
+}
+
+.user-profile .card-title {
+    font-weight: 600;
+    color: var(--brand-navy);
 }
 
 .image {

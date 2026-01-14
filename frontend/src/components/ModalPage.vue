@@ -1,81 +1,74 @@
 <template>
- <i class="close icon"></i>
+ <button type="button" class="btn-close" aria-label="Close"></button>
   <div class="header modal-header">
     Profile Picture
   </div>
 
 
 
-  <div class="image content segment">  
-
-      <div class="grid ui container">
-          <div class="eight wide column">
+  <div class="modal-body">  
+      <div class="row g-3">
+          <div class="col-md-6">
               <STextarea
                   label="Título"
                   placeholder="Título Obtenido"
                   v-model="newuser.nombre"
               />
           </div>
-          <div class="eight wide column">
+          <div class="col-md-6">
               <STextarea
                   label="Institución"
                   placeholder="Universidad o Instituto"
                   v-model="newuser.nombre"
               />
           </div>
-          <div class="eight wide column">
-            <div class="five wide column segment ui modal-panel">
-              <div class="ui labeled large fluid input">
-                  <div class="ui label">
-                  País de Emisión
-                  </div>
-                  <select class="ui compact selection dropdown dropdown-full" v-model="newuser.pais">
-                      <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
-                  </select>
+          <div class="col-md-6">
+            <div class="modal-panel p-3">
+              <div class="input-group">
+                <span class="input-group-text">País de Emisión</span>
+                <select class="form-select dropdown-full" v-model="newuser.pais">
+                  <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
+                </select>
               </div>
             </div>
           </div>
-          <div class="eight wide column">
+          <div class="col-md-6">
               <SInput
                   label="Número de Registro"
                   placeholder="Número de Registro de Senescyt"
                   v-model="newuser.direccion"
               />
           </div>
-          <div class="eight wide column">
-            <div class="five wide column segment ui modal-panel">
-              <div class="ui labeled large fluid input">
-                  <div class="ui label">
-                  Tipo
-                  </div>
-                  <select class="ui compact selection dropdown" v-model="newuser.pais">
-                      <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
-                  </select>
+          <div class="col-md-6">
+            <div class="modal-panel p-3">
+              <div class="input-group">
+                <span class="input-group-text">Tipo</span>
+                <select class="form-select" v-model="newuser.pais">
+                  <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
+                </select>
               </div>
             </div>
           </div>
 
-          <div class="eight wide column">
-            <div class="five wide column segment ui modal-panel">
-              <div class="ui labeled large fluid input">
-                  <div class="ui label">
-                  Nivel
-                  </div>
-                  <select class="ui compact selection dropdown" v-model="newuser.pais">
-                      <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
-                  </select>
+          <div class="col-md-6">
+            <div class="modal-panel p-3">
+              <div class="input-group">
+                <span class="input-group-text">Nivel</span>
+                <select class="form-select" v-model="newuser.pais">
+                  <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
+                </select>
               </div>
             </div>
           </div>
 
-          <div class="eight wide column">
+          <div class="col-md-6">
               <STextarea
                   label="Campo Amplio"
                   placeholder="Campo Amplio de Conocimiento" 
                   v-model="newuser.nombre"
               />
           </div>
-          <div class="eight wide column">
+          <div class="col-md-6">
             <s-select
             label="Ejemplo"
             :options="['A', 'B', 'C', 'D', 'E', 'F']"
@@ -87,14 +80,9 @@
   </div>
   
   
-  <div class="actions">
-    <div class="ui black deny button">
-      Nope
-    </div>
-    <div class="ui positive right labeled icon button">
-      Yep, that's me
-      <i class="checkmark icon"></i>
-    </div>
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <button type="button" class="btn btn-outline-secondary">Nope</button>
+    <button type="button" class="btn btn-primary">Yep, that's me</button>
   </div>
 </template>
 

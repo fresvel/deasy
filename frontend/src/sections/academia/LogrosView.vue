@@ -1,16 +1,17 @@
 <template>
 
 
-<div v-if="1==1" class="ui segment">
+<div v-if="1==1" class="card shadow-sm mb-4">
+  <div class="card-body">
     
-    <h4 class="ui horizontal divider">
+    <h4 class="text-center text-uppercase fw-semibold mb-4">
         Tareas Pendientes
     </h4>
       
 
-    <div class="ui grid">
+    <div class="row">
     
-    <div class="sixteen wide column">
+    <div class="col-12">
     
       <table class="table table-institutional table-striped table-hover align-middle">
               <thead>
@@ -45,7 +46,7 @@
                   <td>
                     <button 
                     @click="removeRow(index, level)"
-                    class="ui negative button">
+                    class="btn btn-outline-danger btn-sm">
                         Eliminar {{ index }}-{{ level }}
                     </button>
                   </td>
@@ -57,14 +58,17 @@
     </div>
 
 </div>
+</div>
 
-<div v-if="1==1" class="ui segment">
+<div v-if="1==1" class="card shadow-sm mb-4">
+  <div class="card-body">
 
-    <h4 class="ui horizontal divider">
+    <h4 class="text-center text-uppercase fw-semibold mb-4">
         Revisar Informes
     </h4>          
       
 <ObtenerInformes class="row" process="ac_cca_logros" url=""></ObtenerInformes>
+</div>
 </div>
 
 
@@ -99,4 +103,3 @@ onMounted(()=>{
 })
 
 </script>
-

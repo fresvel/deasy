@@ -1,13 +1,9 @@
 <template>
-      <div :class="contentClass">
-          <div class="ui segment">
-            <slot></slot>
-          </div>
-      </div>
-
-
-
-
+  <div :class="contentClass">
+    <div class="content-panel">
+      <slot></slot>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -25,24 +21,26 @@ const props=defineProps({
     }
 })
 
-const contentClass= computed(()=>{
-    if (props.showmenu&&props.shownotify) {
-        return "eleven wide column stretched"
-    }else if (!props.showmenu&&!props.shownotify) {
-        return "sixteen wide column stretched"
-    }else if (props.showmenu&&!props.shownotify) {
-        return "thirteen wide column stretched"
-    }else{
-        return "fourteen wide column stretched"
+const contentClass = computed(() => {
+    if (props.showmenu && props.shownotify) {
+        return "col-lg-7 col-md-6 col-12";
     }
-})
+    if (!props.showmenu && !props.shownotify) {
+        return "col-12";
+    }
+    if (props.showmenu && !props.shownotify) {
+        return "col-lg-9 col-md-8 col-12";
+    }
+    return "col-lg-10 col-md-9 col-12";
+});
 
 
 </script>
 
 <style scoped>
-  .main {
-      height: 100vh;
+  .content-panel {
+      min-height: 100vh;
+      padding: 0.75rem;
   }
 
 </style>

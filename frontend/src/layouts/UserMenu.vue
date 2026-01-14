@@ -1,46 +1,51 @@
 <template>
-    <div class="three  wide column  stretched" v-if="props.show">
-        <div class="ui inverted vertical menu smenu fluid">
-            <UserProfile photo="/images/avatar.png" :username="props.username"> </UserProfile>
-            
-            
-            <div class="ui inverted accordion">
-            <div v-for="(rol, index) in roles "  :key="index" class="large accordion">
-                <div class="title">
-                {{ rol.name }}
-                </div>
-                <div class="content">          
-                <a v-for="(job, jndex) of roles[0].jobs" :key="jndex"
-            
-                class="right medium item labeled"
-                :class="job.active ? 'item active' : ''" 
-                @click="onmenuClick(job.label)">
-                {{ job }}
-                    <div class="ui left pointing blue label">
-                        <div class="medium">{{ index }}</div>
-                    </div>
-                </a>
-                </div>
-            </div>
-            </div>
-            
-            
+  <div class="col-lg-3 col-md-4" v-if="props.show">
+    <div class="smenu">
+      <UserProfile photo="/images/avatar.png" :username="props.username" />
 
+      <div class="accordion accordion-flush" id="userMenuAccordion">
+        <div v-for="(rol, index) in roles" :key="index" class="accordion-item bg-transparent">
+          <h2 class="accordion-header" :id="`user-menu-heading-${index}`">
+            <button
+              class="accordion-button collapsed"
+              type="button"
+              data-bs-toggle="collapse"
+              :data-bs-target="`#user-menu-collapse-${index}`"
+              aria-expanded="false"
+              :aria-controls="`user-menu-collapse-${index}`"
+            >
+              {{ rol.name }}
+            </button>
+          </h2>
+          <div
+            :id="`user-menu-collapse-${index}`"
+            class="accordion-collapse collapse"
+            :aria-labelledby="`user-menu-heading-${index}`"
+            data-bs-parent="#userMenuAccordion"
+          >
+            <div class="accordion-body p-0">
+              <button
+                v-for="(job, jndex) of roles[0].jobs"
+                :key="jndex"
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                type="button"
+                @click="onmenuClick(job.label)"
+              >
+                <span>{{ job }}</span>
+                <span class="badge bg-primary rounded-pill">{{ index }}</span>
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-    
-    </template>
+  </div>
+</template>
     
     <script setup>
     
-    import {defineProps, /*defineEmits*/ onMounted} from "vue"
+    import {defineProps} from "vue"
 import UserProfile from "@/components/UserProfile.vue";
-    
-    onMounted(()=>{
-        console.log("menu mounted")
-        $('.ui.accordion')
-            .accordion();
-    })
 
     const props=defineProps({
     show: {
@@ -65,14 +70,7 @@ import UserProfile from "@/components/UserProfile.vue";
 
     })
     
-    /*
-    const emit=defineEmits(["onclick"])
-    
-    const onClick=(item)=>{
-      emit("onclick", item)
-    }
-    
-    */
+    const onmenuClick = () => {}
 
 
 
@@ -82,9 +80,29 @@ import UserProfile from "@/components/UserProfile.vue";
     
     
 .smenu {
-    height: 100vh;
-    margin-top: 13px;
-    background-color: rgba(var(--brand-primary-rgb), 0.92);
+  height: 100vh;
+  margin-top: 13px;
+  background-color: rgba(var(--brand-primary-rgb), 0.92);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.accordion-button {
+  background-color: transparent;
+  color: var(--brand-white);
+  font-weight: 600;
+}
+
+.accordion-button:not(.collapsed) {
+  color: var(--brand-white);
+  box-shadow: none;
+}
+
+.accordion-body .list-group-item {
+  background-color: transparent;
+  color: var(--brand-white);
+  border: 0;
+  padding-left: 1.5rem;
 }
     
     </style>

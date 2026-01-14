@@ -1,6 +1,6 @@
 <template>
-    <div class="ui grid">
-        <div class="sixteen wide column">
+    <div class="row g-3">
+        <div class="col-12">
             <s-file 
                 :files="csv_files" 
                 @addFiles="updateFiles"
@@ -8,27 +8,23 @@
                 @editFiles="editFiles"
             />
         </div>
-        <div class="row">
-            <div class="eight wide column">
+        <div class="col-lg-6">
             <s-input 
             label="Nombre"
             v-model="name"
             placeholder="Nombre del Template"
             />
-
-            </div>
-            <div class="eight wide column middle aligned right aligned ">
-                <button class="ui blue button large" @click="createTemplate">Crear Template</button>
-            </div>
         </div>
-
+        <div class="col-lg-6 d-flex align-items-center justify-content-lg-end">
+            <button class="btn btn-primary" @click="createTemplate">Crear Template</button>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import SFile from '@/components/semantic/elements/SFile.vue'
-import SInput from '@/components/semantic/elements/SInput.vue'
+import SFile from '@/components/SFile.vue'
+import SInput from '@/components/SInput.vue'
 //import axios from 'axios'
 import TemplateService from '@/services/TemplateService.js'
 const template_service = new TemplateService()

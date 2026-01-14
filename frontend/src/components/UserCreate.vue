@@ -1,61 +1,58 @@
 <template>
 
-<div class="ui grid" id="navbar">
-      <div class="sixteen wide column">
-        <div class="ui inverted segment" id="hmenu">
-            <div class="ui inverted secondary menu">
-                <a class="active item" @click="toggleVmenu">
-                Menu
-                </a>
-                <a class="item" @click="toggleNotify">
-                Notify
-                </a>
-                <a class="item">
-                Friends
-                </a>
-            </div>
-        </div>
-      </div>
-</div>
+<nav id="hmenu" class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <div class="navbar-nav gap-2">
+      <button class="nav-link text-white" type="button" @click="toggleVmenu">
+        Menu
+      </button>
+      <button class="nav-link text-white" type="button" @click="toggleNotify">
+        Notify
+      </button>
+      <span class="nav-link text-white">Friends</span>
+    </div>
+  </div>
+</nav>
   
   
-<div class="ui grid">
-      <div class="three  wide column  mainmenu" v-show="vmenu">
-        <div class="ui inverted vertical menu fluid" id="mainmenu" >
-          <a class="item">
+<div class="row g-3">
+      <div class="col-lg-3 mainmenu" v-show="vmenu">
+        <div class="d-flex flex-column" id="mainmenu" >
+          <button class="btn btn-link text-white text-start">
             Bio
-          </a>
-          <a class="item">
+          </button>
+          <button class="btn btn-link text-white text-start">
             Pics
-          </a>
-          <a class="item active">
+          </button>
+          <button class="btn btn-link text-white text-start active">
             Companies
-          </a>
-          <a class="item active">
+          </button>
+          <button class="btn btn-link text-white text-start active">
             Links
-          </a>
+          </button>
         </div>
       </div>
     
       <div :class="contentClass">
-          <div class="ui segment">
+          <div class="card shadow-sm">
+            <div class="card-body">
 
-            <div class="sixteen wide column">
+            <div class="col-12">
                 <h2>Regístrate</h2>
                 <p class="subtitle">Usario Pucese</p>
                 
 
             </div>
             
-            <div class="grid ui container">
-                <div class="seven wide column center">
+            <div class="row g-3">
+                <div class="col-lg-6">
                     <se-input
                         label="Nombre"
                         placeholder="Nombres completos"
                         v-model="newuser.nombre"
                     />
                 </div>
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="Apellidos"
                         placeholder="Apellidos completos"
@@ -63,14 +60,14 @@
                     />
                 </div>
 
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="Contraseña"
                         placeholder="Ingrese la contraseña"
                         v-model="newuser.password"
                     />
                 </div>
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="Contraseña"
                         placeholder="Repita la contraseña"
@@ -78,14 +75,14 @@
                     />
                 </div>
 
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="Número de Cédula o Pasaporte"
                         placeholder="Ingrese su número de Identificación"
                         v-model="newuser.cedula"
                     />
                 </div>
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="Correo"
                         placeholder="correo_personal@ejemplo.com"
@@ -93,48 +90,42 @@
                     />
                 </div>
 
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="whatsapp"
                         placeholder="+593987654321" 
                         v-model="newuser.whatsapp"
                     />
                 </div>
-                <div class="seven wide column center">
+                <div class="col-lg-6">
                     <se-input
                         label="Dirección"
                         placeholder="Coordenadas geográficas"
                         v-model="newuser.direccion"
                     />
                 </div>
-                <div class="seven wide column center">
-                    <div class="five wide column segment ui theme-info-panel">
-                        <div class="ui labeled large fluid input">
-                            <div class="ui label">
-                            País de Nacimiento
-                            </div>
-                            <select class="ui compact selection dropdown" v-model="newuser.pais">
-                                <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
-                            </select>
-                        </div>
+                <div class="col-lg-6">
+                    <div class="theme-info-panel p-3">
+                        <label class="form-label">País de Nacimiento</label>
+                        <select class="form-select" v-model="newuser.pais">
+                            <option v-for="(country, index) in escountries" :key="index" :value="country">{{ country }}</option>
+                        </select>
                     </div>
                 </div>
-                <div class="seven wide column center">
-                    <div class="five wide column segment ui theme-info-panel">
-                        <div class="ui labeled large fluid input">
-                            <div class="ui label">
+                <div class="col-lg-6">
+                    <div class="theme-info-panel p-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="termsCheck">
+                            <label class="form-check-label" for="termsCheck">
                                 Aceptar los <a href="" class="theme-link">términos y condiciones</a> 
-                            </div>
-                            <input  type="checkbox">
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="fourteen wide center aligned column">
-                    
-                    <button class="ui blue button large" @click="createnewUser()">Registrarse</button>
-                    
-                    <button class="ui blue button large" @click="createnewUser()">Iniciar Sesión</button>
+                <div class="col-12 text-center">
+                    <button class="btn btn-primary me-2" @click="createnewUser()">Registrarse</button>
+                    <button class="btn btn-outline-primary" @click="createnewUser()">Iniciar Sesión</button>
                 </div>
             </div>
 
@@ -145,8 +136,8 @@
           </div>
       </div>
     
-      <div class="two wide stretched column" v-if="vnotify" >
-        <div class="ui segment notify">
+      <div class="col-lg-2" v-if="vnotify" >
+        <div class="notify">
           This is an stretched grid column. This segment will always match the tab height
         </div>
       </div>
@@ -167,7 +158,7 @@
 
 <script setup>
 
-import SeInput from '../semantic/elements/SInput.vue';
+import SeInput from '@/components/SInput.vue';
 import { escountries } from '@/composable/countries';
 import axios from 'axios';
 import { ref, computed } from 'vue';
@@ -184,17 +175,18 @@ import { ref, computed } from 'vue';
     vnotify.value = !vnotify.value;
     };
 
-const contentClass= computed(()=>{
-    if (vmenu.value&&vnotify.value) {
-        return "eleven wide stretched column"
-    }else if (!vmenu.value&&!vnotify.value) {
-        return "sixteen wide stretched column"
-    }else if (vmenu.value&&!vnotify.value) {
-        return "thirteen wide stretched column"
-    }else{
-        return "fourteen wide stretched column"
+const contentClass = computed(() => {
+    if (vmenu.value && vnotify.value) {
+        return "col-lg-7 col-md-6 col-12";
     }
-})
+    if (!vmenu.value && !vnotify.value) {
+        return "col-12";
+    }
+    if (vmenu.value && !vnotify.value) {
+        return "col-lg-9 col-md-8 col-12";
+    }
+    return "col-lg-10 col-md-9 col-12";
+});
 
 
 const newuser= ref({
@@ -226,10 +218,6 @@ const createnewUser=async()=>{
 
 <style scoped>
 
-#navbar {
-      margin-bottom: -45px;
-  }
-  
 #mainmenu {
       height: 100vh;
       margin-top: 10px;
@@ -241,40 +229,16 @@ const createnewUser=async()=>{
       background-color: rgba(var(--brand-primary-rgb), 0.92);
   }
   
-  #vmenu {
-      display: block;
-  }
-  
-  #vnotify {
-      display: none;
-  }
-  .notify{
+.notify{
       background-color: rgba(var(--brand-accent-rgb), 0.2);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
   }
   
   #hmenu{
       background: var(--brand-gradient);
   }
   
-  #content {
-      height: 100%;
-  }
-  
-  
-  #app{
-      height: 100vh;
-  }
-
-
-
-.container {
-    padding: 5%;
-}
-
-.link{
-    color: var(--brand-accent);
-}
-
 .subtitle {
     margin-top: -15px;
 }
