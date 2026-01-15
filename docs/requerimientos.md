@@ -13,3 +13,4 @@ Requerimientos pendientes
 11. Implementar RabbitMQ en la arquitectura (si aun no esta configurado).
 12. Implementar EMQX para comunicacion en tiempo real (si aun no esta configurado).
 13. Definir integracion de microservicios via backend API (sin acceso directo a BD) para mantener reglas y permisos centralizados.
+14. Centralizar configuracion de rutas/hosts en backend y frontend (eliminar URLs hardcodeadas, usar env/config).

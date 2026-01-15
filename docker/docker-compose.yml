@@ -1,0 +1,124 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: deasy-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  mongodb:
+    image: mongo:7
+    container_name: deasy-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: deasy-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+  emqx:
+    image: emqx/emqx:latest
+    container_name: deasy-emqx
+    restart: unless-stopped
+    environment:
+      EMQX_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+      - ./emqx/emqx.conf:/opt/emqx/etc/emqx.conf:ro
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+    container_name: deasy-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      URI_MONGO: ${URI_MONGO}
+      PORT: ${BACKEND_PORT}
+    ports:
+      - "${BACKEND_PORT}:3030"
+    volumes:
+      - ../backend:/app/backend
+      - backend_node_modules:/app/backend/node_modules
+      - uploads_data:/app/backend/uploads
+      - storage_data:/app/backend/storage
+    depends_on:
+      - mariadb
+      - mongodb
+      - rabbitmq
+      - emqx
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend/Dockerfile
+    container_name: deasy-frontend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${FRONTEND_PORT}:8080"
+    volumes:
+      - ../frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+    depends_on:
+      - backend
+
+  signer:
+    build:
+      context: ..
+      dockerfile: docker/signer/Dockerfile
+    container_name: deasy-signer
+    restart: unless-stopped
+    profiles:
+      - workers
+    volumes:
+      - storage_data:/data
+
+  analytics:
+    build:
+      context: ..
+      dockerfile: docker/analytics/Dockerfile
+    container_name: deasy-analytics
+    restart: unless-stopped
+    profiles:
+      - workers
+    volumes:
+      - storage_data:/data
+
+volumes:
+  mariadb_data:
+  mongodb_data:
+  rabbitmq_data:
+  emqx_data:
+  emqx_log:
+  backend_node_modules:
+  frontend_node_modules:
+  uploads_data:
+  storage_data:
