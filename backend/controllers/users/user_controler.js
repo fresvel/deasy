@@ -59,7 +59,10 @@ export const getUsers = async (req, res) => {
   console.log("Buscando todos los usuarios");
 
   try {
-    const users = await userRepository.findAll();
+    const term = req.query?.search ?? "";
+    const limit = req.query?.limit ?? 20;
+    const status = req.query?.status ?? null;
+    const users = await userRepository.search(term, limit, status);
     res.json(users.map((user) => userRepository.toPublicUser(user)));
   } catch (error) {
     console.log("Error Buscando Usuarios");

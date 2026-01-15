@@ -13,7 +13,7 @@
             <router-link to="/logout" class="nav-link text-white ms-lg-3">
                 <img class="avatar" src="/images/logout.svg" alt="User Avatar">
             </router-link>              
-            <router-link to="/firmar" class="nav-link text-white"> 
+            <router-link to="/firmar" class="nav-link text-white" @click="resetSigner"> 
                 <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
             </router-link>
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
@@ -53,7 +53,7 @@
         :showmenu="vmenu"
         :shownotify="vnotify"
         >
-        <FirmarPdf></FirmarPdf>
+        <FirmarPdf ref="firmarPdfRef"></FirmarPdf>
 
         </s-body>
         
@@ -104,6 +104,7 @@
     const vnotify = ref(true);
     const selected= ref("Formación")
     const showFormacion = ref(true);
+    const firmarPdfRef = ref(null);
     
     
     const toggleVmenu = () => {
@@ -165,6 +166,10 @@
                 el.active = false;
             }
         }
+    }
+
+    const resetSigner = () => {
+        firmarPdfRef.value?.resetToStart?.();
     }
     
       
