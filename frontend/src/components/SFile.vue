@@ -8,6 +8,7 @@
         <div class="col-12">
             <input 
                 type="file" 
+                id="csv_input"
                 class="file-input-hidden"
                 v-on:change="onFileChange" 
                 name="file" 

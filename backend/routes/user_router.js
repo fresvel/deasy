@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createUser } from "../controllers/users/user_controler.js";
+import { createUser, getUsers } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { updateUserPhoto } from "../controllers/users/user_controler.js";
@@ -10,6 +10,7 @@ import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
 const router=new Router();
 
 router.post('/', validatePassword, createUser)
+router.get('/', getUsers)
 
 router.post('/login', loginUser)
 router.post('/logout', logoutUser)

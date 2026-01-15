@@ -47,6 +47,62 @@ export default class UserRepository {
     return rows;
   }
 
+  async search(term = "", limit = 20, status = null) {
+    this.ensurePool();
+
+    const normalized = term?.trim();
+    const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : 20;
+    const statusFilter = status?.trim();
+
+    const conditions = [];
+    const params = [];
+
+    if (normalized) {
+      const like = `%${normalized}%`;
+      conditions.push("(cedula LIKE ? OR email LIKE ? OR nombre LIKE ? OR apellido LIKE ?)");
+      params.push(like, like, like, like);
+    }
+
+    if (statusFilter) {
+      conditions.push("status = ?");
+      params.push(statusFilter);
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const [rows] = await this.pool.query(
+      `SELECT * FROM users
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ?`,
+      [...params, safeLimit]
+    );
+    return rows;
+  }
+
+  async search(term = "", limit = 20) {
+    this.ensurePool();
+    const normalized = term?.trim();
+    const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : 20;
+
+    if (!normalized) {
+      const [rows] = await this.pool.query(
+        "SELECT * FROM users ORDER BY created_at DESC LIMIT ?",
+        [safeLimit]
+      );
+      return rows;
+    }
+
+    const like = `%${normalized}%`;
+    const [rows] = await this.pool.query(
+      `SELECT * FROM users
+        WHERE cedula LIKE ? OR email LIKE ? OR nombre LIKE ? OR apellido LIKE ?
+        ORDER BY created_at DESC
+        LIMIT ?`,
+      [like, like, like, like, safeLimit]
+    );
+    return rows;
+  }
+
   async create(userData) {
     this.ensurePool();
 

@@ -84,6 +84,7 @@ const onFileChange = (event) => {
 .user-profile .card-title {
     font-weight: 600;
     color: var(--brand-navy);
+    text-align: center;
 }
 
 .image {
