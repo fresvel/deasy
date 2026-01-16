@@ -134,10 +134,10 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';
+    import { API_PREFIX, API_ROUTES } from '@/services/apiConfig';
 
     const service = new EasymServices();
-    const API_BASE_URL = 'http://localhost:3000';
-    const API_PREFIX = `${API_BASE_URL}/easym/v1`;
+    const API_BASE_URL = API_ROUTES.BASE;
 
     // Obtener datos del usuario desde localStorage
     const currentUser = ref(null);

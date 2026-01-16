@@ -11,6 +11,16 @@ Ubicacion y rutas
 - Configuracion RabbitMQ: docker/rabbitmq/rabbitmq.conf
 - Configuracion EMQX: docker/emqx/emqx.conf
 
+Imagenes base
+- Backend: rockylinux/rockylinux:10.1.20251123-ubi
+- Frontend: rockylinux/rockylinux:10.1.20251123-ubi
+- Signer: python:3.11-slim
+- Analytics: python:3.11-slim
+
+Runtime
+- Backend: Node.js 22 (NodeSource)
+- Frontend: Node.js 22 (NodeSource)
+
 Puertos expuestos (host -> contenedor)
 - MariaDB: 3306 -> 3306
 - MongoDB: 27017 -> 27017

@@ -85,6 +85,7 @@
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "bootstrap";
 import axios from "axios";
+import { API_PREFIX } from "@/services/apiConfig";
 import SSelect from "@/components/SSelect.vue";
 
 const emit = defineEmits(["referencia-added"]);
@@ -101,9 +102,6 @@ const form = reactive({
 const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
-
-const API_BASE_URL = "http://localhost:3000";
-const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
 onMounted(() => {
   const storedUser = localStorage.getItem("user");

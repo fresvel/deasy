@@ -74,6 +74,7 @@ import { Modal } from "bootstrap";
 import axios from "axios";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";
+import { API_PREFIX } from "@/services/apiConfig";
 
 const emit = defineEmits(["experiencia-added"]);
 
@@ -89,9 +90,6 @@ const form = reactive({
 const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
-
-const API_BASE_URL = "http://localhost:3000";
-const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
 const instituciones = [
   "Pontificia Universidad Católica del Ecuador",

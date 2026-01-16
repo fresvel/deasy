@@ -14,3 +14,6 @@ Requerimientos pendientes
 12. Implementar EMQX para comunicacion en tiempo real (si aun no esta configurado).
 13. Definir integracion de microservicios via backend API (sin acceso directo a BD) para mantener reglas y permisos centralizados.
 14. Centralizar configuracion de rutas/hosts en backend y frontend (eliminar URLs hardcodeadas, usar env/config).
+15. Documentar y mantener estrategia de imagenes base (backend/frontend en Rocky 10.1 UBI; signer/analytics en python:3.11-slim).
+16. Crear microservicio de LaTeX con su propio Dockerfile/imagen para compilacion (separado del backend/analytics).
+17. Ajustar barra superior de Firmar: alinear selector de paginas con controles superiores y colocar Predefinida + Firmar justo debajo cuando paneles laterales esten activos.

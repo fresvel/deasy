@@ -162,6 +162,7 @@ import AgregarReferencia from "./AgregarReferencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
+import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);
 const dossier = ref(null);
@@ -198,7 +199,7 @@ const loadDossier = async () => {
         
         currentUser.value = JSON.parse(userDataString);
         
-        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}`;
+        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
         const response = await axios.get(url);
         
         if (response.data.success) {
@@ -226,7 +227,7 @@ const deleteReferencia = async (referenciaId) => {
     if (!confirm('¿Estás seguro de eliminar esta referencia?')) return;
     
     try {
-        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}/referencias/${referenciaId}`;
+        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/referencias/${referenciaId}`;
         await axios.delete(url);
         
         await loadDossier();

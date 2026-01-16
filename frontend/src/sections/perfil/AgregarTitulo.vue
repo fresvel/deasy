@@ -112,6 +112,7 @@ import axios from "axios";
 import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";
 import { escountries } from "@/composable/countries";
+import { API_PREFIX } from "@/services/apiConfig";
 
 const emit = defineEmits(["close-modal", "title-added"]);
 
@@ -171,9 +172,6 @@ const niveles = [
 const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
-
-const API_BASE_URL = "http://localhost:3000";
-const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
 onMounted(() => {
   const storedUser = localStorage.getItem("user");

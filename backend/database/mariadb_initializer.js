@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import fs from "fs/promises";
 import {
   getMariaDBPool,
   getMariaDBDatabaseName,
@@ -46,6 +47,20 @@ ALTER TABLE users
 MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
 `;
 
+const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
+
+const stripSqlComments = (sql) =>
+  sql
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("--"))
+    .join("\n");
+
+const splitSqlStatements = (sql) =>
+  stripSqlComments(sql)
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement.length);
+
 export const ensureMariaDBDatabase = async () => {
   const baseConfig = getMariaDBBaseConfig();
   const databaseName = getMariaDBDatabaseName();
@@ -80,8 +95,111 @@ export const ensureMariaDBSchema = async () => {
     await connection.query(ADD_PHOTO_COLUMN_SQL);
     await connection.query(MODIFY_PHOTO_COLUMN_SQL);
     console.log("✅ Tabla 'users' verificada/creada en MariaDB");
+
+    const [columns] = await connection.query(
+      `SELECT COLUMN_NAME
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions'`
+    );
+    const columnNames = columns.map((col) => col.COLUMN_NAME);
+    if (columnNames.includes("version_num") && !columnNames.includes("version")) {
+      await connection.query(
+        "ALTER TABLE document_versions CHANGE COLUMN version_num version INT NOT NULL"
+      );
+      console.log("✅ Columna document_versions.version_num renombrada a version");
+    }
+
+    const [processColumns] = await connection.query(
+      `SELECT COLUMN_NAME
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'`
+    );
+    const processColumnNames = processColumns.map((col) => col.COLUMN_NAME);
+    if (!processColumnNames.includes("unit_id")) {
+      await connection.query("ALTER TABLE processes ADD COLUMN unit_id INT NULL");
+    }
+    if (!processColumnNames.includes("program_id")) {
+      await connection.query("ALTER TABLE processes ADD COLUMN program_id INT NULL");
+    }
+    try {
+      await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
+    } catch (error) {
+      if (error?.code !== "ER_CONSTRAINT_NOT_FOUND") {
+        console.warn("⚠️  No se pudo eliminar el CHECK de processes:", error.message);
+      }
+    }
+
+    const [templateColumns] = await connection.query(
+      `SELECT COLUMN_NAME
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'templates'`
+    );
+    const templateColumnNames = templateColumns.map((col) => col.COLUMN_NAME);
+    if (!templateColumnNames.includes("version")) {
+      await connection.query("ALTER TABLE templates ADD COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+    }
+
+    const [processTemplateColumns] = await connection.query(
+      `SELECT COLUMN_NAME
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_templates'`
+    );
+    const processTemplateColumnNames = processTemplateColumns.map((col) => col.COLUMN_NAME);
+    if (processTemplateColumnNames.includes("template_version_id")) {
+      try {
+        await connection.query("ALTER TABLE process_templates DROP FOREIGN KEY process_templates_ibfk_2");
+      } catch (error) {
+        if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
+          console.warn("⚠️  No se pudo eliminar FK antigua de process_templates:", error.message);
+        }
+      }
+      await connection.query("ALTER TABLE process_templates DROP COLUMN template_version_id");
+    }
+    if (!processTemplateColumnNames.includes("template_id")) {
+      await connection.query("ALTER TABLE process_templates ADD COLUMN template_id INT NOT NULL");
+    }
+    try {
+      await connection.query("ALTER TABLE process_templates DROP PRIMARY KEY");
+    } catch (error) {
+      if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
+        console.warn("⚠️  No se pudo eliminar PK antigua de process_templates:", error.message);
+      }
+    }
+    try {
+      await connection.query("ALTER TABLE process_templates ADD PRIMARY KEY (process_id, template_id)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear PK nueva de process_templates:", error.message);
+      }
+    }
+    try {
+      await connection.query(
+        "ALTER TABLE process_templates ADD CONSTRAINT fk_process_templates_template FOREIGN KEY (template_id) REFERENCES templates(id)"
+      );
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear FK de process_templates:", error.message);
+      }
+    }
+    try {
+      await connection.query(
+        "ALTER TABLE processes ADD CONSTRAINT chk_process_unit_program CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL)"
+      );
+    } catch (error) {
+      if (error?.code !== "ER_CHECK_CONSTRAINT_EXISTS") {
+        console.warn("⚠️  No se pudo crear el CHECK de processes:", error.message);
+      }
+    }
+
+    const schemaSql = await fs.readFile(SCHEMA_FILE_URL, "utf-8");
+    const statements = splitSqlStatements(schemaSql);
+
+    for (const statement of statements) {
+      await connection.query(statement);
+    }
+
+    console.log("✅ Esquema MariaDB verificado/creado desde mariadb_schema.sql");
   } finally {
     connection.release();
   }
 };
-

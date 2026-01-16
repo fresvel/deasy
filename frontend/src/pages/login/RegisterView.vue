@@ -306,6 +306,7 @@
 <script setup>   
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
 import axios from 'axios';
+import { API_ROUTES } from '@/services/apiConfig';
 import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import L from 'leaflet';
@@ -630,8 +631,7 @@ const createnewUser = async() => {
     }
     
     try {
-        const url = "http://localhost:3000/easym/v1/users"
-        await axios.post(url, newuser.value)
+        await axios.post(API_ROUTES.USERS, newuser.value)
         
         // Mostrar modal de éxito
         await nextTick();
