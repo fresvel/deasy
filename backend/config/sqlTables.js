@@ -86,8 +86,10 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
+      { name: "person_id", label: "Responsable", type: "number", required: true },
       { name: "unit_id", label: "Unidad", type: "number" },
       { name: "program_id", label: "Programa", type: "number" },
+      { name: "term_id", label: "Periodo", type: "number", required: true },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
@@ -139,6 +141,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_name", label: "Proceso", type: "text", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "version", label: "Version", type: "text", defaultValue: "0.1", readOnly: true },
@@ -267,11 +270,6 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "term_id", label: "Periodo", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
-      { name: "unit_id_key", label: "Unidad llave", type: "number", readOnly: true },
-      { name: "program_id_key", label: "Programa llave", type: "number", readOnly: true },
       {
         name: "status",
         label: "Estado",
@@ -292,7 +290,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "document_id", label: "Documento", type: "number", required: true },
-      { name: "version", label: "Version", type: "number", required: true },
+      { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
       { name: "payload_mongo_id", label: "Payload mongo", type: "text", required: true },
       { name: "payload_hash", label: "Hash", type: "text", required: true },
       { name: "latex_path", label: "Ruta LaTeX", type: "text" },

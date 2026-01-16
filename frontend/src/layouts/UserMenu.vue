@@ -3,8 +3,8 @@
     <div class="smenu">
       <UserProfile photo="/images/avatar.png" :username="props.username" />
 
-      <div class="accordion accordion-flush" id="userMenuAccordion">
-        <div v-for="(rol, index) in roles" :key="index" class="accordion-item bg-transparent">
+      <div class="accordion" id="userMenuAccordion">
+        <div v-for="(rol, index) in roles" :key="index" class="accordion-item">
           <h2 class="accordion-header" :id="`user-menu-heading-${index}`">
             <button
               class="accordion-button collapsed"
@@ -24,16 +24,18 @@
             data-bs-parent="#userMenuAccordion"
           >
             <div class="accordion-body p-0">
-              <button
-                v-for="(job, jndex) of roles[0].jobs"
-                :key="jndex"
-                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                type="button"
-                @click="onmenuClick(job.label)"
-              >
-                <span>{{ job }}</span>
-                <span class="badge bg-primary rounded-pill">{{ index }}</span>
-              </button>
+              <div class="menu-children">
+                <button
+                  v-for="(job, jndex) of rol.jobs"
+                  :key="jndex"
+                  class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                  type="button"
+                  @click="onmenuClick(job.label ?? job)"
+                >
+                  <span>{{ job }}</span>
+                  <span class="badge bg-primary rounded-pill">{{ index }}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -87,10 +89,24 @@ import UserProfile from "@/components/UserProfile.vue";
   border-radius: var(--radius-md);
 }
 
+.accordion-item {
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.accordion-item:last-child {
+  margin-bottom: 0;
+}
+
 .accordion-button {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.18);
   color: var(--brand-white);
   font-weight: 600;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .accordion-button:not(.collapsed) {
@@ -98,11 +114,26 @@ import UserProfile from "@/components/UserProfile.vue";
   box-shadow: none;
 }
 
-.accordion-body .list-group-item {
+.menu-children {
+  background-color: var(--brand-white);
+  margin: 0;
+  padding: 0.1rem 0;
+}
+
+.accordion-body {
+  padding: 0;
+}
+
+.menu-children .list-group-item {
   background-color: transparent;
-  color: var(--brand-white);
+  color: #1f2933;
   border: 0;
-  padding-left: 1.5rem;
+  border-bottom: 1px solid #e3e6ea;
+  padding: 0.7rem 0.9rem;
+}
+
+.menu-children .list-group-item:last-child {
+  border-bottom: 0;
 }
     
     </style>

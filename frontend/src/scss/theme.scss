@@ -3,6 +3,7 @@
 :root {
   --brand-primary: #003267;
   --brand-accent: #2282be;
+  --brand-secondary: #6b7b88;
   --brand-navy: #033164;
   --brand-ink: #214a77;
   --brand-surface: #f7f9fc;
@@ -17,6 +18,7 @@
   --brand-gradient: linear-gradient(90deg, #003267 0%, #2282be 100%);
   --brand-primary-rgb: 0, 50, 103;
   --brand-accent-rgb: 34, 130, 190;
+  --brand-secondary-rgb: 107, 123, 136;
 
   --state-success: #28a745;
   --state-danger: #dc3545;
@@ -208,6 +210,18 @@ a:hover {
   margin-bottom: 1.25rem;
 }
 
+.table-responsive.table-actions {
+  overflow: visible;
+}
+
+.table-actions-scroll {
+  overflow-x: auto;
+}
+
+.table-institutional.table-actions {
+  overflow: visible;
+}
+
 .alert-danger {
   border-radius: var(--radius-md);
 }
@@ -236,24 +250,71 @@ a:hover {
 }
 
 .menu-section-title {
-  background: #3a3f46;
+  background: var(--brand-secondary);
   color: var(--brand-white);
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  border-radius: 10px;
-  padding: 0.45rem 0.75rem;
-  margin: 0.5rem 0;
+  border: 1px solid var(--brand-border);
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
   text-align: center;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   cursor: pointer;
 }
 
-.menu-section-title + .list-group,
-.menu-section-title + .accordion {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  border-radius: 10px;
-  padding: 0.35rem 0.5rem;
+.menu-section-title.is-open {
+  border-radius: 12px 12px 0 0;
+  border-bottom: 0;
+}
+
+.admin-menu .menu-section {
+  background: #f7f7f7;
+  border: 1px solid var(--brand-border);
+  border-radius: 12px;
+  padding: 0;
+  margin-bottom: 0.6rem;
+}
+
+.admin-menu .menu-section:first-of-type {
+  margin-top: 0.6rem;
+}
+
+.admin-menu .menu-section:last-child {
+  margin-bottom: 0;
+}
+
+.admin-menu .menu-section-title {
+  margin: 0;
+}
+
+.admin-menu .menu-section-body {
+  background: #f7f7f7;
+  border-top: 1px solid var(--brand-border);
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.admin-menu .menu-section-body .list-group-item {
+  background: transparent;
+  color: var(--brand-ink);
+  border: 0;
+  border-bottom: 1px solid var(--brand-ink);
+  padding: 0.6rem 0.85rem;
+}
+
+.admin-menu .menu-section-body .list-group-item:last-child {
+  border-bottom: 0;
+}
+
+.admin-menu .menu-section-body .list-group-item.active {
+  background: #e9edf1;
+  color: var(--brand-ink);
+}
+
+.admin-menu .menu-section-label {
+  color: #6b7680;
+  font-weight: 600;
+  margin: 0.35rem 0.85rem 0.25rem;
 }
 
 .modal .modal-body,

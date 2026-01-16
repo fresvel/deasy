@@ -16,8 +16,8 @@
         <h3 class="h5 mb-0">Capacitación en el área docente</h3>
       </header>
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle table-institutional table-striped">
+      <div class="table-responsive table-actions">
+        <table class="table table-hover align-middle table-institutional table-striped table-actions">
           <thead >
             <tr>
               <th width="5%"></th>
@@ -45,9 +45,31 @@
               <td>{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td>{{ capacitacion.rol || 'N/A' }}</td>
               <td class="text-end">
-                <div class="btn-group" role="group">
-                  <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
-                  <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" />
+                <div class="dropdown d-inline-block">
+                  <button
+                    class="btn btn-outline-primary btn-sm dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-label="Acciones"
+                    title="Acciones"
+                  >
+                    <font-awesome-icon icon="ellipsis-vertical" />
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <button class="dropdown-item" type="button" @click="editarCapacitacion(capacitacion)">
+                        <font-awesome-icon icon="edit" class="me-2" />
+                        Editar
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item text-danger" type="button" @click="openDelete(capacitacion)">
+                        <font-awesome-icon icon="trash" class="me-2" />
+                        Eliminar
+                      </button>
+                    </li>
+                  </ul>
                 </div>
               </td>
             </tr>
@@ -61,8 +83,8 @@
         <h3 class="h5 mb-0">Capacitación profesional</h3>
       </header>
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle table-institutional table-striped">
+      <div class="table-responsive table-actions">
+        <table class="table table-hover align-middle table-institutional table-striped table-actions">
           <thead >
             <tr>
               <th width="5%"></th>
@@ -90,9 +112,31 @@
               <td>{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td>{{ capacitacion.rol || 'N/A' }}</td>
               <td class="text-end">
-                <div class="btn-group" role="group">
-                  <BtnDelete @onpress="() => eliminarCapacitacion(capacitacion)" />
-                  <BtnEdit @onpress="() => editarCapacitacion(capacitacion)" />
+                <div class="dropdown d-inline-block">
+                  <button
+                    class="btn btn-outline-primary btn-sm dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-label="Acciones"
+                    title="Acciones"
+                  >
+                    <font-awesome-icon icon="ellipsis-vertical" />
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <button class="dropdown-item" type="button" @click="editarCapacitacion(capacitacion)">
+                        <font-awesome-icon icon="edit" class="me-2" />
+                        Editar
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item text-danger" type="button" @click="openDelete(capacitacion)">
+                        <font-awesome-icon icon="trash" class="me-2" />
+                        Eliminar
+                      </button>
+                    </li>
+                  </ul>
                 </div>
               </td>
             </tr>
@@ -118,6 +162,35 @@
         </div>
       </div>
     </div>
+
+    <div
+      class="modal fade"
+      id="capacitacionDeleteModal"
+      tabindex="-1"
+      ref="deleteModal"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmar eliminación</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            ¿Deseas eliminar la capacitación
+            <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-danger" @click="confirmDelete">
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -126,17 +199,18 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
-import BtnDelete from "@/components/BtnDelete.vue";
-import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 import LogrosView2 from "@/sections/academia/LogrosView2.vue";
 
 const modal = ref(null);
+const deleteModal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
 let bootstrapModal = null;
+let deleteInstance = null;
+const pendingDelete = ref(null);
 
 // Computed properties para agrupar capacitaciones por tipo
 const capacitacionesDocentes = computed(() => {
@@ -195,13 +269,18 @@ const openModal = () => {
     bootstrapModal.show();
 };
 
+const openDelete = (capacitacion) => {
+    pendingDelete.value = capacitacion;
+    if (!deleteModal.value) return;
+    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
+    deleteInstance.show();
+};
+
 const handleCapacitacionAdded = () => {
     loadDossier();
 };
 
 const eliminarCapacitacion = async (capacitacion) => {
-    if (!confirm('¿Estás seguro de eliminar esta capacitación?')) return;
-    
     try {
         const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/formacion/${capacitacion._id}`;
         await axios.delete(url);
@@ -211,6 +290,13 @@ const eliminarCapacitacion = async (capacitacion) => {
         console.error('Error al eliminar capacitación:', error);
         alert('Error al eliminar la capacitación');
     }
+};
+
+const confirmDelete = async () => {
+    if (!pendingDelete.value) return;
+    await eliminarCapacitacion(pendingDelete.value);
+    deleteInstance?.hide();
+    pendingDelete.value = null;
 };
 
 const editarCapacitacion = (registro) => {
@@ -228,6 +314,11 @@ onBeforeUnmount(() => {
         bootstrapModal.dispose();
         bootstrapModal = null;
     }
+    if (deleteInstance) {
+        deleteInstance.hide();
+        deleteInstance.dispose();
+        deleteInstance = null;
+    }
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
@@ -237,4 +328,5 @@ onBeforeUnmount(() => {
   color: #1d3557;
   font-weight: 600;
 }
+
 </style>

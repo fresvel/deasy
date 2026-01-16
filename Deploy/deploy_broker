@@ -1,0 +1,30 @@
+Contexto reciente (chat/notificaciones)
+
+Resumen
+- Se definio arquitectura para chat/notificaciones con EMQX (WebSocket) y Mongo.
+- Documento de arquitectura creado: docs/arquitecturas/chat-notificaciones.md.
+- Se agrego tarea en docs/requerimientos.md para implementar ese sistema.
+
+Decisiones clave
+- Conversaciones: direct, group y thread (thread ligado a process_id).
+- Responsable del proceso puede agregar/remover participantes en threads.
+- Notificaciones internas en tiempo real.
+- Adjuntos hasta 100 MB (videos/documentos) en storage compartido.
+- Storage: filesystem compartido (NFS u otro) en raiz definida por env SHARED_STORAGE_ROOT.
+- EMQX con auth usuario/clave por persona; credenciales derivadas de la contrasena del sistema.
+- ACL: usuarios solo pueden suscribirse a sus conversaciones; publicar solo backend.
+- Backend publica directo a EMQX (opcion A); evolucion futura a servicio dedicado.
+
+Topics confirmados
+- users/{userId}/notifications
+- conversations/{conversationId}/messages
+- processes/{processId}/thread
+
+Pendientes
+- Definir ruta exacta de SHARED_STORAGE_ROOT en entorno docker/NFS.
+- Confirmar donde vive el "responsable del proceso" en BD (tabla/campo).
+- Detallar reglas ACL de EMQX segun topics y usuarios.
+
+Notas sobre error anterior
+- Error MariaDB: Field 'template_version_id' doesn't have a default value proviene de columna legacy en process_templates.
+- No se elimino FK/columna por solicitud; pendiente revisar estructura y ajustar DB.

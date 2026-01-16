@@ -35,38 +35,46 @@
 
     <div class="row g-3">
       <s-menu :show="showMenu">
-        <UserProfile photo="/images/avatar.png" :username="userFullName" />
-        <button
-          class="menu-section-title text-white w-100"
-          type="button"
-          @click="showCoordinacion = !showCoordinacion"
-        >
-          Coordinación
-        </button>
+        <div class="admin-menu">
+          <UserProfile photo="/images/avatar.png" :username="userFullName" />
+          <div class="menu-section">
+            <button
+              class="menu-section-title text-white w-100"
+              type="button"
+              :class="{ 'is-open': showCoordinacion }"
+              @click="showCoordinacion = !showCoordinacion"
+            >
+              Coordinación
+            </button>
 
-        <div v-show="showCoordinacion">
-        <div class="list-group list-group-flush">
-          <button
-            v-for="item in quickStats"
-            :key="item.label"
-            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-            type="button"
-            @click="navigateTo(item.route)"
-          >
-            <span>{{ item.label }}</span>
-            <span class="badge bg-primary rounded-pill">{{ item.count }}</span>
-          </button>
-        </div>
-        </div>
+            <div v-show="showCoordinacion" class="menu-section-body">
+              <div class="list-group list-group-flush">
+                <button
+                  v-for="item in quickStats"
+                  :key="item.label"
+                  class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                  type="button"
+                  @click="navigateTo(item.route)"
+                >
+                  <span>{{ item.label }}</span>
+                  <span class="badge bg-primary rounded-pill">{{ item.count }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-        <button
-          class="menu-section-title text-white w-100"
-          type="button"
-          @click="showDocencia = !showDocencia"
-        >
-          Docencia
-        </button>
-        <div v-show="showDocencia"></div>
+          <div class="menu-section">
+            <button
+              class="menu-section-title text-white w-100"
+              type="button"
+              :class="{ 'is-open': showDocencia }"
+              @click="showDocencia = !showDocencia"
+            >
+              Docencia
+            </button>
+            <div v-show="showDocencia" class="menu-section-body"></div>
+          </div>
+        </div>
       </s-menu>
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">

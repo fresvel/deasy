@@ -28,24 +28,29 @@
     
         <s-menu :show="vmenu">
 
-            <UserProfile photo="/images/avatar.png" :username="userFullName" />
-            <button
-              class="menu-section-title text-white w-100"
-              type="button"
-              @click="showFormacion = !showFormacion"
-            >
-              Formación y Experiencia
-            </button>
-            <div v-show="showFormacion">
-            <div class="list-group list-group-flush">
-              <button v-for="(item, index) of menu" :key="index"
-                class="list-group-item list-group-item-action"
-                :class="{ active: item.active }"
-                type="button"
-                @click="onmenuClick(item.label)">
-                {{ item.label }}
-              </button>
-            </div>
+            <div class="admin-menu">
+                <UserProfile photo="/images/avatar.png" :username="userFullName" />
+                <div class="menu-section">
+                  <button
+                    class="menu-section-title text-white w-100"
+                    type="button"
+                    :class="{ 'is-open': showFormacion }"
+                    @click="showFormacion = !showFormacion"
+                  >
+                    Formación y Experiencia
+                  </button>
+                  <div v-show="showFormacion" class="menu-section-body">
+                    <div class="list-group list-group-flush">
+                      <button v-for="(item, index) of menu" :key="index"
+                        class="list-group-item list-group-item-action"
+                        :class="{ active: item.active }"
+                        type="button"
+                        @click="onmenuClick(item.label)">
+                        {{ item.label }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
             </div>
         </s-menu>
     

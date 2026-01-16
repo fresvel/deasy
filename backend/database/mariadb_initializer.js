@@ -108,6 +108,11 @@ export const ensureMariaDBSchema = async () => {
       );
       console.log("✅ Columna document_versions.version_num renombrada a version");
     }
+    if (columnNames.includes("version")) {
+      await connection.query(
+        "ALTER TABLE document_versions MODIFY COLUMN version DECIMAL(4,1) NOT NULL DEFAULT 0.1"
+      );
+    }
 
     const [processColumns] = await connection.query(
       `SELECT COLUMN_NAME
@@ -120,6 +125,46 @@ export const ensureMariaDBSchema = async () => {
     }
     if (!processColumnNames.includes("program_id")) {
       await connection.query("ALTER TABLE processes ADD COLUMN program_id INT NULL");
+    }
+    if (!processColumnNames.includes("person_id")) {
+      await connection.query("ALTER TABLE processes ADD COLUMN person_id INT NULL");
+    }
+    if (!processColumnNames.includes("term_id")) {
+      await connection.query("ALTER TABLE processes ADD COLUMN term_id INT NULL");
+    }
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME
+         FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'processes'
+           AND COLUMN_NAME = 'person_id'
+           AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE processes ADD CONSTRAINT fk_processes_person FOREIGN KEY (person_id) REFERENCES persons(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de processes.person_id:", error.message);
+    }
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME
+         FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'processes'
+           AND COLUMN_NAME = 'term_id'
+           AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE processes ADD CONSTRAINT fk_processes_term FOREIGN KEY (term_id) REFERENCES terms(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de processes.term_id:", error.message);
     }
     try {
       await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
@@ -137,6 +182,8 @@ export const ensureMariaDBSchema = async () => {
     const templateColumnNames = templateColumns.map((col) => col.COLUMN_NAME);
     if (!templateColumnNames.includes("version")) {
       await connection.query("ALTER TABLE templates ADD COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+    } else {
+      await connection.query("ALTER TABLE templates MODIFY COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
     }
 
     const [processTemplateColumns] = await connection.query(
@@ -147,13 +194,34 @@ export const ensureMariaDBSchema = async () => {
     const processTemplateColumnNames = processTemplateColumns.map((col) => col.COLUMN_NAME);
     if (processTemplateColumnNames.includes("template_version_id")) {
       try {
-        await connection.query("ALTER TABLE process_templates DROP FOREIGN KEY process_templates_ibfk_2");
-      } catch (error) {
-        if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
-          console.warn("⚠️  No se pudo eliminar FK antigua de process_templates:", error.message);
+        const [fkRows] = await connection.query(
+          `SELECT CONSTRAINT_NAME
+           FROM information_schema.KEY_COLUMN_USAGE
+           WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = 'process_templates'
+             AND COLUMN_NAME = 'template_version_id'
+             AND REFERENCED_TABLE_NAME IS NOT NULL`
+        );
+        if (fkRows.length) {
+          await connection.query(
+            `ALTER TABLE process_templates DROP FOREIGN KEY ${fkRows[0].CONSTRAINT_NAME}`
+          );
         }
+      } catch (error) {
+        console.warn("⚠️  No se pudo eliminar FK antigua de process_templates:", error.message);
       }
-      await connection.query("ALTER TABLE process_templates DROP COLUMN template_version_id");
+      try {
+        await connection.query(
+          "ALTER TABLE process_templates MODIFY COLUMN template_version_id INT NULL DEFAULT NULL"
+        );
+      } catch (error) {
+        console.warn("⚠️  No se pudo ajustar template_version_id:", error.message);
+      }
+      try {
+        await connection.query("ALTER TABLE process_templates DROP COLUMN template_version_id");
+      } catch (error) {
+        console.warn("⚠️  No se pudo eliminar template_version_id:", error.message);
+      }
     }
     if (!processTemplateColumnNames.includes("template_id")) {
       await connection.query("ALTER TABLE process_templates ADD COLUMN template_id INT NOT NULL");

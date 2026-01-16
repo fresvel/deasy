@@ -13,8 +13,8 @@
       </div>
     </div>
 
-    <div class="table-responsive">
-      <table class="table table-hover align-middle table-institutional table-striped">
+    <div class="table-responsive table-actions">
+      <table class="table table-hover align-middle table-institutional table-striped table-actions">
         <thead >
           <tr>
             <th scope="col">Certificación</th>
@@ -38,8 +38,32 @@
             <td>{{ formatDate(certificacion.fecha) }}</td>
             <td>{{ certificacion.tipo || 'N/A' }}</td>
             <td class="text-end">
-              <BtnEdit @onpress="() => editarCertificacion(certificacion)" class="me-2" />
-              <BtnDelete @onpress="() => eliminarCertificacion(certificacion)" />
+              <div class="dropdown d-inline-block">
+                <button
+                  class="btn btn-outline-primary btn-sm dropdown-toggle"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-label="Acciones"
+                  title="Acciones"
+                >
+                  <font-awesome-icon icon="ellipsis-vertical" />
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <button class="dropdown-item" type="button" @click="editarCertificacion(certificacion)">
+                      <font-awesome-icon icon="edit" class="me-2" />
+                      Editar
+                    </button>
+                  </li>
+                  <li>
+                    <button class="dropdown-item text-danger" type="button" @click="openDelete(certificacion)">
+                      <font-awesome-icon icon="trash" class="me-2" />
+                      Eliminar
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -59,6 +83,35 @@
         </div>
       </div>
     </div>
+
+    <div
+      class="modal fade"
+      id="certificacionDeleteModal"
+      tabindex="-1"
+      ref="deleteModal"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmar eliminación</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            ¿Deseas eliminar la certificación
+            <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-danger" @click="confirmDelete">
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -67,15 +120,16 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import AgregarCertificacion from "./AgregarCertificacion.vue";
-import BtnDelete from "@/components/BtnDelete.vue";
-import BtnEdit from "@/components/BtnEdit.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);
+const deleteModal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
 let bootstrapModal = null;
+let deleteInstance = null;
+const pendingDelete = ref(null);
 
 const certificaciones = computed(() => {
     if (!dossier.value || !dossier.value.certificaciones) return [];
@@ -122,13 +176,18 @@ const openModal = () => {
     bootstrapModal.show();
 };
 
+const openDelete = (certificacion) => {
+    pendingDelete.value = certificacion;
+    if (!deleteModal.value) return;
+    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
+    deleteInstance.show();
+};
+
 const handleCertificacionAdded = () => {
     loadDossier();
 };
 
 const eliminarCertificacion = async (certificacion) => {
-    if (!confirm('¿Estás seguro de eliminar esta certificación?')) return;
-    
     try {
         const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/certificaciones/${certificacion._id}`;
         await axios.delete(url);
@@ -138,6 +197,13 @@ const eliminarCertificacion = async (certificacion) => {
         console.error('Error al eliminar certificación:', error);
         alert('Error al eliminar la certificación');
     }
+};
+
+const confirmDelete = async () => {
+    if (!pendingDelete.value) return;
+    await eliminarCertificacion(pendingDelete.value);
+    deleteInstance?.hide();
+    pendingDelete.value = null;
 };
 
 const editarCertificacion = (registro) => {
@@ -155,6 +221,11 @@ onBeforeUnmount(() => {
         bootstrapModal.dispose();
         bootstrapModal = null;
     }
+    if (deleteInstance) {
+        deleteInstance.hide();
+        deleteInstance.dispose();
+        deleteInstance = null;
+    }
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
@@ -164,4 +235,5 @@ onBeforeUnmount(() => {
   color: var(--brand-ink);
   font-weight: 600;
 }
+
 </style>
