@@ -15,43 +15,46 @@
 
   <div class="row g-3">
     <s-menu :show="vmenu">
-      <UserProfile :photo="userPhoto" :username="userFullName" />
+      <div class="admin-menu">
+        <UserProfile :photo="userPhoto" :username="userFullName" />
 
-      <div v-for="group in groupedTables" :key="group.key">
-        <button
-          class="menu-section-title text-white w-100"
-          type="button"
-          @click="toggleCategory(group.label)"
-        >
-          {{ group.label }}
-        </button>
-        <div v-show="openCategories[group.label]">
-          <div class="list-group list-group-flush">
-            <button
-              v-for="table in group.mainTables"
-              :key="table.table"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedTable?.table === table.table }"
-              type="button"
-              @click="selectTable(table)"
-            >
-              {{ table.label }}
-            </button>
-          </div>
-          <div v-if="group.supportTables.length" class="text-white-50 small mt-2 mb-1">
-            Relaciones y soporte
-          </div>
-          <div v-if="group.supportTables.length" class="list-group list-group-flush">
-            <button
-              v-for="table in group.supportTables"
-              :key="table.table"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedTable?.table === table.table }"
-              type="button"
-              @click="selectTable(table)"
-            >
-              {{ table.label }}
-            </button>
+        <div v-for="group in groupedTables" :key="group.key" class="menu-section">
+          <button
+            class="menu-section-title text-white w-100"
+            type="button"
+            :class="{ 'is-open': openCategories[group.label] }"
+            @click="toggleCategory(group.label)"
+          >
+            {{ group.label }}
+          </button>
+          <div v-show="openCategories[group.label]" class="menu-section-body">
+            <div class="list-group list-group-flush">
+              <button
+                v-for="table in group.mainTables"
+                :key="table.table"
+                class="list-group-item list-group-item-action"
+                :class="{ active: selectedTable?.table === table.table }"
+                type="button"
+                @click="selectTable(table)"
+              >
+                {{ table.label }}
+              </button>
+            </div>
+            <div v-if="group.supportTables.length" class="menu-section-label small">
+              Relaciones y soporte
+            </div>
+            <div v-if="group.supportTables.length" class="list-group list-group-flush">
+              <button
+                v-for="table in group.supportTables"
+                :key="table.table"
+                class="list-group-item list-group-item-action"
+                :class="{ active: selectedTable?.table === table.table }"
+                type="button"
+                @click="selectTable(table)"
+              >
+                {{ table.label }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -173,10 +176,8 @@ const GROUP_DEFS = [
   {
     key: "procesos",
     label: "Gestiones",
-    main: ["processes", "templates", "documents"],
+    main: ["processes", "documents", "templates"],
     support: [
-      "process_templates",
-      "document_versions",
       "document_signatures"
     ]
   },

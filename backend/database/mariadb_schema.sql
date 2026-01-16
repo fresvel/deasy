@@ -53,15 +53,19 @@ CREATE TABLE IF NOT EXISTS processes (
   name VARCHAR(180) NOT NULL,
   slug VARCHAR(180) NOT NULL UNIQUE,
   parent_id INT NULL,
+  person_id INT NOT NULL,
   unit_id INT NULL,
   program_id INT NULL,
+  term_id INT NOT NULL,
   has_document TINYINT(1) NOT NULL DEFAULT 1,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL),
   FOREIGN KEY (parent_id) REFERENCES processes(id),
+  FOREIGN KEY (person_id) REFERENCES persons(id),
   FOREIGN KEY (unit_id) REFERENCES units(id),
-  FOREIGN KEY (program_id) REFERENCES programs(id)
+  FOREIGN KEY (program_id) REFERENCES programs(id),
+  FOREIGN KEY (term_id) REFERENCES terms(id)
 );
 
 CREATE TABLE IF NOT EXISTS unit_processes (
@@ -178,26 +182,16 @@ CREATE TABLE IF NOT EXISTS person_cargos (
 CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_id INT NOT NULL,
-  term_id INT NOT NULL,
-  unit_id INT NULL,
-  program_id INT NULL,
-  unit_id_key INT AS (IFNULL(unit_id, -1)) PERSISTENT,
-  program_id_key INT AS (IFNULL(program_id, -1)) PERSISTENT,
   status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
-  CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL),
-  UNIQUE (process_id, term_id, unit_id_key, program_id_key),
-  FOREIGN KEY (process_id) REFERENCES processes(id),
-  FOREIGN KEY (term_id) REFERENCES terms(id),
-  FOREIGN KEY (unit_id) REFERENCES units(id),
-  FOREIGN KEY (program_id) REFERENCES programs(id)
+  FOREIGN KEY (process_id) REFERENCES processes(id)
 );
 
 CREATE TABLE IF NOT EXISTS document_versions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   document_id INT NOT NULL,
-  version INT NOT NULL,
+  version DECIMAL(4,1) NOT NULL DEFAULT 0.1,
   payload_mongo_id VARCHAR(180) NOT NULL,
   payload_hash VARCHAR(64) NOT NULL,
   latex_path VARCHAR(255) NULL,

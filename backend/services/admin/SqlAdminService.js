@@ -130,10 +130,13 @@ const validateTableRules = (tableName, candidate) => {
     case "terms":
       ensureDateOrder(candidate.start_date, candidate.end_date, "periodos");
       break;
-    case "documents":
-      ensureXor(candidate.unit_id, candidate.program_id, "unidad o programa");
-      break;
     case "processes":
+      if (!candidate.person_id) {
+        throw new Error("Selecciona un responsable para el proceso.");
+      }
+      if (!candidate.term_id) {
+        throw new Error("Selecciona un periodo para el proceso.");
+      }
       ensureAtLeastOne(candidate.unit_id, candidate.program_id, "unidad o programa");
       break;
     case "vacancies":
@@ -154,8 +157,11 @@ const validateTableRules = (tableName, candidate) => {
       }
       break;
     case "document_versions":
-      if (candidate.version !== undefined && Number(candidate.version) < 1) {
-        throw new Error("La version debe ser mayor o igual a 1.");
+      if (candidate.version !== undefined) {
+        const versionValue = Number(candidate.version);
+        if (Number.isNaN(versionValue) || versionValue < 0.1) {
+          throw new Error("La version debe ser mayor o igual a 0.1.");
+        }
       }
       break;
     case "templates":
@@ -192,19 +198,32 @@ export default class SqlAdminService {
     const conditions = [];
     let joinClause = "";
     let selectClause = `SELECT ${fields.join(", ")}`;
+    let groupByClause = "";
+    let columnPrefix = "";
     const normalizedFilters = { ...filters };
 
-    if (tableName === "templates" && normalizedFilters.process_id) {
-      joinClause = "INNER JOIN process_templates pt ON pt.template_id = templates.id";
-      conditions.push("pt.process_id = ?");
-      params.push(normalizedFilters.process_id);
-      delete normalizedFilters.process_id;
-      selectClause = `SELECT DISTINCT ${fields.map((field) => `templates.${field}`).join(", ")}`;
+    if (tableName === "templates") {
+      const baseFields = fields.filter((field) => field !== "process_name");
+      joinClause =
+        "LEFT JOIN process_templates pt ON pt.template_id = templates.id " +
+        "LEFT JOIN processes p ON p.id = pt.process_id";
+      columnPrefix = "templates.";
+      const selectFields = baseFields.map((field) => `${columnPrefix}${field}`);
+      if (fields.includes("process_name")) {
+        selectFields.push('GROUP_CONCAT(DISTINCT p.name ORDER BY p.name SEPARATOR ", ") AS process_name');
+      }
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+      groupByClause = `GROUP BY ${baseFields.map((field) => `${columnPrefix}${field}`).join(", ")}`;
+      if (normalizedFilters.process_id) {
+        conditions.push("pt.process_id = ?");
+        params.push(normalizedFilters.process_id);
+        delete normalizedFilters.process_id;
+      }
     }
 
     if (q && config.searchFields?.length) {
       const like = `%${q}%`;
-      const searchClauses = config.searchFields.map((field) => `${field} LIKE ?`);
+      const searchClauses = config.searchFields.map((field) => `${columnPrefix}${field} LIKE ?`);
       conditions.push(`(${searchClauses.join(" OR ")})`);
       params.push(...config.searchFields.map(() => like));
     }
@@ -213,28 +232,37 @@ export default class SqlAdminService {
       if (!fields.includes(field)) {
         continue;
       }
+      if (tableName === "templates" && field === "process_name") {
+        continue;
+      }
       if (value === undefined || value === null || value === "") {
         continue;
       }
       const fieldMeta = config.fields.find((meta) => meta.name === field);
+      const columnName = columnPrefix ? `${columnPrefix}${field}` : field;
       if (["text", "email", "textarea"].includes(fieldMeta?.type)) {
-        conditions.push(`${field} LIKE ?`);
+        conditions.push(`${columnName} LIKE ?`);
         params.push(`%${value}%`);
       } else {
-        conditions.push(`${field} = ?`);
+        conditions.push(`${columnName} = ?`);
         params.push(value);
       }
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const safeOrderBy = fields.includes(orderBy) ? orderBy : config.primaryKeys[0];
-    const orderColumn = joinClause ? `${tableName}.${safeOrderBy}` : safeOrderBy;
+    const orderColumn =
+      tableName === "templates" && safeOrderBy === "process_name"
+        ? "process_name"
+        : joinClause
+          ? `${tableName}.${safeOrderBy}`
+          : safeOrderBy;
     const safeOrder = order?.toLowerCase() === "asc" ? "ASC" : "DESC";
     const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : DEFAULT_LIMIT;
     const safeOffset = Number.isFinite(Number(offset)) ? Math.max(0, Number(offset)) : 0;
 
     const [rows] = await this.pool.query(
-      `${selectClause} FROM ${tableName} ${joinClause} ${whereClause}
+      `${selectClause} FROM ${tableName} ${joinClause} ${whereClause} ${groupByClause}
        ORDER BY ${orderColumn} ${safeOrder} LIMIT ? OFFSET ?`,
       [...params, safeLimit, safeOffset]
     );
@@ -258,12 +286,16 @@ export default class SqlAdminService {
     this.ensurePool();
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
+    const processId = tableName === "templates" ? data?.process_id : null;
 
     const required = config.fields.filter((field) => field.required && !field.readOnly);
     const missing = required.filter((field) => payload[field.name] === undefined || payload[field.name] === "");
 
     if (missing.length) {
       throw new Error(`Datos incompletos: ${missing.map((field) => field.label || field.name).join(", ")}`);
+    }
+    if (tableName === "templates" && (!processId || Number(processId) <= 0)) {
+      throw new Error("Selecciona un proceso para la plantilla.");
     }
 
     validateFieldTypes(config, payload);
@@ -277,12 +309,34 @@ export default class SqlAdminService {
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
 
-    const [result] = await this.pool.query(
-      `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-      values
-    );
+    if (tableName !== "templates") {
+      const [result] = await this.pool.query(
+        `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+        values
+      );
+      return { id: result.insertId, ...payload };
+    }
 
-    return { id: result.insertId, ...payload };
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [result] = await connection.query(
+        `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+        values
+      );
+      const templateId = result.insertId;
+      await connection.query(
+        "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
+        [processId, templateId]
+      );
+      await connection.commit();
+      return { id: templateId, ...payload };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 
   async update(tableName, keys, data) {
@@ -292,12 +346,13 @@ export default class SqlAdminService {
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
     const updates = pickPayload(config.fields, data);
+    const processId = tableName === "templates" ? data?.process_id : null;
 
     const allowPrimaryKeyUpdate = config.allowPrimaryKeyUpdate === true;
     const columns = Object.keys(updates).filter((column) =>
       allowPrimaryKeyUpdate ? true : !config.primaryKeys.includes(column)
     );
-    if (!columns.length) {
+    if (!columns.length && tableName !== "templates") {
       throw new Error("No hay cambios para actualizar.");
     }
 
@@ -313,12 +368,50 @@ export default class SqlAdminService {
     validateFieldTypes(config, candidate);
     validateTableRules(tableName, candidate);
 
-    await this.pool.query(
-      `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-      [...values, ...params]
-    );
+    if (tableName !== "templates") {
+      await this.pool.query(
+        `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+        [...values, ...params]
+      );
+      return { ...keyPayload, ...updates };
+    }
 
-    return { ...keyPayload, ...updates };
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      if (columns.length) {
+        await connection.query(
+          `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+          [...values, ...params]
+        );
+      }
+      const templateId = existing.id ?? keyPayload.id;
+      if (processId && Number(processId) > 0) {
+        await connection.query(
+          "DELETE FROM process_templates WHERE template_id = ?",
+          [templateId]
+        );
+        await connection.query(
+          "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
+          [processId, templateId]
+        );
+      } else {
+        const [rows] = await connection.query(
+          "SELECT process_id FROM process_templates WHERE template_id = ? LIMIT 1",
+          [templateId]
+        );
+        if (!rows?.length) {
+          throw new Error("Selecciona un proceso para la plantilla.");
+        }
+      }
+      await connection.commit();
+      return { ...keyPayload, ...updates };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 
   async remove(tableName, keys) {

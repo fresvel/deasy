@@ -70,8 +70,9 @@
 
             <div v-if="loading" class="text-muted">Cargando datos...</div>
             <div v-else-if="error" class="text-danger">{{ error }}</div>
-            <div v-else class="table-responsive">
-              <table class="table table-striped table-hover align-middle table-institutional">
+            <div v-else class="table-responsive table-actions">
+              <div class="table-actions-scroll">
+                <table class="table table-striped table-hover align-middle table-institutional table-actions">
                 <thead>
                   <tr>
                     <th v-for="field in table.fields" :key="field.name" class="text-start">
@@ -91,14 +92,40 @@
                       {{ formatCell(row[field.name], field) }}
                     </td>
                     <td>
-                      <div class="btn-group" role="group">
-                        <BtnDelete @onpress="() => openDelete(row)" />
-                        <BtnEdit @onpress="() => openEdit(row)" />
+                      <div class="dropdown" @click.stop>
+                        <button
+                          class="btn btn-outline-primary btn-sm dropdown-toggle"
+                          type="button"
+                          :aria-expanded="openDropdownId === rowKey(row)"
+                          aria-label="Acciones"
+                          title="Acciones"
+                          @click="toggleDropdown(row)"
+                        >
+                          <font-awesome-icon icon="ellipsis-vertical" />
+                        </button>
+                        <ul
+                          class="dropdown-menu dropdown-menu-end"
+                          :class="{ show: openDropdownId === rowKey(row) }"
+                        >
+                          <li>
+                            <button class="dropdown-item" type="button" @click="openEdit(row); closeDropdown()">
+                              <font-awesome-icon icon="edit" class="me-2" />
+                              Editar
+                            </button>
+                          </li>
+                          <li>
+                            <button class="dropdown-item text-danger" type="button" @click="openDelete(row); closeDropdown()">
+                              <font-awesome-icon icon="trash" class="me-2" />
+                              Eliminar
+                            </button>
+                          </li>
+                        </ul>
                       </div>
                     </td>
                   </tr>
                 </tbody>
-              </table>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -196,6 +223,27 @@
                   class="form-control"
                   :disabled="isFieldLocked(field)"
                 />
+              </div>
+              <div v-if="isTemplateTable" class="col-12 col-md-6">
+                <label class="form-label">Proceso</label>
+                <div class="input-group">
+                  <input
+                    v-model="templateProcessLabel"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona un proceso"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    @click="openTemplateProcessSearch"
+                  >
+                    Buscar
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -389,6 +437,27 @@
                   </button>
                 </div>
               </div>
+              <div class="col-12">
+                <label class="form-label text-dark">Periodo</label>
+                <div class="input-group">
+                  <input
+                    v-model="processFilterLabels.term_id"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona un periodo"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    @click="openProcessFkSearch('term_id')"
+                  >
+                    Buscar
+                  </button>
+                </div>
+              </div>
               <div class="col-12 col-md-6">
                 <label class="form-label text-dark">Tiene documento</label>
                 <select v-model="processFilters.has_document" class="form-select">
@@ -487,15 +556,77 @@
         </div>
       </div>
     </div>
+
+    <div
+      class="modal fade"
+      id="documentSearchModal"
+      tabindex="-1"
+      aria-labelledby="documentSearchModalLabel"
+      aria-hidden="true"
+      ref="documentSearchModal"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="documentSearchModalLabel">Buscar documentos</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label text-dark">Proceso</label>
+                <div class="input-group">
+                  <input
+                    v-model="documentFilterLabels.process_id"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona un proceso"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    @click="openDocumentFkSearch('process_id')"
+                  >
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label text-dark">Estado</label>
+                <select v-model="documentFilters.status" class="form-select">
+                  <option value="">Todos</option>
+                  <option value="Inicial">Inicial</option>
+                  <option value="En proceso">En proceso</option>
+                  <option value="Aprobado">Aprobado</option>
+                  <option value="Rechazado">Rechazado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-outline-primary" @click="clearDocumentFilter">
+              Limpiar
+            </button>
+            <button type="button" class="btn btn-primary" @click="applyDocumentFilter">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
+import { computed, defineProps, defineExpose, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
-import BtnDelete from "@/components/BtnDelete.vue";
-import BtnEdit from "@/components/BtnEdit.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const props = defineProps({
@@ -536,18 +667,21 @@ const fkLoading = ref(false);
 const fkError = ref("");
 const fkField = ref("");
 const fkSetter = ref(null);
+const openDropdownId = ref(null);
 
 const processFilters = ref({
   unit_id: "",
   program_id: "",
   parent_id: "",
+  term_id: "",
   has_document: "",
   is_active: ""
 });
 const processFilterLabels = ref({
   unit_id: "",
   program_id: "",
-  parent_id: ""
+  parent_id: "",
+  term_id: ""
 });
 const templateFilters = ref({
   name: "",
@@ -558,8 +692,21 @@ const templateFilters = ref({
 const templateFilterLabels = ref({
   process_id: ""
 });
+const templateProcessId = ref("");
+const templateProcessLabel = ref("");
+const documentFilters = ref({
+  process_id: "",
+  term_id: "",
+  status: ""
+});
+const documentFilterLabels = ref({
+  process_id: "",
+  term_id: ""
+});
 const templateSearchModal = ref(null);
 let templateSearchInstance = null;
+const documentSearchModal = ref(null);
+let documentSearchInstance = null;
 const processSearchModal = ref(null);
 let processSearchInstance = null;
 
@@ -581,6 +728,8 @@ const formFields = computed(() => {
   }
   return editableFields.value;
 });
+
+const isTemplateTable = computed(() => props.table?.table === "templates");
 
 const allTablesMap = computed(() =>
   Object.fromEntries(props.allTables.map((table) => [table.table, table]))
@@ -647,6 +796,12 @@ const ensureFkInstance = () => {
       if (returnModal === "processSearch" && processSearchInstance) {
         processSearchInstance.show();
       }
+      if (returnModal === "templateSearch" && templateSearchInstance) {
+        templateSearchInstance.show();
+      }
+      if (returnModal === "documentSearch" && documentSearchInstance) {
+        documentSearchInstance.show();
+      }
       returnModal = null;
     });
   }
@@ -661,6 +816,12 @@ const ensureProcessSearchInstance = () => {
 const ensureTemplateSearchInstance = () => {
   if (!templateSearchInstance && templateSearchModal.value) {
     templateSearchInstance = new Modal(templateSearchModal.value);
+  }
+};
+
+const ensureDocumentSearchInstance = () => {
+  if (!documentSearchInstance && documentSearchModal.value) {
+    documentSearchInstance = new Modal(documentSearchModal.value);
   }
 };
 
@@ -817,6 +978,14 @@ const openFkSearch = async (field, onSelect = null) => {
     processSearchInstance.hide();
     returnModal = "processSearch";
   }
+  if (templateSearchInstance && templateSearchModal.value?.classList.contains("show")) {
+    templateSearchInstance.hide();
+    returnModal = "templateSearch";
+  }
+  if (documentSearchInstance && documentSearchModal.value?.classList.contains("show")) {
+    documentSearchInstance.hide();
+    returnModal = "documentSearch";
+  }
   fkSetter.value = onSelect;
   fkField.value = field.name;
   fkTable.value = allTablesMap.value[tableName] || null;
@@ -885,6 +1054,13 @@ const fetchRows = async () => {
         }
       });
     }
+    if (props.table?.table === "documents") {
+      Object.entries(documentFilters.value).forEach(([key, value]) => {
+        if (value !== "" && value !== null && value !== undefined) {
+          filters[`filter_${key}`] = value;
+        }
+      });
+    }
     const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(props.table.table), {
       params: {
         q: searchTerm.value || undefined,
@@ -896,6 +1072,7 @@ const fetchRows = async () => {
   } catch (err) {
     error.value = err?.response?.data?.message || "No se pudo cargar la informacion.";
   } finally {
+    closeDropdown();
     loading.value = false;
   }
 };
@@ -922,7 +1099,24 @@ const handleSearchAction = () => {
     openTemplateSearch();
     return;
   }
+  if (props.table?.table === "documents") {
+    openDocumentSearch();
+    return;
+  }
   focusSearch();
+};
+
+const toggleDropdown = (row) => {
+  const key = rowKey(row);
+  openDropdownId.value = openDropdownId.value === key ? null : key;
+};
+
+const closeDropdown = () => {
+  openDropdownId.value = null;
+};
+
+const handleDocumentClick = () => {
+  closeDropdown();
 };
 
 const openProcessSearch = () => {
@@ -935,6 +1129,11 @@ const openTemplateSearch = () => {
   templateSearchInstance?.show();
 };
 
+const openDocumentSearch = () => {
+  ensureDocumentSearchInstance();
+  documentSearchInstance?.show();
+};
+
 const applyProcessFilter = async () => {
   await fetchRows();
   processSearchInstance?.hide();
@@ -945,13 +1144,15 @@ const clearProcessFilter = async () => {
     unit_id: "",
     program_id: "",
     parent_id: "",
+    term_id: "",
     has_document: "",
     is_active: ""
   };
   processFilterLabels.value = {
     unit_id: "",
     program_id: "",
-    parent_id: ""
+    parent_id: "",
+    term_id: ""
   };
   await fetchRows();
 };
@@ -974,6 +1175,24 @@ const clearTemplateFilter = async () => {
   await fetchRows();
 };
 
+const applyDocumentFilter = async () => {
+  await fetchRows();
+  documentSearchInstance?.hide();
+};
+
+const clearDocumentFilter = async () => {
+  documentFilters.value = {
+    process_id: "",
+    term_id: "",
+    status: ""
+  };
+  documentFilterLabels.value = {
+    process_id: "",
+    term_id: ""
+  };
+  await fetchRows();
+};
+
 const openTemplateFkSearch = () => {
   openFkSearch({ name: "process_id" }, (row) => {
     const idValue = row.id ?? "";
@@ -985,6 +1204,25 @@ const openTemplateFkSearch = () => {
     const labelValue = row[displayField] ?? row.id;
     templateFilterLabels.value = {
       process_id: labelValue ? String(labelValue) : ""
+    };
+  });
+};
+
+const openDocumentFkSearch = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  openFkSearch({ name: fieldName }, (row) => {
+    const idValue = row.id ?? "";
+    documentFilters.value = {
+      ...documentFilters.value,
+      [fieldName]: idValue
+    };
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    documentFilterLabels.value = {
+      ...documentFilterLabels.value,
+      [fieldName]: labelValue ? String(labelValue) : ""
     };
   });
 };
@@ -1008,6 +1246,67 @@ const openProcessFkSearch = (fieldName) => {
   });
 };
 
+const resetTemplateProcessSelection = () => {
+  templateProcessId.value = "";
+  templateProcessLabel.value = "";
+};
+
+const getProcessLabelById = async (processId) => {
+  if (!processId) {
+    return "";
+  }
+  const processMeta = allTablesMap.value?.processes;
+  const displayField = resolveDisplayField(processMeta);
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("processes"), {
+      params: {
+        filter_id: processId,
+        limit: 1
+      }
+    });
+    const row = response.data?.[0];
+    if (!row) {
+      return String(processId);
+    }
+    return String(row[displayField] ?? row.id ?? processId);
+  } catch (err) {
+    return String(processId);
+  }
+};
+
+const loadTemplateProcessMapping = async (templateId) => {
+  resetTemplateProcessSelection();
+  if (!templateId) {
+    return;
+  }
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_templates"), {
+      params: {
+        filter_template_id: templateId,
+        limit: 1
+      }
+    });
+    const link = response.data?.[0];
+    if (!link?.process_id) {
+      return;
+    }
+    templateProcessId.value = link.process_id;
+    templateProcessLabel.value = await getProcessLabelById(link.process_id);
+  } catch (err) {
+    resetTemplateProcessSelection();
+  }
+};
+
+const openTemplateProcessSearch = () => {
+  openFkSearch({ name: "process_id" }, (row) => {
+    const idValue = row.id ?? "";
+    templateProcessId.value = idValue;
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    templateProcessLabel.value = labelValue ? String(labelValue) : "";
+  });
+};
+
 const openCreate = () => {
   if (!props.table) {
     return;
@@ -1017,15 +1316,21 @@ const openCreate = () => {
   modalError.value = "";
   resetForm();
   fkDisplay.value = {};
+  if (isTemplateTable.value) {
+    resetTemplateProcessSelection();
+  }
   ensureEditorInstance();
   editorInstance?.show();
 };
 
-const openEdit = (row) => {
+const openEdit = async (row) => {
   editorMode.value = "edit";
   selectedRow.value = row;
   modalError.value = "";
   buildFormFromRow(row);
+  if (isTemplateTable.value) {
+    loadTemplateProcessMapping(row?.id);
+  }
   ensureEditorInstance();
   editorInstance?.show();
 };
@@ -1045,13 +1350,33 @@ const submitForm = async () => {
   if (props.table.table === "processes") {
     const unitId = formData.value.unit_id ? Number(formData.value.unit_id) : null;
     const programId = formData.value.program_id ? Number(formData.value.program_id) : null;
+    const personId = formData.value.person_id ? Number(formData.value.person_id) : null;
+    const termId = formData.value.term_id ? Number(formData.value.term_id) : null;
     if (!unitId && !programId) {
       modalError.value = "Selecciona una unidad o un programa.";
+      return;
+    }
+    if (!personId) {
+      modalError.value = "Selecciona un responsable para el proceso.";
+      return;
+    }
+    if (!termId) {
+      modalError.value = "Selecciona un periodo para el proceso.";
+      return;
+    }
+  }
+  if (isTemplateTable.value) {
+    const processId = templateProcessId.value ? Number(templateProcessId.value) : null;
+    if (!processId) {
+      modalError.value = "Selecciona un proceso para la plantilla.";
       return;
     }
   }
   try {
     const payload = buildPayload();
+    if (isTemplateTable.value) {
+      payload.process_id = Number(templateProcessId.value);
+    }
     if (editorMode.value === "create") {
       await axios.post(API_ROUTES.ADMIN_SQL_TABLE(props.table.table), payload);
     } else {
@@ -1087,17 +1412,20 @@ watch(
   () => props.table?.table,
   () => {
     resetForm();
+    resetTemplateProcessSelection();
     processFilters.value = {
       unit_id: "",
       program_id: "",
       parent_id: "",
+      term_id: "",
       has_document: "",
       is_active: ""
     };
     processFilterLabels.value = {
       unit_id: "",
       program_id: "",
-      parent_id: ""
+      parent_id: "",
+      term_id: ""
     };
     templateFilters.value = {
       name: "",
@@ -1108,15 +1436,29 @@ watch(
     templateFilterLabels.value = {
       process_id: ""
     };
+    documentFilters.value = {
+      process_id: "",
+      term_id: "",
+      status: ""
+    };
+    documentFilterLabels.value = {
+      process_id: "",
+      term_id: ""
+    };
     fetchRows();
   },
   { immediate: true }
 );
 
+onMounted(() => {
+  document.addEventListener("click", handleDocumentClick);
+});
+
 onBeforeUnmount(() => {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
+  document.removeEventListener("click", handleDocumentClick);
 });
 
 defineExpose({

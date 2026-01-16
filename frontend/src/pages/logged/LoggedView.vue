@@ -36,43 +36,51 @@
     
         <s-menu :show="vmenu">
 
-            <UserProfile
-                :photo="userPhoto"
-                :username="userFullName"
-                :editable="true"
-                @photo-selected="handlePhotoSelected"
-            />
-            <button
-              class="menu-section-title text-white w-100"
-              type="button"
-              @click="showCoordinacion = !showCoordinacion"
-            >
-                Coordinación
-            </button>
+            <div class="admin-menu">
+                <UserProfile
+                    :photo="userPhoto"
+                    :username="userFullName"
+                    :editable="true"
+                    @photo-selected="handlePhotoSelected"
+                />
+                <div class="menu-section">
+                  <button
+                    class="menu-section-title text-white w-100"
+                    type="button"
+                    :class="{ 'is-open': showCoordinacion }"
+                    @click="showCoordinacion = !showCoordinacion"
+                  >
+                      Coordinación
+                  </button>
 
-            <div v-show="showCoordinacion">
-            <div class="list-group list-group-flush">
-              <button v-for="(item, index) of mainmenu" :key="index"
-                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                :class="{ active: item.active }"
-                type="button"
-                @click="onmenuClick(item.label)">
-                <span>{{ item.label }}</span>
-                <span v-if="item.key" class="badge bg-primary rounded-pill">
-                  {{ dossierCounts[item.key] ?? 0 }}
-                </span>
-              </button>
-            </div>
-            </div>
+                  <div v-show="showCoordinacion" class="menu-section-body">
+                    <div class="list-group list-group-flush">
+                      <button v-for="(item, index) of mainmenu" :key="index"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                        :class="{ active: item.active }"
+                        type="button"
+                        @click="onmenuClick(item.label)">
+                        <span>{{ item.label }}</span>
+                        <span v-if="item.key" class="badge bg-primary rounded-pill">
+                          {{ dossierCounts[item.key] ?? 0 }}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-            <button
-              class="menu-section-title text-white w-100"
-              type="button"
-              @click="showDocencia = !showDocencia"
-            >
-              Docencia
-            </button>
-            <div v-show="showDocencia"></div>
+                <div class="menu-section">
+                  <button
+                    class="menu-section-title text-white w-100"
+                    type="button"
+                    :class="{ 'is-open': showDocencia }"
+                    @click="showDocencia = !showDocencia"
+                  >
+                    Docencia
+                  </button>
+                  <div v-show="showDocencia" class="menu-section-body"></div>
+                </div>
+            </div>
         </s-menu>
     
         <s-body
