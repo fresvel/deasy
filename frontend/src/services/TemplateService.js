@@ -1,5 +1,6 @@
 import {ref} from "vue"
 import axios from "axios"
+import { API_PREFIX } from "./apiConfig";
 
 class TemplateService {
     constructor() {
@@ -13,7 +14,7 @@ class TemplateService {
             return;
         }
         try {
-            const url = "http://localhost:3000/easym/v1/webtemplate"
+            const url = `${API_PREFIX}/webtemplate`;
             const formdata = new FormData();
             
             //const files = this.csv_files.value.files;

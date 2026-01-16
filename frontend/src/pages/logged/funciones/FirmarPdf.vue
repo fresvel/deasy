@@ -10,14 +10,12 @@
     </div>
   </div>
 
-  <div v-if="pdfReady" class="row align-items-center justify-content-center g-3">
-    <div class="col-auto">
-      <button type="button" class="btn btn-outline-secondary btn-sm" @click="goBackToStart">
+  <div v-if="pdfReady" :class="['firmar-top-bar', { 'firmar-top-bar--compact': compactTopBar }]">
+    <div class="firmar-top-group firmar-top-group--left">
+      <button type="button" class="btn btn-outline-secondary btn-lg profile-add-btn top-action-btn" @click="goBackToStart">
         Regresar
       </button>
-    </div>
-    <div class="col-auto">
-      <button type="button" class="btn btn-outline-primary btn-sm" @click="triggerChangePdf">
+      <button type="button" class="btn btn-outline-primary btn-lg profile-add-btn top-action-btn" @click="triggerChangePdf">
         Cambiar PDF
       </button>
       <input
@@ -27,51 +25,66 @@
         accept="application/pdf"
         @change="onChangePdf"
       />
-    </div>
-    <div class="col-auto">
-      <select v-model="selectionMode" class="mode-select" @change="setSelectionMode(selectionMode)">
-        <option value="drag">Seleccion manual</option>
-        <option value="preset">Caja predefinida</option>
+      <select
+        v-if="!compactTopBar"
+        v-model="selectionMode"
+        class="mode-select top-action-control"
+        @change="setSelectionMode(selectionMode)"
+      >
+        <option value="drag">Manual</option>
+        <option value="preset">Predefinida</option>
       </select>
     </div>
-    <div class="col-auto">
-      <button @click="prevPageBtn" class="btnav">
-        <font-awesome-icon icon="backward" class="icon" />
-        <span class="tooltip">Página Anterior</span>
-      </button>
-    </div>
-    <div class="col-auto page-info-column">
-      <div class="page-info">
-        <span class="page-info-label">Pagina</span>
-        <input
-          v-model="pageInput"
-          class="page-input"
-          type="number"
-          min="1"
-          :max="totalPages"
-          @keyup.enter="goToPage"
-        />
-        <span class="page-total">de {{ totalPages }}</span>
+    <div class="firmar-top-group firmar-top-group--center">
+      <div class="page-controls">
+        <button @click="prevPageBtn" class="btnav">
+          <font-awesome-icon icon="backward" class="icon" />
+          <span class="tooltip">Página Anterior</span>
+        </button>
+        <div class="page-info">
+          <span class="page-info-label">P</span>
+          <input
+            v-model="pageInput"
+            class="page-input"
+            type="number"
+            min="1"
+            :max="totalPages"
+            @keyup.enter="goToPage"
+          />
+          <span class="page-total">de {{ totalPages }}</span>
+        </div>
+        <button @click="nextPageBtn" class="btnav">
+          <font-awesome-icon icon="forward" class="icon" />
+          <span class="tooltip">Página Siguiente</span>
+        </button>
+      </div>
+      <div v-if="compactTopBar" class="page-actions">
+        <select
+          v-model="selectionMode"
+          class="mode-select top-action-control"
+          @change="setSelectionMode(selectionMode)"
+        >
+          <option value="drag">Manual</option>
+          <option value="preset">Predefinida</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-lg profile-add-btn top-action-btn" @click="submitAction">
+          {{ requestMode ? 'Enviar' : 'Firmar' }}
+        </button>
       </div>
     </div>
-    <div class="col-auto">
-      <button @click="nextPageBtn" class="btnav">
-        <font-awesome-icon icon="forward" class="icon" />
-        <span class="tooltip">Página Siguiente</span>
-      </button>
-    </div>
-    <div class="col-auto">
-      <button type="button" class="btn btn-outline-primary btn-sm" @click="addFieldAction">
+    <div class="firmar-top-group firmar-top-group--right">
+      <button type="button" class="btn btn-outline-primary btn-lg profile-add-btn top-action-btn" @click="addFieldAction">
         Agregar firma
       </button>
-    </div>
-    <div class="col-auto">
-      <button type="button" class="btn btn-outline-danger btn-sm" @click="openDeleteModal">
-        Eliminar firma
+      <button type="button" class="btn btn-outline-danger btn-lg profile-add-btn top-action-btn" @click="openDeleteModal">
+        Eliminar
       </button>
-    </div>
-    <div class="col-auto">
-      <button type="button" class="btn btn-primary btn-sm" @click="submitAction">
+      <button
+        v-if="!compactTopBar"
+        type="button"
+        class="btn btn-primary btn-lg profile-add-btn top-action-btn"
+        @click="submitAction"
+      >
         {{ requestMode ? 'Enviar' : 'Firmar' }}
       </button>
     </div>
@@ -360,7 +373,7 @@
   </template>
   
   <script setup>
-  import { onMounted, ref, watch, nextTick, computed, defineExpose } from 'vue';
+  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose } from 'vue';
   import * as pdfjsLib from "pdfjs-dist/webpack"; // Usa esta línea para Webpack
   import { Modal } from 'bootstrap';
   import { API_ROUTES } from '@/services/apiConfig';
@@ -372,7 +385,7 @@
   const currentPage = ref(1);
   const pageInput = ref(1);
   const totalPages = ref(0);
-  const selectionMode = ref('drag');
+  const selectionMode = ref('preset');
   const uploadedFiles = ref([]);
   const uploadError = ref('');
   const pdfReady = ref(false);
@@ -410,6 +423,10 @@
   let bootstrapDeleteModal = null;
   let bootstrapAssignSignerModal = null;
   let searchTimeout = null;
+  let resizeObserver = null;
+  let resizeTimer = null;
+  let lastContainerWidth = null;
+  const compactTopBar = ref(false);
 
   const FIELD_WIDTH = 110;
   const FIELD_HEIGHT = 80;
@@ -576,12 +593,27 @@
         console.error('Error al cargar usuario en firmador:', error);
       }
     }
+    ensureResizeObserver();
+    window.addEventListener('resize', scheduleResizeRender);
   });
 
   watch(pdfReady, async (ready) => {
     if (!ready) return;
     await nextTick();
     registerEvents();
+    ensureResizeObserver();
+  });
+
+  onBeforeUnmount(() => {
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
+    }
+    if (resizeTimer) {
+      clearTimeout(resizeTimer);
+      resizeTimer = null;
+    }
+    window.removeEventListener('resize', scheduleResizeRender);
   });
 
   watch(signerInput, (value) => {
@@ -629,6 +661,31 @@
     });
   }
 
+  const scheduleResizeRender = () => {
+    if (!pdfReady.value || !pdfDoc) return;
+    if (resizeTimer) {
+      clearTimeout(resizeTimer);
+    }
+    resizeTimer = setTimeout(() => {
+      if (!pdfReady.value || !pdfDoc) return;
+      renderPage(currentPage.value);
+    }, 150);
+  };
+
+  const ensureResizeObserver = () => {
+    if (!colPdf.value || typeof ResizeObserver === 'undefined') return;
+    if (!resizeObserver) {
+      resizeObserver = new ResizeObserver((entries) => {
+        const width = entries?.[0]?.contentRect?.width;
+        if (!width || width === lastContainerWidth) return;
+        lastContainerWidth = width;
+        compactTopBar.value = width < 900;
+        scheduleResizeRender();
+      });
+    }
+    resizeObserver.observe(colPdf.value);
+  };
+
 
     const prevPageBtn= () => {
       if (currentPage.value <= 1) return;
@@ -666,6 +723,7 @@
       pageInput.value = 1;
       lastSelection.value = null;
       lastFieldId.value = null;
+      selectionMode.value = 'preset';
     };
 
     const loadPdfFromFile = (file, mode = 'sign') => {
@@ -1028,6 +1086,8 @@
       padding: 0.6rem 1rem;
       font-size: 1rem;
       font-weight: 600;
+      min-width: var(--top-control-width);
+      min-height: var(--top-control-height);
     }
 
     .page-info-label {
@@ -1049,16 +1109,106 @@
       font-size: 1rem;
     }
 
+    .firmar-top-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-areas: "left center right";
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+      --top-control-width: 200px;
+      --top-control-height: 2.6rem;
+    }
+
+    .firmar-top-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .firmar-top-group--left {
+      grid-area: left;
+      justify-content: flex-start;
+    }
+
+    .firmar-top-group--center {
+      grid-area: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .firmar-top-group--right {
+      grid-area: right;
+      justify-content: flex-end;
+    }
+
+    .top-action-btn,
+    .top-action-control {
+      min-width: var(--top-control-width);
+      min-height: var(--top-control-height);
+    }
+
+    .top-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .page-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .page-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .firmar-top-bar--compact .firmar-top-group--center {
+      align-items: flex-start;
+    }
+
+    .firmar-top-bar--compact .page-controls {
+      justify-content: center;
+    }
+
+    .firmar-top-bar--compact .page-actions {
+      margin-top: 0.35rem;
+    }
+
     .mode-select {
       border: 1px solid var(--brand-navy);
-      border-radius: var(--radius-md);
-      padding: 0.35rem 0.75rem;
-      font-size: 0.95rem;
-      font-weight: 600;
+      border-radius: 10px;
+      padding: 0.65rem 1.75rem;
+      font-size: 1.25rem;
+      font-weight: 400;
       color: var(--brand-navy);
       background-color: var(--brand-white);
-      min-width: 180px;
-      height: 2.1rem;
+      line-height: 1.2;
+    }
+
+    @media (max-width: 992px) {
+      .firmar-top-bar {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "left"
+          "center"
+          "right";
+      }
+
+      .firmar-top-group--center {
+        order: 2;
+      }
+
+      .firmar-top-group--right {
+        order: 3;
+      }
     }
 
     .pdf-viewer {
@@ -1187,7 +1337,7 @@
     color: var(--brand-accent);
     --tooltip-bg: var(--brand-accent);
     transition: color 0.3s ease-in-out;
-}
+  }
 
 .tooltip {
   visibility: hidden; /* Inicialmente oculto */

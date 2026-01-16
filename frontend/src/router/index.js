@@ -5,8 +5,10 @@ import DashboardHome from "../pages/logged/DashboardHome.vue";
 import IndexPage from "../pages/logged/LoggedView.vue";
 import { isTokenValid, clearAuthData } from "../utils/tokenUtils.js";
 import axios from "axios";
+import { API_ROUTES } from "../services/apiConfig";
 
 import FirmarPdf from "../pages/logged/funciones/FirmarView.vue";
+import AdminView from "../pages/admin/AdminView.vue";
 const routes = [
   {
     path: "/",
@@ -34,13 +36,17 @@ const routes = [
     component: FirmarPdf,
   },
   {
+    path: "/admin",
+    name: "admin",
+    component: AdminView,
+  },
+  {
     path: "/logout",
     name: "logout",
     beforeEnter: async (to, from, next) => {
       try {
         // Llamar al endpoint de logout del backend para limpiar la cookie del refreshToken
-        const url = 'http://localhost:3000/easym/v1/users/logout';
-        await axios.post(url, {}, { withCredentials: true });
+        await axios.post(API_ROUTES.USERS_LOGOUT, {}, { withCredentials: true });
       } catch (error) {
         // Si falla, continuar de todas formas para limpiar el frontend
         console.error('Error al cerrar sesión en el servidor:', error);

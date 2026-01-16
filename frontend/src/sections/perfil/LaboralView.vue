@@ -118,6 +118,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
+import { API_PREFIX } from "@/services/apiConfig";
 import { Modal } from "bootstrap";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
@@ -171,7 +172,7 @@ const loadDossier = async () => {
         console.log('👤 Usuario cargado:', currentUser.value);
         
         // Obtener dossier del backend
-        const url = `http://localhost:3000/easym/v1/dossier/${currentUser.value.cedula}`;
+        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
         const response = await axios.get(url);
         
         if (response.data.success) {

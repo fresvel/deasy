@@ -87,6 +87,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { API_ROUTES } from '@/services/apiConfig';
 
 const identifier = ref('');
 const password = ref('');
@@ -95,7 +96,7 @@ const router = useRouter();
 
 const loginFunction = async () => {
   try {
-    const url = 'http://localhost:3000/easym/v1/users/login';
+    const url = API_ROUTES.USERS_LOGIN;
     const body = {
       password: password.value,
     };

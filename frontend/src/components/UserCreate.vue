@@ -162,6 +162,7 @@ import SeInput from '@/components/SInput.vue';
 import { escountries } from '@/composable/countries';
 import axios from 'axios';
 import { ref, computed } from 'vue';
+import { API_ROUTES } from '@/services/apiConfig';
   
   const vmenu = ref(true);
   const vnotify = ref(true);
@@ -204,8 +205,7 @@ const newuser= ref({
 const createnewUser=async()=>{
     
     try {
-        const ulr="http://localhost:3000/easym/v1/users/register"
-        const ret=await axios.post(ulr, newuser.value)
+        const ret=await axios.post(API_ROUTES.USERS, newuser.value)
         alert(ret.data)
     } catch (error) {
         alert(error.message)

@@ -1,4 +1,4 @@
-FROM rockylinux:9
+FROM rockylinux/rockylinux:10.1.20251123-ubi
 
 WORKDIR /app
 
