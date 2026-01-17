@@ -34,7 +34,7 @@ export default class UserRepository {
     }
 
     const [rows] = await this.pool.query(
-      `SELECT * FROM users WHERE ${conditions.join(" OR ")} LIMIT 1`,
+      `SELECT * FROM persons WHERE ${conditions.join(" OR ")} LIMIT 1`,
       params
     );
 
@@ -43,7 +43,7 @@ export default class UserRepository {
 
   async findAll() {
     this.ensurePool();
-    const [rows] = await this.pool.query("SELECT * FROM users ORDER BY created_at DESC");
+    const [rows] = await this.pool.query("SELECT * FROM persons ORDER BY created_at DESC");
     return rows;
   }
 
@@ -59,7 +59,7 @@ export default class UserRepository {
 
     if (normalized) {
       const like = `%${normalized}%`;
-      conditions.push("(cedula LIKE ? OR email LIKE ? OR nombre LIKE ? OR apellido LIKE ?)");
+      conditions.push("(cedula LIKE ? OR email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)");
       params.push(like, like, like, like);
     }
 
@@ -70,7 +70,7 @@ export default class UserRepository {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const [rows] = await this.pool.query(
-      `SELECT * FROM users
+      `SELECT * FROM persons
         ${whereClause}
         ORDER BY created_at DESC
         LIMIT ?`,
@@ -79,58 +79,26 @@ export default class UserRepository {
     return rows;
   }
 
-  async search(term = "", limit = 20) {
-    this.ensurePool();
-    const normalized = term?.trim();
-    const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : 20;
-
-    if (!normalized) {
-      const [rows] = await this.pool.query(
-        "SELECT * FROM users ORDER BY created_at DESC LIMIT ?",
-        [safeLimit]
-      );
-      return rows;
-    }
-
-    const like = `%${normalized}%`;
-    const [rows] = await this.pool.query(
-      `SELECT * FROM users
-        WHERE cedula LIKE ? OR email LIKE ? OR nombre LIKE ? OR apellido LIKE ?
-        ORDER BY created_at DESC
-        LIMIT ?`,
-      [like, like, like, like, safeLimit]
-    );
-    return rows;
-  }
-
   async create(userData) {
     this.ensurePool();
 
     const payload = {
-      mongo_id: userData.mongo_id ?? null,
       cedula: userData.cedula,
-      email: userData.email,
+      email: userData.email ?? null,
       password_hash: userData.password_hash ?? userData.password,
-      nombre: userData.nombre,
-      apellido: userData.apellido,
+      first_name: userData.first_name ?? userData.nombre,
+      last_name: userData.last_name ?? userData.apellido,
       whatsapp: userData.whatsapp ?? null,
       direccion: userData.direccion ?? null,
       pais: userData.pais ?? null,
       status: userData.status ?? DEFAULT_STATUS,
-      verify_email: Number(
-        userData.verify_email ??
-        userData.verify?.email ??
-        0
-      ),
-      verify_whatsapp: Number(
-        userData.verify_whatsapp ??
-        userData.verify?.whatsapp ??
-        0
-      ),
-      photo_url: userData.photo_url ?? userData.photoUrl ?? null
+      verify_email: Number(userData.verify_email ?? userData.verify?.email ?? 0),
+      verify_whatsapp: Number(userData.verify_whatsapp ?? userData.verify?.whatsapp ?? 0),
+      photo_url: userData.photo_url ?? userData.photoUrl ?? null,
+      is_active: userData.is_active ?? 1
     };
 
-    const requiredFields = ["cedula", "email", "password_hash", "nombre", "apellido"];
+    const requiredFields = ["cedula", "password_hash", "first_name", "last_name"];
     const missingFields = requiredFields.filter((field) => !payload[field]);
 
     if (missingFields.length) {
@@ -142,7 +110,7 @@ export default class UserRepository {
     const placeholders = columns.map(() => "?").join(", ");
 
     const [result] = await this.pool.query(
-      `INSERT INTO users (${columns.join(", ")}) VALUES (${placeholders})`,
+      `INSERT INTO persons (${columns.join(", ")}) VALUES (${placeholders})`,
       values
     );
 
@@ -161,8 +129,8 @@ export default class UserRepository {
       id: userRow.id ?? userRow._id,
       _id: (userRow.id ?? userRow._id)?.toString(),
       cedula: userRow.cedula,
-      nombre: userRow.nombre,
-      apellido: userRow.apellido,
+      first_name: userRow.first_name,
+      last_name: userRow.last_name,
       email: userRow.email,
       whatsapp: userRow.whatsapp,
       direccion: userRow.direccion,
@@ -186,7 +154,7 @@ export default class UserRepository {
     }
 
     await this.pool.query(
-      "UPDATE users SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE cedula = ?",
+      "UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE cedula = ?",
       [photoUrl, cedula]
     );
 

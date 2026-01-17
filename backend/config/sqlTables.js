@@ -89,12 +89,34 @@ export const SQL_TABLES = [
       { name: "person_id", label: "Responsable", type: "number", required: true },
       { name: "unit_id", label: "Unidad", type: "number" },
       { name: "program_id", label: "Programa", type: "number" },
-      { name: "term_id", label: "Periodo", type: "number", required: true },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
+  },
+  {
+    table: "process_versions",
+    label: "Versiones de proceso",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true, readOnly: true },
+      { name: "version", label: "Version", type: "text", required: true, readOnly: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "slug", label: "Slug", type: "text", required: true },
+      { name: "parent_version_id", label: "Version padre", type: "number" },
+      { name: "person_id", label: "Responsable", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "program_id", label: "Programa", type: "number" },
+      { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "slug", "version"]
   },
   {
     table: "unit_processes",
@@ -121,6 +143,21 @@ export const SQL_TABLES = [
     searchFields: []
   },
   {
+    table: "process_cargos",
+    label: "Perfiles por proceso",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "cargo_id", label: "Cargo/Perfil", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "program_id", label: "Programa", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  {
     table: "terms",
     label: "Periodos",
     category: "Academico",
@@ -133,6 +170,52 @@ export const SQL_TABLES = [
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 }
     ],
     searchFields: ["name"]
+  },
+  {
+    table: "tasks",
+    label: "Tareas",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "process_version_id", label: "Version de proceso", type: "number", required: true },
+      { name: "term_id", label: "Periodo", type: "number", required: true },
+      { name: "parent_task_id", label: "Tarea padre", type: "number" },
+      { name: "responsible_person_id", label: "Responsable principal", type: "number" },
+      { name: "start_date", label: "Inicio", type: "date", required: true },
+      { name: "end_date", label: "Fin", type: "date" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_proceso", "completada", "cancelada"],
+        defaultValue: "pendiente"
+      },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["status"]
+  },
+  {
+    table: "task_assignments",
+    label: "Asignaciones de tareas",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "task_id", label: "Tarea", type: "number", required: true },
+      { name: "person_id", label: "Responsable", type: "number", required: true },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_proceso", "completada", "cancelada"],
+        defaultValue: "pendiente"
+      },
+      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
+      { name: "unassigned_at", label: "Desasignado", type: "datetime" }
+    ],
+    searchFields: ["status"]
   },
   {
     table: "templates",
@@ -164,8 +247,8 @@ export const SQL_TABLES = [
   },
   {
     table: "persons",
-    label: "Personas",
-    category: "Personas",
+    label: "Usuarios",
+    category: "Usuarios",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -174,8 +257,22 @@ export const SQL_TABLES = [
       { name: "last_name", label: "Apellido", type: "text", required: true },
       { name: "email", label: "Email", type: "email" },
       { name: "whatsapp", label: "Whatsapp", type: "text" },
+      { name: "direccion", label: "Direccion", type: "text" },
+      { name: "pais", label: "Pais", type: "text" },
+      { name: "password_hash", label: "Password Hash", type: "text", required: true },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["Inactivo", "Activo", "Verificado", "Reportado"],
+        defaultValue: "Inactivo"
+      },
+      { name: "verify_email", label: "Email verificado", type: "boolean", defaultValue: 0 },
+      { name: "verify_whatsapp", label: "Whatsapp verificado", type: "boolean", defaultValue: 0 },
+      { name: "photo_url", label: "Foto", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["cedula", "first_name", "last_name", "email"]
   },
@@ -269,7 +366,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "task_id", label: "Tarea", type: "number", required: true },
       {
         name: "status",
         label: "Estado",

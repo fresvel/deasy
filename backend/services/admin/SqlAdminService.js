@@ -1,4 +1,8 @@
 import { getMariaDBPool } from "../../config/mariadb.js";
+import {
+  generateTasksForTerm,
+  updateParentTaskStatusForTask
+} from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 
 const DEFAULT_LIMIT = 50;
@@ -134,10 +138,43 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.person_id) {
         throw new Error("Selecciona un responsable para el proceso.");
       }
-      if (!candidate.term_id) {
-        throw new Error("Selecciona un periodo para el proceso.");
-      }
       ensureAtLeastOne(candidate.unit_id, candidate.program_id, "unidad o programa");
+      break;
+    case "process_versions":
+      if (!candidate.process_id) {
+        throw new Error("Selecciona un proceso base para la version.");
+      }
+      if (!candidate.person_id) {
+        throw new Error("Selecciona un responsable para la version del proceso.");
+      }
+      if (!candidate.version || !/^\d+\.\d+$/.test(String(candidate.version))) {
+        throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
+      }
+      if (!candidate.effective_from) {
+        throw new Error("Selecciona la fecha de vigencia inicial.");
+      }
+      ensureDateOrder(candidate.effective_from, candidate.effective_to, "versiones de proceso");
+      ensureAtLeastOne(candidate.unit_id, candidate.program_id, "unidad o programa");
+      break;
+    case "tasks":
+      if (!candidate.process_id) {
+        throw new Error("Selecciona un proceso para la tarea.");
+      }
+      if (!candidate.process_version_id) {
+        throw new Error("Selecciona la version del proceso para la tarea.");
+      }
+      if (!candidate.term_id) {
+        throw new Error("Selecciona un periodo para la tarea.");
+      }
+      ensureDateOrder(candidate.start_date, candidate.end_date, "tareas");
+      break;
+    case "task_assignments":
+      if (!candidate.task_id) {
+        throw new Error("Selecciona una tarea para asignar.");
+      }
+      if (!candidate.person_id) {
+        throw new Error("Selecciona una persona para la asignacion.");
+      }
       break;
     case "vacancies":
       ensureXor(candidate.unit_id, candidate.program_id, "unidad o programa");
@@ -284,6 +321,9 @@ export default class SqlAdminService {
 
   async create(tableName, data) {
     this.ensurePool();
+    if (tableName === "process_versions") {
+      throw new Error("Las versiones de proceso se gestionan desde la tabla de procesos.");
+    }
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
     const processId = tableName === "templates" ? data?.process_id : null;
@@ -309,12 +349,20 @@ export default class SqlAdminService {
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
 
-    if (tableName !== "templates") {
+    if (tableName !== "templates" && tableName !== "processes") {
       const [result] = await this.pool.query(
         `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
         values
       );
-      return { id: result.insertId, ...payload };
+      const created = { id: result.insertId, ...payload };
+      if (tableName === "terms") {
+        try {
+          await generateTasksForTerm(created.id);
+        } catch (error) {
+          console.warn("⚠️  No se pudo generar tareas para el periodo:", error.message);
+        }
+      }
+      return created;
     }
 
     const connection = await this.pool.getConnection();
@@ -324,13 +372,53 @@ export default class SqlAdminService {
         `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
         values
       );
-      const templateId = result.insertId;
-      await connection.query(
-        "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
-        [processId, templateId]
-      );
+      const insertedId = result.insertId;
+      if (tableName === "templates") {
+        await connection.query(
+          "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
+          [processId, insertedId]
+        );
+      }
+      if (tableName === "processes") {
+        const version = data?.version ?? "0.1";
+        const versionName = data?.version_name ?? "Inicial";
+        const versionSlug = data?.version_slug ?? payload.slug ?? `process-${insertedId}-v${version}`;
+        const effectiveFrom = data?.version_effective_from ?? data?.effective_from ?? null;
+        const effectiveTo = data?.version_effective_to ?? data?.effective_to ?? null;
+        const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
+
+        if (!effectiveFrom) {
+          throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
+        }
+        if (!/^\d+\.\d+$/.test(String(version))) {
+          throw new Error("La version del proceso debe tener formato decimal (ej: 0.1).");
+        }
+        ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
+
+        const versionPayload = {
+          process_id: insertedId,
+          version,
+          name: versionName,
+          slug: versionSlug,
+          parent_version_id: parentVersionId || null,
+          person_id: payload.person_id,
+          unit_id: payload.unit_id ?? null,
+          program_id: payload.program_id ?? null,
+          has_document: payload.has_document ?? 1,
+          is_active: payload.is_active ?? 1,
+          effective_from: effectiveFrom,
+          effective_to: effectiveTo
+        };
+        const versionColumns = Object.keys(versionPayload);
+        const versionValues = versionColumns.map((key) => versionPayload[key]);
+        const versionPlaceholders = versionColumns.map(() => "?").join(", ");
+        await connection.query(
+          `INSERT INTO process_versions (${versionColumns.join(", ")}) VALUES (${versionPlaceholders})`,
+          versionValues
+        );
+      }
       await connection.commit();
-      return { id: templateId, ...payload };
+      return { id: insertedId, ...payload };
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -343,16 +431,43 @@ export default class SqlAdminService {
     this.ensurePool();
     const config = getConfig(tableName);
 
+    if (tableName === "process_versions") {
+      if (Object.prototype.hasOwnProperty.call(data, "version")) {
+        throw new Error("No se puede modificar el numero de version.");
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "process_id")) {
+        throw new Error("No se puede cambiar el proceso de una version.");
+      }
+    }
+
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
     const updates = pickPayload(config.fields, data);
     const processId = tableName === "templates" ? data?.process_id : null;
+    if (tableName === "process_versions") {
+      const allowed = new Set([
+        "name",
+        "slug",
+        "parent_version_id",
+        "person_id",
+        "unit_id",
+        "program_id",
+        "has_document",
+        "is_active",
+        "effective_from",
+        "effective_to"
+      ]);
+      const disallowed = Object.keys(updates).filter((key) => !allowed.has(key));
+      if (disallowed.length) {
+        throw new Error("Solo se permiten cambios en campos descriptivos de la version.");
+      }
+    }
 
     const allowPrimaryKeyUpdate = config.allowPrimaryKeyUpdate === true;
     const columns = Object.keys(updates).filter((column) =>
       allowPrimaryKeyUpdate ? true : !config.primaryKeys.includes(column)
     );
-    if (!columns.length && tableName !== "templates") {
+    if (!columns.length && tableName !== "templates" && tableName !== "processes") {
       throw new Error("No hay cambios para actualizar.");
     }
 
@@ -368,11 +483,15 @@ export default class SqlAdminService {
     validateFieldTypes(config, candidate);
     validateTableRules(tableName, candidate);
 
-    if (tableName !== "templates") {
+    if (tableName !== "templates" && tableName !== "processes") {
       await this.pool.query(
         `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
         [...values, ...params]
       );
+      if (tableName === "tasks" && Object.prototype.hasOwnProperty.call(updates, "status")) {
+        const taskId = existing.id ?? keyPayload.id;
+        await updateParentTaskStatusForTask(taskId);
+      }
       return { ...keyPayload, ...updates };
     }
 
@@ -385,24 +504,77 @@ export default class SqlAdminService {
           [...values, ...params]
         );
       }
-      const templateId = existing.id ?? keyPayload.id;
-      if (processId && Number(processId) > 0) {
-        await connection.query(
-          "DELETE FROM process_templates WHERE template_id = ?",
-          [templateId]
-        );
-        await connection.query(
-          "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
-          [processId, templateId]
-        );
-      } else {
-        const [rows] = await connection.query(
-          "SELECT process_id FROM process_templates WHERE template_id = ? LIMIT 1",
-          [templateId]
-        );
-        if (!rows?.length) {
-          throw new Error("Selecciona un proceso para la plantilla.");
+      if (tableName === "templates") {
+        const templateId = existing.id ?? keyPayload.id;
+        if (processId && Number(processId) > 0) {
+          await connection.query(
+            "DELETE FROM process_templates WHERE template_id = ?",
+            [templateId]
+          );
+          await connection.query(
+            "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
+            [processId, templateId]
+          );
+        } else {
+          const [rows] = await connection.query(
+            "SELECT process_id FROM process_templates WHERE template_id = ? LIMIT 1",
+            [templateId]
+          );
+          if (!rows?.length) {
+            throw new Error("Selecciona un proceso para la plantilla.");
+          }
         }
+      }
+      if (tableName === "processes") {
+        const processRow = { ...existing, ...updates };
+        const version = data?.version ?? data?.version_number ?? null;
+        const effectiveFrom = data?.version_effective_from ?? data?.effective_from ?? null;
+        const effectiveTo = data?.version_effective_to ?? data?.effective_to ?? null;
+        const versionName = data?.version_name ?? processRow.name;
+        const versionSlug = data?.version_slug ?? processRow.slug ?? `process-${processRow.id}-v${version}`;
+        const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
+
+        if (!version) {
+          throw new Error("Debes indicar la nueva version del proceso.");
+        }
+        if (!/^\d+\.\d+$/.test(String(version))) {
+          throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
+        }
+        if (!effectiveFrom) {
+          throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
+        }
+        ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
+
+        let resolvedParentVersionId = parentVersionId;
+        if (!resolvedParentVersionId) {
+          const [rows] = await connection.query(
+            "SELECT id FROM process_versions WHERE process_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+            [processRow.id]
+          );
+          resolvedParentVersionId = rows?.[0]?.id ?? null;
+        }
+
+        const versionPayload = {
+          process_id: processRow.id,
+          version: String(version),
+          name: versionName,
+          slug: versionSlug,
+          parent_version_id: resolvedParentVersionId,
+          person_id: processRow.person_id,
+          unit_id: processRow.unit_id ?? null,
+          program_id: processRow.program_id ?? null,
+          has_document: processRow.has_document ?? 1,
+          is_active: processRow.is_active ?? 1,
+          effective_from: effectiveFrom,
+          effective_to: effectiveTo
+        };
+        const versionColumns = Object.keys(versionPayload);
+        const versionValues = versionColumns.map((key) => versionPayload[key]);
+        const versionPlaceholders = versionColumns.map(() => "?").join(", ");
+        await connection.query(
+          `INSERT INTO process_versions (${versionColumns.join(", ")}) VALUES (${versionPlaceholders})`,
+          versionValues
+        );
       }
       await connection.commit();
       return { ...keyPayload, ...updates };
@@ -416,6 +588,9 @@ export default class SqlAdminService {
 
   async remove(tableName, keys) {
     this.ensurePool();
+    if (tableName === "process_versions") {
+      throw new Error("Las versiones de proceso se gestionan desde la tabla de procesos.");
+    }
     const config = getConfig(tableName);
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);

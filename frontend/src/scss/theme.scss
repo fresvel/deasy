@@ -33,6 +33,9 @@
 
   --input-height: 52px;
   --font-base: 'Montserrat', Helvetica, sans-serif;
+  --font-size-base: 1rem;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
 }
 
 *,
@@ -73,7 +76,8 @@ a:hover {
   border-radius: var(--radius-md);
   border: 1px solid var(--brand-border);
   box-shadow: var(--brand-shadow-soft);
-  font-size: 1rem;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
   color: var(--brand-navy);
 }
 
@@ -321,4 +325,46 @@ a:hover {
 .modal .modal-footer {
   font-size: 1.2rem;
   font-weight: 400;
+}
+
+.process-modal-content,
+.process-modal-content .modal-header,
+.process-modal-content .modal-body,
+.process-modal-content .modal-footer,
+.process-modal-content .modal-title,
+.process-modal-content .form-label,
+.process-modal-content .form-control,
+.process-modal-content .form-select,
+.process-modal-content .alert,
+.process-modal-content .btn {
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  color: var(--brand-ink);
+}
+
+.process-modal-content .modal-header,
+.process-modal-content .modal-header .modal-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--brand-ink);
+}
+
+.process-modal-content .form-label {
+  color: var(--brand-ink);
+}
+
+.process-modal-content .modal-body,
+.process-modal-content .modal-body p,
+.process-modal-content .modal-body small,
+.process-modal-content .modal-body .text-muted,
+.process-modal-content .modal-body .alert,
+.process-modal-content .modal-footer,
+.process-modal-content .modal-footer .text-muted {
+  color: var(--brand-ink);
+}
+
+.process-modal-content .btn-primary,
+.process-modal-content .btn-primary:hover,
+.process-modal-content .btn-primary:focus {
+  color: var(--brand-white);
 }

@@ -9,7 +9,7 @@
 
 ## Entidades clave
 
-- persons: datos base de personas
+- persons: datos base de usuarios
 - users: usuarios/autenticacion (modelo en backend/models/users/)
 - processes: procesos de negocio
 - templates: plantillas
@@ -20,4 +20,3 @@
 - ER/MER: modelo entidad-relacion
 - ACL: access control list
 - HMR: hot module reload
-

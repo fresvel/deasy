@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid py-4">
     <div class="profile-section-header">
-      <div>
+      <div v-if="!isPersonTable">
         <h2 class="text-start profile-section-title">
           {{ table?.label || "Administracion SQL" }}
         </h2>
@@ -22,7 +22,15 @@
           <button
             class="btn btn-primary btn-lg profile-add-btn"
             type="button"
-            :disabled="!table"
+            :disabled="!table || !isProcessTable"
+            @click="openProcessVersionsModal"
+          >
+            Versiones
+          </button>
+          <button
+            class="btn btn-primary btn-lg profile-add-btn"
+            type="button"
+            :disabled="!table || isProcessVersionsTable"
             @click="openCreate"
           >
             <font-awesome-icon icon="plus" class="me-2" />
@@ -107,13 +115,13 @@
                           class="dropdown-menu dropdown-menu-end"
                           :class="{ show: openDropdownId === rowKey(row) }"
                         >
-                          <li>
+                          <li v-if="!isProcessVersionsTable">
                             <button class="dropdown-item" type="button" @click="openEdit(row); closeDropdown()">
                               <font-awesome-icon icon="edit" class="me-2" />
                               Editar
                             </button>
                           </li>
-                          <li>
+                          <li v-if="!isProcessVersionsTable">
                             <button class="dropdown-item text-danger" type="button" @click="openDelete(row); closeDropdown()">
                               <font-awesome-icon icon="trash" class="me-2" />
                               Eliminar
@@ -141,10 +149,14 @@
       ref="editorModal"
     >
       <div class="modal-dialog modal-xl">
-        <div class="modal-content">
+        <div class="modal-content" :class="{ 'process-modal-content': isProcessTable }">
           <div class="modal-header">
             <h5 class="modal-title" id="sqlEditorModalLabel">
-              {{ editorMode === "create" ? "Crear registro" : "Editar registro" }}
+              {{
+                editorMode === "create"
+                  ? `Añadir ${table?.label || "registro"}`
+                  : "Editar registro"
+              }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
@@ -245,7 +257,369 @@
                   </button>
                 </div>
               </div>
+              <template v-if="isProcessTable">
+                <div class="col-12">
+                  <div class="alert alert-warning mb-0">
+                    Al actualizar un proceso se generara una nueva version. Completa los datos de la version.
+                  </div>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Version</label>
+                  <input
+                    v-model="processVersionForm.version"
+                    type="text"
+                    class="form-control"
+                    placeholder="0.1"
+                  />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Nombre de version</label>
+                  <input
+                    v-model="processVersionForm.name"
+                    type="text"
+                    class="form-control"
+                    placeholder="Inicial"
+                  />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Slug de version</label>
+                  <input
+                    v-model="processVersionForm.slug"
+                    type="text"
+                    class="form-control"
+                    placeholder="Opcional"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label text-dark">Vigencia desde</label>
+                  <input
+                    v-model="processVersionForm.effective_from"
+                    type="date"
+                    class="form-control"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label text-dark">Vigencia hasta</label>
+                  <input
+                    v-model="processVersionForm.effective_to"
+                    type="date"
+                    class="form-control"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label text-dark">Version padre</label>
+                  <div class="input-group">
+                    <input
+                      v-model="processVersionForm.parent_version_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Opcional"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      @click="openProcessVersionParentSearch"
+                    >
+                      Buscar
+                    </button>
+                  </div>
+                </div>
+              </template>
             </form>
+
+            <template v-if="isPersonTable">
+              <div class="border-top pt-4 mt-4">
+                <h6 class="text-uppercase text-muted mb-3">Asignaciones del usuario</h6>
+                <div v-if="!personEditorId" class="alert alert-info">
+                  Guarda el usuario para poder asignar cargos, roles y contratos.
+                </div>
+
+                <div class="row g-4">
+                  <div class="col-12">
+                    <h6 class="mb-2">Cargos</h6>
+                    <div v-if="personCargoError" class="alert alert-danger">{{ personCargoError }}</div>
+                    <div class="table-responsive mb-3">
+                      <table class="table table-sm table-striped align-middle">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Cargo</th>
+                            <th>Unidad</th>
+                            <th>Programa</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Actual</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-if="personCargoRows.length === 0">
+                            <td colspan="7" class="text-center text-muted">Sin cargos asignados.</td>
+                          </tr>
+                          <tr v-for="row in personCargoRows" :key="row.id">
+                            <td>{{ row.id }}</td>
+                            <td>{{ formatCell(row.cargo_id, { name: "cargo_id" }) }}</td>
+                            <td>{{ formatCell(row.unit_id, { name: "unit_id" }) }}</td>
+                            <td>{{ formatCell(row.program_id, { name: "program_id" }) }}</td>
+                            <td>{{ toDateInputValue(row.start_date) }}</td>
+                            <td>{{ toDateInputValue(row.end_date) || "—" }}</td>
+                            <td>{{ Number(row.is_current) === 1 ? "Si" : "No" }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="row g-3">
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Cargo</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personCargoLabels.cargo_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona un cargo"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('cargo_id')">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Unidad</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personCargoLabels.unit_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona una unidad"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('unit_id')">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Programa</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personCargoLabels.program_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona un programa"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('program_id')">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Inicio</label>
+                        <input v-model="personCargoForm.start_date" type="date" class="form-control" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Fin</label>
+                        <input v-model="personCargoForm.end_date" type="date" class="form-control" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Actual</label>
+                        <select v-model="personCargoForm.is_current" class="form-select">
+                          <option value="1">Si</option>
+                          <option value="0">No</option>
+                        </select>
+                      </div>
+                      <div class="col-12 text-end">
+                        <button class="btn btn-outline-primary" type="button" @click="submitPersonCargoCreate">
+                          Agregar cargo
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <h6 class="mb-2">Roles</h6>
+                    <div v-if="personRoleError" class="alert alert-danger">{{ personRoleError }}</div>
+                    <div class="table-responsive mb-3">
+                      <table class="table table-sm table-striped align-middle">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Rol</th>
+                            <th>Unidad</th>
+                            <th>Programa</th>
+                            <th>Asignado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-if="personRoleRows.length === 0">
+                            <td colspan="5" class="text-center text-muted">Sin roles asignados.</td>
+                          </tr>
+                          <tr v-for="row in personRoleRows" :key="row.id">
+                            <td>{{ row.id }}</td>
+                            <td>{{ formatCell(row.role_id, { name: "role_id" }) }}</td>
+                            <td>{{ formatCell(row.unit_id, { name: "unit_id" }) }}</td>
+                            <td>{{ formatCell(row.program_id, { name: "program_id" }) }}</td>
+                            <td>{{ row.assigned_at ?? "—" }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="row g-3">
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Rol</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personRoleLabels.role_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona un rol"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonRoleFkSearch('role_id')">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Unidad</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personRoleLabels.unit_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona una unidad"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonRoleFkSearch('unit_id')">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Programa</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personRoleLabels.program_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona un programa"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonRoleFkSearch('program_id')">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 text-end">
+                        <button class="btn btn-outline-primary" type="button" @click="submitPersonRoleCreate">
+                          Agregar rol
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <h6 class="mb-2">Contratos / Vacantes</h6>
+                    <div v-if="personContractError" class="alert alert-danger">{{ personContractError }}</div>
+                    <div class="table-responsive mb-3">
+                      <table class="table table-sm table-striped align-middle">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Vacante</th>
+                            <th>Relacion</th>
+                            <th>Dedicacion</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-if="personContractRows.length === 0">
+                            <td colspan="7" class="text-center text-muted">Sin contratos asignados.</td>
+                          </tr>
+                          <tr v-for="row in personContractRows" :key="row.id">
+                            <td>{{ row.id }}</td>
+                            <td>{{ formatCell(row.vacancy_id, { name: "vacancy_id" }) }}</td>
+                            <td>{{ row.relation_type }}</td>
+                            <td>{{ row.dedication }}</td>
+                            <td>{{ toDateInputValue(row.start_date) }}</td>
+                            <td>{{ toDateInputValue(row.end_date) || "—" }}</td>
+                            <td>{{ row.status }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="row g-3">
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Vacante</label>
+                        <div class="input-group">
+                          <input
+                            v-model="personContractLabels.vacancy_id"
+                            type="text"
+                            class="form-control"
+                            placeholder="Selecciona una vacante"
+                            readonly
+                            @keydown.prevent
+                            @paste.prevent
+                          />
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonContractFkSearch">
+                            Buscar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Relacion</label>
+                        <input v-model="personContractForm.relation_type" type="text" class="form-control" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Dedicacion</label>
+                        <input v-model="personContractForm.dedication" type="text" class="form-control" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Inicio</label>
+                        <input v-model="personContractForm.start_date" type="date" class="form-control" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Fin</label>
+                        <input v-model="personContractForm.end_date" type="date" class="form-control" />
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <label class="form-label text-dark">Estado</label>
+                        <select v-model="personContractForm.status" class="form-select">
+                          <option value="activo">activo</option>
+                          <option value="finalizado">finalizado</option>
+                          <option value="suspendido">suspendido</option>
+                        </select>
+                      </div>
+                      <div class="col-12 text-end">
+                        <button class="btn btn-outline-primary" type="button" @click="submitPersonContractCreate">
+                          Agregar contrato
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
@@ -258,6 +632,177 @@
         </div>
       </div>
     </div>
+
+    <div
+      class="modal fade"
+      id="processVersionEditorModal"
+      tabindex="-1"
+      aria-labelledby="processVersionEditorModalLabel"
+      aria-hidden="true"
+      ref="processVersionModal"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content process-modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="processVersionEditorModalLabel">Editar versiones de proceso</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="processVersionError" class="alert alert-danger mb-3">
+              {{ processVersionError }}
+            </div>
+            <form class="row g-3">
+              <div class="col-12">
+                <label class="form-label text-dark">Proceso</label>
+                <div class="input-group">
+                  <input
+                    v-model="processVersionProcessLabel"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona un proceso"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionProcessSearch">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label text-dark">Version</label>
+                <select v-model="selectedProcessVersionId" class="form-select" @change="handleProcessVersionSelect">
+                  <option value="">Selecciona una version</option>
+                  <option
+                    v-for="versionRow in processVersionRows"
+                    :key="versionRow.id"
+                    :value="String(versionRow.id)"
+                  >
+                    {{ `v${versionRow.version} - ${versionRow.name}` }}
+                  </option>
+                </select>
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-4">
+                <label class="form-label text-dark">Version</label>
+                <input v-model="processVersionEditForm.version" type="text" class="form-control" readonly />
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-8">
+                <label class="form-label text-dark">Nombre</label>
+                <input v-model="processVersionEditForm.name" type="text" class="form-control" />
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Slug</label>
+                <input v-model="processVersionEditForm.slug" type="text" class="form-control" />
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Version padre</label>
+                <div class="input-group">
+                  <input
+                    v-model="processVersionEditLabels.parent_version_id"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona una version"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('parent_version_id')">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Responsable</label>
+                <div class="input-group">
+                  <input
+                    v-model="processVersionEditLabels.person_id"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona un responsable"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('person_id')">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Unidad</label>
+                <div class="input-group">
+                  <input
+                    v-model="processVersionEditLabels.unit_id"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona una unidad"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('unit_id')">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Programa</label>
+                <div class="input-group">
+                  <input
+                    v-model="processVersionEditLabels.program_id"
+                    type="text"
+                    class="form-control"
+                    placeholder="Selecciona un programa"
+                    readonly
+                    @keydown.prevent
+                    @paste.prevent
+                  />
+                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('program_id')">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Vigencia desde</label>
+                <input v-model="processVersionEditForm.effective_from" type="date" class="form-control" />
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Vigencia hasta</label>
+                <input v-model="processVersionEditForm.effective_to" type="date" class="form-control" />
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Tiene documento</label>
+                <select v-model="processVersionEditForm.has_document" class="form-select">
+                  <option value="1">Si</option>
+                  <option value="0">No</option>
+                </select>
+              </div>
+              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
+                <label class="form-label text-dark">Activo</label>
+                <select v-model="processVersionEditForm.is_active" class="form-select">
+                  <option value="1">Si</option>
+                  <option value="0">No</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="!processVersionEditForm.id"
+              @click="submitProcessVersionEdit"
+            >
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <div
       class="modal fade"
@@ -437,27 +982,6 @@
                   </button>
                 </div>
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Periodo</label>
-                <div class="input-group">
-                  <input
-                    v-model="processFilterLabels.term_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona un periodo"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="openProcessFkSearch('term_id')"
-                  >
-                    Buscar
-                  </button>
-                </div>
-              </div>
               <div class="col-12 col-md-6">
                 <label class="form-label text-dark">Tiene documento</label>
                 <select v-model="processFilters.has_document" class="form-select">
@@ -574,13 +1098,13 @@
           <div class="modal-body">
             <div class="row g-3">
               <div class="col-12">
-                <label class="form-label text-dark">Proceso</label>
+                <label class="form-label text-dark">Tarea</label>
                 <div class="input-group">
                   <input
-                    v-model="documentFilterLabels.process_id"
+                    v-model="documentFilterLabels.task_id"
                     type="text"
                     class="form-control"
-                    placeholder="Selecciona un proceso"
+                    placeholder="Selecciona una tarea"
                     readonly
                     @keydown.prevent
                     @paste.prevent
@@ -588,7 +1112,7 @@
                   <button
                     class="btn btn-outline-secondary"
                     type="button"
-                    @click="openDocumentFkSearch('process_id')"
+                    @click="openDocumentFkSearch('task_id')"
                   >
                     Buscar
                   </button>
@@ -673,15 +1197,13 @@ const processFilters = ref({
   unit_id: "",
   program_id: "",
   parent_id: "",
-  term_id: "",
   has_document: "",
   is_active: ""
 });
 const processFilterLabels = ref({
   unit_id: "",
   program_id: "",
-  parent_id: "",
-  term_id: ""
+  parent_id: ""
 });
 const templateFilters = ref({
   name: "",
@@ -695,13 +1217,11 @@ const templateFilterLabels = ref({
 const templateProcessId = ref("");
 const templateProcessLabel = ref("");
 const documentFilters = ref({
-  process_id: "",
-  term_id: "",
+  task_id: "",
   status: ""
 });
 const documentFilterLabels = ref({
-  process_id: "",
-  term_id: ""
+  task_id: ""
 });
 const templateSearchModal = ref(null);
 let templateSearchInstance = null;
@@ -709,6 +1229,82 @@ const documentSearchModal = ref(null);
 let documentSearchInstance = null;
 const processSearchModal = ref(null);
 let processSearchInstance = null;
+const processVersionModal = ref(null);
+let processVersionInstance = null;
+const processVersionForm = ref({
+  version: "0.1",
+  name: "Inicial",
+  slug: "",
+  effective_from: "",
+  effective_to: "",
+  parent_version_id: ""
+});
+const processVersionError = ref("");
+const processVersionProcessId = ref("");
+const processVersionProcessLabel = ref("");
+const processVersionRows = ref([]);
+const selectedProcessVersionId = ref("");
+const processVersionEditForm = ref({
+  id: "",
+  version: "",
+  name: "",
+  slug: "",
+  parent_version_id: "",
+  person_id: "",
+  unit_id: "",
+  program_id: "",
+  has_document: "1",
+  is_active: "1",
+  effective_from: "",
+  effective_to: ""
+});
+const processVersionEditLabels = ref({
+  parent_version_id: "",
+  person_id: "",
+  unit_id: "",
+  program_id: ""
+});
+const personEditorId = ref("");
+const personCargoRows = ref([]);
+const personCargoError = ref("");
+const personCargoForm = ref({
+  cargo_id: "",
+  unit_id: "",
+  program_id: "",
+  start_date: "",
+  end_date: "",
+  is_current: "1"
+});
+const personCargoLabels = ref({
+  cargo_id: "",
+  unit_id: "",
+  program_id: ""
+});
+const personRoleRows = ref([]);
+const personRoleError = ref("");
+const personRoleForm = ref({
+  role_id: "",
+  unit_id: "",
+  program_id: ""
+});
+const personRoleLabels = ref({
+  role_id: "",
+  unit_id: "",
+  program_id: ""
+});
+const personContractRows = ref([]);
+const personContractError = ref("");
+const personContractForm = ref({
+  vacancy_id: "",
+  relation_type: "",
+  dedication: "",
+  start_date: "",
+  end_date: "",
+  status: "activo"
+});
+const personContractLabels = ref({
+  vacancy_id: ""
+});
 
 const editableFields = computed(() => {
   if (!props.table) {
@@ -730,10 +1326,14 @@ const formFields = computed(() => {
 });
 
 const isTemplateTable = computed(() => props.table?.table === "templates");
+const isProcessTable = computed(() => props.table?.table === "processes");
+const isProcessVersionsTable = computed(() => props.table?.table === "process_versions");
+const isPersonTable = computed(() => props.table?.table === "persons");
 
 const allTablesMap = computed(() =>
   Object.fromEntries(props.allTables.map((table) => [table.table, table]))
 );
+const fkLabelCache = ref({});
 
 const rowKey = (row) => {
   if (!props.table) {
@@ -748,6 +1348,15 @@ const formatCell = (value, field) => {
   }
   if (field.type === "boolean") {
     return Number(value) === 1 ? "Si" : "No";
+  }
+  if (isForeignKeyField(field)) {
+    const tableName = resolveFkTable(field.name);
+    if (!tableName) {
+      return value;
+    }
+    const cache = fkLabelCache.value[tableName];
+    const label = cache?.[value];
+    return label ?? value;
   }
   return value;
 };
@@ -802,6 +1411,9 @@ const ensureFkInstance = () => {
       if (returnModal === "documentSearch" && documentSearchInstance) {
         documentSearchInstance.show();
       }
+      if (returnModal === "processVersionEditor" && processVersionInstance) {
+        processVersionInstance.show();
+      }
       returnModal = null;
     });
   }
@@ -812,6 +1424,13 @@ const ensureProcessSearchInstance = () => {
     processSearchInstance = new Modal(processSearchModal.value);
   }
 };
+
+const ensureProcessVersionInstance = () => {
+  if (!processVersionInstance && processVersionModal.value) {
+    processVersionInstance = new Modal(processVersionModal.value);
+  }
+};
+
 
 const ensureTemplateSearchInstance = () => {
   if (!templateSearchInstance && templateSearchModal.value) {
@@ -843,6 +1462,17 @@ const resetForm = () => {
     payload[field.name] = field.defaultValue ?? "";
   });
   formData.value = payload;
+};
+
+const resetProcessVersionForm = (mode = "create") => {
+  processVersionForm.value = {
+    version: mode === "create" ? "0.1" : "",
+    name: mode === "create" ? "Inicial" : "",
+    slug: "",
+    effective_from: "",
+    effective_to: "",
+    parent_version_id: ""
+  };
 };
 
 const buildFormFromRow = (row) => {
@@ -916,13 +1546,18 @@ const buildPayload = () => {
 
 const FK_TABLE_MAP = {
   parent_id: "processes",
+  parent_task_id: "tasks",
+  parent_version_id: "process_versions",
   process_id: "processes",
+  process_version_id: "process_versions",
   term_id: "terms",
+  task_id: "tasks",
   unit_id: "units",
   program_id: "programs",
   template_id: "templates",
   document_id: "documents",
   person_id: "persons",
+  responsible_person_id: "persons",
   role_id: "roles",
   permission_id: "permissions",
   cargo_id: "cargos",
@@ -941,6 +1576,58 @@ const resolveDisplayField = (tableMeta) => {
   const preferred = ["name", "title", "email", "code", "slug"];
   const match = preferred.find((field) => tableMeta.fields.some((meta) => meta.name === field));
   return match || tableMeta.fields.find((meta) => meta.name !== "id")?.name || "id";
+};
+
+const setFkLabel = (tableName, id, label) => {
+  if (!tableName || id === null || id === undefined || id === "") {
+    return;
+  }
+  if (!fkLabelCache.value[tableName]) {
+    fkLabelCache.value[tableName] = {};
+  }
+  fkLabelCache.value[tableName][id] = label;
+};
+
+const fetchFkLabel = async (tableName, id) => {
+  if (!tableName || id === null || id === undefined || id === "") {
+    return;
+  }
+  if (fkLabelCache.value[tableName]?.[id] !== undefined) {
+    return;
+  }
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(tableName), {
+      params: { filter_id: id, limit: 1 }
+    });
+    const row = response.data?.[0];
+    const displayField = resolveDisplayField(allTablesMap.value?.[tableName]);
+    const label = row ? String(row[displayField] ?? row.id ?? id) : String(id);
+    setFkLabel(tableName, id, label);
+  } catch (error) {
+    setFkLabel(tableName, id, String(id));
+  }
+};
+
+const prefetchFkLabelsForRows = async (rowsToScan, fieldNames) => {
+  if (!rowsToScan?.length || !fieldNames?.length) {
+    return;
+  }
+  const tasks = [];
+  fieldNames.forEach((fieldName) => {
+    const tableName = resolveFkTable(fieldName);
+    if (!tableName) {
+      return;
+    }
+    const ids = Array.from(
+      new Set(
+        rowsToScan
+          .map((row) => row?.[fieldName])
+          .filter((value) => value !== null && value !== undefined && value !== "")
+      )
+    );
+    ids.forEach((id) => tasks.push(fetchFkLabel(tableName, id)));
+  });
+  await Promise.all(tasks);
 };
 
 const fetchFkRows = async () => {
@@ -985,6 +1672,10 @@ const openFkSearch = async (field, onSelect = null) => {
   if (documentSearchInstance && documentSearchModal.value?.classList.contains("show")) {
     documentSearchInstance.hide();
     returnModal = "documentSearch";
+  }
+  if (processVersionInstance && processVersionModal.value?.classList.contains("show")) {
+    processVersionInstance.hide();
+    returnModal = "processVersionEditor";
   }
   fkSetter.value = onSelect;
   fkField.value = field.name;
@@ -1069,6 +1760,10 @@ const fetchRows = async () => {
       }
     });
     rows.value = response.data || [];
+    const fkFields = props.table.fields
+      .filter((field) => isForeignKeyField(field))
+      .map((field) => field.name);
+    await prefetchFkLabelsForRows(rows.value, fkFields);
   } catch (err) {
     error.value = err?.response?.data?.message || "No se pudo cargar la informacion.";
   } finally {
@@ -1144,15 +1839,13 @@ const clearProcessFilter = async () => {
     unit_id: "",
     program_id: "",
     parent_id: "",
-    term_id: "",
     has_document: "",
     is_active: ""
   };
   processFilterLabels.value = {
     unit_id: "",
     program_id: "",
-    parent_id: "",
-    term_id: ""
+    parent_id: ""
   };
   await fetchRows();
 };
@@ -1182,13 +1875,11 @@ const applyDocumentFilter = async () => {
 
 const clearDocumentFilter = async () => {
   documentFilters.value = {
-    process_id: "",
-    term_id: "",
+    task_id: "",
     status: ""
   };
   documentFilterLabels.value = {
-    process_id: "",
-    term_id: ""
+    task_id: ""
   };
   await fetchRows();
 };
@@ -1244,6 +1935,473 @@ const openProcessFkSearch = (fieldName) => {
       [fieldName]: labelValue ? String(labelValue) : ""
     };
   });
+};
+
+const openProcessVersionParentSearch = () => {
+  openFkSearch({ name: "parent_version_id" }, (row) => {
+    const idValue = row.id ?? "";
+    processVersionForm.value = {
+      ...processVersionForm.value,
+      parent_version_id: idValue ? String(idValue) : ""
+    };
+  });
+};
+
+const resetProcessVersionEditor = () => {
+  processVersionError.value = "";
+  processVersionProcessId.value = "";
+  processVersionProcessLabel.value = "";
+  processVersionRows.value = [];
+  selectedProcessVersionId.value = "";
+  processVersionEditForm.value = {
+    id: "",
+    version: "",
+    name: "",
+    slug: "",
+    parent_version_id: "",
+    person_id: "",
+    unit_id: "",
+    program_id: "",
+    has_document: "1",
+    is_active: "1",
+    effective_from: "",
+    effective_to: ""
+  };
+  processVersionEditLabels.value = {
+    parent_version_id: "",
+    person_id: "",
+    unit_id: "",
+    program_id: ""
+  };
+};
+
+const openProcessVersionsModal = () => {
+  if (!isProcessTable.value) {
+    return;
+  }
+  resetProcessVersionEditor();
+  ensureProcessVersionInstance();
+  processVersionInstance?.show();
+};
+
+const resetPersonAssignments = () => {
+  personEditorId.value = "";
+  personCargoRows.value = [];
+  personRoleRows.value = [];
+  personContractRows.value = [];
+  personCargoError.value = "";
+  personRoleError.value = "";
+  personContractError.value = "";
+  personCargoForm.value = {
+    cargo_id: "",
+    unit_id: "",
+    program_id: "",
+    start_date: "",
+    end_date: "",
+    is_current: "1"
+  };
+  personCargoLabels.value = {
+    cargo_id: "",
+    unit_id: "",
+    program_id: ""
+  };
+  personRoleForm.value = {
+    role_id: "",
+    unit_id: "",
+    program_id: ""
+  };
+  personRoleLabels.value = {
+    role_id: "",
+    unit_id: "",
+    program_id: ""
+  };
+  personContractForm.value = {
+    vacancy_id: "",
+    relation_type: "",
+    dedication: "",
+    start_date: "",
+    end_date: "",
+    status: "activo"
+  };
+  personContractLabels.value = {
+    vacancy_id: ""
+  };
+};
+
+
+const fetchProcessVersions = async () => {
+  if (!processVersionProcessId.value) {
+    processVersionRows.value = [];
+    return;
+  }
+  processVersionError.value = "";
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_versions"), {
+      params: {
+        filter_process_id: processVersionProcessId.value,
+        orderBy: "created_at",
+        order: "desc",
+        limit: 100
+      }
+    });
+    processVersionRows.value = response.data || [];
+  } catch (err) {
+    processVersionError.value = err?.response?.data?.message || "No se pudo cargar las versiones.";
+  }
+};
+
+const loadPersonAssignments = async (personId) => {
+  if (!personId) {
+    resetPersonAssignments();
+    return;
+  }
+  personEditorId.value = String(personId);
+  personCargoError.value = "";
+  personRoleError.value = "";
+  personContractError.value = "";
+  try {
+    const [cargoRes, roleRes, contractRes] = await Promise.all([
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("person_cargos"), {
+        params: { filter_person_id: personId, orderBy: "start_date", order: "desc", limit: 200 }
+      }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("role_assignments"), {
+        params: { filter_person_id: personId, orderBy: "assigned_at", order: "desc", limit: 200 }
+      }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("contracts"), {
+        params: { filter_person_id: personId, orderBy: "start_date", order: "desc", limit: 200 }
+      })
+    ]);
+    personCargoRows.value = cargoRes.data || [];
+    personRoleRows.value = roleRes.data || [];
+    personContractRows.value = contractRes.data || [];
+    await prefetchFkLabelsForRows(personCargoRows.value, ["cargo_id", "unit_id", "program_id"]);
+    await prefetchFkLabelsForRows(personRoleRows.value, ["role_id", "unit_id", "program_id"]);
+    await prefetchFkLabelsForRows(personContractRows.value, ["vacancy_id"]);
+  } catch (error) {
+    personCargoError.value = personCargoError.value || "No se pudo cargar cargos.";
+    personRoleError.value = personRoleError.value || "No se pudo cargar roles.";
+    personContractError.value = personContractError.value || "No se pudo cargar contratos.";
+  }
+};
+
+const openProcessVersionProcessSearch = () => {
+  openFkSearch({ name: "process_id" }, async (row) => {
+    const idValue = row.id ?? "";
+    processVersionProcessId.value = idValue ? String(idValue) : "";
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    processVersionProcessLabel.value = labelValue ? String(labelValue) : "";
+    selectedProcessVersionId.value = "";
+    processVersionEditForm.value = {
+      id: "",
+      version: "",
+      name: "",
+      slug: "",
+      parent_version_id: "",
+      person_id: "",
+      unit_id: "",
+      program_id: "",
+      has_document: "1",
+      is_active: "1",
+      effective_from: "",
+      effective_to: ""
+    };
+    processVersionEditLabels.value = {
+      parent_version_id: "",
+      person_id: "",
+      unit_id: "",
+      program_id: ""
+    };
+    await fetchProcessVersions();
+  });
+};
+
+const handleProcessVersionSelect = () => {
+  const selectedId = selectedProcessVersionId.value;
+  if (!selectedId) {
+    processVersionEditForm.value = {
+      id: "",
+      version: "",
+      name: "",
+      slug: "",
+      parent_version_id: "",
+      person_id: "",
+      unit_id: "",
+      program_id: "",
+      has_document: "1",
+      is_active: "1",
+      effective_from: "",
+      effective_to: ""
+    };
+    processVersionEditLabels.value = {
+      parent_version_id: "",
+      person_id: "",
+      unit_id: "",
+      program_id: ""
+    };
+    return;
+  }
+  const row = processVersionRows.value.find((item) => String(item.id) === String(selectedId));
+  if (!row) {
+    return;
+  }
+  processVersionEditForm.value = {
+    id: row.id ?? "",
+    version: row.version ?? "",
+    name: row.name ?? "",
+    slug: row.slug ?? "",
+    parent_version_id: row.parent_version_id ?? "",
+    person_id: row.person_id ?? "",
+    unit_id: row.unit_id ?? "",
+    program_id: row.program_id ?? "",
+    has_document: String(Number(row.has_document ?? 1) === 1 ? 1 : 0),
+    is_active: String(Number(row.is_active ?? 1) === 1 ? 1 : 0),
+    effective_from: toDateInputValue(row.effective_from),
+    effective_to: toDateInputValue(row.effective_to)
+  };
+  processVersionEditLabels.value = {
+    parent_version_id: row.parent_version_id ? String(row.parent_version_id) : "",
+    person_id: row.person_id ? String(row.person_id) : "",
+    unit_id: row.unit_id ? String(row.unit_id) : "",
+    program_id: row.program_id ? String(row.program_id) : ""
+  };
+};
+
+const openProcessVersionFkSearch = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  openFkSearch({ name: fieldName }, (row) => {
+    const idValue = row.id ?? "";
+    processVersionEditForm.value = {
+      ...processVersionEditForm.value,
+      [fieldName]: idValue ? String(idValue) : ""
+    };
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    processVersionEditLabels.value = {
+      ...processVersionEditLabels.value,
+      [fieldName]: labelValue ? String(labelValue) : ""
+    };
+  });
+};
+
+const openPersonCargoFkSearch = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  openFkSearch({ name: fieldName }, (row) => {
+    const idValue = row.id ?? "";
+    personCargoForm.value = {
+      ...personCargoForm.value,
+      [fieldName]: idValue ? String(idValue) : ""
+    };
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    personCargoLabels.value = {
+      ...personCargoLabels.value,
+      [fieldName]: labelValue ? String(labelValue) : ""
+    };
+  });
+};
+
+const openPersonRoleFkSearch = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  openFkSearch({ name: fieldName }, (row) => {
+    const idValue = row.id ?? "";
+    personRoleForm.value = {
+      ...personRoleForm.value,
+      [fieldName]: idValue ? String(idValue) : ""
+    };
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    personRoleLabels.value = {
+      ...personRoleLabels.value,
+      [fieldName]: labelValue ? String(labelValue) : ""
+    };
+  });
+};
+
+const openPersonContractFkSearch = () => {
+  openFkSearch({ name: "vacancy_id" }, (row) => {
+    const idValue = row.id ?? "";
+    personContractForm.value = {
+      ...personContractForm.value,
+      vacancy_id: idValue ? String(idValue) : ""
+    };
+    const displayField = resolveDisplayField(fkTable.value);
+    const labelValue = row[displayField] ?? row.id;
+    personContractLabels.value = {
+      vacancy_id: labelValue ? String(labelValue) : ""
+    };
+  });
+};
+
+const submitPersonCargoCreate = async () => {
+  if (!personEditorId.value) {
+    personCargoError.value = "Guarda el usuario antes de asignar cargos.";
+    return;
+  }
+  personCargoError.value = "";
+  const payload = {
+    person_id: Number(personEditorId.value),
+    cargo_id: personCargoForm.value.cargo_id ? Number(personCargoForm.value.cargo_id) : null,
+    unit_id: personCargoForm.value.unit_id ? Number(personCargoForm.value.unit_id) : null,
+    program_id: personCargoForm.value.program_id ? Number(personCargoForm.value.program_id) : null,
+    start_date: personCargoForm.value.start_date,
+    end_date: personCargoForm.value.end_date || null,
+    is_current: Number(personCargoForm.value.is_current) === 1 ? 1 : 0
+  };
+  if (!payload.cargo_id) {
+    personCargoError.value = "Selecciona un cargo.";
+    return;
+  }
+  if (!payload.start_date) {
+    personCargoError.value = "Selecciona la fecha de inicio.";
+    return;
+  }
+  try {
+    await axios.post(API_ROUTES.ADMIN_SQL_TABLE("person_cargos"), payload);
+    await loadPersonAssignments(personEditorId.value);
+    personCargoForm.value = {
+      cargo_id: "",
+      unit_id: "",
+      program_id: "",
+      start_date: "",
+      end_date: "",
+      is_current: "1"
+    };
+    personCargoLabels.value = {
+      cargo_id: "",
+      unit_id: "",
+      program_id: ""
+    };
+  } catch (err) {
+    personCargoError.value = err?.response?.data?.message || "No se pudo guardar el cargo.";
+  }
+};
+
+const submitPersonRoleCreate = async () => {
+  if (!personEditorId.value) {
+    personRoleError.value = "Guarda el usuario antes de asignar roles.";
+    return;
+  }
+  personRoleError.value = "";
+  const payload = {
+    person_id: Number(personEditorId.value),
+    role_id: personRoleForm.value.role_id ? Number(personRoleForm.value.role_id) : null,
+    unit_id: personRoleForm.value.unit_id ? Number(personRoleForm.value.unit_id) : null,
+    program_id: personRoleForm.value.program_id ? Number(personRoleForm.value.program_id) : null
+  };
+  if (!payload.role_id) {
+    personRoleError.value = "Selecciona un rol.";
+    return;
+  }
+  try {
+    await axios.post(API_ROUTES.ADMIN_SQL_TABLE("role_assignments"), payload);
+    await loadPersonAssignments(personEditorId.value);
+    personRoleForm.value = {
+      role_id: "",
+      unit_id: "",
+      program_id: ""
+    };
+    personRoleLabels.value = {
+      role_id: "",
+      unit_id: "",
+      program_id: ""
+    };
+  } catch (err) {
+    personRoleError.value = err?.response?.data?.message || "No se pudo guardar el rol.";
+  }
+};
+
+const submitPersonContractCreate = async () => {
+  if (!personEditorId.value) {
+    personContractError.value = "Guarda el usuario antes de asignar contratos.";
+    return;
+  }
+  personContractError.value = "";
+  const payload = {
+    person_id: Number(personEditorId.value),
+    vacancy_id: personContractForm.value.vacancy_id ? Number(personContractForm.value.vacancy_id) : null,
+    relation_type: personContractForm.value.relation_type?.trim(),
+    dedication: personContractForm.value.dedication?.trim(),
+    start_date: personContractForm.value.start_date,
+    end_date: personContractForm.value.end_date || null,
+    status: personContractForm.value.status || "activo"
+  };
+  if (!payload.vacancy_id) {
+    personContractError.value = "Selecciona una vacante.";
+    return;
+  }
+  if (!payload.relation_type || !payload.dedication || !payload.start_date) {
+    personContractError.value = "Completa relacion, dedicacion y fecha de inicio.";
+    return;
+  }
+  try {
+    await axios.post(API_ROUTES.ADMIN_SQL_TABLE("contracts"), payload);
+    await loadPersonAssignments(personEditorId.value);
+    personContractForm.value = {
+      vacancy_id: "",
+      relation_type: "",
+      dedication: "",
+      start_date: "",
+      end_date: "",
+      status: "activo"
+    };
+    personContractLabels.value = {
+      vacancy_id: ""
+    };
+  } catch (err) {
+    personContractError.value = err?.response?.data?.message || "No se pudo guardar el contrato.";
+  }
+};
+
+const submitProcessVersionEdit = async () => {
+  if (!processVersionEditForm.value.id) {
+    return;
+  }
+  processVersionError.value = "";
+  const unitId = processVersionEditForm.value.unit_id ? Number(processVersionEditForm.value.unit_id) : null;
+  const programId = processVersionEditForm.value.program_id ? Number(processVersionEditForm.value.program_id) : null;
+  const personId = processVersionEditForm.value.person_id ? Number(processVersionEditForm.value.person_id) : null;
+  if (!unitId && !programId) {
+    processVersionError.value = "Selecciona una unidad o un programa.";
+    return;
+  }
+  if (!personId) {
+    processVersionError.value = "Selecciona un responsable.";
+    return;
+  }
+  if (!processVersionEditForm.value.effective_from) {
+    processVersionError.value = "Selecciona la fecha de vigencia inicial.";
+    return;
+  }
+  try {
+    const payload = {
+      name: processVersionEditForm.value.name?.trim(),
+      slug: processVersionEditForm.value.slug?.trim(),
+      parent_version_id: processVersionEditForm.value.parent_version_id
+        ? Number(processVersionEditForm.value.parent_version_id)
+        : null,
+      person_id: personId,
+      unit_id: unitId,
+      program_id: programId,
+      has_document: Number(processVersionEditForm.value.has_document) === 1 ? 1 : 0,
+      is_active: Number(processVersionEditForm.value.is_active) === 1 ? 1 : 0,
+      effective_from: processVersionEditForm.value.effective_from,
+      effective_to: processVersionEditForm.value.effective_to || null
+    };
+    await axios.put(API_ROUTES.ADMIN_SQL_TABLE("process_versions"), {
+      keys: { id: processVersionEditForm.value.id },
+      data: payload
+    });
+    await fetchProcessVersions();
+  } catch (err) {
+    processVersionError.value = err?.response?.data?.message || "No se pudo actualizar la version.";
+  }
 };
 
 const resetTemplateProcessSelection = () => {
@@ -1319,6 +2477,10 @@ const openCreate = () => {
   if (isTemplateTable.value) {
     resetTemplateProcessSelection();
   }
+  if (isProcessTable.value) {
+    resetProcessVersionForm("create");
+  }
+  resetPersonAssignments();
   ensureEditorInstance();
   editorInstance?.show();
 };
@@ -1330,6 +2492,21 @@ const openEdit = async (row) => {
   buildFormFromRow(row);
   if (isTemplateTable.value) {
     loadTemplateProcessMapping(row?.id);
+  }
+  if (isProcessTable.value) {
+    processVersionForm.value = {
+      version: "",
+      name: row?.name ?? "",
+      slug: row?.slug ?? "",
+      effective_from: "",
+      effective_to: "",
+      parent_version_id: ""
+    };
+  }
+  if (isPersonTable.value) {
+    await loadPersonAssignments(row?.id);
+  } else {
+    resetPersonAssignments();
   }
   ensureEditorInstance();
   editorInstance?.show();
@@ -1351,7 +2528,6 @@ const submitForm = async () => {
     const unitId = formData.value.unit_id ? Number(formData.value.unit_id) : null;
     const programId = formData.value.program_id ? Number(formData.value.program_id) : null;
     const personId = formData.value.person_id ? Number(formData.value.person_id) : null;
-    const termId = formData.value.term_id ? Number(formData.value.term_id) : null;
     if (!unitId && !programId) {
       modalError.value = "Selecciona una unidad o un programa.";
       return;
@@ -1360,9 +2536,23 @@ const submitForm = async () => {
       modalError.value = "Selecciona un responsable para el proceso.";
       return;
     }
-    if (!termId) {
-      modalError.value = "Selecciona un periodo para el proceso.";
+    const versionValue = processVersionForm.value.version?.trim();
+    const effectiveFrom = processVersionForm.value.effective_from;
+    if (!versionValue) {
+      modalError.value = "Indica la version del proceso.";
       return;
+    }
+    if (!effectiveFrom) {
+      modalError.value = "Indica la fecha de vigencia inicial de la version.";
+      return;
+    }
+    if (editorMode.value === "edit") {
+      const confirmed = window.confirm(
+        "Esta actualizacion generara una nueva version del proceso. ¿Deseas continuar?"
+      );
+      if (!confirmed) {
+        return;
+      }
     }
   }
   if (isTemplateTable.value) {
@@ -1374,6 +2564,15 @@ const submitForm = async () => {
   }
   try {
     const payload = buildPayload();
+    if (isProcessTable.value) {
+      payload.version = processVersionForm.value.version?.trim();
+      payload.version_name = processVersionForm.value.name?.trim() || undefined;
+      payload.version_slug = processVersionForm.value.slug?.trim() || undefined;
+      payload.version_effective_from = processVersionForm.value.effective_from || undefined;
+      payload.version_effective_to = processVersionForm.value.effective_to || undefined;
+      const parentVersionId = processVersionForm.value.parent_version_id;
+      payload.version_parent_version_id = parentVersionId ? Number(parentVersionId) : undefined;
+    }
     if (isTemplateTable.value) {
       payload.process_id = Number(templateProcessId.value);
     }
@@ -1413,19 +2612,20 @@ watch(
   () => {
     resetForm();
     resetTemplateProcessSelection();
+    resetProcessVersionForm("create");
+    resetProcessVersionEditor();
+    resetPersonAssignments();
     processFilters.value = {
       unit_id: "",
       program_id: "",
       parent_id: "",
-      term_id: "",
       has_document: "",
       is_active: ""
     };
     processFilterLabels.value = {
       unit_id: "",
       program_id: "",
-      parent_id: "",
-      term_id: ""
+      parent_id: ""
     };
     templateFilters.value = {
       name: "",
@@ -1437,13 +2637,11 @@ watch(
       process_id: ""
     };
     documentFilters.value = {
-      process_id: "",
-      term_id: "",
+      task_id: "",
       status: ""
     };
     documentFilterLabels.value = {
-      process_id: "",
-      term_id: ""
+      task_id: ""
     };
     fetchRows();
   },
