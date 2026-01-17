@@ -29,9 +29,21 @@ class LayoutService {
         }
     }
     async getHeader() {
-        
+        let username = "Usuario";
+        try {
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                const firstName = parsed?.first_name ?? "";
+                const lastName = parsed?.last_name ?? "";
+                username = `${firstName} ${lastName}`.trim() || username;
+            }
+        } catch (error) {
+            username = "Usuario";
+        }
+
         this.menu.value={
-            username: 'ELiana Viscarra',
+            username,
             roles:[
                 {
                 name: "Coordinación de Carrera",

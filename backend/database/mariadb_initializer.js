@@ -9,44 +9,6 @@ import {
 const ensureDatabaseSQL = (databaseName) =>
   `CREATE DATABASE IF NOT EXISTS \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;
 
-const CREATE_USERS_TABLE_SQL = `
-CREATE TABLE IF NOT EXISTS users (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  mongo_id CHAR(24) DEFAULT NULL,
-  cedula VARCHAR(10) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  nombre VARCHAR(120) NOT NULL,
-  apellido VARCHAR(120) NOT NULL,
-  whatsapp VARCHAR(20) DEFAULT NULL,
-  direccion VARCHAR(255) DEFAULT NULL,
-  pais VARCHAR(80) DEFAULT NULL,
-  status ENUM('Inactivo','Activo','Verificado','Reportado') DEFAULT 'Inactivo',
-  verify_email TINYINT(1) DEFAULT 0,
-  verify_whatsapp TINYINT(1) DEFAULT 0,
-  photo_url LONGTEXT DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_users_cedula (cedula),
-  UNIQUE KEY uq_users_email (email),
-  UNIQUE KEY uq_users_mongo_id (mongo_id)
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-`;
-
-const ADD_PHOTO_COLUMN_SQL = `
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS photo_url LONGTEXT DEFAULT NULL;
-`;
-
-const MODIFY_PHOTO_COLUMN_SQL = `
-ALTER TABLE users
-MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
-`;
-
 const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
 
 const stripSqlComments = (sql) =>
@@ -91,10 +53,50 @@ export const ensureMariaDBSchema = async () => {
 
   const connection = await pool.getConnection();
   try {
-    await connection.query(CREATE_USERS_TABLE_SQL);
-    await connection.query(ADD_PHOTO_COLUMN_SQL);
-    await connection.query(MODIFY_PHOTO_COLUMN_SQL);
-    console.log("✅ Tabla 'users' verificada/creada en MariaDB");
+    try {
+      await connection.query("DROP TABLE IF EXISTS users");
+      console.log("✅ Tabla legacy 'users' eliminada (si existia)");
+    } catch (error) {
+      console.warn("⚠️  No se pudo eliminar la tabla legacy users:", error.message);
+    }
+
+    try {
+      const [personTableRows] = await connection.query(
+        `SELECT TABLE_NAME
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'persons'`
+      );
+      if (personTableRows.length) {
+        const [personColumns] = await connection.query(
+          `SELECT COLUMN_NAME
+           FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'persons'`
+        );
+        const personColumnNames = personColumns.map((col) => col.COLUMN_NAME);
+        const addColumn = async (name, definition) => {
+          if (!personColumnNames.includes(name)) {
+            await connection.query(`ALTER TABLE persons ADD COLUMN ${definition}`);
+          }
+        };
+
+        await addColumn("direccion", "direccion VARCHAR(255) NULL");
+        await addColumn("pais", "pais VARCHAR(80) NULL");
+        await addColumn("password_hash", "password_hash VARCHAR(255) NOT NULL");
+        await addColumn(
+          "status",
+          "status ENUM('Inactivo','Activo','Verificado','Reportado') DEFAULT 'Inactivo'"
+        );
+        await addColumn("verify_email", "verify_email TINYINT(1) DEFAULT 0");
+        await addColumn("verify_whatsapp", "verify_whatsapp TINYINT(1) DEFAULT 0");
+        await addColumn("photo_url", "photo_url LONGTEXT DEFAULT NULL");
+        await addColumn(
+          "updated_at",
+          "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo ajustar el esquema de persons:", error.message);
+    }
 
     const [columns] = await connection.query(
       `SELECT COLUMN_NAME
@@ -129,9 +131,6 @@ export const ensureMariaDBSchema = async () => {
     if (!processColumnNames.includes("person_id")) {
       await connection.query("ALTER TABLE processes ADD COLUMN person_id INT NULL");
     }
-    if (!processColumnNames.includes("term_id")) {
-      await connection.query("ALTER TABLE processes ADD COLUMN term_id INT NULL");
-    }
     try {
       const [fkRows] = await connection.query(
         `SELECT CONSTRAINT_NAME
@@ -149,22 +148,27 @@ export const ensureMariaDBSchema = async () => {
     } catch (error) {
       console.warn("⚠️  No se pudo crear FK de processes.person_id:", error.message);
     }
-    try {
-      const [fkRows] = await connection.query(
-        `SELECT CONSTRAINT_NAME
-         FROM information_schema.KEY_COLUMN_USAGE
-         WHERE TABLE_SCHEMA = DATABASE()
-           AND TABLE_NAME = 'processes'
-           AND COLUMN_NAME = 'term_id'
-           AND REFERENCED_TABLE_NAME IS NOT NULL`
-      );
-      if (!fkRows.length) {
-        await connection.query(
-          "ALTER TABLE processes ADD CONSTRAINT fk_processes_term FOREIGN KEY (term_id) REFERENCES terms(id)"
+    if (processColumnNames.includes("term_id")) {
+      try {
+        const [fkRows] = await connection.query(
+          `SELECT CONSTRAINT_NAME
+           FROM information_schema.KEY_COLUMN_USAGE
+           WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = 'processes'
+             AND COLUMN_NAME = 'term_id'
+             AND REFERENCED_TABLE_NAME IS NOT NULL`
         );
+        for (const fk of fkRows) {
+          await connection.query(`ALTER TABLE processes DROP FOREIGN KEY ${fk.CONSTRAINT_NAME}`);
+        }
+      } catch (error) {
+        console.warn("⚠️  No se pudo eliminar FK de processes.term_id:", error.message);
       }
-    } catch (error) {
-      console.warn("⚠️  No se pudo crear FK de processes.term_id:", error.message);
+      try {
+        await connection.query("ALTER TABLE processes DROP COLUMN term_id");
+      } catch (error) {
+        console.warn("⚠️  No se pudo eliminar columna processes.term_id:", error.message);
+      }
     }
     try {
       await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
@@ -259,6 +263,141 @@ export const ensureMariaDBSchema = async () => {
       }
     }
 
+    const [documentColumns] = await connection.query(
+      `SELECT COLUMN_NAME
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents'`
+    );
+    const documentColumnNames = documentColumns.map((col) => col.COLUMN_NAME);
+    if (documentColumnNames.includes("process_id")) {
+      try {
+        const [fkRows] = await connection.query(
+          `SELECT CONSTRAINT_NAME
+           FROM information_schema.KEY_COLUMN_USAGE
+           WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = 'documents'
+             AND COLUMN_NAME = 'process_id'
+             AND REFERENCED_TABLE_NAME IS NOT NULL`
+        );
+        for (const fk of fkRows) {
+          await connection.query(`ALTER TABLE documents DROP FOREIGN KEY ${fk.CONSTRAINT_NAME}`);
+        }
+      } catch (error) {
+        console.warn("⚠️  No se pudo eliminar FK de documents.process_id:", error.message);
+      }
+      try {
+        await connection.query("ALTER TABLE documents DROP COLUMN process_id");
+      } catch (error) {
+        console.warn("⚠️  No se pudo eliminar columna documents.process_id:", error.message);
+      }
+    }
+    if (!documentColumnNames.includes("task_id")) {
+      try {
+        await connection.query("ALTER TABLE documents ADD COLUMN task_id INT NOT NULL");
+      } catch (error) {
+        console.warn("⚠️  No se pudo agregar columna documents.task_id:", error.message);
+      }
+    }
+    try {
+      const [taskTableRows] = await connection.query(
+        `SELECT TABLE_NAME
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'`
+      );
+      if (taskTableRows.length) {
+        await connection.query(
+          "ALTER TABLE documents ADD CONSTRAINT fk_documents_task FOREIGN KEY (task_id) REFERENCES tasks(id)"
+        );
+      }
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear FK de documents.task_id:", error.message);
+      }
+    }
+
+    try {
+      const [taskTableRows] = await connection.query(
+        `SELECT TABLE_NAME
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'`
+      );
+      if (taskTableRows.length) {
+        const [taskColumns] = await connection.query(
+          `SELECT COLUMN_NAME
+           FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'`
+        );
+        const taskColumnNames = taskColumns.map((col) => col.COLUMN_NAME);
+        if (!taskColumnNames.includes("parent_task_id")) {
+          try {
+            await connection.query("ALTER TABLE tasks ADD COLUMN parent_task_id INT NULL AFTER term_id");
+          } catch (error) {
+            console.warn("⚠️  No se pudo agregar tasks.parent_task_id:", error.message);
+          }
+        }
+        if (taskColumnNames.includes("responsible_person_id")) {
+          try {
+            await connection.query("ALTER TABLE tasks MODIFY COLUMN responsible_person_id INT NULL");
+          } catch (error) {
+            console.warn("⚠️  No se pudo ajustar tasks.responsible_person_id:", error.message);
+          }
+        }
+
+        const [taskIndexes] = await connection.query(
+          `SELECT INDEX_NAME,
+                  NON_UNIQUE,
+                  GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS columns
+           FROM information_schema.STATISTICS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'
+           GROUP BY INDEX_NAME, NON_UNIQUE`
+        );
+        const uniqueProcessTerm = taskIndexes.find(
+          (idx) => idx.NON_UNIQUE === 0 && idx.columns === "process_id,term_id"
+        );
+        if (uniqueProcessTerm) {
+          try {
+            await connection.query(`ALTER TABLE tasks DROP INDEX \`${uniqueProcessTerm.INDEX_NAME}\``);
+          } catch (error) {
+            console.warn("⚠️  No se pudo eliminar UNIQUE de tasks:", error.message);
+          }
+        }
+        const hasProcessTermIndex = taskIndexes.some(
+          (idx) => idx.columns === "process_id,term_id"
+        );
+        if (!hasProcessTermIndex) {
+          try {
+            await connection.query("ALTER TABLE tasks ADD INDEX idx_tasks_process_term (process_id, term_id)");
+          } catch (error) {
+            console.warn("⚠️  No se pudo crear indice tasks.process_id/term_id:", error.message);
+          }
+        }
+
+        if (taskColumnNames.includes("parent_task_id")) {
+          try {
+            const [fkRows] = await connection.query(
+              `SELECT CONSTRAINT_NAME
+               FROM information_schema.KEY_COLUMN_USAGE
+               WHERE TABLE_SCHEMA = DATABASE()
+                 AND TABLE_NAME = 'tasks'
+                 AND COLUMN_NAME = 'parent_task_id'
+                 AND REFERENCED_TABLE_NAME IS NOT NULL`
+            );
+            if (!fkRows.length) {
+              await connection.query(
+                "ALTER TABLE tasks ADD CONSTRAINT fk_tasks_parent FOREIGN KEY (parent_task_id) REFERENCES tasks(id)"
+              );
+            }
+          } catch (error) {
+            if (error?.code !== "ER_DUP_KEYNAME") {
+              console.warn("⚠️  No se pudo crear FK de tasks.parent_task_id:", error.message);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo ajustar esquema de tasks:", error.message);
+    }
+
     const schemaSql = await fs.readFile(SCHEMA_FILE_URL, "utf-8");
     const statements = splitSqlStatements(schemaSql);
 
@@ -267,6 +406,26 @@ export const ensureMariaDBSchema = async () => {
     }
 
     console.log("✅ Esquema MariaDB verificado/creado desde mariadb_schema.sql");
+
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME
+         FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'documents'
+           AND COLUMN_NAME = 'task_id'
+           AND REFERENCED_TABLE_NAME = 'tasks'`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE documents ADD CONSTRAINT fk_documents_task FOREIGN KEY (task_id) REFERENCES tasks(id)"
+        );
+      }
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo asegurar FK documents.task_id:", error.message);
+      }
+    }
   } finally {
     connection.release();
   }

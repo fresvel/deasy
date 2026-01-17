@@ -161,7 +161,9 @@ const defaultPhoto = "/images/avatar.png";
 const userPhoto = ref(defaultPhoto);
 const userFullName = computed(() => {
   if (currentUser.value) {
-    return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+    const firstName = currentUser.value.first_name ?? "";
+    const lastName = currentUser.value.last_name ?? "";
+    return `${firstName} ${lastName}`.trim() || "Administrador";
   }
   return "Administrador";
 });
@@ -176,33 +178,29 @@ const GROUP_DEFS = [
   {
     key: "procesos",
     label: "Gestiones",
-    main: ["processes", "documents", "templates"],
+    main: ["processes", "process_versions", "tasks", "documents", "templates"],
     support: [
       "document_signatures"
     ]
   },
   {
-    key: "personas",
-    label: "Personas",
-    main: ["persons", "cargos"],
-    support: ["person_cargos"]
+    key: "usuarios",
+    label: "Usuarios",
+    main: ["persons", "cargos", "roles", "vacancies", "contracts"],
+    support: ["role_assignments", "role_permissions"]
   },
   {
     key: "seguridad",
     label: "Seguridad",
-    main: ["roles", "permissions"],
-    support: ["role_permissions", "role_assignments"]
-  },
-  {
-    key: "contratos",
-    label: "Contratos",
-    main: ["vacancies", "contracts"],
+    main: ["permissions"],
     support: []
-  }
+  },
 ];
 
+const hiddenTables = new Set(["person_cargos"]);
+const visibleTables = computed(() => tables.value.filter((table) => !hiddenTables.has(table.table)));
 const tableMap = computed(() =>
-  Object.fromEntries(tables.value.map((table) => [table.table, table]))
+  Object.fromEntries(visibleTables.value.map((table) => [table.table, table]))
 );
 
 const groupedTables = computed(() => {
@@ -219,7 +217,7 @@ const groupedTables = computed(() => {
     };
   });
 
-  const orphanTables = tables.value.filter((table) => !knownTables.has(table.table));
+  const orphanTables = visibleTables.value.filter((table) => !knownTables.has(table.table));
   if (orphanTables.length) {
     groups.push({
       key: "otros",

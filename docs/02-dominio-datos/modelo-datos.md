@@ -17,22 +17,38 @@
 - program_unit_history(id, program_id, unit_id, start_date, end_date, is_current)
 - terms(id, name, start_date, end_date, is_active)
 
-### Procesos y plantillas
+### Procesos, tareas y plantillas
 
-- processes(id, name, slug, parent_id, person_id, unit_id, program_id, term_id, has_document, is_active, created_at)
+- processes(id, name, slug, parent_id, person_id, unit_id, program_id, has_document, is_active, created_at)
   - CHECK: unit_id IS NOT NULL OR program_id IS NOT NULL
   - FK: parent_id -> processes.id
   - FK: person_id -> persons.id
   - FK: unit_id -> units.id
   - FK: program_id -> programs.id
+- process_cargos(id, process_id, cargo_id, unit_id, program_id, created_at)
+  - UNIQUE(process_id, cargo_id, unit_id, program_id)
+  - FK: process_id -> processes.id
+  - FK: cargo_id -> cargos.id
+  - FK: unit_id -> units.id
+  - FK: program_id -> programs.id
+
+- tasks(id, process_id, process_version_id, term_id, parent_task_id, responsible_person_id, start_date, end_date, status, created_at)
+  - FK: process_id -> processes.id
+  - FK: process_version_id -> process_versions.id
   - FK: term_id -> terms.id
+  - FK: parent_task_id -> tasks.id
+  - FK: responsible_person_id -> persons.id
+- task_assignments(id, task_id, person_id, status, assigned_at, unassigned_at)
+  - UNIQUE(task_id, person_id)
+  - FK: task_id -> tasks.id
+  - FK: person_id -> persons.id
 
 - templates(id, name, slug, description, version, created_at)
 - process_templates(process_id, template_id)
 
-### Personas, roles y cargos
+### Usuarios, roles y cargos
 
-- persons(id, cedula, first_name, last_name, email, whatsapp, is_active, created_at)
+- persons(id, cedula, first_name, last_name, email, whatsapp, direccion, pais, password_hash, status, verify_email, verify_whatsapp, photo_url, is_active, created_at, updated_at)
 - roles(id, name, description, is_active)
 - permissions(id, code, description)
 - role_permissions(role_id, permission_id)
@@ -43,7 +59,7 @@
 
 ### Documentos y firmas
 
-- documents(id, process_id, status, created_at, updated_at)
+- documents(id, task_id, status, created_at, updated_at)
 - document_versions(id, document_id, version, payload_mongo_id, payload_hash, latex_path, pdf_path, signed_pdf_path, status, created_at)
   - UNIQUE(document_id, version)
 - document_signatures(id, document_version_id, signer_user_id, signature_role, signature_status, note_short, signed_file_path, signed_at, created_at)
@@ -71,3 +87,7 @@ Modelos para chat/notificaciones (ver docs/01-arquitectura/chat-notificaciones.m
 ## Pendientes
 
 - Revisar columna legacy template_version_id en process_templates (error conocido).
+- Separación de document_signatures en otra tabla (sería firmas).
+- Probar generación automática de tareas al crear periodos (process_cargos + person_cargos).
+- Validar cierre de tareas padre cuando finalizan tareas hijas.
+- Verificar asignaciones por unidad y programa con datos reales (BD actualmente vacía).

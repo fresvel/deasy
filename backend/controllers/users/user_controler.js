@@ -12,8 +12,8 @@ export const createUser = async (req, res) => {
       cedula: req.body.cedula,
       email: req.body.email,
       password: req.body.password,
-      nombre: req.body.nombre,
-      apellido: req.body.apellido,
+      first_name: req.body.first_name ?? req.body.nombre,
+      last_name: req.body.last_name ?? req.body.apellido,
       whatsapp: req.body.whatsapp,
       direccion: req.body.direccion,
       pais: req.body.pais,
@@ -28,7 +28,7 @@ export const createUser = async (req, res) => {
 
     if (whatsappBot.isReady && createdUser.whatsapp) {
       try {
-        const userName = `${createdUser.nombre} ${createdUser.apellido}`;
+        const userName = `${createdUser.first_name ?? createdUser.nombre} ${createdUser.last_name ?? createdUser.apellido}`.trim();
         await whatsappBot.sendWelcomeMessage(createdUser.whatsapp, userName);
         console.log(`Mensaje de bienvenida enviado a ${createdUser.whatsapp}`);
       } catch (error) {

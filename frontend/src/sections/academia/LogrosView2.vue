@@ -8,7 +8,7 @@
     
       <div class="col-lg-6 text-lg-end">
         <button class="btn btn-primary me-2" @click="generarReporte()">Revisar</button>
-        <button class="btn btn-outline-primary me-2">Guardar</button>
+        <button class="btn btn-primary me-2">Guardar</button>
         <button class="btn btn-primary" @click="obtenerReporte()">Enviar</button>
         
     

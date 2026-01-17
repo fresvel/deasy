@@ -57,6 +57,7 @@ Tareas pendientes/abiertas:
 - Confirmar si el menu UserMenu (frontend/src/layouts/UserMenu.vue) es el que se ve en admin o solo el SMenu; en admin se usa SMenu y estilos globales.
 - Revisar si documents debe mantenerse en soporte y no en main. Actualmente en Gestiones: main = processes, templates; support = documents, document_signatures.
 - Confirmar si se desea auditoria para cambios de documents.
+- Verificar si el JWT se almacena en cookie, local storage o memoria.
 
 Rutas relevantes:
 - frontend/src/pages/admin/AdminView.vue

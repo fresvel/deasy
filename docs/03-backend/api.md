@@ -19,6 +19,14 @@
 - /webtemplate (backend/routes/webtemplate_router.js)
 - /whatsapp (backend/routes/whatsapp_router.js)
 
+## Jobs administrativos
+
+- POST /admin/terms/:termId/generate-tasks
+  - Genera tareas y asignaciones para un periodo a partir de procesos activos.
+  - Resuelve responsables via process_cargos + person_cargos (filtra por unidad/programa si aplica).
+  - Es idempotente: no duplica tareas existentes en el mismo periodo.
+  - Se ejecuta automaticamente al crear un periodo desde /admin/sql/terms.
+
 ## Controladores (referencia por modulo)
 
 - Usuarios/Auth: backend/controllers/users/
@@ -45,4 +53,3 @@
 
 - Swagger describe contratos, esquemas y ejemplos.
 - SQL schema en backend/database/mariadb_schema.sql
-

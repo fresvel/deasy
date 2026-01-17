@@ -160,8 +160,9 @@ const currentUser = ref(null);
 
 const userFullName = computed(() => {
   if (!currentUser.value) return 'Usuario';
-  const { nombre, apellido } = currentUser.value;
-  return `${nombre ?? ''} ${apellido ?? ''}`.trim() || 'Usuario';
+  const firstName = currentUser.value.first_name ?? '';
+  const lastName = currentUser.value.last_name ?? '';
+  return `${firstName} ${lastName}`.trim() || 'Usuario';
 });
 
 const showMenu = ref(true);

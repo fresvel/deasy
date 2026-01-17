@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS processes (
   person_id INT NOT NULL,
   unit_id INT NULL,
   program_id INT NULL,
-  term_id INT NOT NULL,
   has_document TINYINT(1) NOT NULL DEFAULT 1,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -64,8 +63,31 @@ CREATE TABLE IF NOT EXISTS processes (
   FOREIGN KEY (parent_id) REFERENCES processes(id),
   FOREIGN KEY (person_id) REFERENCES persons(id),
   FOREIGN KEY (unit_id) REFERENCES units(id),
-  FOREIGN KEY (program_id) REFERENCES programs(id),
-  FOREIGN KEY (term_id) REFERENCES terms(id)
+  FOREIGN KEY (program_id) REFERENCES programs(id)
+);
+
+CREATE TABLE IF NOT EXISTS process_versions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_id INT NOT NULL,
+  version VARCHAR(10) NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  slug VARCHAR(180) NOT NULL,
+  parent_version_id INT NULL,
+  person_id INT NOT NULL,
+  unit_id INT NULL,
+  program_id INT NULL,
+  has_document TINYINT(1) NOT NULL DEFAULT 1,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  effective_from DATE NOT NULL,
+  effective_to DATE NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (process_id, version),
+  CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL),
+  FOREIGN KEY (process_id) REFERENCES processes(id),
+  FOREIGN KEY (parent_version_id) REFERENCES process_versions(id),
+  FOREIGN KEY (person_id) REFERENCES persons(id),
+  FOREIGN KEY (unit_id) REFERENCES units(id),
+  FOREIGN KEY (program_id) REFERENCES programs(id)
 );
 
 CREATE TABLE IF NOT EXISTS unit_processes (
@@ -90,6 +112,37 @@ CREATE TABLE IF NOT EXISTS terms (
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_id INT NOT NULL,
+  process_version_id INT NOT NULL,
+  term_id INT NOT NULL,
+  parent_task_id INT NULL,
+  responsible_person_id INT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_tasks_process_term (process_id, term_id),
+  FOREIGN KEY (process_id) REFERENCES processes(id),
+  FOREIGN KEY (process_version_id) REFERENCES process_versions(id),
+  FOREIGN KEY (term_id) REFERENCES terms(id),
+  FOREIGN KEY (parent_task_id) REFERENCES tasks(id),
+  FOREIGN KEY (responsible_person_id) REFERENCES persons(id)
+);
+
+CREATE TABLE IF NOT EXISTS task_assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_id INT NOT NULL,
+  person_id INT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+  assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  unassigned_at DATETIME NULL,
+  UNIQUE (task_id, person_id),
+  FOREIGN KEY (task_id) REFERENCES tasks(id),
+  FOREIGN KEY (person_id) REFERENCES persons(id)
 );
 
 CREATE TABLE IF NOT EXISTS templates (
@@ -117,8 +170,16 @@ CREATE TABLE IF NOT EXISTS persons (
   last_name VARCHAR(120) NOT NULL,
   email VARCHAR(180) UNIQUE,
   whatsapp VARCHAR(30),
+  direccion VARCHAR(255),
+  pais VARCHAR(80),
+  password_hash VARCHAR(255) NOT NULL,
+  status ENUM('Inactivo','Activo','Verificado','Reportado') DEFAULT 'Inactivo',
+  verify_email TINYINT(1) DEFAULT 0,
+  verify_whatsapp TINYINT(1) DEFAULT 0,
+  photo_url LONGTEXT DEFAULT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -162,6 +223,20 @@ CREATE TABLE IF NOT EXISTS cargos (
   is_active TINYINT(1) NOT NULL DEFAULT 1
 );
 
+CREATE TABLE IF NOT EXISTS process_cargos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_id INT NOT NULL,
+  cargo_id INT NOT NULL,
+  unit_id INT NULL,
+  program_id INT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_process_cargo_scope (process_id, cargo_id, unit_id, program_id),
+  FOREIGN KEY (process_id) REFERENCES processes(id),
+  FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+  FOREIGN KEY (unit_id) REFERENCES units(id),
+  FOREIGN KEY (program_id) REFERENCES programs(id)
+);
+
 CREATE TABLE IF NOT EXISTS person_cargos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   person_id INT NOT NULL,
@@ -181,11 +256,11 @@ CREATE TABLE IF NOT EXISTS person_cargos (
 
 CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  process_id INT NOT NULL,
+  task_id INT NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
-  FOREIGN KEY (process_id) REFERENCES processes(id)
+  FOREIGN KEY (task_id) REFERENCES tasks(id)
 );
 
 CREATE TABLE IF NOT EXISTS document_versions (

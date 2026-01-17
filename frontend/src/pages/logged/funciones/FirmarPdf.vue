@@ -234,7 +234,7 @@
                     y1={{ formatCoord(field.y1) }}, x2={{ formatCoord(field.x2) }},
                     y2={{ formatCoord(field.y2) }}
                     <span v-if="field.signer">
-                      · {{ field.signer.nombre }} {{ field.signer.apellido }}
+                      · {{ field.signer.first_name }} {{ field.signer.last_name }}
                     </span>
                   </span>
                   <button type="button" class="btn btn-outline-danger btn-sm" @click.stop="removeField(field.id)">
@@ -287,7 +287,7 @@
                   <span>
                     {{ field.name }}
                     <span class="field-signer text-muted">
-                      · {{ field.signer ? `${field.signer.nombre} ${field.signer.apellido}` : 'Sin asignar' }}
+                      · {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
                     </span>
                   </span>
                   <button type="button" class="btn btn-outline-danger btn-sm" @click.stop="removeField(field.id)">
@@ -350,7 +350,7 @@
               :class="{ active: selectedSigner?.id === user.id || selectedSigner?._id === user._id }"
               @click="selectSigner(user)"
             >
-              <div class="fw-semibold">{{ user.nombre }} {{ user.apellido }}</div>
+              <div class="fw-semibold">{{ user.first_name }} {{ user.last_name }}</div>
               <div class="small text-muted">{{ user.email }} · {{ user.cedula }}</div>
             </button>
           </div>
@@ -846,8 +846,8 @@
         ? {
             id: signer.id ?? signer._id,
             cedula: signer.cedula,
-            nombre: signer.nombre,
-            apellido: signer.apellido,
+            first_name: signer.first_name,
+            last_name: signer.last_name,
             email: signer.email
           }
         : null;

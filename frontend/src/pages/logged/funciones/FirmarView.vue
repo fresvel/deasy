@@ -87,7 +87,9 @@
     const currentUser = ref(null);
     const userFullName = computed(() => {
         if (currentUser.value) {
-            return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+            const firstName = currentUser.value.first_name ?? '';
+            const lastName = currentUser.value.last_name ?? '';
+            return `${firstName} ${lastName}`.trim() || 'Usuario';
         }
         return 'Usuario';
     });
