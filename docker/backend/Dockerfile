@@ -29,7 +29,12 @@ RUN cd backend && npm install
 
 COPY backend ./backend
 
+# Copiar y configurar el script de entrypoint
+COPY docker/backend/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 WORKDIR /app/backend
 EXPOSE 3030
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["node", "--watch", "index.js"]

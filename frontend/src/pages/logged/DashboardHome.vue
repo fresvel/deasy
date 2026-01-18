@@ -5,6 +5,9 @@
         <button class="nav-link text-white p-0" type="button" @click="navigateTo('perfil')" title="Ir al perfil">
           <img class="avatar" src="/images/avatar.png" alt="Perfil" />
         </button>
+        <router-link to="/roles" class="nav-link text-white p-0" title="Roles">
+          <font-awesome-icon icon="user" class="avatar" />
+        </router-link>
 
         <button
           v-for="item in headerAreas"
@@ -19,16 +22,11 @@
       </div>
 
       <div class="header-right">
-        <router-link to="/logout" class="nav-link text-white ms-lg-3" title="Cerrar sesión">
-          <img class="avatar" src="/images/logout.svg" alt="Cerrar sesión" />
-        </router-link>
-
-        <button class="nav-link text-white p-0" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
-          <img class="avatar" src="/images/pen_line.svg" alt="Firmar" />
-        </button>
-
         <button class="nav-link text-white p-0" type="button" @click="toggleNotify" title="Notificaciones">
           <font-awesome-icon icon="bell" class="avatar" />
+        </button>
+        <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
+          <font-awesome-icon icon="bars" class="avatar" />
         </button>
       </div>
     </s-header>
@@ -77,7 +75,7 @@
         </div>
       </s-menu>
 
-      <s-body :showmenu="showMenu" :shownotify="showNotify">
+      <s-body :showmenu="showMenu" :shownotify="showNotify" :shownavmenu="showNavMenu">
         <section class="overview-card">
           <div>
             <h1>Bienvenido(a), {{ userFullName }}</h1>
@@ -142,6 +140,8 @@
       </s-body>
 
       <s-message :show="showNotify" />
+      
+      <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
     </div>
   </div>
 </template>
@@ -153,6 +153,7 @@ import SHeader from '@/layouts/SHeader.vue';
 import SMenu from '@/layouts/SMenu.vue';
 import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
+import SNavMenu from '@/layouts/SNavMenu.vue';
 import UserProfile from '@/components/UserProfile.vue';
 
 const router = useRouter();
@@ -165,9 +166,10 @@ const userFullName = computed(() => {
 });
 
 const showMenu = ref(true);
-  const showNotify = ref(false);
-  const showCoordinacion = ref(true);
-  const showDocencia = ref(false);
+const showNotify = ref(false);
+const showNavMenu = ref(false);
+const showCoordinacion = ref(true);
+const showDocencia = ref(false);
 
 const headerAreas = ref([
   { code: 'perfil', name: 'Perfil', active: true, route: 'perfil' },
@@ -256,7 +258,17 @@ const handleHeaderToggle = (target) => {
 };
 
 const toggleNotify = () => {
+  if (showNavMenu.value) {
+    showNavMenu.value = false;
+  }
   showNotify.value = !showNotify.value;
+};
+
+const toggleNavMenu = () => {
+  if (showNotify.value) {
+    showNotify.value = false;
+  }
+  showNavMenu.value = !showNavMenu.value;
 };
 </script>
 

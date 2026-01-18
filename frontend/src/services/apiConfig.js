@@ -18,6 +18,7 @@ export const API_ROUTES = {
   USERS: `${API_PREFIX}/users`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
+  USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,

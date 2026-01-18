@@ -64,4 +64,5 @@
 - Backend usa node --watch para recarga en caliente.
 - Frontend usa vue-cli-service serve con HMR.
 - EMQX_ALLOW_ANONYMOUS=true en compose (ajustar en prod).
+- Backend incluye un entrypoint script (docker/backend/entrypoint.sh) que reconstruye automáticamente los módulos nativos (como bcrypt) al iniciar el contenedor, asegurando compatibilidad con Linux incluso si hay node_modules de Windows montados como volumen.
 

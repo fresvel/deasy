@@ -2,6 +2,7 @@ import { Router } from "express";
 import { createUser, getUsers } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
+import { refreshToken } from "../controllers/users/refresh_token.js";
 import { updateUserPhoto } from "../controllers/users/user_controler.js";
 import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validation_controller.js";
 import { validatePassword } from "../middlewares/val_password.js";
@@ -14,6 +15,7 @@ router.get('/', getUsers)
 
 router.post('/login', loginUser)
 router.post('/logout', logoutUser)
+router.post('/refresh-token', refreshToken)
 
 router.put(
   '/:cedula/photo',

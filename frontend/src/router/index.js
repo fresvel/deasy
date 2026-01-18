@@ -9,6 +9,7 @@ import { API_ROUTES } from "../services/apiConfig";
 
 import FirmarPdf from "../pages/logged/funciones/FirmarView.vue";
 import AdminView from "../pages/admin/AdminView.vue";
+import RolesView from "../pages/logged/RolesView.vue";
 const routes = [
   {
     path: "/",
@@ -39,6 +40,11 @@ const routes = [
     path: "/admin",
     name: "admin",
     component: AdminView,
+  },
+  {
+    path: "/roles",
+    name: "roles",
+    component: RolesView,
   },
   {
     path: "/logout",

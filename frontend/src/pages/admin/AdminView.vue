@@ -4,11 +4,11 @@
       <span class="nav-link text-white fw-semibold">Administrador</span>
     </div>
     <div class="header-right">
-      <router-link to="/logout" class="nav-link text-white">
-        <img class="avatar" src="/images/logout.svg" alt="Cerrar sesion" />
-      </router-link>
       <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
         <font-awesome-icon icon="bell" class="avatar" />
+      </button>
+      <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
+        <font-awesome-icon icon="bars" class="avatar" />
       </button>
     </div>
   </s-header>
@@ -60,7 +60,7 @@
       </div>
     </s-menu>
 
-    <s-body :showmenu="vmenu" :shownotify="vnotify">
+    <s-body :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
       <div class="container-fluid py-4">
         <div v-if="activeGroup?.key !== 'procesos'" class="profile-section-header">
           <div>
@@ -133,6 +133,8 @@
     </s-body>
 
     <s-message :show="vnotify" />
+    
+    <s-nav-menu :show="showNavMenu" :is-admin="true" @close="showNavMenu = false" />
   </div>
 </template>
 
@@ -143,12 +145,14 @@ import SMenu from "@/layouts/SMenu.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import SHeader from "@/layouts/SHeader.vue";
+import SNavMenu from "@/layouts/SNavMenu.vue";
 import UserProfile from "@/components/UserProfile.vue";
 import AdminTableManager from "./AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const vmenu = ref(true);
 const vnotify = ref(false);
+const showNavMenu = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
@@ -260,10 +264,20 @@ const selectTable = (table) => {
 
 const onClick = (item) => {
   if (item === "Message") {
+    if (showNavMenu.value) {
+      showNavMenu.value = false;
+    }
     vnotify.value = !vnotify.value;
     return;
   }
   vmenu.value = !vmenu.value;
+};
+
+const toggleNavMenu = () => {
+  if (vnotify.value) {
+    vnotify.value = false;
+  }
+  showNavMenu.value = !showNavMenu.value;
 };
 
 const fetchMeta = async () => {
