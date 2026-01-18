@@ -18,20 +18,27 @@ const props=defineProps({
     shownotify: {
         type: Boolean,
         default: false
+    },
+    shownavmenu: {
+        type: Boolean,
+        default: false
     }
 })
 
 const contentClass = computed(() => {
-    if (props.showmenu && props.shownotify) {
-        return "col-lg-8 col-md-6 col-12";
-    }
-    if (!props.showmenu && !props.shownotify) {
+    const visiblePanels = [props.showmenu, props.shownotify, props.shownavmenu].filter(Boolean).length;
+    
+    if (visiblePanels === 0) {
         return "col-12";
     }
-    if (props.showmenu && !props.shownotify) {
+    if (visiblePanels === 1) {
         return "col-lg-10 col-md-9 col-12";
     }
-    return "col-lg-10 col-md-9 col-12";
+    if (visiblePanels === 2) {
+        return "col-lg-8 col-md-6 col-12";
+    }
+    // 3 paneles visibles
+    return "col-lg-6 col-md-4 col-12";
 });
 
 
