@@ -11,6 +11,7 @@ export const PATHS = {
   tarea: "/tarea",
   whatsapp: "/whatsapp",
   dossier: "/dossier",
+  email: "/email",
 };
 
 export const ROUTES = Object.fromEntries(
