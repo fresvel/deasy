@@ -11,7 +11,7 @@ if [ -d "/app/backend/node_modules" ]; then
     cd /app/backend
     npm rebuild bcrypt --silent 2>/dev/null || npm rebuild --silent 2>/dev/null || true
     echo "✅ Módulos nativos verificados"
-fi
+fi  
 
 # Ejecutar el comando original
 exec "$@"
