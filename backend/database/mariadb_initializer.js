@@ -37,6 +37,25 @@ DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 `;
 
+const CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  code_hash VARCHAR(255) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_expires_at (expires_at),
+  CONSTRAINT fk_email_verification_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+`;
+
 const ADD_PHOTO_COLUMN_SQL = `
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS photo_url LONGTEXT DEFAULT NULL;
@@ -92,9 +111,11 @@ export const ensureMariaDBSchema = async () => {
   const connection = await pool.getConnection();
   try {
     await connection.query(CREATE_USERS_TABLE_SQL);
+    await connection.query(CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL);
     await connection.query(ADD_PHOTO_COLUMN_SQL);
     await connection.query(MODIFY_PHOTO_COLUMN_SQL);
     console.log("✅ Tabla 'users' verificada/creada en MariaDB");
+    console.log("✅ Tabla 'email_verification_codes' verificada/creada");
 
     const [columns] = await connection.query(
       `SELECT COLUMN_NAME
