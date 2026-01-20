@@ -10,6 +10,7 @@ export const verifyEmailCode = async (userId, code) => {
     SELECT id, code_hash, expires_at
     FROM email_verification_codes
     WHERE user_id = ?
+    ORDER BY created_at DESC
     LIMIT 1
     `,
     [userId]
