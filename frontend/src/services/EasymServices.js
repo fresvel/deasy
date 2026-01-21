@@ -106,9 +106,9 @@ class EasymServices {
         try {
             const url=API_ROUTES.PROGRAMS
             const res=await axios.get(url)
-            this.programs.value=res.data.map(programa => {
-                const {code, ...resto}=programa
-                return {...resto, value: code}
+            this.programs.value=(res.data || []).map((unit) => {
+                const value = unit.slug ?? unit.code ?? unit.id
+                return { ...unit, value }
             })
         } catch (error) {
             console.log(error.message)

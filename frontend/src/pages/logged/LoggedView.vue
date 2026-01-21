@@ -1,8 +1,8 @@
 <template>  
 
-    <s-header @onclick="onClick('Menu')">
+    <s-header @onclick="handleHeaderToggle">
         <div class="header-left">
-            <button class="nav-link text-white p-0" type="button" @click="onheadClick({name:'Perfil'})">
+            <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick">
                 <img class="avatar" :src="userPhoto" alt="User Avatar">
             </button>
 
@@ -121,6 +121,7 @@
     
     
 import { ref, computed, onMounted, onBeforeUnmount} from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
     import SMenu from '@/layouts/SMenu.vue';
     import SMessage from '@/layouts/SNotify.vue';
@@ -144,6 +145,8 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     import EasymServices from '@/services/EasymServices';
     import { API_PREFIX, API_ROUTES } from '@/services/apiConfig';
 
+    const router = useRouter();
+    const route = useRoute();
     const service = new EasymServices();
     const API_BASE_URL = API_ROUTES.BASE;
 
@@ -318,6 +321,21 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         } 
             
     }
+
+    const handleHeaderToggle = (target) => {
+        if (target === 'User') {
+            router.push('/dashboard');
+        }
+    };
+
+    const handleUserIconClick = () => {
+        if (route.name !== 'perfil') {
+            router.push('/perfil');
+        } else {
+            toggleVmenu();
+        }
+        onheadClick({ name: 'Perfil' });
+    };
     
 
     const onmenuClick=(item)=>{

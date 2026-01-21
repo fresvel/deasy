@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <div class="d-flex align-items-center gap-3 w-100">
         <button class="btn btn-link text-white p-0" type="button" @click="onClick('User')">
-          <img class="menulogo avatar" src="/images/menu.svg" alt="User Avatar">
+          <img class="menulogo avatar" src="/images/menu.svg" alt="Dashboard">
         </button>
         <div class="header-actions">
           <slot></slot>

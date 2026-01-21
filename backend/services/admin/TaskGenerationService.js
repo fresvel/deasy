@@ -2,7 +2,7 @@ import { getMariaDBPool } from "../../config/mariadb.js";
 
 const getActiveProcesses = async (connection) => {
   const [rows] = await connection.query(
-    `SELECT id, parent_id, unit_id, program_id
+    `SELECT id, parent_id, unit_id
      FROM processes
      WHERE is_active = 1`
   );
@@ -22,11 +22,12 @@ const getTermById = async (connection, termId) => {
 
 const getProcessVersionMap = async (connection, termStart, termEnd) => {
   const [rows] = await connection.query(
-    `SELECT id, process_id
+    `SELECT id, process_id, cargo_id
      FROM (
        SELECT
          id,
          process_id,
+         cargo_id,
          ROW_NUMBER() OVER (
            PARTITION BY process_id
            ORDER BY effective_from DESC, id DESC
@@ -41,16 +42,17 @@ const getProcessVersionMap = async (connection, termStart, termEnd) => {
   );
   const map = new Map();
   rows.forEach((row) => {
-    map.set(row.process_id, row.id);
+    map.set(row.process_id, { id: row.id, cargo_id: row.cargo_id });
   });
   return map;
 };
 
 const getExistingTasksMap = async (connection, termId) => {
   const [rows] = await connection.query(
-    `SELECT id, process_id, parent_task_id
-     FROM tasks
-     WHERE term_id = ?`,
+    `SELECT t.id, pv.process_id, t.parent_task_id
+     FROM tasks t
+     JOIN process_versions pv ON pv.id = t.process_version_id
+     WHERE t.term_id = ?`,
     [termId]
   );
   const map = new Map();
@@ -62,30 +64,19 @@ const getExistingTasksMap = async (connection, termId) => {
   return map;
 };
 
-const getAssigneesByProcess = async (connection, processIds) => {
-  if (!processIds.length) {
-    return new Map();
-  }
-  const placeholders = processIds.map(() => "?").join(", ");
+const getPositionsForProcess = async (connection, { unitId, cargoId }) => {
   const [rows] = await connection.query(
-    `SELECT DISTINCT pc.process_id, pca.person_id
-     FROM process_cargos pc
-     JOIN person_cargos pca
-       ON pca.cargo_id = pc.cargo_id
-      AND pca.is_current = 1
-      AND (pc.unit_id IS NULL OR pca.unit_id = pc.unit_id)
-      AND (pc.program_id IS NULL OR pca.program_id = pc.program_id)
-     WHERE pc.process_id IN (${placeholders})`,
-    processIds
+    `SELECT up.id AS position_id, pa.person_id
+     FROM unit_positions up
+     LEFT JOIN position_assignments pa
+       ON pa.position_id = up.id
+      AND pa.is_current = 1
+     WHERE up.unit_id = ?
+       AND up.cargo_id = ?
+       AND up.is_active = 1`,
+    [unitId, cargoId]
   );
-  const map = new Map();
-  rows.forEach((row) => {
-    if (!map.has(row.process_id)) {
-      map.set(row.process_id, []);
-    }
-    map.get(row.process_id).push(row.person_id);
-  });
-  return map;
+  return rows;
 };
 
 export const generateTasksForTerm = async (termId) => {
@@ -140,19 +131,18 @@ export const generateTasksForTerm = async (termId) => {
         return existing.id;
       }
 
-      const processVersionId = versionMap.get(processId);
-      if (!processVersionId) {
+      const versionEntry = versionMap.get(processId);
+      if (!versionEntry) {
         tasksWithMissingVersion.push(processId);
         return null;
       }
 
       const [result] = await connection.query(
         `INSERT INTO tasks
-         (process_id, process_version_id, term_id, parent_task_id, responsible_person_id, start_date, end_date, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (process_version_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
-          processId,
-          processVersionId,
+          versionEntry.id,
           term.id,
           parentTaskId,
           null,
@@ -172,7 +162,6 @@ export const generateTasksForTerm = async (termId) => {
     }
 
     const processIds = Array.from(existingTasksMap.keys());
-    const assigneesByProcess = await getAssigneesByProcess(connection, processIds);
     let assignmentsCreated = 0;
     const processesWithoutAssignees = [];
 
@@ -181,16 +170,24 @@ export const generateTasksForTerm = async (termId) => {
       if (!task) {
         continue;
       }
-      const personIds = assigneesByProcess.get(processId) || [];
-      if (!personIds.length) {
+      const process = processById.get(processId);
+      const versionEntry = versionMap.get(processId);
+      if (!process || !versionEntry) {
+        continue;
+      }
+      const positions = await getPositionsForProcess(connection, {
+        unitId: process.unit_id,
+        cargoId: versionEntry.cargo_id
+      });
+      if (!positions.length) {
         processesWithoutAssignees.push(processId);
         continue;
       }
-      const values = personIds.map((personId) => [task.id, personId]);
-      const placeholders = values.map(() => "(?, ?)").join(", ");
+      const values = positions.map((row) => [task.id, row.position_id, row.person_id ?? null]);
+      const placeholders = values.map(() => "(?, ?, ?)").join(", ");
       const flatValues = values.flat();
       const [result] = await connection.query(
-        `INSERT IGNORE INTO task_assignments (task_id, person_id)
+        `INSERT IGNORE INTO task_assignments (task_id, position_id, assigned_person_id)
          VALUES ${placeholders}`,
         flatValues
       );

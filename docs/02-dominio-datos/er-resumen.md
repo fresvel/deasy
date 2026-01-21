@@ -3,45 +3,52 @@
 ## Estructura academica
 
 unit_types 1─∞ units
-units ∞─∞ units (via unit_relations)
-units ∞─∞ programs (via program_unit_history)
-terms 1─∞ tasks
+relation_unit_types 1─∞ unit_relations
+units 1─∞ unit_relations (parent_id)
+units 1─∞ unit_relations (child_id)
 
 ## Procesos y plantillas
 
-persons 1─∞ processes (person_id = responsable)
 processes 1─∞ processes (parent_id)
-units 1─∞ processes (unit_id, opcional)
-programs 1─∞ processes (program_id, opcional)
-processes ∞─∞ cargos (via process_cargos)
-processes 1─∞ tasks
+units 1─∞ processes (unit_id)
+processes 1─∞ process_versions
+terms 1─∞ tasks
 process_versions 1─∞ tasks
 tasks 1─∞ tasks (parent_task_id)
-tasks ∞─∞ persons (via task_assignments)
-processes ∞─∞ templates (via process_templates)
+tasks ∞─∞ unit_positions (via task_assignments)
+processes 1─∞ templates
+templates 1─∞ template_versions
 
 ## Usuarios, roles y cargos
 
-persons ∞─∞ roles (via role_assignments)
+units 1─∞ unit_positions
+cargos 1─∞ unit_positions
+persons ∞─∞ unit_positions (via position_assignments)
+persons ∞─∞ roles (via role_assignments, unit-scoped)
 roles ∞─∞ permissions (via role_permissions)
-persons ∞─∞ cargos (via person_cargos)
+cargos ∞─∞ roles (via cargo_role_map)
+relation_unit_types ∞─∞ role_assignments (via role_assignment_relation_types)
 
 ## Documentos y firmas
 
 tasks 1─∞ documents
 documents 1─∞ document_versions
-persons 1─∞ document_signatures (signer_user_id)
+process_versions 1─∞ signature_flow_templates
+signature_flow_templates 1─∞ signature_flow_steps
+document_versions 1─∞ signature_flow_instances
+signature_flow_instances 1─∞ signature_requests
 document_versions 1─∞ document_signatures
 
 ## Docencia/contratos
 
-units 1─∞ vacancies (opcional)
-programs 1─∞ vacancies (opcional)
-vacancies 1─∞ contracts
+unit_positions 1─∞ vacancies
+vacancies 1─∞ vacancy_visibility
+units 1─∞ vacancy_visibility
+roles 1─∞ vacancy_visibility
+vacancies 1─∞ aplications
+aplications 1─∞ offers
+vacancies 1─∞ contract_origin_recruitment
 persons 1─∞ contracts
-
-## Matricula
-
-persons 1─∞ student_program_terms
-programs 1─∞ student_program_terms
-terms 1─∞ student_program_terms
+unit_positions 1─∞ contracts
+contracts 1─∞ contract_origins
+contracts 1─∞ contract_origin_renewal

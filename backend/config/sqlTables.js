@@ -13,6 +13,22 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
+    table: "relation_unit_types",
+    label: "Tipos de relacion",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_inheritance_allowed", label: "Herencia", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
     table: "units",
     label: "Unidades",
     category: "Estructura",
@@ -23,7 +39,8 @@ export const SQL_TABLES = [
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "unit_type_id", label: "Tipo de unidad", type: "number", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
@@ -31,48 +48,13 @@ export const SQL_TABLES = [
     table: "unit_relations",
     label: "Relaciones de unidades",
     category: "Estructura",
-    primaryKeys: ["parent_unit_id", "child_unit_id"],
+    primaryKeys: ["id"],
     fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
       { name: "parent_unit_id", label: "Unidad padre", type: "number", required: true },
       { name: "child_unit_id", label: "Unidad hija", type: "number", required: true },
-      { name: "relation_type", label: "Tipo de relacion", type: "text", defaultValue: "parent" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["relation_type"]
-  },
-  {
-    table: "programs",
-    label: "Programas",
-    category: "Academico",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "slug", label: "Slug", type: "text", required: true },
-      {
-        name: "level_type",
-        label: "Nivel",
-        type: "select",
-        required: true,
-        options: ["grado", "maestria", "doctorado", "tecnico", "tecnologico"]
-      },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["name", "slug", "level_type"]
-  },
-  {
-    table: "program_unit_history",
-    label: "Historial programa-unidad",
-    category: "Academico",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "program_id", label: "Programa", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number", required: true },
-      { name: "start_date", label: "Inicio", type: "date", required: true },
-      { name: "end_date", label: "Fin", type: "date" },
-      { name: "is_current", label: "Actual", type: "boolean", defaultValue: 1 }
     ],
     searchFields: []
   },
@@ -86,11 +68,16 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
-      { name: "person_id", label: "Responsable", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "cargo_id", label: "Cargo inicial", type: "number", virtual: true },
+      { name: "version", label: "Version inicial", type: "text", virtual: true },
+      { name: "version_name", label: "Nombre version", type: "text", virtual: true },
+      { name: "version_slug", label: "Slug version", type: "text", virtual: true },
+      { name: "version_effective_from", label: "Vigencia desde", type: "date", virtual: true },
+      { name: "version_effective_to", label: "Vigencia hasta", type: "date", virtual: true },
+      { name: "version_parent_version_id", label: "Version padre", type: "number", virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
@@ -107,9 +94,7 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_version_id", label: "Version padre", type: "number" },
-      { name: "person_id", label: "Responsable", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
+      { name: "cargo_id", label: "Cargo responsable", type: "number", required: true },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
@@ -117,45 +102,6 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug", "version"]
-  },
-  {
-    table: "unit_processes",
-    label: "Procesos por unidad",
-    category: "Procesos",
-    primaryKeys: ["unit_id", "process_id"],
-    allowPrimaryKeyUpdate: true,
-    fields: [
-      { name: "unit_id", label: "Unidad", type: "number", required: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true }
-    ],
-    searchFields: []
-  },
-  {
-    table: "program_processes",
-    label: "Procesos por programa",
-    category: "Procesos",
-    primaryKeys: ["program_id", "process_id"],
-    allowPrimaryKeyUpdate: true,
-    fields: [
-      { name: "program_id", label: "Programa", type: "number", required: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true }
-    ],
-    searchFields: []
-  },
-  {
-    table: "process_cargos",
-    label: "Perfiles por proceso",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "cargo_id", label: "Cargo/Perfil", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: []
   },
   {
     table: "terms",
@@ -178,11 +124,13 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
       { name: "process_version_id", label: "Version de proceso", type: "number", required: true },
       { name: "term_id", label: "Periodo", type: "number", required: true },
       { name: "parent_task_id", label: "Tarea padre", type: "number" },
-      { name: "responsible_person_id", label: "Responsable principal", type: "number" },
+      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
+      { name: "is_main", label: "Tarea principal", type: "boolean", defaultValue: 1 },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       {
@@ -204,7 +152,8 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "task_id", label: "Tarea", type: "number", required: true },
-      { name: "person_id", label: "Responsable", type: "number", required: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
+      { name: "assigned_person_id", label: "Responsable (snapshot)", type: "number" },
       {
         name: "status",
         label: "Estado",
@@ -224,26 +173,30 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
       { name: "process_name", label: "Proceso", type: "text", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "version", label: "Version", type: "text", defaultValue: "0.1", readOnly: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
   {
-    table: "process_templates",
-    label: "Plantillas por proceso",
+    table: "template_versions",
+    label: "Versiones de plantilla",
     category: "Plantillas",
-    primaryKeys: ["process_id", "template_id"],
-    allowPrimaryKeyUpdate: true,
+    primaryKeys: ["id"],
     fields: [
-      { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "template_id", label: "Plantilla", type: "number", required: true }
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_id", label: "Plantilla", type: "number", required: true },
+      { name: "version", label: "Version", type: "text", required: true },
+      { name: "mongo_ref", label: "Mongo ref", type: "text", required: true },
+      { name: "mongo_version", label: "Mongo version", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: []
+    searchFields: ["version", "mongo_ref", "mongo_version"]
   },
   {
     table: "persons",
@@ -290,6 +243,18 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
+    table: "cargo_role_map",
+    label: "Mapa cargo-rol",
+    category: "Seguridad",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "cargo_id", label: "Cargo", type: "number", required: true },
+      { name: "role_id", label: "Rol", type: "number", required: true }
+    ],
+    searchFields: []
+  },
+  {
     table: "permissions",
     label: "Permisos",
     category: "Seguridad",
@@ -305,9 +270,9 @@ export const SQL_TABLES = [
     table: "role_permissions",
     label: "Permisos por rol",
     category: "Seguridad",
-    primaryKeys: ["role_id", "permission_id"],
-    allowPrimaryKeyUpdate: true,
+    primaryKeys: ["id"],
     fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "role_id", label: "Rol", type: "number", required: true },
       { name: "permission_id", label: "Permiso", type: "number", required: true }
     ],
@@ -322,9 +287,23 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
       { name: "role_id", label: "Rol", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
-      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true }
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
+      { name: "derived_from_assignment_id", label: "Derivado de ocupacion", type: "number" },
+      {
+        name: "source",
+        label: "Origen",
+        type: "select",
+        options: ["manual", "derived"],
+        defaultValue: "manual"
+      },
+      { name: "max_depth", label: "Profundidad", type: "number", defaultValue: 0 },
+      { name: "start_date", label: "Inicio", type: "date", required: true },
+      { name: "end_date", label: "Fin", type: "date" },
+      { name: "is_current", label: "Actual", type: "boolean", defaultValue: 1 },
+      { name: "current_flag", label: "Marca actual", type: "boolean", readOnly: true },
+      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
+      { name: "revoked_at", label: "Revocado", type: "datetime" },
+      { name: "revoked_reason", label: "Motivo", type: "text" }
     ],
     searchFields: []
   },
@@ -342,20 +321,46 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
-    table: "person_cargos",
-    label: "Cargos por persona",
-    category: "Personas",
+    table: "unit_positions",
+    label: "Puestos",
+    category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
       { name: "cargo_id", label: "Cargo", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
+      { name: "slot_no", label: "Plaza", type: "number", required: true },
+      { name: "title", label: "Titulo", type: "text" },
+      { name: "profile_ref", label: "Perfil (Mongo)", type: "text" },
+      {
+        name: "position_type",
+        label: "Tipo de ocupacion",
+        type: "select",
+        options: ["real", "promocion", "simbolico"],
+        defaultValue: "real"
+      },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "deactivated_at", label: "Desactivado", type: "datetime" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["title"]
+  },
+  {
+    table: "position_assignments",
+    label: "Ocupaciones",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       { name: "is_current", label: "Actual", type: "boolean", defaultValue: 1 },
-      { name: "current_flag", label: "Marca actual", type: "boolean", readOnly: true }
+      { name: "current_flag", label: "Marca actual", type: "boolean", readOnly: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: []
   },
@@ -374,6 +379,7 @@ export const SQL_TABLES = [
         options: ["Inicial", "En proceso", "Aprobado", "Rechazado"],
         defaultValue: "Inicial"
       },
+      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
@@ -411,28 +417,134 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "signature_request_id", label: "Solicitud", type: "number" },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
       { name: "signer_user_id", label: "Firmante", type: "number", required: true },
-      {
-        name: "signature_role",
-        label: "Rol firma",
-        type: "select",
-        options: ["autor", "revisor", "aprobador"],
-        required: true
-      },
-      {
-        name: "signature_status",
-        label: "Estado firma",
-        type: "select",
-        options: ["pendiente", "firmado", "rechazado"],
-        defaultValue: "pendiente"
-      },
+      { name: "signature_type_id", label: "Tipo firma", type: "number", required: true },
+      { name: "signature_status_id", label: "Estado firma", type: "number", required: true },
       { name: "note_short", label: "Nota", type: "textarea" },
       { name: "signed_file_path", label: "Ruta firmada", type: "text" },
       { name: "signed_at", label: "Firmado", type: "datetime" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["signature_role", "signature_status"]
+    searchFields: ["signature_type_id", "signature_status_id"]
+  },
+  {
+    table: "signature_types",
+    label: "Tipos de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "signature_statuses",
+    label: "Estados de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "signature_request_statuses",
+    label: "Estados de solicitud",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "signature_flow_templates",
+    label: "Plantillas de flujo",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_version_id", label: "Version proceso", type: "number", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name"]
+  },
+  {
+    table: "signature_flow_steps",
+    label: "Pasos de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_id", label: "Plantilla", type: "number", required: true },
+      { name: "step_order", label: "Orden", type: "number", required: true },
+      { name: "step_type_id", label: "Tipo", type: "number", required: true },
+      { name: "required_cargo_id", label: "Cargo", type: "number", required: true },
+      {
+        name: "selection_mode",
+        label: "Seleccion",
+        type: "select",
+        options: ["auto_all", "select", "auto_quorum"],
+        defaultValue: "auto_all"
+      },
+      { name: "required_signers_min", label: "Min firmantes", type: "number" },
+      { name: "required_signers_max", label: "Max firmantes", type: "number" },
+      { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  {
+    table: "signature_flow_instances",
+    label: "Instancias de flujo",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_id", label: "Plantilla", type: "number", required: true },
+      { name: "document_version_id", label: "Version documento", type: "number", required: true },
+      { name: "status_id", label: "Estado", type: "number", required: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  {
+    table: "signature_requests",
+    label: "Solicitudes de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "instance_id", label: "Instancia", type: "number", required: true },
+      { name: "step_id", label: "Paso", type: "number", required: true },
+      { name: "assigned_person_id", label: "Persona", type: "number" },
+      { name: "status_id", label: "Estado", type: "number", required: true },
+      { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
+      { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
+      { name: "notified_at", label: "Notificado", type: "datetime" },
+      { name: "responded_at", label: "Respondido", type: "datetime" }
+    ],
+    searchFields: []
   },
   {
     table: "vacancies",
@@ -441,8 +553,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
       { name: "title", label: "Titulo", type: "text", required: true },
       { name: "category", label: "Categoria", type: "text" },
       {
@@ -456,19 +567,33 @@ export const SQL_TABLES = [
         name: "relation_type",
         label: "Relacion",
         type: "select",
-        options: ["dependencia", "servicios"],
+        options: ["dependencia", "servicios", "promocion"],
         required: true
       },
       {
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["abierta", "cerrada", "ocupada"],
+        options: ["abierta", "cubierta", "cerrada", "cancelada"],
         defaultValue: "abierta"
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["title", "category", "status"]
+  },
+  {
+    table: "vacancy_visibility",
+    label: "Visibilidad de vacante",
+    category: "Contratos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "vacancy_id", label: "Vacante", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "role_id", label: "Rol", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
   },
   {
     table: "contracts",
@@ -478,12 +603,12 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
-      { name: "vacancy_id", label: "Vacante", type: "number", required: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
       {
         name: "relation_type",
         label: "Relacion",
         type: "select",
-        options: ["dependencia", "servicios"],
+        options: ["dependencia", "servicios", "promocion"],
         required: true
       },
       {
@@ -499,34 +624,14 @@ export const SQL_TABLES = [
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["activo", "terminado", "suspendido"],
+        options: ["activo", "finalizado", "cancelado"],
         defaultValue: "activo"
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["status"]
   },
-  {
-    table: "student_program_terms",
-    label: "Matriculas",
-    category: "Academico",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "person_id", label: "Persona", type: "number", required: true },
-      { name: "program_id", label: "Programa", type: "number", required: true },
-      { name: "term_id", label: "Periodo", type: "number", required: true },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["activo", "inactivo", "retirado"],
-        defaultValue: "activo"
-      },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["status"]
-  }
+  
 ];
 
 export const SQL_TABLE_MAP = Object.fromEntries(SQL_TABLES.map((table) => [table.table, table]));
