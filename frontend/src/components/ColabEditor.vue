@@ -93,8 +93,10 @@
 </template>
 
 <script setup>
+/* eslint-disable vue/no-setup-props-destructure */
 import { ref, nextTick, watch } from 'vue';
 
+// eslint-disable-next-line no-undef
 const props = defineProps({
   modelValue: {
     type: Array,
@@ -102,6 +104,7 @@ const props = defineProps({
   }
 });
 
+// eslint-disable-next-line no-undef
 const emit = defineEmits(['update:modelValue']);
 
 const cells = ref([]);

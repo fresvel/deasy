@@ -98,19 +98,6 @@ export function useSessionMonitor(sessionModalRef) {
     warningShown = false;
   };
 
-  // No usar onMounted aquí, se llamará desde el componente
-  // onMounted(() => {
-  //   const token = localStorage.getItem('token');
-  //   // Solo monitorear si hay un token
-  //   if (token) {
-  //     startMonitoring();
-  //   }
-  // });
-
-  onBeforeUnmount(() => {
-    stopMonitoring();
-  });
-
   return {
     startMonitoring,
     stopMonitoring,
