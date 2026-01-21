@@ -332,8 +332,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
-import axios from 'axios';
-import { API_PREFIX } from '@/services/apiConfig';
 import ColabEditor from '@/components/ColabEditor.vue';
 
 const activeMenu = ref('Nuevo');
@@ -392,15 +390,9 @@ const setActiveMenu = (option) => {
 const loadMemorandums = async () => {
   try {
     // TODO: Implementar llamada al backend
-    // Por ahora usar datos de ejemplo
-    const estadoMap = {
-      'Guardados': 'Borrador',
-      'Enviar': 'Enviado',
-      'Enviados firmados': 'Firmado'
-    };
-    
-    // Simular carga de datos
-    memorandums.value = [];
+    // Por ahora usar datos de ejemplo desde localStorage
+    const storedMemorandums = JSON.parse(localStorage.getItem('memorandums') || '[]');
+    memorandums.value = storedMemorandums;
   } catch (error) {
     console.error('Error al cargar memorándums:', error);
   }
