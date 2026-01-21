@@ -539,27 +539,43 @@ const run = async () => {
     "Reyes"
   ];
 
-  let cedulaCounter = 800000000;
+  const gradeUnits = [
+    ...grades,
+    ...(unitsByType.get("Tecnologia") || [])
+  ];
+  const maestriaUnits = unitsByType.get("Maestria") || [];
+
+  let cedulaCounter = 0;
+  const personIndexByCargo = new Map();
   const personsByCargo = new Map();
   const personById = new Map();
   const assignedByCargo = new Map();
+  const docentsByUnit = new Map();
   const getPersonList = (cargoName) => personsByCargo.get(cargoName) || [];
   const getPersonIds = (cargoName) => getPersonList(cargoName).map((person) => person.id);
 
   const nextCedula = () => {
     cedulaCounter += 1;
-    return String(cedulaCounter);
+    return `01020304${String(cedulaCounter).padStart(2, "0")}`;
   };
 
-  const createPerson = async (cargoName, index) => {
+  const nextPersonIndex = (cargoName) => {
+    const current = personIndexByCargo.get(cargoName) || 0;
+    const next = current + 1;
+    personIndexByCargo.set(cargoName, next);
+    return next;
+  };
+
+  const createPerson = async (cargoName) => {
+    const index = nextPersonIndex(cargoName);
     const first = firstNames[(index + cargoName.length) % firstNames.length];
     const last = lastNames[(index * 3 + cargoName.length) % lastNames.length];
     const emailSlug = slugify(cargoName).replace(/-/g, "_");
     const created = await post("persons", {
       cedula: nextCedula(),
       first_name: first,
-      last_name: `${last} ${index + 1}`,
-      email: `${emailSlug}.${index + 1}@pucese.local`,
+      last_name: `${last} ${index}`,
+      email: `${emailSlug}.${index}@pucese.local`,
       password_hash: passwordHash,
       status: "Activo",
       is_active: 1,
@@ -571,11 +587,31 @@ const run = async () => {
     }
     personsByCargo.get(cargoName).push(created);
     personById.set(created.id, created);
+    return created;
   };
 
+  const createDocentsForUnit = async (unit, count) => {
+    const docents = [];
+    for (let i = 0; i < count; i += 1) {
+      const created = await createPerson("Docente");
+      docents.push(created.id);
+    }
+    docentsByUnit.set(unit.id, docents);
+  };
+
+  for (const unit of gradeUnits) {
+    await createDocentsForUnit(unit, 4);
+  }
+  for (const unit of maestriaUnits) {
+    await createDocentsForUnit(unit, 3);
+  }
+
   for (const cargo of cargos) {
+    if (cargo === "Docente") {
+      continue;
+    }
     for (let i = 0; i < 4; i += 1) {
-      await createPerson(cargo, i);
+      await createPerson(cargo);
     }
   }
 
@@ -793,7 +829,6 @@ const run = async () => {
     }
   }
 
-  const docentsByUnit = new Map();
   const cargoRoundRobin = new Map();
 
   const pickPerson = (cargoName) => {
@@ -833,40 +868,61 @@ const run = async () => {
     }
 
     if (unit.type === "Grado" || unit.type === "Tecnologia") {
-      const docents = [];
+      const docents = docentsByUnit.get(unit.id) || [];
+      const fallbackDocents = getPersonIds("Docente");
+      const docentPool = docents.length ? docents : fallbackDocents;
+
+      let docentIdx = 0;
       for (const pos of unitPositions.filter(
         (p) => p.cargoName === "Docente" && p.positionType === "real"
       )) {
-        const personId = pickPerson("Docente");
-        if (personId) {
-          docents.push(personId);
-        }
-        await assignPosition(pos, personId);
-      }
-      docentsByUnit.set(unit.id, docents);
-
-      for (const pos of unitPositions.filter(
-        (p) => p.positionType !== "simbolico" && p.cargoName !== "Docente"
-      )) {
-        await assignPosition(pos, pickPerson(pos.cargoName));
-      }
-
-      const fallbackDocents = getPersonIds("Docente");
-      let docentIdx = 0;
-      for (const pos of unitPositions.filter((p) => p.positionType === "simbolico")) {
-        const pool = docents.length ? docents : fallbackDocents;
-        const personId = pool.length ? pool[docentIdx % pool.length] : null;
+        const personId = docentPool.length ? docentPool[docentIdx % docentPool.length] : null;
         docentIdx += 1;
         await assignPosition(pos, personId);
+      }
+
+      const coordPositions = unitPositions.filter((p) => p.cargoName === "Coordinador");
+      let coordIdx = 0;
+      for (const pos of coordPositions) {
+        const personId = docentPool.length ? docentPool[coordIdx % docentPool.length] : null;
+        coordIdx += 1;
+        await assignPosition(pos, personId);
+      }
+
+      const mentorPositions = unitPositions.filter((p) => p.cargoName === "Mentor");
+      for (const pos of mentorPositions) {
+        await assignPosition(pos, pickPerson("Mentor"));
+      }
+
+      const asistentePositions = unitPositions.filter((p) => p.cargoName === "Asistente Academica");
+      for (const pos of asistentePositions) {
+        await assignPosition(pos, pickPerson("Asistente Academica"));
+      }
+
+      const remainingPositions = unitPositions.filter(
+        (p) =>
+          !["Docente", "Coordinador", "Mentor", "Asistente Academica"].includes(p.cargoName)
+      );
+      let respIdx = 0;
+      for (const pos of remainingPositions) {
+        if (pos.positionType === "simbolico") {
+          const personId = docentPool.length ? docentPool[respIdx % docentPool.length] : null;
+          respIdx += 1;
+          await assignPosition(pos, personId);
+        } else {
+          await assignPosition(pos, pickPerson(pos.cargoName));
+        }
       }
       continue;
     }
 
     if (unit.type === "Maestria") {
+      const docents = docentsByUnit.get(unit.id) || [];
       const fallbackDocents = getPersonIds("Docente");
+      const docentPool = docents.length ? docents : fallbackDocents;
       let docentIdx = 0;
       for (const pos of unitPositions) {
-        const personId = fallbackDocents.length ? fallbackDocents[docentIdx % fallbackDocents.length] : null;
+        const personId = docentPool.length ? docentPool[docentIdx % docentPool.length] : null;
         docentIdx += 1;
         await assignPosition(pos, personId);
       }
@@ -1464,8 +1520,8 @@ const run = async () => {
   const headers = {
     cargo: "Cargo",
     count: "Asignados",
-    sample1: "Ejemplo 1 (Nombre/Cedula)",
-    sample2: "Ejemplo 2 (Nombre/Cedula)"
+    sample1: "Ejemplo 1 (Cedula - Nombre)",
+    sample2: "Ejemplo 2 (Cedula - Nombre)"
   };
 
   const widths = {
