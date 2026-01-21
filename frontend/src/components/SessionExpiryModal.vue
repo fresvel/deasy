@@ -48,6 +48,7 @@
 </template>
 
 <script setup>
+/* eslint-disable vue/no-setup-props-destructure */
 import { ref, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
 import { useRouter } from 'vue-router';
@@ -55,6 +56,7 @@ import axios from 'axios';
 import { API_ROUTES } from '@/services/apiConfig';
 import { clearAuthData } from '@/utils/tokenUtils';
 
+// eslint-disable-next-line no-undef
 const emit = defineEmits(['session-refreshed', 'session-closed']);
 
 const modal = ref(null);
@@ -121,6 +123,7 @@ const handleLogout = async () => {
   }
 };
 
+// eslint-disable-next-line no-undef
 defineExpose({
   show,
   hide
