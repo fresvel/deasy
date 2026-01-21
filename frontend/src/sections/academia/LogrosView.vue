@@ -39,10 +39,10 @@
               <tbody>
               <tr v-for="(item, index) in props.tareas" :key="index">
                   <td>{{ index }}</td>
-                  <td>{{ item.process.name}}</td>
-                  <td>{{ String(item.fecha_inicio).substring(0,10) }}</td>
-                  <td>{{ item.estatus }}</td>
-                  <td>{{ item.year+"-"+item.period }}</td>
+                  <td>{{ item.process_name || item.process_slug || 'Proceso' }}</td>
+                  <td>{{ formatDate(item.start_date || item.end_date) }}</td>
+                  <td>{{ item.assignment_status || item.task_status }}</td>
+                  <td>{{ item.term_id ?? '' }}</td>
                   <td>
                     <button 
                     @click="removeRow(index, level)"
@@ -97,6 +97,11 @@ const props= defineProps({
         required:true
     }
 })
+
+const formatDate = (value) => {
+  if (!value) return "";
+  return String(value).substring(0, 10);
+};
 
 onMounted(()=>{
     console.log('mounted', props.tareas)

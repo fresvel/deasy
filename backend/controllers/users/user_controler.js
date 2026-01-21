@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs-extra";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
+import { getMariaDBPool } from "../../config/mariadb.js";
 
 const userRepository = new UserRepository();
 
@@ -104,5 +105,179 @@ export const updateUserPhoto = async (req, res) => {
     await fs.remove(file.path).catch(() => {});
     console.error("Error actualizando foto de usuario", error);
     res.status(500).send({ message: "Error al actualizar la foto", error: error.message });
+  }
+};
+
+export const getUserMenu = async (req, res) => {
+  try {
+    const userIdRaw = req.params?.id ?? req.query?.user_id ?? req.query?.userId ?? req.body?.user_id ?? req.body?.userId;
+    const userId = Number(userIdRaw);
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(400).json({ message: "Se requiere el id del usuario." });
+    }
+
+    const pool = getMariaDBPool();
+    if (!pool) {
+      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    }
+
+    const [positions] = await pool.query(
+      `SELECT DISTINCT
+         u.id AS unit_id,
+         u.name AS unit_name,
+         c.id AS cargo_id,
+         c.name AS cargo_name
+       FROM position_assignments pa
+       INNER JOIN unit_positions up ON up.id = pa.position_id
+       INNER JOIN units u ON u.id = up.unit_id
+       INNER JOIN cargos c ON c.id = up.cargo_id
+       WHERE pa.person_id = ?
+         AND pa.is_current = 1
+         AND up.is_active = 1
+         AND u.is_active = 1
+         AND c.is_active = 1
+       ORDER BY u.name, c.name`,
+      [userId]
+    );
+
+    if (!positions.length) {
+      return res.json({ user_id: userId, units: [], consolidated: [] });
+    }
+
+    const unitsMap = new Map();
+    const cargoMapByUnit = new Map();
+    const consolidatedMap = new Map();
+
+    const ensureUnitCargoMap = (unitId) => {
+      if (!cargoMapByUnit.has(unitId)) {
+        cargoMapByUnit.set(unitId, new Map());
+      }
+      return cargoMapByUnit.get(unitId);
+    };
+
+    positions.forEach((row) => {
+      if (!unitsMap.has(row.unit_id)) {
+        unitsMap.set(row.unit_id, { id: row.unit_id, name: row.unit_name });
+      }
+
+      const unitCargoMap = ensureUnitCargoMap(row.unit_id);
+      if (!unitCargoMap.has(row.cargo_id)) {
+        unitCargoMap.set(row.cargo_id, {
+          id: row.cargo_id,
+          name: row.cargo_name,
+          processes: []
+        });
+      }
+
+      if (!consolidatedMap.has(row.cargo_id)) {
+        consolidatedMap.set(row.cargo_id, {
+          id: row.cargo_id,
+          name: row.cargo_name,
+          processes: []
+        });
+      }
+    });
+
+    const [processRows] = await pool.query(
+      `SELECT DISTINCT
+         p.id AS process_id,
+         p.name AS process_name,
+         p.slug AS process_slug,
+         p.unit_id,
+         cv.cargo_id
+       FROM processes p
+       INNER JOIN (
+         SELECT id, process_id, cargo_id
+         FROM (
+           SELECT
+             id,
+             process_id,
+             cargo_id,
+             ROW_NUMBER() OVER (
+               PARTITION BY process_id
+               ORDER BY effective_from DESC, id DESC
+             ) AS rn
+           FROM process_versions
+           WHERE is_active = 1
+             AND effective_from <= CURDATE()
+             AND (effective_to IS NULL OR effective_to >= CURDATE())
+         ) ranked
+         WHERE rn = 1
+       ) cv ON cv.process_id = p.id
+       INNER JOIN (
+         SELECT DISTINCT up.unit_id, up.cargo_id
+         FROM position_assignments pa
+         INNER JOIN unit_positions up ON up.id = pa.position_id
+         WHERE pa.person_id = ?
+           AND pa.is_current = 1
+           AND up.is_active = 1
+       ) uc ON uc.unit_id = p.unit_id AND uc.cargo_id = cv.cargo_id
+       WHERE p.is_active = 1
+       ORDER BY p.name`,
+      [userId]
+    );
+
+    const seenByUnitCargo = new Map();
+    const seenByCargo = new Map();
+
+    const addProcess = (cargo, process, seenSet) => {
+      if (seenSet.has(process.id)) {
+        return;
+      }
+      cargo.processes.push(process);
+      seenSet.add(process.id);
+    };
+
+    processRows.forEach((row) => {
+      const process = {
+        id: row.process_id,
+        name: row.process_name,
+        slug: row.process_slug,
+        unit_id: row.unit_id
+      };
+
+      const unitCargoMap = cargoMapByUnit.get(row.unit_id);
+      if (unitCargoMap?.has(row.cargo_id)) {
+        const cargo = unitCargoMap.get(row.cargo_id);
+        const key = `${row.unit_id}:${row.cargo_id}`;
+        if (!seenByUnitCargo.has(key)) {
+          seenByUnitCargo.set(key, new Set());
+        }
+        addProcess(cargo, process, seenByUnitCargo.get(key));
+      }
+
+      if (consolidatedMap.has(row.cargo_id)) {
+        if (!seenByCargo.has(row.cargo_id)) {
+          seenByCargo.set(row.cargo_id, new Set());
+        }
+        addProcess(consolidatedMap.get(row.cargo_id), process, seenByCargo.get(row.cargo_id));
+      }
+    });
+
+    const sortCargos = (cargos) => {
+      cargos.forEach((cargo) => {
+        cargo.processes.sort((a, b) => a.name.localeCompare(b.name));
+      });
+      cargos.sort((a, b) => a.name.localeCompare(b.name));
+      return cargos;
+    };
+
+    const units = Array.from(unitsMap.values())
+      .map((unit) => {
+        const cargoMap = cargoMapByUnit.get(unit.id);
+        const cargos = cargoMap ? Array.from(cargoMap.values()) : [];
+        return {
+          ...unit,
+          cargos: sortCargos(cargos)
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const consolidated = sortCargos(Array.from(consolidatedMap.values()));
+
+    res.json({ user_id: userId, units, consolidated });
+  } catch (error) {
+    console.error("Error construyendo el menu del usuario:", error);
+    res.status(500).json({ message: "Error al obtener el menú del usuario", error: error.message });
   }
 };

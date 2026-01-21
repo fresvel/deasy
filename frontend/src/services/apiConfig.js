@@ -9,7 +9,8 @@ export const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 export const API_ROUTES = {
   BASE: API_BASE_URL,
   PREFIX: API_PREFIX,
-  PROGRAMS: `${API_PREFIX}/program`,
+  UNITS: `${API_PREFIX}/units`,
+  PROGRAMS: `${API_PREFIX}/units`,
   AREAS: `${API_PREFIX}/area`,
   TAREAS_PENDIENTES: (usuario) => `${API_PREFIX}/tarea/pendiente?usuario=${usuario}`,
   INFORME_TUTORIAS: `${API_PREFIX}/tutorias/parcial`,
@@ -18,6 +19,7 @@ export const API_ROUTES = {
   USERS: `${API_PREFIX}/users`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
+  USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,

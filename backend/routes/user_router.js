@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createUser, getUsers } from "../controllers/users/user_controler.js";
+import { createUser, getUsers, getUserMenu } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { updateUserPhoto } from "../controllers/users/user_controler.js";
@@ -14,6 +14,8 @@ router.get('/', getUsers)
 
 router.post('/login', loginUser)
 router.post('/logout', logoutUser)
+
+router.get('/:id/menu', getUserMenu);
 
 router.put(
   '/:cedula/photo',

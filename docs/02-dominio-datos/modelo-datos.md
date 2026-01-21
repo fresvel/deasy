@@ -8,69 +8,57 @@
 
 ## Relacional (MariaDB) - tablas principales
 
-### Estructura academica
+### Estructura y personas
 
 - unit_types(id, name, is_active, created_at)
-- units(id, name, slug, unit_type_id, is_active, created_at)
-- unit_relations(parent_unit_id, child_unit_id, relation_type, created_at)
-- programs(id, name, slug, level_type, is_active, created_at)
-- program_unit_history(id, program_id, unit_id, start_date, end_date, is_current)
-- terms(id, name, start_date, end_date, is_active)
+- units(id, name, slug, unit_type_id, is_active, created_at, updated_at)
+- relation_unit_types(id, code, name, is_inheritance_allowed, is_active, created_at)
+- unit_relations(id, relation_type_id, parent_unit_id, child_unit_id, created_at)
+- persons(id, cedula, first_name, last_name, email, whatsapp, direccion, pais, password_hash, status, verify_email, verify_whatsapp, photo_url, is_active, created_at, updated_at)
+- cargos(id, name, description, is_active, created_at, updated_at)
+- unit_positions(id, unit_id, cargo_id, slot_no, title, profile_ref, position_type, is_active, created_at, updated_at)
+  - position_type: real | promocion | simbolico
+- position_assignments(id, position_id, person_id, start_date, end_date, is_current, created_at, updated_at)
+- roles(id, name, description, is_active)
+- resources(id, code, name, description, is_active)
+- actions(id, code, name, description, is_active)
+- permissions(id, resource_id, action_id, code, description, is_active)
+- role_permissions(id, role_id, permission_id)
+- role_assignments(id, person_id, role_id, unit_id, source, derived_from_assignment_id, max_depth, start_date, end_date, is_current)
+- role_assignment_relation_types(id, relation_type_id, role_assignment_id)
+- cargo_role_map(id, role_id, cargo_id)
+
+### Vacantes y contratos
+
+- vacancies(id, position_id, title, category, dedication, relation_type, status, opened_at, closed_at, created_at, updated_at)
+  - relation_type: dependencia | servicios | promocion
+- vacancy_visibility(id, vacancy_id, unit_id, role_id, created_at)
+- aplications(id, vacancy_id, person_id, status, applied_at, note, created_at, updated_at)
+- offers(id, application_id, status, sent_at, responded_at, expires_at, created_at)
+- contracts(id, person_id, position_id, relation_type, dedication, start_date, end_date, status, created_at, updated_at)
+- contract_origins(contract_id, origin_type, created_at)
+- contract_origin_recruitment(contract_id, offer_id, vacancy_id, created_at)
+- contract_origin_renewal(contract_id, renewed_from_contract_id, created_at)
 
 ### Procesos, tareas y plantillas
 
-- processes(id, name, slug, parent_id, person_id, unit_id, program_id, has_document, is_active, created_at)
-  - CHECK: unit_id IS NOT NULL OR program_id IS NOT NULL
-  - FK: parent_id -> processes.id
-  - FK: person_id -> persons.id
-  - FK: unit_id -> units.id
-  - FK: program_id -> programs.id
-- process_cargos(id, process_id, cargo_id, unit_id, program_id, created_at)
-  - UNIQUE(process_id, cargo_id, unit_id, program_id)
-  - FK: process_id -> processes.id
-  - FK: cargo_id -> cargos.id
-  - FK: unit_id -> units.id
-  - FK: program_id -> programs.id
-
-- tasks(id, process_id, process_version_id, term_id, parent_task_id, responsible_person_id, start_date, end_date, status, created_at)
-  - FK: process_id -> processes.id
-  - FK: process_version_id -> process_versions.id
-  - FK: term_id -> terms.id
-  - FK: parent_task_id -> tasks.id
-  - FK: responsible_person_id -> persons.id
-- task_assignments(id, task_id, person_id, status, assigned_at, unassigned_at)
-  - UNIQUE(task_id, person_id)
-  - FK: task_id -> tasks.id
-  - FK: person_id -> persons.id
-
-- templates(id, name, slug, description, version, created_at)
-- process_templates(process_id, template_id)
-
-### Usuarios, roles y cargos
-
-- persons(id, cedula, first_name, last_name, email, whatsapp, direccion, pais, password_hash, status, verify_email, verify_whatsapp, photo_url, is_active, created_at, updated_at)
-- roles(id, name, description, is_active)
-- permissions(id, code, description)
-- role_permissions(role_id, permission_id)
-- role_assignments(id, person_id, role_id, unit_id, program_id, assigned_at)
-- cargos(id, name, description, is_active)
-- person_cargos(id, person_id, cargo_id, unit_id, program_id, start_date, end_date, is_current, current_flag)
-  - UNIQUE(person_id, cargo_id, current_flag)
-
-### Documentos y firmas
-
-- documents(id, task_id, status, created_at, updated_at)
+- processes(id, name, slug, parent_id, unit_id, has_document, is_active, created_at)
+- process_versions(id, process_id, version, name, slug, parent_version_id, cargo_id, has_document, is_active, effective_from, effective_to, created_at)
+- terms(id, name, start_date, end_date, is_active)
+- tasks(id, process_version_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
+- task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
+- templates(id, process_id, name, slug, description, created_at)
+- template_versions(id, template_id, version, mongo_ref, mongo_version, is_active, created_at)
+- documents(id, task_id, status, comments_thread_ref, created_at, updated_at)
 - document_versions(id, document_id, version, payload_mongo_id, payload_hash, latex_path, pdf_path, signed_pdf_path, status, created_at)
-  - UNIQUE(document_id, version)
-- document_signatures(id, document_version_id, signer_user_id, signature_role, signature_status, note_short, signed_file_path, signed_at, created_at)
-
-### Docencia/contratos
-
-- vacancies(id, unit_id, program_id, title, category, dedication, relation_type, status, created_at)
-  - CHECK: solo uno de unit_id o program_id puede ser NULL (XOR)
-- contracts(id, person_id, vacancy_id, relation_type, dedication, start_date, end_date, status, created_at)
-- student_program_terms(id, person_id, program_id, term_id, status, created_at)
-  - UNIQUE(person_id, program_id, term_id)
+- signature_types(id, code, name, description, is_active, created_at)
+- signature_statuses(id, code, name, description, is_active, created_at)
+- signature_request_statuses(id, code, name, description, is_active, created_at)
+- signature_flow_templates(id, process_version_id, name, description, is_active, created_at)
+- signature_flow_steps(id, template_id, step_order, step_type_id, required_cargo_id, selection_mode, required_signers_min, required_signers_max, is_required, created_at)
+- signature_flow_instances(id, template_id, document_version_id, status_id, created_at)
+- signature_requests(id, instance_id, step_id, assigned_person_id, status_id, is_manual, requested_at, notified_at, responded_at)
+- document_signatures(id, signature_request_id, document_version_id, signer_user_id, signature_type_id, signature_status_id, note_short, signed_file_path, signed_at, created_at)
 
 ## NoSQL (MongoDB)
 

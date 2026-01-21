@@ -34,6 +34,9 @@ const getConfig = (tableName) => {
 const pickPayload = (fields, data, { includeReadOnly = false } = {}) => {
   const payload = {};
   for (const field of fields) {
+    if (field.virtual) {
+      continue;
+    }
     if (!includeReadOnly && field.readOnly) {
       continue;
     }
@@ -102,21 +105,6 @@ const validateFieldTypes = (config, payload) => {
 };
 
 const validateTableRules = (tableName, candidate) => {
-  const ensureXor = (left, right, label) => {
-    const hasLeft = left !== null && left !== undefined;
-    const hasRight = right !== null && right !== undefined;
-    if (hasLeft === hasRight) {
-      throw new Error(`Debe existir solo uno entre ${label}.`);
-    }
-  };
-  const ensureAtLeastOne = (left, right, label) => {
-    const hasLeft = left !== null && left !== undefined;
-    const hasRight = right !== null && right !== undefined;
-    if (!hasLeft && !hasRight) {
-      throw new Error(`Debe existir al menos uno entre ${label}.`);
-    }
-  };
-
   switch (tableName) {
     case "unit_relations":
       if (candidate.parent_unit_id && candidate.child_unit_id) {
@@ -125,27 +113,20 @@ const validateTableRules = (tableName, candidate) => {
         }
       }
       break;
-    case "program_unit_history":
-      ensureDateOrder(candidate.start_date, candidate.end_date, "historial programa-unidad");
-      if (Number(candidate.is_current) === 1 && candidate.end_date) {
-        throw new Error("No se puede marcar como actual si existe fecha de fin.");
-      }
-      break;
     case "terms":
       ensureDateOrder(candidate.start_date, candidate.end_date, "periodos");
       break;
     case "processes":
-      if (!candidate.person_id) {
-        throw new Error("Selecciona un responsable para el proceso.");
+      if (!candidate.unit_id) {
+        throw new Error("Selecciona una unidad para el proceso.");
       }
-      ensureAtLeastOne(candidate.unit_id, candidate.program_id, "unidad o programa");
       break;
     case "process_versions":
       if (!candidate.process_id) {
         throw new Error("Selecciona un proceso base para la version.");
       }
-      if (!candidate.person_id) {
-        throw new Error("Selecciona un responsable para la version del proceso.");
+      if (!candidate.cargo_id) {
+        throw new Error("Selecciona un cargo responsable para la version del proceso.");
       }
       if (!candidate.version || !/^\d+\.\d+$/.test(String(candidate.version))) {
         throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
@@ -154,12 +135,8 @@ const validateTableRules = (tableName, candidate) => {
         throw new Error("Selecciona la fecha de vigencia inicial.");
       }
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "versiones de proceso");
-      ensureAtLeastOne(candidate.unit_id, candidate.program_id, "unidad o programa");
       break;
     case "tasks":
-      if (!candidate.process_id) {
-        throw new Error("Selecciona un proceso para la tarea.");
-      }
       if (!candidate.process_version_id) {
         throw new Error("Selecciona la version del proceso para la tarea.");
       }
@@ -172,26 +149,16 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.task_id) {
         throw new Error("Selecciona una tarea para asignar.");
       }
-      if (!candidate.person_id) {
-        throw new Error("Selecciona una persona para la asignacion.");
+      if (!candidate.position_id) {
+        throw new Error("Selecciona un puesto para la asignacion.");
       }
       break;
     case "vacancies":
-      ensureXor(candidate.unit_id, candidate.program_id, "unidad o programa");
       break;
     case "contracts":
       ensureDateOrder(candidate.start_date, candidate.end_date, "contratos");
       break;
-    case "person_cargos":
-      ensureDateOrder(candidate.start_date, candidate.end_date, "cargos por persona");
-      if (Number(candidate.is_current) === 1 && candidate.end_date) {
-        throw new Error("No se puede marcar como actual si existe fecha de fin.");
-      }
-      break;
     case "role_assignments":
-      if (candidate.unit_id && candidate.program_id) {
-        throw new Error("La asignacion no puede tener unidad y programa al mismo tiempo.");
-      }
       break;
     case "document_versions":
       if (candidate.version !== undefined) {
@@ -202,9 +169,6 @@ const validateTableRules = (tableName, candidate) => {
       }
       break;
     case "templates":
-      if (candidate.version && !/^\d+\.\d+$/.test(String(candidate.version))) {
-        throw new Error("La version de plantilla debe tener formato decimal (ej: 0.1).");
-      }
       break;
     default:
       break;
@@ -226,6 +190,20 @@ export default class SqlAdminService {
     return Object.values(SQL_TABLE_MAP);
   }
 
+  async ensureContractablePosition(positionId) {
+    this.ensurePool();
+    const [rows] = await this.pool.query(
+      "SELECT position_type FROM unit_positions WHERE id = ? LIMIT 1",
+      [positionId]
+    );
+    if (!rows?.length) {
+      throw new Error("El puesto seleccionado no existe.");
+    }
+    if (!["real", "promocion"].includes(rows[0].position_type)) {
+      throw new Error("Solo se permiten vacantes para ocupaciones reales o de promocion.");
+    }
+  }
+
   async list(tableName, { q, limit, offset, orderBy, order, filters = {} } = {}) {
     this.ensurePool();
     const config = getConfig(tableName);
@@ -241,18 +219,15 @@ export default class SqlAdminService {
 
     if (tableName === "templates") {
       const baseFields = fields.filter((field) => field !== "process_name");
-      joinClause =
-        "LEFT JOIN process_templates pt ON pt.template_id = templates.id " +
-        "LEFT JOIN processes p ON p.id = pt.process_id";
+      joinClause = "LEFT JOIN processes p ON p.id = templates.process_id";
       columnPrefix = "templates.";
       const selectFields = baseFields.map((field) => `${columnPrefix}${field}`);
       if (fields.includes("process_name")) {
-        selectFields.push('GROUP_CONCAT(DISTINCT p.name ORDER BY p.name SEPARATOR ", ") AS process_name');
+        selectFields.push("p.name AS process_name");
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;
-      groupByClause = `GROUP BY ${baseFields.map((field) => `${columnPrefix}${field}`).join(", ")}`;
       if (normalizedFilters.process_id) {
-        conditions.push("pt.process_id = ?");
+        conditions.push("templates.process_id = ?");
         params.push(normalizedFilters.process_id);
         delete normalizedFilters.process_id;
       }
@@ -326,20 +301,23 @@ export default class SqlAdminService {
     }
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
-    const processId = tableName === "templates" ? data?.process_id : null;
 
-    const required = config.fields.filter((field) => field.required && !field.readOnly);
+    const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
     const missing = required.filter((field) => payload[field.name] === undefined || payload[field.name] === "");
 
     if (missing.length) {
       throw new Error(`Datos incompletos: ${missing.map((field) => field.label || field.name).join(", ")}`);
     }
-    if (tableName === "templates" && (!processId || Number(processId) <= 0)) {
-      throw new Error("Selecciona un proceso para la plantilla.");
+    if (tableName === "processes" && !data?.cargo_id) {
+      throw new Error("Selecciona un cargo responsable para la version inicial del proceso.");
     }
 
     validateFieldTypes(config, payload);
     validateTableRules(tableName, payload);
+
+    if (tableName === "vacancies") {
+      await this.ensureContractablePosition(payload.position_id ?? data?.position_id);
+    }
 
     const columns = Object.keys(payload);
     if (!columns.length) {
@@ -349,7 +327,7 @@ export default class SqlAdminService {
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
 
-    if (tableName !== "templates" && tableName !== "processes") {
+    if (tableName !== "processes") {
       const [result] = await this.pool.query(
         `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
         values
@@ -373,12 +351,6 @@ export default class SqlAdminService {
         values
       );
       const insertedId = result.insertId;
-      if (tableName === "templates") {
-        await connection.query(
-          "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
-          [processId, insertedId]
-        );
-      }
       if (tableName === "processes") {
         const version = data?.version ?? "0.1";
         const versionName = data?.version_name ?? "Inicial";
@@ -401,9 +373,7 @@ export default class SqlAdminService {
           name: versionName,
           slug: versionSlug,
           parent_version_id: parentVersionId || null,
-          person_id: payload.person_id,
-          unit_id: payload.unit_id ?? null,
-          program_id: payload.program_id ?? null,
+          cargo_id: data?.cargo_id,
           has_document: payload.has_document ?? 1,
           is_active: payload.is_active ?? 1,
           effective_from: effectiveFrom,
@@ -443,15 +413,11 @@ export default class SqlAdminService {
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
     const updates = pickPayload(config.fields, data);
-    const processId = tableName === "templates" ? data?.process_id : null;
     if (tableName === "process_versions") {
       const allowed = new Set([
         "name",
         "slug",
         "parent_version_id",
-        "person_id",
-        "unit_id",
-        "program_id",
         "has_document",
         "is_active",
         "effective_from",
@@ -467,7 +433,7 @@ export default class SqlAdminService {
     const columns = Object.keys(updates).filter((column) =>
       allowPrimaryKeyUpdate ? true : !config.primaryKeys.includes(column)
     );
-    if (!columns.length && tableName !== "templates" && tableName !== "processes") {
+    if (!columns.length && tableName !== "processes") {
       throw new Error("No hay cambios para actualizar.");
     }
 
@@ -483,7 +449,7 @@ export default class SqlAdminService {
     validateFieldTypes(config, candidate);
     validateTableRules(tableName, candidate);
 
-    if (tableName !== "templates" && tableName !== "processes") {
+    if (tableName !== "processes") {
       await this.pool.query(
         `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
         [...values, ...params]
@@ -504,27 +470,6 @@ export default class SqlAdminService {
           [...values, ...params]
         );
       }
-      if (tableName === "templates") {
-        const templateId = existing.id ?? keyPayload.id;
-        if (processId && Number(processId) > 0) {
-          await connection.query(
-            "DELETE FROM process_templates WHERE template_id = ?",
-            [templateId]
-          );
-          await connection.query(
-            "INSERT INTO process_templates (process_id, template_id) VALUES (?, ?)",
-            [processId, templateId]
-          );
-        } else {
-          const [rows] = await connection.query(
-            "SELECT process_id FROM process_templates WHERE template_id = ? LIMIT 1",
-            [templateId]
-          );
-          if (!rows?.length) {
-            throw new Error("Selecciona un proceso para la plantilla.");
-          }
-        }
-      }
       if (tableName === "processes") {
         const processRow = { ...existing, ...updates };
         const version = data?.version ?? data?.version_number ?? null;
@@ -533,6 +478,7 @@ export default class SqlAdminService {
         const versionName = data?.version_name ?? processRow.name;
         const versionSlug = data?.version_slug ?? processRow.slug ?? `process-${processRow.id}-v${version}`;
         const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
+        const cargoId = data?.cargo_id ?? null;
 
         if (!version) {
           throw new Error("Debes indicar la nueva version del proceso.");
@@ -542,6 +488,9 @@ export default class SqlAdminService {
         }
         if (!effectiveFrom) {
           throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
+        }
+        if (!cargoId) {
+          throw new Error("Selecciona el cargo responsable para la nueva version del proceso.");
         }
         ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
 
@@ -560,9 +509,7 @@ export default class SqlAdminService {
           name: versionName,
           slug: versionSlug,
           parent_version_id: resolvedParentVersionId,
-          person_id: processRow.person_id,
-          unit_id: processRow.unit_id ?? null,
-          program_id: processRow.program_id ?? null,
+          cargo_id: cargoId,
           has_document: processRow.has_document ?? 1,
           is_active: processRow.is_active ?? 1,
           effective_from: effectiveFrom,

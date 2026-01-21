@@ -236,27 +236,6 @@
                   :disabled="isFieldLocked(field)"
                 />
               </div>
-              <div v-if="isTemplateTable" class="col-12 col-md-6">
-                <label class="form-label">Proceso</label>
-                <div class="input-group">
-                  <input
-                    v-model="templateProcessLabel"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona un proceso"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="openTemplateProcessSearch"
-                  >
-                    Buscar
-                  </button>
-                </div>
-              </div>
               <template v-if="isProcessTable">
                 <div class="col-12">
                   <div class="alert alert-warning mb-0">
@@ -334,21 +313,19 @@
               <div class="border-top pt-4 mt-4">
                 <h6 class="text-uppercase text-muted mb-3">Asignaciones del usuario</h6>
                 <div v-if="!personEditorId" class="alert alert-info">
-                  Guarda el usuario para poder asignar cargos, roles y contratos.
+                  Guarda el usuario para poder asignar ocupaciones, roles y contratos.
                 </div>
 
                 <div class="row g-4">
                   <div class="col-12">
-                    <h6 class="mb-2">Cargos</h6>
+                    <h6 class="mb-2">Ocupaciones</h6>
                     <div v-if="personCargoError" class="alert alert-danger">{{ personCargoError }}</div>
                     <div class="table-responsive mb-3">
                       <table class="table table-sm table-striped align-middle">
                         <thead>
                           <tr>
                             <th>ID</th>
-                            <th>Cargo</th>
-                            <th>Unidad</th>
-                            <th>Programa</th>
+                            <th>Puesto</th>
                             <th>Inicio</th>
                             <th>Fin</th>
                             <th>Actual</th>
@@ -356,13 +333,11 @@
                         </thead>
                         <tbody>
                           <tr v-if="personCargoRows.length === 0">
-                            <td colspan="7" class="text-center text-muted">Sin cargos asignados.</td>
+                            <td colspan="5" class="text-center text-muted">Sin ocupaciones asignadas.</td>
                           </tr>
                           <tr v-for="row in personCargoRows" :key="row.id">
                             <td>{{ row.id }}</td>
-                            <td>{{ formatCell(row.cargo_id, { name: "cargo_id" }) }}</td>
-                            <td>{{ formatCell(row.unit_id, { name: "unit_id" }) }}</td>
-                            <td>{{ formatCell(row.program_id, { name: "program_id" }) }}</td>
+                            <td>{{ formatCell(row.position_id, { name: "position_id" }) }}</td>
                             <td>{{ toDateInputValue(row.start_date) }}</td>
                             <td>{{ toDateInputValue(row.end_date) || "—" }}</td>
                             <td>{{ Number(row.is_current) === 1 ? "Si" : "No" }}</td>
@@ -372,53 +347,19 @@
                     </div>
 
                     <div class="row g-3">
-                      <div class="col-12 col-md-4">
-                        <label class="form-label text-dark">Cargo</label>
+                      <div class="col-12 col-md-6">
+                        <label class="form-label text-dark">Puesto</label>
                         <div class="input-group">
                           <input
-                            v-model="personCargoLabels.cargo_id"
+                            v-model="personCargoLabels.position_id"
                             type="text"
                             class="form-control"
-                            placeholder="Selecciona un cargo"
+                            placeholder="Selecciona un puesto"
                             readonly
                             @keydown.prevent
                             @paste.prevent
                           />
-                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('cargo_id')">
-                            Buscar
-                          </button>
-                        </div>
-                      </div>
-                      <div class="col-12 col-md-4">
-                        <label class="form-label text-dark">Unidad</label>
-                        <div class="input-group">
-                          <input
-                            v-model="personCargoLabels.unit_id"
-                            type="text"
-                            class="form-control"
-                            placeholder="Selecciona una unidad"
-                            readonly
-                            @keydown.prevent
-                            @paste.prevent
-                          />
-                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('unit_id')">
-                            Buscar
-                          </button>
-                        </div>
-                      </div>
-                      <div class="col-12 col-md-4">
-                        <label class="form-label text-dark">Programa</label>
-                        <div class="input-group">
-                          <input
-                            v-model="personCargoLabels.program_id"
-                            type="text"
-                            class="form-control"
-                            placeholder="Selecciona un programa"
-                            readonly
-                            @keydown.prevent
-                            @paste.prevent
-                          />
-                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('program_id')">
+                          <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('position_id')">
                             Buscar
                           </button>
                         </div>
@@ -440,7 +381,7 @@
                       </div>
                       <div class="col-12 text-end">
                         <button class="btn btn-outline-primary" type="button" @click="submitPersonCargoCreate">
-                          Agregar cargo
+                          Agregar ocupacion
                         </button>
                       </div>
                     </div>
@@ -456,19 +397,17 @@
                             <th>ID</th>
                             <th>Rol</th>
                             <th>Unidad</th>
-                            <th>Programa</th>
                             <th>Asignado</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr v-if="personRoleRows.length === 0">
-                            <td colspan="5" class="text-center text-muted">Sin roles asignados.</td>
+                            <td colspan="4" class="text-center text-muted">Sin roles asignados.</td>
                           </tr>
                           <tr v-for="row in personRoleRows" :key="row.id">
                             <td>{{ row.id }}</td>
                             <td>{{ formatCell(row.role_id, { name: "role_id" }) }}</td>
                             <td>{{ formatCell(row.unit_id, { name: "unit_id" }) }}</td>
-                            <td>{{ formatCell(row.program_id, { name: "program_id" }) }}</td>
                             <td>{{ row.assigned_at ?? "—" }}</td>
                           </tr>
                         </tbody>
@@ -476,7 +415,7 @@
                     </div>
 
                     <div class="row g-3">
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-6">
                         <label class="form-label text-dark">Rol</label>
                         <div class="input-group">
                           <input
@@ -493,7 +432,7 @@
                           </button>
                         </div>
                       </div>
-                      <div class="col-12 col-md-4">
+                      <div class="col-12 col-md-6">
                         <label class="form-label text-dark">Unidad</label>
                         <div class="input-group">
                           <input
@@ -510,23 +449,6 @@
                           </button>
                         </div>
                       </div>
-                      <div class="col-12 col-md-4">
-                        <label class="form-label text-dark">Programa</label>
-                        <div class="input-group">
-                          <input
-                            v-model="personRoleLabels.program_id"
-                            type="text"
-                            class="form-control"
-                            placeholder="Selecciona un programa"
-                            readonly
-                            @keydown.prevent
-                            @paste.prevent
-                          />
-                          <button class="btn btn-outline-secondary" type="button" @click="openPersonRoleFkSearch('program_id')">
-                            Buscar
-                          </button>
-                        </div>
-                      </div>
                       <div class="col-12 text-end">
                         <button class="btn btn-outline-primary" type="button" @click="submitPersonRoleCreate">
                           Agregar rol
@@ -536,14 +458,14 @@
                   </div>
 
                   <div class="col-12">
-                    <h6 class="mb-2">Contratos / Vacantes</h6>
+                    <h6 class="mb-2">Contratos / Puestos</h6>
                     <div v-if="personContractError" class="alert alert-danger">{{ personContractError }}</div>
                     <div class="table-responsive mb-3">
                       <table class="table table-sm table-striped align-middle">
                         <thead>
                           <tr>
                             <th>ID</th>
-                            <th>Vacante</th>
+                            <th>Puesto</th>
                             <th>Relacion</th>
                             <th>Dedicacion</th>
                             <th>Inicio</th>
@@ -557,7 +479,7 @@
                           </tr>
                           <tr v-for="row in personContractRows" :key="row.id">
                             <td>{{ row.id }}</td>
-                            <td>{{ formatCell(row.vacancy_id, { name: "vacancy_id" }) }}</td>
+                            <td>{{ formatCell(row.position_id, { name: "position_id" }) }}</td>
                             <td>{{ row.relation_type }}</td>
                             <td>{{ row.dedication }}</td>
                             <td>{{ toDateInputValue(row.start_date) }}</td>
@@ -570,13 +492,13 @@
 
                     <div class="row g-3">
                       <div class="col-12 col-md-4">
-                        <label class="form-label text-dark">Vacante</label>
+                        <label class="form-label text-dark">Puesto</label>
                         <div class="input-group">
                           <input
-                            v-model="personContractLabels.vacancy_id"
+                            v-model="personContractLabels.position_id"
                             type="text"
                             class="form-control"
-                            placeholder="Selecciona una vacante"
+                            placeholder="Selecciona un puesto"
                             readonly
                             @keydown.prevent
                             @paste.prevent
@@ -607,7 +529,7 @@
                         <select v-model="personContractForm.status" class="form-select">
                           <option value="activo">activo</option>
                           <option value="finalizado">finalizado</option>
-                          <option value="suspendido">suspendido</option>
+                          <option value="cancelado">cancelado</option>
                         </select>
                       </div>
                       <div class="col-12 text-end">
@@ -712,52 +634,18 @@
                 </div>
               </div>
               <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Responsable</label>
+                <label class="form-label text-dark">Cargo responsable</label>
                 <div class="input-group">
                   <input
-                    v-model="processVersionEditLabels.person_id"
+                    v-model="processVersionEditLabels.cargo_id"
                     type="text"
                     class="form-control"
-                    placeholder="Selecciona un responsable"
+                    placeholder="Selecciona un cargo"
                     readonly
                     @keydown.prevent
                     @paste.prevent
                   />
-                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('person_id')">
-                    Buscar
-                  </button>
-                </div>
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Unidad</label>
-                <div class="input-group">
-                  <input
-                    v-model="processVersionEditLabels.unit_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona una unidad"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('unit_id')">
-                    Buscar
-                  </button>
-                </div>
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Programa</label>
-                <div class="input-group">
-                  <input
-                    v-model="processVersionEditLabels.program_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona un programa"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('program_id')">
+                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('cargo_id')">
                     Buscar
                   </button>
                 </div>
@@ -935,27 +823,6 @@
                     class="btn btn-outline-secondary"
                     type="button"
                     @click="openProcessFkSearch('unit_id')"
-                  >
-                    Buscar
-                  </button>
-                </div>
-              </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Programa</label>
-                <div class="input-group">
-                  <input
-                    v-model="processFilterLabels.program_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona un programa"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="openProcessFkSearch('program_id')"
                   >
                     Buscar
                   </button>
@@ -1195,14 +1062,12 @@ const openDropdownId = ref(null);
 
 const processFilters = ref({
   unit_id: "",
-  program_id: "",
   parent_id: "",
   has_document: "",
   is_active: ""
 });
 const processFilterLabels = ref({
   unit_id: "",
-  program_id: "",
   parent_id: ""
 });
 const templateFilters = ref({
@@ -1214,8 +1079,6 @@ const templateFilters = ref({
 const templateFilterLabels = ref({
   process_id: ""
 });
-const templateProcessId = ref("");
-const templateProcessLabel = ref("");
 const documentFilters = ref({
   task_id: "",
   status: ""
@@ -1250,9 +1113,7 @@ const processVersionEditForm = ref({
   name: "",
   slug: "",
   parent_version_id: "",
-  person_id: "",
-  unit_id: "",
-  program_id: "",
+  cargo_id: "",
   has_document: "1",
   is_active: "1",
   effective_from: "",
@@ -1260,42 +1121,34 @@ const processVersionEditForm = ref({
 });
 const processVersionEditLabels = ref({
   parent_version_id: "",
-  person_id: "",
-  unit_id: "",
-  program_id: ""
+  cargo_id: ""
 });
 const personEditorId = ref("");
 const personCargoRows = ref([]);
 const personCargoError = ref("");
 const personCargoForm = ref({
-  cargo_id: "",
-  unit_id: "",
-  program_id: "",
+  position_id: "",
   start_date: "",
   end_date: "",
   is_current: "1"
 });
 const personCargoLabels = ref({
-  cargo_id: "",
-  unit_id: "",
-  program_id: ""
+  position_id: ""
 });
 const personRoleRows = ref([]);
 const personRoleError = ref("");
 const personRoleForm = ref({
   role_id: "",
-  unit_id: "",
-  program_id: ""
+  unit_id: ""
 });
 const personRoleLabels = ref({
   role_id: "",
-  unit_id: "",
-  program_id: ""
+  unit_id: ""
 });
 const personContractRows = ref([]);
 const personContractError = ref("");
 const personContractForm = ref({
-  vacancy_id: "",
+  position_id: "",
   relation_type: "",
   dedication: "",
   start_date: "",
@@ -1303,7 +1156,7 @@ const personContractForm = ref({
   status: "activo"
 });
 const personContractLabels = ref({
-  vacancy_id: ""
+  position_id: ""
 });
 
 const editableFields = computed(() => {
@@ -1552,17 +1405,34 @@ const FK_TABLE_MAP = {
   process_version_id: "process_versions",
   term_id: "terms",
   task_id: "tasks",
+  unit_type_id: "unit_types",
   unit_id: "units",
-  program_id: "programs",
+  parent_unit_id: "units",
+  child_unit_id: "units",
+  relation_type_id: "relation_unit_types",
   template_id: "templates",
   document_id: "documents",
+  document_version_id: "document_versions",
   person_id: "persons",
-  responsible_person_id: "persons",
+  responsible_position_id: "unit_positions",
   role_id: "roles",
   permission_id: "permissions",
+  resource_id: "resources",
+  action_id: "actions",
   cargo_id: "cargos",
+  required_cargo_id: "cargos",
   signer_user_id: "persons",
-  vacancy_id: "vacancies"
+  position_id: "unit_positions",
+  assigned_person_id: "persons",
+  vacancy_id: "vacancies",
+  role_assignment_id: "role_assignments",
+  signature_request_id: "signature_requests",
+  signature_type_id: "signature_types",
+  signature_status_id: "signature_statuses",
+  step_id: "signature_flow_steps",
+  step_type_id: "signature_types",
+  instance_id: "signature_flow_instances",
+  status_id: "signature_request_statuses"
 };
 
 const isForeignKeyField = (field) => FK_TABLE_MAP[field.name] !== undefined;
@@ -1837,14 +1707,12 @@ const applyProcessFilter = async () => {
 const clearProcessFilter = async () => {
   processFilters.value = {
     unit_id: "",
-    program_id: "",
     parent_id: "",
     has_document: "",
     is_active: ""
   };
   processFilterLabels.value = {
     unit_id: "",
-    program_id: "",
     parent_id: ""
   };
   await fetchRows();
@@ -1959,9 +1827,7 @@ const resetProcessVersionEditor = () => {
     name: "",
     slug: "",
     parent_version_id: "",
-    person_id: "",
-    unit_id: "",
-    program_id: "",
+    cargo_id: "",
     has_document: "1",
     is_active: "1",
     effective_from: "",
@@ -1969,9 +1835,7 @@ const resetProcessVersionEditor = () => {
   };
   processVersionEditLabels.value = {
     parent_version_id: "",
-    person_id: "",
-    unit_id: "",
-    program_id: ""
+    cargo_id: ""
   };
 };
 
@@ -1993,30 +1857,24 @@ const resetPersonAssignments = () => {
   personRoleError.value = "";
   personContractError.value = "";
   personCargoForm.value = {
-    cargo_id: "",
-    unit_id: "",
-    program_id: "",
+    position_id: "",
     start_date: "",
     end_date: "",
     is_current: "1"
   };
   personCargoLabels.value = {
-    cargo_id: "",
-    unit_id: "",
-    program_id: ""
+    position_id: ""
   };
   personRoleForm.value = {
     role_id: "",
-    unit_id: "",
-    program_id: ""
+    unit_id: ""
   };
   personRoleLabels.value = {
     role_id: "",
-    unit_id: "",
-    program_id: ""
+    unit_id: ""
   };
   personContractForm.value = {
-    vacancy_id: "",
+    position_id: "",
     relation_type: "",
     dedication: "",
     start_date: "",
@@ -2024,7 +1882,7 @@ const resetPersonAssignments = () => {
     status: "activo"
   };
   personContractLabels.value = {
-    vacancy_id: ""
+    position_id: ""
   };
 };
 
@@ -2061,7 +1919,7 @@ const loadPersonAssignments = async (personId) => {
   personContractError.value = "";
   try {
     const [cargoRes, roleRes, contractRes] = await Promise.all([
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("person_cargos"), {
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("position_assignments"), {
         params: { filter_person_id: personId, orderBy: "start_date", order: "desc", limit: 200 }
       }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("role_assignments"), {
@@ -2074,11 +1932,11 @@ const loadPersonAssignments = async (personId) => {
     personCargoRows.value = cargoRes.data || [];
     personRoleRows.value = roleRes.data || [];
     personContractRows.value = contractRes.data || [];
-    await prefetchFkLabelsForRows(personCargoRows.value, ["cargo_id", "unit_id", "program_id"]);
-    await prefetchFkLabelsForRows(personRoleRows.value, ["role_id", "unit_id", "program_id"]);
-    await prefetchFkLabelsForRows(personContractRows.value, ["vacancy_id"]);
+    await prefetchFkLabelsForRows(personCargoRows.value, ["position_id"]);
+    await prefetchFkLabelsForRows(personRoleRows.value, ["role_id", "unit_id"]);
+    await prefetchFkLabelsForRows(personContractRows.value, ["position_id"]);
   } catch (error) {
-    personCargoError.value = personCargoError.value || "No se pudo cargar cargos.";
+    personCargoError.value = personCargoError.value || "No se pudo cargar ocupaciones.";
     personRoleError.value = personRoleError.value || "No se pudo cargar roles.";
     personContractError.value = personContractError.value || "No se pudo cargar contratos.";
   }
@@ -2098,9 +1956,7 @@ const openProcessVersionProcessSearch = () => {
       name: "",
       slug: "",
       parent_version_id: "",
-      person_id: "",
-      unit_id: "",
-      program_id: "",
+      cargo_id: "",
       has_document: "1",
       is_active: "1",
       effective_from: "",
@@ -2108,9 +1964,7 @@ const openProcessVersionProcessSearch = () => {
     };
     processVersionEditLabels.value = {
       parent_version_id: "",
-      person_id: "",
-      unit_id: "",
-      program_id: ""
+      cargo_id: ""
     };
     await fetchProcessVersions();
   });
@@ -2125,9 +1979,7 @@ const handleProcessVersionSelect = () => {
       name: "",
       slug: "",
       parent_version_id: "",
-      person_id: "",
-      unit_id: "",
-      program_id: "",
+      cargo_id: "",
       has_document: "1",
       is_active: "1",
       effective_from: "",
@@ -2135,9 +1987,7 @@ const handleProcessVersionSelect = () => {
     };
     processVersionEditLabels.value = {
       parent_version_id: "",
-      person_id: "",
-      unit_id: "",
-      program_id: ""
+      cargo_id: ""
     };
     return;
   }
@@ -2151,9 +2001,7 @@ const handleProcessVersionSelect = () => {
     name: row.name ?? "",
     slug: row.slug ?? "",
     parent_version_id: row.parent_version_id ?? "",
-    person_id: row.person_id ?? "",
-    unit_id: row.unit_id ?? "",
-    program_id: row.program_id ?? "",
+    cargo_id: row.cargo_id ?? "",
     has_document: String(Number(row.has_document ?? 1) === 1 ? 1 : 0),
     is_active: String(Number(row.is_active ?? 1) === 1 ? 1 : 0),
     effective_from: toDateInputValue(row.effective_from),
@@ -2161,9 +2009,7 @@ const handleProcessVersionSelect = () => {
   };
   processVersionEditLabels.value = {
     parent_version_id: row.parent_version_id ? String(row.parent_version_id) : "",
-    person_id: row.person_id ? String(row.person_id) : "",
-    unit_id: row.unit_id ? String(row.unit_id) : "",
-    program_id: row.program_id ? String(row.program_id) : ""
+    cargo_id: row.cargo_id ? String(row.cargo_id) : ""
   };
 };
 
@@ -2225,37 +2071,35 @@ const openPersonRoleFkSearch = (fieldName) => {
 };
 
 const openPersonContractFkSearch = () => {
-  openFkSearch({ name: "vacancy_id" }, (row) => {
+  openFkSearch({ name: "position_id" }, (row) => {
     const idValue = row.id ?? "";
     personContractForm.value = {
       ...personContractForm.value,
-      vacancy_id: idValue ? String(idValue) : ""
+      position_id: idValue ? String(idValue) : ""
     };
     const displayField = resolveDisplayField(fkTable.value);
     const labelValue = row[displayField] ?? row.id;
     personContractLabels.value = {
-      vacancy_id: labelValue ? String(labelValue) : ""
+      position_id: labelValue ? String(labelValue) : ""
     };
   });
 };
 
 const submitPersonCargoCreate = async () => {
   if (!personEditorId.value) {
-    personCargoError.value = "Guarda el usuario antes de asignar cargos.";
+    personCargoError.value = "Guarda el usuario antes de asignar ocupaciones.";
     return;
   }
   personCargoError.value = "";
   const payload = {
     person_id: Number(personEditorId.value),
-    cargo_id: personCargoForm.value.cargo_id ? Number(personCargoForm.value.cargo_id) : null,
-    unit_id: personCargoForm.value.unit_id ? Number(personCargoForm.value.unit_id) : null,
-    program_id: personCargoForm.value.program_id ? Number(personCargoForm.value.program_id) : null,
+    position_id: personCargoForm.value.position_id ? Number(personCargoForm.value.position_id) : null,
     start_date: personCargoForm.value.start_date,
     end_date: personCargoForm.value.end_date || null,
     is_current: Number(personCargoForm.value.is_current) === 1 ? 1 : 0
   };
-  if (!payload.cargo_id) {
-    personCargoError.value = "Selecciona un cargo.";
+  if (!payload.position_id) {
+    personCargoError.value = "Selecciona un puesto.";
     return;
   }
   if (!payload.start_date) {
@@ -2263,23 +2107,19 @@ const submitPersonCargoCreate = async () => {
     return;
   }
   try {
-    await axios.post(API_ROUTES.ADMIN_SQL_TABLE("person_cargos"), payload);
+    await axios.post(API_ROUTES.ADMIN_SQL_TABLE("position_assignments"), payload);
     await loadPersonAssignments(personEditorId.value);
     personCargoForm.value = {
-      cargo_id: "",
-      unit_id: "",
-      program_id: "",
+      position_id: "",
       start_date: "",
       end_date: "",
       is_current: "1"
     };
     personCargoLabels.value = {
-      cargo_id: "",
-      unit_id: "",
-      program_id: ""
+      position_id: ""
     };
   } catch (err) {
-    personCargoError.value = err?.response?.data?.message || "No se pudo guardar el cargo.";
+    personCargoError.value = err?.response?.data?.message || "No se pudo guardar la ocupacion.";
   }
 };
 
@@ -2293,10 +2133,14 @@ const submitPersonRoleCreate = async () => {
     person_id: Number(personEditorId.value),
     role_id: personRoleForm.value.role_id ? Number(personRoleForm.value.role_id) : null,
     unit_id: personRoleForm.value.unit_id ? Number(personRoleForm.value.unit_id) : null,
-    program_id: personRoleForm.value.program_id ? Number(personRoleForm.value.program_id) : null
+    start_date: new Date().toISOString().slice(0, 10)
   };
   if (!payload.role_id) {
     personRoleError.value = "Selecciona un rol.";
+    return;
+  }
+  if (!payload.unit_id) {
+    personRoleError.value = "Selecciona una unidad.";
     return;
   }
   try {
@@ -2304,13 +2148,11 @@ const submitPersonRoleCreate = async () => {
     await loadPersonAssignments(personEditorId.value);
     personRoleForm.value = {
       role_id: "",
-      unit_id: "",
-      program_id: ""
+      unit_id: ""
     };
     personRoleLabels.value = {
       role_id: "",
-      unit_id: "",
-      program_id: ""
+      unit_id: ""
     };
   } catch (err) {
     personRoleError.value = err?.response?.data?.message || "No se pudo guardar el rol.";
@@ -2325,15 +2167,15 @@ const submitPersonContractCreate = async () => {
   personContractError.value = "";
   const payload = {
     person_id: Number(personEditorId.value),
-    vacancy_id: personContractForm.value.vacancy_id ? Number(personContractForm.value.vacancy_id) : null,
+    position_id: personContractForm.value.position_id ? Number(personContractForm.value.position_id) : null,
     relation_type: personContractForm.value.relation_type?.trim(),
     dedication: personContractForm.value.dedication?.trim(),
     start_date: personContractForm.value.start_date,
     end_date: personContractForm.value.end_date || null,
     status: personContractForm.value.status || "activo"
   };
-  if (!payload.vacancy_id) {
-    personContractError.value = "Selecciona una vacante.";
+  if (!payload.position_id) {
+    personContractError.value = "Selecciona un puesto.";
     return;
   }
   if (!payload.relation_type || !payload.dedication || !payload.start_date) {
@@ -2344,7 +2186,7 @@ const submitPersonContractCreate = async () => {
     await axios.post(API_ROUTES.ADMIN_SQL_TABLE("contracts"), payload);
     await loadPersonAssignments(personEditorId.value);
     personContractForm.value = {
-      vacancy_id: "",
+      position_id: "",
       relation_type: "",
       dedication: "",
       start_date: "",
@@ -2352,7 +2194,7 @@ const submitPersonContractCreate = async () => {
       status: "activo"
     };
     personContractLabels.value = {
-      vacancy_id: ""
+      position_id: ""
     };
   } catch (err) {
     personContractError.value = err?.response?.data?.message || "No se pudo guardar el contrato.";
@@ -2364,15 +2206,9 @@ const submitProcessVersionEdit = async () => {
     return;
   }
   processVersionError.value = "";
-  const unitId = processVersionEditForm.value.unit_id ? Number(processVersionEditForm.value.unit_id) : null;
-  const programId = processVersionEditForm.value.program_id ? Number(processVersionEditForm.value.program_id) : null;
-  const personId = processVersionEditForm.value.person_id ? Number(processVersionEditForm.value.person_id) : null;
-  if (!unitId && !programId) {
-    processVersionError.value = "Selecciona una unidad o un programa.";
-    return;
-  }
-  if (!personId) {
-    processVersionError.value = "Selecciona un responsable.";
+  const cargoId = processVersionEditForm.value.cargo_id ? Number(processVersionEditForm.value.cargo_id) : null;
+  if (!cargoId) {
+    processVersionError.value = "Selecciona el cargo responsable.";
     return;
   }
   if (!processVersionEditForm.value.effective_from) {
@@ -2386,9 +2222,7 @@ const submitProcessVersionEdit = async () => {
       parent_version_id: processVersionEditForm.value.parent_version_id
         ? Number(processVersionEditForm.value.parent_version_id)
         : null,
-      person_id: personId,
-      unit_id: unitId,
-      program_id: programId,
+      cargo_id: cargoId,
       has_document: Number(processVersionEditForm.value.has_document) === 1 ? 1 : 0,
       is_active: Number(processVersionEditForm.value.is_active) === 1 ? 1 : 0,
       effective_from: processVersionEditForm.value.effective_from,
@@ -2404,66 +2238,6 @@ const submitProcessVersionEdit = async () => {
   }
 };
 
-const resetTemplateProcessSelection = () => {
-  templateProcessId.value = "";
-  templateProcessLabel.value = "";
-};
-
-const getProcessLabelById = async (processId) => {
-  if (!processId) {
-    return "";
-  }
-  const processMeta = allTablesMap.value?.processes;
-  const displayField = resolveDisplayField(processMeta);
-  try {
-    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("processes"), {
-      params: {
-        filter_id: processId,
-        limit: 1
-      }
-    });
-    const row = response.data?.[0];
-    if (!row) {
-      return String(processId);
-    }
-    return String(row[displayField] ?? row.id ?? processId);
-  } catch (err) {
-    return String(processId);
-  }
-};
-
-const loadTemplateProcessMapping = async (templateId) => {
-  resetTemplateProcessSelection();
-  if (!templateId) {
-    return;
-  }
-  try {
-    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_templates"), {
-      params: {
-        filter_template_id: templateId,
-        limit: 1
-      }
-    });
-    const link = response.data?.[0];
-    if (!link?.process_id) {
-      return;
-    }
-    templateProcessId.value = link.process_id;
-    templateProcessLabel.value = await getProcessLabelById(link.process_id);
-  } catch (err) {
-    resetTemplateProcessSelection();
-  }
-};
-
-const openTemplateProcessSearch = () => {
-  openFkSearch({ name: "process_id" }, (row) => {
-    const idValue = row.id ?? "";
-    templateProcessId.value = idValue;
-    const displayField = resolveDisplayField(fkTable.value);
-    const labelValue = row[displayField] ?? row.id;
-    templateProcessLabel.value = labelValue ? String(labelValue) : "";
-  });
-};
 
 const openCreate = () => {
   if (!props.table) {
@@ -2474,9 +2248,6 @@ const openCreate = () => {
   modalError.value = "";
   resetForm();
   fkDisplay.value = {};
-  if (isTemplateTable.value) {
-    resetTemplateProcessSelection();
-  }
   if (isProcessTable.value) {
     resetProcessVersionForm("create");
   }
@@ -2490,9 +2261,6 @@ const openEdit = async (row) => {
   selectedRow.value = row;
   modalError.value = "";
   buildFormFromRow(row);
-  if (isTemplateTable.value) {
-    loadTemplateProcessMapping(row?.id);
-  }
   if (isProcessTable.value) {
     processVersionForm.value = {
       version: "",
@@ -2526,14 +2294,13 @@ const submitForm = async () => {
   modalError.value = "";
   if (props.table.table === "processes") {
     const unitId = formData.value.unit_id ? Number(formData.value.unit_id) : null;
-    const programId = formData.value.program_id ? Number(formData.value.program_id) : null;
-    const personId = formData.value.person_id ? Number(formData.value.person_id) : null;
-    if (!unitId && !programId) {
-      modalError.value = "Selecciona una unidad o un programa.";
+    const cargoId = formData.value.cargo_id ? Number(formData.value.cargo_id) : null;
+    if (!unitId) {
+      modalError.value = "Selecciona una unidad para el proceso.";
       return;
     }
-    if (!personId) {
-      modalError.value = "Selecciona un responsable para el proceso.";
+    if (!cargoId) {
+      modalError.value = "Selecciona el cargo responsable inicial.";
       return;
     }
     const versionValue = processVersionForm.value.version?.trim();
@@ -2556,7 +2323,7 @@ const submitForm = async () => {
     }
   }
   if (isTemplateTable.value) {
-    const processId = templateProcessId.value ? Number(templateProcessId.value) : null;
+    const processId = formData.value.process_id ? Number(formData.value.process_id) : null;
     if (!processId) {
       modalError.value = "Selecciona un proceso para la plantilla.";
       return;
@@ -2572,9 +2339,6 @@ const submitForm = async () => {
       payload.version_effective_to = processVersionForm.value.effective_to || undefined;
       const parentVersionId = processVersionForm.value.parent_version_id;
       payload.version_parent_version_id = parentVersionId ? Number(parentVersionId) : undefined;
-    }
-    if (isTemplateTable.value) {
-      payload.process_id = Number(templateProcessId.value);
     }
     if (editorMode.value === "create") {
       await axios.post(API_ROUTES.ADMIN_SQL_TABLE(props.table.table), payload);
@@ -2611,20 +2375,17 @@ watch(
   () => props.table?.table,
   () => {
     resetForm();
-    resetTemplateProcessSelection();
     resetProcessVersionForm("create");
     resetProcessVersionEditor();
     resetPersonAssignments();
     processFilters.value = {
       unit_id: "",
-      program_id: "",
       parent_id: "",
       has_document: "",
       is_active: ""
     };
     processFilterLabels.value = {
       unit_id: "",
-      program_id: "",
       parent_id: ""
     };
     templateFilters.value = {

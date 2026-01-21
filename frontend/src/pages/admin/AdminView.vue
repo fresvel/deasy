@@ -172,32 +172,36 @@ const GROUP_DEFS = [
   {
     key: "estructura_academico",
     label: "Academia",
-    main: ["unit_types", "units", "programs", "terms"],
-    support: ["unit_relations", "program_unit_history", "student_program_terms"]
+    main: ["unit_types", "units", "relation_unit_types", "unit_relations", "cargos", "unit_positions", "position_assignments", "terms"],
+    support: []
   },
   {
     key: "procesos",
     label: "Gestiones",
-    main: ["processes", "process_versions", "tasks", "documents", "templates"],
-    support: [
-      "document_signatures"
-    ]
+    main: ["processes", "process_versions", "tasks", "task_assignments", "templates", "template_versions", "documents", "document_versions"],
+    support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_types", "signature_statuses", "signature_request_statuses"]
   },
   {
     key: "usuarios",
     label: "Usuarios",
-    main: ["persons", "cargos", "roles", "vacancies", "contracts"],
-    support: ["role_assignments", "role_permissions"]
+    main: ["persons", "roles", "permissions", "role_assignments"],
+    support: ["role_permissions", "cargo_role_map", "resources", "actions"]
+  },
+  {
+    key: "contratacion",
+    label: "Contratacion",
+    main: ["vacancies", "aplications", "offers", "contracts"],
+    support: ["contract_origins", "contract_origin_recruitment", "contract_origin_renewal"]
   },
   {
     key: "seguridad",
     label: "Seguridad",
-    main: ["permissions"],
+    main: [],
     support: []
   },
 ];
 
-const hiddenTables = new Set(["person_cargos"]);
+const hiddenTables = new Set([]);
 const visibleTables = computed(() => tables.value.filter((table) => !hiddenTables.has(table.table)));
 const tableMap = computed(() =>
   Object.fromEntries(visibleTables.value.map((table) => [table.table, table]))

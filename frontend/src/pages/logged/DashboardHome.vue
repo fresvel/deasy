@@ -2,20 +2,23 @@
   <div class="dashboard-page">
     <s-header @onclick="handleHeaderToggle">
       <div class="header-left">
-        <button class="nav-link text-white p-0" type="button" @click="navigateTo('perfil')" title="Ir al perfil">
-          <img class="avatar" src="/images/avatar.png" alt="Perfil" />
+        <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
+          <img class="avatar" :src="userPhoto" alt="Perfil" />
         </button>
 
         <button
-          v-for="item in headerAreas"
-          :key="item.code"
+          v-for="unit in userUnits"
+          :key="unit.id"
           class="nav-link text-white"
-          :class="{ active: item.active }"
+          :class="{ active: unit.id === selectedUnitId }"
           type="button"
-          @click="switchArea(item)"
+          @click="selectUnit(unit)"
         >
-          {{ item.name }}
+          {{ unit.name }}
         </button>
+        <span v-if="!userUnits.length && !menuLoading" class="nav-link text-white-50">
+          Sin unidades
+        </span>
       </div>
 
       <div class="header-right">
@@ -36,43 +39,49 @@
     <div class="row g-3">
       <s-menu :show="showMenu">
         <div class="admin-menu">
-          <UserProfile photo="/images/avatar.png" :username="userFullName" />
-          <div class="menu-section">
-            <button
-              class="menu-section-title text-white w-100"
-              type="button"
-              :class="{ 'is-open': showCoordinacion }"
-              @click="showCoordinacion = !showCoordinacion"
-            >
-              Coordinación
-            </button>
-
-            <div v-show="showCoordinacion" class="menu-section-body">
-              <div class="list-group list-group-flush">
-                <button
-                  v-for="item in quickStats"
-                  :key="item.label"
-                  class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                  type="button"
-                  @click="navigateTo(item.route)"
-                >
-                  <span>{{ item.label }}</span>
-                  <span class="badge bg-primary rounded-pill">{{ item.count }}</span>
-                </button>
-              </div>
-            </div>
+          <UserProfile :photo="userPhoto" :username="userFullName" />
+          <div class="menu-context text-white">
+            {{ menuContextLabel }}
           </div>
 
-          <div class="menu-section">
-            <button
-              class="menu-section-title text-white w-100"
-              type="button"
-              :class="{ 'is-open': showDocencia }"
-              @click="showDocencia = !showDocencia"
-            >
-              Docencia
-            </button>
-            <div v-show="showDocencia" class="menu-section-body"></div>
+          <div v-if="menuLoading" class="menu-feedback text-white">
+            Cargando menú...
+          </div>
+          <div v-else-if="menuError" class="menu-feedback text-white">
+            {{ menuError }}
+          </div>
+          <div v-else-if="!menuCargos.length" class="menu-feedback text-white">
+            No hay cargos asignados para mostrar.
+          </div>
+
+          <div v-else>
+            <div v-for="cargo in menuCargos" :key="cargo.id" class="menu-section">
+              <button
+                class="menu-section-title text-white w-100"
+                type="button"
+                :class="{ 'is-open': cargo.open }"
+                @click="toggleCargo(cargo)"
+              >
+                {{ cargo.name }}
+              </button>
+
+              <div v-show="cargo.open" class="menu-section-body">
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="process in cargo.processes"
+                    :key="process.id"
+                    class="list-group-item list-group-item-action"
+                    type="button"
+                    @click="handleProcessSelect(process, cargo)"
+                  >
+                    {{ process.name }}
+                  </button>
+                  <div v-if="!cargo.processes.length" class="menu-empty">
+                    Sin procesos asignados.
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </s-menu>
@@ -154,9 +163,24 @@ import SMenu from '@/layouts/SMenu.vue';
 import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
 import UserProfile from '@/components/UserProfile.vue';
+import UserMenuService from '@/services/logged/UserMenuService.js';
+import { API_ROUTES } from '@/services/apiConfig';
 
 const router = useRouter();
+const menuService = new UserMenuService();
+
 const currentUser = ref(null);
+const userPhoto = ref('/images/avatar.png');
+
+const showMenu = ref(true);
+const showNotify = ref(false);
+
+const menuLoading = ref(false);
+const menuError = ref('');
+const userUnits = ref([]);
+const consolidatedCargos = ref([]);
+const menuCargos = ref([]);
+const selectedUnitId = ref(null);
 
 const userFullName = computed(() => {
   if (!currentUser.value) return 'Usuario';
@@ -165,16 +189,13 @@ const userFullName = computed(() => {
   return `${firstName} ${lastName}`.trim() || 'Usuario';
 });
 
-const showMenu = ref(true);
-  const showNotify = ref(false);
-  const showCoordinacion = ref(true);
-  const showDocencia = ref(false);
-
-const headerAreas = ref([
-  { code: 'perfil', name: 'Perfil', active: true, route: 'perfil' },
-  { code: 'academia', name: 'Academia', active: false, route: 'perfil' },
-  { code: 'firmar', name: 'Firmar', active: false, route: 'firmar' }
-]);
+const menuContextLabel = computed(() => {
+  if (selectedUnitId.value) {
+    const unit = userUnits.value.find((item) => item.id === selectedUnitId.value);
+    return unit ? `Unidad: ${unit.name}` : 'Unidad seleccionada';
+  }
+  return 'Cargos consolidados';
+});
 
 const quickStats = ref([
   { label: 'Formación', count: 0, route: 'perfil' },
@@ -220,19 +241,90 @@ const summaryRows = ref([
   { section: 'Firmas electrónicas', count: 0, status: 'Acción requerida', statusClass: 'status--warning', route: 'firmar' }
 ]);
 
-onMounted(() => {
+const resolvePhotoUrl = (value) => {
+  if (!value) {
+    return '/images/avatar.png';
+  }
+  if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+  const sanitized = value.replace(/^\/+/, '');
+  return `${API_ROUTES.BASE.replace(/\/$/, '')}/${sanitized}`;
+};
+
+const applyMenuCargos = (cargos) => {
+  menuCargos.value = (cargos ?? []).map((cargo, index) => ({
+    ...cargo,
+    open: index === 0
+  }));
+};
+
+const selectConsolidated = () => {
+  selectedUnitId.value = null;
+  applyMenuCargos(consolidatedCargos.value);
+};
+
+const selectUnit = (unit) => {
+  selectedUnitId.value = unit?.id ?? null;
+  applyMenuCargos(unit?.cargos ?? []);
+  if (!showMenu.value) {
+    showMenu.value = true;
+  }
+};
+
+const toggleCargo = (cargo) => {
+  cargo.open = !cargo.open;
+};
+
+const handleProcessSelect = () => {};
+
+const loadUserMenu = async () => {
+  const userId = currentUser.value?.id ?? currentUser.value?._id;
+  if (!userId) {
+    return;
+  }
+  menuLoading.value = true;
+  menuError.value = '';
+
+  try {
+    const data = await menuService.getUserMenu(userId);
+    userUnits.value = Array.isArray(data?.units) ? data.units : [];
+    consolidatedCargos.value = Array.isArray(data?.consolidated) ? data.consolidated : [];
+
+    if (consolidatedCargos.value.length) {
+      selectConsolidated();
+    } else if (userUnits.value.length) {
+      selectUnit(userUnits.value[0]);
+    } else {
+      applyMenuCargos([]);
+      selectedUnitId.value = null;
+    }
+  } catch (error) {
+    console.error('Error al cargar el menú del usuario:', error);
+    menuError.value = 'No se pudo cargar el menú del usuario.';
+  } finally {
+    menuLoading.value = false;
+  }
+};
+
+onMounted(async () => {
   const userDataString = localStorage.getItem('user');
   if (userDataString) {
     try {
       currentUser.value = JSON.parse(userDataString);
+      userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
     } catch (error) {
       console.error('Error al cargar datos del usuario:', error);
     }
   }
+  await loadUserMenu();
 });
 
 const navigateTo = (destination) => {
   switch (destination) {
+    case 'dashboard':
+      router.push('/dashboard');
+      break;
     case 'firmar':
       router.push('/firmar');
       break;
@@ -243,17 +335,17 @@ const navigateTo = (destination) => {
   }
 };
 
-const switchArea = (item) => {
-  headerAreas.value.forEach((area) => {
-    area.active = area.code === item.code;
-  });
-  navigateTo(item.route);
-};
-
 const handleHeaderToggle = (target) => {
   if (target === 'User') {
+    navigateTo('dashboard');
+    selectConsolidated();
     showMenu.value = !showMenu.value;
   }
+};
+
+const handleUserIconClick = () => {
+  showMenu.value = !showMenu.value;
+  navigateTo('perfil');
 };
 
 const toggleNotify = () => {
@@ -417,6 +509,27 @@ const toggleNotify = () => {
 
 .center {
   text-align: center !important;
+}
+
+.menu-context {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem;
+  opacity: 0.85;
+}
+
+.menu-feedback {
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.menu-empty {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: var(--brand-white);
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
 }
 
 @media (max-width: 960px) {

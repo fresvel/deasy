@@ -14,11 +14,13 @@ import swaggerUi from "swagger-ui-express";
 import { API_PREFIX, PATHS, ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
 
 import program_router from "./routes/program_router.js";
+import unit_router from "./routes/unit_router.js";
 import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import webtemplate from "./routes/webtemplate_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
+import vacancy_router from "./routes/vacancy_router.js"
 
 const app = express();
 
@@ -974,6 +976,7 @@ app.use(ROUTES.tutorias,tutorias_router)
 app.use(ROUTES.admin,admin_router)
 
 app.use(ROUTES.program,program_router)
+app.use(ROUTES.units, unit_router)
 
 app.use(ROUTES.area,area_router)
 
@@ -982,6 +985,8 @@ app.use(ROUTES.tarea,tarea_router)
 app.use(ROUTES.whatsapp,whatsapp_router)
 
 app.use(ROUTES.dossier,dossier_router)
+
+app.use(ROUTES.vacancies, vacancy_router)
 
 app.use("/easym/v1/webtemplate",webtemplate)
 

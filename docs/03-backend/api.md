@@ -11,11 +11,13 @@
 - /admin (backend/routes/admin_router.js)
 - /area (backend/routes/area_router.js)
 - /dossier (backend/routes/dossier_router.js)
-- /program (backend/routes/program_router.js)
-- /sql-admin (backend/routes/sql_admin_router.js)
+- /program (backend/routes/program_router.js) -> compat con unidades
+- /units (backend/routes/unit_router.js)
+- /admin/sql (backend/routes/sql_admin_router.js)
 - /tarea (backend/routes/tarea_router.js)
 - /tutorias (backend/routes/tutorias_router.js)
-- /user (backend/routes/user_router.js)
+- /users (backend/routes/user_router.js)
+- /vacancies (backend/routes/vacancy_router.js)
 - /webtemplate (backend/routes/webtemplate_router.js)
 - /whatsapp (backend/routes/whatsapp_router.js)
 
@@ -23,7 +25,7 @@
 
 - POST /admin/terms/:termId/generate-tasks
   - Genera tareas y asignaciones para un periodo a partir de procesos activos.
-  - Resuelve responsables via process_cargos + person_cargos (filtra por unidad/programa si aplica).
+  - Resuelve responsables via process_versions (cargo_id) + unit_positions + position_assignments (unidad del proceso).
   - Es idempotente: no duplica tareas existentes en el mismo periodo.
   - Se ejecuta automaticamente al crear un periodo desde /admin/sql/terms.
 
