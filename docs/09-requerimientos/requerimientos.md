@@ -4,7 +4,7 @@
 
 1) Docencia: Horarios, Requerimientos Docente, Distributivos.
 2) Gestion: Memorandums, Gestion Bibliografica.
-3) Academia: Reportes Semestrales, Tutorías.
+3) Academia: Reportes Semestrales, Tutorías, Repositorio de Sílabos.
 4) Investigacion: Investigacion, Titulación, Vinculacion 
 5) Internacionalización
 6) Calidad: Autoevaluación
