@@ -6,16 +6,37 @@
           <img class="avatar" :src="userPhoto" alt="Perfil" />
         </button>
 
-        <button
-          v-for="unit in userUnits"
-          :key="unit.id"
-          class="nav-link text-white"
-          :class="{ active: unit.id === selectedUnitId }"
-          type="button"
-          @click="selectUnit(unit)"
-        >
-          {{ unit.name }}
-        </button>
+        <div v-if="unitGroups.length" class="group-menu">
+          <div
+            class="group-item"
+            :class="{ active: selectedGroupId === null }"
+            role="button"
+            tabindex="0"
+            @click="selectConsolidated"
+            @keydown.enter="selectConsolidated"
+          >
+            <div class="group-title">Consolidado</div>
+            <div class="group-meta">Todos los cargos</div>
+          </div>
+
+          <div
+            v-for="group in unitGroups"
+            :key="group.id"
+            class="group-item"
+            :class="{ active: group.id === selectedGroupId }"
+            role="button"
+            tabindex="0"
+            @click="selectGroup(group)"
+            @keydown.enter="selectGroup(group)"
+          >
+            <div class="group-title" :title="group.name">{{ group.label || group.name }}</div>
+            <div class="group-units">
+              <span v-for="unit in group.units" :key="unit.id" class="unit-pill" :title="unit.name">
+                {{ unit.label || getUnitChipLabel(unit) }}
+              </span>
+            </div>
+          </div>
+        </div>
         <span v-if="!userUnits.length && !menuLoading" class="nav-link text-white-50">
           Sin unidades
         </span>
@@ -178,9 +199,10 @@ const showNotify = ref(false);
 const menuLoading = ref(false);
 const menuError = ref('');
 const userUnits = ref([]);
+const unitGroups = ref([]);
 const consolidatedCargos = ref([]);
 const menuCargos = ref([]);
-const selectedUnitId = ref(null);
+const selectedGroupId = ref(null);
 
 const userFullName = computed(() => {
   if (!currentUser.value) return 'Usuario';
@@ -190,9 +212,9 @@ const userFullName = computed(() => {
 });
 
 const menuContextLabel = computed(() => {
-  if (selectedUnitId.value) {
-    const unit = userUnits.value.find((item) => item.id === selectedUnitId.value);
-    return unit ? `Unidad: ${unit.name}` : 'Unidad seleccionada';
+  if (selectedGroupId.value) {
+    const group = unitGroups.value.find((item) => item.id === selectedGroupId.value);
+    return group ? `Área: ${group.label || group.name}` : 'Área seleccionada';
   }
   return 'Cargos consolidados';
 });
@@ -259,14 +281,54 @@ const applyMenuCargos = (cargos) => {
   }));
 };
 
+const getUnitChipLabel = (unit) => {
+  if (unit?.label) {
+    return unit.label;
+  }
+  const name = unit?.name ?? '';
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return 'U';
+  }
+  if (words.length === 1) {
+    return words[0].slice(0, 4).toUpperCase();
+  }
+  return words.map((word) => word[0]).join('').slice(0, 5).toUpperCase();
+};
+
 const selectConsolidated = () => {
-  selectedUnitId.value = null;
+  selectedGroupId.value = null;
   applyMenuCargos(consolidatedCargos.value);
 };
 
-const selectUnit = (unit) => {
-  selectedUnitId.value = unit?.id ?? null;
-  applyMenuCargos(unit?.cargos ?? []);
+const buildGroupCargos = (group) => {
+  const cargoMap = new Map();
+  (group?.units ?? []).forEach((unit) => {
+    (unit.cargos ?? []).forEach((cargo) => {
+      if (!cargoMap.has(cargo.id)) {
+        cargoMap.set(cargo.id, { id: cargo.id, name: cargo.name, processes: [] });
+      }
+      const target = cargoMap.get(cargo.id);
+      const seen = new Set(target.processes.map((proc) => proc.id));
+      (cargo.processes ?? []).forEach((process) => {
+        if (!seen.has(process.id)) {
+          target.processes.push(process);
+          seen.add(process.id);
+        }
+      });
+    });
+  });
+  const cargos = Array.from(cargoMap.values());
+  cargos.forEach((cargo) => {
+    cargo.processes.sort((a, b) => a.name.localeCompare(b.name));
+  });
+  cargos.sort((a, b) => a.name.localeCompare(b.name));
+  return cargos;
+};
+
+const selectGroup = (group) => {
+  selectedGroupId.value = group?.id ?? null;
+  applyMenuCargos(buildGroupCargos(group));
   if (!showMenu.value) {
     showMenu.value = true;
   }
@@ -289,15 +351,27 @@ const loadUserMenu = async () => {
   try {
     const data = await menuService.getUserMenu(userId);
     userUnits.value = Array.isArray(data?.units) ? data.units : [];
+    unitGroups.value = Array.isArray(data?.unit_groups) ? data.unit_groups : [];
     consolidatedCargos.value = Array.isArray(data?.consolidated) ? data.consolidated : [];
+
+    if (!unitGroups.value.length && userUnits.value.length) {
+      unitGroups.value = [
+        {
+          id: 'units',
+          name: 'Unidades',
+          label: 'Unidades',
+          units: userUnits.value
+        }
+      ];
+    }
 
     if (consolidatedCargos.value.length) {
       selectConsolidated();
-    } else if (userUnits.value.length) {
-      selectUnit(userUnits.value[0]);
+    } else if (unitGroups.value.length) {
+      selectGroup(unitGroups.value[0]);
     } else {
       applyMenuCargos([]);
-      selectedUnitId.value = null;
+      selectedGroupId.value = null;
     }
   } catch (error) {
     console.error('Error al cargar el menú del usuario:', error);
@@ -357,6 +431,88 @@ const toggleNotify = () => {
 .dashboard-page {
   min-height: 100vh;
   background: #f1f5fb;
+}
+
+.header-left {
+  min-width: 0;
+}
+
+.group-menu {
+  display: flex;
+  align-items: stretch;
+  gap: 0.85rem;
+  overflow-x: auto;
+  padding: 0.2rem 0.35rem;
+  scrollbar-width: thin;
+}
+
+.group-menu::-webkit-scrollbar {
+  height: 6px;
+}
+
+.group-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+.group-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 170px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.group-item:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.group-item.active {
+  background: #ffffff;
+  color: var(--brand-navy);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
+}
+
+.group-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.group-meta {
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
+.group-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.unit-pill {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+}
+
+.group-item.active .unit-pill {
+  background: rgba(16, 24, 39, 0.12);
+  color: var(--brand-navy);
 }
 
 

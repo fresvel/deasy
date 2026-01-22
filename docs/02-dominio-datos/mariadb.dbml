@@ -8,11 +8,22 @@ Table unit_types [headercolor: #abe0f7] {
 Table units [headercolor: #abe0f7] {
   id integer [pk, increment, unique]
   name varchar(180) [not null]
+  label varchar(40)
   slug varchar(180) [not null]
   unit_type_id integer [not null]
   is_active boolean [not null, default: true]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table unit_org_levels [note: "VIEW. Jerarquía orgánica (relation_unit_types.code='org'). group_unit_id representa el ancestro de nivel 3 (o 2/1 si aplica)."] {
+  unit_id integer
+  parent_unit_id integer
+  org_level integer
+  root_unit_id integer
+  level2_unit_id integer
+  level3_unit_id integer
+  group_unit_id integer
 }
 
 Table persons {

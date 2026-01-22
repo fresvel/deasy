@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS unit_types (
 CREATE TABLE IF NOT EXISTS units (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(180) NOT NULL,
+  label VARCHAR(40) NULL,
   slug VARCHAR(180) NOT NULL,
   unit_type_id INT NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -629,3 +630,43 @@ CREATE TABLE IF NOT EXISTS document_signatures (
   CONSTRAINT fk_document_signatures_type FOREIGN KEY (signature_type_id) REFERENCES signature_types(id),
   CONSTRAINT fk_document_signatures_status FOREIGN KEY (signature_status_id) REFERENCES signature_statuses(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP VIEW IF EXISTS unit_org_levels;
+CREATE VIEW unit_org_levels AS
+WITH RECURSIVE org_tree AS (
+  SELECT
+    u.id AS unit_id,
+    CAST(NULL AS UNSIGNED) AS parent_unit_id,
+    1 AS org_level,
+    u.id AS root_unit_id,
+    CAST(NULL AS UNSIGNED) AS level2_unit_id,
+    CAST(NULL AS UNSIGNED) AS level3_unit_id
+  FROM units u
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM unit_relations ur
+    INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+    WHERE ur.child_unit_id = u.id
+  )
+  UNION ALL
+  SELECT
+    child.id AS unit_id,
+    ur.parent_unit_id AS parent_unit_id,
+    parent.org_level + 1 AS org_level,
+    parent.root_unit_id AS root_unit_id,
+    CASE WHEN parent.org_level = 1 THEN child.id ELSE parent.level2_unit_id END AS level2_unit_id,
+    CASE WHEN parent.org_level = 2 THEN child.id ELSE parent.level3_unit_id END AS level3_unit_id
+  FROM unit_relations ur
+  INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+  INNER JOIN units child ON child.id = ur.child_unit_id
+  INNER JOIN org_tree parent ON parent.unit_id = ur.parent_unit_id
+)
+SELECT
+  unit_id,
+  parent_unit_id,
+  org_level,
+  root_unit_id,
+  level2_unit_id,
+  level3_unit_id,
+  COALESCE(level3_unit_id, level2_unit_id, unit_id) AS group_unit_id
+FROM org_tree;

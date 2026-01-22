@@ -16,6 +16,23 @@ const bcrypt = require(path.join(repoRoot, "backend", "node_modules", "bcrypt"))
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const makeUnitLabel = (value) => {
+  const cleaned = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim();
+  if (!cleaned) {
+    return value.slice(0, 4).toUpperCase();
+  }
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length === 1) {
+    return words[0].slice(0, 4).toUpperCase();
+  }
+  const initials = words.map((word) => word[0]).join("").toUpperCase();
+  return initials.slice(0, 5);
+};
+
 const waitForApi = async (url, { retries = 10, delayMs = 1000 } = {}) => {
   let lastStatus = null;
   for (let attempt = 1; attempt <= retries; attempt += 1) {
@@ -69,31 +86,37 @@ const run = async () => {
 
   const unitSystem = await post("units", {
     name: `SYSTEM-${suffix}`,
+    label: makeUnitLabel(`SYSTEM-${suffix}`),
     slug: `system-${suffix}`,
     unit_type_id: unitTypeSystem.id
   });
   const unitUniversity = await post("units", {
     name: `PUCESE-${suffix}`,
+    label: makeUnitLabel(`PUCESE-${suffix}`),
     slug: `pucese-${suffix}`,
     unit_type_id: unitTypeUniversity.id
   });
   const unitFaculty = await post("units", {
     name: `Facultad Ciencias-${suffix}`,
+    label: makeUnitLabel(`Facultad Ciencias-${suffix}`),
     slug: `fac-ciencias-${suffix}`,
     unit_type_id: unitTypeFaculty.id
   });
   const unitCareerSis = await post("units", {
     name: `Ing Sistemas-${suffix}`,
+    label: makeUnitLabel(`Ing Sistemas-${suffix}`),
     slug: `sis-${suffix}`,
     unit_type_id: unitTypeCareer.id
   });
   const unitCareerEnf = await post("units", {
     name: `Enfermeria-${suffix}`,
+    label: makeUnitLabel(`Enfermeria-${suffix}`),
     slug: `enf-${suffix}`,
     unit_type_id: unitTypeCareer.id
   });
   const unitDeptCalidad = await post("units", {
     name: `Depto Calidad-${suffix}`,
+    label: makeUnitLabel(`Depto Calidad-${suffix}`),
     slug: `calidad-${suffix}`,
     unit_type_id: unitTypeDept.id
   });

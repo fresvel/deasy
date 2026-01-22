@@ -11,9 +11,10 @@
 ### Estructura y personas
 
 - unit_types(id, name, is_active, created_at)
-- units(id, name, slug, unit_type_id, is_active, created_at, updated_at)
+- units(id, name, label, slug, unit_type_id, is_active, created_at, updated_at)
 - relation_unit_types(id, code, name, is_inheritance_allowed, is_active, created_at)
 - unit_relations(id, relation_type_id, parent_unit_id, child_unit_id, created_at)
+- unit_org_levels(view: unit_id, parent_unit_id, org_level, root_unit_id, level2_unit_id, level3_unit_id, group_unit_id)
 - persons(id, cedula, first_name, last_name, email, whatsapp, direccion, pais, password_hash, status, verify_email, verify_whatsapp, photo_url, is_active, created_at, updated_at)
 - cargos(id, name, description, is_active, created_at, updated_at)
 - unit_positions(id, unit_id, cargo_id, slot_no, title, profile_ref, position_type, is_active, created_at, updated_at)
