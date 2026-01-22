@@ -36,6 +36,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "label", label: "Etiqueta", type: "text" },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "unit_type_id", label: "Tipo de unidad", type: "number", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },

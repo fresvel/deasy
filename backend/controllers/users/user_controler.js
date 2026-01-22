@@ -121,16 +121,32 @@ export const getUserMenu = async (req, res) => {
       return res.status(500).json({ message: "Conexion MariaDB no disponible" });
     }
 
+    const [orgRelationRows] = await pool.query(
+      "SELECT id FROM relation_unit_types WHERE code = 'org' LIMIT 1"
+    );
+    if (!orgRelationRows.length) {
+      return res.status(500).json({
+        message:
+          "No existe relation_unit_types con code='org'. Debe implementarse para construir la jerarquia de unidades."
+      });
+    }
+
     const [positions] = await pool.query(
       `SELECT DISTINCT
          u.id AS unit_id,
          u.name AS unit_name,
+         u.label AS unit_label,
+         uol.group_unit_id AS group_unit_id,
+         gu.name AS group_unit_name,
+         gu.label AS group_unit_label,
          c.id AS cargo_id,
          c.name AS cargo_name
        FROM position_assignments pa
        INNER JOIN unit_positions up ON up.id = pa.position_id
        INNER JOIN units u ON u.id = up.unit_id
        INNER JOIN cargos c ON c.id = up.cargo_id
+       LEFT JOIN unit_org_levels uol ON uol.unit_id = u.id
+       LEFT JOIN units gu ON gu.id = uol.group_unit_id
        WHERE pa.person_id = ?
          AND pa.is_current = 1
          AND up.is_active = 1
@@ -147,6 +163,7 @@ export const getUserMenu = async (req, res) => {
     const unitsMap = new Map();
     const cargoMapByUnit = new Map();
     const consolidatedMap = new Map();
+    const groupMap = new Map();
 
     const ensureUnitCargoMap = (unitId) => {
       if (!cargoMapByUnit.has(unitId)) {
@@ -156,8 +173,26 @@ export const getUserMenu = async (req, res) => {
     };
 
     positions.forEach((row) => {
+      const groupUnitId = row.group_unit_id ?? row.unit_id;
+      const groupUnitName = row.group_unit_name ?? row.unit_name;
+      const groupUnitLabel = row.group_unit_label ?? row.unit_label ?? row.unit_name;
+
+      if (!groupMap.has(groupUnitId)) {
+        groupMap.set(groupUnitId, {
+          id: groupUnitId,
+          name: groupUnitName,
+          label: groupUnitLabel,
+          units: []
+        });
+      }
+
       if (!unitsMap.has(row.unit_id)) {
-        unitsMap.set(row.unit_id, { id: row.unit_id, name: row.unit_name });
+        unitsMap.set(row.unit_id, {
+          id: row.unit_id,
+          name: row.unit_name,
+          label: row.unit_label ?? row.unit_name,
+          group_id: groupUnitId
+        });
       }
 
       const unitCargoMap = ensureUnitCargoMap(row.unit_id);
@@ -273,9 +308,23 @@ export const getUserMenu = async (req, res) => {
       })
       .sort((a, b) => a.name.localeCompare(b.name));
 
+    units.forEach((unit) => {
+      const group = groupMap.get(unit.group_id);
+      if (group) {
+        group.units.push(unit);
+      }
+    });
+
+    const unitGroups = Array.from(groupMap.values())
+      .map((group) => ({
+        ...group,
+        units: group.units.sort((a, b) => a.name.localeCompare(b.name))
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
     const consolidated = sortCargos(Array.from(consolidatedMap.values()));
 
-    res.json({ user_id: userId, units, consolidated });
+    res.json({ user_id: userId, units, unit_groups: unitGroups, consolidated });
   } catch (error) {
     console.error("Error construyendo el menu del usuario:", error);
     res.status(500).json({ message: "Error al obtener el menú del usuario", error: error.message });

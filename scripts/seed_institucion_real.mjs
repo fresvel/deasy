@@ -112,6 +112,38 @@ const slugify = (value) =>
     .replace(/(^-|-$)+/g, "")
     .slice(0, 120);
 
+const makeUnitLabel = (value) => {
+  const cleaned = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim();
+  if (!cleaned) {
+    return value.slice(0, 4).toUpperCase();
+  }
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length === 1) {
+    return words[0].slice(0, 4).toUpperCase();
+  }
+  const initials = words.map((word) => word[0]).join("").toUpperCase();
+  return initials.slice(0, 5);
+};
+
+const unitLabelOverrides = new Map([
+  ["Direccion Administrativa", "Administración"],
+  ["Direccion de Docencia y Estudiantes", "Academia"],
+  ["Direccion de Investigacion", "Investigación"],
+  ["Direccion Financiera", "Financiero"],
+  ["Jefatura de Aseguramiento de la Calidad", "Calidad"],
+  ["Jefatura de Sistemas", "Sistemas"],
+  ["Jefatura de Talento Humano", "Talento Humano"],
+  ["Prorrectorado", "Prorrectorado"],
+  ["Sede", "Sede"],
+  ["SYSTEM", "System"]
+]);
+
+const resolveUnitLabel = (name) => unitLabelOverrides.get(name) || makeUnitLabel(name);
+
 const uniqueSlug = (base, used) => {
   let slug = base;
   let counter = 1;
@@ -309,6 +341,7 @@ const run = async () => {
     const slug = uniqueSlug(slugify(name), usedSlugs);
     const created = await post("units", {
       name,
+      label: resolveUnitLabel(name),
       slug,
       unit_type_id: unitTypeByName.get(type),
       is_active: 1
