@@ -22,7 +22,7 @@ export const requestPasswordReset = async (req, res) => {
 
     return res.json({
       ok: true,
-      message: "Si el correo existe, se enviará un código"
+      message: "Se ha enviado el codigo de recuperación a tu buzón de correo"
     });
   } catch (error) {
     console.error(error);
