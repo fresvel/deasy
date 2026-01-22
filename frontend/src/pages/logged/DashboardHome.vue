@@ -8,33 +8,27 @@
 
         <div v-if="unitGroups.length" class="group-menu">
           <div
-            class="group-item"
-            :class="{ active: selectedGroupId === null }"
+            class="group-item theme-gradient-tile"
+            :class="{ active: selectedGroupId === null, 'is-active': selectedGroupId === null }"
             role="button"
             tabindex="0"
             @click="selectConsolidated"
             @keydown.enter="selectConsolidated"
           >
             <div class="group-title">Consolidado</div>
-            <div class="group-meta">Todos los cargos</div>
           </div>
 
           <div
             v-for="group in unitGroups"
             :key="group.id"
-            class="group-item"
-            :class="{ active: group.id === selectedGroupId }"
+            class="group-item theme-gradient-tile"
+            :class="{ active: group.id === selectedGroupId, 'is-active': group.id === selectedGroupId }"
             role="button"
             tabindex="0"
             @click="selectGroup(group)"
             @keydown.enter="selectGroup(group)"
           >
             <div class="group-title" :title="group.name">{{ group.label || group.name }}</div>
-            <div class="group-units">
-              <span v-for="unit in group.units" :key="unit.id" class="unit-pill" :title="unit.name">
-                {{ unit.label || getUnitChipLabel(unit) }}
-              </span>
-            </div>
           </div>
         </div>
         <span v-if="!userUnits.length && !menuLoading" class="nav-link text-white-50">
@@ -281,21 +275,6 @@ const applyMenuCargos = (cargos) => {
   }));
 };
 
-const getUnitChipLabel = (unit) => {
-  if (unit?.label) {
-    return unit.label;
-  }
-  const name = unit?.name ?? '';
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (!words.length) {
-    return 'U';
-  }
-  if (words.length === 1) {
-    return words[0].slice(0, 4).toUpperCase();
-  }
-  return words.map((word) => word[0]).join('').slice(0, 5).toUpperCase();
-};
-
 const selectConsolidated = () => {
   selectedGroupId.value = null;
   applyMenuCargos(consolidatedCargos.value);
@@ -461,10 +440,7 @@ const toggleNotify = () => {
   gap: 0.35rem;
   min-width: 170px;
   padding: 0.55rem 0.85rem;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  border-radius: 6px;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   flex-shrink: 0;
@@ -476,8 +452,6 @@ const toggleNotify = () => {
 }
 
 .group-item.active {
-  background: #ffffff;
-  color: var(--brand-navy);
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
 }
 
@@ -493,27 +467,6 @@ const toggleNotify = () => {
   opacity: 0.75;
 }
 
-.group-units {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
-.unit-pill {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-}
-
-.group-item.active .unit-pill {
-  background: rgba(16, 24, 39, 0.12);
-  color: var(--brand-navy);
-}
 
 
 .avatar {

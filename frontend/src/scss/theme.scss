@@ -16,6 +16,7 @@
   --brand-shadow: 0 4px 17.8px rgba(0, 0, 0, 0.25);
   --brand-shadow-soft: 0 3px 10px rgba(3, 49, 100, 0.08);
   --brand-gradient: linear-gradient(90deg, #003267 0%, #2282be 100%);
+  --brand-gradient-angled: linear-gradient(135deg, #003267 0%, #2282be 100%);
   --brand-primary-rgb: 0, 50, 103;
   --brand-accent-rgb: 34, 130, 190;
   --brand-secondary-rgb: 107, 123, 136;
@@ -36,6 +37,37 @@
   --font-size-base: 1rem;
   --font-weight-regular: 400;
   --font-weight-semibold: 600;
+}
+
+.theme-gradient-tile {
+  --tile-bg-start: rgba(var(--brand-primary-rgb), 0.12);
+  --tile-bg-end: rgba(var(--brand-accent-rgb), 0.12);
+  --tile-border-start: rgba(var(--brand-primary-rgb), 0.3);
+  --tile-border-end: rgba(var(--brand-accent-rgb), 0.3);
+  background:
+    linear-gradient(
+        135deg,
+        var(--tile-bg-start) 0%,
+        var(--tile-bg-end) 100%
+      )
+      padding-box,
+    linear-gradient(
+        135deg,
+        var(--tile-border-start) 0%,
+        var(--tile-border-end) 100%
+      )
+      border-box;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.theme-gradient-tile.is-active {
+  --tile-bg-start: rgba(var(--brand-primary-rgb), 0.85);
+  --tile-bg-end: rgba(var(--brand-accent-rgb), 0.85);
+  --tile-border-start: rgba(var(--brand-primary-rgb), 0.9);
+  --tile-border-end: rgba(var(--brand-accent-rgb), 0.9);
+  color: #ffffff;
+  box-shadow: 0 14px 24px rgba(var(--brand-primary-rgb), 0.35);
 }
 
 *,
