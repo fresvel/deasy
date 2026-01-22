@@ -20,6 +20,7 @@ import webtemplate from "./routes/webtemplate_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
 import email_router from "./routes/email_router.js";
+import reset_password_router from "./routes/reset_password_router.js";
 
 
 const app = express();
@@ -986,6 +987,8 @@ app.use(ROUTES.whatsapp,whatsapp_router)
 app.use(ROUTES.dossier,dossier_router)
 
 app.use(ROUTES.email, email_router);
+
+app.use(ROUTES.resetPassword, reset_password_router);
 
 app.use("/easym/v1/webtemplate",webtemplate)
 
