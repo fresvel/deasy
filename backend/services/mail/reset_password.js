@@ -23,6 +23,12 @@ export const sendResetCodeService = async (email) => {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await pool.query(
+    "DELETE FROM password_reset_codes WHERE user_id = ? AND used = 0",
+    [user.id]
+  );
+
+
+  await pool.query(
     `INSERT INTO password_reset_codes (user_id, code_hash, expires_at)
      VALUES (?, ?, ?)`,
     [user.id, codeHash, expiresAt]
@@ -57,17 +63,26 @@ export const verifyResetCodeService = async (email, code) => {
 
   if (!user) return false;
 
+  // Tomamos el último código no usado
   const [[row]] = await pool.query(
-    "SELECT code_hash, expires_at FROM password_reset_codes WHERE user_id = ? ORDER BY expires_at DESC LIMIT 1",
+    "SELECT id, code_hash, expires_at, used FROM password_reset_codes WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
     [user.id]
   );
 
   if (!row) return false;
+
+  // Revisar expiración
   if (new Date() > new Date(row.expires_at)) return false;
 
+  // Revisar si ya fue usado
+  if (row.used) return false;
+
+  // Verificar código
   const valid = await bcrypt.compare(code, row.code_hash);
-  return valid;
+
+  return valid ? row.id : false; // retornamos el id del código válido
 };
+
 
 /**
  * Resetear contraseña
@@ -80,25 +95,24 @@ export const resetPasswordService = async (email, code, password) => {
     "SELECT id FROM users WHERE email = ?",
     [email]
   );
-
   if (!user) throw new Error("Usuario no encontrado");
 
-  // 2️⃣ Verificar código
-  const valid = await verifyResetCodeService(email, code);
-  if (!valid) throw new Error("Código inválido o expirado");
+  // 2️⃣ Verificar código y obtener id del código
+  const codeId = await verifyResetCodeService(email, code);
+  if (!codeId) throw new Error("Código inválido o expirado");
 
   // 3️⃣ Hash de la nueva contraseña
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // 4️⃣ Actualizar contraseña correctamente en la columna password_hash
+  // 4️⃣ Actualizar contraseña
   await pool.query(
     "UPDATE users SET password_hash = ? WHERE id = ?",
     [passwordHash, user.id]
   );
 
-  // 5️⃣ Marcar el código como usado (opcional, mejora seguridad)
+  // 5️⃣ Marcar SOLO este código como usado
   await pool.query(
-    "UPDATE password_reset_codes SET used = 1 WHERE user_id = ? AND used = 0",
-    [user.id]
+    "UPDATE password_reset_codes SET used = 1 WHERE id = ?",
+    [codeId]
   );
 };
