@@ -59,6 +59,7 @@ Este indice organiza la documentacion del repositorio y enlaza a los documentos 
    - docs/07-despliegue/scripts.md
    - docs/07-despliegue/env.md
    - docs/07-despliegue/infra.md
+   - docs/07-despliegue/storage-layout.md
 
 8) Operacion
    - docs/08-operacion/troubleshooting.md
