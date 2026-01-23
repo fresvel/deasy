@@ -12,6 +12,7 @@ export const PATHS = {
   whatsapp: "/whatsapp",
   dossier: "/dossier",
   email: "/email",
+  resetPassword: "/reset-password"
 };
 
 export const ROUTES = Object.fromEntries(
