@@ -20,3 +20,14 @@
 
 - Versionar cambios de schema y documentar scripts de migracion.
 
+## Migracion: templates (1:N con processes)
+
+Motivo: `processes 1─∞ templates` requiere eliminar la unicidad por `process_id`.
+
+SQL sugerido (MariaDB):
+
+```sql
+ALTER TABLE templates
+  DROP INDEX uq_templates_process,
+  ADD INDEX idx_templates_process_id (process_id);
+```

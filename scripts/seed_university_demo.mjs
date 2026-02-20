@@ -259,17 +259,6 @@ const run = async () => {
     is_current: 1
   });
 
-  const assignRole = (personId, roleId, unitId) =>
-    post("role_assignments", {
-      person_id: personId,
-      role_id: roleId,
-      unit_id: unitId,
-      max_depth: 0,
-      start_date: isoDate(today),
-      is_current: 1,
-      source: "derived"
-    });
-
   const posRector = await post("unit_positions", {
     unit_id: unitUniversity.id,
     cargo_id: cargoRector.id,
@@ -533,14 +522,8 @@ const run = async () => {
     is_current: 1
   });
 
-  await assignRole(decano.id, roleDecano.id, unitFaculty.id);
-  await assignRole(coordSis.id, roleCoord.id, unitCareerSis.id);
-  await assignRole(coordSis.id, roleCoord.id, unitFaculty.id);
-  await assignRole(coordEnf.id, roleCoord.id, unitCareerEnf.id);
-  await assignRole(docenteA.id, roleDocente.id, unitCareerSis.id);
-  await assignRole(docenteB.id, roleDocente.id, unitCareerSis.id);
-  await assignRole(docenteA.id, roleDocente.id, unitCareerEnf.id);
-  await assignRole(docenteEnf.id, roleDocente.id, unitCareerEnf.id);
+  // Los role_assignments de source="derived" se crean por trigger al insertar
+  // position_assignments; no duplicarlos manualmente.
 
   const vacancyDocente = await post("vacancies", {
     position_id: posDocenteSisB.id,

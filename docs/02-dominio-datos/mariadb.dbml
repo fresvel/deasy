@@ -455,7 +455,7 @@ Table templates {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_id) [unique]
+    (process_id) [name: "idx_templates_process_id"]
   }
 }
 
