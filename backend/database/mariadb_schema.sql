@@ -398,7 +398,7 @@ CREATE TABLE IF NOT EXISTS templates (
   slug VARCHAR(180) NOT NULL UNIQUE,
   description VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_templates_process (process_id),
+  KEY idx_templates_process_id (process_id),
   CONSTRAINT fk_templates_process FOREIGN KEY (process_id) REFERENCES processes(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

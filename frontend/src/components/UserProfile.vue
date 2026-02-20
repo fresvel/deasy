@@ -90,6 +90,10 @@ const onFileChange = (event) => {
 .image {
     position: relative;
     cursor: default;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 0 0.35rem;
 }
 
 .image.editable {
@@ -97,9 +101,10 @@ const onFileChange = (event) => {
 }
 
 .image img {
-    width: 100%;
-    height: 100%;
+    width: clamp(72px, 10vw, 96px);
+    height: clamp(72px, 10vw, 96px);
     object-fit: cover;
+    border-radius: 50%;
 }
 
 .file-input {

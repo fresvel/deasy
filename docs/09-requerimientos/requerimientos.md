@@ -56,6 +56,8 @@ De esta manera, cuando se cree un nuevo proceso siempre empezará en modo manual
 
 29) Regla de control de tareas pendientes al ocupar un puesto: cuando una posición que estaba vacante pasa a estar ocupada, el sistema debe validar si existen tareas pendientes asignadas a ese puesto y, de ser así, completar el snapshot de la asignación con la persona ocupante (actualizar task_assignments.assigned_person_id). Además, notificar al usuario de las tareas pendientes.
 
+30) Plantillas (Deasy): el microservicio de render debe recibir **JSON** desde front/back, cargar defaults **YAML** del template (`data.yaml`) como fuente de verdad, aplicar overrides, validar con JSON Schema y renderizar. Si se requiere `data.json`, generarlo automáticamente desde `data.yaml` (no editar ambos).
+
 ## Documentacion pendiente
 
 1) Completar detalle tecnico por entidad (reglas de negocio y validaciones), y mapear endpoints/servicios con ejemplos de uso.
