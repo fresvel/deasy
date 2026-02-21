@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-page">
+  <div class="dashboard-page dashboard-typography">
     <s-header @onclick="handleHeaderToggle">
       <div class="header-left">
         <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
@@ -8,27 +8,44 @@
 
         <div v-if="unitGroups.length" class="group-menu">
           <div
-            class="group-item theme-gradient-tile"
-            :class="{ active: selectedGroupId === null, 'is-active': selectedGroupId === null }"
+            class="group-item"
+            :class="{ active: selectedGroupId === null }"
             role="button"
             tabindex="0"
             @click="selectConsolidated"
             @keydown.enter="selectConsolidated"
           >
-            <div class="group-title">Consolidado</div>
+            <span class="group-icon">
+              <font-awesome-icon icon="globe" />
+            </span>
+            <div class="group-content">
+              <div class="group-title">
+                Consolidado
+                <span class="group-pill">UI</span>
+              </div>
+              <div class="group-meta">Todas las unidades agrupadas</div>
+            </div>
           </div>
 
           <div
             v-for="group in unitGroups"
             :key="group.id"
-            class="group-item theme-gradient-tile"
-            :class="{ active: group.id === selectedGroupId, 'is-active': group.id === selectedGroupId }"
+            class="group-item"
+            :class="{ active: group.id === selectedGroupId }"
             role="button"
             tabindex="0"
             @click="selectGroup(group)"
             @keydown.enter="selectGroup(group)"
           >
-            <div class="group-title" :title="group.name">{{ group.label || group.name }}</div>
+            <span class="group-icon">
+              <font-awesome-icon :icon="iconForUnitGroup(group)" />
+            </span>
+            <div class="group-content">
+              <div class="group-title" :title="group.name">
+                {{ group.label || group.name }}
+              </div>
+              <div class="group-meta">{{ unitCountLabel(group) }}</div>
+            </div>
           </div>
         </div>
         <span v-if="!userUnits.length && !menuLoading" class="nav-link text-white-50">
@@ -37,7 +54,7 @@
       </div>
 
       <div class="header-right">
-        <router-link to="/logout" class="nav-link text-white ms-lg-3" title="Cerrar sesión">
+        <router-link to="/logout" class="nav-link text-white p-0 ms-lg-3" title="Cerrar sesión">
           <img class="avatar" src="/images/logout.svg" alt="Cerrar sesión" />
         </router-link>
 
@@ -77,7 +94,10 @@
                 :class="{ 'is-open': cargo.open }"
                 @click="toggleCargo(cargo)"
               >
-                {{ cargo.name }}
+                <span class="menu-title-left">
+                  <font-awesome-icon :icon="iconForCargo(cargo.name)" class="menu-title-icon" />
+                  <span>{{ cargo.name }}</span>
+                </span>
               </button>
 
               <div v-show="cargo.open" class="menu-section-body">
@@ -89,7 +109,10 @@
                     type="button"
                     @click="handleProcessSelect(process, cargo)"
                   >
-                    {{ process.name }}
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="iconForProcess(process.name)" class="menu-item-icon" />
+                      <span>{{ process.name }}</span>
+                    </span>
                   </button>
                   <div v-if="!cargo.processes.length" class="menu-empty">
                     Sin procesos asignados.
@@ -317,6 +340,37 @@ const toggleCargo = (cargo) => {
   cargo.open = !cargo.open;
 };
 
+const iconForCargo = (name = '') => {
+  const normalized = name.toLowerCase();
+  if (normalized.includes('docen')) return 'certificate';
+  if (normalized.includes('coord')) return 'id-card';
+  if (normalized.includes('admin')) return 'lock';
+  return 'id-card';
+};
+
+const iconForProcess = (name = '') => {
+  const normalized = name.toLowerCase();
+  if (normalized.includes('firma')) return 'check-circle';
+  if (normalized.includes('perfil')) return 'user';
+  if (normalized.includes('academ')) return 'certificate';
+  if (normalized.includes('unidad')) return 'globe';
+  return 'square-check';
+};
+
+const iconForUnitGroup = (group) => {
+  const label = `${group?.label ?? ''} ${group?.name ?? ''}`.toLowerCase();
+  if (label.includes('univers')) return 'globe';
+  if (label.includes('facult')) return 'map-marked-alt';
+  if (label.includes('carrera')) return 'certificate';
+  if (label.includes('depart')) return 'id-card';
+  return 'id-card';
+};
+
+const unitCountLabel = (group) => {
+  const count = group?.units?.length ?? 0;
+  return `${count} ${count === 1 ? 'unidad' : 'unidades'}`;
+};
+
 const handleProcessSelect = () => {};
 
 const loadUserMenu = async () => {
@@ -419,9 +473,9 @@ const toggleNotify = () => {
 .group-menu {
   display: flex;
   align-items: stretch;
-  gap: 0.85rem;
+  gap: 0.52rem;
   overflow-x: auto;
-  padding: 0.2rem 0.35rem;
+  padding: 0.12rem 0.2rem;
   scrollbar-width: thin;
 }
 
@@ -435,36 +489,97 @@ const toggleNotify = () => {
 }
 
 .group-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 170px;
-  padding: 0.55rem 0.85rem;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-width: 198px;
+  padding: 0.46rem 0.72rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: rgba(255, 255, 255, 0.94);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
 }
 
 .group-item:hover {
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.38);
 }
 
 .group-item.active {
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 255, 255, 0.95);
+  color: var(--brand-primary);
+  box-shadow: 0 10px 20px rgba(var(--brand-primary-rgb), 0.26);
+}
+
+.group-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.group-item.active .group-icon {
+  background: rgba(var(--brand-primary-rgb), 0.12);
+  border-color: rgba(var(--brand-primary-rgb), 0.18);
+}
+
+.group-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
 }
 
 .group-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .group-meta {
-  font-size: 0.7rem;
-  opacity: 0.75;
+  font-size: 0.72rem;
+  opacity: 0.86;
+  line-height: 1.2;
+}
+
+.group-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.36rem;
+  height: 0.98rem;
+  padding: 0 0.36rem;
+  border-radius: 999px;
+  background: rgba(15, 163, 101, 0.26);
+  border: 1px solid rgba(198, 249, 229, 0.45);
+  color: #eafef6;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.group-item.active .group-pill {
+  background: rgba(15, 163, 101, 0.18);
+  border-color: rgba(15, 163, 101, 0.28);
+  color: #16704d;
 }
 
 
