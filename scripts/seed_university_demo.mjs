@@ -67,6 +67,29 @@ const request = async (method, url, body) => {
 };
 
 const post = (table, payload) => request("POST", `${SQL_BASE}/${table}`, payload);
+const getList = async (table, params = {}) => {
+  const search = new URLSearchParams(params);
+  const url = `${SQL_BASE}/${table}?${search.toString()}`;
+  return request("GET", url);
+};
+
+const ensureRelationType = async ({ code, name, is_inheritance_allowed = 1, is_active = 1 }) => {
+  const existing = await getList("relation_unit_types", {
+    filter_code: code,
+    orderBy: "id",
+    order: "asc",
+    limit: 1
+  });
+  if (existing.length) {
+    return existing[0];
+  }
+  return post("relation_unit_types", {
+    code,
+    name,
+    is_inheritance_allowed,
+    is_active
+  });
+};
 
 const run = async () => {
   const suffix = process.env.SEED_SUFFIX || randomUUID().slice(0, 8);
@@ -121,10 +144,11 @@ const run = async () => {
     unit_type_id: unitTypeDept.id
   });
 
-  const relationParent = await post("relation_unit_types", {
-    code: `parent-${suffix}`,
-    name: `Padre-${suffix}`,
-    is_inheritance_allowed: 1
+  const relationParent = await ensureRelationType({
+    code: "org",
+    name: "Organica",
+    is_inheritance_allowed: 1,
+    is_active: 1
   });
 
   await post("unit_relations", {

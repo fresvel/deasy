@@ -1,21 +1,12 @@
 <template>
   <div class="container-fluid py-4">
-    <div class="profile-section-header">
-      <div>
-        <h2 class="profile-section-title mb-1">Formación continua y conferencias</h2>
-        <p class="profile-section-subtitle">Registra los eventos de capacitación docente y profesional en los que has participado.</p>
-      </div>
-      <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
-        <font-awesome-icon icon="plus" class="me-2" />
-        Agregar
-      </button>
-    </div>
+    <ProfileSectionShell
+      title="Formación continua y conferencias"
+      subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."
+      @add="openModal"
+    >
 
-    <section class="mb-5">
-      <header class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">Capacitación en el área docente</h3>
-      </header>
-
+    <ProfileTableBlock title="Capacitación en el área docente">
       <div class="table-responsive table-actions">
         <table class="table table-hover align-middle table-institutional table-striped table-actions">
           <thead >
@@ -76,13 +67,9 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </ProfileTableBlock>
 
-    <section>
-      <header class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">Capacitación profesional</h3>
-      </header>
-
+    <ProfileTableBlock title="Capacitación profesional">
       <div class="table-responsive table-actions">
         <table class="table table-hover align-middle table-institutional table-striped table-actions">
           <thead >
@@ -143,7 +130,9 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </ProfileTableBlock>
+
+    </ProfileSectionShell>
 
     <section class="mt-5">
       <LogrosView2 />
@@ -202,6 +191,8 @@ import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 import LogrosView2 from "@/sections/academia/LogrosView2.vue";
+import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 
 const modal = ref(null);
 const deleteModal = ref(null);

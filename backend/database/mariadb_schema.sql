@@ -50,6 +50,19 @@ CREATE TABLE IF NOT EXISTS relation_unit_types (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT INTO relation_unit_types (code, name, description, is_inheritance_allowed, is_active)
+SELECT
+  'org',
+  'Organica',
+  'Relacion jerarquica organizacional',
+  1,
+  1
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM relation_unit_types
+  WHERE code = 'org'
+);
+
 CREATE TABLE IF NOT EXISTS unit_relations (
   id INT AUTO_INCREMENT PRIMARY KEY,
   relation_type_id INT NOT NULL,
