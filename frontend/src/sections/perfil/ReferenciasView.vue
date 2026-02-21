@@ -1,23 +1,14 @@
 <template>
 <div class="container-fluid py-4">
-  <div class="profile-section-header">
-    <div>
-      <h2 class="text-start profile-section-title">Referencias</h2>
-      <p class="profile-section-subtitle">Agrega referencias laborales, familiares y personales.</p>
-    </div>
-    <div class="profile-section-actions">
-      <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal()">
-        <font-awesome-icon icon="plus" class="me-2" />
-        Agregar
-      </button>
-    </div>
-  </div>
+  <ProfileSectionShell
+    title="Referencias"
+    subtitle="Agrega referencias laborales, familiares y personales."
+    @add="openModal"
+  >
                 
   
   <!-- Referencias Laborales -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h3 class="text-start mb-3">Referencias Laborales</h3>
+  <ProfileTableBlock title="Referencias laborales">
       <div class="table-responsive">
         <table class="table table-striped table-hover table-institutional align-middle">
           <thead >
@@ -54,13 +45,10 @@
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
+  </ProfileTableBlock>
 
   <!-- Referencias Familiares -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h3 class="text-start mb-3">Referencias Familiares</h3>
+  <ProfileTableBlock title="Referencias familiares">
       <div class="table-responsive">
         <table class="table table-striped table-hover table-institutional align-middle">
           <thead >
@@ -95,13 +83,10 @@
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
+  </ProfileTableBlock>
 
   <!-- Referencias Personales -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h3 class="text-start mb-3">Referencias Personales</h3>
+  <ProfileTableBlock title="Referencias personales">
       <div class="table-responsive">
         <table class="table table-striped table-hover table-institutional align-middle">
           <thead >
@@ -134,8 +119,8 @@
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
+  </ProfileTableBlock>
+  </ProfileSectionShell>
 </div>
 
 <!-- Modal Bootstrap -->
@@ -162,6 +147,8 @@ import AgregarReferencia from "./AgregarReferencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
+import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);

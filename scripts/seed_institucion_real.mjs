@@ -103,6 +103,24 @@ const getList = async (table, params = {}) => {
   return request("GET", url);
 };
 
+const ensureRelationType = async ({ code, name, is_inheritance_allowed = 1, is_active = 1 }) => {
+  const existing = await getList("relation_unit_types", {
+    filter_code: code,
+    orderBy: "id",
+    order: "asc",
+    limit: 1
+  });
+  if (existing.length) {
+    return existing[0];
+  }
+  return post("relation_unit_types", {
+    code,
+    name,
+    is_inheritance_allowed,
+    is_active
+  });
+};
+
 const slugify = (value) =>
   value
     .normalize("NFD")
@@ -323,7 +341,7 @@ const run = async () => {
 
   const relationTypeByCode = new Map();
   for (const rel of relationTypes) {
-    const created = await post("relation_unit_types", {
+    const created = await ensureRelationType({
       code: rel.code,
       name: rel.name,
       is_inheritance_allowed: rel.inherit,

@@ -1,74 +1,70 @@
 <template>
   <div class="container-fluid py-4">
-    <div class="profile-section-header">
-      <div>
-        <h2 class="profile-section-title mb-1">Certificaciones y reconocimientos</h2>
-        <p class="profile-section-subtitle">Registra los certificados o reconocimientos relevantes para tu carrera.</p>
-      </div>
-      <div class="profile-section-actions">
-        <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
-          <font-awesome-icon icon="plus" class="me-2" />
-          Agregar
-        </button>
-      </div>
-    </div>
+    <ProfileSectionShell
+      title="Certificaciones y reconocimientos"
+      subtitle="Registra los certificados o reconocimientos relevantes para tu carrera."
+      @add="openModal"
+    >
 
-    <div class="table-responsive table-actions">
-      <table class="table table-hover align-middle table-institutional table-striped table-actions">
-        <thead >
-          <tr>
-            <th scope="col">Certificación</th>
-            <th scope="col">Institución</th>
-            <th scope="col">Horas</th>
-            <th scope="col">Fecha</th>
-            <th scope="col">Ámbito</th>
-            <th scope="col" class="text-end">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="!certificaciones.length">
-            <td colspan="6" class="text-center text-muted py-4">
-              No has registrado certificaciones aún.
-            </td>
-          </tr>
-          <tr v-for="certificacion in certificaciones" :key="certificacion._id">
-            <td>{{ certificacion.titulo }}</td>
-            <td>{{ certificacion.institution }}</td>
-            <td>{{ certificacion.horas || 'N/A' }}</td>
-            <td>{{ formatDate(certificacion.fecha) }}</td>
-            <td>{{ certificacion.tipo || 'N/A' }}</td>
-            <td class="text-end">
-              <div class="dropdown d-inline-block">
-                <button
-                  class="btn btn-outline-primary btn-sm dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                  aria-label="Acciones"
-                  title="Acciones"
-                >
-                  <font-awesome-icon icon="ellipsis-vertical" />
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li>
-                    <button class="dropdown-item" type="button" @click="editarCertificacion(certificacion)">
-                      <font-awesome-icon icon="edit" class="me-2" />
-                      Editar
-                    </button>
-                  </li>
-                  <li>
-                    <button class="dropdown-item text-danger" type="button" @click="openDelete(certificacion)">
-                      <font-awesome-icon icon="trash" class="me-2" />
-                      Eliminar
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <ProfileTableBlock title="Certificaciones registradas">
+      <div class="table-responsive table-actions">
+        <table class="table table-hover align-middle table-institutional table-striped table-actions">
+          <thead >
+            <tr>
+              <th scope="col">Certificación</th>
+              <th scope="col">Institución</th>
+              <th scope="col">Horas</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Ámbito</th>
+              <th scope="col" class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!certificaciones.length">
+              <td colspan="6" class="text-center text-muted py-4">
+                No has registrado certificaciones aún.
+              </td>
+            </tr>
+            <tr v-for="certificacion in certificaciones" :key="certificacion._id">
+              <td>{{ certificacion.titulo }}</td>
+              <td>{{ certificacion.institution }}</td>
+              <td>{{ certificacion.horas || 'N/A' }}</td>
+              <td>{{ formatDate(certificacion.fecha) }}</td>
+              <td>{{ certificacion.tipo || 'N/A' }}</td>
+              <td class="text-end">
+                <div class="dropdown d-inline-block">
+                  <button
+                    class="btn btn-outline-primary btn-sm dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-label="Acciones"
+                    title="Acciones"
+                  >
+                    <font-awesome-icon icon="ellipsis-vertical" />
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <button class="dropdown-item" type="button" @click="editarCertificacion(certificacion)">
+                        <font-awesome-icon icon="edit" class="me-2" />
+                        Editar
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item text-danger" type="button" @click="openDelete(certificacion)">
+                        <font-awesome-icon icon="trash" class="me-2" />
+                        Eliminar
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ProfileTableBlock>
+    </ProfileSectionShell>
 
     <div class="modal fade" id="certificacionModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="modal-dialog modal-xl">
@@ -120,6 +116,8 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import AgregarCertificacion from "./AgregarCertificacion.vue";
+import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);

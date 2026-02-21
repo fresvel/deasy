@@ -1,115 +1,14 @@
 <template>
 <div class="container-fluid py-4">
-  <div class="profile-section-header">
-    <div>
-      <h2 class="text-start profile-section-title">Formación Profesional</h2>
-      <p class="profile-section-subtitle">Registra tu formación académica y títulos obtenidos.</p>
-    </div>
-    <div class="profile-section-actions">
-      <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal()">
-        <font-awesome-icon icon="plus" class="me-2"/>
-        Agregar
-      </button>
-    </div>
-  </div>
+  <ProfileSectionShell
+    title="Formación Profesional"
+    subtitle="Registra tu formación académica y títulos obtenidos."
+    @add="openModal"
+  >
                 
   
-  <!-- Títulos Técnicos y Tecnológicos -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h3 class="text-start mb-3">Títulos Técnicos y Tecnológicos</h3>
-      <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle table-institutional">
-          <thead >
-            <tr>
-              <th width="5%"></th>
-              <th class="text-start">TÍTULO</th>
-              <th class="text-start">INSTITUCIÓN</th>
-              <th class="text-start">TIPO</th>
-              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
-              <th class="text-start">CAMPO</th>
-              <th class="text-start">PAÍS</th>
-              <th class="text-start">ACCIÓN</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="titulosTecnicos.length === 0">
-              <td colspan="8" class="text-center text-muted">
-                <p class="my-3">No hay títulos técnicos/tecnológicos registrados</p>
-              </td>
-            </tr>
-            <tr v-for="titulo in titulosTecnicos" :key="titulo._id">
-              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
-              <td>{{ titulo.titulo }}</td>
-              <td>{{ titulo.ies }}</td>
-              <td>{{ titulo.tipo }}</td>
-              <td>{{ titulo.sreg || 'N/A' }}</td>
-              <td>{{ titulo.campo_amplio }}</td>
-              <td>{{ titulo.pais }}</td>
-              <td>
-                <div class="btn-group" role="group">
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  
-  <!-- Títulos de Grado -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h3 class="text-start mb-3">Títulos de Grado</h3>
-      <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle table-institutional">
-          <thead >
-            <tr>
-              <th width="5%"></th>
-              <th class="text-start">TÍTULO</th>
-              <th class="text-start">INSTITUCIÓN</th>
-              <th class="text-start">TIPO</th>
-              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
-              <th class="text-start">CAMPO</th>
-              <th class="text-start">PAÍS</th>
-              <th class="text-start">ACCIÓN</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="titulosGrado.length === 0">
-              <td colspan="8" class="text-center text-muted">
-                <p class="my-3">No hay títulos de grado registrados</p>
-              </td>
-            </tr>
-            <tr v-for="titulo in titulosGrado" :key="titulo._id">
-              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
-              <td>{{ titulo.titulo }}</td>
-              <td>{{ titulo.ies }}</td>
-              <td>{{ titulo.tipo }}</td>
-              <td>{{ titulo.sreg || 'N/A' }}</td>
-              <td>{{ titulo.campo_amplio }}</td>
-              <td>{{ titulo.pais }}</td>
-              <td>
-                <div class="btn-group" role="group">
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  
   <!-- Títulos de Cuarto Nivel -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h3 class="text-start mb-3">Títulos de Cuarto Nivel</h3>
+  <ProfileTableBlock title="Títulos de Cuarto Nivel">
       <div class="table-responsive">
         <table class="table table-striped table-hover align-middle table-institutional">
           <thead >
@@ -148,8 +47,94 @@
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
+  </ProfileTableBlock>
+
+  
+  <!-- Títulos de Grado -->
+  <ProfileTableBlock title="Títulos de Grado">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle table-institutional">
+          <thead >
+            <tr>
+              <th width="5%"></th>
+              <th class="text-start">TÍTULO</th>
+              <th class="text-start">INSTITUCIÓN</th>
+              <th class="text-start">TIPO</th>
+              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
+              <th class="text-start">CAMPO</th>
+              <th class="text-start">PAÍS</th>
+              <th class="text-start">ACCIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="titulosGrado.length === 0">
+              <td colspan="8" class="text-center text-muted">
+                <p class="my-3">No hay títulos de grado registrados</p>
+              </td>
+            </tr>
+            <tr v-for="titulo in titulosGrado" :key="titulo._id">
+              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td>{{ titulo.titulo }}</td>
+              <td>{{ titulo.ies }}</td>
+              <td>{{ titulo.tipo }}</td>
+              <td>{{ titulo.sreg || 'N/A' }}</td>
+              <td>{{ titulo.campo_amplio }}</td>
+              <td>{{ titulo.pais }}</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  </ProfileTableBlock>
+
+  
+  <!-- Títulos Técnicos y Tecnológicos -->
+  <ProfileTableBlock title="Títulos Técnicos y Tecnológicos">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle table-institutional">
+          <thead >
+            <tr>
+              <th width="5%"></th>
+              <th class="text-start">TÍTULO</th>
+              <th class="text-start">INSTITUCIÓN</th>
+              <th class="text-start">TIPO</th>
+              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
+              <th class="text-start">CAMPO</th>
+              <th class="text-start">PAÍS</th>
+              <th class="text-start">ACCIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="titulosTecnicos.length === 0">
+              <td colspan="8" class="text-center text-muted">
+                <p class="my-3">No hay títulos técnicos/tecnológicos registrados</p>
+              </td>
+            </tr>
+            <tr v-for="titulo in titulosTecnicos" :key="titulo._id">
+              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td>{{ titulo.titulo }}</td>
+              <td>{{ titulo.ies }}</td>
+              <td>{{ titulo.tipo }}</td>
+              <td>{{ titulo.sreg || 'N/A' }}</td>
+              <td>{{ titulo.campo_amplio }}</td>
+              <td>{{ titulo.pais }}</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
+                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  </ProfileTableBlock>
+  </ProfileSectionShell>
 </div>
 
 
@@ -176,6 +161,8 @@ import AgregarTitulo from "./AgregarTitulo.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
+import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { Modal } from "bootstrap";
 import { API_PREFIX } from "@/services/apiConfig";
 

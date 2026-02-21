@@ -90,7 +90,14 @@
 
 
         <div v-if="area=='Perfil'" id="validar">
-            <TitulosView v-if="process==='Formación'"></TitulosView>
+            <ProfileHomePanel
+              v-if="process==='Inicio'"
+              :current-user="currentUser"
+              :photo="userPhoto"
+              :dossier-counts="dossierCounts"
+              @navigate-section="onmenuClick"
+            />
+            <TitulosView v-else-if="process==='Formación'"></TitulosView>
             <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
             <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
             <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
@@ -133,6 +140,7 @@ import LaboralView from '@/sections/perfil/LaboralView.vue';
 import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
 import CertificacionView from '@/sections/perfil/CertificacionView.vue';
 import CapacitacionView from '@/views/logged/perfil/CapacitaciónView.vue';
+import ProfileHomePanel from '@/sections/perfil/ProfileHomePanel.vue';
 
 import IndexAcademia from '@/sections/academia/AcademiaView.vue';
 import LogrosView from '@/sections/academia/LogrosView.vue';
@@ -184,9 +192,14 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
 
     const buildPerfilMenu = () => ([
         {
+            label: 'Inicio',
+            key: null,
+            active: true,
+        },
+        {
             label: 'Formación',
             key: 'formacion',
-            active: true,
+            active: false,
         },
         {
             label: 'Experiencia',
@@ -261,7 +274,7 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const tareas=service.getEasymdata().tareas
     const vmenu = ref(true);
     const vnotify = ref(true);
-    const process= ref("Formación")
+    const process= ref("Inicio")
 
     const area= ref("Perfil")
     const showCoordinacion = ref(true);
@@ -366,7 +379,7 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         switch(item.name){
             case 'Perfil':
                 mainmenu.value = buildPerfilMenu();
-                process.value="Formación";
+                process.value="Inicio";
                 break;
             case 'Academia':
                 console.log("Academia detected")
