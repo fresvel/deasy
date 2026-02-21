@@ -1,11 +1,47 @@
 <template>
-    <button 
-      @click="onclick" 
-      class="btnedit">
-      <font-awesome-icon icon="edit" class="icon" />
-      <span class="tooltip">{{props.tooltip}}</span>
-    </button>
-  </template>
+  <button
+    type="button"
+    class="btn btn-sm btn-icon text-primary hope-action-btn hope-action-edit"
+    :title="props.tooltip"
+    :aria-label="props.tooltip"
+    @click="onclick"
+  >
+    <span class="btn-inner">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M11.4925 2.78906H7.75349C4.67849 2.78906 2.75049 4.96606 2.75049 8.04806V16.3621C2.75049 19.4441 4.66949 21.6211 7.75349 21.6211H16.5775C19.6625 21.6211 21.5815 19.4441 21.5815 16.3621V12.3341"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M8.82812 10.921L16.3011 3.44799C17.2321 2.51799 18.7411 2.51799 19.6721 3.44799L20.8891 4.66499C21.8201 5.59599 21.8201 7.10599 20.8891 8.03599L13.3801 15.545C12.9731 15.952 12.4211 16.181 11.8451 16.181H8.09912L8.19312 12.401C8.20712 11.845 8.43412 11.315 8.82812 10.921Z"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M15.1655 4.60254L19.7315 9.16854"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </span>
+  </button>
+</template>
 <script setup>
 import { defineProps, defineEmits } from 'vue';
 
@@ -22,46 +58,3 @@ const onclick=()=>{
     emit("onpress")
 }
 </script>
-
-<style scoped>
-
-.btnedit {
-    position: relative; /* Necesario para posicionar el tooltip */
-    margin-left: 5px;
-    margin-top: 5px;
-    padding: 0;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 2em;
-    font-weight: bold;
-    color: var(--brand-accent);
-    --tooltip-bg: var(--brand-accent);
-    transition: color 0.3s ease-in-out;
-    position: relative; /* Necesario para posicionar el tooltip */
-}
-
-.tooltip {
-  visibility: hidden; /* Inicialmente oculto */
-  position: absolute;
-  bottom: 100%; /* Lo coloca justo encima del botón */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--tooltip-bg);
-  color: var(--brand-white);
-  padding: 5px;
-  height:100%;
-  font-family: var(--font-base);
-  border-radius: 3px;
-  font-size: 16px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.btnedit:hover .tooltip {
-  visibility: visible;
-  opacity: 1; /* Lo hace visible cuando el hover es activado */
-}
-
-</style>

@@ -19,7 +19,7 @@
         </div>
 
         <div class="header-right">
-            <router-link to="/logout" class="nav-link text-white">
+            <router-link to="/logout" class="nav-link text-white p-0">
                 <img class="avatar" src="/images/logout.svg" alt="User Avatar">
             </router-link>              
             <button class="nav-link text-white p-0" type="button" @click="onheadClick({name:'Firmar'})"> 
@@ -50,18 +50,24 @@
                     :class="{ 'is-open': showCoordinacion }"
                     @click="showCoordinacion = !showCoordinacion"
                   >
-                      Coordinación
+                      <span class="menu-title-left">
+                        <font-awesome-icon :icon="menuSectionIcons.coordinacion" class="menu-title-icon" />
+                        <span>Coordinación</span>
+                      </span>
                   </button>
 
                   <div v-show="showCoordinacion" class="menu-section-body">
                     <div class="list-group list-group-flush">
                       <button v-for="(item, index) of mainmenu" :key="index"
-                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                        class="list-group-item list-group-item-action"
                         :class="{ active: item.active }"
                         type="button"
                         @click="onmenuClick(item.label)">
-                        <span>{{ item.label }}</span>
-                        <span v-if="item.key" class="badge bg-primary rounded-pill">
+                        <span class="menu-item-content">
+                          <font-awesome-icon :icon="item.icon || 'circle'" class="menu-item-icon" />
+                          <span>{{ item.label }}</span>
+                        </span>
+                        <span v-if="item.key" class="menu-indicator">
                           {{ dossierCounts[item.key] ?? 0 }}
                         </span>
                       </button>
@@ -76,7 +82,10 @@
                     :class="{ 'is-open': showDocencia }"
                     @click="showDocencia = !showDocencia"
                   >
-                    Docencia
+                    <span class="menu-title-left">
+                      <font-awesome-icon :icon="menuSectionIcons.docencia" class="menu-title-icon" />
+                      <span>Docencia</span>
+                    </span>
                   </button>
                   <div v-show="showDocencia" class="menu-section-body"></div>
                 </div>
@@ -194,31 +203,37 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         {
             label: 'Inicio',
             key: null,
+            icon: 'user',
             active: true,
         },
         {
             label: 'Formación',
             key: 'formacion',
+            icon: 'certificate',
             active: false,
         },
         {
             label: 'Experiencia',
             key: 'experiencia',
+            icon: 'check-double',
             active: false,
         },
         {
             label: 'Referencias',
             key: 'referencias',
+            icon: 'id-card',
             active: false,
         },
         {
             label: 'Capacitación',
             key: 'capacitacion',
+            icon: 'square-check',
             active: false,
         },
         {
             label: 'Certificación',
             key: 'certificacion',
+            icon: 'check-circle',
             active: false,
         }
     ]);
@@ -279,6 +294,10 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const area= ref("Perfil")
     const showCoordinacion = ref(true);
     const showDocencia = ref(false);
+    const menuSectionIcons = {
+        coordinacion: 'id-card',
+        docencia: 'certificate'
+    };
     
     
     const toggleVmenu = () => {
@@ -387,26 +406,31 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
                     {
                         label: 'Logros Académicos',
                         key: null,
+                        icon: 'certificate',
                         active: true,
                     },
                     {
                         label: 'Tutorías',
                         key: null,
+                        icon: 'check-double',
                         active: false,
                     },
                     {
                         label: 'Horarios',
                         key: null,
+                        icon: 'info-circle',
                         active: false,
                     },
                     {
                         label: 'Gestión',
                         key: null,
+                        icon: 'id-card',
                         active: false,
                     },
                     {
                         label: 'Eventos',
                         key: null,
+                        icon: 'globe',
                         active: false,
                     }
                 ]
@@ -438,12 +462,4 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
       
       
     </script>
-          
-    <style scoped>
-    .menu-section-title {
-      text-align: center;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    </style>
           

@@ -37,24 +37,24 @@ const onClick=(item)=>{
 
 
 .smenu {
-    height: 100vh;
-    margin-top: 13px;
-    background-color: rgba(var(--brand-primary-rgb), 0.92);
-    padding: 0.75rem;
-    border-radius: var(--radius-md);
-}
-
-.smenu .list-group-item {
-    background-color: transparent;
-    color: var(--brand-white);
-    border: 0;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.smenu .list-group-item.active {
-    background-color: rgba(var(--brand-accent-rgb), 0.2);
-    color: var(--brand-white);
+    height: calc(100vh - 1.1rem);
+    margin-top: 0.12rem;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(var(--brand-primary-rgb), 0.96) 0%,
+        rgba(var(--brand-primary-rgb), 0.9) 55%,
+        rgba(var(--brand-accent-rgb), 0.78) 100%
+      );
+    padding: 0.9rem 0.75rem;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+      0 22px 34px rgba(var(--brand-primary-rgb), 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    position: sticky;
+    top: 0.34rem;
+    overflow: hidden;
 }
 
 </style>

@@ -10,7 +10,7 @@
         </div>
 
         <div class="header-right">
-            <router-link to="/logout" class="nav-link text-white ms-lg-3">
+            <router-link to="/logout" class="nav-link text-white p-0 ms-lg-3">
                 <img class="avatar" src="/images/logout.svg" alt="User Avatar">
             </router-link>              
             <router-link to="/firmar" class="nav-link text-white" @click="resetSigner"> 
