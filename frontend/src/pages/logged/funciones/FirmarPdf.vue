@@ -12,8 +12,14 @@
 
   <div v-if="pdfReady" :class="['firmar-top-bar', { 'firmar-top-bar--compact': compactTopBar }]">
     <div class="firmar-top-group firmar-top-group--left">
-      <button type="button" class="btn btn-outline-secondary btn-lg profile-add-btn top-action-btn" @click="goBackToStart">
-        Regresar
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-lg profile-add-btn top-action-btn"
+        title="Regresar"
+        aria-label="Regresar"
+        @click="goBackToStart"
+      >
+        <font-awesome-icon icon="backward" />
       </button>
       <button type="button" class="btn btn-outline-primary btn-lg profile-add-btn top-action-btn" @click="triggerChangePdf">
         Cambiar PDF

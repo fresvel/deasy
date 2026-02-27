@@ -26,5 +26,9 @@ router.delete('/:cedula/formacion/:formacionId', dossierController.deleteFormaci
 router.post('/:cedula/certificaciones', dossierController.addCertificacion);
 router.delete('/:cedula/certificaciones/:certificacionId', dossierController.deleteCertificacion);
 
-export default router;
+// Rutas para investigación
+router.post('/:cedula/investigacion/:tipo', dossierController.addInvestigacionItem);
+router.put('/:cedula/investigacion/:tipo/:itemId', dossierController.updateInvestigacionItem);
+router.delete('/:cedula/investigacion/:tipo/:itemId', dossierController.deleteInvestigacionItem);
 
+export default router;

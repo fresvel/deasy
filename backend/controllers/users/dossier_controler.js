@@ -3,6 +3,7 @@ import { Usuario } from "../../models/users/usuario_model.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 
 const userRepository = new UserRepository();
+const INVESTIGACION_TIPOS = new Set(["articulos", "libros", "ponencias", "tesis", "proyectos"]);
 
 const findUserRecords = async (cedula) => {
     const [mariaUser, mongoUser] = await Promise.all([
@@ -71,6 +72,36 @@ const getOrCreateDossier = async (cedula) => {
     }
 
     return dossier;
+};
+
+const ensureInvestigacionShape = (dossier) => {
+    if (!dossier.investigacion) {
+        dossier.investigacion = {
+            articulos: [],
+            libros: [],
+            ponencias: [],
+            tesis: [],
+            proyectos: []
+        };
+        return true;
+    }
+
+    let changed = false;
+    for (const tipo of INVESTIGACION_TIPOS) {
+        if (!Array.isArray(dossier.investigacion[tipo])) {
+            dossier.investigacion[tipo] = [];
+            changed = true;
+        }
+    }
+    return changed;
+};
+
+const getInvestigacionTipo = (tipoRaw) => {
+    const tipo = String(tipoRaw || "").toLowerCase();
+    if (!INVESTIGACION_TIPOS.has(tipo)) {
+        return null;
+    }
+    return tipo;
 };
 
 // Obtener o crear dossier del usuario
@@ -450,3 +481,136 @@ export const deleteCertificacion = async (req, res) => {
     }
 };
 
+// Agregar registro de investigación por tipo
+export const addInvestigacionItem = async (req, res) => {
+    try {
+        const { cedula, tipo } = req.params;
+        const investigacionTipo = getInvestigacionTipo(tipo);
+        if (!investigacionTipo) {
+            return res.status(400).json({
+                success: false,
+                message: "Tipo de investigación inválido. Usa: articulos, libros, ponencias, tesis o proyectos."
+            });
+        }
+
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: "Usuario no encontrado"
+            });
+        }
+
+        const reshaped = ensureInvestigacionShape(dossier);
+        dossier.investigacion[investigacionTipo].push(req.body);
+        if (reshaped) {
+            dossier.markModified("investigacion");
+        }
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: "Registro de investigación agregado correctamente",
+            data: dossier
+        });
+    } catch (error) {
+        console.error("Error al agregar investigación:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error al agregar investigación",
+            error: error.message
+        });
+    }
+};
+
+// Actualizar registro de investigación por tipo
+export const updateInvestigacionItem = async (req, res) => {
+    try {
+        const { cedula, tipo, itemId } = req.params;
+        const investigacionTipo = getInvestigacionTipo(tipo);
+        if (!investigacionTipo) {
+            return res.status(400).json({
+                success: false,
+                message: "Tipo de investigación inválido. Usa: articulos, libros, ponencias, tesis o proyectos."
+            });
+        }
+
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: "Usuario no encontrado"
+            });
+        }
+
+        const reshaped = ensureInvestigacionShape(dossier);
+        const item = dossier.investigacion[investigacionTipo].id(itemId);
+        if (!item) {
+            return res.status(404).json({
+                success: false,
+                message: "Registro de investigación no encontrado"
+            });
+        }
+
+        Object.assign(item, req.body);
+        if (reshaped) {
+            dossier.markModified("investigacion");
+        }
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: "Registro de investigación actualizado correctamente",
+            data: dossier
+        });
+    } catch (error) {
+        console.error("Error al actualizar investigación:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error al actualizar investigación",
+            error: error.message
+        });
+    }
+};
+
+// Eliminar registro de investigación por tipo
+export const deleteInvestigacionItem = async (req, res) => {
+    try {
+        const { cedula, tipo, itemId } = req.params;
+        const investigacionTipo = getInvestigacionTipo(tipo);
+        if (!investigacionTipo) {
+            return res.status(400).json({
+                success: false,
+                message: "Tipo de investigación inválido. Usa: articulos, libros, ponencias, tesis o proyectos."
+            });
+        }
+
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: "Usuario no encontrado"
+            });
+        }
+
+        const reshaped = ensureInvestigacionShape(dossier);
+        dossier.investigacion[investigacionTipo].pull(itemId);
+        if (reshaped) {
+            dossier.markModified("investigacion");
+        }
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: "Registro de investigación eliminado correctamente",
+            data: dossier
+        });
+    } catch (error) {
+        console.error("Error al eliminar investigación:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error al eliminar investigación",
+            error: error.message
+        });
+    }
+};

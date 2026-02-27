@@ -1,7 +1,7 @@
 <template>  
 
   
-    <s-header @onclick="onClick('Menu')">
+    <s-header :menu-open="vmenu" @onclick="onClick('Menu')">
         <div class="header-left">
             <router-link to="/" class="nav-link text-white" @click="onClick('Academia')">Academia</router-link>
             <router-link to="/auth" class="nav-link text-white">Investigación</router-link>

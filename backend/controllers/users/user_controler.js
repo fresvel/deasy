@@ -218,9 +218,14 @@ export const getUserMenu = async (req, res) => {
          p.id AS process_id,
          p.name AS process_name,
          p.slug AS process_slug,
-         p.unit_id,
+         pu.unit_id,
          cv.cargo_id
        FROM processes p
+       INNER JOIN process_units pu
+         ON pu.process_id = p.id
+        AND pu.is_active = 1
+        AND (pu.effective_from IS NULL OR pu.effective_from <= CURDATE())
+        AND (pu.effective_to IS NULL OR pu.effective_to >= CURDATE())
        INNER JOIN (
          SELECT id, process_id, cargo_id
          FROM (
@@ -246,7 +251,7 @@ export const getUserMenu = async (req, res) => {
          WHERE pa.person_id = ?
            AND pa.is_current = 1
            AND up.is_active = 1
-       ) uc ON uc.unit_id = p.unit_id AND uc.cargo_id = cv.cargo_id
+       ) uc ON uc.unit_id = pu.unit_id AND uc.cargo_id = cv.cargo_id
        WHERE p.is_active = 1
        ORDER BY p.name`,
       [userId]

@@ -86,7 +86,9 @@ const DROP_TABLES = [
   "task_assignments",
   "tasks",
   "terms",
+  "term_types",
   "process_versions",
+  "process_units",
   "processes",
   "process_cargos",
   "contract_origin_recruitment",
@@ -121,7 +123,7 @@ const DROP_TABLES = [
   "persons"
 ];
 
-export const ensureMariaDBSchema = async () => {
+export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
   const pool = getMariaDBPool();
 
   if (!pool) {
@@ -133,11 +135,13 @@ export const ensureMariaDBSchema = async () => {
 
   const connection = await pool.getConnection();
   try {
-    await connection.query("SET FOREIGN_KEY_CHECKS = 0");
-    for (const table of DROP_TABLES) {
-      await connection.query(`DROP TABLE IF EXISTS \`${table}\``);
+    if (reset) {
+      await connection.query("SET FOREIGN_KEY_CHECKS = 0");
+      for (const table of DROP_TABLES) {
+        await connection.query(`DROP TABLE IF EXISTS \`${table}\``);
+      }
+      await connection.query("SET FOREIGN_KEY_CHECKS = 1");
     }
-    await connection.query("SET FOREIGN_KEY_CHECKS = 1");
 
     const schemaSQL = await fs.readFile(SCHEMA_FILE_URL, "utf8");
     const statements = splitSqlStatements(schemaSQL);
@@ -146,7 +150,11 @@ export const ensureMariaDBSchema = async () => {
       await connection.query(statement);
     }
 
-    console.log("✅ Esquema MariaDB recreado desde mariadb_schema.sql");
+    if (reset) {
+      console.log("✅ Esquema MariaDB recreado desde mariadb_schema.sql");
+    } else {
+      console.log("✅ Esquema MariaDB verificado/actualizado sin reset");
+    }
   } finally {
     connection.release();
   }

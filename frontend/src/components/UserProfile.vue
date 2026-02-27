@@ -1,7 +1,6 @@
 <template>
   <div class="user-profile">
     <div class="card">
-      <div class="profile-chip">Perfil</div>
       <div
         class="image"
         :class="{ editable }"
@@ -23,10 +22,12 @@
         >
       </div>
       <div class="card-body">
-        <div class="card-title mb-0">
-          {{ username }}
+        <div class="profile-identity">
+          <div class="card-title mb-0">
+            {{ username }}
+          </div>
+          <div class="card-subtitle">Cuenta institucional</div>
         </div>
-        <div class="card-subtitle">Cuenta institucional</div>
       </div>
     </div>
   </div>
@@ -101,35 +102,36 @@ const onFileChange = (event) => {
     text-align: center;
 }
 
-.profile-chip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    background: rgba(15, 163, 101, 0.2);
-    color: #e8fff4;
-    border: 1px solid rgba(189, 246, 224, 0.45);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.16rem 0.58rem;
-    margin: 0 auto 0.35rem;
-}
-
 .user-profile .card-title {
     font-weight: 700;
-    font-size: 0.94rem;
-    color: rgba(255, 255, 255, 0.96);
-    text-align: center;
+    font-size: 1.02rem;
     line-height: 1.25;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.96);
+}
+
+.profile-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    width: calc(100% + 2.8rem);
+    border-radius: 12px;
+    background: rgba(15, 163, 101, 0.2);
+    border: 1px solid rgba(189, 246, 224, 0.45);
+    padding: 0.24rem 0.72rem 0.3rem;
+    margin: 0 -1.4rem;
+    box-sizing: border-box;
 }
 
 .user-profile .card-subtitle {
-    margin-top: 0.15rem;
-    color: rgba(255, 255, 255, 0.74);
-    font-size: 0.75rem;
+    margin-top: 0;
+    color: rgba(255, 255, 255, 0.94);
+    font-size: 0.86rem;
+    font-weight: 600;
     letter-spacing: 0.02em;
+    text-align: center;
 }
 
 .image {

@@ -1,5 +1,9 @@
 <template>
-  <nav id="hmenu" class="navbar navbar-expand-lg app-navbar navs-sticky">
+  <nav
+    id="hmenu"
+    class="navbar navbar-expand-lg app-navbar navs-sticky"
+    :class="{ 'menu-open': menuOpen }"
+  >
     <div class="container-fluid navbar-inner">
       <div class="d-flex align-items-center gap-3 w-100 header-main">
         <button class="sidebar-toggle" type="button" @click="onClick('User')" aria-label="Abrir menú">
@@ -17,6 +21,10 @@
   import {defineProps, defineEmits} from "vue"
   
   defineProps({
+    menuOpen: {
+      type: Boolean,
+      default: false
+    },
     menu: [
       {
         label:{
@@ -50,9 +58,9 @@
   background:
     linear-gradient(
       120deg,
-      rgba(var(--brand-primary-rgb), 0.97) 0%,
-      rgba(var(--brand-primary-rgb), 0.93) 38%,
-      rgba(var(--brand-accent-rgb), 0.86) 100%
+      #0c1826 0%,
+      rgba(var(--brand-primary-rgb), 0.94) 42%,
+      rgba(26, 110, 168, 0.86) 100%
     );
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -64,6 +72,10 @@
   position: sticky;
   top: 0.42rem;
   z-index: 20;
+}
+
+#hmenu.menu-open {
+  border-bottom-left-radius: 0;
 }
 
 .navbar-inner {
@@ -228,6 +240,10 @@
     #hmenu {
       border-radius: 14px;
       top: 0.2rem;
+    }
+
+    #hmenu.menu-open {
+      border-bottom-left-radius: 0;
     }
 
     .navbar-inner {

@@ -1,0 +1,1637 @@
+{
+  "seed_name": "pucese",
+  "source_database": "deasy",
+  "captured_at": "2026-02-26T20:28:11.144Z",
+  "tables": [
+    {
+      "table": "unit_types",
+      "columns": [
+        "id",
+        "name",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(120)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "name": "Prorrectorado",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:32:23"
+        },
+        {
+          "id": 2,
+          "name": "Coordinación",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:32:46"
+        },
+        {
+          "id": 3,
+          "name": "Dirección",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:32:57"
+        },
+        {
+          "id": 4,
+          "name": "Escuela",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:33:28"
+        },
+        {
+          "id": 5,
+          "name": "Jefatura",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:34:12"
+        },
+        {
+          "id": 6,
+          "name": "Carrera",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:35:36"
+        },
+        {
+          "id": 7,
+          "name": "Tecnología",
+          "is_active": 1,
+          "created_at": "2026-02-26 12:36:38"
+        },
+        {
+          "id": 8,
+          "name": "Sede",
+          "is_active": 1,
+          "created_at": "2026-02-26 20:07:45"
+        }
+      ]
+    },
+    {
+      "table": "relation_unit_types",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_inheritance_allowed",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(40)",
+        "description": "varchar(255)",
+        "is_inheritance_allowed": "tinyint(1)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "code": "org",
+          "name": "Organica",
+          "description": "Relacion jerarquica organizacional",
+          "is_inheritance_allowed": 1,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:27:59"
+        }
+      ]
+    },
+    {
+      "table": "units",
+      "columns": [
+        "id",
+        "name",
+        "label",
+        "slug",
+        "unit_type_id",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(180)",
+        "label": "varchar(75)",
+        "slug": "varchar(180)",
+        "unit_type_id": "int(11)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "name": "Carrera de Sistemas de Información",
+          "label": "Sistemas de Información",
+          "slug": "E140",
+          "unit_type_id": 6,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:35:41",
+          "updated_at": "2026-02-26 13:05:43"
+        },
+        {
+          "id": 2,
+          "name": "Tecnología en Desarrollo de Software",
+          "label": "Desarrollo de Software",
+          "slug": "TE05",
+          "unit_type_id": 7,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:36:41",
+          "updated_at": "2026-02-26 13:05:27"
+        },
+        {
+          "id": 3,
+          "name": "Carrera de Tecnologías de la Información",
+          "label": "Tecnologías de la Información",
+          "slug": "E055",
+          "unit_type_id": 6,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:37:52",
+          "updated_at": "2026-02-26 13:05:12"
+        },
+        {
+          "id": 4,
+          "name": "Escuela de Hábitat Infraestructura y Creatividad",
+          "label": "Hábitat Infraestructura y Creatividad",
+          "slug": "EHIC",
+          "unit_type_id": 4,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:39:45",
+          "updated_at": "2026-02-26 13:04:54"
+        },
+        {
+          "id": 5,
+          "name": "Dirección de Investigación Vinculación e Innovación",
+          "label": " Investigación Vinculación e Innovación",
+          "slug": "DIVI",
+          "unit_type_id": 3,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:41:33",
+          "updated_at": "2026-02-26 13:04:29"
+        },
+        {
+          "id": 6,
+          "name": "Dirección de Docencia y Estudiantes",
+          "label": "Docencia y Estudiantes",
+          "slug": "DDE",
+          "unit_type_id": 3,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:43:02",
+          "updated_at": "2026-02-26 13:04:03"
+        },
+        {
+          "id": 7,
+          "name": "Coordinación de Aprendizaje y Enseñanza ",
+          "label": "Aprendizaje y Enseñanza",
+          "slug": "COAE",
+          "unit_type_id": 2,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:49:26",
+          "updated_at": "2026-02-26 12:49:26"
+        },
+        {
+          "id": 8,
+          "name": "Coordinación de Bienestar Estudiantil",
+          "label": "Bienestar Estudiantil",
+          "slug": "COBE",
+          "unit_type_id": 2,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:50:36",
+          "updated_at": "2026-02-26 12:50:36"
+        },
+        {
+          "id": 9,
+          "name": "Coordinación de Beneficios Económicos y Becas",
+          "label": "Beneficios Económicos y Becas",
+          "slug": "CBEB",
+          "unit_type_id": 2,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:51:43",
+          "updated_at": "2026-02-26 12:51:43"
+        },
+        {
+          "id": 10,
+          "name": "Escuela de Formación Técnica y Tecnológica",
+          "label": "Escuela",
+          "slug": "EFTT",
+          "unit_type_id": 4,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:52:49",
+          "updated_at": "2026-02-26 12:52:49"
+        },
+        {
+          "id": 11,
+          "name": "Sede Esmeraldas",
+          "label": "Esmeraldas",
+          "slug": "SEES",
+          "unit_type_id": 8,
+          "is_active": 1,
+          "created_at": "2026-02-26 20:08:48",
+          "updated_at": "2026-02-26 20:08:48"
+        }
+      ]
+    },
+    {
+      "table": "unit_relations",
+      "columns": [
+        "id",
+        "relation_type_id",
+        "parent_unit_id",
+        "child_unit_id",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "relation_type_id": "int(11)",
+        "parent_unit_id": "int(11)",
+        "child_unit_id": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "relation_type_id": 1,
+          "parent_unit_id": 10,
+          "child_unit_id": 2,
+          "created_at": "2026-02-26 12:54:13"
+        },
+        {
+          "id": 2,
+          "relation_type_id": 1,
+          "parent_unit_id": 4,
+          "child_unit_id": 1,
+          "created_at": "2026-02-26 12:56:49"
+        },
+        {
+          "id": 3,
+          "relation_type_id": 1,
+          "parent_unit_id": 4,
+          "child_unit_id": 3,
+          "created_at": "2026-02-26 12:58:17"
+        },
+        {
+          "id": 5,
+          "relation_type_id": 1,
+          "parent_unit_id": 7,
+          "child_unit_id": 10,
+          "created_at": "2026-02-26 12:59:52"
+        },
+        {
+          "id": 6,
+          "relation_type_id": 1,
+          "parent_unit_id": 7,
+          "child_unit_id": 4,
+          "created_at": "2026-02-26 13:01:40"
+        },
+        {
+          "id": 7,
+          "relation_type_id": 1,
+          "parent_unit_id": 6,
+          "child_unit_id": 7,
+          "created_at": "2026-02-26 13:02:15"
+        }
+      ]
+    },
+    {
+      "table": "processes",
+      "columns": [
+        "id",
+        "name",
+        "slug",
+        "parent_id",
+        "has_document",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(180)",
+        "slug": "varchar(180)",
+        "parent_id": "int(11)",
+        "has_document": "tinyint(1)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "name": " Memorandums",
+          "slug": "PMEM",
+          "parent_id": null,
+          "has_document": 1,
+          "is_active": 1,
+          "created_at": "2026-02-26 20:21:40"
+        }
+      ]
+    },
+    {
+      "table": "process_units",
+      "columns": [
+        "id",
+        "process_id",
+        "unit_id",
+        "scope",
+        "is_primary",
+        "is_active",
+        "effective_from",
+        "effective_to",
+        "primary_active_flag",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_id": "int(11)",
+        "unit_id": "int(11)",
+        "scope": "enum('owner','collaborator')",
+        "is_primary": "tinyint(1)",
+        "is_active": "tinyint(1)",
+        "effective_from": "date",
+        "effective_to": "date",
+        "primary_active_flag": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "process_id": 1,
+          "unit_id": 11,
+          "scope": "owner",
+          "is_primary": 1,
+          "is_active": 1,
+          "effective_from": "2026-02-26",
+          "effective_to": null,
+          "primary_active_flag": 1,
+          "created_at": "2026-02-26 20:21:40",
+          "updated_at": "2026-02-26 20:21:40"
+        }
+      ]
+    },
+    {
+      "table": "process_versions",
+      "columns": [
+        "id",
+        "process_id",
+        "version",
+        "name",
+        "slug",
+        "parent_version_id",
+        "cargo_id",
+        "has_document",
+        "is_active",
+        "effective_from",
+        "effective_to",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_id": "int(11)",
+        "version": "varchar(10)",
+        "name": "varchar(180)",
+        "slug": "varchar(180)",
+        "parent_version_id": "int(11)",
+        "cargo_id": "int(11)",
+        "has_document": "tinyint(1)",
+        "is_active": "tinyint(1)",
+        "effective_from": "date",
+        "effective_to": "date",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "process_id": 1,
+          "version": "0.1",
+          "name": "Inicial",
+          "slug": "PMEM",
+          "parent_version_id": null,
+          "cargo_id": 5,
+          "has_document": 1,
+          "is_active": 1,
+          "effective_from": "2026-02-26",
+          "effective_to": null,
+          "created_at": "2026-02-26 20:21:40"
+        }
+      ]
+    },
+    {
+      "table": "term_types",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(80)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "code": "SEM",
+          "name": "Semestre",
+          "description": "Periodo academico semestral",
+          "is_active": 1,
+          "created_at": "2026-02-26 20:25:52",
+          "updated_at": "2026-02-26 20:25:52"
+        },
+        {
+          "id": 2,
+          "code": "TRI",
+          "name": "Trimestre",
+          "description": "Periodo academico trimestral",
+          "is_active": 1,
+          "created_at": "2026-02-26 20:25:52",
+          "updated_at": "2026-02-26 20:25:52"
+        },
+        {
+          "id": 3,
+          "code": "INT",
+          "name": "Intensivo",
+          "description": "Periodo academico intensivo",
+          "is_active": 1,
+          "created_at": "2026-02-26 20:25:52",
+          "updated_at": "2026-02-26 20:25:52"
+        },
+        {
+          "id": 4,
+          "code": "PPO",
+          "name": "Primer Periodo Ordinario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 14:07:52",
+          "updated_at": "2026-02-26 14:07:52"
+        },
+        {
+          "id": 5,
+          "code": "SPO",
+          "name": "Segundo Periodo Ordinario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 14:08:11",
+          "updated_at": "2026-02-26 14:08:11"
+        },
+        {
+          "id": 6,
+          "code": "AÑO",
+          "name": "Año Calendario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 14:09:02",
+          "updated_at": "2026-02-26 14:10:46"
+        }
+      ]
+    },
+    {
+      "table": "terms",
+      "columns": [
+        "id",
+        "name",
+        "term_type_id",
+        "start_date",
+        "end_date",
+        "is_active"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(60)",
+        "term_type_id": "int(11)",
+        "start_date": "date",
+        "end_date": "date",
+        "is_active": "tinyint(1)"
+      },
+      "rows": []
+    },
+    {
+      "table": "tasks",
+      "columns": [
+        "id",
+        "process_version_id",
+        "term_id",
+        "parent_task_id",
+        "responsible_position_id",
+        "description",
+        "comments_thread_ref",
+        "is_main",
+        "start_date",
+        "end_date",
+        "status",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_version_id": "int(11)",
+        "term_id": "int(11)",
+        "parent_task_id": "int(11)",
+        "responsible_position_id": "int(11)",
+        "description": "text",
+        "comments_thread_ref": "varchar(64)",
+        "is_main": "tinyint(1)",
+        "start_date": "date",
+        "end_date": "date",
+        "status": "varchar(30)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "task_assignments",
+      "columns": [
+        "id",
+        "task_id",
+        "position_id",
+        "assigned_person_id",
+        "status",
+        "assigned_at",
+        "unassigned_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "task_id": "int(11)",
+        "position_id": "int(11)",
+        "assigned_person_id": "int(11)",
+        "status": "varchar(30)",
+        "assigned_at": "datetime",
+        "unassigned_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "templates",
+      "columns": [
+        "id",
+        "process_id",
+        "name",
+        "slug",
+        "description",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_id": "int(11)",
+        "name": "varchar(180)",
+        "slug": "varchar(180)",
+        "description": "varchar(255)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "template_versions",
+      "columns": [
+        "id",
+        "template_id",
+        "version",
+        "mongo_ref",
+        "mongo_version",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "template_id": "int(11)",
+        "version": "varchar(20)",
+        "mongo_ref": "varchar(64)",
+        "mongo_version": "varchar(40)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "persons",
+      "columns": [
+        "id",
+        "cedula",
+        "first_name",
+        "last_name",
+        "email",
+        "whatsapp",
+        "direccion",
+        "pais",
+        "password_hash",
+        "status",
+        "verify_email",
+        "verify_whatsapp",
+        "photo_url",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "cedula": "varchar(20)",
+        "first_name": "varchar(120)",
+        "last_name": "varchar(120)",
+        "email": "varchar(180)",
+        "whatsapp": "varchar(30)",
+        "direccion": "varchar(255)",
+        "pais": "varchar(80)",
+        "password_hash": "varchar(255)",
+        "status": "enum('Inactivo','Activo','Verificado','Reportado')",
+        "verify_email": "tinyint(1)",
+        "verify_whatsapp": "tinyint(1)",
+        "photo_url": "longtext",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "cedula": "1804326534",
+          "first_name": "Homero Javier",
+          "last_name": "Velasteguí Izurieta",
+          "email": "homero.j.velastegui.i@pucese.edu.ec",
+          "whatsapp": "+5930983069990",
+          "direccion": "0.972240, -79.657466",
+          "pais": "Ecuador",
+          "password_hash": "$2b$10$SdriiYtnau6zGwVvhM3TQ./pjkTOZAe0Vi/XXrJ6.yVnNiPkbdazq",
+          "status": "Inactivo",
+          "verify_email": 0,
+          "verify_whatsapp": 0,
+          "photo_url": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:30:21",
+          "updated_at": "2026-02-26 12:30:21"
+        },
+        {
+          "id": 2,
+          "cedula": "1803131190",
+          "first_name": "Adrian Vargas",
+          "last_name": "Vargas Machuca del Salto",
+          "email": "agvargasmachuca@pucese.edu.ec",
+          "whatsapp": "+593998627624",
+          "direccion": "Esmeraldas",
+          "pais": "Ecuador",
+          "password_hash": "$2b$10$SXiKu8HzkTeiQhH8svcj.eB0zdLSBPwExhjCwmtXQWHKZf0jn4OuW",
+          "status": "Inactivo",
+          "verify_email": 0,
+          "verify_whatsapp": 0,
+          "photo_url": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 19:21:43",
+          "updated_at": "2026-02-26 19:27:29"
+        }
+      ]
+    },
+    {
+      "table": "roles",
+      "columns": [
+        "id",
+        "name",
+        "description",
+        "is_active"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)"
+      },
+      "rows": []
+    },
+    {
+      "table": "cargo_role_map",
+      "columns": [
+        "id",
+        "role_id",
+        "cargo_id"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "role_id": "int(11)",
+        "cargo_id": "int(11)"
+      },
+      "rows": []
+    },
+    {
+      "table": "permissions",
+      "columns": [
+        "id",
+        "resource_id",
+        "action_id",
+        "code",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "resource_id": "int(11)",
+        "action_id": "int(11)",
+        "code": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "role_permissions",
+      "columns": [
+        "id",
+        "role_id",
+        "permission_id"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "role_id": "int(11)",
+        "permission_id": "int(11)"
+      },
+      "rows": []
+    },
+    {
+      "table": "role_assignments",
+      "columns": [
+        "id",
+        "role_id",
+        "unit_id",
+        "derived_from_assignment_id",
+        "source",
+        "person_id",
+        "max_depth",
+        "start_date",
+        "end_date",
+        "is_current",
+        "current_flag",
+        "assigned_at",
+        "revoked_at",
+        "revoked_reason"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "role_id": "int(11)",
+        "unit_id": "int(11)",
+        "derived_from_assignment_id": "int(11)",
+        "source": "enum('manual','derived')",
+        "person_id": "int(11)",
+        "max_depth": "int(11)",
+        "start_date": "date",
+        "end_date": "date",
+        "is_current": "tinyint(1)",
+        "current_flag": "tinyint(1)",
+        "assigned_at": "datetime",
+        "revoked_at": "datetime",
+        "revoked_reason": "varchar(255)"
+      },
+      "rows": []
+    },
+    {
+      "table": "role_assignment_relation_types",
+      "columns": [
+        "id",
+        "relation_type_id",
+        "role_assignment_id"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "relation_type_id": "int(11)",
+        "role_assignment_id": "int(11)"
+      },
+      "rows": []
+    },
+    {
+      "table": "cargos",
+      "columns": [
+        "id",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "name": "Coordinador",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 13:19:04",
+          "updated_at": "2026-02-26 13:19:04"
+        },
+        {
+          "id": 2,
+          "name": "Docente",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 13:19:11",
+          "updated_at": "2026-02-26 13:19:11"
+        },
+        {
+          "id": 3,
+          "name": "Responsable de Calidad",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 13:20:33",
+          "updated_at": "2026-02-26 13:20:33"
+        },
+        {
+          "id": 4,
+          "name": "Director",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 13:20:45",
+          "updated_at": "2026-02-26 13:20:45"
+        },
+        {
+          "id": 5,
+          "name": "Prorrector",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 20:09:13",
+          "updated_at": "2026-02-26 20:09:13"
+        }
+      ]
+    },
+    {
+      "table": "unit_positions",
+      "columns": [
+        "id",
+        "unit_id",
+        "slot_no",
+        "title",
+        "profile_ref",
+        "position_type",
+        "is_active",
+        "deactivated_at",
+        "created_at",
+        "updated_at",
+        "cargo_id"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "unit_id": "int(11)",
+        "slot_no": "int(11)",
+        "title": "varchar(180)",
+        "profile_ref": "varchar(64)",
+        "position_type": "enum('real','promocion','simbolico')",
+        "is_active": "tinyint(1)",
+        "deactivated_at": "datetime",
+        "created_at": "datetime",
+        "updated_at": "datetime",
+        "cargo_id": "int(11)"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Director/a de Escuela",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:22:06",
+          "updated_at": "2026-02-26 13:22:06",
+          "cargo_id": 4
+        },
+        {
+          "id": 2,
+          "unit_id": 3,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:22:53",
+          "updated_at": "2026-02-26 13:22:53",
+          "cargo_id": 1
+        },
+        {
+          "id": 3,
+          "unit_id": 1,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:23:29",
+          "updated_at": "2026-02-26 13:23:29",
+          "cargo_id": 1
+        },
+        {
+          "id": 4,
+          "unit_id": 2,
+          "slot_no": 1,
+          "title": "Coordinador de Tecnología",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:24:16",
+          "updated_at": "2026-02-26 13:24:16",
+          "cargo_id": 1
+        },
+        {
+          "id": 5,
+          "unit_id": 5,
+          "slot_no": 1,
+          "title": "Director de Investigación",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:25:00",
+          "updated_at": "2026-02-26 13:25:00",
+          "cargo_id": 4
+        },
+        {
+          "id": 6,
+          "unit_id": 7,
+          "slot_no": 1,
+          "title": "Coordinador/a de Aprendizaje y Enseñanza",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:25:48",
+          "updated_at": "2026-02-26 13:25:48",
+          "cargo_id": 1
+        },
+        {
+          "id": 7,
+          "unit_id": 6,
+          "slot_no": 1,
+          "title": "Director de Docencia y Estudiantes",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:26:29",
+          "updated_at": "2026-02-26 13:26:29",
+          "cargo_id": 4
+        },
+        {
+          "id": 8,
+          "unit_id": 1,
+          "slot_no": 1,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": "2026-02-26 19:05:00",
+          "created_at": "2026-02-26 13:28:15",
+          "updated_at": "2026-02-26 19:06:07",
+          "cargo_id": 2
+        },
+        {
+          "id": 9,
+          "unit_id": 1,
+          "slot_no": 2,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:29:21",
+          "updated_at": "2026-02-26 13:29:21",
+          "cargo_id": 2
+        },
+        {
+          "id": 12,
+          "unit_id": 1,
+          "slot_no": 3,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:30:05",
+          "updated_at": "2026-02-26 13:30:05",
+          "cargo_id": 2
+        },
+        {
+          "id": 13,
+          "unit_id": 1,
+          "slot_no": 4,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:30:33",
+          "updated_at": "2026-02-26 13:30:33",
+          "cargo_id": 2
+        },
+        {
+          "id": 14,
+          "unit_id": 1,
+          "slot_no": 5,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:30:53",
+          "updated_at": "2026-02-26 13:30:53",
+          "cargo_id": 2
+        },
+        {
+          "id": 15,
+          "unit_id": 1,
+          "slot_no": 6,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:31:32",
+          "updated_at": "2026-02-26 13:31:32",
+          "cargo_id": 2
+        },
+        {
+          "id": 16,
+          "unit_id": 1,
+          "slot_no": 7,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:31:53",
+          "updated_at": "2026-02-26 13:31:53",
+          "cargo_id": 2
+        },
+        {
+          "id": 17,
+          "unit_id": 1,
+          "slot_no": 1,
+          "title": "Responsable de Calidad",
+          "profile_ref": null,
+          "position_type": "simbolico",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-02-26 13:34:18",
+          "updated_at": "2026-02-26 13:34:18",
+          "cargo_id": 3
+        }
+      ]
+    },
+    {
+      "table": "position_assignments",
+      "columns": [
+        "id",
+        "position_id",
+        "person_id",
+        "start_date",
+        "end_date",
+        "is_current",
+        "current_flag",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "position_id": "int(11)",
+        "person_id": "int(11)",
+        "start_date": "date",
+        "end_date": "date",
+        "is_current": "tinyint(1)",
+        "current_flag": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "position_id": 3,
+          "person_id": 1,
+          "start_date": "2025-10-01",
+          "end_date": "2026-09-01",
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-02-26 13:37:44",
+          "updated_at": "2026-02-26 13:37:44"
+        },
+        {
+          "id": 4,
+          "position_id": 2,
+          "person_id": 1,
+          "start_date": "2023-07-24",
+          "end_date": "2026-08-31",
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-02-26 16:19:59",
+          "updated_at": "2026-02-26 16:19:59"
+        },
+        {
+          "id": 5,
+          "position_id": 4,
+          "person_id": 1,
+          "start_date": "2025-09-01",
+          "end_date": "2026-09-01",
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-02-26 18:35:40",
+          "updated_at": "2026-02-26 18:35:40"
+        },
+        {
+          "id": 6,
+          "position_id": 16,
+          "person_id": 1,
+          "start_date": "2026-02-26",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-02-26 19:06:55",
+          "updated_at": "2026-02-26 19:06:55"
+        },
+        {
+          "id": 7,
+          "position_id": 15,
+          "person_id": 2,
+          "start_date": "2024-10-10",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-02-26 19:29:02",
+          "updated_at": "2026-02-26 19:29:02"
+        },
+        {
+          "id": 8,
+          "position_id": 17,
+          "person_id": 2,
+          "start_date": "2026-02-26",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-02-26 19:29:59",
+          "updated_at": "2026-02-26 19:29:59"
+        }
+      ]
+    },
+    {
+      "table": "documents",
+      "columns": [
+        "id",
+        "task_id",
+        "status",
+        "comments_thread_ref",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "task_id": "int(11)",
+        "status": "varchar(30)",
+        "comments_thread_ref": "varchar(64)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "document_versions",
+      "columns": [
+        "id",
+        "document_id",
+        "version",
+        "payload_mongo_id",
+        "payload_hash",
+        "latex_path",
+        "pdf_path",
+        "signed_pdf_path",
+        "status",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "document_id": "int(11)",
+        "version": "decimal(4,1)",
+        "payload_mongo_id": "varchar(180)",
+        "payload_hash": "varchar(64)",
+        "latex_path": "varchar(255)",
+        "pdf_path": "varchar(255)",
+        "signed_pdf_path": "varchar(255)",
+        "status": "varchar(30)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "document_signatures",
+      "columns": [
+        "id",
+        "signature_request_id",
+        "document_version_id",
+        "signer_user_id",
+        "signature_type_id",
+        "signature_status_id",
+        "note_short",
+        "signed_file_path",
+        "signed_at",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "signature_request_id": "int(11)",
+        "document_version_id": "int(11)",
+        "signer_user_id": "int(11)",
+        "signature_type_id": "int(11)",
+        "signature_status_id": "int(11)",
+        "note_short": "varchar(255)",
+        "signed_file_path": "varchar(255)",
+        "signed_at": "datetime",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_types",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(80)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_statuses",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(80)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_request_statuses",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(80)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_flow_templates",
+      "columns": [
+        "id",
+        "process_version_id",
+        "name",
+        "description",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_version_id": "int(11)",
+        "name": "varchar(180)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_flow_steps",
+      "columns": [
+        "id",
+        "template_id",
+        "step_order",
+        "step_type_id",
+        "required_cargo_id",
+        "selection_mode",
+        "required_signers_min",
+        "required_signers_max",
+        "is_required",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "template_id": "int(11)",
+        "step_order": "int(11)",
+        "step_type_id": "int(11)",
+        "required_cargo_id": "int(11)",
+        "selection_mode": "varchar(20)",
+        "required_signers_min": "int(11)",
+        "required_signers_max": "int(11)",
+        "is_required": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_flow_instances",
+      "columns": [
+        "id",
+        "template_id",
+        "document_version_id",
+        "status_id",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "template_id": "int(11)",
+        "document_version_id": "int(11)",
+        "status_id": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "signature_requests",
+      "columns": [
+        "id",
+        "instance_id",
+        "step_id",
+        "assigned_person_id",
+        "status_id",
+        "is_manual",
+        "requested_at",
+        "notified_at",
+        "responded_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "instance_id": "int(11)",
+        "step_id": "int(11)",
+        "assigned_person_id": "int(11)",
+        "status_id": "int(11)",
+        "is_manual": "tinyint(1)",
+        "requested_at": "datetime",
+        "notified_at": "datetime",
+        "responded_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "vacancies",
+      "columns": [
+        "id",
+        "title",
+        "category",
+        "dedication",
+        "relation_type",
+        "status",
+        "open_flag",
+        "profile_ref",
+        "opened_at",
+        "closed_at",
+        "position_id",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "title": "varchar(180)",
+        "category": "varchar(120)",
+        "dedication": "varchar(30)",
+        "relation_type": "varchar(60)",
+        "status": "enum('abierta','cubierta','cerrada','cancelada')",
+        "open_flag": "tinyint(1)",
+        "profile_ref": "varchar(64)",
+        "opened_at": "datetime",
+        "closed_at": "datetime",
+        "position_id": "int(11)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "vacancy_visibility",
+      "columns": [
+        "id",
+        "vacancy_id",
+        "unit_id",
+        "role_id",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "vacancy_id": "int(11)",
+        "unit_id": "int(11)",
+        "role_id": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "contracts",
+      "columns": [
+        "id",
+        "person_id",
+        "position_id",
+        "relation_type",
+        "dedication",
+        "start_date",
+        "end_date",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "person_id": "int(11)",
+        "position_id": "int(11)",
+        "relation_type": "varchar(60)",
+        "dedication": "varchar(30)",
+        "start_date": "date",
+        "end_date": "date",
+        "status": "enum('activo','finalizado','cancelado')",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "actions",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "aplications",
+      "columns": [
+        "id",
+        "person_id",
+        "vacancy_id",
+        "status",
+        "selected_flag",
+        "applied_at",
+        "updated_at",
+        "note"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "person_id": "int(11)",
+        "vacancy_id": "int(11)",
+        "status": "enum('aplicado','preseleccionado','entrevista','rechazado','retirado','seleccionado')",
+        "selected_flag": "tinyint(1)",
+        "applied_at": "datetime",
+        "updated_at": "datetime",
+        "note": "varchar(255)"
+      },
+      "rows": []
+    },
+    {
+      "table": "contract_origin_recruitment",
+      "columns": [
+        "contract_id",
+        "offer_id",
+        "vacancy_id",
+        "created_at"
+      ],
+      "column_types": {
+        "contract_id": "int(11)",
+        "offer_id": "int(11)",
+        "vacancy_id": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "contract_origin_renewal",
+      "columns": [
+        "contract_id",
+        "renewed_from_contract_id",
+        "created_at"
+      ],
+      "column_types": {
+        "contract_id": "int(11)",
+        "renewed_from_contract_id": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "contract_origins",
+      "columns": [
+        "contract_id",
+        "origin_type",
+        "created_at"
+      ],
+      "column_types": {
+        "contract_id": "int(11)",
+        "origin_type": "enum('recruitment','renewal')",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "offers",
+      "columns": [
+        "id",
+        "application_id",
+        "status",
+        "active_flag",
+        "terms_snapshot",
+        "sent_at",
+        "responded_at",
+        "expires_at",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "application_id": "int(11)",
+        "status": "enum('enviada','aceptada','rechazada','retractada','expirada')",
+        "active_flag": "tinyint(1)",
+        "terms_snapshot": "text",
+        "sent_at": "datetime",
+        "responded_at": "datetime",
+        "expires_at": "datetime",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "resources",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(80)",
+        "name": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    }
+  ]
+}

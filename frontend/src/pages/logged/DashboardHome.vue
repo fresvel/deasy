@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-page dashboard-typography">
-    <s-header @onclick="handleHeaderToggle">
+    <s-header :menu-open="showMenu" @onclick="handleHeaderToggle">
       <div class="header-left">
         <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
           <img class="avatar" :src="userPhoto" alt="Perfil" />
@@ -19,11 +19,7 @@
               <font-awesome-icon icon="globe" />
             </span>
             <div class="group-content">
-              <div class="group-title">
-                Consolidado
-                <span class="group-pill">UI</span>
-              </div>
-              <div class="group-meta">Todas las unidades agrupadas</div>
+              <div class="group-title">Consolidado</div>
             </div>
           </div>
 
@@ -44,7 +40,6 @@
               <div class="group-title" :title="group.name">
                 {{ group.label || group.name }}
               </div>
-              <div class="group-meta">{{ unitCountLabel(group) }}</div>
             </div>
           </div>
         </div>
@@ -366,11 +361,6 @@ const iconForUnitGroup = (group) => {
   return 'id-card';
 };
 
-const unitCountLabel = (group) => {
-  const count = group?.units?.length ?? 0;
-  return `${count} ${count === 1 ? 'unidad' : 'unidades'}`;
-};
-
 const handleProcessSelect = () => {};
 
 const loadUserMenu = async () => {
@@ -496,22 +486,20 @@ const toggleNotify = () => {
   padding: 0.46rem 0.72rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: none;
   color: rgba(255, 255, 255, 0.94);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
 }
 
 .group-item:hover {
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.38);
 }
 
 .group-item.active {
   background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(255, 255, 255, 0.95);
   color: var(--brand-primary);
   box-shadow: 0 10px 20px rgba(var(--brand-primary-rgb), 0.26);
 }
@@ -524,21 +512,18 @@ const toggleNotify = () => {
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: none;
   font-size: 1rem;
   flex: 0 0 auto;
 }
 
 .group-item.active .group-icon {
-  background: rgba(var(--brand-primary-rgb), 0.12);
-  border-color: rgba(var(--brand-primary-rgb), 0.18);
+  background: rgba(var(--color-puce-light-rgb), 0.12);
 }
 
 .group-content {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
+  display: block;
 }
 
 .group-title {
@@ -552,37 +537,6 @@ const toggleNotify = () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.group-meta {
-  font-size: 0.72rem;
-  opacity: 0.86;
-  line-height: 1.2;
-}
-
-.group-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.36rem;
-  height: 0.98rem;
-  padding: 0 0.36rem;
-  border-radius: 999px;
-  background: rgba(15, 163, 101, 0.26);
-  border: 1px solid rgba(198, 249, 229, 0.45);
-  color: #eafef6;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.group-item.active .group-pill {
-  background: rgba(15, 163, 101, 0.18);
-  border-color: rgba(15, 163, 101, 0.28);
-  color: #16704d;
-}
-
-
 
 .avatar {
   width: 38px;

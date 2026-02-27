@@ -2,11 +2,31 @@ import { getMariaDBPool } from "../../config/mariadb.js";
 
 const getActiveProcesses = async (connection) => {
   const [rows] = await connection.query(
-    `SELECT id, parent_id, unit_id
+    `SELECT id, parent_id
      FROM processes
      WHERE is_active = 1`
   );
   return rows;
+};
+
+const getProcessUnitsMap = async (connection, termStart, termEnd) => {
+  const [rows] = await connection.query(
+    `SELECT process_id, unit_id
+     FROM process_units
+     WHERE is_active = 1
+       AND (effective_from IS NULL OR effective_from <= ?)
+       AND (effective_to IS NULL OR effective_to >= ?)
+     ORDER BY process_id, is_primary DESC, id ASC`,
+    [termEnd, termStart]
+  );
+  const map = new Map();
+  rows.forEach((row) => {
+    if (!map.has(row.process_id)) {
+      map.set(row.process_id, []);
+    }
+    map.get(row.process_id).push(row.unit_id);
+  });
+  return map;
 };
 
 const getTermById = async (connection, termId) => {
@@ -64,17 +84,21 @@ const getExistingTasksMap = async (connection, termId) => {
   return map;
 };
 
-const getPositionsForProcess = async (connection, { unitId, cargoId }) => {
+const getPositionsForProcess = async (connection, { unitIds, cargoId }) => {
+  if (!Array.isArray(unitIds) || !unitIds.length) {
+    return [];
+  }
+  const placeholders = unitIds.map(() => "?").join(", ");
   const [rows] = await connection.query(
-    `SELECT up.id AS position_id, pa.person_id
+    `SELECT DISTINCT up.id AS position_id, pa.person_id
      FROM unit_positions up
      LEFT JOIN position_assignments pa
        ON pa.position_id = up.id
       AND pa.is_current = 1
-     WHERE up.unit_id = ?
+     WHERE up.unit_id IN (${placeholders})
        AND up.cargo_id = ?
        AND up.is_active = 1`,
-    [unitId, cargoId]
+    [...unitIds, cargoId]
   );
   return rows;
 };
@@ -96,6 +120,7 @@ export const generateTasksForTerm = async (termId) => {
 
     const processes = await getActiveProcesses(connection);
     const processById = new Map(processes.map((process) => [process.id, process]));
+    const processUnitsMap = await getProcessUnitsMap(connection, term.start_date, term.end_date);
     const versionMap = await getProcessVersionMap(connection, term.start_date, term.end_date);
     const existingTasksMap = await getExistingTasksMap(connection, term.id);
     const createdTaskIds = [];
@@ -175,8 +200,9 @@ export const generateTasksForTerm = async (termId) => {
       if (!process || !versionEntry) {
         continue;
       }
+      const unitIds = processUnitsMap.get(processId) || [];
       const positions = await getPositionsForProcess(connection, {
-        unitId: process.unit_id,
+        unitIds,
         cargoId: versionEntry.cargo_id
       });
       if (!positions.length) {

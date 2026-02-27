@@ -1,6 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
+  --color-puce: #003ba3;
+  --color-puce-light: #4a8cff;
+  --color-puce-light-rgb: 74, 140, 255;
+  --color-puce-soft: #efefef;
+  --color-puce-dark: #101010;
+
   --brand-primary: #003267;
   --brand-accent: #2282be;
   --brand-secondary: #6b7b88;
@@ -233,15 +239,15 @@ a:hover {
 }
 
 .hope-action-edit {
-  color: #2e67e5 !important;
-  background: rgba(46, 103, 229, 0.1);
-  border-color: rgba(46, 103, 229, 0.26);
+  color: var(--state-success) !important;
+  background: rgba(40, 167, 69, 0.1);
+  border-color: rgba(40, 167, 69, 0.26);
 }
 
 .hope-action-edit:hover {
-  color: #2158d4 !important;
-  background: rgba(46, 103, 229, 0.12);
-  border-color: rgba(46, 103, 229, 0.4);
+  color: #218838 !important;
+  background: rgba(40, 167, 69, 0.12);
+  border-color: rgba(40, 167, 69, 0.4);
 }
 
 .hope-action-delete {
@@ -443,14 +449,14 @@ a:hover {
   color: var(--brand-white);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 12px;
-  padding: 0.54rem 0.72rem;
+  padding: 0.62rem 0.82rem;
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   text-align: left;
   font-weight: 600;
-  font-size: 1.01rem;
+  font-size: 1.08rem;
   line-height: 1.24;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -474,10 +480,10 @@ a:hover {
 }
 
 .menu-title-icon {
-  width: 1.19rem;
-  height: 1.19rem;
+  width: 1.28rem;
+  height: 1.28rem;
   border-radius: 8px;
-  padding: 0.21rem;
+  padding: 0.24rem;
   background: rgba(255, 255, 255, 0.18);
   color: rgba(255, 255, 255, 0.96);
   flex: 0 0 auto;
@@ -503,14 +509,14 @@ a:hover {
 }
 
 .menu-section-title.is-open .menu-title-icon {
-  background: rgba(var(--brand-primary-rgb), 0.1);
-  color: var(--brand-primary);
+  background: rgba(var(--color-puce-light-rgb), 0.1);
+  color: var(--color-puce-light);
 }
 
 .admin-menu {
   height: 100%;
   overflow-y: auto;
-  padding: 0.42rem;
+  padding: 0.56rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background:
@@ -566,12 +572,12 @@ a:hover {
   color: rgba(255, 255, 255, 0.9);
   border: 0;
   border-radius: 10px;
-  padding: 0.46rem 0.62rem;
+  padding: 0.56rem 0.72rem;
   margin-bottom: 0.14rem;
   font-weight: 500;
-  font-size: 0.99rem;
+  font-size: 1.05rem;
   line-height: 1.24;
-  min-height: 2.25rem;
+  min-height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -629,15 +635,15 @@ a:hover {
 .menu-item-content {
   display: inline-flex;
   align-items: center;
-  gap: 0.57rem;
+  gap: 0.62rem;
   min-width: 0;
 }
 
 .menu-item-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.2rem;
+  height: 1.2rem;
   border-radius: 8px;
-  padding: 0.2rem;
+  padding: 0.22rem;
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.94);
   flex: 0 0 auto;
@@ -694,8 +700,8 @@ a:hover {
 }
 
 .admin-menu .menu-section-body .list-group-item.active .menu-item-icon {
-  background: rgba(var(--brand-primary-rgb), 0.1);
-  color: var(--brand-primary);
+  background: rgba(var(--color-puce-light-rgb), 0.1);
+  color: var(--color-puce-light);
 }
 
 .admin-menu .menu-section-body .list-group-item.active .menu-indicator {
@@ -764,6 +770,15 @@ a:hover {
 .modal .modal-footer {
   font-size: 1.2rem;
   font-weight: 400;
+}
+
+.modal .modal-header {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--brand-primary-rgb), 0.18) 0%,
+    var(--color-puce-soft) 100%
+  );
+  border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.24);
 }
 
 .process-modal-content,

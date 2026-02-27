@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -91,8 +91,33 @@ const ensureRelationType = async ({ code, name, is_inheritance_allowed = 1, is_a
   });
 };
 
+const ensureTermType = async ({ code, name, description = "", is_active = 1 }) => {
+  const existing = await getList("term_types", {
+    filter_code: code,
+    orderBy: "id",
+    order: "asc",
+    limit: 1
+  });
+  if (existing.length) {
+    return existing[0];
+  }
+  return post("term_types", {
+    code,
+    name,
+    description,
+    is_active
+  });
+};
+
+const seedToSuffix = (seedValue) =>
+  createHash("sha256")
+    .update(seedValue)
+    .digest("hex")
+    .slice(0, 8);
+
 const run = async () => {
-  const suffix = process.env.SEED_SUFFIX || randomUUID().slice(0, 8);
+  const seedValue = process.env.SEED || "";
+  const suffix = process.env.SEED_SUFFIX || (seedValue ? seedToSuffix(seedValue) : randomUUID().slice(0, 8));
   const plainPassword = process.env.SEED_PASSWORD || "Demo1234!";
   const passwordHash = await bcrypt.hash(plainPassword, 10);
   const start = new Date(today.getFullYear(), 0, 1);
@@ -149,6 +174,11 @@ const run = async () => {
     name: "Organica",
     is_inheritance_allowed: 1,
     is_active: 1
+  });
+  const termTypeSemester = await ensureTermType({
+    code: "SEM",
+    name: "Semestre",
+    description: "Periodo academico semestral"
   });
 
   await post("unit_relations", {
@@ -583,7 +613,7 @@ const run = async () => {
   const procesoLogros = await post("processes", {
     name: `Informe Logros-${suffix}`,
     slug: `logros-${suffix}`,
-    unit_id: unitCareerSis.id,
+    unit_ids: [unitCareerSis.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoCoord.id,
@@ -596,7 +626,7 @@ const run = async () => {
   const procesoTutorias = await post("processes", {
     name: `Tutorias-${suffix}`,
     slug: `tutorias-${suffix}`,
-    unit_id: unitCareerSis.id,
+    unit_ids: [unitCareerSis.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoDocente.id,
@@ -609,7 +639,7 @@ const run = async () => {
   const procesoVinculacion = await post("processes", {
     name: `Vinculacion-${suffix}`,
     slug: `vinculacion-${suffix}`,
-    unit_id: unitCareerSis.id,
+    unit_ids: [unitCareerSis.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoCoord.id,
@@ -622,7 +652,7 @@ const run = async () => {
   const procesoProyecto = await post("processes", {
     name: `Proyecto Integrador-${suffix}`,
     slug: `proyecto-int-${suffix}`,
-    unit_id: unitCareerSis.id,
+    unit_ids: [unitCareerSis.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoDocente.id,
@@ -635,7 +665,7 @@ const run = async () => {
   const procesoPracticas = await post("processes", {
     name: `Practicas Clinicas-${suffix}`,
     slug: `practicas-${suffix}`,
-    unit_id: unitCareerEnf.id,
+    unit_ids: [unitCareerEnf.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoCoord.id,
@@ -648,7 +678,7 @@ const run = async () => {
   const procesoTutoriasEnf = await post("processes", {
     name: `Tutorias Enfermeria-${suffix}`,
     slug: `tutorias-enf-${suffix}`,
-    unit_id: unitCareerEnf.id,
+    unit_ids: [unitCareerEnf.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoDocente.id,
@@ -661,7 +691,7 @@ const run = async () => {
   const procesoPlanificacion = await post("processes", {
     name: `Planificacion Academica-${suffix}`,
     slug: `plan-acad-${suffix}`,
-    unit_id: unitFaculty.id,
+    unit_ids: [unitFaculty.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoCoord.id,
@@ -674,7 +704,7 @@ const run = async () => {
   const procesoConsejo = await post("processes", {
     name: `Consejo Facultad-${suffix}`,
     slug: `consejo-fac-${suffix}`,
-    unit_id: unitFaculty.id,
+    unit_ids: [unitFaculty.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoDecano.id,
@@ -687,7 +717,7 @@ const run = async () => {
   const procesoAuditoria = await post("processes", {
     name: `Auditoria Interna-${suffix}`,
     slug: `auditoria-${suffix}`,
-    unit_id: unitDeptCalidad.id,
+    unit_ids: [unitDeptCalidad.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoAnalista.id,
@@ -700,7 +730,7 @@ const run = async () => {
   const procesoIndicadores = await post("processes", {
     name: `Indicadores Calidad-${suffix}`,
     slug: `indicadores-${suffix}`,
-    unit_id: unitDeptCalidad.id,
+    unit_ids: [unitDeptCalidad.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoAnalista.id,
@@ -713,7 +743,7 @@ const run = async () => {
   const procesoPlanEstrategico = await post("processes", {
     name: `Plan Estrategico-${suffix}`,
     slug: `plan-estr-${suffix}`,
-    unit_id: unitUniversity.id,
+    unit_ids: [unitUniversity.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoRector.id,
@@ -726,7 +756,7 @@ const run = async () => {
   await post("processes", {
     name: `Evaluacion Docente-${suffix}`,
     slug: `eval-doc-${suffix}`,
-    unit_id: unitFaculty.id,
+    unit_ids: [unitFaculty.id],
     has_document: 1,
     is_active: 1,
     cargo_id: cargoDecano.id,
@@ -806,6 +836,7 @@ const run = async () => {
 
   await post("terms", {
     name: `Periodo-${suffix}`,
+    term_type_id: termTypeSemester.id,
     start_date: isoDate(start),
     end_date: isoDate(end),
     is_active: 1

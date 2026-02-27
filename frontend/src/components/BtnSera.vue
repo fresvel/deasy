@@ -13,7 +13,7 @@
 import {defineProps, computed, defineEmits} from "vue"
 
 const props=defineProps({
-    type: {type: Number, required: true},
+    type: {type: [String, Number], required: true},
 });
 
 
@@ -103,19 +103,21 @@ const onclick=()=>{
 .tooltip {
   visibility: hidden; /* Inicialmente oculto */
   position: absolute;
-  bottom: 100%; /* Lo coloca justo encima del botón */
-  left: 50%;
-  transform: translateX(-50%);
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
   background-color: var(--tooltip-bg);
   color: var(--brand-white);
-  padding: 5px;
-  height:100%;
+  padding: 0.35rem 0.5rem;
   font-family: var(--font-base);
-  border-radius: 3px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.2;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 25;
 }
 
 .btnsera:hover .tooltip {
