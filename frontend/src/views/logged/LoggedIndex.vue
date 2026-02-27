@@ -1,6 +1,6 @@
 <template>  
 
-<s-header @onclick="handleHeaderClick">
+<s-header :menu-open="show_menu" @onclick="handleHeaderClick">
   <div class="header-left">
     <button
       v-if="avatar.enable"

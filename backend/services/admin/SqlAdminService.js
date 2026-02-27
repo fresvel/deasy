@@ -4,8 +4,10 @@ import {
   updateParentTaskStatusForTask
 } from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
+import bcrypt from "bcrypt";
 
 const DEFAULT_LIMIT = 50;
+const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
 
 const normalizeValue = (field, value) => {
   if (value === undefined) {
@@ -78,6 +80,39 @@ const ensureDateOrder = (startDate, endDate, label) => {
   }
 };
 
+const normalizeNumericIdList = (values) => {
+  const source = Array.isArray(values) ? values : [];
+  const numeric = source
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value > 0);
+  return Array.from(new Set(numeric));
+};
+
+const getProcessUnitIdsFromPayload = (data = {}) => {
+  const ids = [];
+
+  if (Array.isArray(data.unit_ids)) {
+    ids.push(...data.unit_ids);
+  } else if (typeof data.unit_ids === "string") {
+    ids.push(
+      ...data.unit_ids
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean)
+    );
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, "unit_id")) {
+    ids.push(data.unit_id);
+  }
+
+  return normalizeNumericIdList(ids);
+};
+
+const hasProcessUnitPayload = (data = {}) =>
+  Object.prototype.hasOwnProperty.call(data, "unit_id")
+  || Object.prototype.hasOwnProperty.call(data, "unit_ids");
+
 const validateFieldTypes = (config, payload) => {
   for (const field of config.fields) {
     if (!Object.prototype.hasOwnProperty.call(payload, field.name)) {
@@ -117,9 +152,9 @@ const validateTableRules = (tableName, candidate) => {
       ensureDateOrder(candidate.start_date, candidate.end_date, "periodos");
       break;
     case "processes":
-      if (!candidate.unit_id) {
-        throw new Error("Selecciona una unidad para el proceso.");
-      }
+      break;
+    case "process_units":
+      ensureDateOrder(candidate.effective_from, candidate.effective_to, "unidades por proceso");
       break;
     case "process_versions":
       if (!candidate.process_id) {
@@ -175,6 +210,39 @@ const validateTableRules = (tableName, candidate) => {
   }
 };
 
+const isBcryptHash = (value) => typeof value === "string" && BCRYPT_HASH_REGEX.test(value);
+
+const validatePasswordPolicy = (password) => {
+  const validations = {
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password)
+  };
+
+  const passedCriteria = Object.values(validations).filter(Boolean).length;
+  if (passedCriteria < 3) {
+    throw new Error(
+      "La contraseña debe cumplir al menos 3 criterios: 8+ caracteres, mayúscula, minúscula, número."
+    );
+  }
+};
+
+const hashPassword = async (password) => {
+  validatePasswordPolicy(password);
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
+
+const sanitizePersonRow = (tableName, row) => {
+  if (tableName !== "persons" || !row || typeof row !== "object") {
+    return row;
+  }
+  const safeRow = { ...row };
+  delete safeRow.password_hash;
+  return safeRow;
+};
+
 export default class SqlAdminService {
   constructor(pool = getMariaDBPool()) {
     this.pool = pool;
@@ -204,32 +272,150 @@ export default class SqlAdminService {
     }
   }
 
+  async syncProcessUnits(connection, processId, unitIds, { replace = false } = {}) {
+    const normalizedIds = normalizeNumericIdList(unitIds);
+    if (!normalizedIds.length) {
+      throw new Error("Selecciona al menos una unidad para el proceso.");
+    }
+
+    if (replace) {
+      await connection.query("DELETE FROM process_units WHERE process_id = ?", [processId]);
+    }
+
+    for (const unitId of normalizedIds) {
+      await connection.query(
+        `INSERT INTO process_units
+          (process_id, unit_id, scope, is_primary, is_active, effective_from, effective_to)
+         VALUES (?, ?, 'owner', 0, 1, CURDATE(), NULL)
+         ON DUPLICATE KEY UPDATE
+           is_active = 1,
+           effective_to = NULL`,
+        [processId, unitId]
+      );
+    }
+
+    await connection.query("UPDATE process_units SET is_primary = 0 WHERE process_id = ?", [processId]);
+    await connection.query(
+      `UPDATE process_units
+       SET is_primary = 1, is_active = 1, effective_to = NULL
+       WHERE process_id = ? AND unit_id = ?`,
+      [processId, normalizedIds[0]]
+    );
+  }
+
   async list(tableName, { q, limit, offset, orderBy, order, filters = {} } = {}) {
     this.ensurePool();
     const config = getConfig(tableName);
-    const fields = config.fields.map((field) => field.name);
+    const physicalFields = config.fields.filter((field) => !field.virtual).map((field) => field.name);
+    const availableFields = config.fields.map((field) => field.name);
+    const orderableFields = [...physicalFields];
 
     const params = [];
     const conditions = [];
     let joinClause = "";
-    let selectClause = `SELECT ${fields.join(", ")}`;
+    let selectClause = `SELECT ${physicalFields.join(", ")}`;
     let groupByClause = "";
     let columnPrefix = "";
     const normalizedFilters = { ...filters };
 
     if (tableName === "templates") {
-      const baseFields = fields.filter((field) => field !== "process_name");
+      const baseFields = physicalFields.filter((field) => field !== "process_name");
       joinClause = "LEFT JOIN processes p ON p.id = templates.process_id";
       columnPrefix = "templates.";
       const selectFields = baseFields.map((field) => `${columnPrefix}${field}`);
-      if (fields.includes("process_name")) {
+      if (availableFields.includes("process_name")) {
         selectFields.push("p.name AS process_name");
+        orderableFields.push("process_name");
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;
       if (normalizedFilters.process_id) {
         conditions.push("templates.process_id = ?");
         params.push(normalizedFilters.process_id);
         delete normalizedFilters.process_id;
+      }
+    }
+
+    if (tableName === "processes") {
+      joinClause = `LEFT JOIN (
+        SELECT process_id, unit_id
+        FROM (
+          SELECT
+            process_id,
+            unit_id,
+            ROW_NUMBER() OVER (
+              PARTITION BY process_id
+              ORDER BY is_primary DESC, id ASC
+            ) AS rn
+          FROM process_units
+          WHERE is_active = 1
+            AND (effective_from IS NULL OR effective_from <= CURDATE())
+            AND (effective_to IS NULL OR effective_to >= CURDATE())
+        ) ranked_pu
+        WHERE rn = 1
+      ) pu_main ON pu_main.process_id = processes.id
+      LEFT JOIN (
+        SELECT process_id, version, name, slug, parent_version_id, cargo_id, effective_from, effective_to
+        FROM (
+          SELECT
+            process_id,
+            version,
+            name,
+            slug,
+            parent_version_id,
+            cargo_id,
+            effective_from,
+            effective_to,
+            ROW_NUMBER() OVER (
+              PARTITION BY process_id
+              ORDER BY created_at DESC, id DESC
+            ) AS rn
+          FROM process_versions
+        ) ranked_pv
+        WHERE rn = 1
+      ) pv_main ON pv_main.process_id = processes.id`;
+      columnPrefix = "processes.";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      if (availableFields.includes("unit_id")) {
+        selectFields.push("pu_main.unit_id AS unit_id");
+        orderableFields.push("unit_id");
+      }
+      if (availableFields.includes("cargo_id")) {
+        selectFields.push("pv_main.cargo_id AS cargo_id");
+      }
+      if (availableFields.includes("version")) {
+        selectFields.push("pv_main.version AS version");
+      }
+      if (availableFields.includes("version_name")) {
+        selectFields.push("pv_main.name AS version_name");
+      }
+      if (availableFields.includes("version_slug")) {
+        selectFields.push("pv_main.slug AS version_slug");
+      }
+      if (availableFields.includes("version_effective_from")) {
+        selectFields.push("pv_main.effective_from AS version_effective_from");
+      }
+      if (availableFields.includes("version_effective_to")) {
+        selectFields.push("pv_main.effective_to AS version_effective_to");
+      }
+      if (availableFields.includes("version_parent_version_id")) {
+        selectFields.push("pv_main.parent_version_id AS version_parent_version_id");
+      }
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+
+      if (normalizedFilters.unit_id) {
+        conditions.push(
+          `EXISTS (
+            SELECT 1
+            FROM process_units pu_filter
+            WHERE pu_filter.process_id = processes.id
+              AND pu_filter.unit_id = ?
+              AND pu_filter.is_active = 1
+              AND (pu_filter.effective_from IS NULL OR pu_filter.effective_from <= CURDATE())
+              AND (pu_filter.effective_to IS NULL OR pu_filter.effective_to >= CURDATE())
+          )`
+        );
+        params.push(normalizedFilters.unit_id);
+        delete normalizedFilters.unit_id;
       }
     }
 
@@ -241,7 +427,7 @@ export default class SqlAdminService {
     }
 
     for (const [field, value] of Object.entries(normalizedFilters)) {
-      if (!fields.includes(field)) {
+      if (!physicalFields.includes(field)) {
         continue;
       }
       if (tableName === "templates" && field === "process_name") {
@@ -262,10 +448,11 @@ export default class SqlAdminService {
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-    const safeOrderBy = fields.includes(orderBy) ? orderBy : config.primaryKeys[0];
+    const safeOrderBy = orderableFields.includes(orderBy) ? orderBy : config.primaryKeys[0];
     const orderColumn =
-      tableName === "templates" && safeOrderBy === "process_name"
-        ? "process_name"
+      (tableName === "templates" && safeOrderBy === "process_name")
+      || (tableName === "processes" && safeOrderBy === "unit_id")
+        ? safeOrderBy
         : joinClause
           ? `${tableName}.${safeOrderBy}`
           : safeOrderBy;
@@ -279,14 +466,14 @@ export default class SqlAdminService {
       [...params, safeLimit, safeOffset]
     );
 
-    return rows;
+    return tableName === "persons" ? rows.map((row) => sanitizePersonRow(tableName, row)) : rows;
   }
 
   async getByKeys(tableName, keys) {
     this.ensurePool();
     const config = getConfig(tableName);
     const { where, params } = buildWhere(config.primaryKeys, keys);
-    const fields = config.fields.map((field) => field.name);
+    const fields = config.fields.filter((field) => !field.virtual).map((field) => field.name);
     const [rows] = await this.pool.query(
       `SELECT ${fields.join(", ")} FROM ${tableName} WHERE ${where} LIMIT 1`,
       params
@@ -302,14 +489,31 @@ export default class SqlAdminService {
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
 
+    if (tableName === "persons") {
+      const rawPassword = typeof data?.password === "string" ? data.password : "";
+      if (rawPassword) {
+        payload.password_hash = await hashPassword(rawPassword);
+      } else if (typeof payload.password_hash === "string" && payload.password_hash) {
+        if (!isBcryptHash(payload.password_hash)) {
+          payload.password_hash = await hashPassword(payload.password_hash);
+        }
+      } else {
+        throw new Error("Ingresa el password del usuario.");
+      }
+    }
+
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
     const missing = required.filter((field) => payload[field.name] === undefined || payload[field.name] === "");
 
     if (missing.length) {
       throw new Error(`Datos incompletos: ${missing.map((field) => field.label || field.name).join(", ")}`);
     }
+    const processUnitIds = tableName === "processes" ? getProcessUnitIdsFromPayload(data) : [];
     if (tableName === "processes" && !data?.cargo_id) {
       throw new Error("Selecciona un cargo responsable para la version inicial del proceso.");
+    }
+    if (tableName === "processes" && !processUnitIds.length) {
+      throw new Error("Selecciona al menos una unidad para el proceso.");
     }
 
     validateFieldTypes(config, payload);
@@ -340,7 +544,7 @@ export default class SqlAdminService {
           console.warn("⚠️  No se pudo generar tareas para el periodo:", error.message);
         }
       }
-      return created;
+      return sanitizePersonRow(tableName, created);
     }
 
     const connection = await this.pool.getConnection();
@@ -352,6 +556,8 @@ export default class SqlAdminService {
       );
       const insertedId = result.insertId;
       if (tableName === "processes") {
+        await this.syncProcessUnits(connection, insertedId, processUnitIds, { replace: true });
+
         const version = data?.version ?? "0.1";
         const versionName = data?.version_name ?? "Inicial";
         const versionSlug = data?.version_slug ?? payload.slug ?? `process-${insertedId}-v${version}`;
@@ -388,7 +594,7 @@ export default class SqlAdminService {
         );
       }
       await connection.commit();
-      return { id: insertedId, ...payload };
+      return { id: insertedId, ...payload, unit_id: processUnitIds[0] ?? null };
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -413,6 +619,17 @@ export default class SqlAdminService {
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
     const updates = pickPayload(config.fields, data);
+    if (tableName === "persons" && Object.prototype.hasOwnProperty.call(data, "password")) {
+      const rawPassword = typeof data.password === "string" ? data.password : "";
+      if (rawPassword) {
+        updates.password_hash = await hashPassword(rawPassword);
+      }
+    }
+    if (tableName === "persons" && typeof updates.password_hash === "string" && updates.password_hash) {
+      if (!isBcryptHash(updates.password_hash)) {
+        updates.password_hash = await hashPassword(updates.password_hash);
+      }
+    }
     if (tableName === "process_versions") {
       const allowed = new Set([
         "name",
@@ -439,6 +656,12 @@ export default class SqlAdminService {
 
     const setClause = columns.map((column) => `${column} = ?`).join(", ");
     const values = columns.map((column) => updates[column]);
+    const shouldSyncProcessUnits = tableName === "processes" && hasProcessUnitPayload(data);
+    const incomingProcessUnitIds = shouldSyncProcessUnits ? getProcessUnitIdsFromPayload(data) : [];
+    const replaceProcessUnits = tableName === "processes" && Object.prototype.hasOwnProperty.call(data, "unit_ids");
+    if (shouldSyncProcessUnits && !incomingProcessUnitIds.length) {
+      throw new Error("Selecciona al menos una unidad para el proceso.");
+    }
 
     const existing = await this.getByKeys(tableName, keyPayload);
     if (!existing) {
@@ -458,7 +681,7 @@ export default class SqlAdminService {
         const taskId = existing.id ?? keyPayload.id;
         await updateParentTaskStatusForTask(taskId);
       }
-      return { ...keyPayload, ...updates };
+      return sanitizePersonRow(tableName, { ...keyPayload, ...updates });
     }
 
     const connection = await this.pool.getConnection();
@@ -471,60 +694,87 @@ export default class SqlAdminService {
         );
       }
       if (tableName === "processes") {
+        if (shouldSyncProcessUnits) {
+          await this.syncProcessUnits(connection, keyPayload.id, incomingProcessUnitIds, {
+            replace: replaceProcessUnits
+          });
+        }
+
         const processRow = { ...existing, ...updates };
-        const version = data?.version ?? data?.version_number ?? null;
-        const effectiveFrom = data?.version_effective_from ?? data?.effective_from ?? null;
-        const effectiveTo = data?.version_effective_to ?? data?.effective_to ?? null;
-        const versionName = data?.version_name ?? processRow.name;
-        const versionSlug = data?.version_slug ?? processRow.slug ?? `process-${processRow.id}-v${version}`;
-        const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
-        const cargoId = data?.cargo_id ?? null;
-
-        if (!version) {
-          throw new Error("Debes indicar la nueva version del proceso.");
-        }
-        if (!/^\d+\.\d+$/.test(String(version))) {
-          throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
-        }
-        if (!effectiveFrom) {
-          throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
-        }
-        if (!cargoId) {
-          throw new Error("Selecciona el cargo responsable para la nueva version del proceso.");
-        }
-        ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
-
-        let resolvedParentVersionId = parentVersionId;
-        if (!resolvedParentVersionId) {
-          const [rows] = await connection.query(
-            "SELECT id FROM process_versions WHERE process_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
-            [processRow.id]
-          );
-          resolvedParentVersionId = rows?.[0]?.id ?? null;
-        }
-
-        const versionPayload = {
-          process_id: processRow.id,
-          version: String(version),
-          name: versionName,
-          slug: versionSlug,
-          parent_version_id: resolvedParentVersionId,
-          cargo_id: cargoId,
-          has_document: processRow.has_document ?? 1,
-          is_active: processRow.is_active ?? 1,
-          effective_from: effectiveFrom,
-          effective_to: effectiveTo
-        };
-        const versionColumns = Object.keys(versionPayload);
-        const versionValues = versionColumns.map((key) => versionPayload[key]);
-        const versionPlaceholders = versionColumns.map(() => "?").join(", ");
-        await connection.query(
-          `INSERT INTO process_versions (${versionColumns.join(", ")}) VALUES (${versionPlaceholders})`,
-          versionValues
+        const hasVersionPayload = [
+          data?.version,
+          data?.version_number,
+          data?.version_name,
+          data?.version_slug,
+          data?.version_effective_from,
+          data?.version_effective_to,
+          data?.version_parent_version_id,
+          data?.parent_version_id
+        ].some((value) =>
+          value !== undefined
+          && value !== null
+          && String(value).trim() !== ""
         );
+
+        if (hasVersionPayload) {
+          const version = data?.version ?? data?.version_number ?? null;
+          const effectiveFrom = data?.version_effective_from ?? null;
+          const effectiveTo = data?.version_effective_to ?? null;
+          const versionName = data?.version_name ?? processRow.name;
+          const versionSlug = data?.version_slug ?? processRow.slug ?? `process-${processRow.id}-v${version}`;
+          const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
+          const cargoId = data?.cargo_id ?? null;
+
+          if (!version) {
+            throw new Error("Debes indicar la nueva version del proceso.");
+          }
+          if (!/^\d+\.\d+$/.test(String(version))) {
+            throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
+          }
+          if (!effectiveFrom) {
+            throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
+          }
+          if (!cargoId) {
+            throw new Error("Selecciona el cargo responsable para la nueva version del proceso.");
+          }
+          ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
+
+          let resolvedParentVersionId = parentVersionId;
+          if (!resolvedParentVersionId) {
+            const [rows] = await connection.query(
+              "SELECT id FROM process_versions WHERE process_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+              [processRow.id]
+            );
+            resolvedParentVersionId = rows?.[0]?.id ?? null;
+          }
+
+          const versionPayload = {
+            process_id: processRow.id,
+            version: String(version),
+            name: versionName,
+            slug: versionSlug,
+            parent_version_id: resolvedParentVersionId,
+            cargo_id: cargoId,
+            has_document: processRow.has_document ?? 1,
+            is_active: processRow.is_active ?? 1,
+            effective_from: effectiveFrom,
+            effective_to: effectiveTo
+          };
+          const versionColumns = Object.keys(versionPayload);
+          const versionValues = versionColumns.map((key) => versionPayload[key]);
+          const versionPlaceholders = versionColumns.map(() => "?").join(", ");
+          await connection.query(
+            `INSERT INTO process_versions (${versionColumns.join(", ")}) VALUES (${versionPlaceholders})`,
+            versionValues
+          );
+        }
       }
       await connection.commit();
-      return { ...keyPayload, ...updates };
+      return {
+        ...keyPayload,
+        ...updates,
+        ...(shouldSyncProcessUnits ? { unit_id: incomingProcessUnitIds[0] ?? null } : {})
+      };
     } catch (error) {
       await connection.rollback();
       throw error;

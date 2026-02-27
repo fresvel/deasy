@@ -1,6 +1,6 @@
 <template>  
 
-    <s-header @onclick="handleHeaderToggle">
+    <s-header :menu-open="vmenu" @onclick="handleHeaderToggle">
         <div class="header-left">
             <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick">
                 <img class="avatar" :src="userPhoto" alt="User Avatar">
@@ -111,6 +111,7 @@
             <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
             <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
+            <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
         </div>
         <div v-else-if="area=='Academia'">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
@@ -150,6 +151,7 @@ import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
 import CertificacionView from '@/sections/perfil/CertificacionView.vue';
 import CapacitacionView from '@/views/logged/perfil/CapacitaciónView.vue';
 import ProfileHomePanel from '@/sections/perfil/ProfileHomePanel.vue';
+import InvestigacionView from '@/sections/perfil/InvestigacionView.vue';
 
 import IndexAcademia from '@/sections/academia/AcademiaView.vue';
 import LogrosView from '@/sections/academia/LogrosView.vue';
@@ -196,7 +198,8 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         experiencia: 0,
         referencias: 0,
         capacitacion: 0,
-        certificacion: 0
+        certificacion: 0,
+        investigacion: 0
     });
 
     const buildPerfilMenu = () => ([
@@ -235,6 +238,12 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
             key: 'certificacion',
             icon: 'check-circle',
             active: false,
+        },
+        {
+            label: 'Investigación',
+            key: 'investigacion',
+            icon: 'certificate',
+            active: false,
         }
     ]);
 
@@ -256,6 +265,11 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
                 dossierCounts.value.referencias = dossier.referencias?.length ?? 0;
                 dossierCounts.value.capacitacion = dossier.formacion?.length ?? 0;
                 dossierCounts.value.certificacion = dossier.certificaciones?.length ?? 0;
+                dossierCounts.value.investigacion = (dossier.investigacion?.articulos?.length ?? 0)
+                    + (dossier.investigacion?.libros?.length ?? 0)
+                    + (dossier.investigacion?.ponencias?.length ?? 0)
+                    + (dossier.investigacion?.tesis?.length ?? 0)
+                    + (dossier.investigacion?.proyectos?.length ?? 0);
             }
         } catch (error) {
             console.error('Error al cargar conteos del dossier:', error);

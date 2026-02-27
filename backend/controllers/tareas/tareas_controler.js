@@ -97,7 +97,24 @@ export const getuserTarea = async (req, res) => {
        INNER JOIN tasks t ON t.id = ta.task_id
        INNER JOIN process_versions pv ON pv.id = t.process_version_id
        INNER JOIN processes p ON p.id = pv.process_id
-       LEFT JOIN units u ON u.id = p.unit_id
+       LEFT JOIN (
+         SELECT process_id, unit_id
+         FROM (
+           SELECT
+             process_id,
+             unit_id,
+             ROW_NUMBER() OVER (
+               PARTITION BY process_id
+               ORDER BY is_primary DESC, id ASC
+             ) AS rn
+           FROM process_units
+           WHERE is_active = 1
+             AND (effective_from IS NULL OR effective_from <= CURDATE())
+             AND (effective_to IS NULL OR effective_to >= CURDATE())
+         ) ranked_pu
+         WHERE rn = 1
+       ) pu ON pu.process_id = p.id
+       LEFT JOIN units u ON u.id = pu.unit_id
        LEFT JOIN position_assignments pa
          ON pa.position_id = ta.position_id AND pa.is_current = 1
        WHERE (ta.assigned_person_id = ? OR (ta.assigned_person_id IS NULL AND pa.person_id = ?))
@@ -165,7 +182,24 @@ export const getTareaspendientes = async (req, res) => {
        INNER JOIN tasks t ON t.id = ta.task_id
        INNER JOIN process_versions pv ON pv.id = t.process_version_id
        INNER JOIN processes p ON p.id = pv.process_id
-       LEFT JOIN units u ON u.id = p.unit_id
+       LEFT JOIN (
+         SELECT process_id, unit_id
+         FROM (
+           SELECT
+             process_id,
+             unit_id,
+             ROW_NUMBER() OVER (
+               PARTITION BY process_id
+               ORDER BY is_primary DESC, id ASC
+             ) AS rn
+           FROM process_units
+           WHERE is_active = 1
+             AND (effective_from IS NULL OR effective_from <= CURDATE())
+             AND (effective_to IS NULL OR effective_to >= CURDATE())
+         ) ranked_pu
+         WHERE rn = 1
+       ) pu ON pu.process_id = p.id
+       LEFT JOIN units u ON u.id = pu.unit_id
        LEFT JOIN position_assignments pa
          ON pa.position_id = ta.position_id AND pa.is_current = 1
        WHERE (ta.assigned_person_id = ? OR (ta.assigned_person_id IS NULL AND pa.person_id = ?))

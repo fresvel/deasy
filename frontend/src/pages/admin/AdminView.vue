@@ -1,8 +1,16 @@
 <template>
   <div class="admin-page admin-typography">
-    <s-header @onclick="onClick('Menu')">
+    <s-header :menu-open="vmenu" @onclick="onClick('Menu')">
       <div class="header-left">
-        <span class="nav-link text-white fw-semibold">Administrador</span>
+        <button class="nav-link text-white fw-semibold admin-home-link" type="button" @click="goAdminHome">
+          Administrador
+        </button>
+        <router-link to="/dashboard" class="nav-link text-white fw-semibold">
+          Dashboard
+        </router-link>
+        <router-link to="/perfil" class="nav-link text-white fw-semibold">
+          Perfil
+        </router-link>
       </div>
       <div class="header-right">
         <router-link to="/logout" class="nav-link text-white p-0">
@@ -24,7 +32,7 @@
               class="menu-section-title text-white w-100"
               type="button"
               :class="{ 'is-open': openCategories[group.label] }"
-              @click="toggleCategory(group.label)"
+              @click="onGroupTitleClick(group)"
             >
               <span class="menu-title-left">
                 <font-awesome-icon :icon="iconForGroup(group)" class="menu-title-icon" />
@@ -32,113 +40,602 @@
               </span>
             </button>
             <div v-show="openCategories[group.label]" class="menu-section-body">
-              <div class="list-group list-group-flush">
-                <button
-                  v-for="table in group.mainTables"
-                  :key="table.table"
-                  class="list-group-item list-group-item-action"
-                  :class="{ active: selectedTable?.table === table.table }"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="menu-item-content">
-                    <font-awesome-icon :icon="iconForTable(table.table)" class="menu-item-icon" />
-                    <span>{{ table.label }}</span>
-                  </span>
-                </button>
-              </div>
-              <div v-if="group.supportTables.length" class="menu-section-label small">
-                Relaciones y soporte
-              </div>
-              <div v-if="group.supportTables.length" class="list-group list-group-flush">
-                <button
-                  v-for="table in group.supportTables"
-                  :key="table.table"
-                  class="list-group-item list-group-item-action"
-                  :class="{ active: selectedTable?.table === table.table }"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="menu-item-content">
-                    <font-awesome-icon :icon="iconForTable(table.table)" class="menu-item-icon" />
-                    <span>{{ table.label }}</span>
-                  </span>
-                </button>
-              </div>
+              <template v-if="isAcademiaGroup(group)">
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="item in academyMenuItems"
+                    :key="item.key"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: isAcademyItemActive(item) }"
+                    type="button"
+                    @click="openAcademyItem(item)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
+                      <span>{{ item.label }}</span>
+                    </span>
+                  </button>
+                </div>
+              </template>
+              <template v-else-if="isGestionGroup(group)">
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="item in gestionMenuItems"
+                    :key="item.key"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: isGestionItemActive(item) }"
+                    type="button"
+                    @click="openGestionItem(item)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
+                      <span>{{ item.label }}</span>
+                    </span>
+                  </button>
+                </div>
+              </template>
+              <template v-else-if="isUsuariosGroup(group)">
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="item in usersMenuItems"
+                    :key="item.key"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: isUsersItemActive(item) }"
+                    type="button"
+                    @click="openUsersItem(item)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
+                      <span>{{ item.label }}</span>
+                    </span>
+                  </button>
+                </div>
+              </template>
+              <template v-else-if="isContratosGroup(group)">
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="item in contractsMenuItems"
+                    :key="item.key"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: isContractsItemActive(item) }"
+                    type="button"
+                    @click="openContractsItem(item)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
+                      <span>{{ item.label }}</span>
+                    </span>
+                  </button>
+                </div>
+              </template>
+              <template v-else-if="isSeguridadGroup(group)">
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="item in securityMenuItems"
+                    :key="item.key"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: isSecurityItemActive(item) }"
+                    type="button"
+                    @click="openSecurityItem(item)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
+                      <span>{{ item.label }}</span>
+                    </span>
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <div class="list-group list-group-flush">
+                  <button
+                    v-for="table in group.mainTables"
+                    :key="table.table"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: selectedTable?.table === table.table }"
+                    type="button"
+                    @click="selectTable(table)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="iconForTable(table.table)" class="menu-item-icon" />
+                      <span>{{ table.label }}</span>
+                    </span>
+                  </button>
+                </div>
+                <div v-if="group.supportTables.length" class="menu-section-label small">
+                  Relaciones y soporte
+                </div>
+                <div v-if="group.supportTables.length" class="list-group list-group-flush">
+                  <button
+                    v-for="table in group.supportTables"
+                    :key="table.table"
+                    class="list-group-item list-group-item-action"
+                    :class="{ active: selectedTable?.table === table.table }"
+                    type="button"
+                    @click="selectTable(table)"
+                  >
+                    <span class="menu-item-content">
+                      <font-awesome-icon :icon="iconForTable(table.table)" class="menu-item-icon" />
+                      <span>{{ table.label }}</span>
+                    </span>
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
         </div>
       </s-menu>
 
       <s-body :showmenu="vmenu" :shownotify="vnotify">
-        <div class="container-fluid py-4">
-          <div v-if="activeGroup?.key !== 'procesos'" class="profile-section-header">
-            <div>
-              <h2 class="text-start profile-section-title">Panel de administracion</h2>
-              <p class="profile-section-subtitle">
-                Accesos organizados para crear, editar, leer y eliminar datos del sistema.
-              </p>
-            </div>
-          </div>
-
-          <div v-if="loadingMeta" class="text-muted">Cargando catalogos...</div>
-          <div v-else-if="metaError" class="text-danger">{{ metaError }}</div>
-          <div v-else>
-            <div v-if="activeGroup?.key !== 'procesos'" class="row g-4 mb-4">
-              <div
-                v-for="table in categoryTables"
-                :key="table.table"
-                class="col-12 col-md-6 col-xl-4"
-              >
-                <div class="card shadow-sm h-100">
-                  <div class="card-body d-flex flex-column">
-                    <h3 class="text-start mb-2">{{ table.label }}</h3>
-                    <p class="text-muted mb-4">Tabla: {{ table.table }}</p>
-                    <button
-                      type="button"
-                      class="btn btn-primary btn-lg w-100 mt-auto"
-                      @click="selectTable(table)"
-                    >
-                      Gestionar
-                    </button>
+        <div v-if="showAcademyCrudIndex" class="admin-home academia-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon :icon="selectedAcademyCrudItem?.icon || 'map-marked-alt'" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">{{ selectedAcademyCrudItem?.label || "Academia" }}</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      {{ selectedAcademyCrudItem?.description || "Gestiona el CRUD de catálogos y relaciones." }}
+                    </p>
                   </div>
                 </div>
               </div>
+
+              <div v-if="academyCrudTables.length" class="admin-home-grid">
+                <button
+                  v-for="table in academyCrudTables"
+                  :key="table.table"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="selectTable(table)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForTable(table.table)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
+                    <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                </button>
+              </div>
+              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
             </div>
-            <div v-if="activeGroup?.key !== 'procesos' && supportTables.length" class="row g-3 mb-4">
-              <div class="col-12">
-                <div class="card shadow-sm">
-                  <div class="card-body">
-                    <h3 class="text-start mb-3">Relaciones y soporte</h3>
-                    <div class="row g-2">
-                      <div
-                        v-for="table in supportTables"
-                        :key="table.table"
-                        class="col-12 col-md-6 col-xl-4"
-                      >
-                        <div class="d-flex align-items-center justify-content-between border rounded p-2">
-                          <span>{{ table.label }}</span>
-                          <button
-                            type="button"
-                            class="btn btn-outline-primary btn-sm"
-                            @click="selectTable(table)"
-                          >
-                            Gestionar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+          </div>
+        </div>
+
+        <div v-else-if="showAcademiaIndex" class="admin-home academia-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon icon="map-marked-alt" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">Academia</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Accesos principales para administrar Unidades, Periodos y Cargos.
+                    </p>
                   </div>
                 </div>
+              </div>
+
+              <div class="admin-home-grid">
+                <button
+                  v-for="item in academyMenuItems"
+                  :key="item.key"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="openAcademyItem(item)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="item.icon" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showGestionCrudIndex" class="admin-home gestiones-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon :icon="selectedGestionCrudItem?.icon || 'check-double'" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">{{ selectedGestionCrudItem?.label || "Gestiones" }}</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      {{ selectedGestionCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="gestionCrudTables.length" class="admin-home-grid">
+                <button
+                  v-for="table in gestionCrudTables"
+                  :key="table.table"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="selectTable(table)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForTable(table.table)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
+                    <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                </button>
+              </div>
+              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showGestionesIndex" class="admin-home gestiones-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon icon="check-double" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">Gestiones</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-home-grid">
+                <button
+                  v-for="item in gestionMenuItems"
+                  :key="item.key"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="openGestionItem(item)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="item.icon" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showUsersCrudIndex" class="admin-home usuarios-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon :icon="selectedUsersCrudItem?.icon || 'user'" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">{{ selectedUsersCrudItem?.label || "Usuarios" }}</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      {{ selectedUsersCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="usersCrudTables.length" class="admin-home-grid">
+                <button
+                  v-for="table in usersCrudTables"
+                  :key="table.table"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="selectTable(table)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForTable(table.table)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
+                    <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                </button>
+              </div>
+              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showUsersIndex" class="admin-home usuarios-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon icon="user" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">Usuarios</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Accesos por subgrupo para administrar personas del sistema.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-home-grid">
+                <button
+                  v-for="item in usersMenuItems"
+                  :key="item.key"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="openUsersItem(item)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="item.icon" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showContractsCrudIndex" class="admin-home contratos-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon :icon="selectedContractsCrudItem?.icon || 'certificate'" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">{{ selectedContractsCrudItem?.label || "Contratos" }}</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      {{ selectedContractsCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="contractsCrudTables.length" class="admin-home-grid">
+                <button
+                  v-for="table in contractsCrudTables"
+                  :key="table.table"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="selectTable(table)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForTable(table.table)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
+                    <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                </button>
+              </div>
+              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showContractsIndex" class="admin-home contratos-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon icon="certificate" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">Contratos</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Accesos por subgrupo para administrar vacantes, contratos y orígenes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-home-grid">
+                <button
+                  v-for="item in contractsMenuItems"
+                  :key="item.key"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="openContractsItem(item)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="item.icon" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showSecurityCrudIndex" class="admin-home seguridad-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon :icon="selectedSecurityCrudItem?.icon || 'lock'" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">{{ selectedSecurityCrudItem?.label || "Seguridad" }}</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      {{ selectedSecurityCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="securityCrudTables.length" class="admin-home-grid">
+                <button
+                  v-for="table in securityCrudTables"
+                  :key="table.table"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="selectTable(table)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForTable(table.table)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
+                    <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                </button>
+              </div>
+              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showSecurityIndex" class="admin-home seguridad-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon icon="lock" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">Seguridad</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Accesos por subgrupo para administrar roles y permisos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-home-grid">
+                <button
+                  v-for="item in securityMenuItems"
+                  :key="item.key"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="openSecurityItem(item)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="item.icon" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="showGroupCrudIndex" class="admin-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon :icon="iconForGroup(selectedGroup)" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">{{ selectedGroup?.label || "Administración" }}</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Gestiona el CRUD de las tablas del grupo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="selectedGroupCrudTables.length" class="admin-home-grid">
+                <button
+                  v-for="item in selectedGroupCrudTables"
+                  :key="item.table"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="selectTable(item)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForTable(item.table)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ item.bucket }}</span>
+                  </span>
+                </button>
+              </div>
+              <p v-else class="text-muted mb-0">No hay tablas disponibles en este grupo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="!selectedTable" class="admin-home container-fluid py-4">
+          <div class="card admin-home-card">
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="admin-home-avatar" aria-hidden="true">
+                    <font-awesome-icon icon="lock" />
+                  </div>
+                  <div>
+                    <h2 class="mb-1">Panel de administración</h2>
+                    <p class="mb-0 admin-home-subtitle">
+                      Accesos organizados para crear, editar, leer y eliminar datos del sistema.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="loadingMeta" class="text-muted">Cargando catálogos...</div>
+              <div v-else-if="metaError" class="text-danger">{{ metaError }}</div>
+              <div v-else class="admin-home-grid">
+                <button
+                  v-for="group in homeGroups"
+                  :key="group.key"
+                  class="admin-home-btn"
+                  type="button"
+                  @click="openGroupFromHome(group)"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon :icon="iconForGroup(group)" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">{{ group.label }}</strong>
+                    <span class="admin-home-btn-meta">{{ tablesCountForGroup(group) }} tablas</span>
+                  </span>
+                </button>
               </div>
             </div>
           </div>
         </div>
 
         <AdminTableManager
+          v-else
           ref="adminManager"
           :table="selectedTable"
           :all-tables="tables"
+          @go-back="handleManagerGoBack"
         />
       </s-body>
 
@@ -164,6 +661,12 @@ const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
 const selectedTable = ref(null);
+const selectedSection = ref("");
+const selectedAcademyItem = ref("");
+const selectedGestionItem = ref("");
+const selectedUsuarioItem = ref("");
+const selectedContratoItem = ref("");
+const selectedSeguridadItem = ref("");
 const openCategories = ref({});
 const adminManager = ref(null);
 
@@ -183,33 +686,170 @@ const GROUP_DEFS = [
   {
     key: "estructura_academico",
     label: "Academia",
-    main: ["unit_types", "units", "relation_unit_types", "unit_relations", "cargos", "unit_positions", "position_assignments", "terms"],
+    main: ["unit_types", "units", "relation_unit_types", "unit_relations", "cargos", "unit_positions", "position_assignments", "term_types", "terms"],
     support: []
   },
   {
     key: "procesos",
     label: "Gestiones",
-    main: ["processes", "process_versions", "tasks", "task_assignments", "templates", "template_versions", "documents", "document_versions"],
+    main: ["processes", "process_units", "process_versions", "tasks", "task_assignments", "templates", "template_versions", "documents", "document_versions"],
     support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_types", "signature_statuses", "signature_request_statuses"]
   },
   {
     key: "usuarios",
     label: "Usuarios",
-    main: ["persons", "roles", "permissions", "role_assignments"],
-    support: ["role_permissions", "cargo_role_map", "resources", "actions"]
+    main: ["persons"],
+    support: []
   },
   {
     key: "contratacion",
-    label: "Contratacion",
-    main: ["vacancies", "aplications", "offers", "contracts"],
+    label: "Contratos",
+    main: ["vacancies", "vacancy_visibility", "aplications", "offers", "contracts"],
     support: ["contract_origins", "contract_origin_recruitment", "contract_origin_renewal"]
   },
   {
     key: "seguridad",
     label: "Seguridad",
-    main: [],
+    main: [
+      "roles",
+      "role_assignments",
+      "cargo_role_map",
+      "role_assignment_relation_types",
+      "permissions",
+      "role_permissions",
+      "actions",
+      "resources"
+    ],
     support: []
   },
+];
+
+const ACADEMY_GROUP_KEY = "estructura_academico";
+const ACADEMY_GROUP_LABEL = "Academia";
+const ACADEMY_INDEX_ITEMS = [
+  {
+    key: "unidades",
+    label: "Unidades",
+    icon: "id-card",
+    description: "Gestiona el CRUD de catálogos y relaciones de unidades.",
+    tables: ["unit_types", "units", "relation_unit_types", "unit_relations"]
+  },
+  {
+    key: "cargos",
+    label: "Cargos",
+    icon: "user",
+    description: "Gestiona el catálogo de cargos, puestos y ocupaciones.",
+    tables: ["cargos", "unit_positions", "position_assignments"]
+  },
+  {
+    key: "periodos",
+    label: "Periodos",
+    icon: "square-check",
+    description: "Gestiona catálogos y periodos académicos.",
+    tables: ["term_types", "terms"]
+  }
+];
+const GESTION_GROUP_KEY = "procesos";
+const GESTION_GROUP_LABEL = "Gestiones";
+const GESTION_INDEX_ITEMS = [
+  {
+    key: "procesos",
+    label: "Procesos",
+    icon: "check-double",
+    description: "Gestiona procesos, versiones y su vínculo con unidades.",
+    tables: ["processes", "process_units", "process_versions"]
+  },
+  {
+    key: "tareas",
+    label: "Tareas",
+    icon: "square-check",
+    description: "Administra tareas y asignaciones de tareas.",
+    tables: ["tasks", "task_assignments"]
+  },
+  {
+    key: "plantillas",
+    label: "Plantillas",
+    icon: "certificate",
+    description: "Gestiona plantillas y sus versiones.",
+    tables: ["templates", "template_versions"]
+  },
+  {
+    key: "documentos",
+    label: "Documentos",
+    icon: "info-circle",
+    description: "Administra documentos y versiones de documentos.",
+    tables: ["documents", "document_versions"]
+  },
+  {
+    key: "firmas",
+    label: "Firmas",
+    icon: "check",
+    description: "Gestiona flujos, solicitudes, estados y firmas documentales.",
+    tables: [
+      "signature_flow_templates",
+      "signature_flow_steps",
+      "signature_flow_instances",
+      "signature_requests",
+      "document_signatures",
+      "signature_types",
+      "signature_statuses",
+      "signature_request_statuses"
+    ]
+  }
+];
+const USERS_GROUP_KEY = "usuarios";
+const USERS_GROUP_LABEL = "Usuarios";
+const USERS_INDEX_ITEMS = [
+  {
+    key: "personas",
+    label: "Personas",
+    icon: "user",
+    description: "Gestiona personas registradas en el sistema.",
+    tables: ["persons"]
+  }
+];
+const CONTRACT_GROUP_KEY = "contratacion";
+const CONTRACT_GROUP_LABEL = "Contratos";
+const CONTRACT_INDEX_ITEMS = [
+  {
+    key: "vacantes",
+    label: "Vacantes",
+    icon: "id-card",
+    description: "Gestiona vacantes, postulaciones y ofertas.",
+    tables: ["vacancies", "vacancy_visibility", "aplications", "offers"]
+  },
+  {
+    key: "contratos",
+    label: "Contratos",
+    icon: "certificate",
+    description: "Gestiona contratos del sistema.",
+    tables: ["contracts"]
+  },
+  {
+    key: "origenes",
+    label: "Origenes",
+    icon: "check-double",
+    description: "Gestiona catálogos y relaciones de origen contractual.",
+    tables: ["contract_origins", "contract_origin_recruitment", "contract_origin_renewal"]
+  }
+];
+const SECURITY_GROUP_KEY = "seguridad";
+const SECURITY_GROUP_LABEL = "Seguridad";
+const SECURITY_INDEX_ITEMS = [
+  {
+    key: "roles",
+    label: "Roles",
+    icon: "lock",
+    description: "Gestiona roles y asignaciones de rol.",
+    tables: ["roles", "role_assignments", "cargo_role_map", "role_assignment_relation_types"]
+  },
+  {
+    key: "permisos",
+    label: "Permisos",
+    icon: "square-check",
+    description: "Gestiona permisos, recursos y acciones.",
+    tables: ["permissions", "role_permissions", "actions", "resources"]
+  }
 ];
 
 const hiddenTables = new Set([]);
@@ -245,17 +885,161 @@ const groupedTables = computed(() => {
   return groups;
 });
 
-const activeGroup = computed(() => {
-  if (selectedTable.value) {
-    return groupedTables.value.find((group) =>
-      [...group.mainTables, ...group.supportTables].some((table) => table.table === selectedTable.value.table)
-    );
-  }
-  return groupedTables.value[0] || null;
-});
+const homeGroups = computed(() =>
+  groupedTables.value.filter((group) => (group.mainTables.length + group.supportTables.length) > 0)
+);
 
-const categoryTables = computed(() => activeGroup.value?.mainTables || []);
-const supportTables = computed(() => activeGroup.value?.supportTables || []);
+const academyMenuItems = computed(() =>
+  ACADEMY_INDEX_ITEMS.map((item) => {
+    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
+    return {
+      ...item,
+      availableTables,
+      tableCount: availableTables.length
+    };
+  })
+);
+const gestionMenuItems = computed(() =>
+  GESTION_INDEX_ITEMS.map((item) => {
+    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
+    return {
+      ...item,
+      availableTables,
+      tableCount: availableTables.length
+    };
+  })
+);
+const usersMenuItems = computed(() =>
+  USERS_INDEX_ITEMS.map((item) => {
+    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
+    return {
+      ...item,
+      availableTables,
+      tableCount: availableTables.length
+    };
+  })
+);
+const contractsMenuItems = computed(() =>
+  CONTRACT_INDEX_ITEMS.map((item) => {
+    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
+    return {
+      ...item,
+      availableTables,
+      tableCount: availableTables.length
+    };
+  })
+);
+const securityMenuItems = computed(() =>
+  SECURITY_INDEX_ITEMS.map((item) => {
+    const availableTables = item.tables.map((tableName) => tableMap.value[tableName]).filter(Boolean);
+    return {
+      ...item,
+      availableTables,
+      tableCount: availableTables.length
+    };
+  })
+);
+
+const showAcademiaIndex = computed(
+  () => selectedSection.value === ACADEMY_GROUP_KEY
+    && !selectedAcademyItem.value
+    && !selectedTable.value
+);
+const showAcademyCrudIndex = computed(
+  () => selectedSection.value === ACADEMY_GROUP_KEY
+    && Boolean(selectedAcademyItem.value)
+    && !selectedTable.value
+);
+const selectedAcademyCrudItem = computed(() =>
+  academyMenuItems.value.find((item) => item.key === selectedAcademyItem.value) || null
+);
+const academyCrudTables = computed(() =>
+  selectedAcademyCrudItem.value?.availableTables || []
+);
+const showGestionesIndex = computed(
+  () => selectedSection.value === GESTION_GROUP_KEY
+    && !selectedGestionItem.value
+    && !selectedTable.value
+);
+const showGestionCrudIndex = computed(
+  () => selectedSection.value === GESTION_GROUP_KEY
+    && Boolean(selectedGestionItem.value)
+    && !selectedTable.value
+);
+const selectedGestionCrudItem = computed(() =>
+  gestionMenuItems.value.find((item) => item.key === selectedGestionItem.value) || null
+);
+const gestionCrudTables = computed(() =>
+  selectedGestionCrudItem.value?.availableTables || []
+);
+const showUsersIndex = computed(
+  () => selectedSection.value === USERS_GROUP_KEY
+    && !selectedUsuarioItem.value
+    && !selectedTable.value
+);
+const showUsersCrudIndex = computed(
+  () => selectedSection.value === USERS_GROUP_KEY
+    && Boolean(selectedUsuarioItem.value)
+    && !selectedTable.value
+);
+const selectedUsersCrudItem = computed(() =>
+  usersMenuItems.value.find((item) => item.key === selectedUsuarioItem.value) || null
+);
+const usersCrudTables = computed(() =>
+  selectedUsersCrudItem.value?.availableTables || []
+);
+const showContractsIndex = computed(
+  () => selectedSection.value === CONTRACT_GROUP_KEY
+    && !selectedContratoItem.value
+    && !selectedTable.value
+);
+const showContractsCrudIndex = computed(
+  () => selectedSection.value === CONTRACT_GROUP_KEY
+    && Boolean(selectedContratoItem.value)
+    && !selectedTable.value
+);
+const selectedContractsCrudItem = computed(() =>
+  contractsMenuItems.value.find((item) => item.key === selectedContratoItem.value) || null
+);
+const contractsCrudTables = computed(() =>
+  selectedContractsCrudItem.value?.availableTables || []
+);
+const showSecurityIndex = computed(
+  () => selectedSection.value === SECURITY_GROUP_KEY
+    && !selectedSeguridadItem.value
+    && !selectedTable.value
+);
+const showSecurityCrudIndex = computed(
+  () => selectedSection.value === SECURITY_GROUP_KEY
+    && Boolean(selectedSeguridadItem.value)
+    && !selectedTable.value
+);
+const selectedSecurityCrudItem = computed(() =>
+  securityMenuItems.value.find((item) => item.key === selectedSeguridadItem.value) || null
+);
+const securityCrudTables = computed(() =>
+  selectedSecurityCrudItem.value?.availableTables || []
+);
+const selectedGroup = computed(() =>
+  groupedTables.value.find((group) => group.key === selectedSection.value) || null
+);
+const showGroupCrudIndex = computed(
+  () => Boolean(selectedGroup.value)
+    && selectedGroup.value.key !== ACADEMY_GROUP_KEY
+    && selectedGroup.value.key !== GESTION_GROUP_KEY
+    && selectedGroup.value.key !== USERS_GROUP_KEY
+    && selectedGroup.value.key !== CONTRACT_GROUP_KEY
+    && selectedGroup.value.key !== SECURITY_GROUP_KEY
+    && !selectedTable.value
+);
+const selectedGroupCrudTables = computed(() => {
+  if (!selectedGroup.value) {
+    return [];
+  }
+  const mainTables = selectedGroup.value.mainTables.map((table) => ({ ...table, bucket: "Principal" }));
+  const supportTables = selectedGroup.value.supportTables.map((table) => ({ ...table, bucket: "Soporte" }));
+  return [...mainTables, ...supportTables];
+});
 
 const groupIconMap = {
   estructura_academico: "map-marked-alt",
@@ -278,8 +1062,114 @@ const iconForTable = (tableName = "") => {
   return "info-circle";
 };
 
-const toggleCategory = (category) => {
-  openCategories.value[category] = !openCategories.value[category];
+const tablesCountForGroup = (group) => (group?.mainTables?.length ?? 0) + (group?.supportTables?.length ?? 0);
+
+const isAcademiaGroup = (group) => group?.key === ACADEMY_GROUP_KEY;
+const isGestionGroup = (group) => group?.key === GESTION_GROUP_KEY;
+const isUsuariosGroup = (group) => group?.key === USERS_GROUP_KEY;
+const isContratosGroup = (group) => group?.key === CONTRACT_GROUP_KEY;
+const isSeguridadGroup = (group) => group?.key === SECURITY_GROUP_KEY;
+
+const resolveAcademyItemByTable = (tableName) =>
+  ACADEMY_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
+const resolveGestionItemByTable = (tableName) =>
+  GESTION_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
+const resolveUsersItemByTable = (tableName) =>
+  USERS_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
+const resolveContractsItemByTable = (tableName) =>
+  CONTRACT_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
+const resolveSecurityItemByTable = (tableName) =>
+  SECURITY_INDEX_ITEMS.find((item) => item.tables.includes(tableName))?.key || "";
+
+const isAcademyItemActive = (item) => {
+  if (!item) {
+    return false;
+  }
+  if (selectedAcademyItem.value === item.key) {
+    return true;
+  }
+  return item.tables.includes(selectedTable.value?.table || "");
+};
+const isGestionItemActive = (item) => {
+  if (!item) {
+    return false;
+  }
+  if (selectedGestionItem.value === item.key) {
+    return true;
+  }
+  return item.tables.includes(selectedTable.value?.table || "");
+};
+const isUsersItemActive = (item) => {
+  if (!item) {
+    return false;
+  }
+  if (selectedUsuarioItem.value === item.key) {
+    return true;
+  }
+  return item.tables.includes(selectedTable.value?.table || "");
+};
+const isContractsItemActive = (item) => {
+  if (!item) {
+    return false;
+  }
+  if (selectedContratoItem.value === item.key) {
+    return true;
+  }
+  return item.tables.includes(selectedTable.value?.table || "");
+};
+const isSecurityItemActive = (item) => {
+  if (!item) {
+    return false;
+  }
+  if (selectedSeguridadItem.value === item.key) {
+    return true;
+  }
+  return item.tables.includes(selectedTable.value?.table || "");
+};
+
+const openGroupIndex = (group) => {
+  if (!group) {
+    return;
+  }
+  if (group.key === ACADEMY_GROUP_KEY) {
+    openAcademyIndex();
+    return;
+  }
+  if (group.key === GESTION_GROUP_KEY) {
+    openGestionIndex();
+    return;
+  }
+  if (group.key === USERS_GROUP_KEY) {
+    openUsersIndex();
+    return;
+  }
+  if (group.key === CONTRACT_GROUP_KEY) {
+    openContractsIndex();
+    return;
+  }
+  if (group.key === SECURITY_GROUP_KEY) {
+    openSecurityIndex();
+    return;
+  }
+  selectedSection.value = group.key;
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  selectedTable.value = null;
+  openCategories.value[group.label] = true;
+};
+
+const onGroupTitleClick = (group) => {
+  if (!group) {
+    return;
+  }
+  const isOpen = Boolean(openCategories.value[group.label]);
+  openCategories.value[group.label] = !isOpen;
+  if (!isOpen) {
+    openGroupIndex(group);
+  }
 };
 
 const selectTable = (table) => {
@@ -287,9 +1177,207 @@ const selectTable = (table) => {
     return;
   }
   selectedTable.value = table;
-  if (activeGroup.value && !openCategories.value[activeGroup.value.label]) {
-    openCategories.value[activeGroup.value.label] = true;
+  const group = groupedTables.value.find((candidate) =>
+    [...candidate.mainTables, ...candidate.supportTables].some((item) => item.table === table.table)
+  );
+  const academyItemKey = resolveAcademyItemByTable(table.table);
+  const gestionItemKey = resolveGestionItemByTable(table.table);
+  const usersItemKey = resolveUsersItemByTable(table.table);
+  const contractsItemKey = resolveContractsItemByTable(table.table);
+  const securityItemKey = resolveSecurityItemByTable(table.table);
+  if (academyItemKey) {
+    selectedSection.value = ACADEMY_GROUP_KEY;
+    selectedAcademyItem.value = academyItemKey;
+    selectedGestionItem.value = "";
+    selectedUsuarioItem.value = "";
+    selectedContratoItem.value = "";
+    selectedSeguridadItem.value = "";
+  } else if (gestionItemKey) {
+    selectedSection.value = GESTION_GROUP_KEY;
+    selectedGestionItem.value = gestionItemKey;
+    selectedAcademyItem.value = "";
+    selectedUsuarioItem.value = "";
+    selectedContratoItem.value = "";
+    selectedSeguridadItem.value = "";
+  } else if (usersItemKey) {
+    selectedSection.value = USERS_GROUP_KEY;
+    selectedUsuarioItem.value = usersItemKey;
+    selectedAcademyItem.value = "";
+    selectedGestionItem.value = "";
+    selectedContratoItem.value = "";
+    selectedSeguridadItem.value = "";
+  } else if (contractsItemKey) {
+    selectedSection.value = CONTRACT_GROUP_KEY;
+    selectedContratoItem.value = contractsItemKey;
+    selectedAcademyItem.value = "";
+    selectedGestionItem.value = "";
+    selectedUsuarioItem.value = "";
+    selectedSeguridadItem.value = "";
+  } else if (securityItemKey) {
+    selectedSection.value = SECURITY_GROUP_KEY;
+    selectedSeguridadItem.value = securityItemKey;
+    selectedAcademyItem.value = "";
+    selectedGestionItem.value = "";
+    selectedUsuarioItem.value = "";
+    selectedContratoItem.value = "";
+  } else {
+    selectedSection.value = group?.key || "";
+    selectedAcademyItem.value = "";
+    selectedGestionItem.value = "";
+    selectedUsuarioItem.value = "";
+    selectedContratoItem.value = "";
+    selectedSeguridadItem.value = "";
   }
+  if (group && !openCategories.value[group.label]) {
+    openCategories.value[group.label] = true;
+  }
+};
+
+const openAcademyIndex = () => {
+  selectedSection.value = ACADEMY_GROUP_KEY;
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  selectedTable.value = null;
+  openCategories.value[ACADEMY_GROUP_LABEL] = true;
+};
+
+const openAcademyItem = (item) => {
+  if (!item) {
+    return;
+  }
+  selectedSection.value = ACADEMY_GROUP_KEY;
+  selectedAcademyItem.value = item.key;
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  openCategories.value[ACADEMY_GROUP_LABEL] = true;
+  selectedTable.value = null;
+};
+const openGestionIndex = () => {
+  selectedSection.value = GESTION_GROUP_KEY;
+  selectedGestionItem.value = "";
+  selectedAcademyItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  selectedTable.value = null;
+  openCategories.value[GESTION_GROUP_LABEL] = true;
+};
+const openGestionItem = (item) => {
+  if (!item) {
+    return;
+  }
+  selectedSection.value = GESTION_GROUP_KEY;
+  selectedGestionItem.value = item.key;
+  selectedAcademyItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  openCategories.value[GESTION_GROUP_LABEL] = true;
+  selectedTable.value = null;
+};
+const openUsersIndex = () => {
+  selectedSection.value = USERS_GROUP_KEY;
+  selectedUsuarioItem.value = "";
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  selectedTable.value = null;
+  openCategories.value[USERS_GROUP_LABEL] = true;
+};
+const openUsersItem = (item) => {
+  if (!item) {
+    return;
+  }
+  selectedSection.value = USERS_GROUP_KEY;
+  selectedUsuarioItem.value = item.key;
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  openCategories.value[USERS_GROUP_LABEL] = true;
+  selectedTable.value = null;
+};
+const openContractsIndex = () => {
+  selectedSection.value = CONTRACT_GROUP_KEY;
+  selectedContratoItem.value = "";
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedSeguridadItem.value = "";
+  selectedTable.value = null;
+  openCategories.value[CONTRACT_GROUP_LABEL] = true;
+};
+const openContractsItem = (item) => {
+  if (!item) {
+    return;
+  }
+  selectedSection.value = CONTRACT_GROUP_KEY;
+  selectedContratoItem.value = item.key;
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedSeguridadItem.value = "";
+  openCategories.value[CONTRACT_GROUP_LABEL] = true;
+  selectedTable.value = null;
+};
+const openSecurityIndex = () => {
+  selectedSection.value = SECURITY_GROUP_KEY;
+  selectedSeguridadItem.value = "";
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedTable.value = null;
+  openCategories.value[SECURITY_GROUP_LABEL] = true;
+};
+const openSecurityItem = (item) => {
+  if (!item) {
+    return;
+  }
+  selectedSection.value = SECURITY_GROUP_KEY;
+  selectedSeguridadItem.value = item.key;
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  openCategories.value[SECURITY_GROUP_LABEL] = true;
+  selectedTable.value = null;
+};
+
+const openGroupFromHome = (group) => {
+  if (!group) {
+    return;
+  }
+  openGroupIndex(group);
+};
+
+const handleManagerGoBack = () => {
+  if (!selectedTable.value) {
+    return;
+  }
+  selectedTable.value = null;
+  if (!selectedSection.value) {
+    goAdminHome();
+  }
+};
+
+const goAdminHome = () => {
+  selectedTable.value = null;
+  selectedSection.value = "";
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
+  Object.keys(openCategories.value).forEach((key) => {
+    openCategories.value[key] = false;
+  });
 };
 
 const onClick = (item) => {
@@ -306,9 +1394,6 @@ const fetchMeta = async () => {
   try {
     const response = await axios.get(API_ROUTES.ADMIN_SQL_META);
     tables.value = response.data?.tables || [];
-    if (tables.value.length && !selectedTable.value) {
-      selectedTable.value = tables.value[0];
-    }
     groupedTables.value.forEach((group) => {
       if (openCategories.value[group.label] === undefined) {
         openCategories.value[group.label] = false;
@@ -333,3 +1418,116 @@ onMounted(() => {
   fetchMeta();
 });
 </script>
+
+<style scoped>
+.admin-home-card {
+  border: 0;
+  border-radius: var(--radius-lg);
+}
+
+.admin-home-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--color-puce-light-rgb), 0.12);
+  border: 1px solid rgba(var(--color-puce-light-rgb), 0.2);
+  color: var(--color-puce-light);
+  font-size: 1.65rem;
+  flex: 0 0 auto;
+}
+
+.admin-home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-home-subtitle {
+  color: var(--brand-ink);
+  opacity: 0.9;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.admin-home-btn {
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--brand-navy);
+  font-size: 0.95rem;
+  min-height: 74px;
+}
+
+.admin-home-btn-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--color-puce-light-rgb), 0.1);
+  border: 1px solid rgba(var(--color-puce-light-rgb), 0.2);
+  color: var(--color-puce-light);
+  flex: 0 0 auto;
+}
+
+.admin-home-btn-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.admin-home-btn-title {
+  font-size: 0.98rem;
+  line-height: 1.2;
+  color: var(--brand-navy);
+}
+
+.admin-home-btn-meta {
+  font-size: 0.75rem;
+  opacity: 0.84;
+  line-height: 1.2;
+}
+
+.admin-home-btn:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.3);
+  color: var(--brand-navy);
+  background: linear-gradient(
+    90deg,
+    rgba(var(--brand-primary-rgb), 0.18) 0%,
+    var(--color-puce-soft) 100%
+  );
+}
+
+.admin-home-btn:hover .admin-home-btn-title,
+.admin-home-btn:hover .admin-home-btn-meta {
+  color: var(--brand-navy);
+}
+
+.admin-home-btn:hover .admin-home-btn-icon {
+  background: rgba(var(--brand-primary-rgb), 0.16);
+  border-color: rgba(var(--brand-primary-rgb), 0.28);
+  color: var(--brand-primary);
+}
+
+.admin-home-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+@media (max-width: 575px) {
+  .admin-home-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

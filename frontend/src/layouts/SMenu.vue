@@ -42,12 +42,12 @@ const onClick=(item)=>{
     background:
       linear-gradient(
         180deg,
-        rgba(var(--brand-primary-rgb), 0.96) 0%,
-        rgba(var(--brand-primary-rgb), 0.9) 55%,
-        rgba(var(--brand-accent-rgb), 0.78) 100%
+        #0c1826 0%,
+        rgba(var(--brand-primary-rgb), 0.9) 58%,
+        rgba(26, 110, 168, 0.78) 100%
       );
     padding: 0.9rem 0.75rem;
-    border-radius: 18px;
+    border-radius: 0 0 18px 18px;
     border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow:
       0 22px 34px rgba(var(--brand-primary-rgb), 0.24),

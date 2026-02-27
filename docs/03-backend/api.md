@@ -23,11 +23,33 @@
 
 ## Jobs administrativos
 
+- Catalogos SQL de admin:
+  - `term_types`: tipos de periodo (Semestre/Trimestre/Intensivo)
+  - `terms`: periodos (requiere `term_type_id`)
+
 - POST /admin/terms/:termId/generate-tasks
   - Genera tareas y asignaciones para un periodo a partir de procesos activos.
-  - Resuelve responsables via process_versions (cargo_id) + unit_positions + position_assignments (unidad del proceso).
+  - Resuelve responsables via process_versions (cargo_id) + process_units + unit_positions + position_assignments (unidades asociadas al proceso).
   - Es idempotente: no duplica tareas existentes en el mismo periodo.
   - Se ejecuta automaticamente al crear un periodo desde /admin/sql/terms.
+
+## Dossier - Investigacion (Mongo)
+
+- GET /dossier/:cedula
+  - Retorna el dossier completo del usuario.
+- POST /dossier/:cedula/investigacion/:tipo
+  - Agrega un registro en `investigacion`.
+- PUT /dossier/:cedula/investigacion/:tipo/:itemId
+  - Actualiza un registro de `investigacion` por `_id`.
+- DELETE /dossier/:cedula/investigacion/:tipo/:itemId
+  - Elimina un registro de `investigacion` por `_id`.
+
+Tipos validos en `:tipo`:
+- `articulos`
+- `libros`
+- `ponencias`
+- `tesis`
+- `proyectos`
 
 ## Controladores (referencia por modulo)
 

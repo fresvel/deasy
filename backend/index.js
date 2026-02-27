@@ -995,9 +995,10 @@ app.use(express.static("public"));
 
 const startServer = async () => {
   try {
+    const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
     await ensureMariaDBDatabase();
     await assertMariaDBConnection();
-    await ensureMariaDBSchema();
+    await ensureMariaDBSchema({ reset: shouldResetSchema });
   } catch (error) {
     console.error("⚠️  No se pudo inicializar MariaDB:", error.message);
   }

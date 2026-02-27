@@ -86,7 +86,7 @@ import UserProfile from "@/components/UserProfile.vue";
   margin-top: 13px;
   background-color: rgba(var(--brand-primary-rgb), 0.92);
   padding: 0.75rem;
-  border-radius: var(--radius-md);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .accordion-item {

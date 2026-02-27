@@ -69,19 +69,44 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
-      { name: "unit_id", label: "Unidad", type: "number", required: true },
+      { name: "unit_id", label: "Unidad principal", type: "number", required: true, virtual: true },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "cargo_id", label: "Cargo inicial", type: "number", virtual: true },
+      { name: "cargo_id", label: "Cargo inicial", type: "number", required: true, virtual: true },
       { name: "version", label: "Version inicial", type: "text", virtual: true },
       { name: "version_name", label: "Nombre version", type: "text", virtual: true },
       { name: "version_slug", label: "Slug version", type: "text", virtual: true },
-      { name: "version_effective_from", label: "Vigencia desde", type: "date", virtual: true },
+      { name: "version_effective_from", label: "Vigencia desde", type: "date", required: true, virtual: true },
       { name: "version_effective_to", label: "Vigencia hasta", type: "date", virtual: true },
       { name: "version_parent_version_id", label: "Version padre", type: "number", virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
+  },
+  {
+    table: "process_units",
+    label: "Procesos por unidad",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
+      {
+        name: "scope",
+        label: "Ambito",
+        type: "select",
+        options: ["owner", "collaborator"],
+        defaultValue: "owner"
+      },
+      { name: "is_primary", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "effective_from", label: "Vigencia desde", type: "date" },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["scope"]
   },
   {
     table: "process_versions",
@@ -105,6 +130,22 @@ export const SQL_TABLES = [
     searchFields: ["name", "slug", "version"]
   },
   {
+    table: "term_types",
+    label: "Tipos de periodo",
+    category: "Academico",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
     table: "terms",
     label: "Periodos",
     category: "Academico",
@@ -112,6 +153,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "term_type_id", label: "Tipo de periodo", type: "number", required: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 }
@@ -175,7 +217,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "process_name", label: "Proceso", type: "text", readOnly: true },
+      { name: "process_name", label: "Proceso", type: "text", readOnly: true, virtual: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
@@ -309,6 +351,18 @@ export const SQL_TABLES = [
     searchFields: []
   },
   {
+    table: "role_assignment_relation_types",
+    label: "Relaciones de asignacion de rol",
+    category: "Seguridad",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
+      { name: "role_assignment_id", label: "Asignacion de rol", type: "number", required: true }
+    ],
+    searchFields: []
+  },
+  {
     table: "cargos",
     label: "Cargos",
     category: "Personas",
@@ -335,7 +389,7 @@ export const SQL_TABLES = [
       { name: "profile_ref", label: "Perfil (Mongo)", type: "text" },
       {
         name: "position_type",
-        label: "Tipo de ocupacion",
+        label: "Tipo de puesto",
         type: "select",
         options: ["real", "promocion", "simbolico"],
         defaultValue: "real"

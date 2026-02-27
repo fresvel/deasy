@@ -10,8 +10,11 @@ units 1─∞ unit_relations (child_id)
 ## Procesos y plantillas
 
 processes 1─∞ processes (parent_id)
-units 1─∞ processes (unit_id)
+processes 1─∞ process_units
+units 1─∞ process_units
+processes ∞─∞ units (via process_units)
 processes 1─∞ process_versions
+term_types 1─∞ terms
 terms 1─∞ tasks
 process_versions 1─∞ tasks
 tasks 1─∞ tasks (parent_task_id)

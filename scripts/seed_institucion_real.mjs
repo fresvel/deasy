@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -121,6 +121,24 @@ const ensureRelationType = async ({ code, name, is_inheritance_allowed = 1, is_a
   });
 };
 
+const ensureTermType = async ({ code, name, description = "", is_active = 1 }) => {
+  const existing = await getList("term_types", {
+    filter_code: code,
+    orderBy: "id",
+    order: "asc",
+    limit: 1
+  });
+  if (existing.length) {
+    return existing[0];
+  }
+  return post("term_types", {
+    code,
+    name,
+    description,
+    is_active
+  });
+};
+
 const slugify = (value) =>
   value
     .normalize("NFD")
@@ -184,6 +202,17 @@ const makeRng = (seedValue) => {
   };
 };
 
+const makeDeterministicUuidFactory = (seedValue) => {
+  let counter = 0;
+  return (scope = "id") => {
+    counter += 1;
+    const hex = createHash("sha256")
+      .update(`${seedValue}:${scope}:${counter}`)
+      .digest("hex");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+  };
+};
+
 const pickRoundRobin = (list, state) => {
   if (!list.length) {
     return null;
@@ -195,7 +224,10 @@ const pickRoundRobin = (list, state) => {
 };
 
 const run = async () => {
-  const rng = makeRng(process.env.SEED || "seed-pucese");
+  const seedValue = process.env.SEED || "seed-pucese";
+  const rng = makeRng(seedValue);
+  const seedUuid = makeDeterministicUuidFactory(seedValue);
+  const nextSeedUuid = (scope) => seedUuid(scope);
   const plainPassword = process.env.SEED_PASSWORD || "Seed2026!";
   const passwordHash = await bcrypt.hash(plainPassword, 10);
 
@@ -308,6 +340,7 @@ const run = async () => {
     "cargo_role_map",
     "processes",
     "process_versions",
+    "term_types",
     "terms",
     "tasks",
     "task_assignments",
@@ -349,6 +382,11 @@ const run = async () => {
     });
     relationTypeByCode.set(rel.code, created.id);
   }
+  const semesterType = await ensureTermType({
+    code: "SEM",
+    name: "Semestre",
+    description: "Periodo academico semestral"
+  });
 
   const orgRelationId = relationTypeByCode.get("org");
 
@@ -1017,7 +1055,7 @@ const run = async () => {
     const created = await post("processes", {
       name,
       slug,
-      unit_id: unit.id,
+      unit_ids: [unit.id],
       parent_id: parentId,
       has_document: hasDocument,
       is_active: 1,
@@ -1330,7 +1368,7 @@ const run = async () => {
     await post("template_versions", {
       template_id: template.id,
       version: "1.0",
-      mongo_ref: randomUUID(),
+      mongo_ref: nextSeedUuid("template_version"),
       mongo_version: "1.0",
       is_active: 1
     });
@@ -1338,6 +1376,7 @@ const run = async () => {
 
   const term = await post("terms", {
     name: "2026-S1",
+    term_type_id: semesterType.id,
     start_date: "2026-04-01",
     end_date: "2026-09-15",
     is_active: 1
@@ -1370,13 +1409,15 @@ const run = async () => {
     const document = await post("documents", {
       task_id: taskId,
       status: "Inicial",
-      comments_thread_ref: randomUUID()
+      comments_thread_ref: nextSeedUuid("document_thread")
     });
     const documentVersion = await post("document_versions", {
       document_id: document.id,
       version: 0.1,
-      payload_mongo_id: randomUUID(),
-      payload_hash: randomUUID().replace(/-/g, ""),
+      payload_mongo_id: nextSeedUuid("document_payload"),
+      payload_hash: createHash("sha256")
+        .update(nextSeedUuid("payload_hash"))
+        .digest("hex"),
       status: "Borrador"
     });
     documentVersionId = documentVersion.id;

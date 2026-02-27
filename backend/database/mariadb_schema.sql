@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS unit_types (
 CREATE TABLE IF NOT EXISTS units (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(180) NOT NULL,
-  label VARCHAR(40) NULL,
+  label VARCHAR(75) NULL,
   slug VARCHAR(180) NOT NULL,
   unit_type_id INT NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS unit_relations (
   child_unit_id INT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY unit_relations_uq (parent_unit_id, child_unit_id, relation_type_id),
+  UNIQUE KEY uq_unit_relations_child_type (child_unit_id, relation_type_id),
   INDEX idx_unit_relations_parent (parent_unit_id),
   INDEX idx_unit_relations_child (child_unit_id),
   CONSTRAINT fk_unit_relations_relation_type
@@ -334,12 +335,31 @@ CREATE TABLE IF NOT EXISTS processes (
   name VARCHAR(180) NOT NULL,
   slug VARCHAR(180) NOT NULL UNIQUE,
   parent_id INT NULL,
-  unit_id INT NOT NULL,
   has_document TINYINT(1) NOT NULL DEFAULT 1,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_processes_parent FOREIGN KEY (parent_id) REFERENCES processes(id),
-  CONSTRAINT fk_processes_unit FOREIGN KEY (unit_id) REFERENCES units(id)
+  CONSTRAINT fk_processes_parent FOREIGN KEY (parent_id) REFERENCES processes(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS process_units (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_id INT NOT NULL,
+  unit_id INT NOT NULL,
+  scope ENUM('owner', 'collaborator') NOT NULL DEFAULT 'owner',
+  is_primary TINYINT(1) NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  effective_from DATE NULL,
+  effective_to DATE NULL,
+  primary_active_flag TINYINT(1)
+    AS (IF(is_primary = 1 AND is_active = 1, 1, NULL)) PERSISTENT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_process_units_process_unit (process_id, unit_id),
+  UNIQUE KEY uq_process_units_single_primary (process_id, primary_active_flag),
+  INDEX idx_process_units_process_active (process_id, is_active),
+  INDEX idx_process_units_unit_active (unit_id, is_active),
+  CONSTRAINT fk_process_units_process FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_units_unit FOREIGN KEY (unit_id) REFERENCES units(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS process_versions (
@@ -361,12 +381,36 @@ CREATE TABLE IF NOT EXISTS process_versions (
   CONSTRAINT fk_process_versions_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS term_types (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL UNIQUE,
+  description VARCHAR(255) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO term_types (id, code, name, description, is_active)
+VALUES
+  (1, 'SEM', 'Semestre', 'Periodo academico semestral', 1),
+  (2, 'TRI', 'Trimestre', 'Periodo academico trimestral', 1),
+  (3, 'INT', 'Intensivo', 'Periodo academico intensivo', 1)
+ON DUPLICATE KEY UPDATE
+  code = VALUES(code),
+  name = VALUES(name),
+  description = VALUES(description),
+  is_active = VALUES(is_active);
+
 CREATE TABLE IF NOT EXISTS terms (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(60) NOT NULL UNIQUE,
+  term_type_id INT NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  INDEX idx_terms_term_type (term_type_id),
+  CONSTRAINT fk_terms_term_type FOREIGN KEY (term_type_id) REFERENCES term_types(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tasks (

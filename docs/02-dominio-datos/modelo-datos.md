@@ -43,9 +43,11 @@
 
 ### Procesos, tareas y plantillas
 
-- processes(id, name, slug, parent_id, unit_id, has_document, is_active, created_at)
+- processes(id, name, slug, parent_id, has_document, is_active, created_at)
+- process_units(id, process_id, unit_id, scope, is_primary, is_active, effective_from, effective_to, created_at, updated_at)
 - process_versions(id, process_id, version, name, slug, parent_version_id, cargo_id, has_document, is_active, effective_from, effective_to, created_at)
-- terms(id, name, start_date, end_date, is_active)
+- term_types(id, code, name, description, is_active, created_at, updated_at)
+- terms(id, name, term_type_id, start_date, end_date, is_active)
 - tasks(id, process_version_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
 - task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
 - templates(id, process_id, name, slug, description, created_at)

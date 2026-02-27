@@ -7,11 +7,8 @@
             <img class="profile-home-avatar" :src="photo" alt="Foto de perfil" />
             <div>
               <h4 class="mb-1">{{ displayName }}</h4>
-              <p class="mb-0 text-muted">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
+              <p class="mb-0 profile-home-id">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
             </div>
-          </div>
-          <div class="profile-home-badge">
-            Perfil
           </div>
         </div>
 
@@ -21,14 +18,19 @@
 
         <div class="profile-home-grid">
           <button
-            v-for="section in sections"
+            v-for="section in sectionCards"
             :key="section.label"
             class="profile-home-btn"
             type="button"
             @click="$emit('navigate-section', section.label)"
           >
-            <span>{{ section.label }}</span>
-            <strong>{{ dossierCounts?.[section.key] ?? 0 }}</strong>
+            <span class="profile-home-btn-icon">
+              <font-awesome-icon :icon="section.icon" />
+            </span>
+            <span class="profile-home-btn-content">
+              <strong class="profile-home-btn-title">{{ section.label }}</strong>
+              <span class="profile-home-btn-meta">{{ section.meta }}</span>
+            </span>
           </button>
         </div>
       </div>
@@ -57,12 +59,23 @@ const props = defineProps({
 defineEmits(["navigate-section"]);
 
 const sections = [
-  { label: "Formación", key: "formacion" },
-  { label: "Experiencia", key: "experiencia" },
-  { label: "Referencias", key: "referencias" },
-  { label: "Capacitación", key: "capacitacion" },
-  { label: "Certificación", key: "certificacion" }
+  { label: "Formación", key: "formacion", icon: "certificate" },
+  { label: "Experiencia", key: "experiencia", icon: "check-double" },
+  { label: "Referencias", key: "referencias", icon: "id-card" },
+  { label: "Capacitación", key: "capacitacion", icon: "square-check" },
+  { label: "Certificación", key: "certificacion", icon: "check-circle" },
+  { label: "Investigación", key: "investigacion", icon: "globe" }
 ];
+
+const sectionCards = computed(() =>
+  sections.map((section) => {
+    const count = Number(props.dossierCounts?.[section.key] ?? 0);
+    return {
+      ...section,
+      meta: `${count} ${count === 1 ? "registro" : "registros"}`
+    };
+  })
+);
 
 const displayName = computed(() => {
   const firstName = props.currentUser?.first_name ?? "";
@@ -84,18 +97,16 @@ const displayName = computed(() => {
   object-fit: cover;
 }
 
-.profile-home-badge {
-  background: rgba(var(--brand-primary-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
-  color: var(--brand-ink);
-  border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
 .profile-home-copy {
   color: var(--brand-muted);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.profile-home-id {
+  color: var(--brand-muted);
+  font-size: 0.92rem;
+  line-height: 1.35;
 }
 
 .profile-home-grid {
@@ -108,17 +119,46 @@ const displayName = computed(() => {
   border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
   border-radius: 12px;
   background: #fff;
-  padding: 0.7rem 0.9rem;
+  padding: 0.75rem 0.9rem;
   text-align: left;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.65rem;
   color: var(--brand-navy);
   font-size: 0.95rem;
+  min-height: 74px;
 }
 
-.profile-home-btn strong {
-  color: var(--brand-accent);
+.profile-home-btn-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--brand-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
+  color: var(--brand-primary);
+  flex: 0 0 auto;
+}
+
+.profile-home-btn-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.profile-home-btn-title {
+  font-size: 1.03rem;
+  line-height: 1.2;
+  color: var(--brand-navy);
+}
+
+.profile-home-btn-meta {
+  font-size: 0.86rem;
+  opacity: 0.84;
+  line-height: 1.2;
 }
 
 .profile-home-btn:hover {
@@ -127,7 +167,14 @@ const displayName = computed(() => {
   background: var(--brand-gradient);
 }
 
-.profile-home-btn:hover strong {
+.profile-home-btn:hover .profile-home-btn-title,
+.profile-home-btn:hover .profile-home-btn-meta {
+  color: #fff;
+}
+
+.profile-home-btn:hover .profile-home-btn-icon {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.26);
   color: #fff;
 }
 

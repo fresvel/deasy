@@ -53,6 +53,7 @@ Table unit_relations [headercolor: #abf7ad] {
 
   indexes {
     (parent_unit_id, child_unit_id, relation_type_id) [name: "unit_relations_uq", unique]
+    (child_unit_id, relation_type_id) [name: "uq_unit_relations_child_type", unique]
   }
 }
 
@@ -368,10 +369,28 @@ Table processes {
   name varchar(180) [not null]
   slug varchar(180) [not null, unique]
   parent_id int [ref: > processes.id]
-  unit_id int [not null, ref: > units.id]
   has_document boolean [not null, default: true]
   is_active boolean [not null, default: true]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table process_units {
+  id int [pk, increment]
+  process_id int [not null, ref: > processes.id]
+  unit_id int [not null, ref: > units.id]
+  scope varchar(20) [not null, default: 'owner', note: "owner|collaborator"]
+  is_primary boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  effective_from date
+  effective_to date
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, unit_id) [name: "uq_process_units_process_unit", unique]
+    (process_id, is_active) [name: "idx_process_units_process_active"]
+    (unit_id, is_active) [name: "idx_process_units_unit_active"]
+  }
 }
 
 Table process_versions {
