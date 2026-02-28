@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
+const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
 
 const normalizeValue = (field, value) => {
   if (value === undefined) {
@@ -80,39 +81,6 @@ const ensureDateOrder = (startDate, endDate, label) => {
   }
 };
 
-const normalizeNumericIdList = (values) => {
-  const source = Array.isArray(values) ? values : [];
-  const numeric = source
-    .map((value) => Number(value))
-    .filter((value) => Number.isInteger(value) && value > 0);
-  return Array.from(new Set(numeric));
-};
-
-const getProcessUnitIdsFromPayload = (data = {}) => {
-  const ids = [];
-
-  if (Array.isArray(data.unit_ids)) {
-    ids.push(...data.unit_ids);
-  } else if (typeof data.unit_ids === "string") {
-    ids.push(
-      ...data.unit_ids
-        .split(",")
-        .map((token) => token.trim())
-        .filter(Boolean)
-    );
-  }
-
-  if (Object.prototype.hasOwnProperty.call(data, "unit_id")) {
-    ids.push(data.unit_id);
-  }
-
-  return normalizeNumericIdList(ids);
-};
-
-const hasProcessUnitPayload = (data = {}) =>
-  Object.prototype.hasOwnProperty.call(data, "unit_id")
-  || Object.prototype.hasOwnProperty.call(data, "unit_ids");
-
 const validateFieldTypes = (config, payload) => {
   for (const field of config.fields) {
     if (!Object.prototype.hasOwnProperty.call(payload, field.name)) {
@@ -153,27 +121,41 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "processes":
       break;
-    case "process_units":
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "unidades por proceso");
-      break;
-    case "process_versions":
+    case "process_definition_versions":
       if (!candidate.process_id) {
-        throw new Error("Selecciona un proceso base para la version.");
+        throw new Error("Selecciona un proceso base para la definicion.");
       }
-      if (!candidate.cargo_id) {
-        throw new Error("Selecciona un cargo responsable para la version del proceso.");
+      if (!candidate.variation_key || !String(candidate.variation_key).trim()) {
+        throw new Error("Ingresa la serie o variante de la definicion.");
       }
-      if (!candidate.version || !/^\d+\.\d+$/.test(String(candidate.version))) {
-        throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
+      if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
+        throw new Error("La version de la definicion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
       }
       if (!candidate.effective_from) {
-        throw new Error("Selecciona la fecha de vigencia inicial.");
+        throw new Error("Selecciona la fecha de vigencia inicial de la definicion.");
       }
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "versiones de proceso");
+      ensureDateOrder(candidate.effective_from, candidate.effective_to, "definiciones de proceso");
+      break;
+    case "process_target_rules":
+      ensureDateOrder(candidate.effective_from, candidate.effective_to, "reglas de alcance");
+      if (!candidate.process_definition_id) {
+        throw new Error("Selecciona una definicion de proceso.");
+      }
+      if (candidate.recipient_policy === "exact_position" && !candidate.position_id) {
+        throw new Error("La politica exact_position requiere un puesto exacto.");
+      }
+      if (candidate.unit_scope_type === "unit_exact" || candidate.unit_scope_type === "unit_subtree") {
+        if (!candidate.unit_id && !candidate.position_id) {
+          throw new Error("El alcance por unidad requiere una unidad base.");
+        }
+      }
+      if (candidate.unit_scope_type === "unit_type" && !candidate.unit_type_id) {
+        throw new Error("El alcance por tipo requiere un tipo de unidad.");
+      }
       break;
     case "tasks":
-      if (!candidate.process_version_id) {
-        throw new Error("Selecciona la version del proceso para la tarea.");
+      if (!candidate.process_definition_id) {
+        throw new Error("Selecciona la definicion del proceso para la tarea.");
       }
       if (!candidate.term_id) {
         throw new Error("Selecciona un periodo para la tarea.");
@@ -201,6 +183,11 @@ const validateTableRules = (tableName, candidate) => {
         if (Number.isNaN(versionValue) || versionValue < 0.1) {
           throw new Error("La version debe ser mayor o igual a 0.1.");
         }
+      }
+      break;
+    case "template_artifacts":
+      if (!candidate.bucket || !candidate.base_object_prefix || !candidate.entry_object_key) {
+        throw new Error("Debes registrar bucket, prefijo base y ruta de entrada del artifact.");
       }
       break;
     case "templates":
@@ -254,6 +241,37 @@ export default class SqlAdminService {
     }
   }
 
+  async ensureProcessDefinitionVersionAvailable(candidate, { excludeId = null } = {}) {
+    this.ensurePool();
+    const processId = Number(candidate?.process_id);
+    const variationKey = String(candidate?.variation_key || "").trim();
+    const definitionVersion = String(candidate?.definition_version || "").trim();
+
+    if (!processId || !variationKey || !definitionVersion) {
+      return;
+    }
+
+    const params = [processId, variationKey, definitionVersion];
+    let query = `
+      SELECT id
+      FROM process_definition_versions
+      WHERE process_id = ?
+        AND variation_key = ?
+        AND definition_version = ?`;
+
+    if (excludeId !== null && excludeId !== undefined && excludeId !== "") {
+      query += "\n        AND id <> ?";
+      params.push(Number(excludeId));
+    }
+
+    query += "\n      LIMIT 1";
+
+    const [rows] = await this.pool.query(query, params);
+    if (rows?.length) {
+      throw new Error("Ya existe una definicion con esa serie y version para el proceso seleccionado.");
+    }
+  }
+
   getMeta() {
     return Object.values(SQL_TABLE_MAP);
   }
@@ -270,37 +288,6 @@ export default class SqlAdminService {
     if (!["real", "promocion"].includes(rows[0].position_type)) {
       throw new Error("Solo se permiten vacantes para ocupaciones reales o de promocion.");
     }
-  }
-
-  async syncProcessUnits(connection, processId, unitIds, { replace = false } = {}) {
-    const normalizedIds = normalizeNumericIdList(unitIds);
-    if (!normalizedIds.length) {
-      throw new Error("Selecciona al menos una unidad para el proceso.");
-    }
-
-    if (replace) {
-      await connection.query("DELETE FROM process_units WHERE process_id = ?", [processId]);
-    }
-
-    for (const unitId of normalizedIds) {
-      await connection.query(
-        `INSERT INTO process_units
-          (process_id, unit_id, scope, is_primary, is_active, effective_from, effective_to)
-         VALUES (?, ?, 'owner', 0, 1, CURDATE(), NULL)
-         ON DUPLICATE KEY UPDATE
-           is_active = 1,
-           effective_to = NULL`,
-        [processId, unitId]
-      );
-    }
-
-    await connection.query("UPDATE process_units SET is_primary = 0 WHERE process_id = ?", [processId]);
-    await connection.query(
-      `UPDATE process_units
-       SET is_primary = 1, is_active = 1, effective_to = NULL
-       WHERE process_id = ? AND unit_id = ?`,
-      [processId, normalizedIds[0]]
-    );
   }
 
   async list(tableName, { q, limit, offset, orderBy, order, filters = {} } = {}) {
@@ -337,86 +324,35 @@ export default class SqlAdminService {
 
     if (tableName === "processes") {
       joinClause = `LEFT JOIN (
-        SELECT process_id, unit_id
+        SELECT process_id, definition_version, execution_mode, status
         FROM (
           SELECT
             process_id,
-            unit_id,
+            definition_version,
+            execution_mode,
+            status,
             ROW_NUMBER() OVER (
               PARTITION BY process_id
-              ORDER BY is_primary DESC, id ASC
+              ORDER BY effective_from DESC, id DESC
             ) AS rn
-          FROM process_units
-          WHERE is_active = 1
-            AND (effective_from IS NULL OR effective_from <= CURDATE())
-            AND (effective_to IS NULL OR effective_to >= CURDATE())
-        ) ranked_pu
+          FROM process_definition_versions
+          WHERE status IN ('draft', 'active')
+        ) ranked_pd
         WHERE rn = 1
-      ) pu_main ON pu_main.process_id = processes.id
-      LEFT JOIN (
-        SELECT process_id, version, name, slug, parent_version_id, cargo_id, effective_from, effective_to
-        FROM (
-          SELECT
-            process_id,
-            version,
-            name,
-            slug,
-            parent_version_id,
-            cargo_id,
-            effective_from,
-            effective_to,
-            ROW_NUMBER() OVER (
-              PARTITION BY process_id
-              ORDER BY created_at DESC, id DESC
-            ) AS rn
-          FROM process_versions
-        ) ranked_pv
-        WHERE rn = 1
-      ) pv_main ON pv_main.process_id = processes.id`;
+      ) pd_main ON pd_main.process_id = processes.id`;
       columnPrefix = "processes.";
       const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
-      if (availableFields.includes("unit_id")) {
-        selectFields.push("pu_main.unit_id AS unit_id");
-        orderableFields.push("unit_id");
+      if (availableFields.includes("active_definition_version")) {
+        selectFields.push("pd_main.definition_version AS active_definition_version");
+        orderableFields.push("active_definition_version");
       }
-      if (availableFields.includes("cargo_id")) {
-        selectFields.push("pv_main.cargo_id AS cargo_id");
+      if (availableFields.includes("active_execution_mode")) {
+        selectFields.push("pd_main.execution_mode AS active_execution_mode");
       }
-      if (availableFields.includes("version")) {
-        selectFields.push("pv_main.version AS version");
-      }
-      if (availableFields.includes("version_name")) {
-        selectFields.push("pv_main.name AS version_name");
-      }
-      if (availableFields.includes("version_slug")) {
-        selectFields.push("pv_main.slug AS version_slug");
-      }
-      if (availableFields.includes("version_effective_from")) {
-        selectFields.push("pv_main.effective_from AS version_effective_from");
-      }
-      if (availableFields.includes("version_effective_to")) {
-        selectFields.push("pv_main.effective_to AS version_effective_to");
-      }
-      if (availableFields.includes("version_parent_version_id")) {
-        selectFields.push("pv_main.parent_version_id AS version_parent_version_id");
+      if (availableFields.includes("active_definition_status")) {
+        selectFields.push("pd_main.status AS active_definition_status");
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;
-
-      if (normalizedFilters.unit_id) {
-        conditions.push(
-          `EXISTS (
-            SELECT 1
-            FROM process_units pu_filter
-            WHERE pu_filter.process_id = processes.id
-              AND pu_filter.unit_id = ?
-              AND pu_filter.is_active = 1
-              AND (pu_filter.effective_from IS NULL OR pu_filter.effective_from <= CURDATE())
-              AND (pu_filter.effective_to IS NULL OR pu_filter.effective_to >= CURDATE())
-          )`
-        );
-        params.push(normalizedFilters.unit_id);
-        delete normalizedFilters.unit_id;
-      }
     }
 
     if (q && config.searchFields?.length) {
@@ -451,7 +387,7 @@ export default class SqlAdminService {
     const safeOrderBy = orderableFields.includes(orderBy) ? orderBy : config.primaryKeys[0];
     const orderColumn =
       (tableName === "templates" && safeOrderBy === "process_name")
-      || (tableName === "processes" && safeOrderBy === "unit_id")
+      || (tableName === "processes" && safeOrderBy === "active_definition_version")
         ? safeOrderBy
         : joinClause
           ? `${tableName}.${safeOrderBy}`
@@ -483,11 +419,17 @@ export default class SqlAdminService {
 
   async create(tableName, data) {
     this.ensurePool();
-    if (tableName === "process_versions") {
-      throw new Error("Las versiones de proceso se gestionan desde la tabla de procesos.");
-    }
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
+
+    if (tableName === "process_definition_versions") {
+      if (typeof payload.variation_key === "string") {
+        payload.variation_key = payload.variation_key.trim();
+      }
+      if (typeof payload.definition_version === "string") {
+        payload.definition_version = payload.definition_version.trim();
+      }
+    }
 
     if (tableName === "persons") {
       const rawPassword = typeof data?.password === "string" ? data.password : "";
@@ -508,16 +450,13 @@ export default class SqlAdminService {
     if (missing.length) {
       throw new Error(`Datos incompletos: ${missing.map((field) => field.label || field.name).join(", ")}`);
     }
-    const processUnitIds = tableName === "processes" ? getProcessUnitIdsFromPayload(data) : [];
-    if (tableName === "processes" && !data?.cargo_id) {
-      throw new Error("Selecciona un cargo responsable para la version inicial del proceso.");
-    }
-    if (tableName === "processes" && !processUnitIds.length) {
-      throw new Error("Selecciona al menos una unidad para el proceso.");
-    }
 
     validateFieldTypes(config, payload);
     validateTableRules(tableName, payload);
+
+    if (tableName === "process_definition_versions") {
+      await this.ensureProcessDefinitionVersionAvailable(payload);
+    }
 
     if (tableName === "vacancies") {
       await this.ensureContractablePosition(payload.position_id ?? data?.position_id);
@@ -530,95 +469,33 @@ export default class SqlAdminService {
 
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
-
-    if (tableName !== "processes") {
-      const [result] = await this.pool.query(
-        `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-        values
-      );
-      const created = { id: result.insertId, ...payload };
-      if (tableName === "terms") {
-        try {
-          await generateTasksForTerm(created.id);
-        } catch (error) {
-          console.warn("⚠️  No se pudo generar tareas para el periodo:", error.message);
-        }
+    const [result] = await this.pool.query(
+      `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+      values
+    );
+    const created = { id: result.insertId, ...payload };
+    if (tableName === "terms") {
+      try {
+        await generateTasksForTerm(created.id);
+      } catch (error) {
+        console.warn("⚠️  No se pudo generar tareas para el periodo:", error.message);
       }
-      return sanitizePersonRow(tableName, created);
     }
-
-    const connection = await this.pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      const [result] = await connection.query(
-        `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-        values
-      );
-      const insertedId = result.insertId;
-      if (tableName === "processes") {
-        await this.syncProcessUnits(connection, insertedId, processUnitIds, { replace: true });
-
-        const version = data?.version ?? "0.1";
-        const versionName = data?.version_name ?? "Inicial";
-        const versionSlug = data?.version_slug ?? payload.slug ?? `process-${insertedId}-v${version}`;
-        const effectiveFrom = data?.version_effective_from ?? data?.effective_from ?? null;
-        const effectiveTo = data?.version_effective_to ?? data?.effective_to ?? null;
-        const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
-
-        if (!effectiveFrom) {
-          throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
-        }
-        if (!/^\d+\.\d+$/.test(String(version))) {
-          throw new Error("La version del proceso debe tener formato decimal (ej: 0.1).");
-        }
-        ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
-
-        const versionPayload = {
-          process_id: insertedId,
-          version,
-          name: versionName,
-          slug: versionSlug,
-          parent_version_id: parentVersionId || null,
-          cargo_id: data?.cargo_id,
-          has_document: payload.has_document ?? 1,
-          is_active: payload.is_active ?? 1,
-          effective_from: effectiveFrom,
-          effective_to: effectiveTo
-        };
-        const versionColumns = Object.keys(versionPayload);
-        const versionValues = versionColumns.map((key) => versionPayload[key]);
-        const versionPlaceholders = versionColumns.map(() => "?").join(", ");
-        await connection.query(
-          `INSERT INTO process_versions (${versionColumns.join(", ")}) VALUES (${versionPlaceholders})`,
-          versionValues
-        );
-      }
-      await connection.commit();
-      return { id: insertedId, ...payload, unit_id: processUnitIds[0] ?? null };
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return sanitizePersonRow(tableName, created);
   }
 
   async update(tableName, keys, data) {
     this.ensurePool();
     const config = getConfig(tableName);
 
-    if (tableName === "process_versions") {
-      if (Object.prototype.hasOwnProperty.call(data, "version")) {
-        throw new Error("No se puede modificar el numero de version.");
-      }
-      if (Object.prototype.hasOwnProperty.call(data, "process_id")) {
-        throw new Error("No se puede cambiar el proceso de una version.");
-      }
-    }
-
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
     const updates = pickPayload(config.fields, data);
+    const existing = await this.getByKeys(tableName, keyPayload);
+    if (!existing) {
+      throw new Error("Registro no encontrado.");
+    }
+
     if (tableName === "persons" && Object.prototype.hasOwnProperty.call(data, "password")) {
       const rawPassword = typeof data.password === "string" ? data.password : "";
       if (rawPassword) {
@@ -630,19 +507,105 @@ export default class SqlAdminService {
         updates.password_hash = await hashPassword(updates.password_hash);
       }
     }
-    if (tableName === "process_versions") {
-      const allowed = new Set([
-        "name",
-        "slug",
-        "parent_version_id",
-        "has_document",
-        "is_active",
-        "effective_from",
-        "effective_to"
-      ]);
+    if (tableName === "process_definition_versions") {
+      if (typeof updates.variation_key === "string") {
+        updates.variation_key = updates.variation_key.trim();
+      }
+      if (typeof updates.definition_version === "string") {
+        updates.definition_version = updates.definition_version.trim();
+      }
+
+      const normalizeComparableValue = (fieldName, value) => {
+        if (value === null || value === undefined || value === "") {
+          return null;
+        }
+        const fieldMeta = config.fields.find((field) => field.name === fieldName);
+        if (value instanceof Date) {
+          if (fieldMeta?.type === "date") {
+            return value.toISOString().slice(0, 10);
+          }
+          if (fieldMeta?.type === "datetime") {
+            return value.toISOString().slice(0, 19).replace("T", " ");
+          }
+          return value.toISOString();
+        }
+        if (fieldMeta?.type === "number" || fieldMeta?.type === "boolean") {
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? String(value) : String(numeric);
+        }
+        return String(value);
+      };
+
+      const isSameValue = (fieldName, left, right) => {
+        const normalizedLeft = normalizeComparableValue(fieldName, left);
+        const normalizedRight = normalizeComparableValue(fieldName, right);
+        return normalizedLeft === normalizedRight;
+      };
+
+      if (Object.prototype.hasOwnProperty.call(updates, "definition_version")) {
+        if (!isSameValue("definition_version", updates.definition_version, existing.definition_version)) {
+          throw new Error("No se puede modificar el numero de version de una definicion.");
+        }
+        delete updates.definition_version;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "process_id")) {
+        if (!isSameValue("process_id", updates.process_id, existing.process_id)) {
+          throw new Error("No se puede cambiar el proceso de una definicion.");
+        }
+        delete updates.process_id;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "variation_key")) {
+        if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
+          throw new Error("No se puede cambiar la serie de una definicion.");
+        }
+        delete updates.variation_key;
+      }
+
+      Object.keys(updates).forEach((key) => {
+        if (isSameValue(key, updates[key], existing[key])) {
+          delete updates[key];
+        }
+      });
+
+      const currentStatus = String(existing.status || "draft");
+      const nextStatus = Object.prototype.hasOwnProperty.call(updates, "status")
+        ? String(updates.status || "")
+        : currentStatus;
+
+      const allowedTransitions = {
+        draft: new Set(["draft", "active", "retired"]),
+        active: new Set(["active", "retired"]),
+        retired: new Set(["retired"])
+      };
+      const currentAllowedTransitions = allowedTransitions[currentStatus] || new Set([currentStatus]);
+      if (!currentAllowedTransitions.has(nextStatus)) {
+        throw new Error(`No se permite cambiar una definicion ${currentStatus} a ${nextStatus}.`);
+      }
+
+      let allowed;
+      let errorMessage;
+      if (currentStatus === "draft") {
+        allowed = new Set([
+          "name",
+          "description",
+          "has_document",
+          "execution_mode",
+          "status",
+          "effective_from",
+          "effective_to"
+        ]);
+        errorMessage = "Una definicion en borrador solo permite cambios funcionales y de estado.";
+      } else if (currentStatus === "active") {
+        allowed = new Set(["status", "effective_to"]);
+        errorMessage = "Una definicion activa solo permite cambiar estado o vigencia final.";
+      } else {
+        allowed = new Set();
+        errorMessage = "Una definicion retirada es de solo lectura.";
+      }
+
       const disallowed = Object.keys(updates).filter((key) => !allowed.has(key));
       if (disallowed.length) {
-        throw new Error("Solo se permiten cambios en campos descriptivos de la version.");
+        throw new Error(errorMessage);
       }
     }
 
@@ -650,144 +613,30 @@ export default class SqlAdminService {
     const columns = Object.keys(updates).filter((column) =>
       allowPrimaryKeyUpdate ? true : !config.primaryKeys.includes(column)
     );
-    if (!columns.length && tableName !== "processes") {
+    if (!columns.length) {
       throw new Error("No hay cambios para actualizar.");
     }
 
     const setClause = columns.map((column) => `${column} = ?`).join(", ");
     const values = columns.map((column) => updates[column]);
-    const shouldSyncProcessUnits = tableName === "processes" && hasProcessUnitPayload(data);
-    const incomingProcessUnitIds = shouldSyncProcessUnits ? getProcessUnitIdsFromPayload(data) : [];
-    const replaceProcessUnits = tableName === "processes" && Object.prototype.hasOwnProperty.call(data, "unit_ids");
-    if (shouldSyncProcessUnits && !incomingProcessUnitIds.length) {
-      throw new Error("Selecciona al menos una unidad para el proceso.");
-    }
-
-    const existing = await this.getByKeys(tableName, keyPayload);
-    if (!existing) {
-      throw new Error("Registro no encontrado.");
-    }
 
     const candidate = { ...existing, ...updates };
     validateFieldTypes(config, candidate);
     validateTableRules(tableName, candidate);
 
-    if (tableName !== "processes") {
-      await this.pool.query(
-        `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-        [...values, ...params]
-      );
-      if (tableName === "tasks" && Object.prototype.hasOwnProperty.call(updates, "status")) {
-        const taskId = existing.id ?? keyPayload.id;
-        await updateParentTaskStatusForTask(taskId);
-      }
-      return sanitizePersonRow(tableName, { ...keyPayload, ...updates });
+    await this.pool.query(
+      `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+      [...values, ...params]
+    );
+    if (tableName === "tasks" && Object.prototype.hasOwnProperty.call(updates, "status")) {
+      const taskId = existing.id ?? keyPayload.id;
+      await updateParentTaskStatusForTask(taskId);
     }
-
-    const connection = await this.pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      if (columns.length) {
-        await connection.query(
-          `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-          [...values, ...params]
-        );
-      }
-      if (tableName === "processes") {
-        if (shouldSyncProcessUnits) {
-          await this.syncProcessUnits(connection, keyPayload.id, incomingProcessUnitIds, {
-            replace: replaceProcessUnits
-          });
-        }
-
-        const processRow = { ...existing, ...updates };
-        const hasVersionPayload = [
-          data?.version,
-          data?.version_number,
-          data?.version_name,
-          data?.version_slug,
-          data?.version_effective_from,
-          data?.version_effective_to,
-          data?.version_parent_version_id,
-          data?.parent_version_id
-        ].some((value) =>
-          value !== undefined
-          && value !== null
-          && String(value).trim() !== ""
-        );
-
-        if (hasVersionPayload) {
-          const version = data?.version ?? data?.version_number ?? null;
-          const effectiveFrom = data?.version_effective_from ?? null;
-          const effectiveTo = data?.version_effective_to ?? null;
-          const versionName = data?.version_name ?? processRow.name;
-          const versionSlug = data?.version_slug ?? processRow.slug ?? `process-${processRow.id}-v${version}`;
-          const parentVersionId = data?.version_parent_version_id ?? data?.parent_version_id ?? null;
-          const cargoId = data?.cargo_id ?? null;
-
-          if (!version) {
-            throw new Error("Debes indicar la nueva version del proceso.");
-          }
-          if (!/^\d+\.\d+$/.test(String(version))) {
-            throw new Error("La version del proceso debe tener formato decimal (ej: 1.0).");
-          }
-          if (!effectiveFrom) {
-            throw new Error("Selecciona la fecha de vigencia inicial para la version del proceso.");
-          }
-          if (!cargoId) {
-            throw new Error("Selecciona el cargo responsable para la nueva version del proceso.");
-          }
-          ensureDateOrder(effectiveFrom, effectiveTo, "versiones de proceso");
-
-          let resolvedParentVersionId = parentVersionId;
-          if (!resolvedParentVersionId) {
-            const [rows] = await connection.query(
-              "SELECT id FROM process_versions WHERE process_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
-              [processRow.id]
-            );
-            resolvedParentVersionId = rows?.[0]?.id ?? null;
-          }
-
-          const versionPayload = {
-            process_id: processRow.id,
-            version: String(version),
-            name: versionName,
-            slug: versionSlug,
-            parent_version_id: resolvedParentVersionId,
-            cargo_id: cargoId,
-            has_document: processRow.has_document ?? 1,
-            is_active: processRow.is_active ?? 1,
-            effective_from: effectiveFrom,
-            effective_to: effectiveTo
-          };
-          const versionColumns = Object.keys(versionPayload);
-          const versionValues = versionColumns.map((key) => versionPayload[key]);
-          const versionPlaceholders = versionColumns.map(() => "?").join(", ");
-          await connection.query(
-            `INSERT INTO process_versions (${versionColumns.join(", ")}) VALUES (${versionPlaceholders})`,
-            versionValues
-          );
-        }
-      }
-      await connection.commit();
-      return {
-        ...keyPayload,
-        ...updates,
-        ...(shouldSyncProcessUnits ? { unit_id: incomingProcessUnitIds[0] ?? null } : {})
-      };
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return sanitizePersonRow(tableName, { ...keyPayload, ...updates });
   }
 
   async remove(tableName, keys) {
     this.ensurePool();
-    if (tableName === "process_versions") {
-      throw new Error("Las versiones de proceso se gestionan desde la tabla de procesos.");
-    }
     const config = getConfig(tableName);
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);

@@ -198,6 +198,9 @@
                     <strong class="admin-home-btn-title">{{ table.label }}</strong>
                     <span class="admin-home-btn-meta">Gestionar</span>
                   </span>
+                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
+                    {{ adminTagForTable(table).label }}
+                  </span>
                 </button>
               </div>
               <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
@@ -274,6 +277,9 @@
                   <span class="admin-home-btn-content">
                     <strong class="admin-home-btn-title">{{ table.label }}</strong>
                     <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
+                    {{ adminTagForTable(table).label }}
                   </span>
                 </button>
               </div>
@@ -352,6 +358,9 @@
                     <strong class="admin-home-btn-title">{{ table.label }}</strong>
                     <span class="admin-home-btn-meta">Gestionar</span>
                   </span>
+                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
+                    {{ adminTagForTable(table).label }}
+                  </span>
                 </button>
               </div>
               <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
@@ -428,6 +437,9 @@
                   <span class="admin-home-btn-content">
                     <strong class="admin-home-btn-title">{{ table.label }}</strong>
                     <span class="admin-home-btn-meta">Gestionar</span>
+                  </span>
+                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
+                    {{ adminTagForTable(table).label }}
                   </span>
                 </button>
               </div>
@@ -506,6 +518,9 @@
                     <strong class="admin-home-btn-title">{{ table.label }}</strong>
                     <span class="admin-home-btn-meta">Gestionar</span>
                   </span>
+                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
+                    {{ adminTagForTable(table).label }}
+                  </span>
                 </button>
               </div>
               <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
@@ -582,6 +597,9 @@
                   <span class="admin-home-btn-content">
                     <strong class="admin-home-btn-title">{{ item.label }}</strong>
                     <span class="admin-home-btn-meta">{{ item.bucket }}</span>
+                  </span>
+                  <span :class="['admin-home-btn-pill', adminTagForTable(item).className]">
+                    {{ adminTagForTable(item).label }}
                   </span>
                 </button>
               </div>
@@ -692,7 +710,19 @@ const GROUP_DEFS = [
   {
     key: "procesos",
     label: "Gestiones",
-    main: ["processes", "process_units", "process_versions", "tasks", "task_assignments", "templates", "template_versions", "documents", "document_versions"],
+    main: [
+      "processes",
+      "process_definition_versions",
+      "process_target_rules",
+      "tasks",
+      "task_assignments",
+      "template_artifacts",
+      "process_definition_template_bindings",
+      "templates",
+      "template_versions",
+      "documents",
+      "document_versions"
+    ],
     support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_types", "signature_statuses", "signature_request_statuses"]
   },
   {
@@ -756,8 +786,15 @@ const GESTION_INDEX_ITEMS = [
     key: "procesos",
     label: "Procesos",
     icon: "check-double",
-    description: "Gestiona procesos, versiones y su vínculo con unidades.",
-    tables: ["processes", "process_units", "process_versions"]
+    description: "Gestiona procesos base, definiciones y reglas de alcance.",
+    tables: ["processes", "process_definition_versions", "process_target_rules"]
+  },
+  {
+    key: "plantillas",
+    label: "Plantillas",
+    icon: "certificate",
+    description: "Gestiona artifacts publicados y sus vínculos con definiciones.",
+    tables: ["templates", "template_versions", "template_artifacts", "process_definition_template_bindings"]
   },
   {
     key: "tareas",
@@ -765,13 +802,6 @@ const GESTION_INDEX_ITEMS = [
     icon: "square-check",
     description: "Administra tareas y asignaciones de tareas.",
     tables: ["tasks", "task_assignments"]
-  },
-  {
-    key: "plantillas",
-    label: "Plantillas",
-    icon: "certificate",
-    description: "Gestiona plantillas y sus versiones.",
-    tables: ["templates", "template_versions"]
   },
   {
     key: "documentos",
@@ -1060,6 +1090,20 @@ const iconForTable = (tableName = "") => {
   if (/contract|vacanc|offer|aplication/.test(normalized)) return "certificate";
   if (/security|resource|action/.test(normalized)) return "lock";
   return "info-circle";
+};
+
+const adminTagForTable = (table) => {
+  const tableName = String(table?.table || "").toLowerCase();
+  if (!tableName) {
+    return { label: "Base", className: "is-success" };
+  }
+  if (/artifact|signature_type|signature_status|request_status|resource|action/.test(tableName)) {
+    return { label: "Soporte", className: "is-danger" };
+  }
+  if (/version|assignment|binding|map|relation|origin/.test(tableName)) {
+    return { label: "Relacion", className: "is-warning" };
+  }
+  return { label: "Base", className: "is-success" };
 };
 
 const tablesCountForGroup = (group) => (group?.mainTables?.length ?? 0) + (group?.supportTables?.length ?? 0);
@@ -1441,8 +1485,8 @@ onMounted(() => {
 
 .admin-home-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
 }
 
 .admin-home-subtitle {
@@ -1456,20 +1500,23 @@ onMounted(() => {
   border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
   border-radius: 12px;
   background: #fff;
-  padding: 0.75rem 0.9rem;
+  padding: 1.45rem 1.5rem;
   text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
+  display: grid;
+  grid-template-columns: 3.35rem minmax(0, 1fr);
+  column-gap: 1rem;
+  row-gap: 0.95rem;
+  align-items: start;
   color: var(--brand-navy);
   font-size: 0.95rem;
-  min-height: 74px;
+  min-height: 188px;
+  box-shadow: var(--brand-shadow-soft);
 }
 
 .admin-home-btn-icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 10px;
+  width: 3.35rem;
+  height: 3.35rem;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1477,25 +1524,59 @@ onMounted(() => {
   border: 1px solid rgba(var(--color-puce-light-rgb), 0.2);
   color: var(--color-puce-light);
   flex: 0 0 auto;
+  font-size: 1.28rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .admin-home-btn-content {
   display: flex;
   flex-direction: column;
-  gap: 0.12rem;
+  gap: 0.28rem;
   min-width: 0;
+  width: 100%;
+  align-self: start;
 }
 
 .admin-home-btn-title {
-  font-size: 0.98rem;
-  line-height: 1.2;
+  font-size: 1.08rem;
+  line-height: 1.28;
   color: var(--brand-navy);
 }
 
+.admin-home-btn-pill {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  margin-top: auto;
+}
+
+.admin-home-btn-pill.is-success {
+  background: rgba(40, 167, 69, 0.14);
+  color: #1d7b35;
+}
+
+.admin-home-btn-pill.is-warning {
+  background: rgba(253, 126, 20, 0.16);
+  color: #b85e11;
+}
+
+.admin-home-btn-pill.is-danger {
+  background: rgba(220, 53, 69, 0.14);
+  color: #b32638;
+}
+
 .admin-home-btn-meta {
-  font-size: 0.75rem;
-  opacity: 0.84;
-  line-height: 1.2;
+  font-size: 0.84rem;
+  opacity: 0.88;
+  line-height: 1.35;
 }
 
 .admin-home-btn:hover {
@@ -1506,6 +1587,7 @@ onMounted(() => {
     rgba(var(--brand-primary-rgb), 0.18) 0%,
     var(--color-puce-soft) 100%
   );
+  box-shadow: 0 16px 28px rgba(var(--brand-primary-rgb), 0.1);
 }
 
 .admin-home-btn:hover .admin-home-btn-title,
@@ -1523,6 +1605,12 @@ onMounted(() => {
   border: 0;
   background: transparent;
   padding: 0;
+}
+
+@media (max-width: 991px) {
+  .admin-home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 575px) {

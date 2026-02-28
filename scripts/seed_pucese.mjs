@@ -40,20 +40,26 @@ const formatError = (error) => {
 
 const usage = () => {
   console.log("Uso:");
+  console.log("  node scripts/seed_pucese.mjs [apply] [--file <ruta>]");
   console.log("  node scripts/seed_pucese.mjs capture [--file <ruta>]");
-  console.log("  node scripts/seed_pucese.mjs apply   [--file <ruta>]");
   console.log("");
   console.log("Ejemplos:");
-  console.log("  node scripts/seed_pucese.mjs capture");
+  console.log("  node scripts/seed_pucese.mjs");
   console.log("  node scripts/seed_pucese.mjs apply --file scripts/seeds/pucese.seed.json");
+  console.log("  node scripts/seed_pucese.mjs capture");
 };
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
-  const mode = args[0] || "capture";
+  let mode = "apply";
+  let startIndex = 0;
+  if (args[0] && !args[0].startsWith("--")) {
+    mode = args[0];
+    startIndex = 1;
+  }
   let file = defaultSeedFile;
 
-  for (let i = 1; i < args.length; i += 1) {
+  for (let i = startIndex; i < args.length; i += 1) {
     const arg = args[i];
     if (arg === "--file") {
       const next = args[i + 1];

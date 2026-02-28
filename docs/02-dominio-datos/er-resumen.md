@@ -10,13 +10,13 @@ units 1─∞ unit_relations (child_id)
 ## Procesos y plantillas
 
 processes 1─∞ processes (parent_id)
-processes 1─∞ process_units
-units 1─∞ process_units
-processes ∞─∞ units (via process_units)
-processes 1─∞ process_versions
+processes 1─∞ process_definition_versions
+process_definition_versions 1─∞ process_target_rules
+process_definition_versions 1─∞ process_definition_template_bindings
+template_artifacts 1─∞ process_definition_template_bindings
 term_types 1─∞ terms
 terms 1─∞ tasks
-process_versions 1─∞ tasks
+process_definition_versions 1─∞ tasks
 tasks 1─∞ tasks (parent_task_id)
 tasks ∞─∞ unit_positions (via task_assignments)
 processes 1─∞ templates
@@ -36,7 +36,7 @@ relation_unit_types ∞─∞ role_assignments (via role_assignment_relation_typ
 
 tasks 1─∞ documents
 documents 1─∞ document_versions
-process_versions 1─∞ signature_flow_templates
+process_definition_versions 1─∞ signature_flow_templates
 signature_flow_templates 1─∞ signature_flow_steps
 document_versions 1─∞ signature_flow_instances
 signature_flow_instances 1─∞ signature_requests

@@ -69,65 +69,81 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
-      { name: "unit_id", label: "Unidad principal", type: "number", required: true, virtual: true },
-      { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "cargo_id", label: "Cargo inicial", type: "number", required: true, virtual: true },
-      { name: "version", label: "Version inicial", type: "text", virtual: true },
-      { name: "version_name", label: "Nombre version", type: "text", virtual: true },
-      { name: "version_slug", label: "Slug version", type: "text", virtual: true },
-      { name: "version_effective_from", label: "Vigencia desde", type: "date", required: true, virtual: true },
-      { name: "version_effective_to", label: "Vigencia hasta", type: "date", virtual: true },
-      { name: "version_parent_version_id", label: "Version padre", type: "number", virtual: true },
+      { name: "active_definition_version", label: "Definicion activa", type: "text", readOnly: true, virtual: true },
+      { name: "active_execution_mode", label: "Modo activo", type: "text", readOnly: true, virtual: true },
+      { name: "active_definition_status", label: "Estado definicion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
   {
-    table: "process_units",
-    label: "Procesos por unidad",
+    table: "process_definition_versions",
+    label: "Definiciones de proceso",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number", required: true },
-      {
-        name: "scope",
-        label: "Ambito",
-        type: "select",
-        options: ["owner", "collaborator"],
-        defaultValue: "owner"
-      },
-      { name: "is_primary", label: "Principal", type: "boolean", defaultValue: 0 },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "effective_from", label: "Vigencia desde", type: "date" },
-      { name: "effective_to", label: "Vigencia hasta", type: "date" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
-      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["scope"]
-  },
-  {
-    table: "process_versions",
-    label: "Versiones de proceso",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true, readOnly: true },
-      { name: "version", label: "Version", type: "text", required: true, readOnly: true },
+      { name: "variation_key", label: "Serie", type: "text", required: true, defaultValue: "general" },
+      { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "parent_version_id", label: "Version padre", type: "number" },
-      { name: "cargo_id", label: "Cargo responsable", type: "number", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      {
+        name: "execution_mode",
+        label: "Modo",
+        type: "select",
+        options: ["manual", "system", "hybrid"],
+        defaultValue: "manual"
+      },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["draft", "active", "retired"],
+        defaultValue: "draft"
+      },
       { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
       { name: "effective_to", label: "Vigencia hasta", type: "date" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["name", "slug", "version"]
+    searchFields: ["variation_key", "definition_version", "name", "status"]
+  },
+  {
+    table: "process_target_rules",
+    label: "Reglas de alcance",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      {
+        name: "unit_scope_type",
+        label: "Alcance",
+        type: "select",
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
+        defaultValue: "unit_exact"
+      },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "include_descendants", label: "Incluye descendientes", type: "boolean", defaultValue: 0 },
+      { name: "cargo_id", label: "Cargo", type: "number" },
+      { name: "position_id", label: "Puesto exacto", type: "number" },
+      {
+        name: "recipient_policy",
+        label: "Entrega",
+        type: "select",
+        options: ["all_matches", "one_per_unit", "one_match_only", "exact_position"],
+        defaultValue: "all_matches"
+      },
+      { name: "priority", label: "Prioridad", type: "number", defaultValue: 1 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "effective_from", label: "Vigencia desde", type: "date" },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["unit_scope_type", "recipient_policy"]
   },
   {
     table: "term_types",
@@ -167,7 +183,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_version_id", label: "Version de proceso", type: "number", required: true },
+      { name: "process_definition_id", label: "Definicion de proceso", type: "number", required: true },
       { name: "term_id", label: "Periodo", type: "number", required: true },
       { name: "parent_task_id", label: "Tarea padre", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
@@ -208,6 +224,58 @@ export const SQL_TABLES = [
       { name: "unassigned_at", label: "Desasignado", type: "datetime" }
     ],
     searchFields: ["status"]
+  },
+  {
+    table: "template_artifacts",
+    label: "Artifacts de plantilla",
+    category: "Plantillas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_code", label: "Codigo", type: "text", required: true },
+      { name: "display_name", label: "Nombre", type: "text", required: true },
+      { name: "source_version", label: "Version fuente", type: "text", required: true },
+      { name: "storage_version", label: "Version storage", type: "text", required: true },
+      { name: "bucket", label: "Bucket", type: "text", required: true },
+      { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
+      {
+        name: "mode",
+        label: "Modo",
+        type: "select",
+        options: ["system", "user"],
+        required: true
+      },
+      { name: "format", label: "Formato", type: "text", required: true },
+      { name: "entry_object_key", label: "Ruta de entrada", type: "text", required: true },
+      { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
+      { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
+      { name: "content_hash", label: "Hash", type: "text" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["template_code", "display_name", "format", "storage_version"]
+  },
+  {
+    table: "process_definition_template_bindings",
+    label: "Vinculos definicion-plantilla",
+    category: "Plantillas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      { name: "template_artifact_id", label: "Artifact", type: "number", required: true },
+      {
+        name: "usage_role",
+        label: "Uso",
+        type: "select",
+        options: ["system_render", "manual_fill", "attachment", "support"],
+        defaultValue: "manual_fill"
+      },
+      { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
+      { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["usage_role"]
   },
   {
     table: "templates",
@@ -536,7 +604,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_version_id", label: "Version proceso", type: "number", required: true },
+      { name: "process_definition_id", label: "Definicion proceso", type: "number", required: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },

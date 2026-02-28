@@ -29,9 +29,27 @@
 
 - POST /admin/terms/:termId/generate-tasks
   - Genera tareas y asignaciones para un periodo a partir de procesos activos.
-  - Resuelve responsables via process_versions (cargo_id) + process_units + unit_positions + position_assignments (unidades asociadas al proceso).
+  - Toma la definicion activa mas reciente (`process_definition_versions`) por proceso y `variation_key`.
+  - Resuelve responsables via `process_target_rules` contra `units`, `unit_types`, `unit_positions` y `position_assignments`.
   - Es idempotente: no duplica tareas existentes en el mismo periodo.
   - Se ejecuta automaticamente al crear un periodo desde /admin/sql/terms.
+
+## Uso del modelo de procesos
+
+- Crear `processes` desde `/admin/sql/processes`.
+- Crear `process_definition_versions` desde `/admin/sql/process_definition_versions`.
+- Registrar el alcance con `/admin/sql/process_target_rules`.
+- Registrar templates publicados en MinIO con `/admin/sql/template_artifacts`.
+- Vincular templates a cada definicion con `/admin/sql/process_definition_template_bindings`.
+
+Flujo recomendado:
+
+1) Crear el proceso base.
+2) Crear una definicion con `variation_key`, `definition_version` (formato `x.y.z`), vigencia y `execution_mode`.
+3) Agregar una o varias reglas de alcance segun el publico objetivo.
+4) Registrar uno o mas `template_artifacts` apuntando al paquete publicado en MinIO.
+5) Vincular los templates requeridos a la definicion.
+6) Crear el periodo o ejecutar `POST /admin/terms/:termId/generate-tasks`.
 
 ## Dossier - Investigacion (Mongo)
 

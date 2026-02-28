@@ -57,7 +57,7 @@
   border-radius: 18px;
   background:
     linear-gradient(
-      120deg,
+      102deg,
       #0c1826 0%,
       rgba(var(--brand-primary-rgb), 0.94) 42%,
       rgba(26, 110, 168, 0.86) 100%
