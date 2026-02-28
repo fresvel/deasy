@@ -11,6 +11,15 @@ export const getSqlMeta = (req, res) => {
   }
 };
 
+export const syncTemplateArtifacts = async (_req, res) => {
+  try {
+    const result = await service.syncTemplateArtifactsFromDist();
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

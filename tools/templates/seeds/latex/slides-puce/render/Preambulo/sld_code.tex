@@ -1,0 +1,60 @@
+\usepackage{xparse}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings, minted}
+\usepackage{tikz}
+
+\colorlet{codeblock_frame_raw}{puce_blue}
+
+\colorlet{codeblock_frame}{codeblock_frame_raw!20!white}
+
+\colorlet{codeblock_bg_raw}{puce_blue!3!puce_gray!30}
+
+\colorlet{codeblock_bg}{codeblock_bg_raw!100!white}
+
+\colorlet{codeblock_title_raw}{puce_blue}
+
+\colorlet{codeblock_title}{codeblock_title_raw!20!white}
+
+\colorlet{codeblock_text}{puce_dark}
+
+
+\newtcolorbox{auxbox}[1][]{%
+  enhanced,
+  breakable,
+  colback=lightblue!3!lightgray!30,     % ← Fondo suave (rojo claro)
+  colframe=darkblue!70!white,   % ← Borde tenue
+  boxrule=0pt,           % ← Grosor del borde
+  arc=1mm,                 % ← Esquinas ligeramente redondeadas
+  top=6pt, bottom=6pt, left=6pt, right=6pt,
+  before skip=10pt, after skip=10pt,
+  valign=top,
+  halign=left,
+  fonttitle=\bfseries,     % ← Título en negrita
+  coltitle=white,
+  title={#1},
+}
+
+
+\NewDocumentEnvironment{boxcode}{m}{%
+\begin{auxbox}[#1]
+}{%
+\end{auxbox}
+}
+
+\newtcblisting{codeblock}[2][bash]{%
+  enhanced,
+  breakable,
+  colback=codeblock_bg,
+  colframe=codeblock_frame,
+  boxrule=0pt,
+  arc=1mm,
+  top=6pt, bottom=6pt, left=6pt, right=6pt,
+  before skip=10pt, after skip=10pt,
+  fonttitle=\bfseries,
+  coltitle=codeblock_text,
+  colbacktitle=codeblock_title,
+  title={\textcolor{puce_white}{\faIcon{laptop-code}}\enspace #2},
+  listing only,
+  listing engine=minted,
+  minted language=#1,
+}

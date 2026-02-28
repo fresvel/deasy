@@ -23,5 +23,6 @@ export const API_ROUTES = {
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
+  ADMIN_SQL_TEMPLATE_ARTIFACTS_SYNC: `${API_PREFIX}/admin/sql/template_artifacts/sync`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`
 };

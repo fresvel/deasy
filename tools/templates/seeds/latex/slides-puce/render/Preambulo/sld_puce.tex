@@ -1,0 +1,38 @@
+\usepackage{tikz}
+\usepackage{pgfmath} % si estás usando Overleaf, a veces esto es necesario aparte
+
+% --- Colores institucionales ---
+\definecolor{azulPUCED}{RGB}{74,140,255}
+% --- Colores de los rectángulos inferiores ---
+\definecolor{lightblue}{HTML}{4a8cff} % Puedes redefinir luego
+\definecolor{darkblue}{HTML}{003ba3}
+\definecolor{lightgray}{HTML}{efefef}
+\definecolor{darckgray}{HTML}{000000}
+\definecolor{logopuce}{HTML}{4a8cff}
+\definecolor{puce_blue}{HTML}{4a8cff}
+\definecolor{puce_gray}{HTML}{efefef}
+\definecolor{puce_navy}{HTML}{003ba3}
+\definecolor{puce_dark}{HTML}{003ba3}
+
+%% Márgenes%%
+\newcommand{\mtop}{0.14}
+\newcommand{\mbottom}{0.05}
+\newcommand{\mleft}{0.04}
+\newcommand{\mright}{0.14}
+
+
+
+\newcommand{\slideTitleNum}{}      % Por defecto vacío
+\newcommand{\slideTitleText}{}     % Por defecto vacío
+
+\input{Preambulo/sld_code}
+\input{Preambulo/sld_base}
+\input{Preambulo/sld_core}
+
+
+\usepackage{fontawesome5}
+\setbeamertemplate{itemize item}{\raisebox{0.15ex}{\color{lightblue}\faCaretRight}}
+\setbeamertemplate{itemize subitem}{\color{darkblue!black}\scriptsize $ast$}
+
+\newcommand{\topic}[1]{\textbf{\textcolor{darkblue}{#1}}}
+\newcommand{\subtopic}[1]{\textbf{\textcolor{lightblue}{#1}}}

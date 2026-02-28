@@ -1,0 +1,14 @@
+key: "investigación/integración/artículos-académicos/planes/trabajo-uic"
+export_id: "tpl_investigación_integración_artículos_académicos_planes_trabajo_uic"
+name: "Trabajo UIC PUCE"
+seed: "informe-general"
+version: 1.0.0
+storage_version: v0001
+modes:
+  system:
+    jinja2:
+      path: "modes/system/jinja2/src"
+  user:
+    latex:
+      path: "modes/user/latex/src"
+origins: []

@@ -1,0 +1,460 @@
+
+
+
+\begin{longtblr}[
+  caption = {Razones de exclusión de estudios a texto completo (PRISMA 2020).},
+  label   = {tab:razones_exclusion}
+]{
+  width   = \textwidth,
+  colspec = {X[l,m,0.25] X[l,m,0.60] X[c,m,0.15]},
+  rowhead = 1,
+  row{1}  = {font=\bfseries},
+}
+\toprule
+\textbf{Categoría de exclusión} & \textbf{Estudios excluidos (referencias)} & \textbf{N} \\
+\midrule
+
+Población no pertinente &
+% Ejemplo: reemplazar por tus referencias reales
+% [Smith 2018; Tanaka 2020; Ruiz 2019]
+ &  \\
+
+Intervención no aplicable &
+ &
+ \\
+
+Datos no adecuados &
+ &
+ \\
+
+Modalidad de imagen no elegible &
+ &
+ \\
+
+Resultados insuficientes &
+ &
+ \\
+
+Diseño no elegible &
+ &
+ \\
+
+Acceso limitado (sin texto completo) &
+ &
+ \\
+
+Duplicado &
+ &
+ \\
+
+Idioma no permitido &
+ &
+ \\
+
+Calidad metodológica deficiente &
+ &
+ \\
+
+\bottomrule
+\end{longtblr}
+
+
+
+
+This section may be divided by subheadings. It should provide a concise and precise description of the experimental results, their interpretation as well as the experimental conclusions that can be drawn.
+\subsection{Subsection}
+\subsubsection{Subsubsection}
+
+Bulleted lists look like this:
+\begin{itemize}
+\item	First bullet;
+\item	Second bullet;
+\item	Third bullet.
+\end{itemize}
+
+Numbered lists can be added as follows:
+\begin{enumerate}
+\item	First item; 
+\item	Second item;
+\item	Third item.
+\end{enumerate}
+
+The text continues here.
+
+\subsection{Figures, Tables and Schemes}
+
+All figures and tables should be cited in the main text as Figure~\ref{fig1}, Table~\ref{tab1}, etc.
+
+\begin{figure}[H]
+%\isPreprints{\centering}{} % Only used for preprints
+\includegraphics[width=4.0 cm]{Definitions/logo-mdpi}
+\caption{This is a figure. Schemes follow the same formatting.\label{fig1}}
+\end{figure}   
+\unskip
+
+\begin{table}[H] 
+%\small % Change table font size
+\caption{This is a table caption. Tables should be placed in the main text near to the first time they are~cited.\label{tab1}}
+%\isPreprints{\centering}{} % Only used for preprints
+\begin{tabularx}{\textwidth}{CCC}
+\toprule
+\textbf{Title 1}	& \textbf{Title 2}	& \textbf{Title 3}\\
+\midrule
+Entry 1		& Data			& Data\\
+Entry 2		& Data			& Data \textsuperscript{1}\\
+\bottomrule
+\end{tabularx}
+
+\noindent{\footnotesize{\textsuperscript{1} Tables may have a footer.}}
+\end{table}
+
+The text continues here (Figure~\ref{fig2} and Table~\ref{tab2}).
+
+% Example of a figure that spans the whole page width and with subfigures. The same concept works for tables, too.
+\begin{figure}[H]
+%\isPreprints{}{% This command is only used for ``preprints''.
+\begin{adjustwidth}{-\extralength}{0cm}
+\centering
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+\subfloat[\centering]{\includegraphics[width=7.0cm]{Definitions/logo-mdpi}}
+%\hfill
+\subfloat[\centering]{\includegraphics[width=7.0cm]{Definitions/logo-mdpi}}\\
+\subfloat[\centering]{\includegraphics[width=7.0cm]{Definitions/logo-mdpi}}
+%\hfill
+\subfloat[\centering]{\includegraphics[width=7.0cm]{Definitions/logo-mdpi}}
+%\isPreprints{}{% This command is only used for ``preprints''.
+\end{adjustwidth}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+\caption{This is a wide figure. Schemes follow the same formatting. If there are multiple panels, they should be listed as: (\textbf{a}) Description of what is contained in the first panel. (\textbf{b}) Description of what is contained in the second panel. (\textbf{c}) Description of what is contained in the third panel. (\textbf{d}) Description of what is contained in the fourth panel. Figures should be placed in the main text near to the first time they are cited. A caption on a single line should be centered.\label{fig2}}
+\end{figure} 
+
+\begin{table}[H]
+\caption{This is a wide table.\label{tab2}}
+%\isPreprints{\centering}{% This command is only used for ``preprints''.
+	\begin{adjustwidth}{-\extralength}{0cm}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+%\isPreprints{\begin{tabularx}{\textwidth}{CCCC}}{% This command is only used for ``preprints''.
+		\begin{tabularx}{\fulllength}{CCCC}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+			\toprule
+			\textbf{Title 1}	& \textbf{Title 2}	& \textbf{Title 3}     & \textbf{Title 4}\\
+			\midrule
+\multirow[m]{3}{*}{Entry 1 *}	& Data			& Data			& Data\\
+			  	                   & Data			& Data			& Data\\
+			             	      & Data			& Data			& Data\\
+                   \midrule
+\multirow[m]{3}{*}{Entry 2}    & Data			& Data			& Data\\
+			  	                  & Data			& Data			& Data\\
+			             	     & Data			& Data			& Data\\
+			\bottomrule
+		\end{tabularx}
+%		\isPreprints{}{% This command is only used for ``preprints''.
+	\end{adjustwidth}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+	\noindent{\footnotesize{* Tables may have a footer.}}
+\end{table}
+
+%\begin{listing}[H]
+%\caption{Title of the listing}
+%\rule{\columnwidth}{1pt}
+%\raggedright Text of the listing. In font size footnotesize, small, or normalsize. Preferred format: left aligned and single spaced. Preferred border format: top border line and bottom border line.
+%\rule{\columnwidth}{1pt}
+%\end{listing}
+
+Text.
+
+Text.
+
+\subsection{Formatting of Mathematical Components}
+
+This is the example 1 of equation:
+\begin{linenomath}
+\begin{equation}
+a = 1,
+\end{equation}
+\end{linenomath}
+the text following an equation need not be a new paragraph. Please punctuate equations as regular text.
+%% If the documentclass option "submit" is chosen, please insert a blank line before and after any math environment (equation and eqnarray environments). This ensures correct linenumbering. The blank line should be removed when the documentclass option is changed to "accept" because the text following an equation should not be a new paragraph.
+
+This is the example 2 of equation:
+%\isPreprints{}{% This command is only used for ``preprints''.
+\begin{adjustwidth}{-\extralength}{0cm}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+\begin{equation}
+a = b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + r + s + t + u + v + w + x + y + z
+\end{equation}
+%\isPreprints{}{% This command is only used for ``preprints''.
+\end{adjustwidth}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.
+
+%% Example of a page in landscape format (with table and table footnote).
+%\startlandscape
+%\begin{table}[H] %% Table in wide page
+%%\isPreprints{\centering}{} % This command is only used for ``preprints''.
+%\caption{This is a very wide table.\label{tab3}}
+%	\begin{tabularx}{\textwidth}{CCCC}
+%		\toprule
+%		\textbf{Title 1}	& \textbf{Title 2}	& \textbf{Title 3}	& \textbf{Title 4}\\
+%		\midrule
+%		Entry 1		& Data			& Data			& This cell has some longer content that runs over two lines.\\
+%		Entry 2		& Data			& Data			& Data\textsuperscript{1}\\
+%		\bottomrule
+%	\end{tabularx}
+%%\isPreprints{}{% This command is only used for ``preprints''.
+%	\begin{adjustwidth}{+\extralength}{0cm}
+%%} % If the paper is ``preprints'', please uncomment this parenthesis.
+%		\noindent\footnotesize{\textsuperscript{1} This is a table footnote.}
+%%\isPreprints{}{% This command is only used for ``preprints''.
+%	\end{adjustwidth}
+%%} % If the paper is ``preprints'', please uncomment this parenthesis.
+%\end{table}
+%\finishlandscape
+
+Please punctuate equations as regular text. Theorem-type environments (including propositions, lemmas, corollaries etc.) can be formatted as follows:
+%% Example of a theorem:
+\begin{Theorem}
+Example text of a theorem.
+\end{Theorem}
+
+The text continues here. Proofs must be formatted as follows:
+
+%% Example of a proof:
+\begin{proof}[Proof of Theorem 1]
+Text of the proof. Note that the phrase ``of Theorem 1'' is optional if it is clear which theorem is being referred to.
+\end{proof}
+The text continues here.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%MAPEO%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Materials and Methods}
+
+\subsection{Design of the Study}
+El presente trabajo corresponde a un \textit{Systematic Mapping Study} (SMS), cuyo objetivo es proporcionar una visión panorámica, estructurada y cuantitativa de la literatura existente sobre la aplicación de modelos de Inteligencia Artificial en imágenes médicas para el análisis, detección y diagnóstico del cáncer de mama. El SMS se desarrolló siguiendo las directrices metodológicas propuestas por Petersen et al.\ (2008, 2015) y las recomendaciones adaptadas de Kitchenham para estudios de mapeo en ingeniería y ciencias computacionales.
+
+A diferencia de una revisión sistemática (SLR), cuyo propósito es responder preguntas de investigación específicas, el SMS busca clasificar, cuantificar e identificar tendencias, vacíos y áreas emergentes en la producción científica del dominio analizado.
+
+\subsection{Objectives and Research Areas}
+Dado que los estudios de mapeo no se estructuran mediante marcos como PICO/PICo, se definieron \textbf{áreas de investigación (Research Areas)} que guían el proceso de categorización:
+
+\begin{itemize}
+    \item \textbf{RA1: Modalidades de imagen utilizadas} (mamografía, RM, ecografía, tomosíntesis, histología digital).
+    \item \textbf{RA2: Técnicas de IA aplicadas} (ML tradicional, CNN, transformadores, modelos híbridos, CAD).
+    \item \textbf{RA3: Tipos de tareas abordadas} (clasificación, segmentación, detección, localización, análisis histopatológico).
+    \item \textbf{RA4: Características y disponibilidad de los datasets} (públicos, privados, tamaño, balance).
+    \item \textbf{RA5: Tendencias y evolución temporal} (volumen anual de publicaciones, áreas emergentes).
+    \item \textbf{RA6: Limitaciones y brechas del campo} (validación externa, generalización, calidad de datos).
+\end{itemize}
+
+Estas áreas constituyen la base de la taxonomía empleada en la etapa de análisis.
+
+\subsection{Search Strategy}
+La búsqueda sistemática se realizó en las bases de datos \textit{Scopus}, \textit{Web of Science}, \textit{ScienceDirect} y \textit{PubMed}. Las cadenas de búsqueda se diseñaron mediante combinaciones de términos generales del dominio, incluyendo palabras clave relacionadas con inteligencia artificial, modelos de aprendizaje profundo y modalidades de imagen mamaria.
+
+Un ejemplo genérico de cadena utilizada fue:
+
+\begin{quote}
+(\textit{``breast cancer'' OR ``mammography'' OR ``breast imaging''}) AND  
+(\textit{``artificial intelligence'' OR ``machine learning'' OR ``deep learning''})  
+\end{quote}
+
+Debido al carácter exploratorio del SMS, no se aplicaron restricciones estrictas sobre intervención, población o contexto, tal como es habitual en estudios de mapeo.
+
+\subsection{Study Selection}
+La selección de estudios se realizó en tres etapas, siguiendo el enfoque sugerido por Petersen:
+
+\begin{enumerate}
+    \item \textbf{Identificación}: eliminación de duplicados.
+    \item \textbf{Cribado inicial}: revisión de título, resumen y palabras clave para determinar relevancia general respecto del área temática.
+    \item \textbf{Evaluación ampliada}: lectura parcial o total para confirmar si el estudio contenía suficiente información para ser clasificado en alguna de las áreas definidas.
+\end{enumerate}
+
+No se aplicaron criterios estrictos de exclusión propios de las SLR (por ejemplo, métricas específicas, validez externa, tipo de diseño experimental), ya que el propósito del SMS es representar la amplitud del campo.
+
+\subsection{Classification Scheme}
+Los estudios incluidos se clasificaron mediante un \textbf{esquema taxonómico} desarrollado a partir de las Research Areas definidas (RA1–RA6). Para cada estudio se registró:
+
+\begin{itemize}
+    \item modalidad de imagen;
+    \item técnica de IA utilizada;
+    \item tipo de tarea;
+    \item dataset empleado;
+    \item año de publicación;
+    \item tipo de fuente (revista, conferencia);
+    \item país y afiliación de los autores;
+    \item palabras clave del autor.
+\end{itemize}
+
+Esta clasificación permitió consolidar una matriz global del panorama investigativo.
+
+\subsection{Data Extraction}
+La extracción de datos se realizó mediante una hoja estructurada basada en las recomendaciones de Kitchenham para SMS, complementada con variables utilizadas en análisis bibliométricos (año, país, palabras clave, fuente, citas).
+
+Los datos se sistematizaron en tablas y posteriormente se integraron en un repositorio suplementario.
+
+\subsection{Data Analysis}
+El análisis se desarrolló bajo dos enfoques:
+
+\begin{enumerate}
+    \item \textbf{Análisis descriptivo / cuantitativo}:  
+    número de estudios por año, distribución por modalidad de imagen, técnicas empleadas, datasets más utilizados, evolución temporal.
+    \item \textbf{Análisis bibliométrico (opcional)}:  
+    realizado con \texttt{bibliometrix} (R) y VOSviewer, incluyendo co-ocurrencia de palabras clave, redes de colaboración y evolución temática.
+\end{enumerate}
+
+Finalmente, los resultados se integraron en un mapa conceptual del área, destacando tendencias, concentración de investigación y vacíos existentes.
+
+
+\section{Results of the Systematic Mapping Study}
+
+\subsection{Overview of the Included Studies}
+Número total de estudios, distribución anual, primeras observaciones.
+
+\subsection{Publication Trends Over Time}
+Gráficas de publicaciones por año.
+
+\subsection{Distribution by Source Type}
+Revistas, conferencias, repositorios.
+
+\subsection{Geographical Distribution}
+Países o regiones principales.
+
+\subsection{Research Focus Classification}
+Taxonomía de áreas:
+- modelos clásicos,
+- deep learning,
+- transformers,
+- CAD,
+- segmentación,
+- clasificación…
+
+\subsection{Dataset Usage Patterns}
+Frecuencia de INbreast, MIAS, DDSM, BreakHis, CBIS-DDSM, datasets privados.
+
+\subsection{Methodological Trends}
+- validaciones usadas  
+- entornos experimentales  
+- métricas  
+
+\subsection{Keyword and Topic Evolution}
+Co-ocurrencia de términos, redes bibliométricas, evolución temporal.
+
+\subsection{Research Gaps and Future Directions}
+Zonas poco atendidas del mapa.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%&
+%=====================================
+% References, variant B: internal bibliography
+%=====================================
+
+% ACS format
+\isAPAandChicago{}{%
+\begin{thebibliography}{999}
+% Reference 1
+\bibitem[Author1(year)]{ref-journal}
+Author~1, T. The title of the cited article. {\em Journal Abbreviation} {\bf 2008}, {\em 10}, 142--149.
+% Reference 2
+\bibitem[Author2(year)]{ref-book1}
+Author~2, L. The title of the cited contribution. In {\em The Book Title}; Editor 1, F., Editor 2, A., Eds.; Publishing House: City, Country, 2007; pp. 32--58.
+% Reference 3
+\bibitem[Author1 and Author2 (year)]{ref-book2}
+Author 1, A.; Author 2, B. \textit{Book Title}, 3rd ed.; Publisher: Publisher Location, Country, 2008; pp. 154--196.
+% Reference 4
+\bibitem[Author4(year)]{ref-unpublish}
+Author 1, A.B.; Author 2, C. Title of Unpublished Work. \textit{Abbreviated Journal Name} year, \textit{phrase indicating stage of publication (submitted; accepted; in press)}.
+% Reference 5
+\bibitem[Author8(year)]{ref-url}
+Title of Site. Available online: URL (accessed on Day Month Year).
+% Reference 6
+\bibitem[Author6(year)]{ref-proceeding}
+Author 1, A.B.; Author 2, C.D.; Author 3, E.F. Title of presentation. In Proceedings of the Name of the Conference, Location of Conference, Country, Date of Conference (Day Month Year); Abstract Number (optional), Pagination (optional).
+% Reference 7
+\bibitem[Author7(year)]{ref-thesis}
+Author 1, A.B. Title of Thesis. Level of Thesis, Degree-Granting University, Location of University, Date of Completion.
+\end{thebibliography}
+}
+
+% Chicago format (Used for journal: arts, genealogy, histories, humanities, jintelligence, laws, literature, religions, risks, socsci)
+\isChicagoStyle{%
+\begin{thebibliography}{999}
+% Reference 1
+\bibitem[Aranceta-Bartrina(1999a)]{ref-journal}
+Aranceta-Bartrina, Javier. 1999a. Title of the cited article. \textit{Journal Title} 6: 100--10.
+% Reference 2
+\bibitem[Aranceta-Bartrina(1999b)]{ref-book1}
+Aranceta-Bartrina, Javier. 1999b. Title of the chapter. In \textit{Book Title}, 2nd ed. Edited by Editor 1 and Editor 2. Publication place: Publisher, vol. 3, pp. 54–96.
+% Reference 3
+\bibitem[Baranwal and Munteanu {[1921]}(1955)]{ref-book2}
+Baranwal, Ajay K., and Costea Munteanu. 1955. \textit{Book Title}. Publication place: Publisher, pp. 154--96. First published 1921 (op-tional).
+% Reference 4
+\bibitem[Berry and Smith(1999)]{ref-thesis}
+Berry, Evan, and Amy M. Smith. 1999. Title of Thesis. Level of Thesis, Degree-Granting University, City, Country. Identifi-cation information (if available).
+% Reference 5
+\bibitem[Cojocaru et al.(1999)]{ref-unpublish}
+Cojocaru, Ludmila, Dragos Constatin Sanda, and Eun Kyeong Yun. 1999. Title of Unpublished Work. \textit{Journal Title}, phrase indicating stage of publication.
+% Reference 6
+\bibitem[Driver et al.(2000)]{ref-proceeding}
+Driver, John P., Steffen Rohrs, and Sean Meighoo. 2000. Title of Presentation. In \textit{Title of the Collected Work} (if available). Paper presented at Name of the Conference, Location of Conference, Date of Conference.
+% Reference 7
+\bibitem[Harwood(2008)]{ref-url}
+Harwood, John. 2008. Title of the cited article. Available online: URL (accessed on Day Month Year).
+\end{thebibliography}
+}{}
+
+% APA format (Used for journal: admsci, behavsci, businesses, econometrics, economies, education, ejihpe, games, humans, ijfs, journalmedia, jrfm, languages, psycholint, publications, tourismhosp, youth)
+\isAPAStyle{%
+\begin{thebibliography}{999}
+% Reference 1
+\bibitem[\protect\citeauthoryear{Azikiwe \BBA\ Bello}{{2020a}}]{ref-journal}
+Azikiwe, H., \& Bello, A. (2020a). Title of the cited article. \textit{Journal Title}, \textit{Volume}(Issue), 
+Firstpage--Lastpage/Article Number.
+% Reference 2
+\bibitem[\protect\citeauthoryear{Azikiwe \BBA\ Bello}{{2020b}}]{ref-book1}
+Azikiwe, H., \& Bello, A. (2020b). \textit{Book title}. Publisher Name.
+% Reference 3
+\bibitem[Davison(1623/2019)]{ref-book2}
+Davison, T. E. (2019). Title of the book chapter. In A. A. Editor (Ed.), \textit{Title of the book: Subtitle} 
+(pp. Firstpage--Lastpage). Publisher Name. (Original work published 1623) (Optional).
+% Reference 4
+\bibitem[Fistek et al.(2017)]{ref-proceeding}
+Fistek, A., Jester, E., \& Sonnenberg, K. (2017, Month Day). Title of contribution [Type of contribution]. Conference Name, Conference City, Conference Country.
+% Reference 5
+\bibitem[Hutcheson(2012)]{ref-thesis}
+Hutcheson, V. H. (2012). \textit{Title of the thesis} [XX Thesis, Name of Institution Awarding the Degree].
+% Reference 6
+\bibitem[Lippincott \& Poindexter(2019)]{ref-unpublish}
+Lippincott, T., \& Poindexter, E. K. (2019). \textit{Title of the unpublished manuscript} [Unpublished manuscript/Manuscript in prepara-tion/Manuscript submitted for publication]. Department Name, Institution Name.
+% Reference 7
+\bibitem[Harwood(2008)]{ref-url}
+Harwood, J. (2008). \textit{Title of the cited article}. Available online: URL (accessed on Day Month Year).
+\end{thebibliography}
+}{}
+
+% If authors have biography, please use the format below
+%\section*{Short Biography of Authors}
+%\bio
+%{\raisebox{-0.35cm}{\includegraphics[width=3.5cm,height=5.3cm,clip,keepaspectratio]{Definitions/author1.pdf}}}
+%{\textbf{Firstname Lastname} Biography of first author}
+%
+%\bio
+%{\raisebox{-0.35cm}{\includegraphics[width=3.5cm,height=5.3cm,clip,keepaspectratio]{Definitions/author2.jpg}}}
+%{\textbf{Firstname Lastname} Biography of second author}
+
+% For the MDPI journals use author-date citation, please follow the formatting guidelines on http://www.mdpi.com/authors/references
+% To cite two works by the same author: \citeauthor{ref-journal-1a} (\citeyear{ref-journal-1a}, \citeyear{ref-journal-1b}). This produces: Whittaker (1967, 1975)
+% To cite two works by the same author with specific pages: \citeauthor{ref-journal-3a} (\citeyear{ref-journal-3a}, p. 328; \citeyear{ref-journal-3b}, p.475). This produces: Wong (1999, p. 328; 2000, p. 475)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% for journal Sci
+%\reviewreports{\\
+%Reviewer 1 comments and authors’ response\\
+%Reviewer 2 comments and authors’ response\\
+%Reviewer 3 comments and authors’ response
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\PublishersNote{}
+%\isPreprints{}{% This command is only used for ``preprints''.
+\end{adjustwidth}
+%} % If the paper is ``preprints'', please uncomment this parenthesis.

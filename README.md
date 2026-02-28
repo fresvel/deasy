@@ -9,6 +9,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - frontend/: interfaz web (Vue).
 - docker/: definiciones de contenedores y servicios.
 - scripts/: utilidades de arranque.
+- tools/: herramientas integradas del proyecto (incluye authoring de templates).
 - docs/: documentacion tecnica, arquitectura y modelos.
 - Deploy/: notas de despliegue y contexto de cambios.
 
@@ -18,6 +19,8 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - Backend integra:
   - Base de datos (MariaDB + Mongo segun el modulo).
   - Motor de procesos basado en `processes` + `process_definition_versions` + `process_target_rules`.
+  - Storage de artifacts de plantillas via MinIO.
+  - Authoring de templates integrado en `tools/templates`.
   - Servicios de reportes/latex.
   - Servicio de firmas (signflow/multisigner).
   - Mensajeria en tiempo real via EMQX (WebSocket).
@@ -72,6 +75,7 @@ Reportes y firmas:
 Despliegue:
 - docs/07-despliegue/docker.md
 - docs/07-despliegue/env.md
+- docs/07-despliegue/minio.md
 - docs/07-despliegue/infra.md
 
 Operacion:

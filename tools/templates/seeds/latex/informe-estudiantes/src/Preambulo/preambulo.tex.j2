@@ -1,0 +1,157 @@
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{lipsum}
+\usepackage{minted}
+
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\usepackage{tabularray}
+\UseTblrLibrary{booktabs}
+
+% Paleta institucional
+\definecolor{brand}{RGB}{ {{ brand_rgb }} }
+\colorlet{colhead}{brand!40} % color de encabezado de tabla
+\definecolor{puce_gray}{HTML}{ {{ palette.puce_gray | replace('#','') }} }
+\definecolor{puce_blue}{HTML}{ {{ palette.puce_blue | replace('#','') }} }
+\definecolor{puce_navy}{HTML}{ {{ palette.puce_navy | replace('#','') }} }
+\definecolor{puce_blue_alt}{HTML}{ {{ palette.puce_blue_alt | replace('#','') }} }
+\definecolor{puce_black}{HTML}{ {{ palette.puce_black | replace('#','') }} }
+\definecolor{puce_white}{HTML}{ {{ palette.puce_white | replace('#','') }} }
+\definecolor{puce_dark}{HTML}{ {{ palette.puce_dark | replace('#','') }} }
+[[% if codeblock.frame.startswith('#') %]]
+\definecolor{codeblock_frame_raw}{HTML}{ {{ codeblock.frame | replace('#','') }} }
+[[% else %]]
+\colorlet{codeblock_frame_raw}{ {{- codeblock.frame -}}}
+[[% endif %]]
+\colorlet{codeblock_frame}{codeblock_frame_raw!{{ codeblock.opacity }}!white}
+[[% if codeblock.background.startswith('#') %]]
+\definecolor{codeblock_bg_raw}{HTML}{ {{ codeblock.background | replace('#','') }} }
+[[% else %]]
+\colorlet{codeblock_bg_raw}{ {{- codeblock.background -}}}
+[[% endif %]]
+\colorlet{codeblock_bg}{codeblock_bg_raw!{{ codeblock.background_opacity }}!white}
+[[% if codeblock.title.startswith('#') %]]
+\definecolor{codeblock_title_raw}{HTML}{ {{ codeblock.title | replace('#','') }} }
+[[% else %]]
+\colorlet{codeblock_title_raw}{ {{- codeblock.title -}}}
+[[% endif %]]
+\colorlet{codeblock_title}{codeblock_title_raw!{{ codeblock.opacity }}!white}
+[[% if codeblock.text.startswith('#') %]]
+\definecolor{codeblock_text}{HTML}{ {{ codeblock.text | replace('#','') }} }
+[[% else %]]
+\colorlet{codeblock_text}{ {{- codeblock.text -}}}
+[[% endif %]]
+
+% Plantillas de tablas (tabularray)
+\NewTblrEnviron{bodytblr}
+\SetTblrInner[bodytblr]{
+  width = \textwidth,
+  hline{1,Z} = {\heavyrulewidth, puce_gray},
+  hline{2} = {\lightrulewidth, puce_gray},
+  vlines = {0pt},
+  cells = {font=\small},
+  row{1} = {bg=codeblock_title, fg=puce_navy, font=\small\bfseries}
+}
+\NewTblrEnviron{bodylongtblr}
+\SetTblrOuter[bodylongtblr]{long}
+\SetTblrInner[bodylongtblr]{
+  width = \textwidth,
+  hline{1,Z} = {\heavyrulewidth, puce_gray},
+  hline{2} = {\lightrulewidth, puce_gray},
+  vlines = {0pt},
+  cells = {font=\small},
+  rowhead = 1,
+  row{1} = {bg=codeblock_title, fg=puce_navy, font=\small\bfseries}
+}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable, skins, minted}
+\definecolor{darkcol}{RGB}{ 7, 7, 100 }
+\usepackage{tabularx}
+
+\setminted{
+    style={{ codeblock.minted_style }},
+    breaklines
+}
+
+\usepackage{geometry}
+% Layout helpers (valores definidos en Preambulo/datos)
+\newcommand{\SetDefaultLayout}{%
+  \edef\layout@tmp{\csname layoutOptions\layoutDefaultName\endcsname}%
+  \expandafter\geometry\expandafter{\layout@tmp}%
+}
+\newcommand{\UseLayout}[1]{%
+  \edef\layout@tmp{\csname layoutOptions#1\endcsname}%
+  \expandafter\newgeometry\expandafter{\layout@tmp}%
+}
+\newcommand{\RestoreLayout}{\restoregeometry}
+
+% Configuración de estilo para comandos en consola
+\newtcolorbox{consolebox}{
+    colback=darkcol,
+    colupper=white,
+    colframe=brand,
+    boxrule=1pt,
+    left=10pt,
+    right=10pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily\fontsize{12}{14}\selectfont,
+}
+
+% Bloques de código con título
+\newtcblisting{codeblock}[2][{{ codeblock.language }}]{%
+    enhanced,
+    breakable,
+    colback=codeblock_bg,
+    colframe=codeblock_frame,
+    coltitle=codeblock_text,
+    colbacktitle=codeblock_title,
+    boxrule=0pt,
+    arc=1mm,
+    top=6pt, bottom=6pt, left=6pt, right=6pt,
+    fonttitle=\bfseries,
+    title={\textcolor{puce_white}{\faIcon{laptop-code}}\enspace #2},
+    listing only,
+    listing engine=minted,
+    minted language=#1,
+}
+
+\usepackage{array}
+
+% %--------------------------------------------------------------------------
+% %         Bibliographie 
+% %--------------------------------------------------------------------------
+
+\usepackage{amsmath}
+
+\usepackage{hyperref}
+
+% Configuración de apariencia de enlaces
+\hypersetup{
+    colorlinks=true,       % true: enlaces con color, false: con recuadro
+    linkcolor=blue!7,        % color de enlaces internos (tabla de contenidos, referencias)
+    citecolor=teal,        % color de citas y referencias bibliográficas
+    filecolor=magenta,     % color de enlaces a archivos
+    urlcolor=blue,         % color de enlaces URL
+    menucolor=red,         % color en menús PDF (poco usado)
+    anchorcolor=black,     % color de anclas
+    pdfauthor={Tu Nombre}, % autor del documento
+    pdftitle={Título del Documento},
+    pdfsubject={Asunto del documento},
+    pdfkeywords={palabra1, palabra2, palabra3},
+    pdfcreator={LaTeX con hyperref},
+    pdfproducer={pdflatex}
+}
+
+\usepackage{float}
+
+\usepackage{datetime}
+\newdateformat{mydate}{\twodigit{\THEDAY}/\twodigit{\THEMONTH}/\THEYEAR}
+\usepackage{advdate} % en el preámbulo
+\input{Preambulo/datos}
+\SetDefaultLayout
+
+\input{Preambulo/header}

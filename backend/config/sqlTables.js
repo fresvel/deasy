@@ -183,9 +183,20 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion de proceso", type: "number", required: true },
+      {
+        name: "process_definition_template_id",
+        label: "Plantilla de definicion",
+        type: "number",
+        required: true
+      },
+      {
+        name: "process_definition_id",
+        label: "Definicion de proceso",
+        type: "number",
+        readOnly: true
+      },
       { name: "term_id", label: "Periodo", type: "number", required: true },
-      { name: "parent_task_id", label: "Tarea padre", type: "number" },
+      { name: "parent_task_id", label: "Tarea padre (manual)", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
@@ -238,26 +249,18 @@ export const SQL_TABLES = [
       { name: "storage_version", label: "Version storage", type: "text", required: true },
       { name: "bucket", label: "Bucket", type: "text", required: true },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
-      {
-        name: "mode",
-        label: "Modo",
-        type: "select",
-        options: ["system", "user"],
-        required: true
-      },
-      { name: "format", label: "Formato", type: "text", required: true },
-      { name: "entry_object_key", label: "Ruta de entrada", type: "text", required: true },
+      { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
       { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
       { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_code", "display_name", "format", "storage_version"]
+    searchFields: ["template_code", "display_name", "storage_version"]
   },
   {
-    table: "process_definition_template_bindings",
-    label: "Vinculos definicion-plantilla",
+    table: "process_definition_templates",
+    label: "Plantillas de definicion",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
@@ -271,43 +274,12 @@ export const SQL_TABLES = [
         options: ["system_render", "manual_fill", "attachment", "support"],
         defaultValue: "manual_fill"
       },
+      { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
       { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["usage_role"]
-  },
-  {
-    table: "templates",
-    label: "Plantillas",
-    category: "Plantillas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "process_name", label: "Proceso", type: "text", readOnly: true, virtual: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["name", "slug"]
-  },
-  {
-    table: "template_versions",
-    label: "Versiones de plantilla",
-    category: "Plantillas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "template_id", label: "Plantilla", type: "number", required: true },
-      { name: "version", label: "Version", type: "text", required: true },
-      { name: "mongo_ref", label: "Mongo ref", type: "text", required: true },
-      { name: "mongo_version", label: "Mongo version", type: "text", required: true },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["version", "mongo_ref", "mongo_version"]
   },
   {
     table: "persons",

@@ -1,0 +1,29 @@
+
+
+\begin{tikzpicture}[remember picture, overlay]
+
+  % Logo PUCE lateral derecho (centrado verticalmente)
+  \node[anchor=east, xshift=-\pucelogoRightOffset] at (current page.east) {
+    \includegraphics[height=\pucelogoHeight]{\logopath}
+  };
+
+  % Logo PUCESE en la parte superior derecha
+  \node[anchor=north east, xshift=-\puceselogoRightOffset, yshift=-\puceselogoTopOffset] at (current page.north east) {
+    \includegraphics[height=\puceselogoHeight]{\puceselogo}
+  };
+
+  % Línea horizontal (con offsets proporcionales)
+  \draw[darkblue, line width=\lineWidth]
+    ([yshift=-\lineHorY, xshift=\lineHorStartOffset]current page.north west) --
+    ([yshift=-\lineHorY, xshift=-\lineHorEndOffset]current page.north east);
+
+  % Línea vertical (con offsets proporcionales)
+  \draw[darkblue, line width=\lineWidth]
+    ([xshift=\lineVerX, yshift=\lineVerStartOffset]current page.south west) --
+    ([xshift=\lineVerX, yshift=-\lineVerEndOffset]current page.north west);
+
+\end{tikzpicture}
+
+
+
+

@@ -1,8 +1,85 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-02-28T16:25:39.094Z",
+  "captured_at": "2026-02-28T23:52:51.080Z",
   "tables": [
+    {
+      "table": "persons",
+      "columns": [
+        "id",
+        "cedula",
+        "first_name",
+        "last_name",
+        "email",
+        "whatsapp",
+        "direccion",
+        "pais",
+        "password_hash",
+        "status",
+        "verify_email",
+        "verify_whatsapp",
+        "photo_url",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "cedula": "varchar(20)",
+        "first_name": "varchar(120)",
+        "last_name": "varchar(120)",
+        "email": "varchar(180)",
+        "whatsapp": "varchar(30)",
+        "direccion": "varchar(255)",
+        "pais": "varchar(80)",
+        "password_hash": "varchar(255)",
+        "status": "enum('Inactivo','Activo','Verificado','Reportado')",
+        "verify_email": "tinyint(1)",
+        "verify_whatsapp": "tinyint(1)",
+        "photo_url": "longtext",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "cedula": "1804326534",
+          "first_name": "Homero Javier",
+          "last_name": "Velasteguí Izurieta",
+          "email": "homero.j.velastegui.i@pucese.edu.ec",
+          "whatsapp": "+5930983069990",
+          "direccion": "0.972240, -79.657466",
+          "pais": "Ecuador",
+          "password_hash": "$2b$10$SdriiYtnau6zGwVvhM3TQ./pjkTOZAe0Vi/XXrJ6.yVnNiPkbdazq",
+          "status": "Inactivo",
+          "verify_email": 0,
+          "verify_whatsapp": 0,
+          "photo_url": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 12:30:21",
+          "updated_at": "2026-02-26 12:30:21"
+        },
+        {
+          "id": 2,
+          "cedula": "1803131190",
+          "first_name": "Adrian Vargas",
+          "last_name": "Vargas Machuca del Salto",
+          "email": "agvargasmachuca@pucese.edu.ec",
+          "whatsapp": "+593998627624",
+          "direccion": "Esmeraldas",
+          "pais": "Ecuador",
+          "password_hash": "$2b$10$SXiKu8HzkTeiQhH8svcj.eB0zdLSBPwExhjCwmtXQWHKZf0jn4OuW",
+          "status": "Inactivo",
+          "verify_email": 0,
+          "verify_whatsapp": 0,
+          "photo_url": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 19:21:43",
+          "updated_at": "2026-02-26 19:27:29"
+        }
+      ]
+    },
     {
       "table": "unit_types",
       "columns": [
@@ -297,251 +374,9 @@
       ]
     },
     {
-      "table": "processes",
+      "table": "cargos",
       "columns": [
         "id",
-        "name",
-        "slug",
-        "parent_id",
-        "is_active",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "name": "varchar(180)",
-        "slug": "varchar(180)",
-        "parent_id": "int(11)",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "name": " Memorandum",
-          "slug": "PMEM",
-          "parent_id": 4,
-          "is_active": 1,
-          "created_at": "2026-02-26 20:21:40"
-        },
-        {
-          "id": 2,
-          "name": "Investigación Formativa",
-          "slug": "PIFO",
-          "parent_id": 3,
-          "is_active": 1,
-          "created_at": "2026-02-27 15:04:23"
-        },
-        {
-          "id": 3,
-          "name": "Investigación",
-          "slug": "PINV",
-          "parent_id": 4,
-          "is_active": 1,
-          "created_at": "2026-02-27 15:32:13"
-        },
-        {
-          "id": 4,
-          "name": "root",
-          "slug": "ROOT",
-          "parent_id": null,
-          "is_active": 1,
-          "created_at": "2026-02-27 15:33:23"
-        }
-      ]
-    },
-    {
-      "table": "process_definition_versions",
-      "columns": [
-        "id",
-        "process_id",
-        "variation_key",
-        "definition_version",
-        "name",
-        "description",
-        "has_document",
-        "execution_mode",
-        "status",
-        "effective_from",
-        "effective_to",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "process_id": "int(11)",
-        "variation_key": "varchar(120)",
-        "definition_version": "varchar(20)",
-        "name": "varchar(180)",
-        "description": "varchar(255)",
-        "has_document": "tinyint(1)",
-        "execution_mode": "enum('manual','system','hybrid')",
-        "status": "enum('draft','active','retired')",
-        "effective_from": "date",
-        "effective_to": "date",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 5,
-          "process_id": 2,
-          "variation_key": "general",
-          "definition_version": "0.1.0",
-          "name": "Carreras",
-          "description": "Investigación Formativa de las Carreras",
-          "has_document": 1,
-          "execution_mode": "manual",
-          "status": "active",
-          "effective_from": "2026-02-27",
-          "effective_to": null,
-          "created_at": "2026-02-27 16:05:16"
-        },
-        {
-          "id": 6,
-          "process_id": 1,
-          "variation_key": "general",
-          "definition_version": "0.1.0",
-          "name": "Memorandum",
-          "description": "Envío y recepción de memorandums entre las diferentes unidades",
-          "has_document": 1,
-          "execution_mode": "manual",
-          "status": "active",
-          "effective_from": "2026-02-27",
-          "effective_to": null,
-          "created_at": "2026-02-27 16:06:16"
-        },
-        {
-          "id": 8,
-          "process_id": 2,
-          "variation_key": "docentes",
-          "definition_version": "0.1.0",
-          "name": "Investigación Formativa Docentes",
-          "description": "Evidencias de los procesos de investigación formativa que ejecutan los docentes en las carreras.",
-          "has_document": 1,
-          "execution_mode": "manual",
-          "status": "active",
-          "effective_from": "2026-02-27",
-          "effective_to": null,
-          "created_at": "2026-02-27 21:22:41"
-        },
-        {
-          "id": 9,
-          "process_id": 2,
-          "variation_key": "general",
-          "definition_version": "0.1.1",
-          "name": "Investigación Formativa Carreras",
-          "description": "Investigación Formativa de las Carreras",
-          "has_document": 1,
-          "execution_mode": "manual",
-          "status": "draft",
-          "effective_from": "2026-02-27",
-          "effective_to": null,
-          "created_at": "2026-02-27 22:53:03"
-        },
-        {
-          "id": 10,
-          "process_id": 2,
-          "variation_key": "general",
-          "definition_version": "0.2.0",
-          "name": "Investigación Formativa Carreras",
-          "description": "Investigación Formativa de las Carreras",
-          "has_document": 1,
-          "execution_mode": "manual",
-          "status": "draft",
-          "effective_from": "2026-02-27",
-          "effective_to": null,
-          "created_at": "2026-02-27 22:56:54"
-        }
-      ]
-    },
-    {
-      "table": "process_target_rules",
-      "columns": [
-        "id",
-        "process_definition_id",
-        "unit_scope_type",
-        "unit_id",
-        "unit_type_id",
-        "include_descendants",
-        "cargo_id",
-        "position_id",
-        "recipient_policy",
-        "priority",
-        "is_active",
-        "effective_from",
-        "effective_to",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "process_definition_id": "int(11)",
-        "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units')",
-        "unit_id": "int(11)",
-        "unit_type_id": "int(11)",
-        "include_descendants": "tinyint(1)",
-        "cargo_id": "int(11)",
-        "position_id": "int(11)",
-        "recipient_policy": "enum('all_matches','one_per_unit','one_match_only','exact_position')",
-        "priority": "int(11)",
-        "is_active": "tinyint(1)",
-        "effective_from": "date",
-        "effective_to": "date",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 2,
-          "process_definition_id": 6,
-          "unit_scope_type": "all_units",
-          "unit_id": null,
-          "unit_type_id": null,
-          "include_descendants": 0,
-          "cargo_id": 1,
-          "position_id": null,
-          "recipient_policy": "all_matches",
-          "priority": 1,
-          "is_active": 1,
-          "effective_from": null,
-          "effective_to": null,
-          "created_at": "2026-02-27 16:09:03"
-        },
-        {
-          "id": 5,
-          "process_definition_id": 5,
-          "unit_scope_type": "all_units",
-          "unit_id": null,
-          "unit_type_id": 6,
-          "include_descendants": 0,
-          "cargo_id": 1,
-          "position_id": null,
-          "recipient_policy": "all_matches",
-          "priority": 1,
-          "is_active": 1,
-          "effective_from": "2026-02-27",
-          "effective_to": null,
-          "created_at": "2026-02-27 16:45:54"
-        },
-        {
-          "id": 6,
-          "process_definition_id": 8,
-          "unit_scope_type": "all_units",
-          "unit_id": null,
-          "unit_type_id": 6,
-          "include_descendants": 0,
-          "cargo_id": 2,
-          "position_id": null,
-          "recipient_policy": "all_matches",
-          "priority": 1,
-          "is_active": 1,
-          "effective_from": "2026-02-26",
-          "effective_to": null,
-          "created_at": "2026-02-27 21:23:21"
-        }
-      ]
-    },
-    {
-      "table": "term_types",
-      "columns": [
-        "id",
-        "code",
         "name",
         "description",
         "is_active",
@@ -550,8 +385,7 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "code": "varchar(40)",
-        "name": "varchar(80)",
+        "name": "varchar(120)",
         "description": "varchar(255)",
         "is_active": "tinyint(1)",
         "created_at": "datetime",
@@ -559,491 +393,44 @@
       },
       "rows": [
         {
-          "id": 4,
-          "code": "PPO",
-          "name": "Primer Periodo Ordinario",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 14:07:52",
-          "updated_at": "2026-02-26 14:07:52"
-        },
-        {
-          "id": 5,
-          "code": "SPO",
-          "name": "Segundo Periodo Ordinario",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 14:08:11",
-          "updated_at": "2026-02-26 14:08:11"
-        },
-        {
-          "id": 6,
-          "code": "AÑO",
-          "name": "Año Calendario",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 14:09:02",
-          "updated_at": "2026-02-26 14:10:46"
-        }
-      ]
-    },
-    {
-      "table": "terms",
-      "columns": [
-        "id",
-        "name",
-        "term_type_id",
-        "start_date",
-        "end_date",
-        "is_active"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "name": "varchar(60)",
-        "term_type_id": "int(11)",
-        "start_date": "date",
-        "end_date": "date",
-        "is_active": "tinyint(1)"
-      },
-      "rows": [
-        {
           "id": 1,
-          "name": "Primer Periodo Ordinario 2026",
-          "term_type_id": 4,
-          "start_date": "2026-03-02",
-          "end_date": "2026-08-28",
-          "is_active": 1
-        }
-      ]
-    },
-    {
-      "table": "tasks",
-      "columns": [
-        "id",
-        "process_definition_id",
-        "term_id",
-        "parent_task_id",
-        "responsible_position_id",
-        "description",
-        "comments_thread_ref",
-        "is_main",
-        "start_date",
-        "end_date",
-        "status",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "process_definition_id": "int(11)",
-        "term_id": "int(11)",
-        "parent_task_id": "int(11)",
-        "responsible_position_id": "int(11)",
-        "description": "text",
-        "comments_thread_ref": "varchar(64)",
-        "is_main": "tinyint(1)",
-        "start_date": "date",
-        "end_date": "date",
-        "status": "varchar(30)",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "process_definition_id": 6,
-          "term_id": 1,
-          "parent_task_id": null,
-          "responsible_position_id": null,
+          "name": "Coordinador",
           "description": null,
-          "comments_thread_ref": null,
-          "is_main": 1,
-          "start_date": "2026-03-02",
-          "end_date": "2026-08-28",
-          "status": "pendiente",
-          "created_at": "2026-02-28 15:49:16"
+          "is_active": 1,
+          "created_at": "2026-02-26 13:19:04",
+          "updated_at": "2026-02-26 13:19:04"
         },
         {
           "id": 2,
-          "process_definition_id": 8,
-          "term_id": 1,
-          "parent_task_id": null,
-          "responsible_position_id": null,
+          "name": "Docente",
           "description": null,
-          "comments_thread_ref": null,
-          "is_main": 1,
-          "start_date": "2026-03-02",
-          "end_date": "2026-08-28",
-          "status": "pendiente",
-          "created_at": "2026-02-28 15:49:16"
+          "is_active": 1,
+          "created_at": "2026-02-26 13:19:11",
+          "updated_at": "2026-02-26 13:19:11"
         },
         {
           "id": 3,
-          "process_definition_id": 5,
-          "term_id": 1,
-          "parent_task_id": null,
-          "responsible_position_id": null,
+          "name": "Responsable de Calidad",
           "description": null,
-          "comments_thread_ref": null,
-          "is_main": 1,
-          "start_date": "2026-03-02",
-          "end_date": "2026-08-28",
-          "status": "pendiente",
-          "created_at": "2026-02-28 15:49:16"
-        }
-      ]
-    },
-    {
-      "table": "task_assignments",
-      "columns": [
-        "id",
-        "task_id",
-        "position_id",
-        "assigned_person_id",
-        "status",
-        "assigned_at",
-        "unassigned_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "task_id": "int(11)",
-        "position_id": "int(11)",
-        "assigned_person_id": "int(11)",
-        "status": "varchar(30)",
-        "assigned_at": "datetime",
-        "unassigned_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "task_id": 1,
-          "position_id": 3,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 2,
-          "task_id": 1,
-          "position_id": 4,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 3,
-          "task_id": 1,
-          "position_id": 2,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
+          "is_active": 1,
+          "created_at": "2026-02-26 13:20:33",
+          "updated_at": "2026-02-26 13:20:33"
         },
         {
           "id": 4,
-          "task_id": 1,
-          "position_id": 6,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
+          "name": "Director",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 13:20:45",
+          "updated_at": "2026-02-26 13:20:45"
         },
         {
           "id": 5,
-          "task_id": 2,
-          "position_id": 8,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 6,
-          "task_id": 2,
-          "position_id": 9,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 7,
-          "task_id": 2,
-          "position_id": 12,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 8,
-          "task_id": 2,
-          "position_id": 13,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 9,
-          "task_id": 2,
-          "position_id": 14,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 10,
-          "task_id": 2,
-          "position_id": 15,
-          "assigned_person_id": 2,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 11,
-          "task_id": 2,
-          "position_id": 16,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 12,
-          "task_id": 3,
-          "position_id": 3,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 13,
-          "task_id": 3,
-          "position_id": 4,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 14,
-          "task_id": 3,
-          "position_id": 2,
-          "assigned_person_id": 1,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        },
-        {
-          "id": 15,
-          "task_id": 3,
-          "position_id": 6,
-          "assigned_person_id": null,
-          "status": "pendiente",
-          "assigned_at": "2026-02-28 15:49:16",
-          "unassigned_at": null
-        }
-      ]
-    },
-    {
-      "table": "template_artifacts",
-      "columns": [
-        "id",
-        "template_code",
-        "display_name",
-        "source_version",
-        "storage_version",
-        "bucket",
-        "base_object_prefix",
-        "mode",
-        "format",
-        "entry_object_key",
-        "schema_object_key",
-        "meta_object_key",
-        "content_hash",
-        "is_active",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "template_code": "varchar(180)",
-        "display_name": "varchar(180)",
-        "source_version": "varchar(20)",
-        "storage_version": "varchar(20)",
-        "bucket": "varchar(120)",
-        "base_object_prefix": "varchar(255)",
-        "mode": "enum('system','user')",
-        "format": "varchar(40)",
-        "entry_object_key": "varchar(255)",
-        "schema_object_key": "varchar(255)",
-        "meta_object_key": "varchar(255)",
-        "content_hash": "varchar(64)",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime"
-      },
-      "rows": []
-    },
-    {
-      "table": "process_definition_template_bindings",
-      "columns": [
-        "id",
-        "process_definition_id",
-        "template_artifact_id",
-        "usage_role",
-        "is_required",
-        "sort_order",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "process_definition_id": "int(11)",
-        "template_artifact_id": "int(11)",
-        "usage_role": "enum('system_render','manual_fill','attachment','support')",
-        "is_required": "tinyint(1)",
-        "sort_order": "int(11)",
-        "created_at": "datetime"
-      },
-      "rows": []
-    },
-    {
-      "table": "templates",
-      "columns": [
-        "id",
-        "process_id",
-        "name",
-        "slug",
-        "description",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "process_id": "int(11)",
-        "name": "varchar(180)",
-        "slug": "varchar(180)",
-        "description": "varchar(255)",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "process_id": 2,
-          "name": "Informe de Investigación Formativa",
-          "slug": "TIIF",
-          "description": "Modelo del informe de Investigación Formativa",
-          "created_at": "2026-02-27 22:18:50"
-        }
-      ]
-    },
-    {
-      "table": "template_versions",
-      "columns": [
-        "id",
-        "template_id",
-        "version",
-        "mongo_ref",
-        "mongo_version",
-        "is_active",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "template_id": "int(11)",
-        "version": "varchar(20)",
-        "mongo_ref": "varchar(64)",
-        "mongo_version": "varchar(40)",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "template_id": 1,
-          "version": "0.1",
-          "mongo_ref": "id",
-          "mongo_version": "0.1",
+          "name": "Prorrector",
+          "description": null,
           "is_active": 1,
-          "created_at": "2026-02-27 22:21:24"
-        }
-      ]
-    },
-    {
-      "table": "persons",
-      "columns": [
-        "id",
-        "cedula",
-        "first_name",
-        "last_name",
-        "email",
-        "whatsapp",
-        "direccion",
-        "pais",
-        "password_hash",
-        "status",
-        "verify_email",
-        "verify_whatsapp",
-        "photo_url",
-        "is_active",
-        "created_at",
-        "updated_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "cedula": "varchar(20)",
-        "first_name": "varchar(120)",
-        "last_name": "varchar(120)",
-        "email": "varchar(180)",
-        "whatsapp": "varchar(30)",
-        "direccion": "varchar(255)",
-        "pais": "varchar(80)",
-        "password_hash": "varchar(255)",
-        "status": "enum('Inactivo','Activo','Verificado','Reportado')",
-        "verify_email": "tinyint(1)",
-        "verify_whatsapp": "tinyint(1)",
-        "photo_url": "longtext",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime",
-        "updated_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "cedula": "1804326534",
-          "first_name": "Homero Javier",
-          "last_name": "Velasteguí Izurieta",
-          "email": "homero.j.velastegui.i@pucese.edu.ec",
-          "whatsapp": "+5930983069990",
-          "direccion": "0.972240, -79.657466",
-          "pais": "Ecuador",
-          "password_hash": "$2b$10$SdriiYtnau6zGwVvhM3TQ./pjkTOZAe0Vi/XXrJ6.yVnNiPkbdazq",
-          "status": "Inactivo",
-          "verify_email": 0,
-          "verify_whatsapp": 0,
-          "photo_url": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 12:30:21",
-          "updated_at": "2026-02-26 12:30:21"
-        },
-        {
-          "id": 2,
-          "cedula": "1803131190",
-          "first_name": "Adrian Vargas",
-          "last_name": "Vargas Machuca del Salto",
-          "email": "agvargasmachuca@pucese.edu.ec",
-          "whatsapp": "+593998627624",
-          "direccion": "Esmeraldas",
-          "pais": "Ecuador",
-          "password_hash": "$2b$10$SXiKu8HzkTeiQhH8svcj.eB0zdLSBPwExhjCwmtXQWHKZf0jn4OuW",
-          "status": "Inactivo",
-          "verify_email": 0,
-          "verify_whatsapp": 0,
-          "photo_url": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 19:21:43",
-          "updated_at": "2026-02-26 19:27:29"
+          "created_at": "2026-02-26 20:09:13",
+          "updated_at": "2026-02-26 20:09:13"
         }
       ]
     },
@@ -1064,16 +451,46 @@
       "rows": []
     },
     {
-      "table": "cargo_role_map",
+      "table": "resources",
       "columns": [
         "id",
-        "role_id",
-        "cargo_id"
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
       ],
       "column_types": {
         "id": "int(11)",
-        "role_id": "int(11)",
-        "cargo_id": "int(11)"
+        "code": "varchar(80)",
+        "name": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "actions",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(120)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
       },
       "rows": []
     },
@@ -1166,65 +583,18 @@
       "rows": []
     },
     {
-      "table": "cargos",
+      "table": "cargo_role_map",
       "columns": [
         "id",
-        "name",
-        "description",
-        "is_active",
-        "created_at",
-        "updated_at"
+        "role_id",
+        "cargo_id"
       ],
       "column_types": {
         "id": "int(11)",
-        "name": "varchar(120)",
-        "description": "varchar(255)",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime",
-        "updated_at": "datetime"
+        "role_id": "int(11)",
+        "cargo_id": "int(11)"
       },
-      "rows": [
-        {
-          "id": 1,
-          "name": "Coordinador",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 13:19:04",
-          "updated_at": "2026-02-26 13:19:04"
-        },
-        {
-          "id": 2,
-          "name": "Docente",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 13:19:11",
-          "updated_at": "2026-02-26 13:19:11"
-        },
-        {
-          "id": 3,
-          "name": "Responsable de Calidad",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 13:20:33",
-          "updated_at": "2026-02-26 13:20:33"
-        },
-        {
-          "id": 4,
-          "name": "Director",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 13:20:45",
-          "updated_at": "2026-02-26 13:20:45"
-        },
-        {
-          "id": 5,
-          "name": "Prorrector",
-          "description": null,
-          "is_active": 1,
-          "created_at": "2026-02-26 20:09:13",
-          "updated_at": "2026-02-26 20:09:13"
-        }
-      ]
+      "rows": []
     },
     {
       "table": "unit_positions",
@@ -1546,6 +916,629 @@
       ]
     },
     {
+      "table": "processes",
+      "columns": [
+        "id",
+        "name",
+        "slug",
+        "parent_id",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(180)",
+        "slug": "varchar(180)",
+        "parent_id": "int(11)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "name": " Memorandum",
+          "slug": "PMEM",
+          "parent_id": 4,
+          "is_active": 1,
+          "created_at": "2026-02-26 20:21:40"
+        },
+        {
+          "id": 2,
+          "name": "Investigación Formativa",
+          "slug": "PIFO",
+          "parent_id": 3,
+          "is_active": 1,
+          "created_at": "2026-02-27 15:04:23"
+        },
+        {
+          "id": 3,
+          "name": "Investigación",
+          "slug": "PINV",
+          "parent_id": 4,
+          "is_active": 1,
+          "created_at": "2026-02-27 15:32:13"
+        },
+        {
+          "id": 4,
+          "name": "root",
+          "slug": "ROOT",
+          "parent_id": null,
+          "is_active": 1,
+          "created_at": "2026-02-27 15:33:23"
+        }
+      ]
+    },
+    {
+      "table": "process_definition_versions",
+      "columns": [
+        "id",
+        "process_id",
+        "variation_key",
+        "definition_version",
+        "name",
+        "description",
+        "has_document",
+        "execution_mode",
+        "status",
+        "effective_from",
+        "effective_to",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_id": "int(11)",
+        "variation_key": "varchar(120)",
+        "definition_version": "varchar(20)",
+        "name": "varchar(180)",
+        "description": "varchar(255)",
+        "has_document": "tinyint(1)",
+        "execution_mode": "enum('manual','system','hybrid')",
+        "status": "enum('draft','active','retired')",
+        "effective_from": "date",
+        "effective_to": "date",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 5,
+          "process_id": 2,
+          "variation_key": "general",
+          "definition_version": "0.1.0",
+          "name": "Carreras",
+          "description": "Investigación Formativa de las Carreras",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 16:05:16"
+        },
+        {
+          "id": 6,
+          "process_id": 1,
+          "variation_key": "general",
+          "definition_version": "0.1.0",
+          "name": "Memorandum",
+          "description": "Envío y recepción de memorandums entre las diferentes unidades",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 16:06:16"
+        },
+        {
+          "id": 8,
+          "process_id": 2,
+          "variation_key": "docentes",
+          "definition_version": "0.1.0",
+          "name": "Investigación Formativa Docentes",
+          "description": "Evidencias de los procesos de investigación formativa que ejecutan los docentes en las carreras.",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 21:22:41"
+        },
+        {
+          "id": 9,
+          "process_id": 2,
+          "variation_key": "general",
+          "definition_version": "0.1.1",
+          "name": "Investigación Formativa Carreras",
+          "description": "Investigación Formativa de las Carreras",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "draft",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 22:53:03"
+        },
+        {
+          "id": 10,
+          "process_id": 2,
+          "variation_key": "general",
+          "definition_version": "0.2.0",
+          "name": "Investigación Formativa Carreras",
+          "description": "Investigación Formativa de las Carreras",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "draft",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 22:56:54"
+        }
+      ]
+    },
+    {
+      "table": "process_target_rules",
+      "columns": [
+        "id",
+        "process_definition_id",
+        "unit_scope_type",
+        "unit_id",
+        "unit_type_id",
+        "include_descendants",
+        "cargo_id",
+        "position_id",
+        "recipient_policy",
+        "priority",
+        "is_active",
+        "effective_from",
+        "effective_to",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_id": "int(11)",
+        "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units')",
+        "unit_id": "int(11)",
+        "unit_type_id": "int(11)",
+        "include_descendants": "tinyint(1)",
+        "cargo_id": "int(11)",
+        "position_id": "int(11)",
+        "recipient_policy": "enum('all_matches','one_per_unit','one_match_only','exact_position')",
+        "priority": "int(11)",
+        "is_active": "tinyint(1)",
+        "effective_from": "date",
+        "effective_to": "date",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 2,
+          "process_definition_id": 6,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": null,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": null,
+          "effective_to": null,
+          "created_at": "2026-02-27 16:09:03"
+        },
+        {
+          "id": 5,
+          "process_definition_id": 5,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 16:45:54"
+        },
+        {
+          "id": 6,
+          "process_definition_id": 8,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 2,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-02-26",
+          "effective_to": null,
+          "created_at": "2026-02-27 21:23:21"
+        }
+      ]
+    },
+    {
+      "table": "term_types",
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "description",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "code": "varchar(40)",
+        "name": "varchar(80)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "code": "SEM",
+          "name": "Semestre",
+          "description": "Periodo academico semestral",
+          "is_active": 1,
+          "created_at": "2026-02-28 16:43:58",
+          "updated_at": "2026-02-28 16:43:58"
+        },
+        {
+          "id": 2,
+          "code": "TRI",
+          "name": "Trimestre",
+          "description": "Periodo academico trimestral",
+          "is_active": 1,
+          "created_at": "2026-02-28 16:43:58",
+          "updated_at": "2026-02-28 16:43:58"
+        },
+        {
+          "id": 3,
+          "code": "INT",
+          "name": "Intensivo",
+          "description": "Periodo academico intensivo",
+          "is_active": 1,
+          "created_at": "2026-02-28 16:43:58",
+          "updated_at": "2026-02-28 16:43:58"
+        },
+        {
+          "id": 4,
+          "code": "PPO",
+          "name": "Primer Periodo Ordinario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 14:07:52",
+          "updated_at": "2026-02-26 14:07:52"
+        },
+        {
+          "id": 5,
+          "code": "SPO",
+          "name": "Segundo Periodo Ordinario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 14:08:11",
+          "updated_at": "2026-02-26 14:08:11"
+        },
+        {
+          "id": 6,
+          "code": "AÑO",
+          "name": "Año Calendario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-02-26 14:09:02",
+          "updated_at": "2026-02-26 14:10:46"
+        }
+      ]
+    },
+    {
+      "table": "terms",
+      "columns": [
+        "id",
+        "name",
+        "term_type_id",
+        "start_date",
+        "end_date",
+        "is_active"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "name": "varchar(60)",
+        "term_type_id": "int(11)",
+        "start_date": "date",
+        "end_date": "date",
+        "is_active": "tinyint(1)"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "name": "Primer Periodo Ordinario 2026",
+          "term_type_id": 4,
+          "start_date": "2026-03-02",
+          "end_date": "2026-08-28",
+          "is_active": 1
+        }
+      ]
+    },
+    {
+      "table": "template_artifacts",
+      "columns": [
+        "id",
+        "template_code",
+        "display_name",
+        "source_version",
+        "storage_version",
+        "bucket",
+        "base_object_prefix",
+        "available_formats",
+        "schema_object_key",
+        "meta_object_key",
+        "content_hash",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "template_code": "varchar(180)",
+        "display_name": "varchar(180)",
+        "source_version": "varchar(20)",
+        "storage_version": "varchar(20)",
+        "bucket": "varchar(120)",
+        "base_object_prefix": "varchar(255)",
+        "available_formats": "longtext",
+        "schema_object_key": "varchar(255)",
+        "meta_object_key": "varchar(255)",
+        "content_hash": "varchar(64)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "template_code": "tpl_investigación_formativa_informe_carrera",
+          "display_name": "Informe de Carrera PUCE",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_formativa_informe_carrera/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_informe_carrera/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_informe_carrera/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_formativa_informe_carrera/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_formativa_informe_carrera/v0001/meta.yaml",
+          "content_hash": "abe377df9b199bb9f85f29678038e6e49991ae7206dda8b861563a9690a6d2d5",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 3,
+          "template_code": "tpl_investigación_formativa_informe_docente",
+          "display_name": "Informe Docente PUCE",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_formativa_informe_docente/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_informe_docente/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_informe_docente/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_formativa_informe_docente/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_formativa_informe_docente/v0001/meta.yaml",
+          "content_hash": "6459e93798c8f381fea386ca5cce4d7133ff441b1bf1bc5fb94b1628c5ff8cd4",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 5,
+          "template_code": "tpl_investigación_formativa_informe_estudiantes",
+          "display_name": "Informe Estudiantil PUCE",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_formativa_informe_estudiantes/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_informe_estudiantes/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_informe_estudiantes/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_formativa_informe_estudiantes/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_formativa_informe_estudiantes/v0001/meta.yaml",
+          "content_hash": "b410e4e484faf012666a07d27a5dc0920e0815c22281f5069d3542a1bc4e3990",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 7,
+          "template_code": "tpl_investigación_formativa_plan_carrera",
+          "display_name": "Plan de Carrera PUCE",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_formativa_plan_carrera/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_plan_carrera/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_plan_carrera/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_formativa_plan_carrera/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_formativa_plan_carrera/v0001/meta.yaml",
+          "content_hash": "7c35a9d5002b901ddde9a03e5b3bac50443e51b4b59d819b8136783ac3161b93",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 9,
+          "template_code": "tpl_investigación_formativa_plan_docente",
+          "display_name": "Plan Docente PUCE",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_formativa_plan_docente/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_plan_docente/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_formativa_plan_docente/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_formativa_plan_docente/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_formativa_plan_docente/v0001/meta.yaml",
+          "content_hash": "d73fcecabb02cc290b7658259c7883a6c377206ed3fe73a73271c211582e8bb9",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 11,
+          "template_code": "tpl_investigación_integración_artículos_académicos_planes_trabajo_uic",
+          "display_name": "Trabajo UIC PUCE",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/meta.yaml",
+          "content_hash": "359c22dafcf6ee1d70115ccf65540c08b63fbf01b37d1524c15bdc93fbf587a2",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 13,
+          "template_code": "tpl_investigación_integración_artículos_académicos_revistas_ieee",
+          "display_name": "IEEE Template",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/",
+          "available_formats": "{\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/meta.yaml",
+          "content_hash": "09416ef49071de3038ba689fa987e125f21a6c5d58c22232731b4e3908829a88",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:13"
+        },
+        {
+          "id": 14,
+          "template_code": "tpl_investigación_integración_artículos_académicos_revistas_mdpi",
+          "display_name": "MDPI Template",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/",
+          "available_formats": "{\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/meta.yaml",
+          "content_hash": "0d6bf931f9f20b6259289bb4cabf23720c7475ec800124e705b92197c5991734",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:14"
+        },
+        {
+          "id": 15,
+          "template_code": "tpl_investigación_integración_artículos_académicos_revistas_springer",
+          "display_name": "Springer LNCS Template",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/",
+          "available_formats": "{\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/meta.yaml",
+          "content_hash": "e05910374cdb7226d25435b01ae744ea7cc2cc0d11cfd91f8824a4e14b6bf905",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:14"
+        },
+        {
+          "id": 16,
+          "template_code": "tpl_investigación_productiva_testing",
+          "display_name": "investigación/productiva/testing",
+          "source_version": "1.0.0",
+          "storage_version": "v0001",
+          "bucket": "deasy-templates",
+          "base_object_prefix": "Plantillas/tpl_investigación_productiva_testing/v0001/",
+          "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"Plantillas/tpl_investigación_productiva_testing/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"Plantillas/tpl_investigación_productiva_testing/v0001/template/modes/user/latex/src/\"}}}",
+          "schema_object_key": "Plantillas/tpl_investigación_productiva_testing/v0001/schema.json",
+          "meta_object_key": "Plantillas/tpl_investigación_productiva_testing/v0001/meta.yaml",
+          "content_hash": "11178db8f032d1aa2fd2a48902ec362398d1ac93267e709bffacd10c3f9cdf63",
+          "is_active": 1,
+          "created_at": "2026-02-28 22:11:14"
+        }
+      ]
+    },
+    {
+      "table": "process_definition_templates",
+      "columns": [
+        "id",
+        "process_definition_id",
+        "template_artifact_id",
+        "usage_role",
+        "creates_task",
+        "is_required",
+        "sort_order",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_id": "int(11)",
+        "template_artifact_id": "int(11)",
+        "usage_role": "enum('system_render','manual_fill','attachment','support')",
+        "creates_task": "tinyint(1)",
+        "is_required": "tinyint(1)",
+        "sort_order": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 3,
+          "process_definition_id": 8,
+          "template_artifact_id": 9,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-02-28 23:13:31"
+        }
+      ]
+    },
+    {
+      "table": "tasks",
+      "columns": [
+        "id",
+        "process_definition_template_id",
+        "process_definition_id",
+        "term_id",
+        "parent_task_id",
+        "responsible_position_id",
+        "description",
+        "comments_thread_ref",
+        "is_main",
+        "start_date",
+        "end_date",
+        "status",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_template_id": "int(11)",
+        "process_definition_id": "int(11)",
+        "term_id": "int(11)",
+        "parent_task_id": "int(11)",
+        "responsible_position_id": "int(11)",
+        "description": "text",
+        "comments_thread_ref": "varchar(64)",
+        "is_main": "tinyint(1)",
+        "start_date": "date",
+        "end_date": "date",
+        "status": "varchar(30)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "task_assignments",
+      "columns": [
+        "id",
+        "task_id",
+        "position_id",
+        "assigned_person_id",
+        "status",
+        "assigned_at",
+        "unassigned_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "task_id": "int(11)",
+        "position_id": "int(11)",
+        "assigned_person_id": "int(11)",
+        "status": "varchar(30)",
+        "assigned_at": "datetime",
+        "unassigned_at": "datetime"
+      },
+      "rows": []
+    },
+    {
       "table": "documents",
       "columns": [
         "id",
@@ -1589,34 +1582,6 @@
         "pdf_path": "varchar(255)",
         "signed_pdf_path": "varchar(255)",
         "status": "varchar(30)",
-        "created_at": "datetime"
-      },
-      "rows": []
-    },
-    {
-      "table": "document_signatures",
-      "columns": [
-        "id",
-        "signature_request_id",
-        "document_version_id",
-        "signer_user_id",
-        "signature_type_id",
-        "signature_status_id",
-        "note_short",
-        "signed_file_path",
-        "signed_at",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "signature_request_id": "int(11)",
-        "document_version_id": "int(11)",
-        "signer_user_id": "int(11)",
-        "signature_type_id": "int(11)",
-        "signature_status_id": "int(11)",
-        "note_short": "varchar(255)",
-        "signed_file_path": "varchar(255)",
-        "signed_at": "datetime",
         "created_at": "datetime"
       },
       "rows": []
@@ -1774,6 +1739,34 @@
       "rows": []
     },
     {
+      "table": "document_signatures",
+      "columns": [
+        "id",
+        "signature_request_id",
+        "document_version_id",
+        "signer_user_id",
+        "signature_type_id",
+        "signature_status_id",
+        "note_short",
+        "signed_file_path",
+        "signed_at",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "signature_request_id": "int(11)",
+        "document_version_id": "int(11)",
+        "signer_user_id": "int(11)",
+        "signature_type_id": "int(11)",
+        "signature_status_id": "int(11)",
+        "note_short": "varchar(255)",
+        "signed_file_path": "varchar(255)",
+        "signed_at": "datetime",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
       "table": "vacancies",
       "columns": [
         "id",
@@ -1826,56 +1819,6 @@
       "rows": []
     },
     {
-      "table": "contracts",
-      "columns": [
-        "id",
-        "person_id",
-        "position_id",
-        "relation_type",
-        "dedication",
-        "start_date",
-        "end_date",
-        "status",
-        "created_at",
-        "updated_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "person_id": "int(11)",
-        "position_id": "int(11)",
-        "relation_type": "varchar(60)",
-        "dedication": "varchar(30)",
-        "start_date": "date",
-        "end_date": "date",
-        "status": "enum('activo','finalizado','cancelado')",
-        "created_at": "datetime",
-        "updated_at": "datetime"
-      },
-      "rows": []
-    },
-    {
-      "table": "actions",
-      "columns": [
-        "id",
-        "code",
-        "name",
-        "description",
-        "is_active",
-        "created_at",
-        "updated_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "code": "varchar(40)",
-        "name": "varchar(120)",
-        "description": "varchar(255)",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime",
-        "updated_at": "datetime"
-      },
-      "rows": []
-    },
-    {
       "table": "aplications",
       "columns": [
         "id",
@@ -1896,50 +1839,6 @@
         "applied_at": "datetime",
         "updated_at": "datetime",
         "note": "varchar(255)"
-      },
-      "rows": []
-    },
-    {
-      "table": "contract_origin_recruitment",
-      "columns": [
-        "contract_id",
-        "offer_id",
-        "vacancy_id",
-        "created_at"
-      ],
-      "column_types": {
-        "contract_id": "int(11)",
-        "offer_id": "int(11)",
-        "vacancy_id": "int(11)",
-        "created_at": "datetime"
-      },
-      "rows": []
-    },
-    {
-      "table": "contract_origin_renewal",
-      "columns": [
-        "contract_id",
-        "renewed_from_contract_id",
-        "created_at"
-      ],
-      "column_types": {
-        "contract_id": "int(11)",
-        "renewed_from_contract_id": "int(11)",
-        "created_at": "datetime"
-      },
-      "rows": []
-    },
-    {
-      "table": "contract_origins",
-      "columns": [
-        "contract_id",
-        "origin_type",
-        "created_at"
-      ],
-      "column_types": {
-        "contract_id": "int(11)",
-        "origin_type": "enum('recruitment','renewal')",
-        "created_at": "datetime"
       },
       "rows": []
     },
@@ -1970,24 +1869,74 @@
       "rows": []
     },
     {
-      "table": "resources",
+      "table": "contracts",
       "columns": [
         "id",
-        "code",
-        "name",
-        "description",
-        "is_active",
+        "person_id",
+        "position_id",
+        "relation_type",
+        "dedication",
+        "start_date",
+        "end_date",
+        "status",
         "created_at",
         "updated_at"
       ],
       "column_types": {
         "id": "int(11)",
-        "code": "varchar(80)",
-        "name": "varchar(120)",
-        "description": "varchar(255)",
-        "is_active": "tinyint(1)",
+        "person_id": "int(11)",
+        "position_id": "int(11)",
+        "relation_type": "varchar(60)",
+        "dedication": "varchar(30)",
+        "start_date": "date",
+        "end_date": "date",
+        "status": "enum('activo','finalizado','cancelado')",
         "created_at": "datetime",
         "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "contract_origins",
+      "columns": [
+        "contract_id",
+        "origin_type",
+        "created_at"
+      ],
+      "column_types": {
+        "contract_id": "int(11)",
+        "origin_type": "enum('recruitment','renewal')",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "contract_origin_recruitment",
+      "columns": [
+        "contract_id",
+        "offer_id",
+        "vacancy_id",
+        "created_at"
+      ],
+      "column_types": {
+        "contract_id": "int(11)",
+        "offer_id": "int(11)",
+        "vacancy_id": "int(11)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "contract_origin_renewal",
+      "columns": [
+        "contract_id",
+        "renewed_from_contract_id",
+        "created_at"
+      ],
+      "column_types": {
+        "contract_id": "int(11)",
+        "renewed_from_contract_id": "int(11)",
+        "created_at": "datetime"
       },
       "rows": []
     }

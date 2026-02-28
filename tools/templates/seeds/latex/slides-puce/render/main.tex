@@ -1,0 +1,89 @@
+\documentclass[aspectratio=169]{beamer}
+
+\setbeamersize{text margin left=0pt, text margin right=0pt}
+
+\usepackage{lipsum}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+\usepackage{fontspec}
+\usefonttheme{professionalfonts}
+
+\setsansfont[
+  UprightFont = *-Light,
+  BoldFont    = *-SemiBold]{Josefin Sans}
+
+\title{Título de la presentación}
+\subtitle{Subtítulo}
+\author{Nombre Apellido}
+\institute{PUCESE}
+\date{\today}
+
+\setbeamerfont{title}{family=\sffamily}
+\setbeamerfont{frametitle}{family=\sffamily}
+\setbeamerfont{normal text}{family=\sffamily}
+
+
+\usepackage{minted}
+\input{Preambulo/sld_puce}
+
+% --- Sin iconos de navegación ---
+\setbeamertemplate{navigation symbols}{}
+
+
+\usepackage{tabularray}
+\UseTblrLibrary{booktabs}  % líneas estéticas
+%\UseTblrLibrary{longtable} % para permitir saltos de página
+
+% Plantillas de tablas (tabularray)
+\NewTblrEnviron{bodytblr}
+\SetTblrInner[bodytblr]{
+  width = \textwidth,
+  hline{1,Z} = {\heavyrulewidth, puce_gray},
+  hline{2} = {\lightrulewidth, puce_gray},
+  vlines = {0pt},
+  cells = {font=\small},
+  row{1} = {bg=codeblock_title, fg=puce_navy, font=\small\bfseries}
+}
+\NewTblrEnviron{bodylongtblr}
+\SetTblrOuter[bodylongtblr]{long}
+\SetTblrInner[bodylongtblr]{
+  width = \textwidth,
+  hline{1,Z} = {\heavyrulewidth, puce_gray},
+  hline{2} = {\lightrulewidth, puce_gray},
+  vlines = {0pt},
+  cells = {font=\small},
+  rowhead = 1,
+  row{1} = {bg=codeblock_title, fg=puce_navy, font=\small\bfseries}
+}
+
+
+
+\newcommand{\fsize}{\large}
+
+% ====== Variables globales para minted ======
+\newcommand{\codesize}{\small}          % Tamaño de fuente de código
+%\newcommand{\codestyle}{stata-dark}     % Estilo Pygments %%Styles paraiso-light or rainbow_dash -stata-dark
+%\newcommand{\codestyle}{monokai}     % Estilo Pygments %%Styles paraiso-light or rainbow_dash -stata-dark
+
+\setminted{
+  style=stata-dark,
+  fontsize=\codesize,
+  breaklines
+}
+
+\begin{document}
+
+\SetTblrTemplate{caption}{empty}
+
+
+
+\input{Contenido/slides}
+
+
+\end{document}

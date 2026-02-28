@@ -12,15 +12,13 @@ units 1─∞ unit_relations (child_id)
 processes 1─∞ processes (parent_id)
 processes 1─∞ process_definition_versions
 process_definition_versions 1─∞ process_target_rules
-process_definition_versions 1─∞ process_definition_template_bindings
-template_artifacts 1─∞ process_definition_template_bindings
+process_definition_versions 1─∞ process_definition_templates
+template_artifacts 1─∞ process_definition_templates
 term_types 1─∞ terms
 terms 1─∞ tasks
 process_definition_versions 1─∞ tasks
-tasks 1─∞ tasks (parent_task_id)
+tasks 1─∞ tasks (parent_task_id, solo jerarquia manual)
 tasks ∞─∞ unit_positions (via task_assignments)
-processes 1─∞ templates
-templates 1─∞ template_versions
 
 ## Usuarios, roles y cargos
 

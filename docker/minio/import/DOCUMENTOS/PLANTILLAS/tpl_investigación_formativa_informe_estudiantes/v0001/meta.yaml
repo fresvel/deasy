@@ -1,0 +1,16 @@
+key: "investigación/formativa/informe-estudiantes"
+export_id: "tpl_investigación_formativa_informe_estudiantes"
+name: "Informe Estudiantil PUCE"
+seed: "informe-estudiantes"
+domain: investigacion
+version: 1.0.0
+storage_version: v0001
+modes:
+  system:
+    jinja2:
+      path: "modes/system/jinja2/src"
+  user:
+    latex:
+      path: "modes/user/latex/src"
+origins:
+  - "Sharepoint/EQUIPO EIS - Documentos/DCC/GLOBAL/0000/Devs/pucese-libs/docs/Latex/Formato/Latex/Informes Estudiantes"

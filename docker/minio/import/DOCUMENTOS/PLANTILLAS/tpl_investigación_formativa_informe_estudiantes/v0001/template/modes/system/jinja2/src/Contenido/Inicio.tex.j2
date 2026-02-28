@@ -1,0 +1,29 @@
+% Portada / encabezado del informe
+\begin{center}
+\Large\titulo\\
+\end{center}
+
+\noindent
+\large
+\begin{tblr}
+{
+  colspec = {X[l,m,1] X[l,m,5] X[r,m,3]},
+  rows = {m},
+  width={\textwidth}
+}
+\textbf{Carrera:} & \carrera & \textbf{Semestre:} \semestre \\
+%\SetCell[c=3]{}{\textbf{Coordinador:} \coordinador} &  & \\
+\end{tblr}
+
+\renewcommand{\arraystretch}{1.5}
+\noindent
+
+\bigskip
+\textbf{Ejemplo de uso del entorno \texttt{codeblock}.}
+Uso: \texttt{\string\begin\{codeblock\}[lenguaje]\{titulo\} ... \string\end\{codeblock\}}
+
+\begin{codeblock}[bash]{Ejemplo de uso}
+echo "Hola Mundo"
+firewall-cmd --add-port=3306/tcp --permanent
+firewall-cmd --reload
+\end{codeblock}

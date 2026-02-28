@@ -49,3 +49,9 @@ export const assertMariaDBConnection = async () => {
   }
 };
 
+export const closeMariaDBPool = async () => {
+  if (!pool) {
+    return;
+  }
+  await pool.end();
+};

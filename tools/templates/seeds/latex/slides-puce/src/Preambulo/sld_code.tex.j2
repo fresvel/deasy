@@ -1,0 +1,68 @@
+\usepackage{xparse}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings, minted}
+\usepackage{tikz}
+[[% if codeblock.frame.startswith('#') %]]
+\definecolor{codeblock_frame_raw}{HTML}{ {{- codeblock.frame | replace('#','') -}} }
+[[% else %]]
+\colorlet{codeblock_frame_raw}{ {{- codeblock.frame -}}}
+[[% endif %]]
+\colorlet{codeblock_frame}{codeblock_frame_raw!{{- codeblock.opacity -}}!white}
+[[% if codeblock.background.startswith('#') %]]
+\definecolor{codeblock_bg_raw}{HTML}{ {{- codeblock.background | replace('#','') -}} }
+[[% else %]]
+\colorlet{codeblock_bg_raw}{ {{- codeblock.background -}}}
+[[% endif %]]
+\colorlet{codeblock_bg}{codeblock_bg_raw!{{- codeblock.background_opacity -}}!white}
+[[% if codeblock.title.startswith('#') %]]
+\definecolor{codeblock_title_raw}{HTML}{ {{- codeblock.title | replace('#','') -}} }
+[[% else %]]
+\colorlet{codeblock_title_raw}{ {{- codeblock.title -}}}
+[[% endif %]]
+\colorlet{codeblock_title}{codeblock_title_raw!{{- codeblock.opacity -}}!white}
+[[% if codeblock.text.startswith('#') %]]
+\definecolor{codeblock_text}{HTML}{ {{- codeblock.text | replace('#','') -}} }
+[[% else %]]
+\colorlet{codeblock_text}{ {{- codeblock.text -}}}
+[[% endif %]]
+
+\newtcolorbox{auxbox}[1][]{%
+  enhanced,
+  breakable,
+  colback=lightblue!3!lightgray!30,     % ← Fondo suave (rojo claro)
+  colframe=darkblue!70!white,   % ← Borde tenue
+  boxrule=0pt,           % ← Grosor del borde
+  arc=1mm,                 % ← Esquinas ligeramente redondeadas
+  top=6pt, bottom=6pt, left=6pt, right=6pt,
+  before skip=10pt, after skip=10pt,
+  valign=top,
+  halign=left,
+  fonttitle=\bfseries,     % ← Título en negrita
+  coltitle=white,
+  title={#1},
+}
+
+
+\NewDocumentEnvironment{boxcode}{m}{%
+\begin{auxbox}[#1]
+}{%
+\end{auxbox}
+}
+
+\newtcblisting{codeblock}[2][{{- codeblock.language -}}]{%
+  enhanced,
+  breakable,
+  colback=codeblock_bg,
+  colframe=codeblock_frame,
+  boxrule=0pt,
+  arc=1mm,
+  top=6pt, bottom=6pt, left=6pt, right=6pt,
+  before skip=10pt, after skip=10pt,
+  fonttitle=\bfseries,
+  coltitle=codeblock_text,
+  colbacktitle=codeblock_title,
+  title={\textcolor{puce_white}{\faIcon{laptop-code}}\enspace #2},
+  listing only,
+  listing engine=minted,
+  minted language=#1,
+}

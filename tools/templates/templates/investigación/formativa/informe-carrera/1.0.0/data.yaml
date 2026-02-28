@@ -1,0 +1,52 @@
+firmaElaboradoToken: "!-1804326534-!"
+firmaRevisadoToken: "!-0000000000-!"
+firmaAprobadoToken: "!-0000000000-!"
+nombreElaborado: "Mgt. Velasteguí Izurieta Homero Javier"
+nombreRevisado: "Mgt. Carvajal Carvajal José Luis"
+nombreAprobado: "Mgt. Puente Holguín Washington David"
+cargoElaborado: "Coordinador de Carrera"
+cargoRevisado: "Responsable de Aseguramiento de la Calidad"
+cargoAprobado: "Director de Escuela"
+fechaElaborado: "\\mydate\\today"
+fechaRevisado: "\\mydate\\AdvanceDate[2]\\today"
+fechaAprobado: "\\mydate\\AdvanceDate[4]\\today"
+semestre: "2025-I"
+titulo: "\\textbf{INFORME DE CARRERA}"
+carrera: "Carrera de Ingeniería en Tecnologías de la Información"
+coordinador: "Velasteguí Izurieta Homero Javier"
+show_firmas: true
+show_bibliography: false
+bibliography_style: "IEEEtran"
+bibliography_file: "Referencias/references"
+brand_rgb: "74,140,255"
+layout_default: "portrait"
+layout:
+  portrait:
+    pagesize: "a4paper"
+    orientopt: "portrait"
+    total: "{160mm,247mm}"
+    left: "25mm"
+    top: "0mm"
+  landscape:
+    pagesize: "a4paper"
+    orientopt: "landscape"
+    total: "{289mm,170mm}"
+    left: "4mm"
+    top: "0mm"
+palette:
+  puce_gray: "#efefef"
+  puce_blue: "#4a8cff"
+  puce_navy: "#003ba3"
+  puce_blue_alt: "#4a8cff"
+  puce_black: "#000000"
+  puce_white: "#ffffff"
+  puce_dark: "#003ba3"
+codeblock:
+  frame: "puce_blue"
+  opacity: 20
+  background: "puce_blue!3!puce_gray!30"
+  background_opacity: 100
+  title: "puce_blue"
+  text: "puce_dark"
+  minted_style: "stata-dark"
+  language: "bash"

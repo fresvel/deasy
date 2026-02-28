@@ -1,0 +1,50 @@
+titulo: "Título de la presentación"
+subtitulo: "Subtítulo"
+autor: "Nombre Apellido"
+institucion: "PUCESE"
+fecha: "\\today"
+show_title: false
+
+aspectratio: 169
+
+font_family: "Josefin Sans"
+font_upright: "Light"
+font_bold: "SemiBold"
+
+text_size: "\\large"
+code_size: "\\small"
+
+margins:
+  mtop: 0.14
+  mbottom: 0.05
+  mleft: 0.04
+  mright: 0.14
+
+brand_rgb: "74,140,255"
+palette:
+  puce_gray: "#efefef"
+  puce_blue: "#4a8cff"
+  puce_navy: "#003ba3"
+  puce_blue_alt: "#4a8cff"
+  puce_black: "#000000"
+  puce_white: "#ffffff"
+  puce_dark: "#003ba3"
+
+codeblock:
+  frame: "puce_blue"
+  opacity: 20
+  background: "puce_blue!3!puce_gray!30"
+  background_opacity: 100
+  title: "puce_blue"
+  text: "puce_dark"
+  minted_style: "stata-dark"
+  language: "bash"
+
+logos:
+  puce: "assets/puce_logo.png"
+  pucese: "assets/pucese_logo.png"
+  puce_height_percent: 1
+  puce_right_offset_percent: 0.00
+  pucese_height_percent: 0.1
+  pucese_right_offset_percent: 0.02
+  pucese_top_offset_percent: 0.02

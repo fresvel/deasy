@@ -1,5 +1,12 @@
 import fs from 'fs';
+import path from 'path';
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const UTILS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const LEGACY_TEMPLATE_ROOT = path.resolve(UTILS_DIR, '..', 'templates_legacy');
+const LEGACY_LATEX_SOURCE = path.join(LEGACY_TEMPLATE_ROOT, 'latex');
+const LEGACY_RUNTIME_ROOT = path.join(LEGACY_TEMPLATE_ROOT, '_runtime');
 
 export const create_latexEra=() => { //recibe un objeto
 
@@ -21,36 +28,18 @@ export const create_latexEra=() => { //recibe un objeto
 
 const createlatexFiles = (dest) => {// Crear una copia de la plantilla para compilar los archivos latex
     return new Promise((resolve, reject) => {
-      if (!fs.existsSync(`templates/temporal/${dest}`)) {
-        fs.mkdirSync(`templates/temporal/${dest}`, { recursive: true });
-        
-      }else{
-        console.log(`La carpeta temporal/${dest} ya existe`);
+      const runtimeDest = path.join(LEGACY_RUNTIME_ROOT, dest);
+      if (!fs.existsSync(runtimeDest)) {
+        fs.mkdirSync(runtimeDest, { recursive: true });
+      } else {
+        console.log(`La carpeta runtime/${dest} ya existe`);
       }
-
-        const command = 'cp';
-        const args = ['-r', 'latex/*', `temporal/${dest}/`];
-        const child = spawn(command, args, { cwd: 'templates', shell: true });
-        
-        child.stdout.on('data', (data) => {
-            //console.log(`stdout: ${data}`);
-        });
-  
-        child.stderr.on('data', (data) => {
-            console.error(`stderr: ${data}`);
-        });
-  
-        child.on('close', (code) => {
-            if (code === 0) {
-                resolve(code);
-            } else {
-                reject(new Error(`El proceso terminó con el código ${code}`));
-            }
-        });
-  
-        child.on('error', (err) => {
-            reject(err);
-        });
+      try {
+        fs.cpSync(LEGACY_LATEX_SOURCE, runtimeDest, { recursive: true });
+        resolve(0);
+      } catch (err) {
+        reject(err);
+      }
     });
   };
 
@@ -76,7 +65,7 @@ const latexTopdf = (source) => {
         const args = ['-output-directory=../../../public', `-jobname=${source}`,'main.tex'];
   
         // Ejecutar el comando `cp`
-        const child = spawn(command, args, { cwd: `templates/temporal/${source}`, shell: true });
+        const child = spawn(command, args, { cwd: path.join(LEGACY_RUNTIME_ROOT, source), shell: true });
   
         // Manejar salida estándar
         child.stdout.on('data', (data) => {
@@ -112,7 +101,7 @@ export const compileLatexjs = async (file) => {
     let ret = await createlatexFiles(file.name);
     if (ret !== 0) throw new Error(`Error al crear archivos LaTeX: ${ret}`);
     
-    const filePath = `templates/temporal/${file.name}/Contenido/Content.tex`;
+    const filePath = path.join(LEGACY_RUNTIME_ROOT, file.name, 'Contenido', 'Content.tex');
     ret = await saveLatexFile(filePath, file.content);
     if (ret !== 0) throw new Error(`Error al guardar el archivo LaTeX: ${ret}`);
     

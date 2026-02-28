@@ -1,0 +1,12 @@
+key: "investigación/integración/artículos-académicos/revistas/mdpi"
+export_id: "tpl_investigación_integración_artículos_académicos_revistas_mdpi"
+name: "MDPI Template"
+domain: investigacion
+version: 1.0.0
+storage_version: v0001
+modes:
+  user:
+    latex:
+      path: "modes/user/latex/src"
+origins:
+  - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2026/PPO2026/Investigación/Productiva/Resultados/Velastegui Izurieta Homero Javier/A0X/mdpi"

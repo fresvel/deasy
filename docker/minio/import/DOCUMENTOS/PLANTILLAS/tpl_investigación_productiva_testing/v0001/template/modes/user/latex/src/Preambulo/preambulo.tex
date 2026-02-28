@@ -1,0 +1,85 @@
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\usepackage{tabularray}
+\UseTblrLibrary{booktabs}
+
+% Paleta institucional
+\definecolor{brand}{RGB}{ 74,140,255 }
+\colorlet{colhead}{brand!40} % color de encabezado de tabla
+\definecolor{puce_gray}{HTML}{ efefef }
+\definecolor{puce_blue}{HTML}{ 4a8cff }
+\definecolor{puce_navy}{HTML}{ 003ba3 }
+\definecolor{puce_blue_alt}{HTML}{ 4a8cff }
+\definecolor{puce_black}{HTML}{ 000000 }
+\definecolor{puce_white}{HTML}{ ffffff }
+
+\usepackage{tcolorbox}
+\definecolor{darkcol}{RGB}{ 7, 7, 100 }
+\usepackage{tabularx}
+
+\usepackage{geometry}
+% Layout helpers (valores definidos en Preambulo/datos)
+\newcommand{\SetDefaultLayout}{%
+  \edef\layout@tmp{\csname layoutOptions\layoutDefaultName\endcsname}%
+  \expandafter\geometry\expandafter{\layout@tmp}%
+}
+\newcommand{\UseLayout}[1]{%
+  \edef\layout@tmp{\csname layoutOptions#1\endcsname}%
+  \expandafter\newgeometry\expandafter{\layout@tmp}%
+}
+\newcommand{\RestoreLayout}{\restoregeometry}
+
+% Configuración de estilo para comandos en consola
+\newtcolorbox{consolebox}{
+    colback=darkcol,
+    colupper=white,
+    colframe=brand,
+    boxrule=1pt,
+    left=10pt,
+    right=10pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily\fontsize{12}{14}\selectfont,
+}
+
+\usepackage{array}
+
+% %--------------------------------------------------------------------------
+% %         Bibliographie 
+% %--------------------------------------------------------------------------
+
+\usepackage{amsmath}
+
+\usepackage{hyperref}
+
+% Configuración de apariencia de enlaces
+\hypersetup{
+    colorlinks=true,       % true: enlaces con color, false: con recuadro
+    linkcolor=blue!7,        % color de enlaces internos (tabla de contenidos, referencias)
+    citecolor=teal,        % color de citas y referencias bibliográficas
+    filecolor=magenta,     % color de enlaces a archivos
+    urlcolor=blue,         % color de enlaces URL
+    menucolor=red,         % color en menús PDF (poco usado)
+    anchorcolor=black,     % color de anclas
+    pdfauthor={Tu Nombre}, % autor del documento
+    pdftitle={Título del Documento},
+    pdfsubject={Asunto del documento},
+    pdfkeywords={palabra1, palabra2, palabra3},
+    pdfcreator={LaTeX con hyperref},
+    pdfproducer={pdflatex}
+}
+
+\usepackage{float}
+
+\usepackage{datetime}
+\newdateformat{mydate}{\twodigit{\THEDAY}/\twodigit{\THEMONTH}/\THEYEAR}
+\usepackage{advdate} % en el preámbulo
+\input{Preambulo/datos}
+\SetDefaultLayout
+
+\input{Preambulo/header}

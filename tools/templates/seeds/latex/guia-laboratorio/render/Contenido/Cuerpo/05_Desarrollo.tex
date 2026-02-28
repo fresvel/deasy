@@ -1,0 +1,145 @@
+\section{Desarrollo}
+
+En esta sección, el docente debe describir de manera estructurada el desarrollo de la práctica de laboratorio. El objetivo de esta sección es definir con claridad las fases de la actividad, las acciones esperadas por parte del estudiante y las evidencias que se deberán generar, evitando limitarse a una enumeración mecánica de pasos.
+
+El desarrollo debe permitir comprender cómo se ejecuta la práctica, qué productos intermedios o finales se esperan y cómo estos se relacionan con los objetivos y la evaluación.
+
+\subsection*{Estructura del desarrollo}
+
+Se recomienda que el docente organice el desarrollo de la práctica en fases claramente diferenciadas. Como mínimo, se deben considerar las siguientes:
+
+\paragraph{1. Preparación}
+En esta fase, el docente debe indicar las actividades previas que el estudiante debe realizar antes de la ejecución del laboratorio, tales como revisión de recursos, configuración del entorno, carga de datos o verificación de condiciones iniciales.
+
+Estructura sugerida:
+\begin{quote}
+Antes de iniciar la práctica, el estudiante debe \textbf{[acciones previas]}, verificando \textbf{[condiciones iniciales]} y disponiendo de \textbf{[recursos necesarios]}.
+\end{quote}
+
+\paragraph{2. Ejecución}
+En esta fase, el docente debe describir las actividades principales de la práctica. Se deben indicar las acciones a realizar, el orden lógico de las mismas y las decisiones relevantes que el estudiante debe tomar durante la ejecución.
+
+Estructura sugerida:
+\begin{quote}
+Durante la ejecución de la práctica, el estudiante debe \textbf{[acciones principales]}, siguiendo \textbf{[criterios, parámetros o restricciones]}.
+\end{quote}
+
+\paragraph{3. Análisis e interpretación}
+En esta fase, el docente debe indicar cómo el estudiante debe analizar los resultados obtenidos, qué aspectos deben interpretarse y qué elementos deben ser discutidos o justificados.
+
+Estructura sugerida:
+\begin{quote}
+Una vez finalizada la ejecución, el estudiante debe \textbf{[analizar, interpretar o evaluar]} los resultados obtenidos, considerando \textbf{[criterios de análisis]}.
+\end{quote}
+
+\subsubsection*{Uso del entorno de código}
+
+La guía dispone de un entorno personalizado denominado \texttt{codeblock}, el cual permite presentar fragmentos de código de manera clara y uniforme. Este entorno puede utilizarse tanto para mostrar comandos como para explicar su funcionamiento.
+
+Ejemplo de uso para mostrar código:
+
+
+\begin{verbatim}
+\begin{codeblock}[bash]{Ejemplo de uso}
+echo "Hola Mundo"
+firewall-cmd --add-port=3306/tcp --permanent
+firewall-cmd --reload
+\end{codeblock}
+\end{verbatim}
+
+\begin{codeblock}[bash]{Ejemplo de uso}
+echo "Hola Mundo"
+firewall-cmd --add-port=3306/tcp --permanent
+firewall-cmd --reload
+\end{codeblock}
+
+El mismo entorno puede utilizarse para explicar el código presentado, detallando el propósito de cada instrucción:
+
+\begin{verbatim}
+\begin{codeblock}[bash]{Explicación del código}
+echo "Hola Mundo"        % Muestra un mensaje en la salida estándar
+firewall-cmd --add-port=3306/tcp --permanent  % Habilita el puerto 3306 de forma permanente
+firewall-cmd --reload    % Recarga la configuración del firewall
+\end{codeblock}
+\end{verbatim}
+
+\begin{codeblock}[bash]{Explicación del código}
+echo "Hola Mundo"        % Muestra un mensaje en la salida estándar
+firewall-cmd --add-port=3306/tcp --permanent  % Habilita el puerto 3306 de forma permanente
+firewall-cmd --reload    % Recarga la configuración del firewall
+\end{codeblock}
+
+El docente debe emplear este entorno siempre que la práctica requiera la ejecución o análisis de comandos, scripts o fragmentos de código, garantizando así consistencia en la presentación y comprensión del contenido.
+
+
+
+\subsection*{Uso de tablas, figuras y código}
+
+La guía tiene configurada una estructura de directorios que permite el uso organizado de recursos gráficos y tabulares. Las figuras deben almacenarse en el directorio \texttt{figures}, mientras que las tablas pueden declararse directamente en el documento o gestionarse desde el directorio \texttt{tables}, según la complejidad de la práctica.
+
+El docente puede referenciar figuras y tablas de manera directa dentro del desarrollo para apoyar la explicación de resultados, configuraciones o esquemas.
+
+\subsubsection*{Ejemplo de uso de tablas}
+
+Para la construcción de tablas, se dispone del paquete \texttt{tabularray}, que permite una definición clara y flexible de estructuras tabulares. El manual oficial del paquete está disponible en:
+
+\begin{quote}
+\url{https://mirror.clientvps.com/CTAN/macros/latex/contrib/tabularray/tabularray.pdf}
+\end{quote}
+
+Ejemplo de tabla que puede ser utilizada para organizar resultados o configuraciones:
+
+\begin{codeblock}[latex]{Uso de tablas en la plantilla}
+\begin {table}[ht]
+\centering
+\caption {Parámetros evaluados durante la práctica}
+\begin{bodytblr}{
+  colspec = {X[l] X[c] X[l]}
+}
+Parámetro & Valor & Observación \\
+Tiempo de ejecución & 120 s & Medido en condiciones normales \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+\end{bodytblr}
+\end {table}
+\end{codeblock}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Parámetros evaluados durante la práctica}
+\begin{bodytblr}{
+  colspec = {X[l] X[c] X[l]}
+}
+Parámetro & Valor & Observación \\
+Tiempo de ejecución & 120 s & Medido en condiciones normales \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+\end{bodytblr}
+\end{table}
+
+
+
+\subsubsection*{Uso de referencias bibliográficas}
+
+La guía dispone de una estructura de referencias bibliográficas para respaldar las fuentes teóricas utilizadas en la introducción y en el desarrollo de la práctica. Para tal fin, el docente puede registrar las referencias en el archivo bibliográfico \texttt{references.bib}, ubicado en el directorio \texttt{Referencias}, y citarlas desde el contenido mediante los comandos de citación configurados en el proyecto.
+
+Se recomienda que el docente incorpore en \texttt{references.bib} las fuentes base del laboratorio (libros, artículos, normas o documentación técnica) y que cite únicamente aquellas referencias que efectivamente sustentan decisiones metodológicas, definiciones técnicas o procedimientos empleados.
+
+Ejemplo de registro en \texttt{references.bib}:
+
+\begin{codeblock}
+% Referencias (ejemplo)
+@article{example2025,
+  title   ={Título del artículo},
+  author  ={Apellido, Nombre},
+  journal ={Revista Ejemplo},
+  year    ={2025},
+  volume  ={1},
+  number  ={1},
+  pages   ={1--10}
+}
+\end{codeblock}
+
+El docente debe asegurar que las referencias citadas en el documento correspondan a entradas válidas en el archivo \texttt{references.bib}, manteniendo consistencia en las claves de citación (por ejemplo, \texttt{example2025}).
