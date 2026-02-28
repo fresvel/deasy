@@ -335,50 +335,92 @@ CREATE TABLE IF NOT EXISTS processes (
   name VARCHAR(180) NOT NULL,
   slug VARCHAR(180) NOT NULL UNIQUE,
   parent_id INT NULL,
-  has_document TINYINT(1) NOT NULL DEFAULT 1,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_processes_parent FOREIGN KEY (parent_id) REFERENCES processes(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS process_units (
+CREATE TABLE IF NOT EXISTS process_definition_versions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_id INT NOT NULL,
-  unit_id INT NOT NULL,
-  scope ENUM('owner', 'collaborator') NOT NULL DEFAULT 'owner',
-  is_primary TINYINT(1) NOT NULL DEFAULT 0,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  effective_from DATE NULL,
-  effective_to DATE NULL,
-  primary_active_flag TINYINT(1)
-    AS (IF(is_primary = 1 AND is_active = 1, 1, NULL)) PERSISTENT,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_units_process_unit (process_id, unit_id),
-  UNIQUE KEY uq_process_units_single_primary (process_id, primary_active_flag),
-  INDEX idx_process_units_process_active (process_id, is_active),
-  INDEX idx_process_units_unit_active (unit_id, is_active),
-  CONSTRAINT fk_process_units_process FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
-  CONSTRAINT fk_process_units_unit FOREIGN KEY (unit_id) REFERENCES units(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS process_versions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  process_id INT NOT NULL,
-  version VARCHAR(10) NOT NULL,
+  variation_key VARCHAR(120) NOT NULL DEFAULT 'general',
+  definition_version VARCHAR(20) NOT NULL,
   name VARCHAR(180) NOT NULL,
-  slug VARCHAR(180) NOT NULL,
-  parent_version_id INT NULL,
-  cargo_id INT NOT NULL,
+  description VARCHAR(255) NULL,
   has_document TINYINT(1) NOT NULL DEFAULT 1,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  execution_mode ENUM('manual', 'system', 'hybrid') NOT NULL DEFAULT 'manual',
+  status ENUM('draft', 'active', 'retired') NOT NULL DEFAULT 'draft',
   effective_from DATE NOT NULL,
   effective_to DATE NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_versions (process_id, version),
-  CONSTRAINT fk_process_versions_process FOREIGN KEY (process_id) REFERENCES processes(id),
-  CONSTRAINT fk_process_versions_parent FOREIGN KEY (parent_version_id) REFERENCES process_versions(id),
-  CONSTRAINT fk_process_versions_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id)
+  UNIQUE KEY uq_process_definition_versions_series (process_id, variation_key, definition_version),
+  INDEX idx_process_definition_versions_status (process_id, variation_key, status, effective_from),
+  CONSTRAINT fk_process_definition_versions_process
+    FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS process_target_rules (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units') NOT NULL DEFAULT 'unit_exact',
+  unit_id INT NULL,
+  unit_type_id INT NULL,
+  include_descendants TINYINT(1) NOT NULL DEFAULT 0,
+  cargo_id INT NULL,
+  position_id INT NULL,
+  recipient_policy ENUM('all_matches', 'one_per_unit', 'one_match_only', 'exact_position')
+    NOT NULL DEFAULT 'all_matches',
+  priority INT NOT NULL DEFAULT 1,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  effective_from DATE NULL,
+  effective_to DATE NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_process_target_rules_definition (process_definition_id, is_active),
+  INDEX idx_process_target_rules_scope (unit_scope_type, unit_id, unit_type_id),
+  CONSTRAINT fk_process_target_rules_definition
+    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_target_rules_unit
+    FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_process_target_rules_unit_type
+    FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
+  CONSTRAINT fk_process_target_rules_cargo
+    FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+  CONSTRAINT fk_process_target_rules_position
+    FOREIGN KEY (position_id) REFERENCES unit_positions(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS template_artifacts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  template_code VARCHAR(180) NOT NULL,
+  display_name VARCHAR(180) NOT NULL,
+  source_version VARCHAR(20) NOT NULL,
+  storage_version VARCHAR(20) NOT NULL,
+  bucket VARCHAR(120) NOT NULL,
+  base_object_prefix VARCHAR(255) NOT NULL,
+  mode ENUM('system', 'user') NOT NULL,
+  format VARCHAR(40) NOT NULL,
+  entry_object_key VARCHAR(255) NOT NULL,
+  schema_object_key VARCHAR(255) NOT NULL,
+  meta_object_key VARCHAR(255) NOT NULL,
+  content_hash VARCHAR(64) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version, mode, format)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS process_definition_template_bindings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  template_artifact_id INT NOT NULL,
+  usage_role ENUM('system_render', 'manual_fill', 'attachment', 'support') NOT NULL DEFAULT 'manual_fill',
+  is_required TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_process_definition_template_bindings (process_definition_id, template_artifact_id, usage_role),
+  CONSTRAINT fk_process_definition_template_bindings_definition
+    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_definition_template_bindings_artifact
+    FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS term_types (
@@ -415,7 +457,7 @@ CREATE TABLE IF NOT EXISTS terms (
 
 CREATE TABLE IF NOT EXISTS tasks (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  process_version_id INT NOT NULL,
+  process_definition_id INT NOT NULL,
   term_id INT NOT NULL,
   parent_task_id INT NULL,
   responsible_position_id INT NULL,
@@ -426,8 +468,9 @@ CREATE TABLE IF NOT EXISTS tasks (
   end_date DATE NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_tasks_version_term (process_version_id, term_id),
-  CONSTRAINT fk_tasks_process_version FOREIGN KEY (process_version_id) REFERENCES process_versions(id),
+  INDEX idx_tasks_definition_term (process_definition_id, term_id),
+  CONSTRAINT fk_tasks_process_definition
+    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
   CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
   CONSTRAINT fk_tasks_parent FOREIGN KEY (parent_task_id) REFERENCES tasks(id),
   CONSTRAINT fk_tasks_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id)
@@ -615,12 +658,13 @@ DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS signature_flow_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  process_version_id INT NOT NULL,
+  process_definition_id INT NOT NULL,
   name VARCHAR(180) NOT NULL,
   description VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_signature_flow_templates_version FOREIGN KEY (process_version_id) REFERENCES process_versions(id)
+  CONSTRAINT fk_signature_flow_templates_definition
+    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS signature_flow_steps (

@@ -35,7 +35,7 @@
           <button
             class="btn btn-primary btn-lg profile-add-btn"
             type="button"
-            :disabled="!table || isProcessVersionsTable"
+            :disabled="!table"
             @click="openCreate"
           >
             <font-awesome-icon icon="plus" class="me-2" />
@@ -60,7 +60,7 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="row g-3 align-items-center mb-3">
-              <div :class="isPositionFilterTable ? 'col-12 col-lg-3' : 'col-12 col-md-6'">
+              <div :class="isPositionFilterTable ? 'col-12 col-lg-3' : isProcessDefinitionFilterTable ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-6'">
                 <input
                   ref="searchInput"
                   v-model="searchTerm"
@@ -123,7 +123,34 @@
                   </select>
                 </div>
               </template>
-              <div :class="isPositionFilterTable ? 'col-12 col-lg-2 text-lg-end' : 'col-12 col-md-6 text-md-end'">
+              <template v-else-if="isProcessDefinitionFilterTable">
+                <div class="col-12 col-md-4 col-lg-3">
+                  <select
+                    v-model="processDefinitionInlineFilters.process_id"
+                    class="form-select"
+                    @change="fetchRows"
+                  >
+                    <option value="">Proceso</option>
+                    <option
+                      v-for="row in processDefinitionProcessOptions"
+                      :key="row.id"
+                      :value="String(row.id)"
+                    >
+                      {{ formatFkOptionLabel("processes", row) }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4 col-lg-3">
+                  <input
+                    v-model="processDefinitionInlineFilters.variation_key"
+                    type="text"
+                    class="form-control"
+                    placeholder="Filtrar por serie"
+                    @input="debouncedSearch"
+                  />
+                </div>
+              </template>
+              <div :class="isPositionFilterTable ? 'col-12 col-lg-2 text-lg-end' : isProcessDefinitionFilterTable ? 'col-12 col-lg-3 text-lg-end' : 'col-12 col-md-6 text-md-end'">
                 <div class="d-inline-flex align-items-center gap-2">
                   <button
                     v-if="isPositionFilterTable"
@@ -133,6 +160,17 @@
                     aria-label="Limpiar filtros"
                     :disabled="!hasUnitPositionFilters"
                     @click="clearUnitPositionInlineFilters"
+                  >
+                    <font-awesome-icon icon="times" />
+                  </button>
+                  <button
+                    v-else-if="isProcessDefinitionFilterTable"
+                    class="btn btn-outline-secondary btn-lg"
+                    type="button"
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    :disabled="!hasProcessDefinitionInlineFilters"
+                    @click="clearProcessDefinitionInlineFilters"
                   >
                     <font-awesome-icon icon="times" />
                   </button>
@@ -173,7 +211,30 @@
                       {{ formatCell(row[field.name], field, row) }}
                     </td>
                     <td class="text-end admin-action-col">
-                      <div v-if="!isProcessVersionsTable" class="d-inline-flex align-items-center gap-1">
+                      <div class="d-inline-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                          title="Visualizar"
+                          aria-label="Visualizar"
+                          @click="openRecordViewer(row)"
+                        >
+                          <span class="btn-inner">
+                            <font-awesome-icon icon="eye" />
+                          </span>
+                        </button>
+                        <button
+                          v-if="table?.table === 'process_definition_versions'"
+                          type="button"
+                          class="btn btn-sm btn-icon hope-action-btn hope-action-version"
+                          title="Versionar"
+                          aria-label="Versionar"
+                          @click="startProcessDefinitionVersioning(row)"
+                        >
+                          <span class="btn-inner">
+                            <font-awesome-icon icon="rotate-right" />
+                          </span>
+                        </button>
                         <button
                           v-if="isPersonTable"
                           type="button"
@@ -188,19 +249,6 @@
                         </button>
                         <BtnEdit @onpress="openEdit(row)" />
                         <BtnDelete @onpress="openDelete(row)" />
-                      </div>
-                      <div v-else class="d-inline-flex align-items-center gap-1">
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-icon hope-action-btn hope-action-edit"
-                          title="Versionar proceso"
-                          aria-label="Versionar proceso"
-                          @click="openProcessVersioningFromRow(row)"
-                        >
-                          <span class="btn-inner">
-                            <font-awesome-icon icon="plus" />
-                          </span>
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -460,8 +508,18 @@
                               @keydown.prevent
                               @paste.prevent
                             />
-                            <button class="btn btn-outline-secondary" type="button" @click="openPersonCargoFkSearch('position_id')">
-                              Buscar
+                            <button
+                              class="btn btn-outline-secondary"
+                              type="button"
+                              title="Limpiar"
+                              aria-label="Limpiar"
+                              :disabled="!personCargoForm.position_id"
+                              @click="clearPersonCargoPosition"
+                            >
+                              <font-awesome-icon icon="times" />
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" title="Buscar" aria-label="Buscar" @click="openPersonCargoFkSearch('position_id')">
+                              <font-awesome-icon icon="search" />
                             </button>
                           </div>
                         </div>
@@ -526,6 +584,17 @@
                             <td>{{ Number(row.is_current) === 1 ? "Si" : "No" }}</td>
                             <td class="text-end">
                               <div class="d-inline-flex align-items-center gap-1">
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                                  title="Visualizar"
+                                  aria-label="Visualizar"
+                                  @click="openRecordViewer(row, allTablesMap.position_assignments)"
+                                >
+                                  <span class="btn-inner">
+                                    <font-awesome-icon icon="eye" />
+                                  </span>
+                                </button>
                                 <BtnEdit tooltip="Editar ocupacion" @onpress="startPersonCargoEdit(row)" />
                                 <BtnDelete message="Eliminar ocupacion" @onpress="deletePersonCargo(row)" />
                               </div>
@@ -556,8 +625,18 @@
                               @keydown.prevent
                               @paste.prevent
                             />
-                            <button class="btn btn-outline-secondary" type="button" @click="openPersonRoleFkSearch('role_id')">
-                              Buscar
+                            <button
+                              class="btn btn-outline-secondary"
+                              type="button"
+                              title="Limpiar"
+                              aria-label="Limpiar"
+                              :disabled="!personRoleForm.role_id"
+                              @click="clearPersonRoleField('role_id')"
+                            >
+                              <font-awesome-icon icon="times" />
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" title="Buscar" aria-label="Buscar" @click="openPersonRoleFkSearch('role_id')">
+                              <font-awesome-icon icon="search" />
                             </button>
                           </div>
                         </div>
@@ -573,8 +652,18 @@
                               @keydown.prevent
                               @paste.prevent
                             />
-                            <button class="btn btn-outline-secondary" type="button" @click="openPersonRoleFkSearch('unit_id')">
-                              Buscar
+                            <button
+                              class="btn btn-outline-secondary"
+                              type="button"
+                              title="Limpiar"
+                              aria-label="Limpiar"
+                              :disabled="!personRoleForm.unit_id"
+                              @click="clearPersonRoleField('unit_id')"
+                            >
+                              <font-awesome-icon icon="times" />
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" title="Buscar" aria-label="Buscar" @click="openPersonRoleFkSearch('unit_id')">
+                              <font-awesome-icon icon="search" />
                             </button>
                           </div>
                         </div>
@@ -620,6 +709,17 @@
                             <td>{{ row.assigned_at ?? "—" }}</td>
                             <td class="text-end">
                               <div class="d-inline-flex align-items-center gap-1">
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                                  title="Visualizar"
+                                  aria-label="Visualizar"
+                                  @click="openRecordViewer(row, allTablesMap.role_assignments)"
+                                >
+                                  <span class="btn-inner">
+                                    <font-awesome-icon icon="eye" />
+                                  </span>
+                                </button>
                                 <BtnEdit tooltip="Editar rol" @onpress="startPersonRoleEdit(row)" />
                                 <BtnDelete message="Eliminar rol" @onpress="deletePersonRole(row)" />
                               </div>
@@ -650,8 +750,18 @@
                               @keydown.prevent
                               @paste.prevent
                             />
-                            <button class="btn btn-outline-secondary" type="button" @click="openPersonContractFkSearch">
-                              Buscar
+                            <button
+                              class="btn btn-outline-secondary"
+                              type="button"
+                              title="Limpiar"
+                              aria-label="Limpiar"
+                              :disabled="!personContractForm.position_id"
+                              @click="clearPersonContractPosition"
+                            >
+                              <font-awesome-icon icon="times" />
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" title="Buscar" aria-label="Buscar" @click="openPersonContractFkSearch">
+                              <font-awesome-icon icon="search" />
                             </button>
                           </div>
                         </div>
@@ -727,6 +837,17 @@
                             <td>{{ row.status }}</td>
                             <td class="text-end">
                               <div class="d-inline-flex align-items-center gap-1">
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                                  title="Visualizar"
+                                  aria-label="Visualizar"
+                                  @click="openRecordViewer(row, allTablesMap.contracts)"
+                                >
+                                  <span class="btn-inner">
+                                    <font-awesome-icon icon="eye" />
+                                  </span>
+                                </button>
                                 <BtnEdit tooltip="Editar contrato" @onpress="startPersonContractEdit(row)" />
                                 <BtnDelete message="Eliminar contrato" @onpress="deletePersonContract(row)" />
                               </div>
@@ -771,12 +892,6 @@
             <div v-if="modalError" class="alert alert-danger mb-3">
               {{ modalError }}
             </div>
-            <div v-if="isProcessVersioningMode" class="alert alert-info mb-3">
-              <strong>Versionando proceso:</strong>
-              <span class="ms-1">proceso #{{ processVersioningContext?.process_id }}</span>
-              <span class="ms-2">base v{{ processVersioningContext?.base_version }}</span>
-              <span class="ms-2">nueva v{{ processVersioningContext?.next_version }}</span>
-            </div>
             <form class="row g-3">
               <div
                 v-for="field in visibleFormFields"
@@ -787,31 +902,65 @@
                   {{ field.label || field.name }}
                   <span v-if="field.required" class="text-danger">*</span>
                 </label>
-                <input
-                  v-if="isProcessTable && field.name === 'version_effective_from'"
-                  v-model="processVersionForm.effective_from"
-                  type="date"
-                  class="form-control"
-                  :disabled="isFieldLocked(field)"
-                />
-                <div v-else-if="isInputField(field) && isForeignKeyField(field)" class="input-group">
-                  <input
-                    v-model="fkDisplay[field.name]"
-                    type="text"
-                    class="form-control"
-                    :placeholder="field.placeholder || ''"
-                    :readonly="true"
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    :disabled="isFieldLocked(field)"
-                    @click="openFkSearch(field)"
+                <div v-if="isInputField(field) && isForeignKeyField(field)" class="position-relative">
+                  <div class="input-group">
+                    <input
+                      v-model="fkDisplay[field.name]"
+                      type="text"
+                      class="form-control"
+                      :placeholder="field.placeholder || ''"
+                      :disabled="isFieldLocked(field)"
+                      autocomplete="off"
+                      @focus="openInlineFkSuggestions(field)"
+                      @blur="scheduleInlineFkClose(field.name)"
+                      @input="handleInlineFkInput(field)"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="isFieldLocked(field) || !fkDisplay[field.name]"
+                      @mousedown.prevent
+                      @click="clearInlineFkSelection(field.name)"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="isFieldLocked(field)"
+                      @mousedown.prevent
+                      @click="openFkSearch(field)"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                  <div
+                    v-if="shouldShowInlineFkSuggestions(field.name)"
+                    class="list-group fk-inline-suggestions shadow-sm"
+                    @mousedown.prevent
                   >
-                    Buscar
-                  </button>
+                    <div v-if="inlineFkLoading[field.name]" class="list-group-item text-muted small">
+                      Buscando...
+                    </div>
+                    <template v-else-if="(inlineFkSuggestions[field.name] || []).length">
+                      <button
+                        v-for="option in inlineFkSuggestions[field.name]"
+                        :key="`${field.name}-${option.id}`"
+                        type="button"
+                        class="list-group-item list-group-item-action"
+                        @mousedown.prevent="selectInlineFkSuggestion(field, option)"
+                      >
+                        {{ formatInlineFkOption(field, option) }}
+                      </button>
+                    </template>
+                    <div v-else class="list-group-item text-muted small">
+                      Sin coincidencias. Usa Buscar.
+                    </div>
+                  </div>
                 </div>
                 <input
                   v-else-if="isInputField(field)"
@@ -856,25 +1005,6 @@
                   :disabled="isFieldLocked(field)"
                 />
               </div>
-              <template v-if="isProcessTable">
-                <div class="col-12">
-                  <div
-                    class="alert mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2"
-                    :class="editorMode === 'create' ? 'alert-info' : 'alert-warning'"
-                  >
-                    <span>
-                      {{
-                        editorMode === "create"
-                          ? "Define la version inicial del proceso (obligatorio)."
-                          : "Si necesitas nueva version, usa Configurar flujo. Si no, guarda cambios directos."
-                      }}
-                    </span>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" @click="openProcessFlowModal">
-                      Configurar flujo
-                    </button>
-                  </div>
-                </div>
-              </template>
             </form>
 
           </div>
@@ -892,209 +1022,42 @@
 
     <div
       class="modal fade"
-      id="processFlowModal"
+      id="processDefinitionVersioningModal"
       tabindex="-1"
-      aria-labelledby="processFlowModalLabel"
+      aria-labelledby="processDefinitionVersioningModalLabel"
       aria-hidden="true"
-      ref="processFlowModal"
+      ref="processDefinitionVersioningModal"
     >
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content process-modal-content">
+      <div class="modal-dialog">
+        <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="processFlowModalLabel">Configuracion del flujo del proceso</h5>
-            <button type="button" class="btn-close" aria-label="Close" @click="closeProcessFlowModal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-12 col-md-4">
-                <label class="form-label text-dark">Version</label>
-                <input
-                  v-model="processVersionForm.version"
-                  type="text"
-                  class="form-control"
-                  placeholder="0.1"
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label text-dark">Nombre de version</label>
-                <input
-                  v-model="processVersionForm.name"
-                  type="text"
-                  class="form-control"
-                  placeholder="Inicial"
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label text-dark">Slug de version</label>
-                <input
-                  v-model="processVersionForm.slug"
-                  type="text"
-                  class="form-control"
-                  placeholder="Opcional"
-                />
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label text-dark">Vigencia hasta</label>
-                <input
-                  v-model="processVersionForm.effective_to"
-                  type="date"
-                  class="form-control"
-                />
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label text-dark">Version padre</label>
-                <div class="input-group">
-                  <input
-                    v-model="processVersionForm.parent_version_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Opcional"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="openProcessVersionParentSearch"
-                  >
-                    Buscar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" @click="closeProcessFlowModal">
-              Cerrar
-            </button>
-            <button type="button" class="btn btn-primary" @click="closeProcessFlowModal">
-              Aceptar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div
-      class="modal fade"
-      id="processVersionEditorModal"
-      tabindex="-1"
-      aria-labelledby="processVersionEditorModalLabel"
-      aria-hidden="true"
-      ref="processVersionModal"
-    >
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content process-modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="processVersionEditorModalLabel">Editar versiones de proceso</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="processVersionError" class="alert alert-danger mb-3">
-              {{ processVersionError }}
-            </div>
-            <form class="row g-3">
-              <div class="col-12">
-                <label class="form-label text-dark">Proceso</label>
-                <div class="input-group">
-                  <input
-                    v-model="processVersionProcessLabel"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona un proceso"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionProcessSearch">
-                    Buscar
-                  </button>
-                </div>
-              </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Version</label>
-                <select v-model="selectedProcessVersionId" class="form-select" @change="handleProcessVersionSelect">
-                  <option value="">Selecciona una version</option>
-                  <option
-                    v-for="versionRow in processVersionRows"
-                    :key="versionRow.id"
-                    :value="String(versionRow.id)"
-                  >
-                    {{ `v${versionRow.version} - ${versionRow.name}` }}
-                  </option>
-                </select>
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-4">
-                <label class="form-label text-dark">Version</label>
-                <input v-model="processVersionEditForm.version" type="text" class="form-control" readonly />
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-8">
-                <label class="form-label text-dark">Nombre</label>
-                <input v-model="processVersionEditForm.name" type="text" class="form-control" />
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Slug</label>
-                <input v-model="processVersionEditForm.slug" type="text" class="form-control" />
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Version padre</label>
-                <div class="input-group">
-                  <input
-                    v-model="processVersionEditLabels.parent_version_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona una version"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button class="btn btn-outline-secondary" type="button" @click="openProcessVersionFkSearch('parent_version_id')">
-                    Buscar
-                  </button>
-                </div>
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Vigencia desde</label>
-                <input v-model="processVersionEditForm.effective_from" type="date" class="form-control" />
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Vigencia hasta</label>
-                <input v-model="processVersionEditForm.effective_to" type="date" class="form-control" />
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Tiene documento</label>
-                <select v-model="processVersionEditForm.has_document" class="form-select">
-                  <option value="1">Si</option>
-                  <option value="0">No</option>
-                </select>
-              </div>
-              <div v-if="processVersionEditForm.id" class="col-12 col-md-6">
-                <label class="form-label text-dark">Activo</label>
-                <select v-model="processVersionEditForm.is_active" class="form-select">
-                  <option value="1">Si</option>
-                  <option value="0">No</option>
-                </select>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
+            <h5 class="modal-title" id="processDefinitionVersioningModalLabel">Crear nueva version</h5>
             <button
               type="button"
-              class="btn btn-primary"
-              :disabled="!processVersionEditForm.id"
-              @click="submitProcessVersionEdit"
-            >
-              Guardar cambios
+              class="btn-close"
+              aria-label="Close"
+              @click="closeProcessDefinitionVersioningModal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-2">
+              La definicion activa no puede modificarse directamente en sus campos funcionales.
+            </p>
+            <p class="mb-0 text-muted">
+              Puedes cancelar esta edicion o convertir el formulario actual en una nueva version en borrador.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" @click="cancelProcessDefinitionEdit">
+              Cancelar edicion
+            </button>
+            <button type="button" class="btn btn-primary" @click="promoteProcessDefinitionToNewVersion">
+              Crear nueva version
             </button>
           </div>
         </div>
       </div>
     </div>
-
 
     <div
       class="modal fade"
@@ -1187,6 +1150,66 @@
                   </button>
                 </div>
               </template>
+              <template v-else-if="isFkProcessDefinitions">
+                <div class="col-12 col-md-5">
+                  <label class="form-label text-dark">Busqueda</label>
+                  <input
+                    v-model="fkSearch"
+                    type="text"
+                    class="form-control"
+                    placeholder="Buscar referencia"
+                    @input="debouncedFkSearch"
+                  />
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Estado</label>
+                  <select
+                    v-model="fkFilters.status"
+                    class="form-select"
+                    @change="handleFkProcessDefinitionFilterChange"
+                  >
+                    <option value="">Todos</option>
+                    <option
+                      v-for="option in getFkTableFieldOptions('status')"
+                      :key="option"
+                      :value="option"
+                    >
+                      {{ formatSelectOptionLabel(getFkTableField('status'), option) }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Modo</label>
+                  <select
+                    v-model="fkFilters.execution_mode"
+                    class="form-select"
+                    @change="handleFkProcessDefinitionFilterChange"
+                  >
+                    <option value="">Todos</option>
+                    <option
+                      v-for="option in getFkTableFieldOptions('execution_mode')"
+                      :key="option"
+                      :value="option"
+                    >
+                      {{ formatSelectOptionLabel(getFkTableField('execution_mode'), option) }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-1 d-grid">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-icon btn-outline-secondary"
+                    title="Limpiar filtro"
+                    aria-label="Limpiar filtro"
+                    :disabled="!hasFkProcessDefinitionFilters"
+                    @click="clearFkProcessDefinitionFilters"
+                  >
+                    <span class="btn-inner">
+                      <font-awesome-icon icon="times" />
+                    </span>
+                  </button>
+                </div>
+              </template>
               <div v-else class="col-12">
                 <label class="form-label text-dark">Busqueda</label>
                 <input
@@ -1271,7 +1294,7 @@
                 <thead>
                   <tr>
                     <th class="text-start">ID</th>
-                    <th class="text-start">Detalle</th>
+                    <th class="text-start">{{ fkPrimaryListLabel }}</th>
                     <th
                       v-for="field in fkListExtraFields"
                       :key="field.name"
@@ -1291,7 +1314,7 @@
                   <tr v-for="row in fkRows" :key="row.id">
                     <td>{{ row.id }}</td>
                     <td>
-                      {{ row[resolveDisplayField(fkTable) || "id"] || "—" }}
+                      {{ formatFkPrimaryCell(row) }}
                     </td>
                     <td v-for="field in fkListExtraFields" :key="field.name">
                       {{ formatFkListCell(row, field) }}
@@ -1329,12 +1352,14 @@
           </div>
           <div class="modal-footer">
             <button
+              v-if="canOpenFkFilterModal"
               type="button"
               class="btn btn-outline-secondary"
-              :disabled="!fkTable"
+              title="Buscar"
+              aria-label="Buscar"
               @click="openFkFilterModal"
             >
-              Buscar
+              <font-awesome-icon icon="search" />
             </button>
             <button
               type="button"
@@ -1346,6 +1371,96 @@
               Crear nuevo
             </button>
             <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="recordViewerModal"
+      tabindex="-1"
+      aria-labelledby="recordViewerModalLabel"
+      aria-hidden="true"
+      ref="recordViewerModal"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="recordViewerModalLabel">
+              Visualizar registro {{ recordViewerTable?.label || "" }}
+            </h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="closeRecordViewer"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="recordViewerLoading" class="text-muted">
+              Cargando información del registro...
+            </div>
+            <div v-else-if="recordViewerError" class="alert alert-danger mb-0">
+              {{ recordViewerError }}
+            </div>
+            <div v-else-if="recordViewerTable && recordViewerRow">
+              <div class="table-responsive">
+                <table class="table table-striped align-middle table-institutional">
+                  <tbody>
+                    <tr v-for="field in recordViewerFields" :key="field.name">
+                      <th class="text-start">{{ field.label || field.name }}</th>
+                      <td>{{ formatRecordViewerValue(field, recordViewerRow) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div
+                v-for="section in recordViewerRelatedSections"
+                :key="section.key"
+                class="mt-4"
+              >
+                <h6 class="mb-2 person-subtitle">
+                  <font-awesome-icon icon="list-check" />
+                  <span>{{ section.label }}</span>
+                </h6>
+                <div v-if="section.error" class="alert alert-danger py-2 mb-0">
+                  {{ section.error }}
+                </div>
+                <div v-else-if="section.rows.length === 0" class="text-muted">
+                  Sin registros relacionados.
+                </div>
+                <div v-else class="table-responsive">
+                  <table class="table table-sm table-striped align-middle">
+                    <thead>
+                      <tr>
+                        <th
+                          v-for="field in section.fields"
+                          :key="field.name"
+                          class="text-start"
+                        >
+                          {{ field.label || field.name }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="sectionRow in section.rows"
+                        :key="rowKeyForTable(section.tableMeta, sectionRow)"
+                      >
+                        <td v-for="field in section.fields" :key="field.name">
+                          {{ formatValueForTable(section.tableMeta, sectionRow[field.name], field, sectionRow) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-muted">
+              No hay información para visualizar.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" @click="closeRecordViewer">
               Cerrar
             </button>
           </div>
@@ -1471,8 +1586,8 @@
             <button type="button" class="btn btn-outline-primary" @click="clearFkFilters">
               Limpiar
             </button>
-            <button type="button" class="btn btn-primary" @click="applyFkFilters">
-              Buscar
+            <button type="button" class="btn btn-primary" title="Buscar" aria-label="Buscar" @click="applyFkFilters">
+              <font-awesome-icon icon="search" />
             </button>
           </div>
         </div>
@@ -1592,27 +1707,6 @@
           <div class="modal-body">
             <div class="row g-3">
               <div class="col-12">
-                <label class="form-label text-dark">Unidad</label>
-                <div class="input-group">
-                  <input
-                    v-model="processFilterLabels.unit_id"
-                    type="text"
-                    class="form-control"
-                    placeholder="Selecciona una unidad"
-                    readonly
-                    @keydown.prevent
-                    @paste.prevent
-                  />
-                  <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="openProcessFkSearch('unit_id')"
-                  >
-                    Buscar
-                  </button>
-                </div>
-              </div>
-              <div class="col-12">
                 <label class="form-label text-dark">Proceso padre</label>
                 <div class="input-group">
                   <input
@@ -1627,21 +1721,25 @@
                   <button
                     class="btn btn-outline-secondary"
                     type="button"
+                    title="Limpiar"
+                    aria-label="Limpiar"
+                    :disabled="!processFilters.parent_id"
+                    @click="clearProcessParentFilter"
+                  >
+                    <font-awesome-icon icon="times" />
+                  </button>
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    title="Buscar"
+                    aria-label="Buscar"
                     @click="openProcessFkSearch('parent_id')"
                   >
-                    Buscar
+                    <font-awesome-icon icon="search" />
                   </button>
                 </div>
               </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label text-dark">Tiene documento</label>
-                <select v-model="processFilters.has_document" class="form-select">
-                  <option value="">Todos</option>
-                  <option value="1">Si</option>
-                  <option value="0">No</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12">
                 <label class="form-label text-dark">Activo</label>
                 <select v-model="processFilters.is_active" class="form-select">
                   <option value="">Todos</option>
@@ -1658,8 +1756,8 @@
             <button type="button" class="btn btn-outline-primary" @click="clearProcessFilter">
               Limpiar
             </button>
-            <button type="button" class="btn btn-primary" @click="applyProcessFilter">
-              Buscar
+            <button type="button" class="btn btn-primary" title="Buscar" aria-label="Buscar" @click="applyProcessFilter">
+              <font-awesome-icon icon="search" />
             </button>
           </div>
         </div>
@@ -1709,9 +1807,21 @@
                   <button
                     class="btn btn-outline-secondary"
                     type="button"
+                    title="Limpiar"
+                    aria-label="Limpiar"
+                    :disabled="!templateFilters.process_id"
+                    @click="clearTemplateProcessFilter"
+                  >
+                    <font-awesome-icon icon="times" />
+                  </button>
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    title="Buscar"
+                    aria-label="Buscar"
                     @click="openTemplateFkSearch"
                   >
-                    Buscar
+                    <font-awesome-icon icon="search" />
                   </button>
                 </div>
               </div>
@@ -1724,8 +1834,8 @@
             <button type="button" class="btn btn-outline-primary" @click="clearTemplateFilter">
               Limpiar
             </button>
-            <button type="button" class="btn btn-primary" @click="applyTemplateFilter">
-              Buscar
+            <button type="button" class="btn btn-primary" title="Buscar" aria-label="Buscar" @click="applyTemplateFilter">
+              <font-awesome-icon icon="search" />
             </button>
           </div>
         </div>
@@ -1763,9 +1873,21 @@
                   <button
                     class="btn btn-outline-secondary"
                     type="button"
+                    title="Limpiar"
+                    aria-label="Limpiar"
+                    :disabled="!documentFilters.task_id"
+                    @click="clearDocumentTaskFilter"
+                  >
+                    <font-awesome-icon icon="times" />
+                  </button>
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    title="Buscar"
+                    aria-label="Buscar"
                     @click="openDocumentFkSearch('task_id')"
                   >
-                    Buscar
+                    <font-awesome-icon icon="search" />
                   </button>
                 </div>
               </div>
@@ -1788,8 +1910,8 @@
             <button type="button" class="btn btn-outline-primary" @click="clearDocumentFilter">
               Limpiar
             </button>
-            <button type="button" class="btn btn-primary" @click="applyDocumentFilter">
-              Buscar
+            <button type="button" class="btn btn-primary" title="Buscar" aria-label="Buscar" @click="applyDocumentFilter">
+              <font-awesome-icon icon="search" />
             </button>
           </div>
         </div>
@@ -1873,8 +1995,8 @@
             <button type="button" class="btn btn-outline-primary" @click="clearUnitPositionFilter">
               Limpiar
             </button>
-            <button type="button" class="btn btn-primary" @click="applyUnitPositionFilter">
-              Buscar
+            <button type="button" class="btn btn-primary" title="Buscar" aria-label="Buscar" @click="applyUnitPositionFilter">
+              <font-awesome-icon icon="search" />
             </button>
           </div>
         </div>
@@ -1908,6 +2030,11 @@ const loading = ref(false);
 const error = ref("");
 const searchTerm = ref("");
 const vacantSearchTerm = ref("");
+const processDefinitionInlineFilters = ref({
+  process_id: "",
+  variation_key: ""
+});
+const processDefinitionProcessOptions = ref([]);
 const editorMode = ref("create");
 const formData = ref({});
 const selectedRow = ref(null);
@@ -1915,8 +2042,9 @@ const modalError = ref("");
 const fkDisplay = ref({});
 
 const editorModal = ref(null);
-const processFlowModal = ref(null);
+const processDefinitionVersioningModal = ref(null);
 const deleteModal = ref(null);
+const recordViewerModal = ref(null);
 const personAssignmentsModal = ref(null);
 const fkModal = ref(null);
 const fkViewerModal = ref(null);
@@ -1924,8 +2052,9 @@ const fkFilterModal = ref(null);
 const fkCreateModal = ref(null);
 const searchInput = ref(null);
 let editorInstance = null;
-let processFlowInstance = null;
+let processDefinitionVersioningInstance = null;
 let deleteInstance = null;
+let recordViewerInstance = null;
 let personAssignmentsInstance = null;
 let fkInstance = null;
 let fkViewerInstance = null;
@@ -1937,7 +2066,12 @@ let vacantSearchTimeout = null;
 const skipFkReturnRestore = ref(false);
 const fkCreateExitTarget = ref("none");
 const fkNestedExitTarget = ref("none");
-const processFlowReturnToEditor = ref(false);
+const recordViewerTable = ref(null);
+const recordViewerRow = ref(null);
+const recordViewerLoading = ref(false);
+const recordViewerError = ref("");
+const recordViewerRelatedSections = ref([]);
+const processDefinitionVersioningSource = ref(null);
 
 const fkTable = ref(null);
 const fkRows = ref([]);
@@ -1963,13 +2097,10 @@ const fkCargoOptions = ref([]);
 const fkPositionFilterLoading = ref(false);
 
 const processFilters = ref({
-  unit_id: "",
   parent_id: "",
-  has_document: "",
   is_active: ""
 });
 const processFilterLabels = ref({
-  unit_id: "",
   parent_id: ""
 });
 const templateFilters = ref({
@@ -2018,36 +2149,6 @@ const processSearchModal = ref(null);
 let processSearchInstance = null;
 const unitPositionSearchModal = ref(null);
 let unitPositionSearchInstance = null;
-const processVersionModal = ref(null);
-let processVersionInstance = null;
-const processVersionForm = ref({
-  version: "0.1",
-  name: "Inicial",
-  slug: "",
-  effective_from: "",
-  effective_to: "",
-  parent_version_id: ""
-});
-const processVersionError = ref("");
-const processVersionProcessId = ref("");
-const processVersionProcessLabel = ref("");
-const processVersionRows = ref([]);
-const selectedProcessVersionId = ref("");
-const processVersionEditForm = ref({
-  id: "",
-  version: "",
-  name: "",
-  slug: "",
-  parent_version_id: "",
-  has_document: "1",
-  is_active: "1",
-  effective_from: "",
-  effective_to: ""
-});
-const processVersionEditLabels = ref({
-  parent_version_id: ""
-});
-const processVersioningContext = ref(null);
 const personEditorId = ref("");
 const personCargoRows = ref([]);
 const positionMetaById = ref({});
@@ -2139,25 +2240,7 @@ const PROCESS_INLINE_HIDDEN_FIELDS = new Set([
   "version_effective_to",
   "version_parent_version_id"
 ]);
-const PROCESS_VERSION_DESCRIPTIVE_FIELDS = new Set([
-  "name",
-  "slug",
-  "parent_version_id",
-  "cargo_id",
-  "has_document",
-  "is_active",
-  "effective_from",
-  "effective_to"
-]);
-const isProcessVersioningMode = computed(() =>
-  props.table?.table === "process_versions"
-  && editorMode.value === "create"
-  && Boolean(processVersioningContext.value?.process_id)
-);
 const visibleFormFields = computed(() => {
-  if (isProcessVersioningMode.value) {
-    return formFields.value.filter((field) => PROCESS_VERSION_DESCRIPTIVE_FIELDS.has(field.name));
-  }
   if (!isProcessTable.value) {
     return formFields.value;
   }
@@ -2168,8 +2251,26 @@ const tableListFields = computed(() => {
     return [];
   }
   const fields = props.table.fields.filter((field) => !(isPersonTable.value && field.name === "password_hash"));
+  const normalizedFields = fields.filter((field) => !(
+    props.table.table === "templates" && field.name === "process_name"
+  ));
+  if (props.table.table === "process_target_rules") {
+    const expandedFields = [];
+    const processField = {
+      name: "__process_name",
+      label: "Proceso",
+      type: "text"
+    };
+    normalizedFields.forEach((field) => {
+      if (field.name === "process_definition_id") {
+        expandedFields.push(processField);
+      }
+      expandedFields.push(field);
+    });
+    return expandedFields;
+  }
   if (props.table.table !== "position_assignments") {
-    return fields;
+    return normalizedFields;
   }
   const plazaField = {
     name: "__plaza",
@@ -2181,15 +2282,15 @@ const tableListFields = computed(() => {
     label: "Tipo de puesto",
     type: "text"
   };
-  const positionIndex = fields.findIndex((field) => field.name === "position_id");
+  const positionIndex = normalizedFields.findIndex((field) => field.name === "position_id");
   if (positionIndex < 0) {
-    return [...fields, plazaField, positionTypeField];
+    return [...normalizedFields, plazaField, positionTypeField];
   }
   return [
-    ...fields.slice(0, positionIndex + 1),
+    ...normalizedFields.slice(0, positionIndex + 1),
     plazaField,
     positionTypeField,
-    ...fields.slice(positionIndex + 1)
+    ...normalizedFields.slice(positionIndex + 1)
   ];
 });
 const fkCreateFields = computed(() => {
@@ -2208,11 +2309,30 @@ const fkFilterFields = computed(() => {
   if (!fkTable.value?.fields) {
     return [];
   }
+  if (fkTable.value.table === "process_definition_versions") {
+    return [];
+  }
   return fkTable.value.fields.filter((field) => !field.virtual);
 });
+const fkPrimaryListField = computed(() => {
+  if (!fkTable.value?.fields) {
+    return null;
+  }
+  if (fkTable.value.table === "process_definition_versions") {
+    return fkTable.value.fields.find((field) => field.name === "process_id") || null;
+  }
+  const displayFieldName = resolveDisplayField(fkTable.value);
+  return fkTable.value.fields.find((field) => field.name === displayFieldName) || null;
+});
+const fkPrimaryListLabel = computed(() => fkPrimaryListField.value?.label || "Detalle");
 const fkListExtraFields = computed(() => {
   if (!fkTable.value?.fields) {
     return [];
+  }
+  if (fkTable.value.table === "process_definition_versions") {
+    return fkTable.value.fields.filter((field) =>
+      ["variation_key", "definition_version", "name", "description", "status", "execution_mode"].includes(field.name)
+    );
   }
   if (fkTable.value.table === "units") {
     return fkTable.value.fields.filter((field) => ["unit_type_id"].includes(field.name));
@@ -2244,15 +2364,22 @@ const fkListExtraFields = computed(() => {
 });
 const canCreateFkReference = computed(() =>
   Boolean(fkTable.value)
-  && fkTable.value.table !== "process_versions"
   && fkCreateFields.value.length > 0
+);
+const canOpenFkFilterModal = computed(() =>
+  Boolean(fkTable.value)
+  && fkFilterFields.value.length > 0
 );
 const isFkUnitPositions = computed(() => fkTable.value?.table === "unit_positions");
 const isFkUnits = computed(() => fkTable.value?.table === "units");
+const isFkProcessDefinitions = computed(() => fkTable.value?.table === "process_definition_versions");
+const hasFkProcessDefinitionFilters = computed(() =>
+  Boolean(fkFilters.value.status || fkFilters.value.execution_mode)
+);
 
 const isTemplateTable = computed(() => props.table?.table === "templates");
 const isProcessTable = computed(() => props.table?.table === "processes");
-const isProcessVersionsTable = computed(() => props.table?.table === "process_versions");
+const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
 const isPositionAssignmentsTable = computed(() => props.table?.table === "position_assignments");
@@ -2264,6 +2391,12 @@ const hasUnitPositionFilters = computed(() =>
     unitPositionFilters.value.unit_type_id
     || unitPositionFilters.value.unit_id
     || unitPositionFilters.value.cargo_id
+  )
+);
+const hasProcessDefinitionInlineFilters = computed(() =>
+  Boolean(
+    processDefinitionInlineFilters.value.process_id
+    || processDefinitionInlineFilters.value.variation_key?.trim()
   )
 );
 const hasVacantPositionFilters = computed(() =>
@@ -2304,15 +2437,20 @@ const personAssignmentMeta = computed(() => {
   }
   return pieces.join(" | ");
 });
+const recordViewerFields = computed(() =>
+  getViewerFieldsForTable(recordViewerTable.value)
+);
 const tableHeaderIcon = computed(() => {
   const tableName = props.table?.table || "";
   if (
     [
       "processes",
-      "process_units",
-      "process_versions",
+      "process_definition_versions",
+      "process_target_rules",
       "tasks",
       "task_assignments",
+      "template_artifacts",
+      "process_definition_template_bindings",
       "templates",
       "template_versions"
     ].includes(tableName)
@@ -2351,13 +2489,56 @@ const allTablesMap = computed(() =>
   Object.fromEntries(props.allTables.map((table) => [table.table, table]))
 );
 const fkLabelCache = ref({});
+const processIdByDefinitionId = ref({});
+const inlineFkSuggestions = ref({});
+const inlineFkLoading = ref({});
+const inlineFkTouched = ref({});
+const inlineFkActiveField = ref("");
+const inlineFkCloseTimers = {};
+const inlineFkQueryTimers = {};
 
-const rowKey = (row) => {
-  if (!props.table) {
+const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
+  if (!tableMeta?.fields) {
+    return [];
+  }
+  const fields = tableMeta.fields.filter((field) => {
+    if (field.name === "password_hash") {
+      return false;
+    }
+    if (tableMeta.table === "templates" && field.name === "process_name") {
+      return false;
+    }
+    if (!includeVirtual && field.virtual) {
+      return false;
+    }
+    return true;
+  });
+  if (tableMeta.table === "process_target_rules") {
+    const expandedFields = [];
+    fields.forEach((field) => {
+      expandedFields.push(field);
+      if (field.name === "process_definition_id") {
+        expandedFields.push({
+          name: "__process_name",
+          label: "Proceso",
+          type: "text"
+        });
+      }
+    });
+    return expandedFields;
+  }
+  return fields;
+};
+
+const rowKeyForTable = (tableMeta, row) => {
+  if (!tableMeta) {
     return JSON.stringify(row);
   }
-  return props.table.primaryKeys.map((key) => row[key]).join("-");
+  const primaryKeys = tableMeta.primaryKeys?.length ? tableMeta.primaryKeys : ["id"];
+  return primaryKeys.map((key) => row?.[key]).join("-");
 };
+
+const rowKey = (row) => rowKeyForTable(props.table, row);
 
 const buildPersonAssignmentContext = (row) => {
   const firstName = row?.first_name ? String(row.first_name).trim() : "";
@@ -2430,9 +2611,9 @@ const formatSelectOptionLabel = (field, value) => {
   return value;
 };
 
-const formatCell = (value, field, row = null) => {
+const formatValueForTable = (tableMeta, value, field, row = null) => {
   if (value === null || value === undefined || value === "") {
-    if (!["__plaza", "__position_type"].includes(field?.name)) {
+    if (!["__plaza", "__position_type", "__process_name"].includes(field?.name)) {
       return "—";
     }
   }
@@ -2452,10 +2633,27 @@ const formatCell = (value, field, row = null) => {
     const slotNo = positionMeta.slot_no;
     return slotNo === null || slotNo === undefined || slotNo === "" ? "—" : slotNo;
   }
+  if (fieldName === "__process_name") {
+    const definitionId = row?.process_definition_id;
+    if (definitionId === null || definitionId === undefined || definitionId === "") {
+      return "—";
+    }
+    const processId = processIdByDefinitionId.value[String(definitionId)];
+    if (processId === null || processId === undefined || processId === "") {
+      return "—";
+    }
+    const label = getFkCachedLabel("processes", processId);
+    return label ?? processId;
+  }
   if (["created_at", "updated_at", "created", "updated"].includes(fieldName)) {
     return formatDateTimeHour(value);
   }
-  if (props.table?.table === "position_assignments") {
+  if (tableMeta?.table === "process_target_rules") {
+    if (["effective_from", "effective_to"].includes(fieldName)) {
+      return formatDateOnly(value);
+    }
+  }
+  if (tableMeta?.table === "position_assignments") {
     if (["start_date", "end_date"].includes(field?.name)) {
       return formatDateOnly(value);
     }
@@ -2477,6 +2675,9 @@ const formatCell = (value, field, row = null) => {
   }
   return value;
 };
+
+const formatCell = (value, field, row = null) =>
+  formatValueForTable(props.table, value, field, row);
 
 const toDateInputValue = (value) => {
   if (!value) {
@@ -2500,24 +2701,57 @@ const toDateTimeInputValue = (value) => {
   return date.toISOString().slice(0, 16);
 };
 
+const normalizeComparableFormValue = (fieldName, value, tableMeta = props.table) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const fieldMeta = tableMeta?.fields?.find((field) => field.name === fieldName) || null;
+  if (fieldMeta?.type === "date") {
+    return formatDateOnly(value);
+  }
+  if (fieldMeta?.type === "datetime") {
+    return toDateTimeInputValue(value);
+  }
+  if (fieldMeta?.type === "number" || fieldMeta?.type === "boolean") {
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? String(value) : String(numeric);
+  }
+  return String(value).trim();
+};
+
+const getChangedPayloadKeys = (baseRow, payload, tableMeta = props.table) => {
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+  return Object.keys(payload).filter((key) => (
+    normalizeComparableFormValue(key, payload[key], tableMeta)
+    !== normalizeComparableFormValue(key, baseRow?.[key], tableMeta)
+  ));
+};
+
+const getNextSemanticVersion = (value) => {
+  const source = String(value || "").trim();
+  const match = source.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) {
+    return "0.1.0";
+  }
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  const patch = Number(match[3]) + 1;
+  return `${major}.${minor}.${patch}`;
+};
+
 const ensureEditorInstance = () => {
   if (!editorInstance && editorModal.value) {
     editorInstance = new Modal(editorModal.value);
   }
 };
 
-const ensureProcessFlowInstance = () => {
-  if (!processFlowInstance && processFlowModal.value) {
-    processFlowInstance = new Modal(processFlowModal.value);
-    processFlowModal.value.addEventListener("hidden.bs.modal", () => {
-      if (returnModal === "processFlow") {
-        return;
-      }
-      if (processFlowReturnToEditor.value) {
-        ensureEditorInstance();
-        editorInstance?.show();
-      }
-      processFlowReturnToEditor.value = false;
+const ensureProcessDefinitionVersioningInstance = () => {
+  if (!processDefinitionVersioningInstance && processDefinitionVersioningModal.value) {
+    processDefinitionVersioningInstance = new Modal(processDefinitionVersioningModal.value);
+    processDefinitionVersioningModal.value.addEventListener("hidden.bs.modal", () => {
+      processDefinitionVersioningSource.value = null;
     });
   }
 };
@@ -2525,6 +2759,15 @@ const ensureProcessFlowInstance = () => {
 const ensureDeleteInstance = () => {
   if (!deleteInstance && deleteModal.value) {
     deleteInstance = new Modal(deleteModal.value);
+  }
+};
+
+const ensureRecordViewerInstance = () => {
+  if (!recordViewerInstance && recordViewerModal.value) {
+    recordViewerInstance = new Modal(recordViewerModal.value);
+    recordViewerModal.value.addEventListener("hidden.bs.modal", () => {
+      restoreReturnModal();
+    });
   }
 };
 
@@ -2538,9 +2781,6 @@ const restoreReturnModal = () => {
   if (returnModal === "editor" && editorInstance) {
     editorInstance.show();
   }
-  if (returnModal === "processFlow" && processFlowInstance) {
-    processFlowInstance.show();
-  }
   if (returnModal === "processSearch" && processSearchInstance) {
     processSearchInstance.show();
   }
@@ -2549,9 +2789,6 @@ const restoreReturnModal = () => {
   }
   if (returnModal === "documentSearch" && documentSearchInstance) {
     documentSearchInstance.show();
-  }
-  if (returnModal === "processVersionEditor" && processVersionInstance) {
-    processVersionInstance.show();
   }
   if (returnModal === "personAssignments" && personAssignmentsInstance) {
     personAssignmentsInstance.show();
@@ -2725,6 +2962,21 @@ const loadVacantPositionCargoOptions = async () => {
   }
 };
 
+const loadProcessDefinitionProcessOptions = async () => {
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("processes"), {
+      params: {
+        orderBy: "name",
+        order: "asc",
+        limit: 500
+      }
+    });
+    processDefinitionProcessOptions.value = response.data || [];
+  } catch (error) {
+    processDefinitionProcessOptions.value = [];
+  }
+};
+
 const loadVacantPositionUnitOptions = async () => {
   if (!vacantPositionFilters.value.unit_type_id) {
     vacantPositionUnitOptions.value = [];
@@ -2757,6 +3009,7 @@ const loadVacantPositionUnitOptions = async () => {
 };
 
 const resetForm = () => {
+  resetInlineFkState();
   const payload = {};
   formFields.value.forEach((field) => {
     if (field.type === "boolean") {
@@ -2797,22 +3050,11 @@ const resetFkFilters = () => {
   fkFilterFields.value.forEach((field) => {
     payload[field.name] = "";
   });
+  if (fkTable.value?.table === "process_definition_versions") {
+    payload.status = "";
+    payload.execution_mode = "";
+  }
   fkFilters.value = payload;
-};
-
-const resetProcessVersionForm = (mode = "create") => {
-  processVersionForm.value = {
-    version: mode === "create" ? "0.1" : "",
-    name: mode === "create" ? "Inicial" : "",
-    slug: "",
-    effective_from: "",
-    effective_to: "",
-    parent_version_id: ""
-  };
-};
-
-const clearProcessVersioningContext = () => {
-  processVersioningContext.value = null;
 };
 
 const buildFormFromRow = (row) => {
@@ -2843,6 +3085,13 @@ const isFieldLocked = (field) => {
     return true;
   }
   if (
+    props.table?.table === "process_definition_versions"
+    && editorMode.value === "edit"
+    && ["process_id", "variation_key", "definition_version"].includes(field.name)
+  ) {
+    return true;
+  }
+  if (
     editorMode.value === "edit" &&
     props.table?.primaryKeys?.includes(field.name) &&
     !props.table?.allowPrimaryKeyUpdate
@@ -2850,23 +3099,6 @@ const isFieldLocked = (field) => {
     return true;
   }
   return false;
-};
-
-const openProcessFlowModal = () => {
-  if (!isProcessTable.value) {
-    return;
-  }
-  ensureEditorInstance();
-  ensureProcessFlowInstance();
-  processFlowReturnToEditor.value = Boolean(editorModal.value?.classList.contains("show"));
-  if (processFlowReturnToEditor.value) {
-    editorInstance?.hide();
-  }
-  processFlowInstance?.show();
-};
-
-const closeProcessFlowModal = () => {
-  processFlowInstance?.hide();
 };
 
 const isInputField = (field) => {
@@ -2883,6 +3115,13 @@ const inputType = (field) => {
 const buildPayload = () => {
   const payload = {};
   editableFields.value.forEach((field) => {
+    if (
+      props.table?.table === "process_definition_versions"
+      && editorMode.value === "edit"
+      && ["process_id", "variation_key", "definition_version"].includes(field.name)
+    ) {
+      return;
+    }
     let value = formData.value[field.name];
     if (value === "") {
       value = null;
@@ -2910,9 +3149,8 @@ const buildPayload = () => {
 const FK_TABLE_MAP = {
   parent_id: "processes",
   parent_task_id: "tasks",
-  parent_version_id: "process_versions",
   process_id: "processes",
-  process_version_id: "process_versions",
+  process_definition_id: "process_definition_versions",
   term_type_id: "term_types",
   term_id: "terms",
   task_id: "tasks",
@@ -2922,6 +3160,7 @@ const FK_TABLE_MAP = {
   child_unit_id: "units",
   relation_type_id: "relation_unit_types",
   template_id: "templates",
+  template_artifact_id: "template_artifacts",
   document_id: "documents",
   document_version_id: "document_versions",
   person_id: "persons",
@@ -2963,9 +3202,221 @@ const formatFkOptionLabel = (tableName, row) => {
   if (!row) {
     return "—";
   }
+  if (tableName === "process_definition_versions") {
+    const parts = [
+      row.variation_key,
+      row.definition_version,
+      row.name
+    ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
+    if (parts.length) {
+      return parts.join(" · ");
+    }
+  }
   const displayField = resolveDisplayField(allTablesMap.value?.[tableName]);
   const value = row[displayField] ?? row.name ?? row.title ?? row.code ?? row.id;
   return value !== null && value !== undefined && value !== "" ? String(value) : "—";
+};
+
+const getFkTableField = (fieldName) => {
+  if (!fkTable.value?.fields || !fieldName) {
+    return null;
+  }
+  return fkTable.value.fields.find((field) => field.name === fieldName) || null;
+};
+
+const getFkTableFieldOptions = (fieldName) => getFkTableField(fieldName)?.options || [];
+
+const resetInlineFkState = () => {
+  inlineFkSuggestions.value = {};
+  inlineFkLoading.value = {};
+  inlineFkTouched.value = {};
+  inlineFkActiveField.value = "";
+  Object.values(inlineFkCloseTimers).forEach((timerId) => {
+    clearTimeout(timerId);
+  });
+  Object.keys(inlineFkCloseTimers).forEach((key) => {
+    delete inlineFkCloseTimers[key];
+  });
+  Object.values(inlineFkQueryTimers).forEach((timerId) => {
+    clearTimeout(timerId);
+  });
+  Object.keys(inlineFkQueryTimers).forEach((key) => {
+    delete inlineFkQueryTimers[key];
+  });
+};
+
+const cancelInlineFkClose = (fieldName) => {
+  if (!fieldName || !inlineFkCloseTimers[fieldName]) {
+    return;
+  }
+  clearTimeout(inlineFkCloseTimers[fieldName]);
+  delete inlineFkCloseTimers[fieldName];
+};
+
+const scheduleInlineFkClose = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  cancelInlineFkClose(fieldName);
+  inlineFkCloseTimers[fieldName] = setTimeout(() => {
+    if (inlineFkActiveField.value === fieldName) {
+      inlineFkActiveField.value = "";
+    }
+    delete inlineFkCloseTimers[fieldName];
+  }, 150);
+};
+
+const shouldShowInlineFkSuggestions = (fieldName) => (
+  inlineFkActiveField.value === fieldName
+  && (
+    inlineFkLoading.value[fieldName]
+    || inlineFkTouched.value[fieldName]
+  )
+);
+
+const formatInlineFkOption = (field, row) => {
+  const tableName = resolveFkTable(field?.name);
+  if (!tableName) {
+    return row?.id ?? "—";
+  }
+  return formatFkOptionLabel(tableName, row);
+};
+
+const clearInlineFkSelection = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  cancelInlineFkClose(fieldName);
+  formData.value = {
+    ...formData.value,
+    [fieldName]: ""
+  };
+  fkDisplay.value = {
+    ...fkDisplay.value,
+    [fieldName]: ""
+  };
+  inlineFkSuggestions.value = {
+    ...inlineFkSuggestions.value,
+    [fieldName]: []
+  };
+  inlineFkTouched.value = {
+    ...inlineFkTouched.value,
+    [fieldName]: false
+  };
+  inlineFkActiveField.value = fieldName;
+};
+
+const applyInlineFkSelection = (field, row) => {
+  if (!field?.name || !row) {
+    return;
+  }
+  cancelInlineFkClose(field.name);
+  const tableName = resolveFkTable(field.name);
+  const labelValue = formatFkOptionLabel(tableName, row);
+  formData.value = {
+    ...formData.value,
+    [field.name]: row.id ?? ""
+  };
+  fkDisplay.value = {
+    ...fkDisplay.value,
+    [field.name]: labelValue
+  };
+  inlineFkSuggestions.value = {
+    ...inlineFkSuggestions.value,
+    [field.name]: []
+  };
+  inlineFkTouched.value = {
+    ...inlineFkTouched.value,
+    [field.name]: false
+  };
+  inlineFkActiveField.value = "";
+};
+
+const fetchInlineFkSuggestions = async (field) => {
+  if (!field?.name) {
+    return;
+  }
+  const tableName = resolveFkTable(field.name);
+  if (!tableName) {
+    return;
+  }
+  const query = String(fkDisplay.value[field.name] ?? "").trim();
+  if (!query) {
+    inlineFkSuggestions.value = {
+      ...inlineFkSuggestions.value,
+      [field.name]: []
+    };
+    inlineFkTouched.value = {
+      ...inlineFkTouched.value,
+      [field.name]: false
+    };
+    return;
+  }
+
+  inlineFkLoading.value = {
+    ...inlineFkLoading.value,
+    [field.name]: true
+  };
+  inlineFkTouched.value = {
+    ...inlineFkTouched.value,
+    [field.name]: true
+  };
+
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(tableName), {
+      params: {
+        q: query,
+        limit: 8
+      }
+    });
+    inlineFkSuggestions.value = {
+      ...inlineFkSuggestions.value,
+      [field.name]: response.data || []
+    };
+  } catch (error) {
+    inlineFkSuggestions.value = {
+      ...inlineFkSuggestions.value,
+      [field.name]: []
+    };
+  } finally {
+    inlineFkLoading.value = {
+      ...inlineFkLoading.value,
+      [field.name]: false
+    };
+  }
+};
+
+const openInlineFkSuggestions = (field) => {
+  if (!field?.name || isFieldLocked(field)) {
+    return;
+  }
+  cancelInlineFkClose(field.name);
+  inlineFkActiveField.value = field.name;
+  if (fkDisplay.value[field.name]) {
+    fetchInlineFkSuggestions(field);
+  }
+};
+
+const handleInlineFkInput = async (field) => {
+  if (!field?.name || isFieldLocked(field)) {
+    return;
+  }
+  formData.value = {
+    ...formData.value,
+    [field.name]: ""
+  };
+  inlineFkActiveField.value = field.name;
+  if (inlineFkQueryTimers[field.name]) {
+    clearTimeout(inlineFkQueryTimers[field.name]);
+  }
+  inlineFkQueryTimers[field.name] = setTimeout(() => {
+    fetchInlineFkSuggestions(field);
+    delete inlineFkQueryTimers[field.name];
+  }, 220);
+};
+
+const selectInlineFkSuggestion = (field, row) => {
+  applyInlineFkSelection(field, row);
 };
 
 const resetFkUnitPositionFilters = () => {
@@ -3071,6 +3522,19 @@ const handleFkCargoChange = async () => {
   await fetchFkRows();
 };
 
+const handleFkProcessDefinitionFilterChange = async () => {
+  await fetchFkRows();
+};
+
+const clearFkProcessDefinitionFilters = async () => {
+  fkFilters.value = {
+    ...fkFilters.value,
+    status: "",
+    execution_mode: ""
+  };
+  await fetchFkRows();
+};
+
 const setFkLabel = (tableName, id, label) => {
   if (!tableName || id === null || id === undefined || id === "") {
     return;
@@ -3129,6 +3593,59 @@ const prefetchFkLabelsForRows = async (rowsToScan, fieldNames) => {
     ids.forEach((id) => tasks.push(fetchFkLabel(tableName, id)));
   });
   await Promise.all(tasks);
+};
+
+const prefetchProcessLabelsForDefinitionRows = async (rowsToScan, tableMeta = null) => {
+  const effectiveTable = tableMeta || props.table;
+  if (!rowsToScan?.length || effectiveTable?.table !== "process_target_rules") {
+    return;
+  }
+
+  const definitionIds = Array.from(
+    new Set(
+      rowsToScan
+        .map((row) => row?.process_definition_id)
+        .filter((value) => value !== null && value !== undefined && value !== "")
+    )
+  );
+
+  const missingDefinitionIds = definitionIds.filter(
+    (definitionId) => processIdByDefinitionId.value[String(definitionId)] === undefined
+  );
+
+  if (!missingDefinitionIds.length) {
+    return;
+  }
+
+  const resolved = await Promise.all(
+    missingDefinitionIds.map(async (definitionId) => {
+      try {
+        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_versions"), {
+          params: { filter_id: definitionId, limit: 1 }
+        });
+        const definitionRow = response.data?.[0];
+        const processId = definitionRow?.process_id;
+        if (processId !== null && processId !== undefined && processId !== "") {
+          await fetchFkLabel("processes", processId);
+        }
+        return {
+          definitionId: String(definitionId),
+          processId: processId ?? null
+        };
+      } catch (error) {
+        return {
+          definitionId: String(definitionId),
+          processId: null
+        };
+      }
+    })
+  );
+
+  const nextMap = { ...processIdByDefinitionId.value };
+  resolved.forEach(({ definitionId, processId }) => {
+    nextMap[definitionId] = processId;
+  });
+  processIdByDefinitionId.value = nextMap;
 };
 
 const prefetchUnitTypeForUnitPositions = async (rowsToScan) => {
@@ -3438,10 +3955,6 @@ const openFkSearch = async (field, onSelect = null) => {
     editorInstance.hide();
     returnModal = "editor";
   }
-  if (processFlowInstance && processFlowModal.value?.classList.contains("show")) {
-    processFlowInstance.hide();
-    returnModal = "processFlow";
-  }
   if (processSearchInstance && processSearchModal.value?.classList.contains("show")) {
     processSearchInstance.hide();
     returnModal = "processSearch";
@@ -3453,10 +3966,6 @@ const openFkSearch = async (field, onSelect = null) => {
   if (documentSearchInstance && documentSearchModal.value?.classList.contains("show")) {
     documentSearchInstance.hide();
     returnModal = "documentSearch";
-  }
-  if (processVersionInstance && processVersionModal.value?.classList.contains("show")) {
-    processVersionInstance.hide();
-    returnModal = "processVersionEditor";
   }
   if (personAssignmentsInstance && personAssignmentsModal.value?.classList.contains("show")) {
     personAssignmentsInstance.hide();
@@ -3527,11 +4036,165 @@ const formatFkListCell = (row, field) => {
   return formatCell(row[field.name], field);
 };
 
+const formatFkPrimaryCell = (row) => {
+  if (!row) {
+    return "—";
+  }
+  if (!fkPrimaryListField.value) {
+    const displayField = resolveDisplayField(fkTable.value) || "id";
+    const value = row[displayField];
+    return value === null || value === undefined || value === "" ? "—" : String(value);
+  }
+  return formatFkListCell(row, fkPrimaryListField.value);
+};
+
 const formatFkViewerValue = (field, row) => {
   if (!row || !field) {
     return "—";
   }
-  return formatCell(row[field.name], field);
+  return formatValueForTable(fkTable.value, row[field.name], field, row);
+};
+
+const RELATED_RECORD_CONFIG = {
+  persons: [
+    { table: "position_assignments", label: "Ocupaciones", foreignKey: "person_id", orderBy: "start_date", order: "desc" },
+    { table: "role_assignments", label: "Roles", foreignKey: "person_id", orderBy: "assigned_at", order: "desc" },
+    { table: "contracts", label: "Contratos", foreignKey: "person_id", orderBy: "start_date", order: "desc" }
+  ],
+  processes: [
+    { table: "process_definition_versions", label: "Definiciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" },
+    { table: "templates", label: "Plantillas", foreignKey: "process_id", orderBy: "created_at", order: "desc" }
+  ],
+  process_definition_versions: [
+    { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
+    { table: "process_definition_template_bindings", label: "Plantillas vinculadas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
+    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
+    { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }
+  ],
+  tasks: [
+    { table: "task_assignments", label: "Asignaciones", foreignKey: "task_id", orderBy: "assigned_at", order: "desc" },
+    { table: "documents", label: "Documentos", foreignKey: "task_id", orderBy: "created_at", order: "desc" }
+  ],
+  templates: [
+    { table: "template_versions", label: "Versiones de plantilla", foreignKey: "template_id", orderBy: "created_at", order: "desc" }
+  ],
+  documents: [
+    { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }
+  ],
+  units: [
+    { table: "unit_positions", label: "Puestos", foreignKey: "unit_id", orderBy: "created_at", order: "desc" },
+    { table: "role_assignments", label: "Roles asignados", foreignKey: "unit_id", orderBy: "assigned_at", order: "desc" }
+  ],
+  vacancies: [
+    { table: "vacancy_visibility", label: "Visibilidad", foreignKey: "vacancy_id", orderBy: "created_at", order: "desc" },
+    { table: "aplications", label: "Aplicaciones", foreignKey: "vacancy_id", orderBy: "applied_at", order: "desc" }
+  ]
+};
+
+const formatRecordViewerValue = (field, row) => {
+  if (!row || !field) {
+    return "—";
+  }
+  return formatValueForTable(recordViewerTable.value, row[field.name], field, row);
+};
+
+const loadRecordViewerRelatedSections = async (tableMeta, row) => {
+  if (!tableMeta?.table || row?.id === null || row?.id === undefined || row?.id === "") {
+    recordViewerRelatedSections.value = [];
+    return;
+  }
+
+  const configs = RELATED_RECORD_CONFIG[tableMeta.table] || [];
+  if (!configs.length) {
+    recordViewerRelatedSections.value = [];
+    return;
+  }
+
+  const sections = await Promise.all(
+    configs.map(async (config) => {
+      const sectionTableMeta = allTablesMap.value[config.table];
+      if (!sectionTableMeta) {
+        return null;
+      }
+
+      const fields = getViewerFieldsForTable(sectionTableMeta, { includeVirtual: false });
+
+      try {
+        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(config.table), {
+          params: {
+            [`filter_${config.foreignKey}`]: row.id,
+            orderBy: config.orderBy,
+            order: config.order,
+            limit: 50
+          }
+        });
+        const relatedRows = response.data || [];
+        const fkFields = fields
+          .filter((field) => isForeignKeyField(field))
+          .map((field) => field.name);
+        await prefetchFkLabelsForRows(relatedRows, fkFields);
+        await prefetchProcessLabelsForDefinitionRows(relatedRows, sectionTableMeta);
+
+        return {
+          key: config.table,
+          label: config.label,
+          tableMeta: sectionTableMeta,
+          fields,
+          rows: relatedRows,
+          error: ""
+        };
+      } catch (err) {
+        return {
+          key: config.table,
+          label: config.label,
+          tableMeta: sectionTableMeta,
+          fields,
+          rows: [],
+          error: err?.response?.data?.message || "No se pudo cargar la relacion."
+        };
+      }
+    })
+  );
+
+  recordViewerRelatedSections.value = sections.filter(Boolean);
+};
+
+const openRecordViewer = async (row, tableMeta = props.table) => {
+  if (!row || !tableMeta) {
+    return;
+  }
+
+  returnModal = null;
+  if (personAssignmentsInstance && personAssignmentsModal.value?.classList.contains("show")) {
+    personAssignmentsInstance.hide();
+    returnModal = "personAssignments";
+  }
+
+  recordViewerTable.value = tableMeta;
+  recordViewerRow.value = row;
+  recordViewerError.value = "";
+  recordViewerLoading.value = true;
+  recordViewerRelatedSections.value = [];
+
+  try {
+    const fkFields = getViewerFieldsForTable(tableMeta)
+      .filter((field) => isForeignKeyField(field))
+      .map((field) => field.name);
+    await prefetchFkLabelsForRows([row], fkFields);
+    await prefetchProcessLabelsForDefinitionRows([row], tableMeta);
+    await loadRecordViewerRelatedSections(tableMeta, row);
+  } catch (err) {
+    recordViewerError.value = err?.response?.data?.message || "No se pudo cargar el registro.";
+  } finally {
+    recordViewerLoading.value = false;
+  }
+
+  ensureRecordViewerInstance();
+  recordViewerInstance?.show();
+};
+
+const closeRecordViewer = () => {
+  recordViewerInstance?.hide();
 };
 
 const openFkViewer = (row) => {
@@ -3673,24 +4336,6 @@ const buildKeys = (row) => {
     keys[key] = row?.[key];
   });
   return keys;
-};
-
-const getNextVersionValue = (currentVersion) => {
-  const versionText = String(currentVersion ?? "").trim();
-  if (!/^\d+\.\d+$/.test(versionText)) {
-    return "";
-  }
-  const [majorPart, minorPart] = versionText.split(".");
-  const scale = 10 ** minorPart.length;
-  const major = Number(majorPart);
-  const minor = Number(minorPart);
-  if (!Number.isInteger(major) || !Number.isInteger(minor) || Number.isNaN(scale)) {
-    return "";
-  }
-  const nextScaled = major * scale + minor + 1;
-  const nextMajor = Math.floor(nextScaled / scale);
-  const nextMinor = String(nextScaled % scale).padStart(minorPart.length, "0");
-  return `${nextMajor}.${nextMinor}`;
 };
 
 const fetchUnitPositionsForCurrentFilters = async ({
@@ -3856,6 +4501,13 @@ const fetchRows = async () => {
         }
       });
     }
+    if (props.table?.table === "process_definition_versions") {
+      Object.entries(processDefinitionInlineFilters.value).forEach(([key, value]) => {
+        if (value !== "" && value !== null && value !== undefined) {
+          filters[`filter_${key}`] = typeof value === "string" ? value.trim() : value;
+        }
+      });
+    }
     const baseParams = {
       q: searchTerm.value || undefined,
       ...filters
@@ -3929,6 +4581,7 @@ const fetchRows = async () => {
       .filter((field) => isForeignKeyField(field))
       .map((field) => field.name);
     await prefetchFkLabelsForRows(rows.value, fkFields);
+    await prefetchProcessLabelsForDefinitionRows(rows.value, props.table);
     if (isPositionAssignmentsTable.value) {
       await prefetchPositionMetaForAssignments(rows.value);
       await loadVacantPositions();
@@ -3952,6 +4605,14 @@ const fetchRows = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const clearProcessDefinitionInlineFilters = async () => {
+  processDefinitionInlineFilters.value = {
+    process_id: "",
+    variation_key: ""
+  };
+  await fetchRows();
 };
 
 const debouncedSearch = () => {
@@ -4036,16 +4697,24 @@ const applyProcessFilter = async () => {
 
 const clearProcessFilter = async () => {
   processFilters.value = {
-    unit_id: "",
     parent_id: "",
-    has_document: "",
     is_active: ""
   };
   processFilterLabels.value = {
-    unit_id: "",
     parent_id: ""
   };
   await fetchRows();
+};
+
+const clearProcessParentFilter = () => {
+  processFilters.value = {
+    ...processFilters.value,
+    parent_id: ""
+  };
+  processFilterLabels.value = {
+    ...processFilterLabels.value,
+    parent_id: ""
+  };
 };
 
 const applyTemplateFilter = async () => {
@@ -4066,6 +4735,17 @@ const clearTemplateFilter = async () => {
   await fetchRows();
 };
 
+const clearTemplateProcessFilter = () => {
+  templateFilters.value = {
+    ...templateFilters.value,
+    process_id: ""
+  };
+  templateFilterLabels.value = {
+    ...templateFilterLabels.value,
+    process_id: ""
+  };
+};
+
 const applyDocumentFilter = async () => {
   await fetchRows();
   documentSearchInstance?.hide();
@@ -4080,6 +4760,17 @@ const clearDocumentFilter = async () => {
     task_id: ""
   };
   await fetchRows();
+};
+
+const clearDocumentTaskFilter = () => {
+  documentFilters.value = {
+    ...documentFilters.value,
+    task_id: ""
+  };
+  documentFilterLabels.value = {
+    ...documentFilterLabels.value,
+    task_id: ""
+  };
 };
 
 const refreshUnitPositionScope = async () => {
@@ -4259,38 +4950,6 @@ const openProcessFkSearch = (fieldName) => {
   });
 };
 
-const openProcessVersionParentSearch = () => {
-  openFkSearch({ name: "parent_version_id" }, (row) => {
-    const idValue = row.id ?? "";
-    processVersionForm.value = {
-      ...processVersionForm.value,
-      parent_version_id: idValue ? String(idValue) : ""
-    };
-  });
-};
-
-const resetProcessVersionEditor = () => {
-  processVersionError.value = "";
-  processVersionProcessId.value = "";
-  processVersionProcessLabel.value = "";
-  processVersionRows.value = [];
-  selectedProcessVersionId.value = "";
-  processVersionEditForm.value = {
-    id: "",
-    version: "",
-    name: "",
-    slug: "",
-    parent_version_id: "",
-    has_document: "1",
-    is_active: "1",
-    effective_from: "",
-    effective_to: ""
-  };
-  processVersionEditLabels.value = {
-    parent_version_id: ""
-  };
-};
-
 const resetPersonCargoForm = () => {
   personCargoEditId.value = "";
   personCargoForm.value = {
@@ -4300,6 +4959,17 @@ const resetPersonCargoForm = () => {
     is_current: "1"
   };
   personCargoLabels.value = {
+    position_id: ""
+  };
+};
+
+const clearPersonCargoPosition = () => {
+  personCargoForm.value = {
+    ...personCargoForm.value,
+    position_id: ""
+  };
+  personCargoLabels.value = {
+    ...personCargoLabels.value,
     position_id: ""
   };
 };
@@ -4317,6 +4987,20 @@ const resetPersonRoleForm = () => {
   };
 };
 
+const clearPersonRoleField = (fieldName) => {
+  if (!["role_id", "unit_id"].includes(fieldName)) {
+    return;
+  }
+  personRoleForm.value = {
+    ...personRoleForm.value,
+    [fieldName]: ""
+  };
+  personRoleLabels.value = {
+    ...personRoleLabels.value,
+    [fieldName]: ""
+  };
+};
+
 const resetPersonContractForm = () => {
   personContractEditId.value = "";
   personContractForm.value = {
@@ -4328,6 +5012,17 @@ const resetPersonContractForm = () => {
     status: "activo"
   };
   personContractLabels.value = {
+    position_id: ""
+  };
+};
+
+const clearPersonContractPosition = () => {
+  personContractForm.value = {
+    ...personContractForm.value,
+    position_id: ""
+  };
+  personContractLabels.value = {
+    ...personContractLabels.value,
     position_id: ""
   };
 };
@@ -4347,28 +5042,6 @@ const resetPersonAssignments = () => {
   resetPersonCargoForm();
   resetPersonRoleForm();
   resetPersonContractForm();
-};
-
-
-const fetchProcessVersions = async () => {
-  if (!processVersionProcessId.value) {
-    processVersionRows.value = [];
-    return;
-  }
-  processVersionError.value = "";
-  try {
-    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_versions"), {
-      params: {
-        filter_process_id: processVersionProcessId.value,
-        orderBy: "created_at",
-        order: "desc",
-        limit: 100
-      }
-    });
-    processVersionRows.value = response.data || [];
-  } catch (err) {
-    processVersionError.value = err?.response?.data?.message || "No se pudo cargar las versiones.";
-  }
 };
 
 const loadPersonAssignments = async (personId) => {
@@ -4480,100 +5153,6 @@ const openPersonAssignments = async (row) => {
   ensurePersonAssignmentsInstance();
   personAssignmentsInstance?.show();
   await loadPersonAssignments(row.id);
-};
-
-const openProcessVersionProcessSearch = () => {
-  openFkSearch({ name: "process_id" }, async (row) => {
-    const idValue = row.id ?? "";
-    processVersionProcessId.value = idValue ? String(idValue) : "";
-    const displayField = resolveDisplayField(fkTable.value);
-    const labelValue = row[displayField] ?? row.id;
-    processVersionProcessLabel.value = labelValue ? String(labelValue) : "";
-    selectedProcessVersionId.value = "";
-    processVersionEditForm.value = {
-      id: "",
-      version: "",
-      name: "",
-      slug: "",
-      parent_version_id: "",
-      has_document: "1",
-      is_active: "1",
-      effective_from: "",
-      effective_to: ""
-    };
-    processVersionEditLabels.value = {
-      parent_version_id: ""
-    };
-    await fetchProcessVersions();
-  });
-};
-
-const handleProcessVersionSelect = async () => {
-  const selectedId = selectedProcessVersionId.value;
-  if (!selectedId) {
-    processVersionEditForm.value = {
-      id: "",
-      version: "",
-      name: "",
-      slug: "",
-      parent_version_id: "",
-      has_document: "1",
-      is_active: "1",
-      effective_from: "",
-      effective_to: ""
-    };
-    processVersionEditLabels.value = {
-      parent_version_id: ""
-    };
-    return;
-  }
-  const row = processVersionRows.value.find((item) => String(item.id) === String(selectedId));
-  if (!row) {
-    return;
-  }
-  processVersionEditForm.value = {
-    id: row.id ?? "",
-    version: row.version ?? "",
-    name: row.name ?? "",
-    slug: row.slug ?? "",
-    parent_version_id: row.parent_version_id ?? "",
-    has_document: String(Number(row.has_document ?? 1) === 1 ? 1 : 0),
-    is_active: String(Number(row.is_active ?? 1) === 1 ? 1 : 0),
-    effective_from: toDateInputValue(row.effective_from),
-    effective_to: toDateInputValue(row.effective_to)
-  };
-  processVersionEditLabels.value = {
-    parent_version_id: row.parent_version_id ? String(row.parent_version_id) : ""
-  };
-  if (row.parent_version_id) {
-    await fetchFkLabel("process_versions", row.parent_version_id);
-    const parentLabel = getFkCachedLabel("process_versions", row.parent_version_id);
-    processVersionEditLabels.value = {
-      ...processVersionEditLabels.value,
-      parent_version_id: parentLabel !== null && parentLabel !== undefined
-        ? String(parentLabel)
-        : String(row.parent_version_id)
-    };
-  }
-};
-
-const openProcessVersionFkSearch = (fieldName) => {
-  if (!fieldName) {
-    return;
-  }
-  openFkSearch({ name: fieldName }, (row) => {
-    const idValue = row.id ?? "";
-    processVersionEditForm.value = {
-      ...processVersionEditForm.value,
-      [fieldName]: idValue ? String(idValue) : ""
-    };
-    const displayField = resolveDisplayField(fkTable.value);
-    const labelValue = row[displayField] ?? row.id;
-    processVersionEditLabels.value = {
-      ...processVersionEditLabels.value,
-      [fieldName]: labelValue ? String(labelValue) : ""
-    };
-  });
 };
 
 const openPersonCargoFkSearch = (fieldName) => {
@@ -4867,37 +5446,6 @@ const submitPersonContractCreate = async () => {
   }
 };
 
-const submitProcessVersionEdit = async () => {
-  if (!processVersionEditForm.value.id) {
-    return;
-  }
-  processVersionError.value = "";
-  if (!processVersionEditForm.value.effective_from) {
-    processVersionError.value = "Selecciona la fecha de vigencia inicial.";
-    return;
-  }
-  try {
-    const payload = {
-      name: processVersionEditForm.value.name?.trim(),
-      slug: processVersionEditForm.value.slug?.trim(),
-      parent_version_id: processVersionEditForm.value.parent_version_id
-        ? Number(processVersionEditForm.value.parent_version_id)
-        : null,
-      has_document: Number(processVersionEditForm.value.has_document) === 1 ? 1 : 0,
-      is_active: Number(processVersionEditForm.value.is_active) === 1 ? 1 : 0,
-      effective_from: processVersionEditForm.value.effective_from,
-      effective_to: processVersionEditForm.value.effective_to || null
-    };
-    await axios.put(API_ROUTES.ADMIN_SQL_TABLE("process_versions"), {
-      keys: { id: processVersionEditForm.value.id },
-      data: payload
-    });
-    await fetchProcessVersions();
-  } catch (err) {
-    processVersionError.value = err?.response?.data?.message || "No se pudo actualizar la version.";
-  }
-};
-
 const applyUnitRelationDefaults = async () => {
   if (props.table?.table !== "unit_relations") {
     return;
@@ -4933,39 +5481,26 @@ const openCreate = async () => {
   if (!props.table) {
     return;
   }
-  clearProcessVersioningContext();
+  resetInlineFkState();
+  closeProcessDefinitionVersioningModal();
   editorMode.value = "create";
   selectedRow.value = null;
   modalError.value = "";
   resetForm();
   fkDisplay.value = {};
-  if (isProcessTable.value) {
-    resetProcessVersionForm("create");
-    processFlowReturnToEditor.value = false;
-  }
   await applyUnitRelationDefaults();
   ensureEditorInstance();
   editorInstance?.show();
 };
 
 const openEdit = async (row) => {
-  clearProcessVersioningContext();
+  resetInlineFkState();
+  closeProcessDefinitionVersioningModal();
   editorMode.value = "edit";
   selectedRow.value = row;
   modalError.value = "";
   buildFormFromRow(row);
   await refreshFormFkDisplayLabels();
-  if (isProcessTable.value) {
-    processVersionForm.value = {
-      version: "",
-      name: row?.version_name ?? row?.name ?? "",
-      slug: row?.version_slug ?? row?.slug ?? "",
-      effective_from: "",
-      effective_to: row?.version_effective_to ? String(row.version_effective_to).slice(0, 10) : "",
-      parent_version_id: row?.version_parent_version_id ? String(row.version_parent_version_id) : ""
-    };
-    processFlowReturnToEditor.value = false;
-  }
   ensureEditorInstance();
   editorInstance?.show();
 };
@@ -4976,41 +5511,70 @@ const openDelete = (row) => {
   deleteInstance?.show();
 };
 
-const openProcessVersioningFromRow = async (versionRow) => {
-  if (!versionRow?.id || !versionRow?.process_id) {
-    error.value = "No se pudo resolver el proceso para versionar.";
+const startProcessDefinitionVersioning = async (row) => {
+  if (!row) {
     return;
   }
-  const nextVersion = getNextVersionValue(versionRow.version);
-  if (!nextVersion) {
-    error.value = "No se pudo calcular la siguiente version del proceso.";
-    return;
-  }
-  error.value = "";
-  modalError.value = "";
+  resetInlineFkState();
+  closeProcessDefinitionVersioningModal();
   editorMode.value = "create";
   selectedRow.value = null;
-  resetForm();
+  modalError.value = "";
+  buildFormFromRow(row);
   formData.value = {
     ...formData.value,
-    name: versionRow.name ? String(versionRow.name) : "",
-    slug: versionRow.slug ? String(versionRow.slug) : "",
-    parent_version_id: String(versionRow.id),
-    cargo_id: versionRow.cargo_id ? String(versionRow.cargo_id) : "",
-    has_document: String(Number(versionRow.has_document ?? 1) === 1 ? 1 : 0),
-    is_active: "1",
-    effective_from: toDateInputValue(new Date()),
-    effective_to: ""
-  };
-  processVersioningContext.value = {
-    process_id: Number(versionRow.process_id),
-    base_version_id: Number(versionRow.id),
-    base_version: String(versionRow.version),
-    next_version: nextVersion
+    process_id: row.process_id ?? formData.value.process_id ?? "",
+    variation_key: row.variation_key ?? formData.value.variation_key ?? "general",
+    definition_version: getNextSemanticVersion(row.definition_version),
+    status: "draft"
   };
   await refreshFormFkDisplayLabels();
   ensureEditorInstance();
   editorInstance?.show();
+};
+
+const openProcessDefinitionVersioningModal = () => {
+  processDefinitionVersioningSource.value = selectedRow.value ? { ...selectedRow.value } : null;
+  ensureProcessDefinitionVersioningInstance();
+  processDefinitionVersioningInstance?.show();
+};
+
+const closeProcessDefinitionVersioningModal = () => {
+  processDefinitionVersioningInstance?.hide();
+  processDefinitionVersioningSource.value = null;
+};
+
+const cancelProcessDefinitionEdit = () => {
+  closeProcessDefinitionVersioningModal();
+  editorInstance?.hide();
+};
+
+const promoteProcessDefinitionToNewVersion = async () => {
+  const sourceRow = processDefinitionVersioningSource.value || selectedRow.value || {};
+  const nextVersion = (
+    normalizeComparableFormValue("definition_version", formData.value.definition_version)
+    && normalizeComparableFormValue("definition_version", formData.value.definition_version)
+      !== normalizeComparableFormValue("definition_version", sourceRow.definition_version)
+  )
+    ? String(formData.value.definition_version).trim()
+    : getNextSemanticVersion(sourceRow.definition_version);
+
+  formData.value = {
+    ...formData.value,
+    process_id: sourceRow.process_id ?? formData.value.process_id ?? "",
+    variation_key: sourceRow.variation_key ?? formData.value.variation_key ?? "general",
+    definition_version: nextVersion,
+    status: "draft"
+  };
+  fkDisplay.value = {
+    ...fkDisplay.value,
+    process_id: fkDisplay.value.process_id || (sourceRow.process_id ? String(sourceRow.process_id) : "")
+  };
+  editorMode.value = "create";
+  selectedRow.value = null;
+  modalError.value = "";
+  closeProcessDefinitionVersioningModal();
+  await refreshFormFkDisplayLabels();
 };
 
 const submitForm = async () => {
@@ -5019,101 +5583,6 @@ const submitForm = async () => {
   }
   error.value = "";
   modalError.value = "";
-  let shouldAttachProcessVersionPayload = false;
-  if (isProcessVersioningMode.value) {
-    const context = processVersioningContext.value;
-    const processId = Number(context?.process_id);
-    if (!processId) {
-      modalError.value = "No se pudo resolver el proceso base.";
-      return;
-    }
-    const versionValue = context?.next_version || getNextVersionValue(context?.base_version);
-    if (!versionValue) {
-      modalError.value = "No se pudo calcular la siguiente version.";
-      return;
-    }
-    const cargoId = formData.value.cargo_id ? Number(formData.value.cargo_id) : null;
-    if (!cargoId) {
-      modalError.value = "No se pudo resolver el cargo responsable de la version base.";
-      return;
-    }
-    if (!formData.value.effective_from) {
-      modalError.value = "Indica la fecha de vigencia inicial de la version.";
-      return;
-    }
-    const payload = {
-      process_id: processId,
-      version: versionValue,
-      name: formData.value.name?.trim(),
-      slug: formData.value.slug?.trim(),
-      parent_version_id: formData.value.parent_version_id
-        ? Number(formData.value.parent_version_id)
-        : context?.base_version_id || null,
-      cargo_id: cargoId,
-      has_document: Number(formData.value.has_document) === 1 ? 1 : 0,
-      is_active: Number(formData.value.is_active) === 1 ? 1 : 0,
-      effective_from: formData.value.effective_from,
-      effective_to: formData.value.effective_to || null
-    };
-    if (!payload.name || !payload.slug) {
-      modalError.value = "Completa nombre y slug para la nueva version.";
-      return;
-    }
-    try {
-      await axios.post(API_ROUTES.ADMIN_SQL_TABLE("process_versions"), payload);
-      editorInstance?.hide();
-      clearProcessVersioningContext();
-      await fetchRows();
-    } catch (err) {
-      modalError.value = err?.response?.data?.message || "No se pudo guardar la nueva version.";
-    }
-    return;
-  }
-  if (props.table.table === "processes") {
-    const unitId = formData.value.unit_id ? Number(formData.value.unit_id) : null;
-    const cargoId = formData.value.cargo_id ? Number(formData.value.cargo_id) : null;
-    const versionValue = processVersionForm.value.version?.trim();
-    const effectiveFrom = processVersionForm.value.effective_from;
-    const wantsVersioning = editorMode.value === "create" || Boolean(
-      versionValue
-      || effectiveFrom
-      || processVersionForm.value.effective_to
-      || processVersionForm.value.name?.trim()
-      || processVersionForm.value.slug?.trim()
-      || processVersionForm.value.parent_version_id
-    );
-    if (!unitId) {
-      modalError.value = "Selecciona una unidad para el proceso.";
-      return;
-    }
-    if (editorMode.value === "create" && !cargoId) {
-      modalError.value = "Selecciona el cargo responsable inicial.";
-      return;
-    }
-    if (wantsVersioning) {
-      if (!cargoId) {
-        modalError.value = "Selecciona el cargo responsable para versionar el proceso.";
-        return;
-      }
-      if (!versionValue) {
-        modalError.value = "Indica la version del proceso.";
-        return;
-      }
-      if (!effectiveFrom) {
-        modalError.value = "Indica la fecha de vigencia inicial de la version.";
-        return;
-      }
-      if (editorMode.value === "edit") {
-        const confirmed = window.confirm(
-          "Se creara una nueva version del proceso con estos datos. ¿Deseas continuar?"
-        );
-        if (!confirmed) {
-          return;
-        }
-      }
-      shouldAttachProcessVersionPayload = true;
-    }
-  }
   if (isTemplateTable.value) {
     const processId = formData.value.process_id ? Number(formData.value.process_id) : null;
     if (!processId) {
@@ -5130,16 +5599,19 @@ const submitForm = async () => {
   }
   try {
     const payload = buildPayload();
-    let createdPersonRow = null;
-    if (isProcessTable.value && (editorMode.value === "create" || shouldAttachProcessVersionPayload)) {
-      payload.version = processVersionForm.value.version?.trim();
-      payload.version_name = processVersionForm.value.name?.trim() || undefined;
-      payload.version_slug = processVersionForm.value.slug?.trim() || undefined;
-      payload.version_effective_from = processVersionForm.value.effective_from || undefined;
-      payload.version_effective_to = processVersionForm.value.effective_to || undefined;
-      const parentVersionId = processVersionForm.value.parent_version_id;
-      payload.version_parent_version_id = parentVersionId ? Number(parentVersionId) : undefined;
+    if (
+      props.table.table === "process_definition_versions"
+      && editorMode.value === "edit"
+      && String(selectedRow.value?.status || "") === "active"
+    ) {
+      const changedKeys = getChangedPayloadKeys(selectedRow.value || {}, payload);
+      const disallowedActiveChanges = changedKeys.filter((key) => !["status", "effective_to"].includes(key));
+      if (disallowedActiveChanges.length) {
+        openProcessDefinitionVersioningModal();
+        return;
+      }
     }
+    let createdPersonRow = null;
     if (editorMode.value === "create") {
       const response = await axios.post(API_ROUTES.ADMIN_SQL_TABLE(props.table.table), payload);
       if (isPersonTable.value) {
@@ -5154,7 +5626,6 @@ const submitForm = async () => {
       });
     }
     editorInstance?.hide();
-    clearProcessVersioningContext();
     await fetchRows();
     if (createdPersonRow) {
       const createdId = createdPersonRow.id ?? createdPersonRow._id;
@@ -5173,7 +5644,16 @@ const submitForm = async () => {
       }
     }
   } catch (err) {
-    modalError.value = err?.response?.data?.message || "No se pudo guardar el registro.";
+    const responseMessage = err?.response?.data?.message || "";
+    if (
+      props.table?.table === "process_definition_versions"
+      && editorMode.value === "edit"
+      && responseMessage === "Una definicion activa solo permite cambiar estado o vigencia final."
+    ) {
+      openProcessDefinitionVersioningModal();
+      return;
+    }
+    modalError.value = responseMessage || "No se pudo guardar el registro.";
   }
 };
 
@@ -5202,11 +5682,7 @@ const confirmDelete = async () => {
 watch(
   () => props.table?.table,
   async () => {
-    clearProcessVersioningContext();
-    processFlowReturnToEditor.value = false;
-    if (processFlowInstance && processFlowModal.value?.classList.contains("show")) {
-      processFlowInstance.hide();
-    }
+    resetInlineFkState();
     if (personAssignmentsInstance && personAssignmentsModal.value?.classList.contains("show")) {
       personAssignmentsInstance.hide();
     }
@@ -5214,8 +5690,6 @@ watch(
       unitPositionSearchInstance.hide();
     }
     resetForm();
-    resetProcessVersionForm("create");
-    resetProcessVersionEditor();
     resetPersonAssignments();
     positionMetaById.value = {};
     vacantSearchTerm.value = "";
@@ -5223,13 +5697,10 @@ watch(
     vacantPositionError.value = "";
     vacantPositionLoading.value = false;
     processFilters.value = {
-      unit_id: "",
       parent_id: "",
-      has_document: "",
       is_active: ""
     };
     processFilterLabels.value = {
-      unit_id: "",
       parent_id: ""
     };
     templateFilters.value = {
@@ -5265,6 +5736,11 @@ watch(
     vacantPositionUnitTypeOptions.value = [];
     vacantPositionUnitOptions.value = [];
     vacantPositionCargoOptions.value = [];
+    processDefinitionInlineFilters.value = {
+      process_id: "",
+      variation_key: ""
+    };
+    processDefinitionProcessOptions.value = [];
     if (isPositionFilterTable.value) {
       await loadUnitPositionUnitTypeOptions();
       await loadUnitPositionCargoOptions();
@@ -5272,6 +5748,9 @@ watch(
     if (isPositionAssignmentsTable.value) {
       await loadVacantPositionUnitTypeOptions();
       await loadVacantPositionCargoOptions();
+    }
+    if (isProcessDefinitionFilterTable.value) {
+      await loadProcessDefinitionProcessOptions();
     }
     await fetchRows();
   },
@@ -5285,6 +5764,7 @@ onBeforeUnmount(() => {
   if (vacantSearchTimeout) {
     clearTimeout(vacantSearchTimeout);
   }
+  resetInlineFkState();
 });
 
 defineExpose({
@@ -5342,6 +5822,20 @@ defineExpose({
   color: rgba(var(--color-puce-light-rgb), 0.56);
   border: 1px solid rgba(var(--color-puce-light-rgb), 0.28);
   background: transparent;
+}
+
+.fk-inline-suggestions {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 20;
+  max-height: 16rem;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+}
+
+.fk-inline-suggestions .list-group-item {
+  font-size: 0.95rem;
 }
 
 .person-assignment-title,
@@ -5491,6 +5985,18 @@ defineExpose({
   color: #0f3153 !important;
   background: rgba(var(--brand-primary-rgb), 0.16);
   border-color: rgba(var(--brand-primary-rgb), 0.4);
+}
+
+.hope-action-version {
+  color: var(--color-puce-light) !important;
+  background: rgba(var(--color-puce-light-rgb), 0.14);
+  border-color: rgba(var(--color-puce-light-rgb), 0.34);
+}
+
+.hope-action-version:hover {
+  color: #2f73f1 !important;
+  background: rgba(var(--color-puce-light-rgb), 0.2);
+  border-color: rgba(var(--color-puce-light-rgb), 0.46);
 }
 
 .table-actions-scroll {

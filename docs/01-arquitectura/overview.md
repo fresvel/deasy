@@ -3,6 +3,7 @@
 ## Proposito
 
 Deasy integra frontend web, backend API y servicios auxiliares (mensajeria, firmas y reportes) para gestion academica y documental.
+El motor de negocio usa procesos base, definiciones versionadas y reglas de alcance para resolver asignaciones masivas sin perder precision organizacional.
 
 ## Componentes principales
 
@@ -33,4 +34,3 @@ Deasy integra frontend web, backend API y servicios auxiliares (mensajeria, firm
 
 - Docker compose como stack de desarrollo.
 - Servicios externos documentados en docs/07-despliegue/docker.md.
-

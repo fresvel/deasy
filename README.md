@@ -17,6 +17,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - Frontend consume API del backend.
 - Backend integra:
   - Base de datos (MariaDB + Mongo segun el modulo).
+  - Motor de procesos basado en `processes` + `process_definition_versions` + `process_target_rules`.
   - Servicios de reportes/latex.
   - Servicio de firmas (signflow/multisigner).
   - Mensajeria en tiempo real via EMQX (WebSocket).

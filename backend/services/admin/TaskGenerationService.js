@@ -9,26 +9,6 @@ const getActiveProcesses = async (connection) => {
   return rows;
 };
 
-const getProcessUnitsMap = async (connection, termStart, termEnd) => {
-  const [rows] = await connection.query(
-    `SELECT process_id, unit_id
-     FROM process_units
-     WHERE is_active = 1
-       AND (effective_from IS NULL OR effective_from <= ?)
-       AND (effective_to IS NULL OR effective_to >= ?)
-     ORDER BY process_id, is_primary DESC, id ASC`,
-    [termEnd, termStart]
-  );
-  const map = new Map();
-  rows.forEach((row) => {
-    if (!map.has(row.process_id)) {
-      map.set(row.process_id, []);
-    }
-    map.get(row.process_id).push(row.unit_id);
-  });
-  return map;
-};
-
 const getTermById = async (connection, termId) => {
   const [rows] = await connection.query(
     `SELECT id, start_date, end_date
@@ -40,67 +20,171 @@ const getTermById = async (connection, termId) => {
   return rows[0] || null;
 };
 
-const getProcessVersionMap = async (connection, termStart, termEnd) => {
+const getActiveDefinitions = async (connection, termStart, termEnd) => {
   const [rows] = await connection.query(
-    `SELECT id, process_id, cargo_id
+    `SELECT id, process_id, variation_key, definition_version
      FROM (
        SELECT
          id,
          process_id,
-         cargo_id,
+         variation_key,
+         definition_version,
          ROW_NUMBER() OVER (
-           PARTITION BY process_id
+           PARTITION BY process_id, variation_key
            ORDER BY effective_from DESC, id DESC
          ) AS rn
-       FROM process_versions
-       WHERE is_active = 1
+       FROM process_definition_versions
+       WHERE status = 'active'
          AND effective_from <= ?
          AND (effective_to IS NULL OR effective_to >= ?)
      ) AS ranked
-     WHERE rn = 1`,
+     WHERE rn = 1
+     ORDER BY process_id ASC, variation_key ASC`,
+    [termEnd, termStart]
+  );
+  return rows;
+};
+
+const getTargetRulesMap = async (connection, termStart, termEnd) => {
+  const [rows] = await connection.query(
+    `SELECT
+       id,
+       process_definition_id,
+       unit_scope_type,
+       unit_id,
+       unit_type_id,
+       include_descendants,
+       cargo_id,
+       position_id,
+       recipient_policy,
+       priority
+     FROM process_target_rules
+     WHERE is_active = 1
+       AND (effective_from IS NULL OR effective_from <= ?)
+       AND (effective_to IS NULL OR effective_to >= ?)
+     ORDER BY process_definition_id, priority ASC, id ASC`,
     [termEnd, termStart]
   );
   const map = new Map();
   rows.forEach((row) => {
-    map.set(row.process_id, { id: row.id, cargo_id: row.cargo_id });
+    if (!map.has(row.process_definition_id)) {
+      map.set(row.process_definition_id, []);
+    }
+    map.get(row.process_definition_id).push(row);
   });
   return map;
 };
 
 const getExistingTasksMap = async (connection, termId) => {
   const [rows] = await connection.query(
-    `SELECT t.id, pv.process_id, t.parent_task_id
+    `SELECT t.id, t.process_definition_id, t.parent_task_id
      FROM tasks t
-     JOIN process_versions pv ON pv.id = t.process_version_id
      WHERE t.term_id = ?`,
     [termId]
   );
   const map = new Map();
   rows.forEach((row) => {
-    if (!map.has(row.process_id)) {
-      map.set(row.process_id, { id: row.id, parent_task_id: row.parent_task_id });
+    if (!map.has(row.process_definition_id)) {
+      map.set(row.process_definition_id, { id: row.id, parent_task_id: row.parent_task_id });
     }
   });
   return map;
 };
 
-const getPositionsForProcess = async (connection, { unitIds, cargoId }) => {
-  if (!Array.isArray(unitIds) || !unitIds.length) {
+const applyRecipientPolicy = (rows, recipientPolicy, exactPositionId = null) => {
+  if (!rows.length) {
     return [];
   }
-  const placeholders = unitIds.map(() => "?").join(", ");
-  const [rows] = await connection.query(
-    `SELECT DISTINCT up.id AS position_id, pa.person_id
-     FROM unit_positions up
-     LEFT JOIN position_assignments pa
-       ON pa.position_id = up.id
-      AND pa.is_current = 1
-     WHERE up.unit_id IN (${placeholders})
-       AND up.cargo_id = ?
-       AND up.is_active = 1`,
-    [...unitIds, cargoId]
-  );
+  if (recipientPolicy === "exact_position" || exactPositionId) {
+    return rows.slice(0, 1);
+  }
+  if (recipientPolicy === "one_match_only") {
+    return rows.slice(0, 1);
+  }
+  if (recipientPolicy === "one_per_unit") {
+    const seen = new Set();
+    return rows.filter((row) => {
+      if (seen.has(row.unit_id)) {
+        return false;
+      }
+      seen.add(row.unit_id);
+      return true;
+    });
+  }
   return rows;
+};
+
+const getPositionsForRule = async (connection, rule) => {
+  const useExactPosition = rule.position_id || rule.recipient_policy === "exact_position";
+  if (useExactPosition && !rule.position_id) {
+    return [];
+  }
+
+  const params = [];
+  let query = `
+    SELECT DISTINCT
+      up.id AS position_id,
+      up.unit_id,
+      pa.person_id,
+      up.slot_no
+    FROM unit_positions up
+    INNER JOIN units u ON u.id = up.unit_id
+    LEFT JOIN position_assignments pa
+      ON pa.position_id = up.id
+     AND pa.is_current = 1
+    WHERE up.is_active = 1
+      AND u.is_active = 1`;
+
+  if (useExactPosition) {
+    query += "\n      AND up.id = ?";
+    params.push(rule.position_id);
+  } else {
+    if (rule.cargo_id) {
+      query += "\n      AND up.cargo_id = ?";
+      params.push(rule.cargo_id);
+    }
+
+    const useSubtree = rule.unit_scope_type === "unit_subtree"
+      || (rule.unit_scope_type === "unit_exact" && Number(rule.include_descendants) === 1);
+
+    if (useSubtree) {
+      if (!rule.unit_id) {
+        return [];
+      }
+      query = `
+        WITH RECURSIVE scoped_units AS (
+          SELECT id
+          FROM units
+          WHERE id = ?
+          UNION ALL
+          SELECT ur.child_unit_id
+          FROM unit_relations ur
+          INNER JOIN relation_unit_types rt
+            ON rt.id = ur.relation_type_id
+           AND rt.code = 'org'
+          INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
+        )
+        ${query}
+          AND up.unit_id IN (SELECT id FROM scoped_units)`;
+      params.unshift(rule.unit_id);
+    } else if (rule.unit_scope_type === "unit_exact") {
+      if (!rule.unit_id) {
+        return [];
+      }
+      query += "\n      AND up.unit_id = ?";
+      params.push(rule.unit_id);
+    } else if (rule.unit_scope_type === "unit_type") {
+      if (!rule.unit_type_id) {
+        return [];
+      }
+      query += "\n      AND u.unit_type_id = ?";
+      params.push(rule.unit_type_id);
+    }
+  }
+
+  query += "\n    ORDER BY up.unit_id ASC, up.slot_no ASC, up.id ASC";
+  const [rows] = await connection.query(query, params);
+  return applyRecipientPolicy(rows, rule.recipient_policy, rule.position_id);
 };
 
 export const generateTasksForTerm = async (termId) => {
@@ -120,30 +204,38 @@ export const generateTasksForTerm = async (termId) => {
 
     const processes = await getActiveProcesses(connection);
     const processById = new Map(processes.map((process) => [process.id, process]));
-    const processUnitsMap = await getProcessUnitsMap(connection, term.start_date, term.end_date);
-    const versionMap = await getProcessVersionMap(connection, term.start_date, term.end_date);
+    const activeDefinitions = await getActiveDefinitions(connection, term.start_date, term.end_date);
+    const definitionById = new Map(activeDefinitions.map((definition) => [definition.id, definition]));
+    const primaryDefinitionByProcess = new Map();
+    activeDefinitions.forEach((definition) => {
+      if (!primaryDefinitionByProcess.has(definition.process_id)) {
+        primaryDefinitionByProcess.set(definition.process_id, definition);
+      }
+    });
+    const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
     const existingTasksMap = await getExistingTasksMap(connection, term.id);
     const createdTaskIds = [];
-    const tasksWithMissingVersion = [];
+    const tasksWithMissingDefinition = [];
     const updatedParents = [];
     const processing = new Set();
 
-    const ensureTask = async (processId) => {
-      if (!processById.has(processId)) {
+    const ensureTask = async (definition) => {
+      if (!definition || !processById.has(definition.process_id)) {
         return null;
       }
-      if (processing.has(processId)) {
-        return existingTasksMap.get(processId)?.id || null;
+      if (processing.has(definition.id)) {
+        return existingTasksMap.get(definition.id)?.id || null;
       }
-      processing.add(processId);
+      processing.add(definition.id);
 
-      const process = processById.get(processId);
+      const process = processById.get(definition.process_id);
       let parentTaskId = null;
       if (process.parent_id) {
-        parentTaskId = await ensureTask(process.parent_id);
+        const parentDefinition = primaryDefinitionByProcess.get(process.parent_id);
+        parentTaskId = await ensureTask(parentDefinition);
       }
 
-      const existing = existingTasksMap.get(processId);
+      const existing = existingTasksMap.get(definition.id);
       if (existing) {
         if (parentTaskId && existing.parent_task_id !== parentTaskId) {
           await connection.query(
@@ -156,18 +248,12 @@ export const generateTasksForTerm = async (termId) => {
         return existing.id;
       }
 
-      const versionEntry = versionMap.get(processId);
-      if (!versionEntry) {
-        tasksWithMissingVersion.push(processId);
-        return null;
-      }
-
       const [result] = await connection.query(
         `INSERT INTO tasks
-         (process_version_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status)
+         (process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
-          versionEntry.id,
+          definition.id,
           term.id,
           parentTaskId,
           null,
@@ -177,36 +263,47 @@ export const generateTasksForTerm = async (termId) => {
         ]
       );
       const insertedId = result.insertId;
-      existingTasksMap.set(processId, { id: insertedId, parent_task_id: parentTaskId });
+      existingTasksMap.set(definition.id, { id: insertedId, parent_task_id: parentTaskId });
       createdTaskIds.push(insertedId);
       return insertedId;
     };
 
-    for (const process of processes) {
-      await ensureTask(process.id);
+    processes.forEach((process) => {
+      if (!primaryDefinitionByProcess.has(process.id)) {
+        tasksWithMissingDefinition.push(process.id);
+      }
+    });
+
+    for (const definition of activeDefinitions) {
+      await ensureTask(definition);
     }
 
-    const processIds = Array.from(existingTasksMap.keys());
+    const processDefinitionIds = Array.from(existingTasksMap.keys());
     let assignmentsCreated = 0;
+    const processesWithoutTargetRules = [];
     const processesWithoutAssignees = [];
 
-    for (const processId of processIds) {
-      const task = existingTasksMap.get(processId);
+    for (const processDefinitionId of processDefinitionIds) {
+      const task = existingTasksMap.get(processDefinitionId);
       if (!task) {
         continue;
       }
-      const process = processById.get(processId);
-      const versionEntry = versionMap.get(processId);
-      if (!process || !versionEntry) {
+      const definitionEntry = definitionById.get(processDefinitionId);
+      if (!definitionEntry || !processById.has(definitionEntry.process_id)) {
         continue;
       }
-      const unitIds = processUnitsMap.get(processId) || [];
-      const positions = await getPositionsForProcess(connection, {
-        unitIds,
-        cargoId: versionEntry.cargo_id
-      });
+      const rules = targetRulesMap.get(definitionEntry.id) || [];
+      if (!rules.length) {
+        processesWithoutTargetRules.push(processDefinitionId);
+        continue;
+      }
+      const positions = [];
+      for (const rule of rules) {
+        const matched = await getPositionsForRule(connection, rule);
+        positions.push(...matched);
+      }
       if (!positions.length) {
-        processesWithoutAssignees.push(processId);
+        processesWithoutAssignees.push(processDefinitionId);
         continue;
       }
       const values = positions.map((row) => [task.id, row.position_id, row.person_id ?? null]);
@@ -227,8 +324,9 @@ export const generateTasksForTerm = async (termId) => {
       tasks_created: createdTaskIds.length,
       tasks_existing: existingTasksMap.size,
       assignments_created: assignmentsCreated,
-      tasks_with_missing_version: tasksWithMissingVersion,
+      tasks_with_missing_definition: tasksWithMissingDefinition,
       tasks_parent_updated: updatedParents,
+      processes_without_target_rules: processesWithoutTargetRules,
       processes_without_assignees: processesWithoutAssignees
     };
   } catch (error) {

@@ -43,13 +43,15 @@
 
 ### Procesos, tareas y plantillas
 
-- processes(id, name, slug, parent_id, has_document, is_active, created_at)
-- process_units(id, process_id, unit_id, scope, is_primary, is_active, effective_from, effective_to, created_at, updated_at)
-- process_versions(id, process_id, version, name, slug, parent_version_id, cargo_id, has_document, is_active, effective_from, effective_to, created_at)
+- processes(id, name, slug, parent_id, is_active, created_at)
+- process_definition_versions(id, process_id, variation_key, definition_version, name, description, has_document, execution_mode, status, effective_from, effective_to, created_at)
+- process_target_rules(id, process_definition_id, unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id, recipient_policy, priority, is_active, effective_from, effective_to, created_at)
 - term_types(id, code, name, description, is_active, created_at, updated_at)
 - terms(id, name, term_type_id, start_date, end_date, is_active)
-- tasks(id, process_version_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
+- tasks(id, process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
 - task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
+- template_artifacts(id, template_code, display_name, source_version, storage_version, bucket, base_object_prefix, mode, format, entry_object_key, schema_object_key, meta_object_key, content_hash, is_active, created_at)
+- process_definition_template_bindings(id, process_definition_id, template_artifact_id, usage_role, is_required, sort_order, created_at)
 - templates(id, process_id, name, slug, description, created_at)
 - template_versions(id, template_id, version, mongo_ref, mongo_version, is_active, created_at)
 - documents(id, task_id, status, comments_thread_ref, created_at, updated_at)
@@ -57,11 +59,26 @@
 - signature_types(id, code, name, description, is_active, created_at)
 - signature_statuses(id, code, name, description, is_active, created_at)
 - signature_request_statuses(id, code, name, description, is_active, created_at)
-- signature_flow_templates(id, process_version_id, name, description, is_active, created_at)
+- signature_flow_templates(id, process_definition_id, name, description, is_active, created_at)
 - signature_flow_steps(id, template_id, step_order, step_type_id, required_cargo_id, selection_mode, required_signers_min, required_signers_max, is_required, created_at)
 - signature_flow_instances(id, template_id, document_version_id, status_id, created_at)
 - signature_requests(id, instance_id, step_id, assigned_person_id, status_id, is_manual, requested_at, notified_at, responded_at)
 - document_signatures(id, signature_request_id, document_version_id, signer_user_id, signature_type_id, signature_status_id, note_short, signed_file_path, signed_at, created_at)
+
+## Uso del modelo de procesos
+
+1) Crear `processes` para la identidad estable del proceso.
+2) Crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. Cada definicion pertenece a una `variation_key` (serie) y su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`).
+3) Definir el alcance con una o varias filas en `process_target_rules`:
+   - `unit_exact`: una unidad puntual.
+   - `unit_subtree`: una unidad y toda su jerarquia.
+   - `unit_type`: todas las unidades de un tipo.
+   - `all_units`: cualquier unidad activa.
+   - Si solo cambia el alcance, reutilizar la misma definicion y ajustar/agregar reglas.
+   - Si cambia la logica funcional (templates, modo, contenido), crear una nueva version o una nueva `variation_key`.
+4) Publicar templates empaquetados en MinIO y registrarlos en `template_artifacts`.
+5) Vincular los templates requeridos a la definicion mediante `process_definition_template_bindings`.
+6) Al crear un periodo (`terms`), el backend toma la definicion activa mas reciente por proceso y `variation_key`, y genera tareas segun las reglas de alcance.
 
 ## NoSQL (MongoDB)
 
@@ -79,6 +96,6 @@ Modelos para chat/notificaciones (ver docs/01-arquitectura/chat-notificaciones.m
 
 - Revisar columna legacy template_version_id en process_templates (error conocido).
 - Separación de document_signatures en otra tabla (sería firmas).
-- Probar generación automática de tareas al crear periodos (process_cargos + person_cargos).
+- Afinar la resolución de múltiples definiciones activas para un mismo proceso si negocio lo requiere.
 - Validar cierre de tareas padre cuando finalizan tareas hijas.
 - Verificar asignaciones por unidad y programa con datos reales (BD actualmente vacía).

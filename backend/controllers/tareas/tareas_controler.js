@@ -85,9 +85,10 @@ export const getuserTarea = async (req, res) => {
               t.term_id,
               ta.id AS assignment_id,
               ta.status AS assignment_status,
-              pv.id AS process_version_id,
-              pv.version AS process_version,
-              pv.name AS process_version_name,
+              pdv.id AS process_definition_id,
+              pdv.variation_key,
+              pdv.definition_version,
+              pdv.name AS process_definition_name,
               p.id AS process_id,
               p.name AS process_name,
               p.slug AS process_slug,
@@ -95,26 +96,10 @@ export const getuserTarea = async (req, res) => {
               u.name AS unit_name
        FROM task_assignments ta
        INNER JOIN tasks t ON t.id = ta.task_id
-       INNER JOIN process_versions pv ON pv.id = t.process_version_id
-       INNER JOIN processes p ON p.id = pv.process_id
-       LEFT JOIN (
-         SELECT process_id, unit_id
-         FROM (
-           SELECT
-             process_id,
-             unit_id,
-             ROW_NUMBER() OVER (
-               PARTITION BY process_id
-               ORDER BY is_primary DESC, id ASC
-             ) AS rn
-           FROM process_units
-           WHERE is_active = 1
-             AND (effective_from IS NULL OR effective_from <= CURDATE())
-             AND (effective_to IS NULL OR effective_to >= CURDATE())
-         ) ranked_pu
-         WHERE rn = 1
-       ) pu ON pu.process_id = p.id
-       LEFT JOIN units u ON u.id = pu.unit_id
+       INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       INNER JOIN unit_positions up ON up.id = ta.position_id
+       INNER JOIN units u ON u.id = up.unit_id
        LEFT JOIN position_assignments pa
          ON pa.position_id = ta.position_id AND pa.is_current = 1
        WHERE (ta.assigned_person_id = ? OR (ta.assigned_person_id IS NULL AND pa.person_id = ?))
@@ -170,9 +155,10 @@ export const getTareaspendientes = async (req, res) => {
               t.term_id,
               ta.id AS assignment_id,
               ta.status AS assignment_status,
-              pv.id AS process_version_id,
-              pv.version AS process_version,
-              pv.name AS process_version_name,
+              pdv.id AS process_definition_id,
+              pdv.variation_key,
+              pdv.definition_version,
+              pdv.name AS process_definition_name,
               p.id AS process_id,
               p.name AS process_name,
               p.slug AS process_slug,
@@ -180,26 +166,10 @@ export const getTareaspendientes = async (req, res) => {
               u.name AS unit_name
        FROM task_assignments ta
        INNER JOIN tasks t ON t.id = ta.task_id
-       INNER JOIN process_versions pv ON pv.id = t.process_version_id
-       INNER JOIN processes p ON p.id = pv.process_id
-       LEFT JOIN (
-         SELECT process_id, unit_id
-         FROM (
-           SELECT
-             process_id,
-             unit_id,
-             ROW_NUMBER() OVER (
-               PARTITION BY process_id
-               ORDER BY is_primary DESC, id ASC
-             ) AS rn
-           FROM process_units
-           WHERE is_active = 1
-             AND (effective_from IS NULL OR effective_from <= CURDATE())
-             AND (effective_to IS NULL OR effective_to >= CURDATE())
-         ) ranked_pu
-         WHERE rn = 1
-       ) pu ON pu.process_id = p.id
-       LEFT JOIN units u ON u.id = pu.unit_id
+       INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       INNER JOIN unit_positions up ON up.id = ta.position_id
+       INNER JOIN units u ON u.id = up.unit_id
        LEFT JOIN position_assignments pa
          ON pa.position_id = ta.position_id AND pa.is_current = 1
        WHERE (ta.assigned_person_id = ? OR (ta.assigned_person_id IS NULL AND pa.person_id = ?))

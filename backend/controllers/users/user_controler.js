@@ -133,9 +133,11 @@ export const getUserMenu = async (req, res) => {
 
     const [positions] = await pool.query(
       `SELECT DISTINCT
+         up.id AS position_id,
          u.id AS unit_id,
          u.name AS unit_name,
          u.label AS unit_label,
+         u.unit_type_id,
          uol.group_unit_id AS group_unit_id,
          gu.name AS group_unit_name,
          gu.label AS group_unit_label,
@@ -213,49 +215,108 @@ export const getUserMenu = async (req, res) => {
       }
     });
 
-    const [processRows] = await pool.query(
+    const [orgTreeRows] = await pool.query(
+      `SELECT ur.parent_unit_id, ur.child_unit_id
+       FROM unit_relations ur
+       INNER JOIN relation_unit_types rt
+         ON rt.id = ur.relation_type_id
+        AND rt.code = 'org'`
+    );
+
+    const [processRuleRows] = await pool.query(
       `SELECT DISTINCT
          p.id AS process_id,
          p.name AS process_name,
          p.slug AS process_slug,
-         pu.unit_id,
-         cv.cargo_id
+         pdv.id AS process_definition_id,
+         pdv.variation_key,
+         pdv.definition_version,
+         ptr.id AS rule_id,
+         ptr.unit_scope_type,
+         ptr.unit_id,
+         ptr.unit_type_id,
+         ptr.include_descendants,
+         ptr.cargo_id,
+         ptr.position_id,
+         ptr.recipient_policy
        FROM processes p
-       INNER JOIN process_units pu
-         ON pu.process_id = p.id
-        AND pu.is_active = 1
-        AND (pu.effective_from IS NULL OR pu.effective_from <= CURDATE())
-        AND (pu.effective_to IS NULL OR pu.effective_to >= CURDATE())
-       INNER JOIN (
-         SELECT id, process_id, cargo_id
-         FROM (
-           SELECT
-             id,
-             process_id,
-             cargo_id,
-             ROW_NUMBER() OVER (
-               PARTITION BY process_id
-               ORDER BY effective_from DESC, id DESC
-             ) AS rn
-           FROM process_versions
-           WHERE is_active = 1
-             AND effective_from <= CURDATE()
-             AND (effective_to IS NULL OR effective_to >= CURDATE())
-         ) ranked
-         WHERE rn = 1
-       ) cv ON cv.process_id = p.id
-       INNER JOIN (
-         SELECT DISTINCT up.unit_id, up.cargo_id
-         FROM position_assignments pa
-         INNER JOIN unit_positions up ON up.id = pa.position_id
-         WHERE pa.person_id = ?
-           AND pa.is_current = 1
-           AND up.is_active = 1
-       ) uc ON uc.unit_id = pu.unit_id AND uc.cargo_id = cv.cargo_id
+       INNER JOIN process_definition_versions pdv
+         ON pdv.process_id = p.id
+        AND pdv.status = 'active'
+        AND pdv.effective_from <= CURDATE()
+        AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
+       INNER JOIN process_target_rules ptr
+         ON ptr.process_definition_id = pdv.id
+        AND ptr.is_active = 1
+        AND (ptr.effective_from IS NULL OR ptr.effective_from <= CURDATE())
+        AND (ptr.effective_to IS NULL OR ptr.effective_to >= CURDATE())
        WHERE p.is_active = 1
-       ORDER BY p.name`,
-      [userId]
+       ORDER BY p.name, ptr.priority, ptr.id`
     );
+
+    const childrenByUnit = new Map();
+    orgTreeRows.forEach((row) => {
+      if (!childrenByUnit.has(row.parent_unit_id)) {
+        childrenByUnit.set(row.parent_unit_id, []);
+      }
+      childrenByUnit.get(row.parent_unit_id).push(row.child_unit_id);
+    });
+
+    const subtreeCache = new Map();
+    const getUnitSubtree = (unitId) => {
+      if (!unitId) {
+        return new Set();
+      }
+      if (subtreeCache.has(unitId)) {
+        return subtreeCache.get(unitId);
+      }
+      const visited = new Set([unitId]);
+      const stack = [unitId];
+      while (stack.length) {
+        const current = stack.pop();
+        const children = childrenByUnit.get(current) || [];
+        children.forEach((childId) => {
+          if (!visited.has(childId)) {
+            visited.add(childId);
+            stack.push(childId);
+          }
+        });
+      }
+      subtreeCache.set(unitId, visited);
+      return visited;
+    };
+
+    const positionMatchesRule = (position, rule) => {
+      if (rule.position_id) {
+        return Number(position.position_id) === Number(rule.position_id);
+      }
+      if (rule.recipient_policy === "exact_position") {
+        return false;
+      }
+      if (rule.cargo_id && Number(position.cargo_id) !== Number(rule.cargo_id)) {
+        return false;
+      }
+      switch (rule.unit_scope_type) {
+        case "all_units":
+          return true;
+        case "unit_type":
+          return rule.unit_type_id && Number(position.unit_type_id) === Number(rule.unit_type_id);
+        case "unit_subtree":
+          return rule.unit_id && getUnitSubtree(Number(rule.unit_id)).has(Number(position.unit_id));
+        case "unit_exact":
+        default:
+          if (!rule.unit_id) {
+            return false;
+          }
+          if (Number(position.unit_id) === Number(rule.unit_id)) {
+            return true;
+          }
+          if (Number(rule.include_descendants) === 1) {
+            return getUnitSubtree(Number(rule.unit_id)).has(Number(position.unit_id));
+          }
+          return false;
+      }
+    };
 
     const seenByUnitCargo = new Map();
     const seenByCargo = new Map();
@@ -268,30 +329,36 @@ export const getUserMenu = async (req, res) => {
       seenSet.add(process.id);
     };
 
-    processRows.forEach((row) => {
-      const process = {
-        id: row.process_id,
-        name: row.process_name,
-        slug: row.process_slug,
-        unit_id: row.unit_id
-      };
+    positions.forEach((position) => {
+      const matchingRules = processRuleRows.filter((rule) => positionMatchesRule(position, rule));
+      matchingRules.forEach((row) => {
+        const process = {
+          id: row.process_id,
+          name: row.process_name,
+          slug: row.process_slug,
+          unit_id: position.unit_id,
+          process_definition_id: row.process_definition_id,
+          variation_key: row.variation_key,
+          definition_version: row.definition_version
+        };
 
-      const unitCargoMap = cargoMapByUnit.get(row.unit_id);
-      if (unitCargoMap?.has(row.cargo_id)) {
-        const cargo = unitCargoMap.get(row.cargo_id);
-        const key = `${row.unit_id}:${row.cargo_id}`;
-        if (!seenByUnitCargo.has(key)) {
-          seenByUnitCargo.set(key, new Set());
+        const unitCargoMap = cargoMapByUnit.get(position.unit_id);
+        if (unitCargoMap?.has(position.cargo_id)) {
+          const cargo = unitCargoMap.get(position.cargo_id);
+          const key = `${position.unit_id}:${position.cargo_id}`;
+          if (!seenByUnitCargo.has(key)) {
+            seenByUnitCargo.set(key, new Set());
+          }
+          addProcess(cargo, process, seenByUnitCargo.get(key));
         }
-        addProcess(cargo, process, seenByUnitCargo.get(key));
-      }
 
-      if (consolidatedMap.has(row.cargo_id)) {
-        if (!seenByCargo.has(row.cargo_id)) {
-          seenByCargo.set(row.cargo_id, new Set());
+        if (consolidatedMap.has(position.cargo_id)) {
+          if (!seenByCargo.has(position.cargo_id)) {
+            seenByCargo.set(position.cargo_id, new Set());
+          }
+          addProcess(consolidatedMap.get(position.cargo_id), process, seenByCargo.get(position.cargo_id));
         }
-        addProcess(consolidatedMap.get(row.cargo_id), process, seenByCargo.get(row.cargo_id));
-      }
+      });
     });
 
     const sortCargos = (cargos) => {

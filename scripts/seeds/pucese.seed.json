@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-02-26T20:28:11.144Z",
+  "captured_at": "2026-02-28T16:25:39.094Z",
   "tables": [
     {
       "table": "unit_types",
@@ -303,7 +303,6 @@
         "name",
         "slug",
         "parent_id",
-        "has_document",
         "is_active",
         "created_at"
       ],
@@ -312,78 +311,56 @@
         "name": "varchar(180)",
         "slug": "varchar(180)",
         "parent_id": "int(11)",
-        "has_document": "tinyint(1)",
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
       "rows": [
         {
           "id": 1,
-          "name": " Memorandums",
+          "name": " Memorandum",
           "slug": "PMEM",
-          "parent_id": null,
-          "has_document": 1,
+          "parent_id": 4,
           "is_active": 1,
           "created_at": "2026-02-26 20:21:40"
-        }
-      ]
-    },
-    {
-      "table": "process_units",
-      "columns": [
-        "id",
-        "process_id",
-        "unit_id",
-        "scope",
-        "is_primary",
-        "is_active",
-        "effective_from",
-        "effective_to",
-        "primary_active_flag",
-        "created_at",
-        "updated_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "process_id": "int(11)",
-        "unit_id": "int(11)",
-        "scope": "enum('owner','collaborator')",
-        "is_primary": "tinyint(1)",
-        "is_active": "tinyint(1)",
-        "effective_from": "date",
-        "effective_to": "date",
-        "primary_active_flag": "tinyint(1)",
-        "created_at": "datetime",
-        "updated_at": "datetime"
-      },
-      "rows": [
+        },
         {
-          "id": 1,
-          "process_id": 1,
-          "unit_id": 11,
-          "scope": "owner",
-          "is_primary": 1,
+          "id": 2,
+          "name": "Investigación Formativa",
+          "slug": "PIFO",
+          "parent_id": 3,
           "is_active": 1,
-          "effective_from": "2026-02-26",
-          "effective_to": null,
-          "primary_active_flag": 1,
-          "created_at": "2026-02-26 20:21:40",
-          "updated_at": "2026-02-26 20:21:40"
+          "created_at": "2026-02-27 15:04:23"
+        },
+        {
+          "id": 3,
+          "name": "Investigación",
+          "slug": "PINV",
+          "parent_id": 4,
+          "is_active": 1,
+          "created_at": "2026-02-27 15:32:13"
+        },
+        {
+          "id": 4,
+          "name": "root",
+          "slug": "ROOT",
+          "parent_id": null,
+          "is_active": 1,
+          "created_at": "2026-02-27 15:33:23"
         }
       ]
     },
     {
-      "table": "process_versions",
+      "table": "process_definition_versions",
       "columns": [
         "id",
         "process_id",
-        "version",
+        "variation_key",
+        "definition_version",
         "name",
-        "slug",
-        "parent_version_id",
-        "cargo_id",
+        "description",
         "has_document",
-        "is_active",
+        "execution_mode",
+        "status",
         "effective_from",
         "effective_to",
         "created_at"
@@ -391,12 +368,119 @@
       "column_types": {
         "id": "int(11)",
         "process_id": "int(11)",
-        "version": "varchar(10)",
+        "variation_key": "varchar(120)",
+        "definition_version": "varchar(20)",
         "name": "varchar(180)",
-        "slug": "varchar(180)",
-        "parent_version_id": "int(11)",
-        "cargo_id": "int(11)",
+        "description": "varchar(255)",
         "has_document": "tinyint(1)",
+        "execution_mode": "enum('manual','system','hybrid')",
+        "status": "enum('draft','active','retired')",
+        "effective_from": "date",
+        "effective_to": "date",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 5,
+          "process_id": 2,
+          "variation_key": "general",
+          "definition_version": "0.1.0",
+          "name": "Carreras",
+          "description": "Investigación Formativa de las Carreras",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 16:05:16"
+        },
+        {
+          "id": 6,
+          "process_id": 1,
+          "variation_key": "general",
+          "definition_version": "0.1.0",
+          "name": "Memorandum",
+          "description": "Envío y recepción de memorandums entre las diferentes unidades",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 16:06:16"
+        },
+        {
+          "id": 8,
+          "process_id": 2,
+          "variation_key": "docentes",
+          "definition_version": "0.1.0",
+          "name": "Investigación Formativa Docentes",
+          "description": "Evidencias de los procesos de investigación formativa que ejecutan los docentes en las carreras.",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 21:22:41"
+        },
+        {
+          "id": 9,
+          "process_id": 2,
+          "variation_key": "general",
+          "definition_version": "0.1.1",
+          "name": "Investigación Formativa Carreras",
+          "description": "Investigación Formativa de las Carreras",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "draft",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 22:53:03"
+        },
+        {
+          "id": 10,
+          "process_id": 2,
+          "variation_key": "general",
+          "definition_version": "0.2.0",
+          "name": "Investigación Formativa Carreras",
+          "description": "Investigación Formativa de las Carreras",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "draft",
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 22:56:54"
+        }
+      ]
+    },
+    {
+      "table": "process_target_rules",
+      "columns": [
+        "id",
+        "process_definition_id",
+        "unit_scope_type",
+        "unit_id",
+        "unit_type_id",
+        "include_descendants",
+        "cargo_id",
+        "position_id",
+        "recipient_policy",
+        "priority",
+        "is_active",
+        "effective_from",
+        "effective_to",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_id": "int(11)",
+        "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units')",
+        "unit_id": "int(11)",
+        "unit_type_id": "int(11)",
+        "include_descendants": "tinyint(1)",
+        "cargo_id": "int(11)",
+        "position_id": "int(11)",
+        "recipient_policy": "enum('all_matches','one_per_unit','one_match_only','exact_position')",
+        "priority": "int(11)",
         "is_active": "tinyint(1)",
         "effective_from": "date",
         "effective_to": "date",
@@ -404,18 +488,52 @@
       },
       "rows": [
         {
-          "id": 1,
-          "process_id": 1,
-          "version": "0.1",
-          "name": "Inicial",
-          "slug": "PMEM",
-          "parent_version_id": null,
-          "cargo_id": 5,
-          "has_document": 1,
+          "id": 2,
+          "process_definition_id": 6,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": null,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": null,
+          "effective_to": null,
+          "created_at": "2026-02-27 16:09:03"
+        },
+        {
+          "id": 5,
+          "process_definition_id": 5,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-02-27 16:45:54"
+        },
+        {
+          "id": 6,
+          "process_definition_id": 8,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 2,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
           "is_active": 1,
           "effective_from": "2026-02-26",
           "effective_to": null,
-          "created_at": "2026-02-26 20:21:40"
+          "created_at": "2026-02-27 21:23:21"
         }
       ]
     },
@@ -440,33 +558,6 @@
         "updated_at": "datetime"
       },
       "rows": [
-        {
-          "id": 1,
-          "code": "SEM",
-          "name": "Semestre",
-          "description": "Periodo academico semestral",
-          "is_active": 1,
-          "created_at": "2026-02-26 20:25:52",
-          "updated_at": "2026-02-26 20:25:52"
-        },
-        {
-          "id": 2,
-          "code": "TRI",
-          "name": "Trimestre",
-          "description": "Periodo academico trimestral",
-          "is_active": 1,
-          "created_at": "2026-02-26 20:25:52",
-          "updated_at": "2026-02-26 20:25:52"
-        },
-        {
-          "id": 3,
-          "code": "INT",
-          "name": "Intensivo",
-          "description": "Periodo academico intensivo",
-          "is_active": 1,
-          "created_at": "2026-02-26 20:25:52",
-          "updated_at": "2026-02-26 20:25:52"
-        },
         {
           "id": 4,
           "code": "PPO",
@@ -514,13 +605,22 @@
         "end_date": "date",
         "is_active": "tinyint(1)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "Primer Periodo Ordinario 2026",
+          "term_type_id": 4,
+          "start_date": "2026-03-02",
+          "end_date": "2026-08-28",
+          "is_active": 1
+        }
+      ]
     },
     {
       "table": "tasks",
       "columns": [
         "id",
-        "process_version_id",
+        "process_definition_id",
         "term_id",
         "parent_task_id",
         "responsible_position_id",
@@ -534,7 +634,7 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "process_version_id": "int(11)",
+        "process_definition_id": "int(11)",
         "term_id": "int(11)",
         "parent_task_id": "int(11)",
         "responsible_position_id": "int(11)",
@@ -546,7 +646,50 @@
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 6,
+          "term_id": 1,
+          "parent_task_id": null,
+          "responsible_position_id": null,
+          "description": null,
+          "comments_thread_ref": null,
+          "is_main": 1,
+          "start_date": "2026-03-02",
+          "end_date": "2026-08-28",
+          "status": "pendiente",
+          "created_at": "2026-02-28 15:49:16"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 8,
+          "term_id": 1,
+          "parent_task_id": null,
+          "responsible_position_id": null,
+          "description": null,
+          "comments_thread_ref": null,
+          "is_main": 1,
+          "start_date": "2026-03-02",
+          "end_date": "2026-08-28",
+          "status": "pendiente",
+          "created_at": "2026-02-28 15:49:16"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 5,
+          "term_id": 1,
+          "parent_task_id": null,
+          "responsible_position_id": null,
+          "description": null,
+          "comments_thread_ref": null,
+          "is_main": 1,
+          "start_date": "2026-03-02",
+          "end_date": "2026-08-28",
+          "status": "pendiente",
+          "created_at": "2026-02-28 15:49:16"
+        }
+      ]
     },
     {
       "table": "task_assignments",
@@ -568,6 +711,202 @@
         "assigned_at": "datetime",
         "unassigned_at": "datetime"
       },
+      "rows": [
+        {
+          "id": 1,
+          "task_id": 1,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 2,
+          "task_id": 1,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 3,
+          "task_id": 1,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 4,
+          "task_id": 1,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 5,
+          "task_id": 2,
+          "position_id": 8,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 6,
+          "task_id": 2,
+          "position_id": 9,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 7,
+          "task_id": 2,
+          "position_id": 12,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 8,
+          "task_id": 2,
+          "position_id": 13,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 9,
+          "task_id": 2,
+          "position_id": 14,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 10,
+          "task_id": 2,
+          "position_id": 15,
+          "assigned_person_id": 2,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 11,
+          "task_id": 2,
+          "position_id": 16,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 12,
+          "task_id": 3,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 13,
+          "task_id": 3,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 14,
+          "task_id": 3,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        },
+        {
+          "id": 15,
+          "task_id": 3,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-02-28 15:49:16",
+          "unassigned_at": null
+        }
+      ]
+    },
+    {
+      "table": "template_artifacts",
+      "columns": [
+        "id",
+        "template_code",
+        "display_name",
+        "source_version",
+        "storage_version",
+        "bucket",
+        "base_object_prefix",
+        "mode",
+        "format",
+        "entry_object_key",
+        "schema_object_key",
+        "meta_object_key",
+        "content_hash",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "template_code": "varchar(180)",
+        "display_name": "varchar(180)",
+        "source_version": "varchar(20)",
+        "storage_version": "varchar(20)",
+        "bucket": "varchar(120)",
+        "base_object_prefix": "varchar(255)",
+        "mode": "enum('system','user')",
+        "format": "varchar(40)",
+        "entry_object_key": "varchar(255)",
+        "schema_object_key": "varchar(255)",
+        "meta_object_key": "varchar(255)",
+        "content_hash": "varchar(64)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "process_definition_template_bindings",
+      "columns": [
+        "id",
+        "process_definition_id",
+        "template_artifact_id",
+        "usage_role",
+        "is_required",
+        "sort_order",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_id": "int(11)",
+        "template_artifact_id": "int(11)",
+        "usage_role": "enum('system_render','manual_fill','attachment','support')",
+        "is_required": "tinyint(1)",
+        "sort_order": "int(11)",
+        "created_at": "datetime"
+      },
       "rows": []
     },
     {
@@ -588,7 +927,16 @@
         "description": "varchar(255)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_id": 2,
+          "name": "Informe de Investigación Formativa",
+          "slug": "TIIF",
+          "description": "Modelo del informe de Investigación Formativa",
+          "created_at": "2026-02-27 22:18:50"
+        }
+      ]
     },
     {
       "table": "template_versions",
@@ -610,7 +958,17 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "template_id": 1,
+          "version": "0.1",
+          "mongo_ref": "id",
+          "mongo_version": "0.1",
+          "is_active": 1,
+          "created_at": "2026-02-27 22:21:24"
+        }
+      ]
     },
     {
       "table": "persons",
@@ -1327,7 +1685,7 @@
       "table": "signature_flow_templates",
       "columns": [
         "id",
-        "process_version_id",
+        "process_definition_id",
         "name",
         "description",
         "is_active",
@@ -1335,7 +1693,7 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "process_version_id": "int(11)",
+        "process_definition_id": "int(11)",
         "name": "varchar(180)",
         "description": "varchar(255)",
         "is_active": "tinyint(1)",

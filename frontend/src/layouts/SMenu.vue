@@ -41,7 +41,7 @@ const onClick=(item)=>{
     margin-top: 0.12rem;
     background:
       linear-gradient(
-        180deg,
+        168deg,
         #0c1826 0%,
         rgba(var(--brand-primary-rgb), 0.9) 58%,
         rgba(26, 110, 168, 0.78) 100%

@@ -380,46 +380,49 @@ Table processes {
   name varchar(180) [not null]
   slug varchar(180) [not null, unique]
   parent_id int [ref: > processes.id]
-  has_document boolean [not null, default: true]
   is_active boolean [not null, default: true]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table process_units {
+Table process_definition_versions {
   id int [pk, increment]
   process_id int [not null, ref: > processes.id]
-  unit_id int [not null, ref: > units.id]
-  scope varchar(20) [not null, default: 'owner', note: "owner|collaborator"]
-  is_primary boolean [not null, default: false]
-  is_active boolean [not null, default: true]
-  effective_from date
-  effective_to date
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_id, unit_id) [name: "uq_process_units_process_unit", unique]
-    (process_id, is_active) [name: "idx_process_units_process_active"]
-    (unit_id, is_active) [name: "idx_process_units_unit_active"]
-  }
-}
-
-Table process_versions {
-  id int [pk, increment]
-  process_id int [not null, ref: > processes.id]
-  version varchar(10) [not null]
+  variation_key varchar(120) [not null, default: 'general', note: "Serie o variante de versionado dentro del proceso"]
+  definition_version varchar(20) [not null]
   name varchar(180) [not null]
-  slug varchar(180) [not null]
-  parent_version_id int [ref: > process_versions.id]
-  cargo_id int [not null, ref: > cargos.id]
+  description varchar(255)
   has_document boolean [not null, default: true]
-  is_active boolean [not null, default: true]
+  execution_mode varchar(20) [not null, default: 'manual', note: "manual|system|hybrid"]
+  status varchar(20) [not null, default: 'draft', note: "draft|active|retired"]
   effective_from date [not null]
   effective_to date
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_id, version) [unique]
+    (process_id, variation_key, definition_version) [name: "uq_process_definition_versions_series", unique]
+    (process_id, variation_key, status, effective_from) [name: "idx_process_definition_versions_status"]
+  }
+}
+
+Table process_target_rules {
+  id int [pk, increment]
+  process_definition_id int [not null, ref: > process_definition_versions.id]
+  unit_scope_type varchar(20) [not null, default: 'unit_exact', note: "unit_exact|unit_subtree|unit_type|all_units"]
+  unit_id int [ref: > units.id]
+  unit_type_id int [ref: > unit_types.id]
+  include_descendants boolean [not null, default: false]
+  cargo_id int [ref: > cargos.id]
+  position_id int [ref: > unit_positions.id]
+  recipient_policy varchar(20) [not null, default: 'all_matches', note: "all_matches|one_per_unit|one_match_only|exact_position"]
+  priority int [not null, default: 1]
+  is_active boolean [not null, default: true]
+  effective_from date
+  effective_to date
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, is_active) [name: "idx_process_target_rules_definition"]
+    (unit_scope_type, unit_id, unit_type_id) [name: "idx_process_target_rules_scope"]
   }
 }
 
@@ -444,7 +447,7 @@ Table terms {
 
 Table tasks {
   id int [pk, increment]
-  process_version_id int [not null, ref: > process_versions.id]
+  process_definition_id int [not null, ref: > process_definition_versions.id]
   term_id int [not null, ref: > terms.id]
   parent_task_id int [ref: > tasks.id]
   responsible_position_id int [ref: > unit_positions.id]
@@ -457,7 +460,7 @@ Table tasks {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_version_id, term_id) [name: 'idx_tasks_version_term']
+    (process_definition_id, term_id) [name: 'idx_tasks_definition_term']
   }
 }
 
@@ -503,6 +506,42 @@ Table template_versions {
   }
 }
 
+Table template_artifacts {
+  id int [pk, increment]
+  template_code varchar(180) [not null]
+  display_name varchar(180) [not null]
+  source_version varchar(20) [not null]
+  storage_version varchar(20) [not null]
+  bucket varchar(120) [not null]
+  base_object_prefix varchar(255) [not null]
+  mode varchar(20) [not null, note: "system|user"]
+  format varchar(40) [not null]
+  entry_object_key varchar(255) [not null]
+  schema_object_key varchar(255) [not null]
+  meta_object_key varchar(255) [not null]
+  content_hash varchar(64)
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (template_code, storage_version, mode, format) [name: "uq_template_artifacts_storage", unique]
+  }
+}
+
+Table process_definition_template_bindings {
+  id int [pk, increment]
+  process_definition_id int [not null, ref: > process_definition_versions.id]
+  template_artifact_id int [not null, ref: > template_artifacts.id]
+  usage_role varchar(20) [not null, default: 'manual_fill', note: "system_render|manual_fill|attachment|support"]
+  is_required boolean [not null, default: true]
+  sort_order int [not null, default: 1]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, template_artifact_id, usage_role) [name: "uq_process_definition_template_bindings", unique]
+  }
+}
+
 Table documents {
   id int [pk, increment]
   task_id int [not null, ref: > tasks.id]
@@ -531,7 +570,7 @@ Table document_versions {
 
 Table signature_flow_templates {
   id int [pk, increment]
-  process_version_id int [not null, ref: > process_versions.id]
+  process_definition_id int [not null, ref: > process_definition_versions.id]
   name varchar(180) [not null]
   description varchar(255)
   is_active boolean [not null, default: true]
