@@ -40,16 +40,21 @@
 - Crear `process_definition_versions` desde `/admin/sql/process_definition_versions`.
 - Registrar el alcance con `/admin/sql/process_target_rules`.
 - Registrar templates publicados en MinIO con `/admin/sql/template_artifacts`.
-- Vincular templates a cada definicion con `/admin/sql/process_definition_template_bindings`.
+- Sincronizar automaticamente `template_artifacts` desde `tools/templates/dist` con `POST /admin/sql/template_artifacts/sync`.
+- Vincular templates a cada definicion con `/admin/sql/process_definition_templates`.
 
 Flujo recomendado:
 
 1) Crear el proceso base.
 2) Crear una definicion con `variation_key`, `definition_version` (formato `x.y.z`), vigencia y `execution_mode`.
 3) Agregar una o varias reglas de alcance segun el publico objetivo.
-4) Registrar uno o mas `template_artifacts` apuntando al paquete publicado en MinIO.
-5) Vincular los templates requeridos a la definicion.
-6) Crear el periodo o ejecutar `POST /admin/terms/:termId/generate-tasks`.
+4) Editar la fuente del template en `tools/templates/templates/`.
+5) Ejecutar `node tools/templates/cli.mjs package`.
+6) Ejecutar `node tools/templates/cli.mjs publish` para subir el paquete a MinIO.
+7) Ejecutar `POST /admin/sql/template_artifacts/sync` o usar `Sincronizar dist` en el admin.
+   - Este paso genera o actualiza `template_artifacts` desde el `dist` local.
+8) Vincular los templates requeridos a la definicion mediante `process_definition_templates`.
+9) Crear el periodo o ejecutar `POST /admin/terms/:termId/generate-tasks`.
 
 ## Dossier - Investigacion (Mongo)
 

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getSqlMeta,
+  syncTemplateArtifacts,
   listSqlRows,
   createSqlRow,
   updateSqlRow,
@@ -10,6 +11,7 @@ import {
 const router = new Router();
 
 router.get("/meta", getSqlMeta);
+router.post("/template_artifacts/sync", syncTemplateArtifacts);
 router.get("/:table", listSqlRows);
 router.post("/:table", createSqlRow);
 router.put("/:table", updateSqlRow);

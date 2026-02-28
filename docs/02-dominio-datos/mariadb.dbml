@@ -447,9 +447,10 @@ Table terms {
 
 Table tasks {
   id int [pk, increment]
+  process_definition_template_id int [not null, ref: > process_definition_templates.id]
   process_definition_id int [not null, ref: > process_definition_versions.id]
   term_id int [not null, ref: > terms.id]
-  parent_task_id int [ref: > tasks.id]
+  parent_task_id int [ref: > tasks.id, note: "Solo para jerarquias manuales; el generador automatico no la completa."]
   responsible_position_id int [ref: > unit_positions.id]
   description text
   comments_thread_ref varchar(64) [note: "Mongo thread id para comentarios de la tarea. Permisos/reportes se resuelven en backend al combinar SQL + Mongo."]
@@ -460,6 +461,8 @@ Table tasks {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
+    (term_id, process_definition_template_id) [name: 'uq_tasks_term_template', unique]
+    (process_definition_template_id, term_id) [name: 'idx_tasks_template_term']
     (process_definition_id, term_id) [name: 'idx_tasks_definition_term']
   }
 }
@@ -479,33 +482,6 @@ Table task_assignments {
   }
 }
 
-Table templates {
-  id int [pk, increment]
-  process_id int [not null, ref: > processes.id]
-  name varchar(180) [not null]
-  slug varchar(180) [not null, unique]
-  description varchar(255)
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_id) [name: "idx_templates_process_id"]
-  }
-}
-
-Table template_versions {
-  id int [pk, increment]
-  template_id int [not null, ref: > templates.id]
-  version varchar(20) [not null]
-  mongo_ref varchar(64) [not null, note: "Mongo template version id as string"]
-  mongo_version varchar(40) [not null]
-  is_active boolean [not null, default: true]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (template_id, version) [unique]
-  }
-}
-
 Table template_artifacts {
   id int [pk, increment]
   template_code varchar(180) [not null]
@@ -514,9 +490,7 @@ Table template_artifacts {
   storage_version varchar(20) [not null]
   bucket varchar(120) [not null]
   base_object_prefix varchar(255) [not null]
-  mode varchar(20) [not null, note: "system|user"]
-  format varchar(40) [not null]
-  entry_object_key varchar(255) [not null]
+  available_formats json [not null, note: "Mapa JSON por mode/formato con entry_object_key. Ej: { system: { jinja2: { entry_object_key } }, user: { latex: { entry_object_key } } }"]
   schema_object_key varchar(255) [not null]
   meta_object_key varchar(255) [not null]
   content_hash varchar(64)
@@ -524,21 +498,22 @@ Table template_artifacts {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (template_code, storage_version, mode, format) [name: "uq_template_artifacts_storage", unique]
+    (template_code, storage_version) [name: "uq_template_artifacts_storage", unique]
   }
 }
 
-Table process_definition_template_bindings {
+Table process_definition_templates {
   id int [pk, increment]
   process_definition_id int [not null, ref: > process_definition_versions.id]
   template_artifact_id int [not null, ref: > template_artifacts.id]
   usage_role varchar(20) [not null, default: 'manual_fill', note: "system_render|manual_fill|attachment|support"]
+  creates_task boolean [not null, default: true, note: "Si esta activo, esta plantilla dispara una tarea automatica por periodo."]
   is_required boolean [not null, default: true]
   sort_order int [not null, default: 1]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_definition_id, template_artifact_id, usage_role) [name: "uq_process_definition_template_bindings", unique]
+    (process_definition_id, template_artifact_id, usage_role) [name: "uq_process_definition_templates", unique]
   }
 }
 

@@ -1,0 +1,340 @@
+\section{Materials and Methods}
+
+\subsection{Research Questions and Scope}
+El presente estudio corresponde a una revisión sistemática de la literatura, desarrollada siguiendo las guías metodológicas de Kitchenham y los lineamientos de PRISMA 2020. Se enmarca en un diseño documental de carácter descriptivo–sintético, propio de los estudios basados en evidencia secundaria. Su enfoque es mixto con predominio cualitativo, dado que integra análisis descriptivo de variables cuantificables (tipo de algoritmos, métricas de rendimiento, bases de datos empleadas) junto con una síntesis cualitativa de hallazgos y tendencias reportadas.
+
+
+La definición del alcance y de la pregunta de investigación se estructuró mediante el marco conceptual PICo mostrado en la tabla \ref{tab:pico_terms}, el cual permitió delimitar la Población (P), el Fenómeno de Interés/Intervención (I) y el Contexto (Co). A partir de este marco se formuló la pregunta de investigación principal:
+\begin{quote}
+\textit{¿Cómo se han aplicado modelos de Inteligencia Artificial en imágenes médicas para la detección o diagnóstico del cáncer de mama en contextos clínicos y de investigación?}
+\end{quote}
+
+Siguiendo las recomendaciones de Kitchenham a partir de esta pregunta, se establecieron además las siguientes preguntas directrices que guían la extracción y síntesis de información:
+
+\begin{itemize}[label=]
+    \item \textbf{RQ1:} ¿Qué modelos de Inteligencia Artificial se utilizan para el diagnóstico de cáncer de mama basado en imágenes médicas?
+    \item \textbf{RQ2:} ¿Qué modalidades de imagen son empleadas con mayor frecuencia?
+    \item \textbf{RQ3:} ¿Qué métricas de desempeño se reportan en los estudios?
+    \item \textbf{RQ4:} ¿Qué bases de datos, repositorios o conjuntos de imágenes utilizan los investigadores?
+    \item \textbf{RQ5:} ¿Qué limitaciones, desafíos o brechas se documentan en el desarrollo y uso de estas técnicas?
+\end{itemize}
+
+% ------------------------ TABLA PICo (3 columnas) ------------------------
+\begin{adjustwidth}{-\extralength}{0cm}
+\begin{longtblr}[
+  caption = {Esquema PICo — Elementos, términos concretos y definiciones},
+  label   = {tab:pico_def}
+]{
+  width   = \textwidth,
+  colspec = {X[j, 0.2] X[j,0.4] X[j, 0.6]},
+  rowhead = 1,
+  row{1}  = {font=\bfseries},
+  width = \fulllength
+}
+\toprule
+\textbf{Elemento} & \textbf{Definición} & \textbf{Alcance Operativo} \\
+\midrule
+
+\textbf{P — Población} &
+Mujeres con sospecha o diagnóstico de cáncer de mama evaluadas mediante imágenes médicas. &
+Pacientes mujeres sometidas a mamografía, resonancia magnética, ecografía mamaria o histología digital con el fin de detectar, caracterizar o diagnosticar lesiones asociadas al cáncer de mama. \\
+
+\textbf{I — Intervención} &
+Aplicación de técnicas de Inteligencia Artificial para el análisis de imágenes médicas de mama. &
+Uso de modelos de IA, ML o DL para tareas de detección, clasificación, segmentación o apoyo al diagnóstico clínico a partir de imágenes mamarias. \\
+
+\textbf{Co — Contexto} &
+Entornos clínicos, experimentales y repositorios biomédicos con imágenes de mama. &
+Ambientes donde se obtienen, procesan o analizan imágenes médicas (mamografía, RM, ecografía, histología digital) para diagnóstico asistido por tecnología o por modelos de IA. \\
+
+\bottomrule
+\end{longtblr}
+\end{adjustwidth}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Estrategia de búsqueda}
+
+La estrategia de búsqueda se fundamentó en los elementos definidos en el marco PICo presentado en la sección anterior (Tabla~\ref{tab:pico_def}). A partir de la Población, la Intervención y el Contexto se elaboró una matriz de expansión semántica en la que cada elemento fue desagregado en sus posibles sinónimos, equivalencias terminológicas y acrónimos comunes en la literatura biomédica y de inteligencia artificial. Estos \textit{variant terms} constituyeron la base para la construcción de las cadenas booleanas empleadas en cada una de las bases de datos.
+
+En esta fase se evitaron los elementos estrictamente conceptuales del PICo, centrándose únicamente en los términos operativos necesarios para garantizar búsquedas amplias, sensibles y metodológicamente reproducibles. La Tabla~\ref{tab:pico_terms} resume los \textit{variant terms} derivados de cada componente del esquema PICo.
+
+% ------------------------ TABLA VARIANT TERMS ------------------------
+\begin{adjustwidth}{-\extralength}{0cm}
+\begin{longtblr}[
+  caption = {Variant terms derivados del esquema PICo utilizados en la estrategia de búsqueda},
+  label   = {tab:pico_terms}
+]{
+  width   = \textwidth,
+  colspec = {X[j,m,0.25] X[j,m,0.75]},
+  rowhead = 1,
+  row{1}  = {font=\bfseries},
+  width = \fulllength
+}
+\toprule
+\textbf{Elemento PICo} & \textbf{Variant Terms / Equivalencias léxicas} \\
+\midrule
+
+\textbf{P — Población} &
+breast cancer, breast neoplasm, mammary carcinoma, breast lesion, breast tumor, malignant lesion, benign lesion, mammography, digital mammography, tomosynthesis, breast MRI, breast ultrasound, sonomammography, histopathology, H\&E slides, INbreast, DDSM, MIAS, BreakHis \\
+
+\textbf{I — Intervención} &
+artificial intelligence, machine learning, deep learning, neural networks, CNN, convolutional neural network, ResNet, DenseNet, EfficientNet, VGG, Vision Transformer, ViT, U-Net, Mask R-CNN, CAD, CADx, computer-aided diagnosis, image segmentation, feature extraction, transfer learning \\
+
+\textbf{Co — Contexto} &
+clinical setting, diagnostic imaging center, radiology, radiomics, digital pathology, pathology lab, biomedical datasets, medical imaging archives, cancer screening programs \\
+\bottomrule
+\end{longtblr}
+\end{adjustwidth}
+
+El desarrollo de las cadenas se realizó combinando los términos de manera iterativa mediante operadores booleanos, siguiendo el principio:
+
+\[
+\text{Población} \; \mathbf{AND} \; \text{Intervención} \; \mathbf{AND} \; \text{Contexto}.
+\]
+
+Estas combinaciones fueron ajustadas para cada base de datos con el fin de respetar diferencias en sintaxis, operadores de truncamiento y campos de indexación. Asimismo, se realizaron búsquedas piloto y contrastes manuales con artículos de referencia para depurar términos redundantes y confirmar la recuperación adecuada de literatura relevante.
+
+Las búsquedas definitivas se ejecutaron en cuatro bases de datos de alto impacto: \textit{Scopus}, \textit{Web of Science}, \textit{ScienceDirect} y \textit{PubMed}. Las cadenas finales utilizadas en cada plataforma se presentan en la Tabla~\ref{tab:chain}, asegurando coherencia en la recuperación de registros y comparabilidad en fases posteriores del proceso PRISMA.
+
+% ------------------------ TABLA BASES DE DATOS ------------------------
+\begin{adjustwidth}{-\extralength}{0cm}
+\begin{longtblr}[
+  caption = {Cadenas de búsqueda empleadas en las bases de datos consultadas},
+  label   = {tab:chain}
+]{
+  width   = \fulllength,
+  colspec = {X[l,m,0.20] X[l,m,0.80]},
+  rowhead = 1,
+  row{1}  = {font=\bfseries},
+}
+\toprule
+\textbf{Base de datos} & \textbf{Cadena de búsqueda} \\
+\midrule
+
+Scopus &
+("Breast Neoplasms"[MeSH] OR "Breast Cancer" OR "Cáncer de Mama")
+AND
+("Diagnosis, Computer-Assisted"[MeSH] OR "Computer-Aided Diagnosis" OR CAD OR "Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Image Processing, Computer-Assisted")
+AND
+(mammography OR MRI OR ultrasound OR histopathology) \\
+
+Web of Science &
+("Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Neural Networks")
+AND ("Medical diagnosis" OR "image-based diagnosis")
+AND ("Breast cancer" OR "breast neoplasms") \\
+
+PubMed &
+("Artificial Intelligence"[MeSH] OR "Machine Learning" OR "Deep Learning")
+AND ("Diagnosis, Computer-Assisted"[MeSH] OR CAD)
+AND ("Breast Neoplasms"[MeSH] OR "Breast Cancer") \\
+
+ScienceDirect &
+("breast cancer") AND ("deep learning" OR "machine learning" OR "neural network")
+AND (mammography OR MRI OR ultrasound OR histopathology) \\
+
+\bottomrule
+\end{longtblr}
+\end{adjustwidth}
+
+
+\subsection{Selección de Artículos}
+
+El proceso de selección de estudios siguió las recomendaciones del diagrama PRISMA 2020, estructurado en las fases de identificación, cribado, elegibilidad e inclusión final.
+
+En la fase de \textbf{identificación}, todos los registros recuperados desde las bases de datos fueron exportados y se realizó la eliminación de duplicados mediante herramientas automáticas y verificación manual. 
+
+Durante el \textbf{cribado} (screening) de títulos y resúmenes, se aplicó un filtro conceptual basado en el marco PICo (Población, Intervención y Contexto). Se verificó que cada registro presentara correspondencia mínima con los tres elementos definidos en la Tabla~\ref{tab:pico_def}. Este filtro permitió descartar estudios claramente irrelevantes antes de aplicar los criterios formales.
+
+Posteriormente, en la fase de \textbf{elegibilidad}, los estudios potencialmente pertinentes fueron evaluados a texto completo utilizando los criterios de inclusión y exclusión definidos en la tabla~\ref{tab:criterios}. Estos criterios contemplaron aspectos relacionados con la población objetivo, tipo de intervención, modalidad de imagen, métricas de desempeño, diseño metodológico, idioma y periodo de publicación.
+
+\begin{longtblr}[
+  caption = {Criterios de inclusión y exclusión aplicados en la revisión sistemática.},
+  label   = {tab:criterios}
+]{
+  width   = \textwidth,
+  colspec = {X[l,m,0.25] X[l,m,0.7]},
+  rowhead = 1,
+  row{1}  = {font=\bfseries},
+}
+\toprule
+\textbf{Criterio} & \textbf{Descripción / Justificación} \\
+
+\midrule
+\SetCell[c=2]{l}{\textbf{Criterios de Inclusión}} \\
+\midrule
+
+Población & Estudios realizados en humanos enfocados en cáncer de mama evaluado mediante imágenes médicas. \\
+
+Intervención & Aplicación de modelos de Inteligencia Artificial, Aprendizaje Automático o Aprendizaje Profundo para diagnóstico, clasificación o segmentación de cáncer de mama a partir de imágenes. \\
+
+Modalidad de imagen & Mamografía (2D o tomosíntesis), resonancia magnética, ecografía mamaria o histología digital. \\
+
+Tipo de estudio & Estudios primarios revisados por pares que presenten metodologías experimentales claramente documentadas. \\
+
+Resultados & Reporte de métricas cuantitativas de desempeño (sensibilidad, especificidad, AUC, F1, etc.). \\
+
+Relevancia temática & Correspondencia explícita con todos los elementos PICo (P, I y Co) definidos para esta revisión. \\
+
+Disponibilidad & Acceso a texto completo para evaluación metodológica. \\
+
+Periodo & Publicaciones desde 2010 en adelante, debido a la madurez del campo de IA en imágenes médicas. \\
+
+Idioma & Estudios escritos en inglés o español. \\
+
+\midrule
+\SetCell[c=2]{l}{\textbf{Criterios de Exclusión}} \\
+\midrule
+
+Población no pertinente & Estudios centrados en neoplasias diferentes al cáncer de mama o poblaciones animales. \\
+
+Intervención no aplicable & Uso exclusivo de métodos estadísticos tradicionales o técnicas sin componente de IA, ML o DL. \\
+
+Datos no apropiados & Trabajos basados únicamente en datos clínicos, genómicos, ómicos o textuales sin uso de imágenes médicas. \\
+
+Diseño no elegible & Revisiones narrativas, revisiones sistemáticas previas, editoriales, cartas al editor, resúmenes de conferencia, tesis o capítulos de libro. \\
+
+Resultados insuficientes & Ausencia de métricas cuantitativas, falta de validación experimental o insuficiente descripción del modelo. \\
+
+Acceso limitado & Imposibilidad de obtener el texto completo del estudio. \\
+
+Duplicación & Estudios duplicados o versiones extendidas/abreviadas del mismo trabajo. \\
+
+Periodo excluido & Publicaciones anteriores a 2010. \\
+
+Idioma no permitido & Estudios escritos en idiomas diferentes al español o inglés. \\
+
+Calidad metodológica & Deficiencias graves en la descripción de métodos, inconsistencia en datos o falta de transparencia experimental. \\
+
+\bottomrule
+\end{longtblr}
+
+
+
+La selección se realizó mediante \textbf{revisión por pares} con dos evaluadores independientes utilizando la plataforma Rayyan, manteniendo el \textit{modo ciego} activado para reducir sesgos de selección. Las discrepancias entre revisores fueron resueltas mediante discusión y consenso, o por adjudicación de un tercer revisor cuando fue necesario.
+
+Durante el proceso de evaluación a texto completo se documentaron explícitamente las razones de exclusión, en cumplimiento de los lineamientos PRISMA. Finalmente, se incluyeron en la síntesis cualitativa los estudios que cumplían con todos los criterios establecidos, garantizando trazabilidad y reproducibilidad del proceso.
+
+
+
+
+
+\subsection{Quality Assessment}
+
+La evaluación de calidad metodológica se llevó a cabo tras la selección a texto completo y antes del proceso de extracción de datos, siguiendo las recomendaciones de PRISMA 2020 y las guías propuestas por Kitchenham para revisiones sistemáticas en ingeniería y ciencias computacionales. El objetivo de esta fase fue determinar el rigor, transparencia y validez metodológica de los estudios incluidos, así como identificar posibles fuentes de sesgo que pudieran afectar la interpretación de los resultados.
+
+Para ello se diseñó una herramienta de evaluación específica para estudios basados en modelos de Inteligencia Artificial aplicados a imágenes médicas, considerando dimensiones relacionadas con: (1) la calidad del dataset, (2) la claridad del diseño experimental, (3) la reproducibilidad del modelo, (4) la adecuación de las métricas utilizadas, (5) la existencia o ausencia de validación externa, y (6) la transparencia general del estudio. La Tabla~\ref{tab:quality} presenta los criterios empleados.
+
+Dos revisores llevaron a cabo la evaluación de manera independiente. Cada estudio recibió una puntuación cualitativa (Alta, Media o Baja) según el grado de cumplimiento de los criterios. Las discrepancias fueron resueltas por consenso o mediante la participación de un tercer evaluador. La matriz completa con las puntuaciones individuales se incluye en el Material Suplementario S1.
+
+
+\begin{longtblr}[
+  caption = {Criterios de evaluación de calidad aplicados a los estudios incluidos.},
+  label   = {tab:quality}
+]{
+  width = \textwidth,
+  colspec = {X[l,m,0.35] X[l,m,0.65]},
+  rowhead = 1,
+  row{1} = {font=\bfseries},
+}
+\toprule
+\textbf{Criterio} & \textbf{Descripción} \\
+\midrule
+
+\textbf{Claridad y adecuación del dataset} &
+El estudio documenta adecuadamente el origen del dataset, su tamaño, su balance, sus procesos de preprocesamiento y su disponibilidad (público o privado). \\
+
+\textbf{Calidad del diseño experimental} &
+Describe de forma clara las particiones de datos, la metodología experimental, la organización de entrenamientos y pruebas, así como los parámetros operativos relevantes. \\
+
+\textbf{Reproducibilidad del modelo} &
+Especifica la arquitectura, hiperparámetros, framework utilizado, técnicas de regularización, y cualquier factor necesario para reproducir el modelo. \\
+
+\textbf{Validación externa} &
+Incluye evaluación con un dataset independiente, validación cruzada robusta o pruebas en entorno clínico real. \\
+
+\textbf{Adecuación de métricas} &
+Emplea métricas apropiadas para la tarea (AUC, sensibilidad, especificidad, F1-score, IoU, Dice, etc.) y reporta intervalos de confianza cuando corresponde. \\
+
+\textbf{Transparencia y reportabilidad} &
+Presenta limitaciones, fuentes de sesgo, posibles problemas de generalización y discute la aplicabilidad clínica del modelo. \\
+
+\bottomrule
+\end{longtblr}
+
+
+\subsection{Extracción de datos}
+
+El proceso de extracción de datos se realizó siguiendo las recomendaciones de PRISMA 2020 y de las guías metodológicas de Kitchenham para revisiones sistemáticas. Para cada estudio incluido tras la evaluación a texto completo, se aplicó un formulario estructurado de extracción diseñado específicamente para esta revisión (Tabla~\ref{tab:matriz_extraccion_vertical}), el cual fue previamente probado en una fase piloto con un conjunto reducido de artículos para asegurar claridad y consistencia en su aplicación.
+
+La extracción se efectuó de manera independiente por dos revisores, quienes registraron la información de forma paralela. Las discrepancias fueron resueltas mediante consenso o, cuando fue necesario, por un tercer evaluador. Este procedimiento permitió reducir sesgos y asegurar la fiabilidad del proceso.
+
+Los datos extraídos incluyeron: (1) información bibliográfica y metadatos del estudio, (2) características de la intervención basada en IA, (3) modalidad de imagen utilizada, (4) características del dataset, (5) métricas de desempeño reportadas, (6) procedimientos de validación, (7) limitaciones mencionadas por los autores, y (8) una valoración final respecto al cumplimiento de los criterios establecidos. 
+
+La matriz completa de extracción, con el detalle de todos los estudios incluidos y sus correspondientes variables, se proporciona en el Material Suplementario S1 para facilitar transparencia y reproducibilidad.
+
+
+
+\begin{longtblr}[
+  caption = {Matriz de extracción de datos para los estudios incluidos.},
+  label   = {tab:matriz_extraccion_vertical},
+]{
+  width   = \textwidth,
+  colspec = {X[l,m,0.28] X[l,m,0.72]},
+  rowhead = 1,
+  row{1} = {font=\bfseries},
+}
+\toprule
+\textbf{Parámetro} & \textbf{Descripción} \\
+\midrule
+
+\textbf{Referencia} & Autores, año, título, revista, DOI, país o afiliación institucional principal. \\
+
+\textbf{Objetivo del estudio} & Declaración del propósito del estudio tal como lo presentan los autores. \\
+
+\textbf{Modalidad de imagen} & Tipo de imagen analizada: mamografía, RM, ecografía, tomosíntesis, histología digital, u otras variantes relevantes. \\
+
+\textbf{Características del dataset} & Nombre del dataset, tamaño muestral, número de clases, balance, origen (público/privado), preprocesamiento aplicado. \\
+
+\textbf{Modelo de IA} & Tipo de modelo (CNN, ViT, híbridos, aprendizaje tradicional), arquitectura, número de capas, técnicas de transferencia, hiperparámetros relevantes. \\
+
+\textbf{Tarea realizada} & Clasificación, segmentación, detección, localización, reconstrucción, etc. \\
+
+\textbf{Validación y experimentos} & Tipo de validación (cross-validation, hold-out, validación externa), número de particiones, entorno experimental. \\
+
+\textbf{Métricas de desempeño} & AUC, exactitud, sensibilidad, especificidad, F1-score, IoU, Dice, entre otras. \\
+
+\textbf{Comparadores} & Benchmarking con radiólogos, otros modelos, métodos tradicionales o ausencia de comparador. \\
+
+\textbf{Limitaciones} & Restricciones reconocidas por los autores (dataset pequeño, falta de generalización, sesgos, etc.). \\
+
+\textbf{Conclusión del estudio} & Principales hallazgos, interpretación final y relevancia para la revisión. \\
+
+\textbf{Valoración final} & Evaluación de si el estudio cumple con los criterios de calidad y relevancia para esta revisión. \\
+
+\bottomrule
+\end{longtblr}
+
+
+
+\subsection{Análisis de datos}
+
+El análisis de los datos extraídos se llevó a cabo mediante un proceso de síntesis narrativa, siguiendo las directrices de PRISMA 2020, JBI y las recomendaciones de Kitchenham para revisiones sistemáticas en ingeniería. Dado que los estudios incluidos presentan una alta heterogeneidad en términos de arquitecturas de IA, modalidades de imagen, tamaños de dataset, métricas de validación y diseños experimentales, no fue posible realizar un metaanálisis cuantitativo tradicional. Por ello, se optó por una integración descriptiva y estructurada de los hallazgos.
+
+Los estudios fueron organizados y sintetizados en función de las preguntas de investigación formuladas (RQ1–RQ5), lo que permitió agrupar la evidencia según: (1) los modelos de IA empleados, (2) las modalidades de imagen utilizadas, (3) las métricas de desempeño reportadas, (4) los conjuntos de datos y repositorios empleados, y (5) las limitaciones y desafíos documentados por los autores. Para cada dimensión se identificaron patrones comunes, variabilidad metodológica y tendencias emergentes en el campo.
+
+Asimismo, se llevó a cabo un análisis transversal comparando la calidad metodológica de los estudios (según los criterios de la Sección~\ref{tab:quality}) con los resultados reportados, con el fin de evaluar la consistencia entre el rigor experimental y el desempeño de los modelos. Cuando fue pertinente, se realizaron agregaciones descriptivas (por ejemplo, valores típicos de AUC, sensibilidad o F1-score) y se destacaron casos representativos que contribuyen de manera significativa al estado del arte.
+
+Finalmente, los hallazgos se integraron en una síntesis narrativa que aborda de forma conjunta las preguntas de investigación y el alcance definido por el esquema PICo, permitiendo generar una visión global y crítica del uso de modelos de Inteligencia Artificial en imágenes médicas para la detección y diagnóstico del cáncer de mama.
+
+
+
+%Materials and Methods should be described with sufficient details to allow others to replicate and build on published results. Please note that publication of your manuscript implicates that you must make all materials, data, computer code, and protocols associated with the publication available to readers. Please disclose at the submission stage any restrictions on the availability of materials or information. New methods and protocols should be described in detail while well-established methods can be briefly described and appropriately cited.
+
+%Research manuscripts reporting large datasets that are deposited in a publicly avail-able database should specify where the data have been deposited and provide the relevant accession numbers. If the accession numbers have not yet been obtained at the time of submission, please state that they will be provided during review. They must be provided prior to publication.
+
+%Interventionary studies involving animals or humans, and other studies require ethical approval must list the authority that provided approval and the corresponding ethical approval code.
+
+%In this section, where applicable, authors are required to disclose details of how gen-erative artificial intelligence (GenAI) has been used in this paper (e.g., to generate text, data, or graphics, or to assist in study design, data collection, analysis, or interpretation). The use of GenAI for superficial text editing (e.g., grammar, spelling, punctuation, and formatting) does not need to be declared.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

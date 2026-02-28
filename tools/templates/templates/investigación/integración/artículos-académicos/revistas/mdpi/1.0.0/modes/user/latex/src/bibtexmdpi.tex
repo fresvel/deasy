@@ -1,0 +1,19 @@
+% =====================================================
+% DESACTIVAR BIBLIOGRAFÍA INTERNA MDPI PARA USAR BIBTEX
+% =====================================================
+
+% 1. Evitar que MDPI genere su thebibliography automático
+\renewcommand{\isAPAandChicago}[2]{#2}
+\renewcommand{\isChicagoStyle}[2]{#2}
+\renewcommand{\isAPAStyle}[2]{#2}
+
+% 2. Anular los bibliographystyle internos
+\def\bibliographystyle#1{\typeout{(MDPI override disabled; using external BibTeX style)}}
+
+% 3. Impedir creación automática del thebibliography redefiniendo directamente:
+\renewenvironment{thebibliography}[1]{%
+  \section*{\@reftitle}
+  \begin{itemize}
+}{%
+  \end{itemize}
+}

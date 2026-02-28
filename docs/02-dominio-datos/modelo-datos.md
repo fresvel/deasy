@@ -48,12 +48,10 @@
 - process_target_rules(id, process_definition_id, unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id, recipient_policy, priority, is_active, effective_from, effective_to, created_at)
 - term_types(id, code, name, description, is_active, created_at, updated_at)
 - terms(id, name, term_type_id, start_date, end_date, is_active)
-- tasks(id, process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
+- tasks(id, process_definition_template_id, process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
 - task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
-- template_artifacts(id, template_code, display_name, source_version, storage_version, bucket, base_object_prefix, mode, format, entry_object_key, schema_object_key, meta_object_key, content_hash, is_active, created_at)
-- process_definition_template_bindings(id, process_definition_id, template_artifact_id, usage_role, is_required, sort_order, created_at)
-- templates(id, process_id, name, slug, description, created_at)
-- template_versions(id, template_id, version, mongo_ref, mongo_version, is_active, created_at)
+- template_artifacts(id, template_code, display_name, source_version, storage_version, bucket, base_object_prefix, available_formats, schema_object_key, meta_object_key, content_hash, is_active, created_at)
+- process_definition_templates(id, process_definition_id, template_artifact_id, usage_role, creates_task, is_required, sort_order, created_at)
 - documents(id, task_id, status, comments_thread_ref, created_at, updated_at)
 - document_versions(id, document_id, version, payload_mongo_id, payload_hash, latex_path, pdf_path, signed_pdf_path, status, created_at)
 - signature_types(id, code, name, description, is_active, created_at)
@@ -77,8 +75,10 @@
    - Si solo cambia el alcance, reutilizar la misma definicion y ajustar/agregar reglas.
    - Si cambia la logica funcional (templates, modo, contenido), crear una nueva version o una nueva `variation_key`.
 4) Publicar templates empaquetados en MinIO y registrarlos en `template_artifacts`.
-5) Vincular los templates requeridos a la definicion mediante `process_definition_template_bindings`.
-6) Al crear un periodo (`terms`), el backend toma la definicion activa mas reciente por proceso y `variation_key`, y genera tareas segun las reglas de alcance.
+5) Vincular los templates requeridos a la definicion mediante `process_definition_templates`.
+6) Marcar `creates_task = 1` en cada plantilla de definicion que represente una plantilla ejecutable.
+7) Al crear un periodo (`terms`), el backend toma la definicion activa mas reciente por proceso y `variation_key`, genera una tarea por cada plantilla de definicion ejecutable y asigna destinatarios con las reglas de alcance.
+8) `parent_task_id` queda reservado para jerarquias manuales; el generador automatico no lo completa.
 
 ## NoSQL (MongoDB)
 

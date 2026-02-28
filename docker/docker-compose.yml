@@ -47,6 +47,63 @@ services:
       - emqx_log:/opt/emqx/log
       - ./emqx/emqx.conf:/opt/emqx/etc/emqx.conf:ro
 
+  minio:
+    image: minio/minio:RELEASE.2025-02-18T16-25-55Z
+    container_name: deasy-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-bootstrap:
+    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
+    container_name: deasy-minio-bootstrap
+    profiles:
+      - storage-init
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
+      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
+      MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
+      MINIO_CHAT_PREFIX: ${MINIO_CHAT_PREFIX}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
+      MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
+      MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    volumes:
+      - ./minio/bootstrap.sh:/bootstrap.sh:ro
+      - ./minio/import:/import:ro
+    depends_on:
+      - minio
+
+  minio-publish:
+    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
+    profiles:
+      - storage-publish
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+    entrypoint: ["/bin/sh", "/publish.sh"]
+    volumes:
+      - ./minio/publish-templates.sh:/publish.sh:ro
+      - ../tools/templates/dist/Plantillas:/publish:ro
+    depends_on:
+      - minio
+
   backend:
     build:
       context: ..
@@ -62,10 +119,26 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
       URI_MONGO: ${URI_MONGO}
       PORT: ${BACKEND_PORT}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:${MINIO_API_PORT}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: 0
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
+      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
+      MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
+      MINIO_CHAT_PREFIX: ${MINIO_CHAT_PREFIX}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
+      MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
+      MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
     ports:
       - "${BACKEND_PORT}:3030"
     volumes:
       - ../backend:/app/backend
+      - ../tools/templates:/app/tools/templates:ro
       - backend_node_modules:/app/backend/node_modules
       - uploads_data:/app/backend/uploads
       - storage_data:/app/backend/storage
@@ -118,6 +191,7 @@ volumes:
   rabbitmq_data:
   emqx_data:
   emqx_log:
+  minio_data:
   backend_node_modules:
   frontend_node_modules:
   uploads_data:

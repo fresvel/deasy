@@ -19,18 +19,16 @@
 ## Recomendacion
 
 - Versionar cambios de schema y documentar scripts de migracion.
+- Usar `node scripts/drop_legacy_tables.mjs` solo cuando quieras eliminar tablas heredadas fuera del flujo normal de arranque/reset.
 
-## Migracion: templates (1:N con processes)
+## Scripts operativos
 
-Motivo: `processes 1─∞ templates` requiere eliminar la unicidad por `process_id`.
-
-SQL sugerido (MariaDB):
-
-```sql
-ALTER TABLE templates
-  DROP INDEX uq_templates_process,
-  ADD INDEX idx_templates_process_id (process_id);
-```
+- Migrar una base existente al nombre y estructura nuevos:
+  - `node scripts/migrate_process_templates.mjs`
+- Resetear completamente el esquema MariaDB vigente:
+  - `node scripts/reset_mariadb.mjs`
+- Aplicar la semilla PUCESA sobre un esquema limpio:
+  - `node scripts/seed_pucese.mjs`
 
 ## Migracion: procesos -> definiciones + reglas de alcance
 
@@ -44,7 +42,8 @@ Pasos sugeridos:
 4) Convertir cada relacion previa de `process_units` + `cargo_id` en una o mas filas de `process_target_rules`.
 5) Actualizar `tasks.process_version_id` -> `tasks.process_definition_id`.
 6) Actualizar `signature_flow_templates.process_version_id` -> `signature_flow_templates.process_definition_id`.
-7) Registrar templates publicados en `template_artifacts` y vincularlos con `process_definition_template_bindings`.
+7) Registrar templates publicados en `template_artifacts` y vincularlos con `process_definition_templates`.
+8) Cambiar la generacion automatica para crear una tarea por cada plantilla de definicion con `creates_task = 1`.
 
 Regla practica de migracion:
 

@@ -1,0 +1,253 @@
+% =========================================================
+% 1. INTRODUCCIÓN A LOS FIREWALLS EN LINUX
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{1}{Introducción a los Firewalls en Linux}
+\topic{¿Qué es un firewall?}
+
+Un \subtopic{firewall} es un sistema de seguridad encargado de controlar y filtrar el tráfico de red entrante y saliente, aplicando un conjunto de reglas predefinidas. Su objetivo principal es establecer una barrera entre una red interna confiable y redes externas no confiables, como Internet, reduciendo el riesgo de accesos no autorizados y ataques externos.
+
+Desde una perspectiva de ciberseguridad, los firewalls constituyen un componente fundamental en la protección de infraestructuras informáticas modernas, ya sea implementados como soluciones de hardware o software.
+
+\end{core}
+\end{frame}
+
+\begin{frame}[fragile, plain]
+\begin{core}{1}{Introducción a los Firewalls en Linux}
+\topic{Firewalls basados en host y basados en red}
+
+Un \subtopic{firewall basado en host} se ejecuta directamente sobre un equipo o servidor individual, permitiendo un control granular del tráfico asociado a aplicaciones y servicios específicos del sistema. Este enfoque facilita políticas de seguridad detalladas a nivel de proceso y protocolo.
+
+Por otro lado, un \subtopic{firewall basado en red} actúa como una barrera centralizada que protege a múltiples dispositivos dentro de una red completa. Generalmente se implementa en hardware dedicado y es adecuado para gestionar grandes volúmenes de tráfico.
+
+La combinación de ambos enfoques es considerada una buena práctica, ya que permite una estrategia de defensa en profundidad.
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 2. HERRAMIENTAS DE FIREWALL EN LINUX
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{2}{Herramientas de Firewall en Linux}
+\topic{iptables, nftables y firewalld}
+
+En el ecosistema Linux existen diversas herramientas para la gestión de firewalls, entre las más relevantes se encuentran:
+
+\subtopic{iptables}: herramienta clásica basada en Netfilter, potente pero con sintaxis compleja y estructuras separadas para IPv4, IPv6 y otros protocolos.
+
+\subtopic{nftables}: sucesor moderno de iptables, con una sintaxis más limpia, soporte unificado y mejor rendimiento en escenarios de alto tráfico.
+
+\subtopic{firewalld}: solución dinámica que actúa como capa de abstracción sobre iptables o nftables, incorporando conceptos como zonas y configuración sin interrupción del servicio.
+
+\end{core}
+\end{frame}
+
+\begin{frame}[fragile, plain]
+\begin{core}{2}{Herramientas de Firewall en Linux}
+\topic{Ventajas de usar firewalld}
+
+Firewalld destaca por permitir cambios dinámicos en la configuración del firewall sin necesidad de reiniciar el servicio ni interrumpir conexiones activas. Además, introduce el concepto de zonas de red, facilitando la adaptación de políticas de seguridad según el entorno de conexión.
+
+Entre sus principales ventajas se encuentran:
+\subtopic{soporte IPv4 e IPv6}, separación entre configuración temporal y permanente, integración con DBus y herramientas gráficas, y facilidad de administración mediante comandos simples.
+
+Estas características lo convierten en el firewall predeterminado de distribuciones como Fedora, CentOS y RHEL.
+
+\end{core}
+\end{frame}
+
+\begin{frame}[fragile, plain]
+\begin{core}{2}{Tabla de Ejemplo}
+\topic{Estilo institucional}
+
+\centering
+\begin{bodytblr}{
+  colspec = {X[l] X[c] X[l]}
+}
+Indicador & Valor & Observación \\
+Cobertura & 92\% & Cumple el objetivo \\
+Asistencia & 85\% & Requiere seguimiento \\
+Satisfacción & 4.6/5 & Opiniones positivas \\
+\end{bodytblr}
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 3. ARQUITECTURA DE FIREWALLD
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{3}{Arquitectura de firewalld}
+\topic{Componentes principales}
+
+Firewalld funciona como un demonio en segundo plano, identificado por el servicio \subtopic{firewalld.service}, encargado de administrar las reglas de filtrado de red.
+
+Su arquitectura soporta múltiples backends, principalmente iptables y nftables, lo que le permite adaptarse a distintas versiones del kernel Linux. Además, separa claramente la configuración activa de la permanente, facilitando pruebas sin impacto en producción.
+
+\end{core}
+\end{frame}
+
+\begin{frame}[fragile, plain]
+\begin{core}{3}{Arquitectura de firewalld}
+\topic{Zonas, servicios e interfaces}
+
+Las \subtopic{zonas} representan distintos niveles de confianza asignados a interfaces o fuentes de red, como public, internal, dmz o trusted.
+
+Los \subtopic{servicios} agrupan puertos y protocolos necesarios para aplicaciones comunes, como SSH o HTTP.
+
+Las \subtopic{interfaces} de red se asocian a zonas específicas, permitiendo aplicar políticas de seguridad contextualizadas según el origen del tráfico.
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 4. GESTIÓN DE SERVICIOS Y PUERTOS
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{4}{Gestión de Servicios y Puertos}
+\topic{Permitir y bloquear servicios}
+
+Firewalld permite habilitar o deshabilitar servicios de manera sencilla mediante comandos. Estos cambios pueden ser temporales o permanentes según las necesidades del administrador.
+
+\begin{codeblock}[bash]{Permitir un servicio}
+firewall-cmd --add-service=http --permanent
+firewall-cmd --reload
+\end{codeblock}
+
+\end{core}
+\end{frame}
+
+\begin{frame}[fragile, plain]
+\begin{core}{4}{Gestión de Servicios y Puertos}
+\topic{Apertura y cierre de puertos}
+
+Además de servicios, es posible gestionar puertos específicos indicando el protocolo correspondiente, TCP o UDP.
+
+\begin{codeblock}[bash]{Abrir un puerto TCP}
+firewall-cmd --add-port=3306/tcp --permanent
+firewall-cmd --reload
+\end{codeblock}
+
+Esta funcionalidad resulta esencial para bases de datos, servidores personalizados y aplicaciones específicas.
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 5. SERVICIOS PERSONALIZADOS
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{5}{Servicios Personalizados}
+\topic{Definición de servicios propios}
+
+Firewalld permite crear servicios personalizados mediante archivos XML, almacenados en el directorio \subtopic{/etc/firewalld/services/}. Esto facilita la reutilización y documentación de reglas específicas.
+
+\begin{codeblock}[xml]{Servicio personalizado XML}
+<service>
+  <short>MiApp</short>
+  <description>Puerto personalizado para MiApp</description>
+  <port protocol="tcp" port="12345"/>
+</service>
+\end{codeblock}
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 6. BLOQUEO AVANZADO Y REGLAS RICAS
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{6}{Bloqueo y Filtrado Avanzado}
+\topic{Reglas ricas (Rich Rules)}
+
+Las \subtopic{reglas ricas} permiten definir políticas avanzadas basadas en múltiples criterios como dirección IP, familia de protocolo y acción específica.
+
+\begin{codeblock}[bash]{Bloquear una IP}
+firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.100" reject'
+\end{codeblock}
+
+Este mecanismo proporciona un control detallado y flexible sobre el tráfico de red.
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 7. FIREWALLD Y SELINUX
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{7}{firewalld y SELinux}
+\topic{Seguridad en capas}
+
+Firewalld y SELinux actúan en capas distintas pero complementarias. Mientras Firewalld controla el tráfico de red, SELinux regula el acceso de los procesos a recursos del sistema.
+
+Cuando un servicio utiliza un puerto no estándar, es necesario configurar tanto Firewalld como SELinux para evitar bloqueos de seguridad.
+
+\begin{codeblock}[bash]{Habilitar puerto en SELinux}
+semanage port -a -t http_port_t -p tcp 3131
+\end{codeblock}
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 8. DIAGNÓSTICO Y SOLUCIÓN DE PROBLEMAS
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{8}{Diagnóstico y Solución de Problemas}
+\topic{Verificación y registros}
+
+Para diagnosticar problemas en Firewalld es fundamental revisar los registros del sistema y verificar el estado del servicio.
+
+\begin{codeblock}[bash]{Logs de firewalld}
+journalctl -u firewalld
+journalctl -u firewalld -f
+\end{codeblock}
+
+Estas herramientas permiten identificar errores, conflictos de reglas o bloqueos inesperados.
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 9. FIREWALLD Y NETWORKMANAGER
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{9}{firewalld y NetworkManager}
+\topic{Asignación de zonas a interfaces}
+
+Firewalld se integra estrechamente con NetworkManager, permitiendo asignar zonas de firewall directamente a perfiles de conexión.
+
+\begin{codeblock}[bash]{Asignar zona a conexión}
+nmcli connection modify lan connection.zone internal
+nmcli connection up lan
+\end{codeblock}
+
+Este enfoque facilita políticas dinámicas según el entorno de red.
+
+\end{core}
+\end{frame}
+
+% =========================================================
+% 10. HERRAMIENTAS GRÁFICAS
+% =========================================================
+
+\begin{frame}[fragile, plain]
+\begin{core}{10}{Herramientas Gráficas}
+\topic{Administración visual}
+
+Firewalld dispone de herramientas gráficas como \subtopic{firewall-config} y \subtopic{Cockpit}, que permiten gestionar zonas, servicios y reglas de forma visual.
+
+Estas interfaces resultan especialmente útiles para administración remota y para usuarios que prefieren entornos gráficos sin renunciar a la potencia del firewall.
+
+\end{core}
+\end{frame}

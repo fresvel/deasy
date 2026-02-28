@@ -5,10 +5,89 @@ import {
 } from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import bcrypt from "bcrypt";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { fileURLToPath } from "url";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
 const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
+const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
+const TEMPLATE_DIST_ROOT = path.join(REPO_ROOT, "tools", "templates", "dist", "Plantillas");
+
+const walkFiles = (dirPath, collected = []) => {
+  if (!fs.existsSync(dirPath)) {
+    return collected;
+  }
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      walkFiles(fullPath, collected);
+      continue;
+    }
+    collected.push(fullPath);
+  }
+  return collected;
+};
+
+const getYamlScalar = (content, key) => {
+  const match = content.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
+  if (!match) {
+    return "";
+  }
+  let value = match[1].trim();
+  if (
+    (value.startsWith('"') && value.endsWith('"'))
+    || (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1);
+  }
+  return value;
+};
+
+const hasVisibleFiles = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    return false;
+  }
+  return walkFiles(dirPath).some((filePath) => path.basename(filePath) && !path.basename(filePath).startsWith("."));
+};
+
+const hashDirectory = (dirPath) => {
+  const hash = crypto.createHash("sha256");
+  const files = walkFiles(dirPath)
+    .filter((filePath) => !path.basename(filePath).startsWith("."))
+    .sort((left, right) => left.localeCompare(right));
+  for (const filePath of files) {
+    const relative = path.relative(dirPath, filePath).replace(/\\/g, "/");
+    hash.update(relative);
+    hash.update(fs.readFileSync(filePath));
+  }
+  return files.length ? hash.digest("hex") : null;
+};
+
+const parseJsonObject = (value, fieldLabel) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`El campo ${fieldLabel} debe ser un JSON valido.`);
+  }
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("invalid");
+    }
+    return parsed;
+  } catch {
+    throw new Error(`El campo ${fieldLabel} debe ser un JSON valido.`);
+  }
+};
 
 const normalizeValue = (field, value) => {
   if (value === undefined) {
@@ -154,8 +233,8 @@ const validateTableRules = (tableName, candidate) => {
       }
       break;
     case "tasks":
-      if (!candidate.process_definition_id) {
-        throw new Error("Selecciona la definicion del proceso para la tarea.");
+      if (!candidate.process_definition_template_id) {
+        throw new Error("Selecciona la plantilla de definicion que genera la tarea.");
       }
       if (!candidate.term_id) {
         throw new Error("Selecciona un periodo para la tarea.");
@@ -186,11 +265,15 @@ const validateTableRules = (tableName, candidate) => {
       }
       break;
     case "template_artifacts":
-      if (!candidate.bucket || !candidate.base_object_prefix || !candidate.entry_object_key) {
-        throw new Error("Debes registrar bucket, prefijo base y ruta de entrada del artifact.");
+      if (!candidate.bucket || !candidate.base_object_prefix) {
+        throw new Error("Debes registrar bucket y prefijo base del artifact.");
       }
-      break;
-    case "templates":
+      {
+        const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
+        if (!availableFormats || !Object.keys(availableFormats).length) {
+          throw new Error("Debes registrar al menos un formato disponible en available_formats.");
+        }
+      }
       break;
     default:
       break;
@@ -305,23 +388,6 @@ export default class SqlAdminService {
     let columnPrefix = "";
     const normalizedFilters = { ...filters };
 
-    if (tableName === "templates") {
-      const baseFields = physicalFields.filter((field) => field !== "process_name");
-      joinClause = "LEFT JOIN processes p ON p.id = templates.process_id";
-      columnPrefix = "templates.";
-      const selectFields = baseFields.map((field) => `${columnPrefix}${field}`);
-      if (availableFields.includes("process_name")) {
-        selectFields.push("p.name AS process_name");
-        orderableFields.push("process_name");
-      }
-      selectClause = `SELECT ${selectFields.join(", ")}`;
-      if (normalizedFilters.process_id) {
-        conditions.push("templates.process_id = ?");
-        params.push(normalizedFilters.process_id);
-        delete normalizedFilters.process_id;
-      }
-    }
-
     if (tableName === "processes") {
       joinClause = `LEFT JOIN (
         SELECT process_id, definition_version, execution_mode, status
@@ -366,9 +432,6 @@ export default class SqlAdminService {
       if (!physicalFields.includes(field)) {
         continue;
       }
-      if (tableName === "templates" && field === "process_name") {
-        continue;
-      }
       if (value === undefined || value === null || value === "") {
         continue;
       }
@@ -386,8 +449,7 @@ export default class SqlAdminService {
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const safeOrderBy = orderableFields.includes(orderBy) ? orderBy : config.primaryKeys[0];
     const orderColumn =
-      (tableName === "templates" && safeOrderBy === "process_name")
-      || (tableName === "processes" && safeOrderBy === "active_definition_version")
+      (tableName === "processes" && safeOrderBy === "active_definition_version")
         ? safeOrderBy
         : joinClause
           ? `${tableName}.${safeOrderBy}`
@@ -417,6 +479,18 @@ export default class SqlAdminService {
     return rows?.[0] ?? null;
   }
 
+  async getTaskTemplate(templateId) {
+    this.ensurePool();
+    const [rows] = await this.pool.query(
+      `SELECT id, process_definition_id, creates_task
+       FROM process_definition_templates
+       WHERE id = ?
+       LIMIT 1`,
+      [templateId]
+    );
+    return rows?.[0] ?? null;
+  }
+
   async create(tableName, data) {
     this.ensurePool();
     const config = getConfig(tableName);
@@ -442,6 +516,17 @@ export default class SqlAdminService {
       } else {
         throw new Error("Ingresa el password del usuario.");
       }
+    }
+
+    if (tableName === "tasks" && payload.process_definition_template_id) {
+      const template = await this.getTaskTemplate(payload.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de definicion seleccionada no existe.");
+      }
+      if (!Number(template.creates_task)) {
+        throw new Error("La plantilla de definicion seleccionada no esta marcada para generar tareas.");
+      }
+      payload.process_definition_id = template.process_definition_id;
     }
 
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
@@ -505,6 +590,27 @@ export default class SqlAdminService {
     if (tableName === "persons" && typeof updates.password_hash === "string" && updates.password_hash) {
       if (!isBcryptHash(updates.password_hash)) {
         updates.password_hash = await hashPassword(updates.password_hash);
+      }
+    }
+    if (tableName === "tasks") {
+      if (
+        Object.prototype.hasOwnProperty.call(updates, "process_definition_id")
+        && !Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")
+      ) {
+        if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
+          throw new Error("La definicion de la tarea se deriva de la plantilla vinculada.");
+        }
+        delete updates.process_definition_id;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+        const template = await this.getTaskTemplate(updates.process_definition_template_id);
+        if (!template) {
+          throw new Error("La plantilla de definicion seleccionada no existe.");
+        }
+        if (!Number(template.creates_task)) {
+          throw new Error("La plantilla de definicion seleccionada no esta marcada para generar tareas.");
+        }
+        updates.process_definition_id = template.process_definition_id;
       }
     }
     if (tableName === "process_definition_versions") {
@@ -633,6 +739,181 @@ export default class SqlAdminService {
       await updateParentTaskStatusForTask(taskId);
     }
     return sanitizePersonRow(tableName, { ...keyPayload, ...updates });
+  }
+
+  async syncTemplateArtifactsFromDist() {
+    this.ensurePool();
+
+    if (!fs.existsSync(TEMPLATE_DIST_ROOT)) {
+      throw new Error("No existe tools/templates/dist/Plantillas. Ejecuta el empaquetado primero.");
+    }
+
+    const templateRootEntries = fs.readdirSync(TEMPLATE_DIST_ROOT, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory());
+
+    if (!templateRootEntries.length) {
+      throw new Error("No hay templates empaquetados en tools/templates/dist/Plantillas.");
+    }
+
+    const bucket = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+    const basePrefixRoot = (process.env.MINIO_TEMPLATES_PREFIX || "Plantillas").replace(/^\/+|\/+$/g, "");
+
+    let inserted = 0;
+    let updated = 0;
+    let discovered = 0;
+    let outputs = 0;
+
+    for (const templateEntry of templateRootEntries) {
+      const templateCode = templateEntry.name;
+      const templateDir = path.join(TEMPLATE_DIST_ROOT, templateCode);
+      const storageEntries = fs.readdirSync(templateDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory());
+
+      for (const storageEntry of storageEntries) {
+        const storageVersion = storageEntry.name;
+        const versionDir = path.join(templateDir, storageVersion);
+        const metaPath = path.join(versionDir, "meta.yaml");
+        const schemaPath = path.join(versionDir, "schema.json");
+        const packagedTemplateDir = path.join(versionDir, "template");
+
+        if (!fs.existsSync(metaPath) || !fs.existsSync(packagedTemplateDir)) {
+          continue;
+        }
+
+        const metaContent = fs.readFileSync(metaPath, "utf8");
+        const displayName = getYamlScalar(metaContent, "name") || templateCode;
+        const sourceVersion = getYamlScalar(metaContent, "version") || "1.0.0";
+        const versionHash = hashDirectory(versionDir);
+        const baseObjectPrefix = `${basePrefixRoot}/${templateCode}/${storageVersion}/`;
+        const schemaObjectKey = `${baseObjectPrefix}schema.json`;
+        const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
+
+        const candidates = [
+          {
+            mode: "system",
+            format: "jinja2",
+            dirPath: path.join(packagedTemplateDir, "modes", "system", "jinja2", "src")
+          },
+          {
+            mode: "user",
+            format: "docx",
+            dirPath: path.join(packagedTemplateDir, "modes", "user", "docx", "src")
+          },
+          {
+            mode: "user",
+            format: "latex",
+            dirPath: path.join(packagedTemplateDir, "modes", "user", "latex", "src")
+          },
+          {
+            mode: "user",
+            format: "pdf",
+            dirPath: path.join(packagedTemplateDir, "modes", "user", "pdf", "src")
+          },
+          {
+            mode: "user",
+            format: "xlsx",
+            dirPath: path.join(packagedTemplateDir, "modes", "user", "xlsx", "src")
+          }
+        ];
+
+        const availableFormats = {};
+        for (const candidate of candidates) {
+          if (!hasVisibleFiles(candidate.dirPath)) {
+            continue;
+          }
+
+          const entryObjectKey = `${baseObjectPrefix}template/modes/${candidate.mode}/${candidate.format}/src/`;
+          if (!availableFormats[candidate.mode]) {
+            availableFormats[candidate.mode] = {};
+          }
+          availableFormats[candidate.mode][candidate.format] = {
+            entry_object_key: entryObjectKey
+          };
+          outputs += 1;
+        }
+
+        if (!Object.keys(availableFormats).length) {
+          continue;
+        }
+
+        discovered += 1;
+        const availableFormatsJson = JSON.stringify(availableFormats);
+        const [existingRows] = await this.pool.query(
+          `SELECT id
+           FROM template_artifacts
+           WHERE template_code = ?
+             AND storage_version = ?
+           LIMIT 1`,
+          [templateCode, storageVersion]
+        );
+
+        if (existingRows?.length) {
+          await this.pool.query(
+            `UPDATE template_artifacts
+             SET display_name = ?,
+                 source_version = ?,
+                 bucket = ?,
+                 base_object_prefix = ?,
+                 available_formats = ?,
+                 schema_object_key = ?,
+                 meta_object_key = ?,
+                 content_hash = ?,
+                 is_active = 1
+             WHERE id = ?`,
+            [
+              displayName,
+              sourceVersion,
+              bucket,
+              baseObjectPrefix,
+              availableFormatsJson,
+              schemaObjectKey,
+              metaObjectKey,
+              versionHash,
+              existingRows[0].id
+            ]
+          );
+          updated += 1;
+        } else {
+          await this.pool.query(
+            `INSERT INTO template_artifacts (
+              template_code,
+              display_name,
+              source_version,
+              storage_version,
+              bucket,
+              base_object_prefix,
+              available_formats,
+              schema_object_key,
+              meta_object_key,
+              content_hash,
+              is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            [
+              templateCode,
+              displayName,
+              sourceVersion,
+              storageVersion,
+              bucket,
+              baseObjectPrefix,
+              availableFormatsJson,
+              schemaObjectKey,
+              metaObjectKey,
+              versionHash
+            ]
+          );
+          inserted += 1;
+        }
+      }
+    }
+
+    return {
+      discovered,
+      outputs,
+      inserted,
+      updated,
+      bucket,
+      prefix: basePrefixRoot
+    };
   }
 
   async remove(tableName, keys) {

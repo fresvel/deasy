@@ -83,12 +83,15 @@ export const getuserTarea = async (req, res) => {
               t.start_date,
               t.end_date,
               t.term_id,
+              t.process_definition_template_id,
               ta.id AS assignment_id,
               ta.status AS assignment_status,
               pdv.id AS process_definition_id,
               pdv.variation_key,
               pdv.definition_version,
               pdv.name AS process_definition_name,
+              pdtb.usage_role AS template_usage_role,
+              tar.display_name AS template_name,
               p.id AS process_id,
               p.name AS process_name,
               p.slug AS process_slug,
@@ -97,6 +100,10 @@ export const getuserTarea = async (req, res) => {
        FROM task_assignments ta
        INNER JOIN tasks t ON t.id = ta.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       LEFT JOIN process_definition_templates pdtb
+         ON pdtb.id = t.process_definition_template_id
+       LEFT JOIN template_artifacts tar
+         ON tar.id = pdtb.template_artifact_id
        INNER JOIN processes p ON p.id = pdv.process_id
        INNER JOIN unit_positions up ON up.id = ta.position_id
        INNER JOIN units u ON u.id = up.unit_id
@@ -153,12 +160,15 @@ export const getTareaspendientes = async (req, res) => {
               t.start_date,
               t.end_date,
               t.term_id,
+              t.process_definition_template_id,
               ta.id AS assignment_id,
               ta.status AS assignment_status,
               pdv.id AS process_definition_id,
               pdv.variation_key,
               pdv.definition_version,
               pdv.name AS process_definition_name,
+              pdtb.usage_role AS template_usage_role,
+              tar.display_name AS template_name,
               p.id AS process_id,
               p.name AS process_name,
               p.slug AS process_slug,
@@ -167,6 +177,10 @@ export const getTareaspendientes = async (req, res) => {
        FROM task_assignments ta
        INNER JOIN tasks t ON t.id = ta.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       LEFT JOIN process_definition_templates pdtb
+         ON pdtb.id = t.process_definition_template_id
+       LEFT JOIN template_artifacts tar
+         ON tar.id = pdtb.template_artifact_id
        INNER JOIN processes p ON p.id = pdv.process_id
        INNER JOIN unit_positions up ON up.id = ta.position_id
        INNER JOIN units u ON u.id = up.unit_id

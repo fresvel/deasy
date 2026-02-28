@@ -124,11 +124,62 @@ const ensureConfig = () => {
 
 const baseType = (mysqlType = "") => mysqlType.toLowerCase().split("(")[0];
 
+const SEED_TABLE_ORDER = [
+  "persons",
+  "unit_types",
+  "relation_unit_types",
+  "units",
+  "unit_relations",
+  "cargos",
+  "roles",
+  "resources",
+  "actions",
+  "permissions",
+  "role_permissions",
+  "role_assignments",
+  "role_assignment_relation_types",
+  "cargo_role_map",
+  "unit_positions",
+  "position_assignments",
+  "processes",
+  "process_definition_versions",
+  "process_target_rules",
+  "term_types",
+  "terms",
+  "template_artifacts",
+  "process_definition_templates",
+  "tasks",
+  "task_assignments",
+  "documents",
+  "document_versions",
+  "signature_types",
+  "signature_statuses",
+  "signature_request_statuses",
+  "signature_flow_templates",
+  "signature_flow_steps",
+  "signature_flow_instances",
+  "signature_requests",
+  "document_signatures",
+  "vacancies",
+  "vacancy_visibility",
+  "aplications",
+  "offers",
+  "contracts",
+  "contract_origins",
+  "contract_origin_recruitment",
+  "contract_origin_renewal"
+];
+
 const getTableOrder = (tableNames) => {
-  const orderMap = new Map(SQL_TABLES.map((table, idx) => [table.table, idx]));
+  const seedOrderMap = new Map(SEED_TABLE_ORDER.map((table, idx) => [table, idx]));
+  const configOrderMap = new Map(SQL_TABLES.map((table, idx) => [table.table, idx]));
   return [...tableNames].sort((a, b) => {
-    const aIdx = orderMap.has(a) ? orderMap.get(a) : Number.MAX_SAFE_INTEGER;
-    const bIdx = orderMap.has(b) ? orderMap.get(b) : Number.MAX_SAFE_INTEGER;
+    const aIdx = seedOrderMap.has(a)
+      ? seedOrderMap.get(a)
+      : seedOrderMap.size + (configOrderMap.has(a) ? configOrderMap.get(a) : Number.MAX_SAFE_INTEGER / 4);
+    const bIdx = seedOrderMap.has(b)
+      ? seedOrderMap.get(b)
+      : seedOrderMap.size + (configOrderMap.has(b) ? configOrderMap.get(b) : Number.MAX_SAFE_INTEGER / 4);
     if (aIdx !== bIdx) {
       return aIdx - bIdx;
     }
@@ -295,7 +346,11 @@ const captureSeed = async (connection, config, filePath) => {
 const applySeed = async (connection, filePath) => {
   const raw = await readFile(filePath, "utf8");
   const snapshot = JSON.parse(raw);
-  const tables = Array.isArray(snapshot.tables) ? snapshot.tables : [];
+  const originalTables = Array.isArray(snapshot.tables) ? snapshot.tables : [];
+  const tableMap = new Map(originalTables.map((table) => [table.table, table]));
+  const tables = getTableOrder(originalTables.map((table) => table.table))
+    .map((tableName) => tableMap.get(tableName))
+    .filter(Boolean);
   if (!tables.length) {
     throw new Error("La semilla no contiene tablas.");
   }

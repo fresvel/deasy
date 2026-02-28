@@ -717,9 +717,7 @@ const GROUP_DEFS = [
       "tasks",
       "task_assignments",
       "template_artifacts",
-      "process_definition_template_bindings",
-      "templates",
-      "template_versions",
+      "process_definition_templates",
       "documents",
       "document_versions"
     ],
@@ -793,8 +791,8 @@ const GESTION_INDEX_ITEMS = [
     key: "plantillas",
     label: "Plantillas",
     icon: "certificate",
-    description: "Gestiona artifacts publicados y sus vínculos con definiciones.",
-    tables: ["templates", "template_versions", "template_artifacts", "process_definition_template_bindings"]
+    description: "Gestiona artifacts publicados y plantillas de definicion.",
+    tables: ["template_artifacts", "process_definition_templates"]
   },
   {
     key: "tareas",
@@ -1100,7 +1098,7 @@ const adminTagForTable = (table) => {
   if (/artifact|signature_type|signature_status|request_status|resource|action/.test(tableName)) {
     return { label: "Soporte", className: "is-danger" };
   }
-  if (/version|assignment|binding|map|relation|origin/.test(tableName)) {
+  if (/version|assignment|template|map|relation|origin/.test(tableName)) {
     return { label: "Relacion", className: "is-warning" };
   }
   return { label: "Base", className: "is-success" };

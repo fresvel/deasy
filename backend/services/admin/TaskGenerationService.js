@@ -1,14 +1,5 @@
 import { getMariaDBPool } from "../../config/mariadb.js";
 
-const getActiveProcesses = async (connection) => {
-  const [rows] = await connection.query(
-    `SELECT id, parent_id
-     FROM processes
-     WHERE is_active = 1`
-  );
-  return rows;
-};
-
 const getTermById = async (connection, termId) => {
   const [rows] = await connection.query(
     `SELECT id, start_date, end_date
@@ -75,17 +66,43 @@ const getTargetRulesMap = async (connection, termStart, termEnd) => {
   return map;
 };
 
+const getExecutableTemplatesMap = async (connection) => {
+  const [rows] = await connection.query(
+    `SELECT
+       id,
+       process_definition_id,
+       template_artifact_id,
+       usage_role,
+       sort_order
+     FROM process_definition_templates
+     WHERE creates_task = 1
+     ORDER BY process_definition_id ASC, sort_order ASC, id ASC`
+  );
+  const map = new Map();
+  rows.forEach((row) => {
+    if (!map.has(row.process_definition_id)) {
+      map.set(row.process_definition_id, []);
+    }
+    map.get(row.process_definition_id).push(row);
+  });
+  return map;
+};
+
 const getExistingTasksMap = async (connection, termId) => {
   const [rows] = await connection.query(
-    `SELECT t.id, t.process_definition_id, t.parent_task_id
+    `SELECT t.id, t.process_definition_template_id, t.process_definition_id, t.parent_task_id
      FROM tasks t
      WHERE t.term_id = ?`,
     [termId]
   );
   const map = new Map();
   rows.forEach((row) => {
-    if (!map.has(row.process_definition_id)) {
-      map.set(row.process_definition_id, { id: row.id, parent_task_id: row.parent_task_id });
+    if (!map.has(row.process_definition_template_id)) {
+      map.set(row.process_definition_template_id, {
+        id: row.id,
+        parent_task_id: row.parent_task_id,
+        process_definition_id: row.process_definition_id
+      });
     }
   });
   return map;
@@ -202,60 +219,47 @@ export const generateTasksForTerm = async (termId) => {
       throw new Error("Periodo no encontrado.");
     }
 
-    const processes = await getActiveProcesses(connection);
-    const processById = new Map(processes.map((process) => [process.id, process]));
     const activeDefinitions = await getActiveDefinitions(connection, term.start_date, term.end_date);
     const definitionById = new Map(activeDefinitions.map((definition) => [definition.id, definition]));
-    const primaryDefinitionByProcess = new Map();
-    activeDefinitions.forEach((definition) => {
-      if (!primaryDefinitionByProcess.has(definition.process_id)) {
-        primaryDefinitionByProcess.set(definition.process_id, definition);
-      }
-    });
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
+    const executableTemplatesMap = await getExecutableTemplatesMap(connection);
     const existingTasksMap = await getExistingTasksMap(connection, term.id);
     const createdTaskIds = [];
-    const tasksWithMissingDefinition = [];
-    const updatedParents = [];
+    const definitionsWithoutTaskTemplates = [];
     const processing = new Set();
 
-    const ensureTask = async (definition) => {
-      if (!definition || !processById.has(definition.process_id)) {
+    const ensureTask = async (definition, template) => {
+      if (!definition || !template) {
         return null;
       }
-      if (processing.has(definition.id)) {
-        return existingTasksMap.get(definition.id)?.id || null;
+      if (processing.has(template.id)) {
+        return existingTasksMap.get(template.id)?.id || null;
       }
-      processing.add(definition.id);
+      processing.add(template.id);
 
-      const process = processById.get(definition.process_id);
-      let parentTaskId = null;
-      if (process.parent_id) {
-        const parentDefinition = primaryDefinitionByProcess.get(process.parent_id);
-        parentTaskId = await ensureTask(parentDefinition);
-      }
-
-      const existing = existingTasksMap.get(definition.id);
+      const existing = existingTasksMap.get(template.id);
       if (existing) {
-        if (parentTaskId && existing.parent_task_id !== parentTaskId) {
-          await connection.query(
-            "UPDATE tasks SET parent_task_id = ? WHERE id = ?",
-            [parentTaskId, existing.id]
-          );
-          existing.parent_task_id = parentTaskId;
-          updatedParents.push(existing.id);
-        }
         return existing.id;
       }
 
       const [result] = await connection.query(
         `INSERT INTO tasks
-         (process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (
+           process_definition_template_id,
+           process_definition_id,
+           term_id,
+           parent_task_id,
+           responsible_position_id,
+           start_date,
+           end_date,
+           status
+        )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          template.id,
           definition.id,
           term.id,
-          parentTaskId,
+          null,
           null,
           term.start_date,
           term.end_date,
@@ -263,38 +267,41 @@ export const generateTasksForTerm = async (termId) => {
         ]
       );
       const insertedId = result.insertId;
-      existingTasksMap.set(definition.id, { id: insertedId, parent_task_id: parentTaskId });
+      existingTasksMap.set(template.id, {
+        id: insertedId,
+        parent_task_id: null,
+        process_definition_id: definition.id
+      });
       createdTaskIds.push(insertedId);
       return insertedId;
     };
 
-    processes.forEach((process) => {
-      if (!primaryDefinitionByProcess.has(process.id)) {
-        tasksWithMissingDefinition.push(process.id);
-      }
-    });
-
     for (const definition of activeDefinitions) {
-      await ensureTask(definition);
+      const templates = executableTemplatesMap.get(definition.id) || [];
+      if (!templates.length) {
+        definitionsWithoutTaskTemplates.push(definition.id);
+        continue;
+      }
+      for (const template of templates) {
+        await ensureTask(definition, template);
+      }
     }
 
-    const processDefinitionIds = Array.from(existingTasksMap.keys());
     let assignmentsCreated = 0;
-    const processesWithoutTargetRules = [];
-    const processesWithoutAssignees = [];
+    const definitionsWithoutTargetRules = [];
+    const definitionsWithoutAssignees = [];
 
-    for (const processDefinitionId of processDefinitionIds) {
-      const task = existingTasksMap.get(processDefinitionId);
+    for (const task of existingTasksMap.values()) {
       if (!task) {
         continue;
       }
-      const definitionEntry = definitionById.get(processDefinitionId);
-      if (!definitionEntry || !processById.has(definitionEntry.process_id)) {
+      const definitionEntry = definitionById.get(task.process_definition_id);
+      if (!definitionEntry) {
         continue;
       }
       const rules = targetRulesMap.get(definitionEntry.id) || [];
       if (!rules.length) {
-        processesWithoutTargetRules.push(processDefinitionId);
+        definitionsWithoutTargetRules.push(definitionEntry.id);
         continue;
       }
       const positions = [];
@@ -303,7 +310,7 @@ export const generateTasksForTerm = async (termId) => {
         positions.push(...matched);
       }
       if (!positions.length) {
-        processesWithoutAssignees.push(processDefinitionId);
+        definitionsWithoutAssignees.push(definitionEntry.id);
         continue;
       }
       const values = positions.map((row) => [task.id, row.position_id, row.person_id ?? null]);
@@ -324,10 +331,9 @@ export const generateTasksForTerm = async (termId) => {
       tasks_created: createdTaskIds.length,
       tasks_existing: existingTasksMap.size,
       assignments_created: assignmentsCreated,
-      tasks_with_missing_definition: tasksWithMissingDefinition,
-      tasks_parent_updated: updatedParents,
-      processes_without_target_rules: processesWithoutTargetRules,
-      processes_without_assignees: processesWithoutAssignees
+      definitions_without_task_templates: definitionsWithoutTaskTemplates,
+      definitions_without_target_rules: definitionsWithoutTargetRules,
+      definitions_without_assignees: definitionsWithoutAssignees
     };
   } catch (error) {
     await connection.rollback();

@@ -397,29 +397,28 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   storage_version VARCHAR(20) NOT NULL,
   bucket VARCHAR(120) NOT NULL,
   base_object_prefix VARCHAR(255) NOT NULL,
-  mode ENUM('system', 'user') NOT NULL,
-  format VARCHAR(40) NOT NULL,
-  entry_object_key VARCHAR(255) NOT NULL,
+  available_formats JSON NOT NULL,
   schema_object_key VARCHAR(255) NOT NULL,
   meta_object_key VARCHAR(255) NOT NULL,
   content_hash VARCHAR(64) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version, mode, format)
+  UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS process_definition_template_bindings (
+CREATE TABLE IF NOT EXISTS process_definition_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_id INT NOT NULL,
   template_artifact_id INT NOT NULL,
   usage_role ENUM('system_render', 'manual_fill', 'attachment', 'support') NOT NULL DEFAULT 'manual_fill',
+  creates_task TINYINT(1) NOT NULL DEFAULT 1,
   is_required TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_definition_template_bindings (process_definition_id, template_artifact_id, usage_role),
-  CONSTRAINT fk_process_definition_template_bindings_definition
+  UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id, usage_role),
+  CONSTRAINT fk_process_definition_templates_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
-  CONSTRAINT fk_process_definition_template_bindings_artifact
+  CONSTRAINT fk_process_definition_templates_artifact
     FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -457,6 +456,7 @@ CREATE TABLE IF NOT EXISTS terms (
 
 CREATE TABLE IF NOT EXISTS tasks (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  process_definition_template_id INT NOT NULL,
   process_definition_id INT NOT NULL,
   term_id INT NOT NULL,
   parent_task_id INT NULL,
@@ -468,7 +468,11 @@ CREATE TABLE IF NOT EXISTS tasks (
   end_date DATE NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_tasks_term_template (term_id, process_definition_template_id),
+  INDEX idx_tasks_template_term (process_definition_template_id, term_id),
   INDEX idx_tasks_definition_term (process_definition_id, term_id),
+  CONSTRAINT fk_tasks_process_definition_template
+    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
   CONSTRAINT fk_tasks_process_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
   CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
@@ -489,29 +493,6 @@ CREATE TABLE IF NOT EXISTS task_assignments (
   CONSTRAINT fk_task_assignments_task FOREIGN KEY (task_id) REFERENCES tasks(id),
   CONSTRAINT fk_task_assignments_position FOREIGN KEY (position_id) REFERENCES unit_positions(id),
   CONSTRAINT fk_task_assignments_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS templates (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  process_id INT NOT NULL,
-  name VARCHAR(180) NOT NULL,
-  slug VARCHAR(180) NOT NULL UNIQUE,
-  description VARCHAR(255) NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_templates_process_id (process_id),
-  CONSTRAINT fk_templates_process FOREIGN KEY (process_id) REFERENCES processes(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS template_versions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  template_id INT NOT NULL,
-  version VARCHAR(20) NOT NULL,
-  mongo_ref VARCHAR(64) NOT NULL,
-  mongo_version VARCHAR(40) NOT NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_template_versions (template_id, version),
-  CONSTRAINT fk_template_versions_template FOREIGN KEY (template_id) REFERENCES templates(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS documents (

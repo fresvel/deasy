@@ -1,5 +1,29 @@
 <template>
   <div class="container-fluid py-4">
+    <div
+      v-if="feedbackToast.visible"
+      class="admin-feedback-toast"
+      :class="`is-${feedbackToast.kind}`"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="admin-feedback-toast-body">
+        <div class="admin-feedback-toast-copy">
+          <strong class="admin-feedback-toast-title">{{ feedbackToast.title }}</strong>
+          <div class="admin-feedback-toast-message">{{ feedbackToast.message }}</div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-sm btn-icon admin-feedback-toast-close"
+          title="Cerrar"
+          aria-label="Cerrar"
+          @click="hideFeedbackToast"
+        >
+          <font-awesome-icon icon="times" />
+        </button>
+      </div>
+    </div>
+
     <div class="profile-section-header">
       <div>
         <h2 class="text-start profile-section-title table-title-with-icon">
@@ -31,6 +55,16 @@
             @click="handleSearchAction"
           >
             Buscar
+          </button>
+          <button
+            v-if="isTemplateArtifactsTable"
+            class="btn btn-outline-secondary btn-lg"
+            type="button"
+            :disabled="!table || loading"
+            @click="syncTemplateArtifactsFromDist"
+          >
+            <font-awesome-icon icon="rotate-right" class="me-2" />
+            Sincronizar dist
           </button>
           <button
             class="btn btn-primary btn-lg profile-add-btn"
@@ -188,7 +222,7 @@
             </div>
 
             <div v-if="loading" class="text-muted">Cargando datos...</div>
-            <div v-else-if="error" class="text-danger">{{ error }}</div>
+            <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
             <div v-else class="table-responsive table-actions">
               <div class="table-actions-scroll">
                 <table class="table table-striped table-hover align-middle table-institutional table-actions">
@@ -381,7 +415,7 @@
             </div>
 
             <div v-if="vacantPositionLoading" class="text-muted">Cargando puestos sin ocupaciones...</div>
-            <div v-else-if="vacantPositionError" class="text-danger">{{ vacantPositionError }}</div>
+            <div v-else-if="vacantPositionError" class="admin-inline-error" role="alert">{{ vacantPositionError }}</div>
             <div v-else class="table-responsive table-actions">
               <div class="table-actions-scroll">
                 <table class="table table-striped table-hover align-middle table-institutional table-actions">
@@ -1151,7 +1185,7 @@
                 </div>
               </template>
               <template v-else-if="isFkProcessDefinitions">
-                <div class="col-12 col-md-5">
+                <div class="col-12 col-md-3">
                   <label class="form-label text-dark">Busqueda</label>
                   <input
                     v-model="fkSearch"
@@ -1162,23 +1196,33 @@
                   />
                 </div>
                 <div class="col-12 col-md-3">
-                  <label class="form-label text-dark">Estado</label>
+                  <label class="form-label text-dark">Proceso</label>
                   <select
-                    v-model="fkFilters.status"
+                    v-model="fkFilters.process_id"
                     class="form-select"
                     @change="handleFkProcessDefinitionFilterChange"
                   >
                     <option value="">Todos</option>
                     <option
-                      v-for="option in getFkTableFieldOptions('status')"
-                      :key="option"
-                      :value="option"
+                      v-for="row in fkProcessDefinitionProcessOptions"
+                      :key="row.id"
+                      :value="String(row.id)"
                     >
-                      {{ formatSelectOptionLabel(getFkTableField('status'), option) }}
+                      {{ formatFkOptionLabel("processes", row) }}
                     </option>
                   </select>
                 </div>
                 <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Serie</label>
+                  <input
+                    v-model="fkFilters.variation_key"
+                    type="text"
+                    class="form-control"
+                    placeholder="Filtrar por serie"
+                    @input="debouncedFkSearch"
+                  />
+                </div>
+                <div class="col-12 col-md-2">
                   <label class="form-label text-dark">Modo</label>
                   <select
                     v-model="fkFilters.execution_mode"
@@ -1288,7 +1332,7 @@
               </div>
             </div>
             <div v-if="fkLoading" class="text-muted">Cargando...</div>
-            <div v-else-if="fkError" class="text-danger">{{ fkError }}</div>
+            <div v-else-if="fkError" class="admin-inline-error" role="alert">{{ fkError }}</div>
             <div v-else class="table-responsive">
               <table class="table table-striped table-hover align-middle table-institutional">
                 <thead>
@@ -2028,6 +2072,12 @@ const emit = defineEmits(["go-back"]);
 const rows = ref([]);
 const loading = ref(false);
 const error = ref("");
+const feedbackToast = ref({
+  visible: false,
+  kind: "success",
+  title: "",
+  message: ""
+});
 const searchTerm = ref("");
 const vacantSearchTerm = ref("");
 const processDefinitionInlineFilters = ref({
@@ -2063,6 +2113,7 @@ let fkCreateInstance = null;
 let returnModal = null;
 let searchTimeout = null;
 let vacantSearchTimeout = null;
+let feedbackToastTimeout = null;
 const skipFkReturnRestore = ref(false);
 const fkCreateExitTarget = ref("none");
 const fkNestedExitTarget = ref("none");
@@ -2086,6 +2137,7 @@ const fkFilters = ref({});
 const fkCreateForm = ref({});
 const fkCreateError = ref("");
 const fkCreateLoading = ref(false);
+const fkProcessDefinitionProcessOptions = ref([]);
 const fkPositionFilters = ref({
   unit_type_id: "",
   unit_id: "",
@@ -2226,11 +2278,6 @@ const formFields = computed(() => {
     }
     return editableFields.value;
   }
-  if (props.table.table === "templates") {
-    return props.table.fields.filter(
-      (field) => !field.readOnly || field.name === "version"
-    );
-  }
   return editableFields.value;
 });
 const PROCESS_INLINE_HIDDEN_FIELDS = new Set([
@@ -2251,9 +2298,7 @@ const tableListFields = computed(() => {
     return [];
   }
   const fields = props.table.fields.filter((field) => !(isPersonTable.value && field.name === "password_hash"));
-  const normalizedFields = fields.filter((field) => !(
-    props.table.table === "templates" && field.name === "process_name"
-  ));
+  const normalizedFields = fields;
   if (props.table.table === "process_target_rules") {
     const expandedFields = [];
     const processField = {
@@ -2374,12 +2419,16 @@ const isFkUnitPositions = computed(() => fkTable.value?.table === "unit_position
 const isFkUnits = computed(() => fkTable.value?.table === "units");
 const isFkProcessDefinitions = computed(() => fkTable.value?.table === "process_definition_versions");
 const hasFkProcessDefinitionFilters = computed(() =>
-  Boolean(fkFilters.value.status || fkFilters.value.execution_mode)
+  Boolean(
+    fkFilters.value.process_id
+    || fkFilters.value.variation_key?.trim()
+    || fkFilters.value.execution_mode
+  )
 );
 
-const isTemplateTable = computed(() => props.table?.table === "templates");
 const isProcessTable = computed(() => props.table?.table === "processes");
 const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
+const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
 const isPositionAssignmentsTable = computed(() => props.table?.table === "position_assignments");
@@ -2450,9 +2499,7 @@ const tableHeaderIcon = computed(() => {
       "tasks",
       "task_assignments",
       "template_artifacts",
-      "process_definition_template_bindings",
-      "templates",
-      "template_versions"
+      "process_definition_templates"
     ].includes(tableName)
   ) {
     return "check-double";
@@ -2503,9 +2550,6 @@ const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
   }
   const fields = tableMeta.fields.filter((field) => {
     if (field.name === "password_hash") {
-      return false;
-    }
-    if (tableMeta.table === "templates" && field.name === "process_name") {
       return false;
     }
     if (!includeVirtual && field.virtual) {
@@ -2611,6 +2655,36 @@ const formatSelectOptionLabel = (field, value) => {
   return value;
 };
 
+const formatAvailableFormatsSummary = (value) => {
+  if (!value) {
+    return "—";
+  }
+  let parsed = value;
+  if (typeof value === "string") {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return String(value);
+  }
+  const parts = Object.entries(parsed)
+    .map(([mode, formats]) => {
+      if (!formats || typeof formats !== "object" || Array.isArray(formats)) {
+        return "";
+      }
+      const names = Object.keys(formats);
+      if (!names.length) {
+        return "";
+      }
+      return `${mode}: ${names.join(", ")}`;
+    })
+    .filter(Boolean);
+  return parts.length ? parts.join(" | ") : "—";
+};
+
 const formatValueForTable = (tableMeta, value, field, row = null) => {
   if (value === null || value === undefined || value === "") {
     if (!["__plaza", "__position_type", "__process_name"].includes(field?.name)) {
@@ -2660,6 +2734,9 @@ const formatValueForTable = (tableMeta, value, field, row = null) => {
   }
   if (fieldName === "scope") {
     return formatSelectOptionLabel(field, value);
+  }
+  if (fieldName === "available_formats") {
+    return formatAvailableFormatsSummary(value);
   }
   if (field.type === "boolean") {
     return Number(value) === 1 ? "Si" : "No";
@@ -2857,12 +2934,6 @@ const ensureProcessSearchInstance = () => {
   }
 };
 
-const ensureTemplateSearchInstance = () => {
-  if (!templateSearchInstance && templateSearchModal.value) {
-    templateSearchInstance = new Modal(templateSearchModal.value);
-  }
-};
-
 const ensureDocumentSearchInstance = () => {
   if (!documentSearchInstance && documentSearchModal.value) {
     documentSearchInstance = new Modal(documentSearchModal.value);
@@ -3051,7 +3122,9 @@ const resetFkFilters = () => {
     payload[field.name] = "";
   });
   if (fkTable.value?.table === "process_definition_versions") {
-    payload.status = "";
+    payload.process_id = "";
+    payload.variation_key = "";
+    payload.status = "active";
     payload.execution_mode = "";
   }
   fkFilters.value = payload;
@@ -3151,6 +3224,7 @@ const FK_TABLE_MAP = {
   parent_task_id: "tasks",
   process_id: "processes",
   process_definition_id: "process_definition_versions",
+  process_definition_template_id: "process_definition_templates",
   term_type_id: "term_types",
   term_id: "terms",
   task_id: "tasks",
@@ -3159,7 +3233,7 @@ const FK_TABLE_MAP = {
   parent_unit_id: "units",
   child_unit_id: "units",
   relation_type_id: "relation_unit_types",
-  template_id: "templates",
+  template_id: "signature_flow_templates",
   template_artifact_id: "template_artifacts",
   document_id: "documents",
   document_version_id: "document_versions",
@@ -3207,6 +3281,16 @@ const formatFkOptionLabel = (tableName, row) => {
       row.variation_key,
       row.definition_version,
       row.name
+    ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
+    if (parts.length) {
+      return parts.join(" · ");
+    }
+  }
+  if (tableName === "process_definition_templates") {
+    const parts = [
+      row.process_definition_id ? `Def ${row.process_definition_id}` : null,
+      row.template_artifact_id ? `Art ${row.template_artifact_id}` : null,
+      row.usage_role
     ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
     if (parts.length) {
       return parts.join(" · ");
@@ -3529,10 +3613,27 @@ const handleFkProcessDefinitionFilterChange = async () => {
 const clearFkProcessDefinitionFilters = async () => {
   fkFilters.value = {
     ...fkFilters.value,
-    status: "",
+    process_id: "",
+    variation_key: "",
+    status: "active",
     execution_mode: ""
   };
   await fetchFkRows();
+};
+
+const loadFkProcessDefinitionProcessOptions = async () => {
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("processes"), {
+      params: {
+        orderBy: "name",
+        order: "asc",
+        limit: 500
+      }
+    });
+    fkProcessDefinitionProcessOptions.value = response.data || [];
+  } catch (error) {
+    fkProcessDefinitionProcessOptions.value = [];
+  }
 };
 
 const setFkLabel = (tableName, id, label) => {
@@ -3989,6 +4090,9 @@ const openFkSearch = async (field, onSelect = null) => {
   if (tableName === "unit_positions") {
     await loadFkCargoOptions();
   }
+  if (tableName === "process_definition_versions") {
+    await loadFkProcessDefinitionProcessOptions();
+  }
   await fetchFkRows();
   ensureFkInstance();
   fkInstance?.show();
@@ -4062,21 +4166,17 @@ const RELATED_RECORD_CONFIG = {
     { table: "contracts", label: "Contratos", foreignKey: "person_id", orderBy: "start_date", order: "desc" }
   ],
   processes: [
-    { table: "process_definition_versions", label: "Definiciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" },
-    { table: "templates", label: "Plantillas", foreignKey: "process_id", orderBy: "created_at", order: "desc" }
+    { table: "process_definition_versions", label: "Definiciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
   ],
   process_definition_versions: [
     { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
-    { table: "process_definition_template_bindings", label: "Plantillas vinculadas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
+    { table: "process_definition_templates", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
     { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }
   ],
   tasks: [
     { table: "task_assignments", label: "Asignaciones", foreignKey: "task_id", orderBy: "assigned_at", order: "desc" },
     { table: "documents", label: "Documentos", foreignKey: "task_id", orderBy: "created_at", order: "desc" }
-  ],
-  templates: [
-    { table: "template_versions", label: "Versiones de plantilla", foreignKey: "template_id", orderBy: "created_at", order: "desc" }
   ],
   documents: [
     { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }
@@ -4487,13 +4587,6 @@ const fetchRows = async () => {
         }
       });
     }
-    if (props.table?.table === "templates") {
-      Object.entries(templateFilters.value).forEach(([key, value]) => {
-        if (value !== "" && value !== null && value !== undefined) {
-          filters[`filter_${key}`] = value;
-        }
-      });
-    }
     if (props.table?.table === "documents") {
       Object.entries(documentFilters.value).forEach(([key, value]) => {
         if (value !== "" && value !== null && value !== undefined) {
@@ -4642,10 +4735,6 @@ const handleSearchAction = () => {
     openProcessSearch();
     return;
   }
-  if (props.table?.table === "templates") {
-    openTemplateSearch();
-    return;
-  }
   if (props.table?.table === "documents") {
     openDocumentSearch();
     return;
@@ -4657,6 +4746,63 @@ const handleSearchAction = () => {
   focusSearch();
 };
 
+const hideFeedbackToast = () => {
+  if (feedbackToastTimeout) {
+    clearTimeout(feedbackToastTimeout);
+    feedbackToastTimeout = null;
+  }
+  feedbackToast.value = {
+    visible: false,
+    kind: "success",
+    title: "",
+    message: ""
+  };
+};
+
+const showFeedbackToast = ({ kind = "success", title, message, duration = 5200 }) => {
+  if (feedbackToastTimeout) {
+    clearTimeout(feedbackToastTimeout);
+    feedbackToastTimeout = null;
+  }
+  feedbackToast.value = {
+    visible: true,
+    kind,
+    title,
+    message
+  };
+  feedbackToastTimeout = setTimeout(() => {
+    hideFeedbackToast();
+  }, duration);
+};
+
+const syncTemplateArtifactsFromDist = async () => {
+  if (!isTemplateArtifactsTable.value) {
+    return;
+  }
+  loading.value = true;
+  error.value = "";
+  try {
+    const response = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACTS_SYNC);
+    const { discovered = 0, outputs = 0, inserted = 0, updated = 0 } = response.data || {};
+    await fetchRows();
+    showFeedbackToast({
+      kind: "success",
+      title: "Sincronizacion completada",
+      message: `Paquetes: ${discovered}. Salidas detectadas: ${outputs}. Insertados: ${inserted}. Actualizados: ${updated}.`
+    });
+  } catch (err) {
+    error.value = err?.response?.data?.message || "No se pudo sincronizar template_artifacts.";
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo sincronizar",
+      message: error.value,
+      duration: 7000
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
 const handleGoBack = () => {
   emit("go-back");
 };
@@ -4664,11 +4810,6 @@ const handleGoBack = () => {
 const openProcessSearch = () => {
   ensureProcessSearchInstance();
   processSearchInstance?.show();
-};
-
-const openTemplateSearch = () => {
-  ensureTemplateSearchInstance();
-  templateSearchInstance?.show();
 };
 
 const openDocumentSearch = () => {
@@ -5583,13 +5724,6 @@ const submitForm = async () => {
   }
   error.value = "";
   modalError.value = "";
-  if (isTemplateTable.value) {
-    const processId = formData.value.process_id ? Number(formData.value.process_id) : null;
-    if (!processId) {
-      modalError.value = "Selecciona un proceso para la plantilla.";
-      return;
-    }
-  }
   if (isPersonTable.value && editorMode.value === "create") {
     const password = formData.value.password;
     if (typeof password !== "string" || !password.trim()) {
@@ -5763,6 +5897,9 @@ onBeforeUnmount(() => {
   }
   if (vacantSearchTimeout) {
     clearTimeout(vacantSearchTimeout);
+  }
+  if (feedbackToastTimeout) {
+    clearTimeout(feedbackToastTimeout);
   }
   resetInlineFkState();
 });
@@ -5945,6 +6082,86 @@ defineExpose({
   font-weight: 700;
   color: var(--brand-ink);
   margin-bottom: 0.9rem;
+}
+
+.admin-inline-error {
+  border: 1px solid rgba(220, 53, 69, 0.22);
+  border-radius: 0.85rem;
+  background: rgba(220, 53, 69, 0.08);
+  color: #b42332;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-bottom: 0.25rem;
+}
+
+.admin-feedback-toast {
+  position: sticky;
+  top: 0.85rem;
+  z-index: 18;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  pointer-events: none;
+}
+
+.admin-feedback-toast-body {
+  min-width: min(34rem, 100%);
+  max-width: 42rem;
+  border-radius: 1rem;
+  padding: 0.95rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  box-shadow: 0 18px 38px rgba(var(--brand-primary-rgb), 0.14);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  background: #ffffff;
+  pointer-events: auto;
+}
+
+.admin-feedback-toast.is-success .admin-feedback-toast-body {
+  border-color: rgba(40, 167, 69, 0.2);
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.08), rgba(255, 255, 255, 0.98));
+}
+
+.admin-feedback-toast.is-error .admin-feedback-toast-body {
+  border-color: rgba(220, 53, 69, 0.22);
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.08), rgba(255, 255, 255, 0.98));
+}
+
+.admin-feedback-toast-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-feedback-toast-title {
+  display: block;
+  color: var(--brand-ink);
+  font-size: 1rem;
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}
+
+.admin-feedback-toast-message {
+  color: rgba(var(--brand-primary-rgb), 0.86);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.admin-feedback-toast.is-error .admin-feedback-toast-title {
+  color: #b42332;
+}
+
+.admin-feedback-toast.is-error .admin-feedback-toast-message {
+  color: rgba(180, 35, 50, 0.92);
+}
+
+.admin-feedback-toast-close {
+  flex-shrink: 0;
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .fk-row-actions .hope-action-btn {
