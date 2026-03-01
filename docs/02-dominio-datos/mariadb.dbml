@@ -394,12 +394,14 @@ Table process_definition_versions {
   has_document boolean [not null, default: true]
   execution_mode varchar(20) [not null, default: 'manual', note: "manual|system|hybrid"]
   status varchar(20) [not null, default: 'draft', note: "draft|active|retired"]
+  active_series_flag boolean [note: "In SQL: IF(status='active',1,NULL) to enforce only one active definition per process+series"]
   effective_from date [not null]
   effective_to date
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
     (process_id, variation_key, definition_version) [name: "uq_process_definition_versions_series", unique]
+    (process_id, variation_key, active_series_flag) [name: "uq_process_definition_one_active_series", unique]
     (process_id, variation_key, status, effective_from) [name: "idx_process_definition_versions_status"]
   }
 }

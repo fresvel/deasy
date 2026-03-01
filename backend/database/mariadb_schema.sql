@@ -350,10 +350,12 @@ CREATE TABLE IF NOT EXISTS process_definition_versions (
   has_document TINYINT(1) NOT NULL DEFAULT 1,
   execution_mode ENUM('manual', 'system', 'hybrid') NOT NULL DEFAULT 'manual',
   status ENUM('draft', 'active', 'retired') NOT NULL DEFAULT 'draft',
+  active_series_flag TINYINT(1) AS (IF(status = 'active', 1, NULL)) PERSISTENT,
   effective_from DATE NOT NULL,
   effective_to DATE NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_process_definition_versions_series (process_id, variation_key, definition_version),
+  UNIQUE KEY uq_process_definition_one_active_series (process_id, variation_key, active_series_flag),
   INDEX idx_process_definition_versions_status (process_id, variation_key, status, effective_from),
   CONSTRAINT fk_process_definition_versions_process
     FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE

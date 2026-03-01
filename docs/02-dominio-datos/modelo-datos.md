@@ -66,7 +66,7 @@
 ## Uso del modelo de procesos
 
 1) Crear `processes` para la identidad estable del proceso.
-2) Crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. Cada definicion pertenece a una `variation_key` (serie) y su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`).
+2) Crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. Cada definicion pertenece a una `variation_key` (serie) y su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`). Las nuevas definiciones se crean en `draft` y, por restriccion de dominio, solo puede existir una definicion `active` por cada `process_id + variation_key`.
 3) Definir el alcance con una o varias filas en `process_target_rules`:
    - `unit_exact`: una unidad puntual.
    - `unit_subtree`: una unidad y toda su jerarquia.
@@ -76,6 +76,9 @@
    - Si cambia la logica funcional (templates, modo, contenido), crear una nueva version o una nueva `variation_key`.
 4) Publicar templates empaquetados en MinIO y registrarlos en `template_artifacts`.
 5) Vincular los templates requeridos a la definicion mediante `process_definition_templates`.
+   - Estas filas pertenecen a una definicion concreta; no deben "moverse" cuando otra version se activa.
+   - Se editan mientras la definicion esta en `draft`.
+   - Al crear una nueva version desde `Versionar`, el backend clona automaticamente las `process_definition_templates` y las `process_target_rules` de la definicion origen para conservar trazabilidad sin recapturar todo.
 6) Marcar `creates_task = 1` en cada plantilla de definicion que represente una plantilla ejecutable.
 7) Al crear un periodo (`terms`), el backend toma la definicion activa mas reciente por proceso y `variation_key`, genera una tarea por cada plantilla de definicion ejecutable y asigna destinatarios con las reglas de alcance.
 8) `parent_task_id` queda reservado para jerarquias manuales; el generador automatico no lo completa.

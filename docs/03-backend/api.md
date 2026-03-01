@@ -38,10 +38,13 @@
 
 - Crear `processes` desde `/admin/sql/processes`.
 - Crear `process_definition_versions` desde `/admin/sql/process_definition_versions`.
+  - Las nuevas definiciones se crean en `draft`.
+  - Si se crea una nueva version desde una definicion existente, el backend puede clonar automaticamente `process_definition_templates` y `process_target_rules` desde la definicion origen.
 - Registrar el alcance con `/admin/sql/process_target_rules`.
 - Registrar templates publicados en MinIO con `/admin/sql/template_artifacts`.
 - Sincronizar automaticamente `template_artifacts` desde `tools/templates/dist` con `POST /admin/sql/template_artifacts/sync`.
 - Vincular templates a cada definicion con `/admin/sql/process_definition_templates`.
+  - Estas vinculaciones solo se deben editar mientras la definicion este en `draft`.
 
 Flujo recomendado:
 
