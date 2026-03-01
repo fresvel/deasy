@@ -27,7 +27,11 @@
     <div class="profile-section-header">
       <div>
         <h2 class="text-start profile-section-title table-title-with-icon">
-          <span class="table-title-icon" aria-hidden="true">
+          <span
+            class="table-title-icon"
+            :class="{ 'is-template-artifacts': isTemplateArtifactsTable }"
+            aria-hidden="true"
+          >
             <font-awesome-icon :icon="tableHeaderIcon" />
           </span>
           <span>{{ tableHeaderTitle }}</span>
@@ -94,7 +98,7 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="row g-3 align-items-center mb-3">
-              <div :class="isPositionFilterTable ? 'col-12 col-lg-3' : isProcessDefinitionFilterTable ? 'col-12 col-md-4 col-lg-3' : 'col-12 col-md-6'">
+              <div :class="isPositionFilterTable ? 'col-12 col-lg-3' : isProcessDefinitionFilterTable ? 'col-12 col-md-6 col-lg-2' : 'col-12 col-md-6'">
                 <input
                   ref="searchInput"
                   v-model="searchTerm"
@@ -158,7 +162,7 @@
                 </div>
               </template>
               <template v-else-if="isProcessDefinitionFilterTable">
-                <div class="col-12 col-md-4 col-lg-3">
+                <div class="col-12 col-md-6 col-lg-2">
                   <select
                     v-model="processDefinitionInlineFilters.process_id"
                     class="form-select"
@@ -174,7 +178,19 @@
                     </option>
                   </select>
                 </div>
-                <div class="col-12 col-md-4 col-lg-3">
+                <div class="col-12 col-md-6 col-lg-2">
+                  <select
+                    v-model="processDefinitionInlineFilters.status"
+                    class="form-select"
+                    @change="fetchRows"
+                  >
+                    <option value="">Estado</option>
+                    <option value="draft">draft</option>
+                    <option value="active">active</option>
+                    <option value="retired">retired</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-12 col-lg-3">
                   <input
                     v-model="processDefinitionInlineFilters.variation_key"
                     type="text"
@@ -242,7 +258,33 @@
                   </tr>
                   <tr v-for="row in rows" :key="rowKey(row)">
                     <td v-for="field in tableListFields" :key="field.name">
-                      {{ formatCell(row[field.name], field, row) }}
+                      <template v-if="field.name === 'available_formats'">
+                        <div class="available-formats-cell">
+                          <template v-if="getAvailableFormatSections(row[field.name]).length">
+                            <div
+                              v-for="section in getAvailableFormatSections(row[field.name])"
+                              :key="section.mode"
+                              class="available-formats-group"
+                            >
+                              <span class="available-formats-mode">{{ section.label }}</span>
+                              <div class="available-formats-badges">
+                                <span
+                                  v-for="entry in section.entries"
+                                  :key="`${section.mode}-${entry.format}`"
+                                  class="available-formats-badge"
+                                  :style="getAvailableFormatBadgeStyle(section.mode, entry)"
+                                >
+                                  {{ entry.formatLabel }}
+                                </span>
+                              </div>
+                            </div>
+                          </template>
+                          <span v-else>—</span>
+                        </div>
+                      </template>
+                      <template v-else>
+                        {{ formatCell(row[field.name], field, row) }}
+                      </template>
                     </td>
                     <td class="text-end admin-action-col">
                       <div class="d-inline-flex align-items-center gap-1">
@@ -1130,7 +1172,10 @@
       aria-hidden="true"
       ref="fkModal"
     >
-      <div class="modal-dialog modal-lg">
+      <div
+        class="modal-dialog"
+        :class="isFkTemplateArtifacts || isFkProcessDefinitions ? 'modal-xl' : 'modal-lg'"
+      >
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="sqlFkModalLabel">
@@ -1169,10 +1214,10 @@
                     </option>
                   </select>
                 </div>
-                <div class="col-12 col-md-1 d-grid">
+                <div class="col-12 col-md-auto d-flex align-items-end justify-content-md-end fk-inline-clear-col">
                   <button
                     type="button"
-                    class="btn btn-sm btn-icon btn-outline-secondary"
+                    class="btn btn-outline-secondary fk-inline-clear-btn"
                     title="Limpiar filtro"
                     aria-label="Limpiar filtro"
                     :disabled="!fkPositionFilters.unit_type_id"
@@ -1219,8 +1264,16 @@
                     type="text"
                     class="form-control"
                     placeholder="Filtrar por serie"
+                    list="fkProcessDefinitionSeriesList"
                     @input="debouncedFkSearch"
                   />
+                  <datalist id="fkProcessDefinitionSeriesList">
+                    <option
+                      v-for="option in fkProcessDefinitionSeriesOptions"
+                      :key="option"
+                      :value="option"
+                    />
+                  </datalist>
                 </div>
                 <div class="col-12 col-md-2">
                   <label class="form-label text-dark">Modo</label>
@@ -1239,14 +1292,72 @@
                     </option>
                   </select>
                 </div>
-                <div class="col-12 col-md-1 d-grid">
+                <div class="col-12 col-md-auto d-flex align-items-end justify-content-md-end fk-inline-clear-col">
                   <button
                     type="button"
-                    class="btn btn-sm btn-icon btn-outline-secondary"
+                    class="btn btn-outline-secondary fk-inline-clear-btn"
                     title="Limpiar filtro"
                     aria-label="Limpiar filtro"
                     :disabled="!hasFkProcessDefinitionFilters"
                     @click="clearFkProcessDefinitionFilters"
+                  >
+                    <span class="btn-inner">
+                      <font-awesome-icon icon="times" />
+                    </span>
+                  </button>
+                </div>
+              </template>
+              <template v-else-if="isFkTemplateArtifacts">
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Busqueda</label>
+                  <input
+                    v-model="fkSearch"
+                    type="text"
+                    class="form-control"
+                    placeholder="Buscar referencia"
+                    @input="debouncedFkSearch"
+                  />
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Codigo</label>
+                  <input
+                    v-model="fkFilters.template_code"
+                    type="text"
+                    class="form-control"
+                    placeholder="Filtrar por codigo"
+                    @input="debouncedFkSearch"
+                  />
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Version storage</label>
+                  <input
+                    v-model="fkFilters.storage_version"
+                    type="text"
+                    class="form-control"
+                    placeholder="Filtrar por version"
+                    @input="debouncedFkSearch"
+                  />
+                </div>
+                <div class="col-12 col-md-2">
+                  <label class="form-label text-dark">Activo</label>
+                  <select
+                    v-model="fkFilters.is_active"
+                    class="form-select"
+                    @change="handleFkTemplateArtifactFilterChange"
+                  >
+                    <option value="">Todos</option>
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-auto d-flex align-items-end justify-content-md-end fk-inline-clear-col">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary fk-inline-clear-btn"
+                    title="Limpiar filtro"
+                    aria-label="Limpiar filtro"
+                    :disabled="!hasFkTemplateArtifactFilters"
+                    @click="clearFkTemplateArtifactFilters"
                   >
                     <span class="btn-inner">
                       <font-awesome-icon icon="times" />
@@ -1320,78 +1431,110 @@
                   </option>
                 </select>
               </div>
-              <div class="col-12 d-grid">
+              <div class="col-12 d-flex justify-content-end fk-inline-clear-col">
                 <button
                   type="button"
-                  class="btn btn-outline-secondary"
+                  class="btn btn-outline-secondary fk-inline-clear-btn"
+                  title="Limpiar filtro"
+                  aria-label="Limpiar filtro"
                   :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
                   @click="clearFkUnitPositionFilters"
                 >
-                  Limpiar
+                  <span class="btn-inner">
+                    <font-awesome-icon icon="times" />
+                  </span>
                 </button>
               </div>
             </div>
             <div v-if="fkLoading" class="text-muted">Cargando...</div>
             <div v-else-if="fkError" class="admin-inline-error" role="alert">{{ fkError }}</div>
-            <div v-else class="table-responsive">
-              <table class="table table-striped table-hover align-middle table-institutional">
-                <thead>
-                  <tr>
-                    <th class="text-start">ID</th>
-                    <th class="text-start">{{ fkPrimaryListLabel }}</th>
-                    <th
-                      v-for="field in fkListExtraFields"
-                      :key="field.name"
-                      class="text-start"
-                    >
-                      {{ field.label || field.name }}
-                    </th>
-                    <th class="text-start">Accion</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="fkRows.length === 0">
-                    <td :colspan="3 + fkListExtraFields.length" class="text-center text-muted">
-                      <p class="my-3">No hay registros disponibles</p>
-                    </td>
-                  </tr>
-                  <tr v-for="row in fkRows" :key="row.id">
-                    <td>{{ row.id }}</td>
-                    <td>
-                      {{ formatFkPrimaryCell(row) }}
-                    </td>
-                    <td v-for="field in fkListExtraFields" :key="field.name">
-                      {{ formatFkListCell(row, field) }}
-                    </td>
-                    <td class="text-end">
-                      <div class="d-inline-flex align-items-center gap-1 fk-row-actions">
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-icon hope-action-btn hope-action-view"
-                          title="Visualizar"
-                          aria-label="Visualizar"
-                          @click="openFkViewer(row)"
-                        >
-                          <span class="btn-inner">
-                            <font-awesome-icon icon="eye" />
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-icon hope-action-btn hope-action-select"
-                          title="Seleccionar"
-                          aria-label="Seleccionar"
-                          @click="selectFkRow(row)"
-                        >
-                          <span class="btn-inner">
-                            <font-awesome-icon icon="check" />
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div v-else class="table-responsive table-actions">
+              <div class="table-actions-scroll">
+                <table class="table table-striped table-hover align-middle table-institutional table-actions">
+                  <thead>
+                    <tr>
+                      <th class="text-start">ID</th>
+                      <th class="text-start">{{ fkPrimaryListLabel }}</th>
+                      <th
+                        v-for="field in fkListExtraFields"
+                        :key="field.name"
+                        class="text-start"
+                      >
+                        {{ field.label || field.name }}
+                      </th>
+                      <th class="text-start admin-action-col">Accion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="fkRows.length === 0">
+                      <td :colspan="3 + fkListExtraFields.length" class="text-center text-muted">
+                        <p class="my-3">No hay registros disponibles</p>
+                      </td>
+                    </tr>
+                    <tr v-for="row in fkRows" :key="row.id">
+                      <td>{{ row.id }}</td>
+                      <td>
+                        {{ formatFkPrimaryCell(row) }}
+                      </td>
+                      <td v-for="field in fkListExtraFields" :key="field.name">
+                        <template v-if="field.name === 'available_formats'">
+                          <div class="available-formats-cell">
+                            <template v-if="getAvailableFormatSections(row[field.name]).length">
+                              <div
+                                v-for="section in getAvailableFormatSections(row[field.name])"
+                                :key="section.mode"
+                                class="available-formats-group"
+                              >
+                                <span class="available-formats-mode">{{ section.label }}</span>
+                                <div class="available-formats-badges">
+                                  <span
+                                    v-for="entry in section.entries"
+                                    :key="`${section.mode}-${entry.format}`"
+                                    class="available-formats-badge"
+                                    :style="getAvailableFormatBadgeStyle(section.mode, entry)"
+                                  >
+                                    {{ entry.formatLabel }}
+                                  </span>
+                                </div>
+                              </div>
+                            </template>
+                            <span v-else>—</span>
+                          </div>
+                        </template>
+                        <template v-else>
+                          {{ formatFkListCell(row, field) }}
+                        </template>
+                      </td>
+                      <td class="text-end admin-action-col">
+                        <div class="d-inline-flex align-items-center gap-1 fk-row-actions">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                            title="Visualizar"
+                            aria-label="Visualizar"
+                            @click="openFkViewer(row)"
+                          >
+                            <span class="btn-inner">
+                              <font-awesome-icon icon="eye" />
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-icon hope-action-btn hope-action-select"
+                            title="Seleccionar"
+                            aria-label="Seleccionar"
+                            @click="selectFkRow(row)"
+                          >
+                            <span class="btn-inner">
+                              <font-awesome-icon icon="check" />
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -1451,7 +1594,40 @@
                   <tbody>
                     <tr v-for="field in recordViewerFields" :key="field.name">
                       <th class="text-start">{{ field.label || field.name }}</th>
-                      <td>{{ formatRecordViewerValue(field, recordViewerRow) }}</td>
+                      <td>
+                        <template v-if="field.name === 'available_formats'">
+                          <div class="available-formats-viewer">
+                            <template v-if="getAvailableFormatSections(recordViewerRow[field.name]).length">
+                              <div
+                                v-for="section in getAvailableFormatSections(recordViewerRow[field.name])"
+                                :key="section.mode"
+                                class="available-formats-viewer-section"
+                              >
+                                <div class="available-formats-viewer-title">{{ section.label }}</div>
+                                <div
+                                  v-for="entry in section.entries"
+                                  :key="`${section.mode}-${entry.format}`"
+                                  class="available-formats-viewer-entry"
+                                >
+                                  <span
+                                    class="available-formats-badge is-viewer"
+                                    :style="getAvailableFormatBadgeStyle(section.mode, entry)"
+                                  >
+                                    {{ entry.formatLabel }}
+                                  </span>
+                                  <code class="available-formats-path">
+                                    {{ entry.entryObjectKey }}
+                                  </code>
+                                </div>
+                              </div>
+                            </template>
+                            <span v-else>—</span>
+                          </div>
+                        </template>
+                        <template v-else>
+                          {{ formatRecordViewerValue(field, recordViewerRow) }}
+                        </template>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -2082,7 +2258,8 @@ const searchTerm = ref("");
 const vacantSearchTerm = ref("");
 const processDefinitionInlineFilters = ref({
   process_id: "",
-  variation_key: ""
+  variation_key: "",
+  status: ""
 });
 const processDefinitionProcessOptions = ref([]);
 const editorMode = ref("create");
@@ -2138,6 +2315,15 @@ const fkCreateForm = ref({});
 const fkCreateError = ref("");
 const fkCreateLoading = ref(false);
 const fkProcessDefinitionProcessOptions = ref([]);
+const fkProcessDefinitionSeriesOptions = computed(() =>
+  Array.from(
+    new Set(
+      (fkRows.value || [])
+        .map((row) => (row?.variation_key ? String(row.variation_key).trim() : ""))
+        .filter(Boolean)
+    )
+  ).sort((left, right) => left.localeCompare(right, "es"))
+);
 const fkPositionFilters = ref({
   unit_type_id: "",
   unit_id: "",
@@ -2293,12 +2479,47 @@ const visibleFormFields = computed(() => {
   }
   return formFields.value.filter((field) => !PROCESS_INLINE_HIDDEN_FIELDS.has(field.name));
 });
+
+const formatTemplateArtifactFieldLabel = (field) => {
+  if (!field) {
+    return field;
+  }
+  if (field.name !== "available_formats") {
+    return field;
+  }
+  return {
+    ...field,
+    label: "Formatos"
+  };
+};
+
 const tableListFields = computed(() => {
   if (!props.table) {
     return [];
   }
   const fields = props.table.fields.filter((field) => !(isPersonTable.value && field.name === "password_hash"));
-  const normalizedFields = fields;
+  let normalizedFields = fields;
+  if (props.table.table === "template_artifacts") {
+    const preferredOrder = [
+      "id",
+      "display_name",
+      "available_formats",
+      "template_code",
+      "source_version",
+      "storage_version"
+    ];
+    normalizedFields = [...fields].sort((left, right) => {
+      const leftIndex = preferredOrder.indexOf(left.name);
+      const rightIndex = preferredOrder.indexOf(right.name);
+      const normalizedLeftIndex = leftIndex < 0 ? Number.MAX_SAFE_INTEGER : leftIndex;
+      const normalizedRightIndex = rightIndex < 0 ? Number.MAX_SAFE_INTEGER : rightIndex;
+      if (normalizedLeftIndex !== normalizedRightIndex) {
+        return normalizedLeftIndex - normalizedRightIndex;
+      }
+      return fields.indexOf(left) - fields.indexOf(right);
+    });
+    normalizedFields = normalizedFields.map((field) => formatTemplateArtifactFieldLabel(field));
+  }
   if (props.table.table === "process_target_rules") {
     const expandedFields = [];
     const processField = {
@@ -2357,6 +2578,9 @@ const fkFilterFields = computed(() => {
   if (fkTable.value.table === "process_definition_versions") {
     return [];
   }
+  if (fkTable.value.table === "template_artifacts") {
+    return [];
+  }
   return fkTable.value.fields.filter((field) => !field.virtual);
 });
 const fkPrimaryListField = computed(() => {
@@ -2365,6 +2589,9 @@ const fkPrimaryListField = computed(() => {
   }
   if (fkTable.value.table === "process_definition_versions") {
     return fkTable.value.fields.find((field) => field.name === "process_id") || null;
+  }
+  if (fkTable.value.table === "template_artifacts") {
+    return fkTable.value.fields.find((field) => field.name === "display_name") || null;
   }
   const displayFieldName = resolveDisplayField(fkTable.value);
   return fkTable.value.fields.find((field) => field.name === displayFieldName) || null;
@@ -2381,6 +2608,13 @@ const fkListExtraFields = computed(() => {
   }
   if (fkTable.value.table === "units") {
     return fkTable.value.fields.filter((field) => ["unit_type_id"].includes(field.name));
+  }
+  if (fkTable.value.table === "template_artifacts") {
+    return fkTable.value.fields
+      .filter((field) =>
+        ["template_code", "source_version", "storage_version", "available_formats", "is_active"].includes(field.name)
+      )
+      .map((field) => formatTemplateArtifactFieldLabel(field));
   }
   if (fkTable.value.table === "unit_positions") {
     const unitField = fkTable.value.fields.find((field) => field.name === "unit_id");
@@ -2418,11 +2652,19 @@ const canOpenFkFilterModal = computed(() =>
 const isFkUnitPositions = computed(() => fkTable.value?.table === "unit_positions");
 const isFkUnits = computed(() => fkTable.value?.table === "units");
 const isFkProcessDefinitions = computed(() => fkTable.value?.table === "process_definition_versions");
+const isFkTemplateArtifacts = computed(() => fkTable.value?.table === "template_artifacts");
 const hasFkProcessDefinitionFilters = computed(() =>
   Boolean(
     fkFilters.value.process_id
     || fkFilters.value.variation_key?.trim()
     || fkFilters.value.execution_mode
+  )
+);
+const hasFkTemplateArtifactFilters = computed(() =>
+  Boolean(
+    fkFilters.value.template_code?.trim()
+    || fkFilters.value.storage_version?.trim()
+    || fkFilters.value.is_active !== ""
   )
 );
 
@@ -2445,6 +2687,7 @@ const hasUnitPositionFilters = computed(() =>
 const hasProcessDefinitionInlineFilters = computed(() =>
   Boolean(
     processDefinitionInlineFilters.value.process_id
+    || processDefinitionInlineFilters.value.status
     || processDefinitionInlineFilters.value.variation_key?.trim()
   )
 );
@@ -2571,6 +2814,9 @@ const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
     });
     return expandedFields;
   }
+  if (tableMeta.table === "template_artifacts") {
+    return fields.map((field) => formatTemplateArtifactFieldLabel(field));
+  }
   return fields;
 };
 
@@ -2655,33 +2901,124 @@ const formatSelectOptionLabel = (field, value) => {
   return value;
 };
 
-const formatAvailableFormatsSummary = (value) => {
+const prettifyFormatName = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  return String(value).replaceAll("_", " ");
+};
+
+const normalizeAvailableFormats = (value) => {
   if (!value) {
-    return "—";
+    return null;
   }
   let parsed = value;
   if (typeof value === "string") {
     try {
       parsed = JSON.parse(value);
     } catch {
-      return value;
+      return null;
     }
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return String(value);
+    return null;
   }
-  const parts = Object.entries(parsed)
+  return parsed;
+};
+
+const getAvailableFormatSections = (value) => {
+  const parsed = normalizeAvailableFormats(value);
+  if (!parsed) {
+    return [];
+  }
+  const modeLabels = {
+    system: "Sistema",
+    user: "Usuario"
+  };
+  return Object.entries(parsed)
     .map(([mode, formats]) => {
       if (!formats || typeof formats !== "object" || Array.isArray(formats)) {
-        return "";
+        return null;
       }
-      const names = Object.keys(formats);
-      if (!names.length) {
-        return "";
+      const entries = Object.entries(formats)
+        .map(([format, meta]) => {
+          const entryObjectKey =
+            meta && typeof meta === "object" && !Array.isArray(meta)
+              ? meta.entry_object_key || meta.entryObjectKey || ""
+              : "";
+          return {
+            format,
+            formatLabel: prettifyFormatName(format),
+            entryObjectKey
+          };
+        })
+        .filter((entry) => entry.format);
+      if (!entries.length) {
+        return null;
       }
-      return `${mode}: ${names.join(", ")}`;
+      return {
+        mode,
+        label: modeLabels[mode] || mode,
+        entries
+      };
     })
     .filter(Boolean);
+};
+
+const expandHexColor = (hex) => {
+  if (!hex) {
+    return "";
+  }
+  const normalized = hex.replace("#", "");
+  if (normalized.length === 3) {
+    return normalized
+      .split("")
+      .map((char) => `${char}${char}`)
+      .join("");
+  }
+  return normalized;
+};
+
+const toRgbaFromHex = (hex, alpha) => {
+  const expanded = expandHexColor(hex);
+  if (!expanded || expanded.length !== 6) {
+    return "";
+  }
+  const red = Number.parseInt(expanded.slice(0, 2), 16);
+  const green = Number.parseInt(expanded.slice(2, 4), 16);
+  const blue = Number.parseInt(expanded.slice(4, 6), 16);
+  if ([red, green, blue].some((value) => Number.isNaN(value))) {
+    return "";
+  }
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+};
+
+const getDefaultAvailableFormatColor = (mode, format) => {
+  const palette = {
+    "system:jinja2": "#18b7a3",
+    "user:latex": "#8b5cf6",
+    "user:docx": "#2563eb",
+    "user:pdf": "#ef4444",
+    "user:xlsx": "#16a34a"
+  };
+  return palette[`${mode}:${format}`] || "#8a94a6";
+};
+
+const getAvailableFormatBadgeStyle = (mode, entry) => {
+  const color = getDefaultAvailableFormatColor(mode, entry?.format);
+  const backgroundColor = toRgbaFromHex(color, 0.2);
+  const borderColor = toRgbaFromHex(color, 0.44);
+  return {
+    color,
+    backgroundColor: backgroundColor || undefined,
+    borderColor: borderColor || undefined
+  };
+};
+
+const formatAvailableFormatsSummary = (value) => {
+  const parts = getAvailableFormatSections(value).map(
+    (section) => `${section.label}: ${section.entries.map((entry) => entry.formatLabel).join(", ")}`
+  );
   return parts.length ? parts.join(" | ") : "—";
 };
 
@@ -3126,6 +3463,11 @@ const resetFkFilters = () => {
     payload.variation_key = "";
     payload.status = "active";
     payload.execution_mode = "";
+  }
+  if (fkTable.value?.table === "template_artifacts") {
+    payload.template_code = "";
+    payload.storage_version = "";
+    payload.is_active = "";
   }
   fkFilters.value = payload;
 };
@@ -3617,6 +3959,20 @@ const clearFkProcessDefinitionFilters = async () => {
     variation_key: "",
     status: "active",
     execution_mode: ""
+  };
+  await fetchFkRows();
+};
+
+const handleFkTemplateArtifactFilterChange = async () => {
+  await fetchFkRows();
+};
+
+const clearFkTemplateArtifactFilters = async () => {
+  fkFilters.value = {
+    ...fkFilters.value,
+    template_code: "",
+    storage_version: "",
+    is_active: ""
   };
   await fetchFkRows();
 };
@@ -4703,7 +5059,8 @@ const fetchRows = async () => {
 const clearProcessDefinitionInlineFilters = async () => {
   processDefinitionInlineFilters.value = {
     process_id: "",
-    variation_key: ""
+    variation_key: "",
+    status: ""
   };
   await fetchRows();
 };
@@ -5872,7 +6229,8 @@ watch(
     vacantPositionCargoOptions.value = [];
     processDefinitionInlineFilters.value = {
       process_id: "",
-      variation_key: ""
+      variation_key: "",
+      status: ""
     };
     processDefinitionProcessOptions.value = [];
     if (isPositionFilterTable.value) {
@@ -5928,6 +6286,38 @@ defineExpose({
   color: var(--color-puce-light);
   flex: 0 0 auto;
   font-size: 0.95rem;
+}
+
+.table-title-icon.is-template-artifacts {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.16) 0%,
+      rgba(37, 99, 235, 0.16) 48%,
+      rgba(239, 68, 68, 0.16) 52%,
+      rgba(239, 68, 68, 0.16) 100%
+    );
+  border: 1px solid rgba(112, 110, 186, 0.34);
+  color: #6b56d6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 8px 18px rgba(89, 94, 186, 0.12);
+}
+
+.fk-inline-clear-col {
+  padding-right: calc(var(--bs-gutter-x) * 0.5 + 0.2rem);
+  min-width: 4rem;
+}
+
+.fk-inline-clear-btn {
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
 }
 
 .modal .btn:not(.btn-sm):not(.btn-icon) {
@@ -6121,13 +6511,15 @@ defineExpose({
 }
 
 .admin-feedback-toast.is-success .admin-feedback-toast-body {
-  border-color: rgba(40, 167, 69, 0.2);
-  background: linear-gradient(135deg, rgba(40, 167, 69, 0.08), rgba(255, 255, 255, 0.98));
+  border-color: rgba(40, 167, 69, 0.28);
+  background: rgba(40, 167, 69, 0.1);
+  box-shadow: 0 18px 38px rgba(40, 167, 69, 0.08);
 }
 
 .admin-feedback-toast.is-error .admin-feedback-toast-body {
-  border-color: rgba(220, 53, 69, 0.22);
-  background: linear-gradient(135deg, rgba(220, 53, 69, 0.08), rgba(255, 255, 255, 0.98));
+  border-color: rgba(220, 53, 69, 0.28);
+  background: rgba(220, 53, 69, 0.1);
+  box-shadow: 0 18px 38px rgba(220, 53, 69, 0.08);
 }
 
 .admin-feedback-toast-copy {
@@ -6143,11 +6535,19 @@ defineExpose({
   margin-bottom: 0.2rem;
 }
 
+.admin-feedback-toast.is-success .admin-feedback-toast-title {
+  color: #218838;
+}
+
 .admin-feedback-toast-message {
   color: rgba(var(--brand-primary-rgb), 0.86);
   font-size: 0.95rem;
   line-height: 1.45;
   white-space: pre-wrap;
+}
+
+.admin-feedback-toast.is-success .admin-feedback-toast-message {
+  color: rgba(33, 136, 56, 0.92);
 }
 
 .admin-feedback-toast.is-error .admin-feedback-toast-title {
@@ -6162,6 +6562,87 @@ defineExpose({
   flex-shrink: 0;
   border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
   background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-feedback-toast.is-success .admin-feedback-toast-close {
+  border-color: rgba(40, 167, 69, 0.22);
+  color: #218838;
+  background: rgba(40, 167, 69, 0.06);
+}
+
+.admin-feedback-toast.is-error .admin-feedback-toast-close {
+  border-color: rgba(220, 53, 69, 0.22);
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.06);
+}
+
+.available-formats-cell,
+.available-formats-viewer {
+  min-width: 0;
+}
+
+.available-formats-group,
+.available-formats-viewer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.available-formats-group + .available-formats-group,
+.available-formats-viewer-section + .available-formats-viewer-section {
+  margin-top: 0.55rem;
+}
+
+.available-formats-mode,
+.available-formats-viewer-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: rgba(var(--brand-primary-rgb), 0.7);
+}
+
+.available-formats-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.available-formats-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--brand-navy);
+  background: rgba(var(--color-puce-light-rgb), 0.16);
+  border: 1px solid rgba(var(--color-puce-light-rgb), 0.28);
+}
+
+.available-formats-badge.is-viewer {
+  min-width: 4.5rem;
+  justify-content: center;
+}
+
+.available-formats-viewer-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.available-formats-path {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.18rem 0.45rem;
+  border-radius: 0.5rem;
+  background: rgba(var(--brand-primary-rgb), 0.05);
+  color: rgba(var(--brand-primary-rgb), 0.84);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .fk-row-actions .hope-action-btn {
