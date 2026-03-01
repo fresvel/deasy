@@ -44,13 +44,15 @@
 ### Procesos, tareas y plantillas
 
 - processes(id, name, slug, parent_id, is_active, created_at)
-- process_definition_versions(id, process_id, variation_key, definition_version, name, description, has_document, execution_mode, status, effective_from, effective_to, created_at)
+- process_definition_series(id, process_id, source_type, unit_type_id, cargo_id, code, label, is_active, created_at)
+- process_definition_versions(id, process_id, series_id, variation_key, definition_version, name, description, has_document, execution_mode, status, effective_from, effective_to, created_at)
 - process_target_rules(id, process_definition_id, unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id, recipient_policy, priority, is_active, effective_from, effective_to, created_at)
 - term_types(id, code, name, description, is_active, created_at, updated_at)
 - terms(id, name, term_type_id, start_date, end_date, is_active)
 - tasks(id, process_definition_template_id, process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
 - task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
-- template_artifacts(id, template_code, display_name, source_version, storage_version, bucket, base_object_prefix, available_formats, schema_object_key, meta_object_key, content_hash, is_active, created_at)
+- template_seeds(id, seed_code, display_name, description, seed_type, source_path, preview_path, is_active, created_at)
+- template_artifacts(id, template_seed_id, owner_person_id, template_code, display_name, description, owner_ref, source_version, storage_version, artifact_origin, artifact_stage, bucket, base_object_prefix, available_formats, schema_object_key, meta_object_key, content_hash, is_active, created_at)
 - process_definition_templates(id, process_definition_id, template_artifact_id, usage_role, creates_task, is_required, sort_order, created_at)
 - documents(id, task_id, status, comments_thread_ref, created_at, updated_at)
 - document_versions(id, document_id, version, payload_mongo_id, payload_hash, latex_path, pdf_path, signed_pdf_path, status, created_at)
@@ -66,7 +68,8 @@
 ## Uso del modelo de procesos
 
 1) Crear `processes` para la identidad estable del proceso.
-2) Crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. Cada definicion pertenece a una `variation_key` (serie) y su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`). Las nuevas definiciones se crean en `draft` y, por restriccion de dominio, solo puede existir una definicion `active` por cada `process_id + variation_key`.
+2) Crear primero una fila en `process_definition_series` por cada serie controlada del proceso. Cada serie debe basarse en un `unit_type` o un `cargo` (las series `legacy` solo se usan para migracion). Luego crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. La definicion referencia `series_id` y conserva `variation_key` como snapshot derivado del codigo de la serie. Su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`). Las nuevas definiciones se crean en `draft` y, por restriccion de dominio, solo puede existir una definicion `active` por cada `process_id + variation_key`.
+   - Si `has_document = 1`, no se permite pasarla a `active` hasta que tenga al menos un registro vinculado en `process_definition_templates`.
 3) Definir el alcance con una o varias filas en `process_target_rules`:
    - `unit_exact`: una unidad puntual.
    - `unit_subtree`: una unidad y toda su jerarquia.

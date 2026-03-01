@@ -27,6 +27,8 @@
   - `node scripts/migrate_process_templates.mjs`
 - Enforzar una sola definicion activa por serie y normalizar conflictos existentes:
   - `node scripts/enforce_process_definition_active_series.mjs`
+- Enforzar que una definicion con documento no pueda activarse sin al menos un artifact vinculado:
+  - `node scripts/enforce_process_definition_document_artifacts.mjs`
 - Resetear completamente el esquema MariaDB vigente:
   - `node scripts/reset_mariadb.mjs`
 - Aplicar la semilla PUCESA sobre un esquema limpio:
@@ -52,6 +54,7 @@ Restriccion vigente sobre definiciones:
 - las nuevas definiciones se crean en `draft`
 - solo puede existir una definicion `active` por cada `process_id + variation_key`
 - al activar una definicion nueva de una serie, la activa anterior de esa misma serie se retira automaticamente (`retired`)
+- si `has_document = 1`, la definicion no puede pasar a `active` sin al menos un registro en `process_definition_templates`
 
 Regla practica de migracion:
 

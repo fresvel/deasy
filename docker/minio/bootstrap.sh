@@ -4,7 +4,8 @@ set -eu
 MINIO_ALIAS="local"
 MINIO_URL="http://minio:9000"
 TEMPLATES_BUCKET="${MINIO_TEMPLATES_BUCKET:-deasy-templates}"
-TEMPLATES_PREFIX="${MINIO_TEMPLATES_PREFIX:-Plantillas}"
+TEMPLATES_PREFIX="${MINIO_TEMPLATES_PREFIX:-System}"
+TEMPLATE_SEEDS_PREFIX="${MINIO_TEMPLATES_SEEDS_PREFIX:-Seeds}"
 DOCUMENTS_BUCKET="${MINIO_DOCUMENTS_BUCKET:-deasy-documents}"
 DOCUMENTS_PREFIX="${MINIO_DOCUMENTS_PREFIX:-Unidades}"
 CHAT_BUCKET="${MINIO_CHAT_BUCKET:-deasy-chat}"
@@ -45,13 +46,14 @@ ensure_bucket "$DOSSIER_BUCKET"
 SYNC_COUNT=0
 
 sync_path "/import/Plantillas" "$TEMPLATES_BUCKET" "$TEMPLATES_PREFIX"
+sync_path "/import/Seeds" "$TEMPLATES_BUCKET" "$TEMPLATE_SEEDS_PREFIX"
 sync_path "/import/Unidades" "$DOCUMENTS_BUCKET" "$DOCUMENTS_PREFIX"
 sync_path "/import/Chat" "$CHAT_BUCKET" "$CHAT_PREFIX"
 sync_path "/import/Firmas" "$SPOOL_BUCKET" "$SPOOL_PREFIX"
 sync_path "/import/Dosier" "$DOSSIER_BUCKET" "$DOSSIER_PREFIX"
 
 if [ "$SYNC_COUNT" -eq 0 ]; then
-  echo "No se detectaron carpetas importables. Usa /import/{Plantillas,Unidades,Chat,Firmas,Dosier}."
+  echo "No se detectaron carpetas importables. Usa /import/{Plantillas,Seeds,Unidades,Chat,Firmas,Dosier}."
 else
   echo "Sincronizacion completada."
 fi

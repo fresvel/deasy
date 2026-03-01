@@ -85,7 +85,8 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "variation_key", label: "Serie", type: "text", required: true, defaultValue: "general" },
+      { name: "series_id", label: "Serie", type: "number", required: true },
+      { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "general" },
       { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
@@ -109,6 +110,30 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["variation_key", "definition_version", "name", "status"]
+  },
+  {
+    table: "process_definition_series",
+    label: "Series de definicion",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      {
+        name: "source_type",
+        label: "Origen de serie",
+        type: "select",
+        options: ["unit_type", "cargo", "legacy"],
+        defaultValue: "unit_type"
+      },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "cargo_id", label: "Cargo", type: "number" },
+      { name: "code", label: "Codigo", type: "text", readOnly: true },
+      { name: "label", label: "Nombre", type: "text", readOnly: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "label", "source_type"]
   },
   {
     table: "process_target_rules",
@@ -237,26 +262,63 @@ export const SQL_TABLES = [
     searchFields: ["status"]
   },
   {
+    table: "template_seeds",
+    label: "Seeds de plantilla",
+    category: "Plantillas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "seed_code", label: "Codigo", type: "text", required: true },
+      { name: "display_name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "seed_type", label: "Tipo", type: "text", required: true },
+      { name: "source_path", label: "Ruta fuente", type: "text", required: true },
+      { name: "preview_path", label: "Ruta preview", type: "text" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["seed_code", "display_name", "seed_type"]
+  },
+  {
     table: "template_artifacts",
     label: "Artifacts de plantilla",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_seed_id", label: "Seed", type: "number", readOnly: true },
+      { name: "owner_person_id", label: "Persona propietaria", type: "number", readOnly: true },
       { name: "template_code", label: "Codigo", type: "text", required: true },
       { name: "display_name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "owner_ref", label: "Propietario", type: "text" },
       { name: "source_version", label: "Version fuente", type: "text", required: true },
       { name: "storage_version", label: "Version storage", type: "text", required: true },
+      {
+        name: "artifact_origin",
+        label: "Origen",
+        type: "select",
+        options: ["system", "user"],
+        defaultValue: "system"
+      },
+      {
+        name: "artifact_stage",
+        label: "Etapa",
+        type: "select",
+        options: ["draft", "review", "approved", "published", "archived"],
+        defaultValue: "published"
+      },
       { name: "bucket", label: "Bucket", type: "text", required: true },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
       { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
       { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
+      { name: "seed_display_name", label: "Nombre del seed", type: "text", readOnly: true, virtual: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_code", "display_name", "storage_version"]
+    searchFields: ["template_code", "display_name", "storage_version", "owner_ref", "artifact_origin", "artifact_stage"]
   },
   {
     table: "process_definition_templates",

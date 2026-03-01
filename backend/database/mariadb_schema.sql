@@ -340,9 +340,30 @@ CREATE TABLE IF NOT EXISTS processes (
   CONSTRAINT fk_processes_parent FOREIGN KEY (parent_id) REFERENCES processes(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS process_definition_series (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_id INT NOT NULL,
+  source_type ENUM('unit_type', 'cargo', 'legacy') NOT NULL DEFAULT 'legacy',
+  unit_type_id INT NULL,
+  cargo_id INT NULL,
+  code VARCHAR(120) NOT NULL,
+  label VARCHAR(180) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_process_definition_series_code (process_id, code),
+  INDEX idx_process_definition_series_process (process_id, is_active),
+  CONSTRAINT fk_process_definition_series_process
+    FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_definition_series_unit_type
+    FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
+  CONSTRAINT fk_process_definition_series_cargo
+    FOREIGN KEY (cargo_id) REFERENCES cargos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS process_definition_versions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_id INT NOT NULL,
+  series_id INT NOT NULL,
   variation_key VARCHAR(120) NOT NULL DEFAULT 'general',
   definition_version VARCHAR(20) NOT NULL,
   name VARCHAR(180) NOT NULL,
@@ -358,7 +379,9 @@ CREATE TABLE IF NOT EXISTS process_definition_versions (
   UNIQUE KEY uq_process_definition_one_active_series (process_id, variation_key, active_series_flag),
   INDEX idx_process_definition_versions_status (process_id, variation_key, status, effective_from),
   CONSTRAINT fk_process_definition_versions_process
-    FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE
+    FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_definition_versions_series
+    FOREIGN KEY (series_id) REFERENCES process_definition_series(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS process_target_rules (
@@ -391,12 +414,31 @@ CREATE TABLE IF NOT EXISTS process_target_rules (
     FOREIGN KEY (position_id) REFERENCES unit_positions(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS template_seeds (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  seed_code VARCHAR(180) NOT NULL,
+  display_name VARCHAR(180) NOT NULL,
+  description VARCHAR(255) NULL,
+  seed_type VARCHAR(40) NOT NULL,
+  source_path VARCHAR(255) NOT NULL,
+  preview_path VARCHAR(255) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_template_seeds_code (seed_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS template_artifacts (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  template_seed_id INT NULL,
+  owner_person_id INT NULL,
   template_code VARCHAR(180) NOT NULL,
   display_name VARCHAR(180) NOT NULL,
+  description VARCHAR(255) NULL,
+  owner_ref VARCHAR(180) NULL,
   source_version VARCHAR(20) NOT NULL,
   storage_version VARCHAR(20) NOT NULL,
+  artifact_origin ENUM('system','user') NOT NULL DEFAULT 'system',
+  artifact_stage ENUM('draft','review','approved','published','archived') NOT NULL DEFAULT 'published',
   bucket VARCHAR(120) NOT NULL,
   base_object_prefix VARCHAR(255) NOT NULL,
   available_formats JSON NOT NULL,
@@ -405,7 +447,15 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   content_hash VARCHAR(64) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version)
+  UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version),
+  INDEX idx_template_artifacts_seed (template_seed_id),
+  INDEX idx_template_artifacts_owner_person (owner_person_id),
+  INDEX idx_template_artifacts_origin (artifact_origin),
+  INDEX idx_template_artifacts_stage (artifact_stage),
+  CONSTRAINT fk_template_artifacts_seed
+    FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
+  CONSTRAINT fk_template_artifacts_owner_person
+    FOREIGN KEY (owner_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS process_definition_templates (
@@ -550,6 +600,26 @@ CREATE TABLE IF NOT EXISTS signature_request_statuses (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DELIMITER //
+
+DROP TRIGGER IF EXISTS trg_process_definition_versions_before_update //
+CREATE TRIGGER trg_process_definition_versions_before_update
+BEFORE UPDATE ON process_definition_versions
+FOR EACH ROW
+BEGIN
+  DECLARE linked_template_count INT DEFAULT 0;
+
+  IF NEW.status = 'active' AND OLD.status <> 'active' AND NEW.has_document = 1 THEN
+    SELECT COUNT(*)
+      INTO linked_template_count
+    FROM process_definition_templates
+    WHERE process_definition_id = NEW.id;
+
+    IF linked_template_count < 1 THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se puede activar una definicion con documento si no tiene al menos un artifact vinculado en Plantillas de definicion.';
+    END IF;
+  END IF;
+END //
 
 DROP TRIGGER IF EXISTS trg_position_assignments_after_insert //
 CREATE TRIGGER trg_position_assignments_after_insert
