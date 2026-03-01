@@ -72,6 +72,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
       MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
       MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
       MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
       MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
@@ -84,6 +85,23 @@ services:
     volumes:
       - ./minio/bootstrap.sh:/bootstrap.sh:ro
       - ./minio/import:/import:ro
+    depends_on:
+      - minio
+
+  minio-publish-seeds:
+    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
+    profiles:
+      - storage-publish-seeds
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
+    entrypoint: ["/bin/sh", "/publish-seeds.sh"]
+    volumes:
+      - ./minio/publish-template-seeds.sh:/publish-seeds.sh:ro
+      - ../tools/templates/seeds:/publish:ro
     depends_on:
       - minio
 
@@ -126,6 +144,8 @@ services:
       MINIO_USE_SSL: 0
       MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
       MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
+      MINIO_TEMPLATES_USERS_PREFIX: ${MINIO_TEMPLATES_USERS_PREFIX}
       MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
       MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
       MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
@@ -134,12 +154,16 @@ services:
       MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
       MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
       MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+      RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
+      RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
+      RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
+      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
     ports:
       - "${BACKEND_PORT}:3030"
     volumes:
       - ../backend:/app/backend
       - ../tools/templates:/app/tools/templates:ro
-      - backend_node_modules:/app/backend/node_modules
+      - backend_node_modules_v2:/app/backend/node_modules
       - uploads_data:/app/backend/uploads
       - storage_data:/app/backend/storage
     depends_on:
@@ -147,6 +171,37 @@ services:
       - mongodb
       - rabbitmq
       - emqx
+
+  storage-uploader:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+    container_name: deasy-storage-uploader
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: 0
+      RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
+      RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
+      RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
+      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
+    command: ["node", "workers/storage_uploader.js"]
+    volumes:
+      - ../backend:/app/backend
+      - backend_node_modules_v2:/app/backend/node_modules
+      - storage_data:/app/backend/storage
+    depends_on:
+      - mariadb
+      - rabbitmq
+      - minio
 
   frontend:
     build:
@@ -192,7 +247,7 @@ volumes:
   emqx_data:
   emqx_log:
   minio_data:
-  backend_node_modules:
+  backend_node_modules_v2:
   frontend_node_modules:
   uploads_data:
   storage_data:

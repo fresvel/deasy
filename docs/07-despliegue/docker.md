@@ -24,7 +24,9 @@
 - minio (minio/minio)
 - minio-bootstrap (profile storage-init, minio/mc)
 - minio-publish (profile storage-publish, minio/mc)
+- minio-publish-seeds (profile storage-publish-seeds, minio/mc)
 - backend (build docker/backend/Dockerfile)
+- storage-uploader (worker Node para cargas a MinIO via RabbitMQ)
 - frontend (build docker/frontend/Dockerfile)
 - signer (profile workers)
 - analytics (profile workers)
@@ -56,7 +58,7 @@
 
 - mariadb_data, mongodb_data, rabbitmq_data
 - emqx_data, emqx_log, minio_data
-- backend_node_modules, frontend_node_modules
+- backend_node_modules_v2, frontend_node_modules
 - uploads_data, storage_data
 
 Montajes relevantes en desarrollo:
@@ -65,6 +67,9 @@ Montajes relevantes en desarrollo:
 - `../tools/templates -> /app/tools/templates` (solo lectura en `backend`)
   - Esto permite que el backend lea `tools/templates/dist/Plantillas/`.
   - Lo usa el endpoint de sincronizacion de `template_artifacts` (`Sincronizar dist`).
+- `storage_data -> /app/backend/storage` (lectura/escritura en `backend` y `storage-uploader`)
+  - El backend deja paquetes temporales en `backend/storage/minio-jobs/...`.
+  - `storage-uploader` consume esos paquetes y los sube a MinIO.
 
 ## Comandos base
 
@@ -72,6 +77,7 @@ Montajes relevantes en desarrollo:
 - Iniciar con workers: docker compose --profile workers up -d
 - Cargar templates en MinIO: docker compose --profile storage-init run --rm minio-bootstrap
 - Publicar templates desde tools/templates/dist: docker compose --profile storage-publish run --rm minio-publish
+- Publicar seeds desde tools/templates/seeds: docker compose --profile storage-publish-seeds run --rm minio-publish-seeds
 - Ver logs: docker compose logs -f
 - Detener: docker compose down
 - Script de arranque: scripts/start-services.sh
@@ -83,5 +89,7 @@ Montajes relevantes en desarrollo:
 - EMQX_ALLOW_ANONYMOUS=true en compose (ajustar en prod).
 - `minio-bootstrap` no se ejecuta en el arranque normal; solo cuando quieras subir el contenido de `docker/minio/import/`.
 - `minio-publish` no usa `docker/minio/import/`; publica directo desde `tools/templates/dist/Plantillas`.
+- `minio-publish-seeds` no usa `docker/minio/import/`; publica directo desde `tools/templates/seeds`.
+- `storage-uploader` debe estar levantado para que los borradores creados desde el admin se publiquen automaticamente en MinIO.
 - El bucket ya no es solo para templates; MinIO se usa como storage general con prefijos para documentos, chat y firmas.
-- Si cambias `docker-compose.yml` o la ruta de `tools/templates`, recrea `backend` con `docker compose up -d --force-recreate backend` para que el contenedor tome el nuevo montaje.
+- Si cambias `docker-compose.yml` o la ruta de `tools/templates`, recrea `backend` con `docker compose up -d --build --force-recreate backend storage-uploader` para que ambos contenedores tomen el nuevo montaje y dependencias.

@@ -384,9 +384,26 @@ Table processes {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table process_definition_series {
+  id int [pk, increment]
+  process_id int [not null, ref: > processes.id]
+  source_type varchar(20) [not null, default: 'legacy', note: "unit_type|cargo|legacy"]
+  unit_type_id int [ref: > unit_types.id]
+  cargo_id int [ref: > cargos.id]
+  code varchar(120) [not null]
+  label varchar(180) [not null]
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, code) [name: "uq_process_definition_series_code", unique]
+  }
+}
+
 Table process_definition_versions {
   id int [pk, increment]
   process_id int [not null, ref: > processes.id]
+  series_id int [not null, ref: > process_definition_series.id]
   variation_key varchar(120) [not null, default: 'general', note: "Serie o variante de versionado dentro del proceso"]
   definition_version varchar(20) [not null]
   name varchar(180) [not null]
@@ -486,10 +503,16 @@ Table task_assignments {
 
 Table template_artifacts {
   id int [pk, increment]
+  template_seed_id int [ref: > template_seeds.id]
+  owner_person_id int [ref: > persons.id, note: "FK al propietario cuando el artifact es de usuario"]
   template_code varchar(180) [not null]
   display_name varchar(180) [not null]
+  description varchar(255)
+  owner_ref varchar(180)
   source_version varchar(20) [not null]
   storage_version varchar(20) [not null]
+  artifact_origin varchar(20) [not null, default: 'system', note: "system|user"]
+  artifact_stage varchar(20) [not null, default: 'published', note: "draft|published"]
   bucket varchar(120) [not null]
   base_object_prefix varchar(255) [not null]
   available_formats json [not null, note: "Mapa JSON por mode/formato con entry_object_key. Ej: { system: { jinja2: { entry_object_key } }, user: { latex: { entry_object_key } } }"]
@@ -501,6 +524,23 @@ Table template_artifacts {
 
   Indexes {
     (template_code, storage_version) [name: "uq_template_artifacts_storage", unique]
+    (artifact_origin) [name: "idx_template_artifacts_origin"]
+  }
+}
+
+Table template_seeds {
+  id int [pk, increment]
+  seed_code varchar(180) [not null]
+  display_name varchar(180) [not null]
+  description varchar(255)
+  seed_type varchar(40) [not null]
+  source_path varchar(255) [not null]
+  preview_path varchar(255)
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (seed_code) [name: "uq_template_seeds_code", unique]
   }
 }
 

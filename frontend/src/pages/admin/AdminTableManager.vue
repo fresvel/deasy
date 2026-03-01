@@ -61,6 +61,16 @@
             Buscar
           </button>
           <button
+            v-if="isTemplateSeedsTable"
+            class="btn btn-outline-secondary btn-lg"
+            type="button"
+            :disabled="!table || loading"
+            @click="syncTemplateSeedsFromSource"
+          >
+            <font-awesome-icon icon="rotate-right" class="me-2" />
+            Sincronizar seeds
+          </button>
+          <button
             v-if="isTemplateArtifactsTable"
             class="btn btn-outline-secondary btn-lg"
             type="button"
@@ -74,7 +84,7 @@
             class="btn btn-primary btn-lg profile-add-btn"
             type="button"
             :disabled="!table"
-            @click="openCreate"
+            @click="handlePrimaryCreateAction"
           >
             <font-awesome-icon icon="plus" class="me-2" />
             Agregar
@@ -98,7 +108,7 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="row g-3 align-items-center mb-3">
-              <div :class="isPositionFilterTable ? 'col-12 col-lg-3' : isProcessDefinitionFilterTable ? 'col-12 col-md-6 col-lg-2' : isProcessTargetRuleFilterTable ? 'col-12 col-md-6 col-lg-3' : 'col-12 col-md-6'">
+              <div :class="isPositionFilterTable ? 'col-12 col-lg-3' : isProcessDefinitionFilterTable ? 'col-12 col-md-6 col-lg-2' : isProcessTargetRuleFilterTable ? 'col-12 col-md-6 col-lg-3' : isTemplateArtifactsTable ? 'col-12 col-md-6 col-lg-3' : 'col-12 col-md-6'">
                 <input
                   ref="searchInput"
                   v-model="searchTerm"
@@ -226,7 +236,31 @@
                   </select>
                 </div>
               </template>
-              <div :class="isPositionFilterTable ? 'col-12 col-lg-2 text-lg-end' : isProcessDefinitionFilterTable ? 'col-12 col-lg-3 text-lg-end' : isProcessTargetRuleFilterTable ? 'col-12 col-lg-3 text-lg-end' : 'col-12 col-md-6 text-md-end'">
+              <template v-else-if="isTemplateArtifactsTable">
+                <div class="col-12 col-md-6 col-lg-2">
+                  <select
+                    v-model="templateArtifactInlineFilters.artifact_origin"
+                    class="form-select"
+                    @change="fetchRows"
+                  >
+                    <option value="">Origen</option>
+                    <option value="system">system</option>
+                    <option value="user">user</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                  <select
+                    v-model="templateArtifactInlineFilters.artifact_stage"
+                    class="form-select"
+                    @change="fetchRows"
+                  >
+                    <option value="">Etapa</option>
+                    <option value="draft">draft</option>
+                    <option value="published">published</option>
+                  </select>
+                </div>
+              </template>
+              <div :class="isPositionFilterTable ? 'col-12 col-lg-2 text-lg-end' : isProcessDefinitionFilterTable ? 'col-12 col-lg-3 text-lg-end' : isProcessTargetRuleFilterTable ? 'col-12 col-lg-3 text-lg-end' : isTemplateArtifactsTable ? 'col-12 col-lg-3 text-lg-end' : 'col-12 col-md-6 text-md-end'">
                 <div class="d-inline-flex align-items-center gap-2">
                   <button
                     v-if="isPositionFilterTable"
@@ -258,6 +292,17 @@
                     aria-label="Limpiar filtros"
                     :disabled="!hasProcessTargetRuleInlineFilters"
                     @click="clearProcessTargetRuleInlineFilters"
+                  >
+                    <font-awesome-icon icon="times" />
+                  </button>
+                  <button
+                    v-else-if="isTemplateArtifactsTable"
+                    class="btn btn-outline-secondary btn-lg"
+                    type="button"
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    :disabled="!hasTemplateArtifactInlineFilters"
+                    @click="clearTemplateArtifactInlineFilters"
                   >
                     <font-awesome-icon icon="times" />
                   </button>
@@ -302,6 +347,7 @@
                               v-for="section in getAvailableFormatSections(row[field.name])"
                               :key="section.mode"
                               class="available-formats-group"
+                              :class="{ 'is-inline': section.mode === 'user' }"
                             >
                               <span class="available-formats-mode">{{ section.label }}</span>
                               <div class="available-formats-badges">
@@ -360,7 +406,52 @@
                             <font-awesome-icon icon="list-check" />
                           </span>
                         </button>
-                        <BtnEdit @onpress="openEdit(row)" />
+                        <template v-if="isTemplateArtifactsTable">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-icon text-primary hope-action-btn hope-action-edit"
+                            :title="String(row?.artifact_origin || '') === 'system' ? 'Los artifacts del sistema se sincronizan desde MinIO' : 'Editar'"
+                            :aria-label="String(row?.artifact_origin || '') === 'system' ? 'Edicion bloqueada para artifacts del sistema' : 'Editar'"
+                            :disabled="String(row?.artifact_origin || '') === 'system'"
+                            @click="String(row?.artifact_origin || '') === 'system' ? undefined : openEdit(row)"
+                          >
+                            <span class="btn-inner">
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M11.4925 2.78906H7.75349C4.67849 2.78906 2.75049 4.96606 2.75049 8.04806V16.3621C2.75049 19.4441 4.66949 21.6211 7.75349 21.6211H16.5775C19.6625 21.6211 21.5815 19.4441 21.5815 16.3621V12.3341"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  fill-rule="evenodd"
+                                  clip-rule="evenodd"
+                                  d="M8.82812 10.921L16.3011 3.44799C17.2321 2.51799 18.7411 2.51799 19.6721 3.44799L20.8891 4.66499C21.8201 5.59599 21.8201 7.10599 20.8891 8.03599L13.3801 15.545C12.9731 15.952 12.4211 16.181 11.8451 16.181H8.09912L8.19312 12.401C8.20712 11.845 8.43412 11.315 8.82812 10.921Z"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M15.1655 4.60254L19.7315 9.16854"
+                                  stroke="currentColor"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                            </span>
+                          </button>
+                        </template>
+                        <BtnEdit v-else @onpress="openEdit(row)" />
                         <BtnDelete @onpress="openDelete(row)" />
                       </div>
                     </td>
@@ -656,6 +747,7 @@
                               v-for="section in getAvailableFormatSections(row.available_formats)"
                               :key="section.mode"
                               class="available-formats-group"
+                              :class="{ 'is-inline': section.mode === 'user' }"
                             >
                               <span class="available-formats-mode">{{ section.label }}</span>
                               <div class="available-formats-badges">
@@ -1277,6 +1369,15 @@
 
           </div>
           <div class="modal-footer">
+            <button
+              v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
+              type="button"
+              class="btn btn-outline-primary"
+              @click="openDefinitionArtifactsFromEditor"
+            >
+              <font-awesome-icon icon="link" class="me-2" />
+              Artifacts
+            </button>
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
               Cancelar
             </button>
@@ -1390,6 +1491,212 @@
             <button type="button" class="btn btn-outline-danger" @click="confirmDelete">
               Eliminar
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="definitionArtifactsPromptModal"
+      tabindex="-1"
+      aria-labelledby="definitionArtifactsPromptModalLabel"
+      aria-hidden="true"
+      ref="definitionArtifactsPromptModal"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="definitionArtifactsPromptModalLabel">Definicion creada</h5>
+            <button type="button" class="btn-close" @click="closeDefinitionArtifactsPrompt" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">
+              La definicion se creo correctamente.
+              <span v-if="definitionArtifactsPromptContext?.name">
+                <strong>{{ definitionArtifactsPromptContext.name }}</strong>.
+              </span>
+              ¿Deseas agregar artifacts ahora?
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" @click="closeDefinitionArtifactsPrompt">
+              Ahora no
+            </button>
+            <button type="button" class="btn btn-primary" @click="confirmDefinitionArtifactsPrompt">
+              Agregar artifacts
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="definitionArtifactsModal"
+      tabindex="-1"
+      aria-labelledby="definitionArtifactsModalLabel"
+      aria-hidden="true"
+      ref="definitionArtifactsModal"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="definitionArtifactsModalLabel">Artifacts de la definicion</h5>
+            <button type="button" class="btn-close" @click="closeDefinitionArtifactsManager" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="definitionArtifactsContext" class="person-assignment-context mb-3">
+              <strong>{{ definitionArtifactsContext.name || `Definicion #${definitionArtifactsContext.id}` }}</strong>
+              <span class="text-muted ms-2">
+                Serie {{ definitionArtifactsContext.variation_key || "—" }} | Version {{ definitionArtifactsContext.definition_version || "—" }} | Estado {{ definitionArtifactsContext.status || "—" }}
+              </span>
+            </div>
+
+            <div v-if="definitionArtifactsError" class="alert alert-danger">{{ definitionArtifactsError }}</div>
+            <div v-if="definitionArtifactsContext && !canManageDefinitionArtifacts" class="alert alert-info">
+              Esta definicion no esta en draft. Solo puedes gestionar artifacts cuando la definicion este en draft.
+            </div>
+            <div
+              v-else-if="canManageDefinitionArtifacts && !definitionArtifactsForm.template_artifact_id"
+              class="alert alert-secondary"
+            >
+              Selecciona un artifact para habilitar el boton de agregar.
+            </div>
+
+            <div class="person-assignment-form">
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="form-label text-dark">Artifact</label>
+                  <div class="input-group">
+                    <input
+                      v-model="definitionArtifactsLabels.template_artifact_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Selecciona un artifact"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="!canManageDefinitionArtifacts || !definitionArtifactsForm.template_artifact_id"
+                      @click="clearDefinitionArtifactSelection"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="!canManageDefinitionArtifacts"
+                      @click="openDefinitionArtifactFkSearch"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Uso</label>
+                  <select v-model="definitionArtifactsForm.usage_role" class="form-select" :disabled="!canManageDefinitionArtifacts">
+                    <option value="manual_fill">manual_fill</option>
+                    <option value="system_render">system_render</option>
+                    <option value="attachment">attachment</option>
+                    <option value="support">support</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Orden</label>
+                  <input v-model="definitionArtifactsForm.sort_order" type="number" min="1" class="form-control" :disabled="!canManageDefinitionArtifacts" />
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Genera tarea</label>
+                  <select v-model="definitionArtifactsForm.creates_task" class="form-select" :disabled="!canManageDefinitionArtifacts">
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Requerido</label>
+                  <select v-model="definitionArtifactsForm.is_required" class="form-select" :disabled="!canManageDefinitionArtifacts">
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+              </div>
+              <div class="person-assignment-form-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  :disabled="!canSubmitDefinitionArtifact"
+                  @click="submitDefinitionArtifact"
+                >
+                  {{ definitionArtifactsEditId ? "Guardar artifact" : "Agregar artifact" }}
+                </button>
+                <button
+                  v-if="definitionArtifactsEditId"
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  @click="resetDefinitionArtifactsForm"
+                >
+                  Cancelar edicion
+                </button>
+              </div>
+            </div>
+
+            <div v-if="definitionArtifactsLoading" class="text-muted mt-3">Cargando artifacts vinculados...</div>
+            <div v-else class="table-responsive mt-3 person-assignment-table">
+              <table class="table table-sm table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Artifact</th>
+                    <th>Uso</th>
+                    <th>Genera tarea</th>
+                    <th>Requerido</th>
+                    <th>Orden</th>
+                    <th class="text-end">Accion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="definitionArtifactsRows.length === 0">
+                    <td colspan="7" class="text-center text-muted">Sin artifacts vinculados.</td>
+                  </tr>
+                  <tr v-for="row in definitionArtifactsRows" :key="row.id">
+                    <td>{{ row.id }}</td>
+                    <td>{{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }) }}</td>
+                    <td>{{ row.usage_role }}</td>
+                    <td>{{ Number(row.creates_task) === 1 ? "Si" : "No" }}</td>
+                    <td>{{ Number(row.is_required) === 1 ? "Si" : "No" }}</td>
+                    <td>{{ row.sort_order ?? "—" }}</td>
+                    <td class="text-end">
+                      <div class="d-inline-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                          title="Visualizar"
+                          aria-label="Visualizar"
+                          @click="openRecordViewer(row, allTablesMap.process_definition_templates)"
+                        >
+                          <span class="btn-inner">
+                            <font-awesome-icon icon="eye" />
+                          </span>
+                        </button>
+                        <BtnEdit tooltip="Editar artifact" @onpress="startDefinitionArtifactEdit(row)" />
+                        <BtnDelete message="Eliminar artifact" @onpress="deleteDefinitionArtifact(row)" />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" @click="closeDefinitionArtifactsManager">Cerrar</button>
           </div>
         </div>
       </div>
@@ -1715,6 +2022,7 @@
                                 v-for="section in getAvailableFormatSections(row[field.name])"
                                 :key="section.mode"
                                 class="available-formats-group"
+                                :class="{ 'is-inline': section.mode === 'user' }"
                               >
                                 <span class="available-formats-mode">{{ section.label }}</span>
                                 <div class="available-formats-badges">
@@ -2453,6 +2761,154 @@
         </div>
       </div>
     </div>
+
+    <div
+      ref="draftArtifactModalRef"
+      class="modal fade"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ draftArtifactEditId ? "Editar artifact de usuario" : "Crear artifact de usuario" }}</h5>
+            <button type="button" class="btn-close" aria-label="Cerrar" @click="closeDraftArtifactModal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="draftArtifactError" class="alert alert-danger">{{ draftArtifactError }}</div>
+            <div class="alert alert-info">
+              Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} el artifact de usuario y lo sube directamente a <strong>MinIO</strong>. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
+            </div>
+            <div v-if="draftArtifactLoading" class="alert alert-warning">
+              Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label text-dark">Seed LaTeX</label>
+                <select
+                  v-model="draftArtifactForm.template_seed_id"
+                  class="form-select"
+                >
+                  <option value="">Sin seed</option>
+                  <option
+                    v-for="row in draftArtifactSeedOptions"
+                    :key="row.id"
+                    :value="String(row.id)"
+                  >
+                    {{ row.display_name }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label text-dark">Version fuente</label>
+                <input
+                  v-model="draftArtifactForm.source_version"
+                  type="text"
+                  class="form-control"
+                  placeholder="1.0.0"
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label text-dark">Nombre del artifact</label>
+                <input
+                  v-model="draftArtifactForm.display_name"
+                  type="text"
+                  class="form-control"
+                  placeholder="Nombre del artifact"
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label text-dark">Descripcion</label>
+                <input
+                  v-model="draftArtifactForm.description"
+                  type="text"
+                  class="form-control"
+                  placeholder="Descripcion breve"
+                />
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label text-dark">PDF</label>
+                <label
+                  class="draft-upload-dropzone"
+                  for="draft-upload-pdf"
+                  @dragover.prevent
+                  @drop.prevent="handleDraftArtifactDrop('pdf', $event)"
+                >
+                  <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
+                  <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("pdf") }}</span>
+                </label>
+                <input id="draft-upload-pdf" class="d-none" type="file" accept=".pdf" @change="handleDraftArtifactFileChange('pdf', $event)" />
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label text-dark">Word</label>
+                <label
+                  class="draft-upload-dropzone"
+                  for="draft-upload-docx"
+                  @dragover.prevent
+                  @drop.prevent="handleDraftArtifactDrop('docx', $event)"
+                >
+                  <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
+                  <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("docx") }}</span>
+                </label>
+                <input id="draft-upload-docx" class="d-none" type="file" accept=".doc,.docx" @change="handleDraftArtifactFileChange('docx', $event)" />
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label text-dark">Excel</label>
+                <label
+                  class="draft-upload-dropzone"
+                  for="draft-upload-xlsx"
+                  @dragover.prevent
+                  @drop.prevent="handleDraftArtifactDrop('xlsx', $event)"
+                >
+                  <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
+                  <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("xlsx") }}</span>
+                </label>
+                <input id="draft-upload-xlsx" class="d-none" type="file" accept=".xls,.xlsx" @change="handleDraftArtifactFileChange('xlsx', $event)" />
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label text-dark">PowerPoint</label>
+                <label
+                  class="draft-upload-dropzone"
+                  for="draft-upload-pptx"
+                  @dragover.prevent
+                  @drop.prevent="handleDraftArtifactDrop('pptx', $event)"
+                >
+                  <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
+                  <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("pptx") }}</span>
+                </label>
+                <input id="draft-upload-pptx" class="d-none" type="file" accept=".ppt,.pptx" @change="handleDraftArtifactFileChange('pptx', $event)" />
+              </div>
+              <div v-if="draftArtifactPreviewUrl" class="col-12">
+                <label class="form-label text-dark">Preview del seed</label>
+                <iframe
+                  :src="draftArtifactPreviewUrl"
+                  class="w-100 border rounded"
+                  style="min-height: 420px; background: #fff;"
+                  title="Preview del seed"
+                ></iframe>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              @click="closeDraftArtifactModal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              :disabled="draftArtifactLoading"
+              @click="submitDraftArtifact"
+            >
+              {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear artifact") }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -2496,6 +2952,10 @@ const processTargetRuleInlineFilters = ref({
   definition_execution_mode: "",
   definition_status: ""
 });
+const templateArtifactInlineFilters = ref({
+  artifact_origin: "",
+  artifact_stage: ""
+});
 const processDefinitionProcessOptions = ref([]);
 const editorMode = ref("create");
 const formData = ref({});
@@ -2506,6 +2966,9 @@ const fkDisplay = ref({});
 const editorModal = ref(null);
 const processDefinitionVersioningModal = ref(null);
 const processDefinitionActivationModal = ref(null);
+const definitionArtifactsModal = ref(null);
+const definitionArtifactsPromptModal = ref(null);
+const draftArtifactModalRef = ref(null);
 const deleteModal = ref(null);
 const recordViewerModal = ref(null);
 const personAssignmentsModal = ref(null);
@@ -2517,6 +2980,9 @@ const searchInput = ref(null);
 let editorInstance = null;
 let processDefinitionVersioningInstance = null;
 let processDefinitionActivationInstance = null;
+let definitionArtifactsInstance = null;
+let definitionArtifactsPromptInstance = null;
+let draftArtifactInstance = null;
 let deleteInstance = null;
 let recordViewerInstance = null;
 let personAssignmentsInstance = null;
@@ -2540,6 +3006,44 @@ const recordViewerRelatedSections = ref([]);
 const processDefinitionVersioningSource = ref(null);
 const processDefinitionCloneSourceId = ref("");
 const processDefinitionActivationConfirmed = ref(false);
+const definitionArtifactsContext = ref(null);
+const definitionArtifactsRows = ref([]);
+const definitionArtifactsLoading = ref(false);
+const definitionArtifactsError = ref("");
+const definitionArtifactsEditId = ref("");
+const definitionArtifactsForm = ref({
+  template_artifact_id: "",
+  usage_role: "manual_fill",
+  creates_task: "1",
+  is_required: "1",
+  sort_order: "1"
+});
+const definitionArtifactsLabels = ref({
+  template_artifact_id: ""
+});
+const definitionArtifactsPromptContext = ref(null);
+const draftArtifactSeedOptions = ref([]);
+const draftArtifactError = ref("");
+const draftArtifactLoading = ref(false);
+const draftArtifactEditId = ref("");
+const draftArtifactExistingFiles = ref({
+  pdf: "",
+  docx: "",
+  xlsx: "",
+  pptx: ""
+});
+const draftArtifactForm = ref({
+  template_seed_id: "",
+  display_name: "",
+  description: "",
+  source_version: "1.0.0"
+});
+const draftArtifactFiles = ref({
+  pdf: null,
+  docx: null,
+  xlsx: null,
+  pptx: null
+});
 
 const fkTable = ref(null);
 const fkRows = ref([]);
@@ -2917,6 +3421,7 @@ const hasFkTemplateArtifactFilters = computed(() =>
 
 const isProcessTable = computed(() => props.table?.table === "processes");
 const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
+const isTemplateSeedsTable = computed(() => props.table?.table === "template_seeds");
 const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
@@ -2926,6 +3431,33 @@ const isPositionFilterTable = computed(() =>
   isUnitPositionsTable.value || isPositionAssignmentsTable.value
 );
 const isProcessTargetRuleFilterTable = computed(() => props.table?.table === "process_target_rules");
+const canManageDefinitionArtifacts = computed(() =>
+  String(definitionArtifactsContext.value?.status || "") === "draft"
+);
+const canSubmitDefinitionArtifact = computed(() =>
+  canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.template_artifact_id)
+);
+const draftArtifactPreviewUrl = computed(() => {
+  if (!draftArtifactForm.value.template_seed_id) {
+    return "";
+  }
+  return API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_PREVIEW(draftArtifactForm.value.template_seed_id);
+});
+const currentLoggedUser = computed(() => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      return null;
+    }
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+});
 const hasUnitPositionFilters = computed(() =>
   Boolean(
     unitPositionFilters.value.unit_type_id
@@ -2944,6 +3476,12 @@ const hasProcessTargetRuleInlineFilters = computed(() =>
   Boolean(
     processTargetRuleInlineFilters.value.definition_execution_mode
     || processTargetRuleInlineFilters.value.definition_status
+  )
+);
+const hasTemplateArtifactInlineFilters = computed(() =>
+  Boolean(
+    templateArtifactInlineFilters.value.artifact_origin
+    || templateArtifactInlineFilters.value.artifact_stage
   )
 );
 const hasVacantPositionFilters = computed(() =>
@@ -3182,6 +3720,19 @@ const prettifyFormatName = (value) => {
     return "";
   }
   return String(value).replaceAll("_", " ");
+};
+
+const getFileNameFromObjectKey = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  const normalized = String(value).replace(/\\/g, "/").replace(/\/+$/g, "");
+  const pieces = normalized.split("/").filter(Boolean);
+  const fileName = pieces.length ? pieces[pieces.length - 1] : "";
+  if (fileName.toLowerCase() === "src") {
+    return "Contenido actual";
+  }
+  return fileName;
 };
 
 const normalizeAvailableFormats = (value) => {
@@ -3493,6 +4044,60 @@ const ensurePersonAssignmentsInstance = () => {
   }
 };
 
+const ensureDefinitionArtifactsInstance = () => {
+  if (!definitionArtifactsInstance && definitionArtifactsModal.value) {
+    definitionArtifactsInstance = new Modal(definitionArtifactsModal.value);
+    definitionArtifactsModal.value.addEventListener("hidden.bs.modal", () => {
+      if (returnModal === "definitionArtifacts") {
+        return;
+      }
+      definitionArtifactsError.value = "";
+      definitionArtifactsEditId.value = "";
+      definitionArtifactsContext.value = null;
+      definitionArtifactsRows.value = [];
+      resetDefinitionArtifactsForm();
+    });
+  }
+};
+
+const ensureDefinitionArtifactsPromptInstance = () => {
+  if (!definitionArtifactsPromptInstance && definitionArtifactsPromptModal.value) {
+    definitionArtifactsPromptInstance = new Modal(definitionArtifactsPromptModal.value);
+    definitionArtifactsPromptModal.value.addEventListener("hidden.bs.modal", () => {
+      definitionArtifactsPromptContext.value = null;
+    });
+  }
+};
+
+const ensureDraftArtifactInstance = () => {
+  if (!draftArtifactInstance && draftArtifactModalRef.value) {
+    draftArtifactInstance = new Modal(draftArtifactModalRef.value);
+    draftArtifactModalRef.value.addEventListener("hidden.bs.modal", () => {
+      draftArtifactError.value = "";
+      draftArtifactLoading.value = false;
+      draftArtifactEditId.value = "";
+      draftArtifactExistingFiles.value = {
+        pdf: "",
+        docx: "",
+        xlsx: "",
+        pptx: ""
+      };
+      draftArtifactForm.value = {
+        template_seed_id: "",
+        display_name: "",
+        description: "",
+        source_version: "1.0.0"
+      };
+      draftArtifactFiles.value = {
+        pdf: null,
+        docx: null,
+        xlsx: null,
+        pptx: null
+      };
+    });
+  }
+};
+
 const restoreReturnModal = () => {
   if (returnModal === "editor" && editorInstance) {
     editorInstance.show();
@@ -3508,6 +4113,9 @@ const restoreReturnModal = () => {
   }
   if (returnModal === "personAssignments" && personAssignmentsInstance) {
     personAssignmentsInstance.show();
+  }
+  if (returnModal === "definitionArtifacts" && definitionArtifactsInstance) {
+    definitionArtifactsInstance.show();
   }
   returnModal = null;
 };
@@ -3889,8 +4497,10 @@ const FK_TABLE_MAP = {
   parent_id: "processes",
   parent_task_id: "tasks",
   process_id: "processes",
+  series_id: "process_definition_series",
   process_definition_id: "process_definition_versions",
   process_definition_template_id: "process_definition_templates",
+  template_seed_id: "template_seeds",
   term_type_id: "term_types",
   term_id: "terms",
   task_id: "tasks",
@@ -3933,7 +4543,7 @@ const resolveDisplayField = (tableMeta) => {
   if (!tableMeta) {
     return null;
   }
-  const preferred = ["name", "title", "email", "code", "slug"];
+  const preferred = ["name", "title", "email", "label", "code", "slug"];
   const match = preferred.find((field) => tableMeta.fields.some((meta) => meta.name === field));
   return match || tableMeta.fields.find((meta) => meta.name !== "id")?.name || "id";
 };
@@ -4812,6 +5422,10 @@ const openFkSearch = async (field, onSelect = null) => {
     personAssignmentsInstance.hide();
     returnModal = "personAssignments";
   }
+  if (definitionArtifactsInstance && definitionArtifactsModal.value?.classList.contains("show")) {
+    definitionArtifactsInstance.hide();
+    returnModal = "definitionArtifacts";
+  }
   fkSetter.value = onSelect;
   fkField.value = field.name;
   fkTable.value = allTablesMap.value[tableName] || null;
@@ -5009,6 +5623,10 @@ const openRecordViewer = async (row, tableMeta = props.table) => {
   if (personAssignmentsInstance && personAssignmentsModal.value?.classList.contains("show")) {
     personAssignmentsInstance.hide();
     returnModal = "personAssignments";
+  }
+  if (definitionArtifactsInstance && definitionArtifactsModal.value?.classList.contains("show")) {
+    definitionArtifactsInstance.hide();
+    returnModal = "definitionArtifacts";
   }
 
   recordViewerTable.value = tableMeta;
@@ -5405,6 +6023,13 @@ const fetchRows = async () => {
         }
       });
     }
+    if (props.table?.table === "template_artifacts") {
+      Object.entries(templateArtifactInlineFilters.value).forEach(([key, value]) => {
+        if (value !== "" && value !== null && value !== undefined) {
+          filters[`filter_${key}`] = typeof value === "string" ? value.trim() : value;
+        }
+      });
+    }
     const baseParams = {
       q: searchTerm.value || undefined,
       ...filters
@@ -5528,6 +6153,14 @@ const clearProcessTargetRuleInlineFilters = async () => {
   await fetchRows();
 };
 
+const clearTemplateArtifactInlineFilters = async () => {
+  templateArtifactInlineFilters.value = {
+    artifact_origin: "",
+    artifact_stage: ""
+  };
+  await fetchRows();
+};
+
 const debouncedSearch = () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout);
@@ -5629,6 +6262,171 @@ const syncTemplateArtifactsFromDist = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+const loadDraftArtifactSeedOptions = async () => {
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("template_seeds"), {
+      params: {
+        filter_is_active: 1,
+        orderBy: "display_name",
+        order: "asc",
+        limit: 500
+      }
+    });
+    draftArtifactSeedOptions.value = response.data || [];
+  } catch (err) {
+    draftArtifactSeedOptions.value = [];
+  }
+};
+
+const syncTemplateSeedsFromSource = async () => {
+  loading.value = true;
+  error.value = "";
+  try {
+    const response = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_SEEDS_SYNC);
+    const { discovered = 0, inserted = 0, updated = 0 } = response.data || {};
+    if (isTemplateSeedsTable.value) {
+      await fetchRows();
+    }
+    await loadDraftArtifactSeedOptions();
+    showFeedbackToast({
+      kind: "success",
+      title: "Seeds sincronizados",
+      message: `Detectados: ${discovered}. Insertados: ${inserted}. Actualizados: ${updated}.`
+    });
+  } catch (err) {
+    error.value = err?.response?.data?.message || "No se pudieron sincronizar los seeds.";
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudieron sincronizar",
+      message: error.value,
+      duration: 7000
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openDraftArtifactModal = async (row = null) => {
+  if (!props.table || props.table.table !== "template_artifacts") {
+    return;
+  }
+  draftArtifactError.value = "";
+  draftArtifactEditId.value = row?.id ? String(row.id) : "";
+  draftArtifactExistingFiles.value = {
+    pdf: "",
+    docx: "",
+    xlsx: "",
+    pptx: ""
+  };
+  if (row) {
+    const availableFormats = normalizeAvailableFormats(row.available_formats) || {};
+    draftArtifactForm.value = {
+      template_seed_id: row.template_seed_id ? String(row.template_seed_id) : "",
+      display_name: row.display_name ? String(row.display_name) : "",
+      description: row.description ? String(row.description) : "",
+      source_version: row.source_version ? String(row.source_version) : "1.0.0"
+    };
+    draftArtifactExistingFiles.value = {
+      pdf: getFileNameFromObjectKey(availableFormats?.user?.pdf?.entry_object_key),
+      docx: getFileNameFromObjectKey(availableFormats?.user?.docx?.entry_object_key),
+      xlsx: getFileNameFromObjectKey(availableFormats?.user?.xlsx?.entry_object_key),
+      pptx: getFileNameFromObjectKey(availableFormats?.user?.pptx?.entry_object_key)
+    };
+  } else {
+    draftArtifactForm.value = {
+      template_seed_id: "",
+      display_name: "",
+      description: "",
+      source_version: "1.0.0"
+    };
+  }
+  await loadDraftArtifactSeedOptions();
+  ensureDraftArtifactInstance();
+  draftArtifactInstance?.show();
+};
+
+const closeDraftArtifactModal = () => {
+  draftArtifactInstance?.hide();
+};
+
+const handleDraftArtifactFileChange = (kind, event) => {
+  draftArtifactFiles.value = {
+    ...draftArtifactFiles.value,
+    [kind]: event?.target?.files?.[0] || null
+  };
+};
+
+const handleDraftArtifactDrop = (kind, event) => {
+  const file = event?.dataTransfer?.files?.[0] || null;
+  draftArtifactFiles.value = {
+    ...draftArtifactFiles.value,
+    [kind]: file
+  };
+};
+
+const getDraftArtifactFileLabel = (kind) => {
+  const file = draftArtifactFiles.value[kind];
+  return file?.name || draftArtifactExistingFiles.value[kind] || "Sin archivo";
+};
+
+const submitDraftArtifact = async () => {
+  draftArtifactLoading.value = true;
+  draftArtifactError.value = "";
+  const isEditingDraft = Boolean(draftArtifactEditId.value);
+  try {
+    const ownerCedula = currentLoggedUser.value?.cedula ? String(currentLoggedUser.value.cedula).trim() : "";
+    const ownerPersonId = currentLoggedUser.value?.id ? String(currentLoggedUser.value.id).trim() : "";
+    if (!ownerCedula) {
+      throw new Error("No se pudo inferir la cedula del usuario logueado.");
+    }
+    const form = new FormData();
+    form.append("template_seed_id", draftArtifactForm.value.template_seed_id || "");
+    form.append("owner_cedula", ownerCedula);
+    if (ownerPersonId) {
+      form.append("owner_person_id", ownerPersonId);
+    }
+    form.append("display_name", draftArtifactForm.value.display_name || "");
+    form.append("description", draftArtifactForm.value.description || "");
+    form.append("source_version", draftArtifactForm.value.source_version || "1.0.0");
+    if (draftArtifactFiles.value.pdf) {
+      form.append("pdf_file", draftArtifactFiles.value.pdf);
+    }
+    if (draftArtifactFiles.value.docx) {
+      form.append("docx_file", draftArtifactFiles.value.docx);
+    }
+    if (draftArtifactFiles.value.xlsx) {
+      form.append("xlsx_file", draftArtifactFiles.value.xlsx);
+    }
+    if (draftArtifactFiles.value.pptx) {
+      form.append("pptx_file", draftArtifactFiles.value.pptx);
+    }
+
+    const requestConfig = {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    };
+    const response = isEditingDraft
+      ? await axios.put(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE(draftArtifactEditId.value), form, requestConfig)
+      : await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT, form, requestConfig);
+    await fetchRows();
+    closeDraftArtifactModal();
+    showFeedbackToast({
+      kind: "success",
+      title: isEditingDraft ? "Artifact actualizado" : "Artifact creado",
+      message: response.data?.__notice || (isEditingDraft
+        ? "El artifact de usuario fue actualizado correctamente."
+        : "El artifact de usuario fue creado correctamente.")
+    });
+  } catch (err) {
+    draftArtifactError.value = err?.response?.data?.message || (isEditingDraft
+      ? "No se pudo actualizar el artifact de usuario."
+      : "No se pudo crear el artifact de usuario.");
+  } finally {
+    draftArtifactLoading.value = false;
   }
 };
 
@@ -6020,6 +6818,214 @@ const resetPersonAssignments = () => {
   resetPersonCargoForm();
   resetPersonRoleForm();
   resetPersonContractForm();
+};
+
+const resetDefinitionArtifactsForm = () => {
+  definitionArtifactsEditId.value = "";
+  definitionArtifactsForm.value = {
+    template_artifact_id: "",
+    usage_role: "manual_fill",
+    creates_task: "1",
+    is_required: "1",
+    sort_order: "1"
+  };
+  definitionArtifactsLabels.value = {
+    template_artifact_id: ""
+  };
+};
+
+const loadDefinitionArtifacts = async () => {
+  const definitionId = definitionArtifactsContext.value?.id;
+  if (!definitionId) {
+    definitionArtifactsRows.value = [];
+    definitionArtifactsError.value = "";
+    definitionArtifactsLoading.value = false;
+    return;
+  }
+  definitionArtifactsLoading.value = true;
+  definitionArtifactsError.value = "";
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+      params: {
+        filter_process_definition_id: definitionId,
+        orderBy: "sort_order",
+        order: "asc",
+        limit: 200
+      }
+    });
+    definitionArtifactsRows.value = response.data || [];
+    await prefetchFkLabelsForRows(definitionArtifactsRows.value, ["template_artifact_id"]);
+  } catch (error) {
+    definitionArtifactsRows.value = [];
+    definitionArtifactsError.value = "No se pudieron cargar los artifacts vinculados.";
+  } finally {
+    definitionArtifactsLoading.value = false;
+  }
+};
+
+const openDefinitionArtifactsManager = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  definitionArtifactsContext.value = {
+    ...definitionRow
+  };
+  definitionArtifactsError.value = "";
+  resetDefinitionArtifactsForm();
+  ensureDefinitionArtifactsInstance();
+  definitionArtifactsInstance?.show();
+  await loadDefinitionArtifacts();
+};
+
+const closeDefinitionArtifactsManager = () => {
+  definitionArtifactsInstance?.hide();
+};
+
+const openDefinitionArtifactsPrompt = (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  definitionArtifactsPromptContext.value = { ...definitionRow };
+  ensureDefinitionArtifactsPromptInstance();
+  definitionArtifactsPromptInstance?.show();
+};
+
+const closeDefinitionArtifactsPrompt = () => {
+  definitionArtifactsPromptInstance?.hide();
+  definitionArtifactsPromptContext.value = null;
+};
+
+const confirmDefinitionArtifactsPrompt = async () => {
+  const context = definitionArtifactsPromptContext.value;
+  closeDefinitionArtifactsPrompt();
+  if (context?.id) {
+    await openDefinitionArtifactsManager(context);
+  }
+};
+
+const openDefinitionArtifactsFromEditor = async () => {
+  if (props.table?.table !== "process_definition_versions" || editorMode.value !== "edit" || !selectedRow.value?.id) {
+    return;
+  }
+  editorInstance?.hide();
+  await openDefinitionArtifactsManager(selectedRow.value);
+};
+
+const openDefinitionArtifactFkSearch = () => {
+  openFkSearch({ name: "template_artifact_id" }, (row) => {
+    const idValue = row.id ?? "";
+    definitionArtifactsForm.value = {
+      ...definitionArtifactsForm.value,
+      template_artifact_id: idValue ? String(idValue) : ""
+    };
+    const labelValue = formatFkOptionLabel("template_artifacts", row);
+    definitionArtifactsLabels.value = {
+      ...definitionArtifactsLabels.value,
+      template_artifact_id: labelValue ? String(labelValue) : ""
+    };
+  });
+};
+
+const clearDefinitionArtifactSelection = () => {
+  definitionArtifactsForm.value = {
+    ...definitionArtifactsForm.value,
+    template_artifact_id: ""
+  };
+  definitionArtifactsLabels.value = {
+    ...definitionArtifactsLabels.value,
+    template_artifact_id: ""
+  };
+};
+
+const startDefinitionArtifactEdit = (row) => {
+  if (!row) {
+    return;
+  }
+  if (!canManageDefinitionArtifacts.value) {
+    definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la definicion este en draft.";
+    return;
+  }
+  definitionArtifactsEditId.value = row.id ? String(row.id) : "";
+  definitionArtifactsForm.value = {
+    template_artifact_id: row.template_artifact_id ? String(row.template_artifact_id) : "",
+    usage_role: row.usage_role || "manual_fill",
+    creates_task: Number(row.creates_task) === 1 ? "1" : "0",
+    is_required: Number(row.is_required) === 1 ? "1" : "0",
+    sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : "1"
+  };
+  definitionArtifactsLabels.value = {
+    template_artifact_id: row.template_artifact_id
+      ? String(getFkCachedLabel("template_artifacts", row.template_artifact_id) || row.template_artifact_id)
+      : ""
+  };
+};
+
+const submitDefinitionArtifact = async () => {
+  const definitionId = definitionArtifactsContext.value?.id;
+  if (!definitionId) {
+    definitionArtifactsError.value = "No hay una definicion seleccionada.";
+    return;
+  }
+  if (!canManageDefinitionArtifacts.value) {
+    definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la definicion este en draft.";
+    return;
+  }
+  if (!definitionArtifactsForm.value.template_artifact_id) {
+    definitionArtifactsError.value = "Selecciona un artifact.";
+    return;
+  }
+  const payload = {
+    process_definition_id: Number(definitionId),
+    template_artifact_id: Number(definitionArtifactsForm.value.template_artifact_id),
+    usage_role: definitionArtifactsForm.value.usage_role || "manual_fill",
+    creates_task: Number(definitionArtifactsForm.value.creates_task) === 1 ? 1 : 0,
+    is_required: Number(definitionArtifactsForm.value.is_required) === 1 ? 1 : 0,
+    sort_order: Number(definitionArtifactsForm.value.sort_order || 1) || 1
+  };
+
+  definitionArtifactsError.value = "";
+  try {
+    if (definitionArtifactsEditId.value) {
+      await axios.put(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+        keys: { id: Number(definitionArtifactsEditId.value) },
+        data: payload
+      });
+    } else {
+      await axios.post(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), payload);
+    }
+    resetDefinitionArtifactsForm();
+    await loadDefinitionArtifacts();
+  } catch (error) {
+    definitionArtifactsError.value = error?.response?.data?.message || "No se pudo guardar el artifact.";
+  }
+};
+
+const deleteDefinitionArtifact = async (row) => {
+  if (!row?.id) {
+    return;
+  }
+  if (!canManageDefinitionArtifacts.value) {
+    definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la definicion este en draft.";
+    return;
+  }
+  const confirmed = window.confirm("¿Deseas eliminar este artifact de la definicion?");
+  if (!confirmed) {
+    return;
+  }
+  definitionArtifactsError.value = "";
+  try {
+    await axios.delete(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+      data: {
+        keys: { id: row.id }
+      }
+    });
+    if (String(definitionArtifactsEditId.value) === String(row.id)) {
+      resetDefinitionArtifactsForm();
+    }
+    await loadDefinitionArtifacts();
+  } catch (error) {
+    definitionArtifactsError.value = error?.response?.data?.message || "No se pudo eliminar el artifact.";
+  }
 };
 
 const loadPersonAssignments = async (personId) => {
@@ -6472,7 +7478,30 @@ const openCreate = async () => {
   editorInstance?.show();
 };
 
+const handlePrimaryCreateAction = async () => {
+  if (isTemplateArtifactsTable.value) {
+    await openDraftArtifactModal();
+    return;
+  }
+  await openCreate();
+};
+
 const openEdit = async (row) => {
+  if (
+    props.table?.table === "template_artifacts"
+    && String(row?.artifact_origin || "") === "system"
+  ) {
+    showFeedbackToast({
+      kind: "error",
+      title: "Edicion bloqueada",
+      message: "Los artifacts del sistema se sincronizan desde MinIO y no se editan manualmente."
+    });
+    return;
+  }
+  if (props.table?.table === "template_artifacts") {
+    await openDraftArtifactModal(row);
+    return;
+  }
   resetInlineFkState();
   closeProcessDefinitionVersioningModal();
   processDefinitionCloneSourceId.value = "";
@@ -6529,7 +7558,7 @@ const startProcessDefinitionVersioning = async (row) => {
   formData.value = {
     ...formData.value,
     process_id: row.process_id ?? formData.value.process_id ?? "",
-    variation_key: row.variation_key ?? formData.value.variation_key ?? "general",
+    series_id: row.series_id ?? formData.value.series_id ?? "",
     definition_version: getNextSemanticVersion(row.definition_version),
     status: "draft"
   };
@@ -6588,7 +7617,7 @@ const promoteProcessDefinitionToNewVersion = async () => {
   formData.value = {
     ...formData.value,
     process_id: sourceRow.process_id ?? formData.value.process_id ?? "",
-    variation_key: sourceRow.variation_key ?? formData.value.variation_key ?? "general",
+    series_id: sourceRow.series_id ?? formData.value.series_id ?? "",
     definition_version: nextVersion,
     status: "draft"
   };
@@ -6643,6 +7672,7 @@ const submitForm = async () => {
     }
     const usesProcessDefinitionActivationConfirmation = processDefinitionActivationConfirmed.value;
     let createdPersonRow = null;
+    let createdDefinitionRow = null;
     let responseNotice = "";
     if (editorMode.value === "create") {
       const response = await axios.post(API_ROUTES.ADMIN_SQL_TABLE(props.table.table), payload);
@@ -6650,6 +7680,10 @@ const submitForm = async () => {
       if (isPersonTable.value) {
         const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
         createdPersonRow = { ...payload, ...responseRow };
+      }
+      if (props.table.table === "process_definition_versions") {
+        const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
+        createdDefinitionRow = { ...payload, ...responseRow };
       }
     } else {
       const keys = buildKeys(selectedRow.value || {});
@@ -6688,6 +7722,19 @@ const submitForm = async () => {
       if (selectedPerson) {
         await openPersonAssignments(selectedPerson);
       }
+    }
+    if (createdDefinitionRow?.id || createdDefinitionRow?.process_id) {
+      let selectedDefinition = null;
+      if (createdDefinitionRow.id !== null && createdDefinitionRow.id !== undefined && createdDefinitionRow.id !== "") {
+        selectedDefinition = rows.value.find((row) => String(row.id) === String(createdDefinitionRow.id));
+      }
+      if (!selectedDefinition) {
+        selectedDefinition = {
+          ...createdDefinitionRow,
+          id: createdDefinitionRow.id ?? ""
+        };
+      }
+      openDefinitionArtifactsPrompt(selectedDefinition);
     }
   } catch (err) {
     const responseMessage = err?.response?.data?.message || "";
@@ -6802,6 +7849,10 @@ watch(
       definition_execution_mode: "",
       definition_status: ""
     };
+    templateArtifactInlineFilters.value = {
+      artifact_origin: "",
+      artifact_stage: ""
+    };
     processDefinitionProcessOptions.value = [];
     if (isPositionFilterTable.value) {
       await loadUnitPositionUnitTypeOptions();
@@ -6836,7 +7887,8 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
-  openCreate
+  openCreate,
+  openDraftArtifactModal
 });
 </script>
 
@@ -7161,6 +8213,17 @@ defineExpose({
   gap: 0.35rem;
 }
 
+.available-formats-group.is-inline {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.available-formats-group.is-inline .available-formats-badges {
+  flex: 1 1 auto;
+}
+
 .available-formats-group + .available-formats-group,
 .available-formats-viewer-section + .available-formats-viewer-section {
   margin-top: 0.55rem;
@@ -7215,6 +8278,40 @@ defineExpose({
   color: rgba(var(--brand-primary-rgb), 0.84);
   font-size: 0.8rem;
   white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.draft-upload-dropzone {
+  display: flex;
+  min-height: 5.5rem;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px dashed rgba(var(--brand-primary-rgb), 0.28);
+  border-radius: 0.9rem;
+  background: rgba(var(--brand-primary-rgb), 0.04);
+  color: rgba(var(--brand-primary-rgb), 0.86);
+  text-align: center;
+  cursor: pointer;
+  padding: 0.85rem;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.draft-upload-dropzone:hover {
+  background: rgba(var(--brand-primary-rgb), 0.08);
+  border-color: rgba(var(--brand-primary-rgb), 0.42);
+}
+
+.draft-upload-dropzone-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.draft-upload-dropzone-meta {
+  font-size: 0.78rem;
+  color: rgba(var(--brand-primary-rgb), 0.68);
   word-break: break-word;
 }
 

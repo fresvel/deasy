@@ -282,6 +282,21 @@
                     {{ adminTagForTable(table).label }}
                   </span>
                 </button>
+                <button
+                  v-if="selectedGestionCrudItem?.key === 'plantillas'"
+                  class="admin-home-btn admin-home-btn-accent"
+                  type="button"
+                  @click="openTemplateArtifactDraftFromHome"
+                >
+                  <span class="admin-home-btn-icon">
+                    <font-awesome-icon icon="plus" />
+                  </span>
+                  <span class="admin-home-btn-content">
+                    <strong class="admin-home-btn-title">Nuevo artifact de usuario</strong>
+                    <span class="admin-home-btn-meta">Crear desde seed o archivos</span>
+                  </span>
+                  <span class="admin-home-btn-pill admin-home-btn-pill-secondary">Accion</span>
+                </button>
               </div>
               <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
             </div>
@@ -663,7 +678,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import axios from "axios";
 import SMenu from "@/layouts/SMenu.vue";
 import SMessage from "@/layouts/SNotify.vue";
@@ -716,6 +731,7 @@ const GROUP_DEFS = [
       "process_target_rules",
       "tasks",
       "task_assignments",
+      "template_seeds",
       "template_artifacts",
       "process_definition_templates",
       "documents",
@@ -785,14 +801,14 @@ const GESTION_INDEX_ITEMS = [
     label: "Procesos",
     icon: "check-double",
     description: "Gestiona procesos base, definiciones y reglas de alcance.",
-    tables: ["processes", "process_definition_versions", "process_target_rules"]
+    tables: ["processes", "process_definition_series", "process_definition_versions", "process_target_rules"]
   },
   {
     key: "plantillas",
     label: "Plantillas",
     icon: "certificate",
-    description: "Gestiona artifacts publicados y plantillas de definicion.",
-    tables: ["template_artifacts", "process_definition_templates"]
+    description: "Gestiona seeds, artifacts y plantillas de definicion.",
+    tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
   },
   {
     key: "tareas",
@@ -1322,6 +1338,16 @@ const openGestionItem = (item) => {
   openCategories.value[GESTION_GROUP_LABEL] = true;
   selectedTable.value = null;
 };
+const openTemplateArtifactDraftFromHome = async () => {
+  const templateArtifactsTable = tables.value.find((table) => table.table === "template_artifacts");
+  if (!templateArtifactsTable) {
+    return;
+  }
+  selectTable(templateArtifactsTable);
+  await nextTick();
+  await nextTick();
+  adminManager.value?.openDraftArtifactModal?.();
+};
 const openUsersIndex = () => {
   selectedSection.value = USERS_GROUP_KEY;
   selectedUsuarioItem.value = "";
@@ -1596,6 +1622,17 @@ onMounted(() => {
 .admin-home-btn:hover .admin-home-btn-icon {
   background: rgba(var(--brand-primary-rgb), 0.16);
   border-color: rgba(var(--brand-primary-rgb), 0.28);
+  color: var(--brand-primary);
+}
+
+.admin-home-btn-accent .admin-home-btn-icon {
+  background: rgba(var(--brand-primary-rgb), 0.14);
+  border-color: rgba(var(--brand-primary-rgb), 0.24);
+  color: var(--brand-primary);
+}
+
+.admin-home-btn-pill-secondary {
+  background: rgba(var(--brand-primary-rgb), 0.14);
   color: var(--brand-primary);
 }
 

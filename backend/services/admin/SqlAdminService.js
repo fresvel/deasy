@@ -8,14 +8,28 @@ import bcrypt from "bcrypt";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import * as Minio from "minio";
 import { fileURLToPath } from "url";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
 const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
+const ARTIFACT_STAGE_VALUES = new Set(["draft", "review", "approved", "published", "archived"]);
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
 const TEMPLATE_DIST_ROOT = path.join(REPO_ROOT, "tools", "templates", "dist", "Plantillas");
+const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
+const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
+const MINIO_TEMPLATES_SEEDS_PREFIX = (process.env.MINIO_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
+const TEMPLATE_USERS_PREFIX = (
+  process.env.MINIO_TEMPLATES_USERS_PREFIX
+  || process.env.MINIO_TEMPLATES_DRAFT_PREFIX
+  || "Users"
+).replace(/^\/+|\/+$/g, "");
+const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
+const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
+let minioClientInstance = null;
 
 const walkFiles = (dirPath, collected = []) => {
   if (!fs.existsSync(dirPath)) {
@@ -66,6 +80,220 @@ const hashDirectory = (dirPath) => {
     hash.update(fs.readFileSync(filePath));
   }
   return files.length ? hash.digest("hex") : null;
+};
+
+const slugify = (value) => String(value || "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "")
+  .replace(/-{2,}/g, "-");
+
+const humanizeSlug = (value) => String(value || "")
+  .split(/[-_/]+/)
+  .filter(Boolean)
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join(" ");
+
+const getMinioClient = () => {
+  if (!minioClientInstance) {
+    minioClientInstance = new Minio.Client({
+      endPoint: minioUrl.hostname,
+      port: Number(minioUrl.port || (minioUseSSL ? 443 : 80)),
+      useSSL: minioUseSSL,
+      accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
+      secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || ""
+    });
+  }
+  return minioClientInstance;
+};
+
+const listMinioObjects = (bucket, prefix, recursive = true) => new Promise((resolve, reject) => {
+  const objects = [];
+  const stream = getMinioClient().listObjectsV2(bucket, prefix, recursive);
+  stream.on("data", (item) => {
+    if (item?.name) {
+      objects.push(item.name);
+    }
+  });
+  stream.on("error", reject);
+  stream.on("end", () => resolve(objects));
+});
+
+const getMinioObjectStream = (bucket, objectName) => new Promise((resolve, reject) => {
+  getMinioClient().getObject(bucket, objectName, (error, dataStream) => {
+    if (error) {
+      reject(error);
+      return;
+    }
+    resolve(dataStream);
+  });
+});
+
+const streamToBuffer = (stream) => new Promise((resolve, reject) => {
+  const chunks = [];
+  stream.on("data", (chunk) => chunks.push(chunk));
+  stream.on("error", reject);
+  stream.on("end", () => resolve(Buffer.concat(chunks)));
+});
+
+const copyMinioObjectToFile = async (bucket, objectName, targetFile) => {
+  const dataStream = await getMinioObjectStream(bucket, objectName);
+  fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+  await new Promise((resolve, reject) => {
+    const writeStream = fs.createWriteStream(targetFile);
+    dataStream.on("error", reject);
+    writeStream.on("error", reject);
+    writeStream.on("finish", resolve);
+    dataStream.pipe(writeStream);
+  });
+};
+
+const downloadMinioPrefixToDirectory = async (bucket, objectPrefix, targetDir) => {
+  const normalizedPrefix = String(objectPrefix || "").replace(/^\/+/, "").replace(/\/?$/, "/");
+  const objectNames = await listMinioObjects(bucket, normalizedPrefix, true);
+  if (!objectNames.length) {
+    throw new Error(`No se encontraron objetos en MinIO bajo ${normalizedPrefix}`);
+  }
+  for (const objectName of objectNames) {
+    if (!objectName.startsWith(normalizedPrefix)) {
+      continue;
+    }
+    const relativePath = objectName.slice(normalizedPrefix.length);
+    if (!relativePath) {
+      continue;
+    }
+    await copyMinioObjectToFile(bucket, objectName, path.join(targetDir, relativePath));
+  }
+};
+
+const fPutObject = (bucket, objectName, filePath) => new Promise((resolve, reject) => {
+  getMinioClient().fPutObject(bucket, objectName, filePath, {}, (error, etag) => {
+    if (error) {
+      reject(error);
+      return;
+    }
+    resolve(etag);
+  });
+});
+
+const ensureMinioBucket = (bucket) => new Promise((resolve, reject) => {
+  getMinioClient().bucketExists(bucket, (checkError, exists) => {
+    if (checkError) {
+      reject(checkError);
+      return;
+    }
+    if (exists) {
+      resolve(true);
+      return;
+    }
+    getMinioClient().makeBucket(bucket, "", (makeError) => {
+      if (makeError) {
+        reject(makeError);
+        return;
+      }
+      resolve(true);
+    });
+  });
+});
+
+const normalizeObjectName = (prefix, relativePath) => {
+  const cleanPrefix = String(prefix || "").replace(/^\/+|\/+$/g, "");
+  const cleanRelative = String(relativePath || "").replace(/^\/+|\/+$/g, "");
+  if (!cleanPrefix) {
+    return cleanRelative;
+  }
+  if (!cleanRelative) {
+    return cleanPrefix;
+  }
+  return `${cleanPrefix}/${cleanRelative}`;
+};
+
+const uploadDirectoryToMinio = async (bucket, objectPrefix, sourceDir) => {
+  await ensureMinioBucket(bucket);
+  const files = walkFiles(sourceDir).filter((filePath) => !path.basename(filePath).startsWith("."));
+  for (const filePath of files) {
+    const relativePath = path.relative(sourceDir, filePath).replace(/\\/g, "/");
+    const objectName = normalizeObjectName(objectPrefix, relativePath);
+    await fPutObject(bucket, objectName, filePath);
+  }
+  return files.length;
+};
+
+const parseAvailableFormats = (value) => {
+  if (!value) {
+    return {};
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const normalizeNumericId = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+};
+
+const findPreferredPdfObject = (objectNames = []) => {
+  const pdfCandidates = (objectNames || []).filter((name) => /\.pdf$/i.test(String(name || "")));
+  if (!pdfCandidates.length) {
+    return null;
+  }
+  const preferredMatchers = [
+    /\/render\/output\/pdf\/.+\.pdf$/i,
+    /\/render\/.+\.pdf$/i,
+    /\/preview\/.+\.pdf$/i,
+    /\.pdf$/i
+  ];
+  for (const matcher of preferredMatchers) {
+    const match = pdfCandidates.find((name) => matcher.test(name));
+    if (match) {
+      return match;
+    }
+  }
+  return pdfCandidates[0];
+};
+
+const buildArtifactModeDir = (baseDir, mode, format) =>
+  path.join(baseDir, "template", "modes", mode, format, "src");
+
+const setAvailableFormatEntry = (availableFormats, mode, format, baseObjectPrefix) => {
+  if (!availableFormats[mode]) {
+    availableFormats[mode] = {};
+  }
+  availableFormats[mode][format] = {
+    entry_object_key: `${baseObjectPrefix}template/modes/${mode}/${format}/src/`
+  };
+};
+
+const validatePackagedArtifactDraft = (draftDir, availableFormats) => {
+  const schemaPath = path.join(draftDir, "schema.json");
+  const metaPath = path.join(draftDir, "meta.yaml");
+  const templateDir = path.join(draftDir, "template");
+  if (!fs.existsSync(schemaPath) || !fs.existsSync(metaPath) || !fs.existsSync(templateDir)) {
+    throw new Error("El artifact no cumple la estructura base requerida (meta.yaml, schema.json y template/).");
+  }
+  for (const [mode, formats] of Object.entries(availableFormats || {})) {
+    for (const format of Object.keys(formats || {})) {
+      const dirPath = buildArtifactModeDir(draftDir, mode, format);
+      if (!hasVisibleFiles(dirPath)) {
+        throw new Error(`La salida ${mode}/${format} no cumple la estructura esperada en template/modes/${mode}/${format}/src/.`);
+      }
+    }
+  }
 };
 
 const parseJsonObject = (value, fieldLabel) => {
@@ -204,8 +432,8 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.process_id) {
         throw new Error("Selecciona un proceso base para la definicion.");
       }
-      if (!candidate.variation_key || !String(candidate.variation_key).trim()) {
-        throw new Error("Ingresa la serie o variante de la definicion.");
+      if (!candidate.series_id) {
+        throw new Error("Selecciona una serie de definicion.");
       }
       if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
         throw new Error("La version de la definicion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
@@ -214,6 +442,23 @@ const validateTableRules = (tableName, candidate) => {
         throw new Error("Selecciona la fecha de vigencia inicial de la definicion.");
       }
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "definiciones de proceso");
+      break;
+    case "process_definition_series":
+      if (!candidate.process_id) {
+        throw new Error("Selecciona un proceso para la serie.");
+      }
+      if (!candidate.source_type || !["unit_type", "cargo", "legacy"].includes(String(candidate.source_type))) {
+        throw new Error("Selecciona el origen de la serie.");
+      }
+      if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
+        throw new Error("Una serie por tipo de unidad requiere seleccionar un tipo de unidad.");
+      }
+      if (candidate.source_type === "cargo" && !candidate.cargo_id) {
+        throw new Error("Una serie por cargo requiere seleccionar un cargo.");
+      }
+      if (candidate.source_type !== "legacy" && candidate.unit_type_id && candidate.cargo_id) {
+        throw new Error("La serie debe asociarse a un tipo de unidad o a un cargo, no a ambos.");
+      }
       break;
     case "process_target_rules":
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "reglas de alcance");
@@ -264,7 +509,15 @@ const validateTableRules = (tableName, candidate) => {
         }
       }
       break;
+    case "template_seeds":
+      if (!candidate.seed_code || !candidate.source_path) {
+        throw new Error("Debes registrar el codigo y la ruta fuente del seed.");
+      }
+      break;
     case "template_artifacts":
+      if (candidate.artifact_stage && !ARTIFACT_STAGE_VALUES.has(String(candidate.artifact_stage))) {
+        throw new Error("La etapa del artifact debe ser: draft, review, approved, published o archived.");
+      }
       if (!candidate.bucket || !candidate.base_object_prefix) {
         throw new Error("Debes registrar bucket y prefijo base del artifact.");
       }
@@ -272,6 +525,9 @@ const validateTableRules = (tableName, candidate) => {
         const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
         if (!availableFormats || !Object.keys(availableFormats).length) {
           throw new Error("Debes registrar al menos un formato disponible en available_formats.");
+        }
+        if (!candidate.artifact_origin) {
+          candidate.artifact_origin = candidate.owner_ref ? "user" : "system";
         }
       }
       break;
@@ -353,6 +609,34 @@ export default class SqlAdminService {
     if (rows?.length) {
       throw new Error("Ya existe una definicion con esa serie y version para el proceso seleccionado.");
     }
+  }
+
+  async resolveProcessDefinitionSeries(candidate, { connection = this.pool, allowLegacy = false } = {}) {
+    this.ensurePool();
+    const processId = Number(candidate?.process_id);
+    const seriesId = Number(candidate?.series_id);
+    if (!processId || !seriesId) {
+      throw new Error("Selecciona una serie valida para la definicion.");
+    }
+    const [rows] = await connection.query(
+      `SELECT id, process_id, source_type, unit_type_id, cargo_id, code, label, is_active
+       FROM process_definition_series
+       WHERE id = ?
+         AND process_id = ?
+       LIMIT 1`,
+      [seriesId, processId]
+    );
+    const series = rows?.[0] || null;
+    if (!series) {
+      throw new Error("La serie seleccionada no pertenece al proceso indicado.");
+    }
+    if (!Number(series.is_active)) {
+      throw new Error("La serie seleccionada esta inactiva.");
+    }
+    if (!allowLegacy && String(series.source_type) === "legacy") {
+      throw new Error("Las series heredadas no se pueden usar para nuevas definiciones. Crea una serie basada en tipo de unidad o cargo.");
+    }
+    return series;
   }
 
   async retireActiveDefinitionsInSeries({ processId, variationKey, excludeId = null, connection = this.pool }) {
@@ -488,6 +772,17 @@ export default class SqlAdminService {
       }
     }
 
+    if (tableName === "template_artifacts") {
+      joinClause = "LEFT JOIN template_seeds ts ON ts.id = template_artifacts.template_seed_id";
+      columnPrefix = "template_artifacts.";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      if (availableFields.includes("seed_display_name")) {
+        selectFields.push("ts.display_name AS seed_display_name");
+        orderableFields.push("seed_display_name");
+      }
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+    }
+
     if (q && config.searchFields?.length) {
       const like = `%${q}%`;
       const searchClauses = config.searchFields.map((field) => `${columnPrefix}${field} LIKE ?`);
@@ -518,6 +813,8 @@ export default class SqlAdminService {
     const orderColumn =
       (tableName === "processes" && safeOrderBy === "active_definition_version")
         ? safeOrderBy
+        : (tableName === "template_artifacts" && safeOrderBy === "seed_display_name")
+          ? safeOrderBy
         : joinClause
           ? `${tableName}.${safeOrderBy}`
           : safeOrderBy;
@@ -689,6 +986,32 @@ export default class SqlAdminService {
     };
   }
 
+  async ensureDefinitionHasArtifactsForActivation(definitionId, candidate = null, connection = this.pool) {
+    const normalizedDefinitionId = Number(definitionId);
+    if (!normalizedDefinitionId) {
+      return;
+    }
+
+    const requiresDocument = Number(candidate?.has_document ?? 0) === 1;
+    if (!requiresDocument) {
+      return;
+    }
+
+    const [rows] = await connection.query(
+      `SELECT COUNT(*) AS total
+       FROM process_definition_templates
+       WHERE process_definition_id = ?`,
+      [normalizedDefinitionId]
+    );
+
+    const total = Number(rows?.[0]?.total || 0);
+    if (total < 1) {
+      throw new Error(
+        "No se puede activar una definicion con documento si no tiene al menos un artifact vinculado en Plantillas de definicion."
+      );
+    }
+  }
+
   async create(tableName, data) {
     this.ensurePool();
     const config = getConfig(tableName);
@@ -703,12 +1026,48 @@ export default class SqlAdminService {
       : null;
 
     if (tableName === "process_definition_versions") {
-      if (typeof payload.variation_key === "string") {
-        payload.variation_key = payload.variation_key.trim();
-      }
       if (typeof payload.definition_version === "string") {
         payload.definition_version = payload.definition_version.trim();
       }
+    }
+
+    if (tableName === "process_definition_series") {
+      const sourceType = String(payload.source_type || "unit_type");
+      payload.source_type = sourceType;
+      let code = "";
+      let label = "";
+      if (sourceType === "unit_type") {
+        const unitType = await this.getByKeys("unit_types", { id: payload.unit_type_id });
+        if (!unitType) {
+          throw new Error("El tipo de unidad seleccionado no existe.");
+        }
+        payload.cargo_id = null;
+        code = slugify(unitType.name);
+        label = unitType.name;
+      } else if (sourceType === "cargo") {
+        const cargo = await this.getByKeys("cargos", { id: payload.cargo_id });
+        if (!cargo) {
+          throw new Error("El cargo seleccionado no existe.");
+        }
+        payload.unit_type_id = null;
+        code = slugify(cargo.name);
+        label = cargo.name;
+      } else {
+        throw new Error("Las series legacy solo se crean por migracion.");
+      }
+      const [dupRows] = await this.pool.query(
+        `SELECT id
+         FROM process_definition_series
+         WHERE process_id = ?
+           AND code = ?
+         LIMIT 1`,
+        [Number(payload.process_id), code]
+      );
+      if (dupRows?.length) {
+        throw new Error("Ya existe una serie con ese origen para el proceso seleccionado.");
+      }
+      payload.code = code;
+      payload.label = label;
     }
 
     if (tableName === "persons") {
@@ -746,6 +1105,10 @@ export default class SqlAdminService {
       );
     }
 
+    if (tableName === "template_artifacts") {
+      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de artifact de usuario.");
+    }
+
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
     const missing = required.filter((field) => payload[field.name] === undefined || payload[field.name] === "");
 
@@ -761,6 +1124,8 @@ export default class SqlAdminService {
       if (requestedStatus !== "draft") {
         throw new Error("Las nuevas definiciones solo pueden crearse en estado draft.");
       }
+      const series = await this.resolveProcessDefinitionSeries(payload);
+      payload.variation_key = String(series.code || "").trim();
       payload.status = "draft";
       await this.ensureProcessDefinitionVersionAvailable(payload);
     }
@@ -902,14 +1267,76 @@ export default class SqlAdminService {
         }
       );
     }
+    if (tableName === "process_definition_series") {
+      if (Object.prototype.hasOwnProperty.call(updates, "process_id")) {
+        if (Number(updates.process_id) !== Number(existing.process_id)) {
+          throw new Error("No se puede cambiar el proceso de una serie.");
+        }
+        delete updates.process_id;
+      }
+      const candidateSeries = { ...existing, ...updates };
+      const sourceType = String(candidateSeries.source_type || existing.source_type || "legacy");
+      if (sourceType === "legacy") {
+        throw new Error("Las series legacy no se editan manualmente.");
+      }
+      let code = "";
+      let label = "";
+      if (sourceType === "unit_type") {
+        if (!candidateSeries.unit_type_id) {
+          throw new Error("La serie requiere un tipo de unidad.");
+        }
+        const unitType = await this.getByKeys("unit_types", { id: candidateSeries.unit_type_id });
+        if (!unitType) {
+          throw new Error("El tipo de unidad seleccionado no existe.");
+        }
+        updates.cargo_id = null;
+        code = slugify(unitType.name);
+        label = unitType.name;
+      } else if (sourceType === "cargo") {
+        if (!candidateSeries.cargo_id) {
+          throw new Error("La serie requiere un cargo.");
+        }
+        const cargo = await this.getByKeys("cargos", { id: candidateSeries.cargo_id });
+        if (!cargo) {
+          throw new Error("El cargo seleccionado no existe.");
+        }
+        updates.unit_type_id = null;
+        code = slugify(cargo.name);
+        label = cargo.name;
+      } else {
+        throw new Error("El origen de serie no es valido.");
+      }
+      const [dupRows] = await this.pool.query(
+        `SELECT id
+         FROM process_definition_series
+         WHERE process_id = ?
+           AND code = ?
+           AND id <> ?
+         LIMIT 1`,
+        [Number(existing.process_id), code, Number(existing.id)]
+      );
+      if (dupRows?.length) {
+        throw new Error("Ya existe otra serie con ese origen para el proceso seleccionado.");
+      }
+      updates.code = code;
+      updates.label = label;
+    }
+    if (tableName === "template_artifacts") {
+      if (String(existing.artifact_origin || "system") === "system") {
+        throw new Error("Los artifacts del sistema se sincronizan desde MinIO y no se pueden editar manualmente.");
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "artifact_origin")) {
+        if (String(updates.artifact_origin || "") !== String(existing.artifact_origin || "")) {
+          throw new Error("No se puede cambiar el origen del artifact.");
+        }
+        delete updates.artifact_origin;
+      }
+    }
     let activateDraftVersion = false;
     let processDefinitionActivationNotice = "";
     let processDefinitionSeriesContext = null;
 
     if (tableName === "process_definition_versions") {
-      if (typeof updates.variation_key === "string") {
-        updates.variation_key = updates.variation_key.trim();
-      }
       if (typeof updates.definition_version === "string") {
         updates.definition_version = updates.definition_version.trim();
       }
@@ -952,6 +1379,12 @@ export default class SqlAdminService {
           throw new Error("No se puede cambiar el proceso de una definicion.");
         }
         delete updates.process_id;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "series_id")) {
+        if (!isSameValue("series_id", updates.series_id, existing.series_id)) {
+          throw new Error("No se puede cambiar la serie de una definicion.");
+        }
+        delete updates.series_id;
       }
       if (Object.prototype.hasOwnProperty.call(updates, "variation_key")) {
         if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
@@ -1037,6 +1470,7 @@ export default class SqlAdminService {
         const connection = await this.pool.getConnection();
         try {
           await connection.beginTransaction();
+          await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, candidate, connection);
           const retiredCount = await this.retireActiveDefinitionsInSeries({
             ...processDefinitionSeriesContext,
             connection
@@ -1060,6 +1494,14 @@ export default class SqlAdminService {
           `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
           [...values, ...params]
         );
+        if (tableName === "process_definition_series" && Object.prototype.hasOwnProperty.call(updates, "code")) {
+          await this.pool.query(
+            `UPDATE process_definition_versions
+             SET variation_key = ?
+             WHERE series_id = ?`,
+            [updates.code, Number(existing.id)]
+          );
+        }
       }
     } catch (error) {
       if (
@@ -1100,7 +1542,7 @@ export default class SqlAdminService {
     }
 
     const bucket = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
-    const basePrefixRoot = (process.env.MINIO_TEMPLATES_PREFIX || "Plantillas").replace(/^\/+|\/+$/g, "");
+    const basePrefixRoot = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
 
     let inserted = 0;
     let updated = 0;
@@ -1127,10 +1569,40 @@ export default class SqlAdminService {
         const metaContent = fs.readFileSync(metaPath, "utf8");
         const displayName = getYamlScalar(metaContent, "name") || templateCode;
         const sourceVersion = getYamlScalar(metaContent, "version") || "1.0.0";
+        const repositoryStage = (getYamlScalar(metaContent, "repository_stage") || "published").trim() || "published";
+        const rawSeedCode = getYamlScalar(metaContent, "seed_code") || "";
+        const legacySeedName = getYamlScalar(metaContent, "seed") || "";
+        if (!ARTIFACT_STAGE_VALUES.has(repositoryStage)) {
+          throw new Error(
+            `El repository_stage de ${metaPath} debe ser uno de: draft, review, approved, published, archived.`
+          );
+        }
         const versionHash = hashDirectory(versionDir);
         const baseObjectPrefix = `${basePrefixRoot}/${templateCode}/${storageVersion}/`;
         const schemaObjectKey = `${baseObjectPrefix}schema.json`;
         const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
+        let templateSeedId = null;
+        const candidateSeedCodes = [];
+        if (rawSeedCode) {
+          candidateSeedCodes.push(rawSeedCode);
+        }
+        if (legacySeedName) {
+          candidateSeedCodes.push(`latex/${legacySeedName}`);
+          candidateSeedCodes.push(legacySeedName);
+        }
+        for (const candidateSeedCode of candidateSeedCodes) {
+          const [seedRows] = await this.pool.query(
+            `SELECT id
+             FROM template_seeds
+             WHERE seed_code = ?
+             LIMIT 1`,
+            [candidateSeedCode]
+          );
+          if (seedRows?.length) {
+            templateSeedId = seedRows[0].id;
+            break;
+          }
+        }
 
         const candidates = [
           {
@@ -1195,7 +1667,13 @@ export default class SqlAdminService {
           await this.pool.query(
             `UPDATE template_artifacts
              SET display_name = ?,
+                 description = COALESCE(description, NULL),
+                 owner_ref = NULL,
+                 owner_person_id = NULL,
+                 artifact_origin = 'system',
                  source_version = ?,
+                 artifact_stage = ?,
+                 template_seed_id = ?,
                  bucket = ?,
                  base_object_prefix = ?,
                  available_formats = ?,
@@ -1207,6 +1685,8 @@ export default class SqlAdminService {
             [
               displayName,
               sourceVersion,
+              repositoryStage,
+              templateSeedId,
               bucket,
               baseObjectPrefix,
               availableFormatsJson,
@@ -1219,11 +1699,17 @@ export default class SqlAdminService {
           updated += 1;
         } else {
           await this.pool.query(
-            `INSERT INTO template_artifacts (
+              `INSERT INTO template_artifacts (
+              template_seed_id,
+              owner_person_id,
               template_code,
               display_name,
+              description,
+              owner_ref,
+              artifact_origin,
               source_version,
               storage_version,
+              artifact_stage,
               bucket,
               base_object_prefix,
               available_formats,
@@ -1231,12 +1717,18 @@ export default class SqlAdminService {
               meta_object_key,
               content_hash,
               is_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [
+              templateSeedId,
+              null,
               templateCode,
               displayName,
+              null,
+              null,
+              "system",
               sourceVersion,
               storageVersion,
+              repositoryStage,
               bucket,
               baseObjectPrefix,
               availableFormatsJson,
@@ -1258,6 +1750,512 @@ export default class SqlAdminService {
       bucket,
       prefix: basePrefixRoot
     };
+  }
+
+  async syncTemplateSeedsFromSource() {
+    this.ensurePool();
+    const bucket = MINIO_TEMPLATES_BUCKET;
+    const prefixRoot = `${MINIO_TEMPLATES_SEEDS_PREFIX}/`;
+    const objectNames = await listMinioObjects(bucket, prefixRoot, true);
+    if (!objectNames.length) {
+      throw new Error(`No existen seeds publicados en MinIO bajo ${prefixRoot}`);
+    }
+
+    let discovered = 0;
+    let inserted = 0;
+    let updated = 0;
+
+    const seedGroups = new Map();
+    for (const objectName of objectNames) {
+      if (!objectName.startsWith(prefixRoot)) {
+        continue;
+      }
+      const relativePath = objectName.slice(prefixRoot.length);
+      const parts = relativePath.split("/").filter(Boolean);
+      if (parts.length < 2) {
+        continue;
+      }
+
+      const seedType = parts[0];
+      const seedName = parts[1];
+      const seedCode = `${seedType}/${seedName}`;
+      const objectSuffix = parts.slice(2).join("/");
+
+      if (!seedGroups.has(seedCode)) {
+        seedGroups.set(seedCode, {
+          seedCode,
+          displayName: humanizeSlug(seedName),
+          seedType,
+          sourcePath: `${prefixRoot}${seedType}/${seedName}/`,
+          previewPath: null,
+          readmeObjectKey: null,
+          objectNames: []
+        });
+      }
+
+      const group = seedGroups.get(seedCode);
+      group.objectNames.push(objectName);
+      if (!group.readmeObjectKey && objectSuffix === "README.md") {
+        group.readmeObjectKey = objectName;
+      }
+    }
+
+    for (const group of seedGroups.values()) {
+      discovered += 1;
+      group.previewPath = findPreferredPdfObject(group.objectNames);
+      let description = `Seed ${group.displayName}`;
+      if (group.readmeObjectKey) {
+        try {
+          const readmeStream = await getMinioObjectStream(bucket, group.readmeObjectKey);
+          const readmeContent = (await streamToBuffer(readmeStream)).toString("utf8");
+          const firstBodyLine = readmeContent
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .find((line) => line && !line.startsWith("#"));
+          if (firstBodyLine) {
+            description = firstBodyLine.slice(0, 255);
+          }
+        } catch {
+          // Fallback to generated description.
+        }
+      }
+
+      const [existingRows] = await this.pool.query(
+        `SELECT id
+         FROM template_seeds
+         WHERE seed_code = ?
+         LIMIT 1`,
+        [group.seedCode]
+      );
+
+      if (existingRows?.length) {
+        await this.pool.query(
+          `UPDATE template_seeds
+           SET display_name = ?,
+               description = ?,
+               seed_type = ?,
+               source_path = ?,
+               preview_path = ?,
+               is_active = 1
+           WHERE id = ?`,
+          [group.displayName, description, group.seedType, group.sourcePath, group.previewPath, existingRows[0].id]
+        );
+        updated += 1;
+      } else {
+        await this.pool.query(
+          `INSERT INTO template_seeds (
+            seed_code,
+            display_name,
+            description,
+            seed_type,
+            source_path,
+            preview_path,
+            is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, 1)`,
+          [group.seedCode, group.displayName, description, group.seedType, group.sourcePath, group.previewPath]
+        );
+        inserted += 1;
+      }
+    }
+
+    return { discovered, inserted, updated, bucket, prefix: MINIO_TEMPLATES_SEEDS_PREFIX };
+  }
+
+  async getTemplateSeedPreview(seedId) {
+    this.ensurePool();
+    const [rows] = await this.pool.query(
+      `SELECT id, display_name, preview_path, source_path
+       FROM template_seeds
+       WHERE id = ?
+       LIMIT 1`,
+      [Number(seedId)]
+    );
+    const row = rows?.[0];
+    if (!row) {
+      throw new Error("El seed seleccionado no existe.");
+    }
+    if (!row.preview_path) {
+      const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
+      const fallbackPreviewPath = findPreferredPdfObject(seedObjects);
+      if (!fallbackPreviewPath) {
+        throw new Error("El seed seleccionado no tiene preview PDF publicado en MinIO.");
+      }
+      row.preview_path = fallbackPreviewPath;
+      await this.pool.query(
+        "UPDATE template_seeds SET preview_path = ? WHERE id = ?",
+        [fallbackPreviewPath, row.id]
+      );
+    }
+    let objectStream;
+    try {
+      objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (!/does not exist|NoSuchKey/i.test(message)) {
+        throw error;
+      }
+      const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
+      const fallbackPreviewPath = findPreferredPdfObject(seedObjects);
+      if (!fallbackPreviewPath) {
+        throw new Error("El seed seleccionado no tiene preview PDF publicado en MinIO.");
+      }
+      row.preview_path = fallbackPreviewPath;
+      await this.pool.query(
+        "UPDATE template_seeds SET preview_path = ? WHERE id = ?",
+        [fallbackPreviewPath, row.id]
+      );
+      objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
+    }
+    return {
+      stream: objectStream,
+      fileName: `${slugify(row.display_name || "seed") || "seed"}-preview.pdf`
+    };
+  }
+
+  async getNextStorageVersionForTemplateCode(templateCode, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT storage_version
+       FROM template_artifacts
+       WHERE template_code = ?`,
+      [templateCode]
+    );
+    let maxVersion = 0;
+    for (const row of rows || []) {
+      const match = String(row.storage_version || "").match(/^v(\d+)$/i);
+      if (!match) {
+        continue;
+      }
+      maxVersion = Math.max(maxVersion, Number(match[1]));
+    }
+    return `v${String(maxVersion + 1).padStart(4, "0")}`;
+  }
+
+  async createTemplateArtifactDraft(data = {}, files = {}) {
+    return this.saveTemplateArtifactDraft(null, data, files);
+  }
+
+  async updateTemplateArtifactDraft(artifactId, data = {}, files = {}) {
+    return this.saveTemplateArtifactDraft(artifactId, data, files);
+  }
+
+  async saveTemplateArtifactDraft(artifactId, data = {}, files = {}) {
+    this.ensurePool();
+
+    const displayName = String(data.display_name || "").trim();
+    const description = String(data.description || "").trim() || null;
+    const sourceVersion = String(data.source_version || "1.0.0").trim();
+    const ownerCedula = String(data.owner_cedula || "").trim();
+    const requestedOwnerPersonId = normalizeNumericId(data.owner_person_id);
+    const templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
+    const isEdit = artifactId !== null && artifactId !== undefined && artifactId !== "";
+
+    if (!displayName) {
+      throw new Error("Ingresa el nombre del artifact borrador.");
+    }
+    if (!ownerCedula && !isEdit) {
+      throw new Error("No se pudo inferir la cedula del usuario actual para crear el borrador.");
+    }
+
+    const uploadedFiles = {
+      pdf: files?.pdf_file?.[0] || null,
+      docx: files?.docx_file?.[0] || null,
+      xlsx: files?.xlsx_file?.[0] || null,
+      pptx: files?.pptx_file?.[0] || null
+    };
+
+    let existingArtifact = null;
+    if (isEdit) {
+      existingArtifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
+      if (!existingArtifact) {
+        throw new Error("El artifact seleccionado no existe.");
+      }
+      if (String(existingArtifact.artifact_origin || "system") !== "user") {
+        throw new Error("Solo se pueden editar artifacts de usuario con este flujo.");
+      }
+    }
+
+    const existingAvailableFormats = parseAvailableFormats(existingArtifact?.available_formats);
+
+    if (
+      !templateSeedId
+      && !Object.values(uploadedFiles).some(Boolean)
+      && !Object.keys(existingAvailableFormats).length
+    ) {
+      throw new Error("Selecciona un seed o sube al menos un archivo para crear el borrador.");
+    }
+
+    const ownerRef = String(existingArtifact?.owner_ref || ownerCedula).slice(0, 180);
+    if (!ownerRef) {
+      throw new Error("No se pudo resolver el propietario del artifact.");
+    }
+    let ownerPersonId = normalizeNumericId(existingArtifact?.owner_person_id);
+    if (requestedOwnerPersonId) {
+      const ownerPerson = await this.getByKeys("persons", { id: requestedOwnerPersonId });
+      if (!ownerPerson) {
+        throw new Error("La persona propietaria indicada no existe.");
+      }
+      ownerPersonId = requestedOwnerPersonId;
+    } else if (!ownerPersonId && ownerRef) {
+      const [ownerRows] = await this.pool.query(
+        `SELECT id
+         FROM persons
+         WHERE cedula = ?
+         LIMIT 1`,
+        [ownerRef]
+      );
+      if (ownerRows?.length) {
+        ownerPersonId = ownerRows[0].id;
+      }
+    }
+    const baseSlug = slugify(displayName) || "artifact";
+    const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
+    const storageVersion = existingArtifact?.storage_version || await this.getNextStorageVersionForTemplateCode(templateCode);
+    const bucket = String(existingArtifact?.bucket || MINIO_TEMPLATES_BUCKET);
+    const baseObjectPrefix = String(existingArtifact?.base_object_prefix || `${TEMPLATE_USERS_PREFIX}/${ownerRef}/${templateCode}/${storageVersion}/`);
+    const artifactStage = String(existingArtifact?.artifact_stage || "draft");
+    const draftDir = path.join(
+      BACKEND_STORAGE_ROOT,
+      "minio-jobs",
+      "templates-drafts",
+      ownerRef,
+      templateCode,
+      storageVersion
+    );
+
+    fs.rmSync(draftDir, { recursive: true, force: true });
+    fs.mkdirSync(draftDir, { recursive: true });
+    fs.mkdirSync(path.join(draftDir, "template", "modes"), { recursive: true });
+    const availableFormats = {};
+
+    const preserveExistingFormat = async (mode, format) => {
+      const existingEntry = existingAvailableFormats?.[mode]?.[format];
+      if (!existingEntry?.entry_object_key) {
+        return false;
+      }
+      const targetDir = buildArtifactModeDir(draftDir, mode, format);
+      const existingObjectKey = String(existingEntry.entry_object_key);
+      if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+        const fileName = path.basename(existingObjectKey);
+        await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
+      } else {
+        await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
+      }
+      setAvailableFormatEntry(availableFormats, mode, format, baseObjectPrefix);
+      return true;
+    };
+
+    let seedRow = null;
+    if (templateSeedId) {
+      seedRow = await this.getByKeys("template_seeds", { id: templateSeedId });
+      if (!seedRow) {
+        throw new Error("El seed seleccionado no existe.");
+      }
+      await downloadMinioPrefixToDirectory(
+        MINIO_TEMPLATES_BUCKET,
+        `${seedRow.source_path}src/`,
+        buildArtifactModeDir(draftDir, "system", "jinja2")
+      );
+      setAvailableFormatEntry(availableFormats, "system", "jinja2", baseObjectPrefix);
+      const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
+      try {
+        await copyMinioObjectToFile(
+          MINIO_TEMPLATES_BUCKET,
+          defaultsObjectKey,
+          path.join(draftDir, "data.yaml")
+        );
+      } catch {
+        // Optional for non-latex seeds.
+      }
+      if (String(seedRow.seed_type || "").toLowerCase() === "latex") {
+        await downloadMinioPrefixToDirectory(
+          MINIO_TEMPLATES_BUCKET,
+          `${seedRow.source_path}render/`,
+          buildArtifactModeDir(draftDir, "user", "latex")
+        );
+        setAvailableFormatEntry(availableFormats, "user", "latex", baseObjectPrefix);
+      }
+    }
+
+    if (!seedRow) {
+      await preserveExistingFormat("system", "jinja2");
+      await preserveExistingFormat("user", "latex");
+    }
+
+    const fileFieldMap = {
+      pdf: "pdf",
+      docx: "docx",
+      xlsx: "xlsx",
+      pptx: "pptx"
+    };
+
+    for (const [format, file] of Object.entries(uploadedFiles)) {
+      const relativeDir = path.join("template", "modes", "user", fileFieldMap[format], "src");
+      const targetDir = path.join(draftDir, relativeDir);
+      const existingEntry = existingAvailableFormats?.user?.[fileFieldMap[format]];
+
+      if (file) {
+        const safeName = slugify(path.parse(file.originalname || format).name) || format;
+        const extension = path.extname(file.originalname || "") || `.${format}`;
+        const fallbackFileName = `${safeName}${extension.toLowerCase()}`;
+        const fileName = existingEntry?.entry_object_key
+          ? path.basename(existingEntry.entry_object_key)
+          : fallbackFileName;
+        fs.mkdirSync(targetDir, { recursive: true });
+        fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
+        setAvailableFormatEntry(availableFormats, "user", fileFieldMap[format], baseObjectPrefix);
+        continue;
+      }
+
+      if (existingEntry?.entry_object_key) {
+        const existingObjectKey = String(existingEntry.entry_object_key);
+        if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
+          const fileName = path.basename(existingObjectKey);
+          await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
+        } else {
+          await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
+        }
+        setAvailableFormatEntry(availableFormats, "user", fileFieldMap[format], baseObjectPrefix);
+      }
+    }
+
+    if (!Object.keys(availableFormats).length) {
+      throw new Error("No se detectaron formatos disponibles para el borrador.");
+    }
+
+    const schemaObjectKey = `${baseObjectPrefix}schema.json`;
+    const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
+    fs.writeFileSync(path.join(draftDir, "schema.json"), "{}\n", "utf8");
+    const metaLines = [
+      `name: "${displayName.replace(/"/g, '\\"')}"`,
+      `version: "${sourceVersion.replace(/"/g, '\\"')}"`,
+      `template_code: "${templateCode.replace(/"/g, '\\"')}"`,
+      `owner_ref: "${ownerRef.replace(/"/g, '\\"')}"`,
+      `stage: ${artifactStage}`
+    ];
+    if (description) {
+      metaLines.push(`description: "${description.replace(/"/g, '\\"')}"`);
+    }
+    if (seedRow?.seed_code) {
+      metaLines.push(`seed_code: "${String(seedRow.seed_code).replace(/"/g, '\\"')}"`);
+    }
+    fs.writeFileSync(path.join(draftDir, "meta.yaml"), `${metaLines.join("\n")}\n`, "utf8");
+    validatePackagedArtifactDraft(draftDir, availableFormats);
+
+    const contentHash = hashDirectory(draftDir);
+    let createdId = isEdit ? Number(existingArtifact.id) : null;
+
+    try {
+      await uploadDirectoryToMinio(bucket, baseObjectPrefix, draftDir);
+
+      if (isEdit) {
+        await this.pool.query(
+          `UPDATE template_artifacts
+           SET template_seed_id = ?,
+               owner_person_id = ?,
+               display_name = ?,
+               description = ?,
+               owner_ref = ?,
+               artifact_origin = 'user',
+               source_version = ?,
+               artifact_stage = ?,
+               bucket = ?,
+               base_object_prefix = ?,
+               available_formats = ?,
+               schema_object_key = ?,
+               meta_object_key = ?,
+               content_hash = ?,
+               is_active = 1
+           WHERE id = ?`,
+          [
+            templateSeedId,
+            ownerPersonId,
+            displayName,
+            description,
+            ownerRef,
+            sourceVersion,
+            artifactStage,
+            bucket,
+            baseObjectPrefix,
+            JSON.stringify(availableFormats),
+            schemaObjectKey,
+            metaObjectKey,
+            contentHash,
+            createdId
+          ]
+        );
+      } else {
+        const [result] = await this.pool.query(
+          `INSERT INTO template_artifacts (
+            template_seed_id,
+            owner_person_id,
+            template_code,
+            display_name,
+            description,
+            owner_ref,
+            artifact_origin,
+            source_version,
+            storage_version,
+            artifact_stage,
+            bucket,
+            base_object_prefix,
+            available_formats,
+            schema_object_key,
+            meta_object_key,
+            content_hash,
+            is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+          [
+            templateSeedId,
+            ownerPersonId,
+            templateCode,
+            displayName,
+            description,
+            ownerRef,
+            "user",
+            sourceVersion,
+            storageVersion,
+            bucket,
+            baseObjectPrefix,
+            JSON.stringify(availableFormats),
+            schemaObjectKey,
+            metaObjectKey,
+            contentHash
+          ]
+        );
+        createdId = result.insertId;
+      }
+
+      return {
+        id: createdId,
+        template_seed_id: templateSeedId,
+        owner_person_id: ownerPersonId,
+        template_code: templateCode,
+        display_name: displayName,
+        description,
+        owner_ref: ownerRef,
+        artifact_origin: "user",
+        source_version: sourceVersion,
+        storage_version: storageVersion,
+        artifact_stage: artifactStage,
+        bucket,
+        base_object_prefix: baseObjectPrefix,
+        available_formats: availableFormats,
+        schema_object_key: schemaObjectKey,
+        meta_object_key: metaObjectKey,
+        content_hash: contentHash,
+        is_active: 1,
+        __notice: isEdit
+          ? "El artifact de usuario fue actualizado y cargado correctamente en MinIO."
+          : "El artifact de usuario fue cargado correctamente en MinIO y registrado en el sistema."
+      };
+    } catch (error) {
+      if (createdId && !isEdit) {
+        await this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [createdId]);
+      }
+      throw error;
+    } finally {
+      fs.rmSync(draftDir, { recursive: true, force: true });
+    }
   }
 
   async remove(tableName, keys) {

@@ -24,5 +24,9 @@ export const API_ROUTES = {
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
   ADMIN_SQL_TEMPLATE_ARTIFACTS_SYNC: `${API_PREFIX}/admin/sql/template_artifacts/sync`,
+  ADMIN_SQL_TEMPLATE_SEEDS_SYNC: `${API_PREFIX}/admin/sql/template_seeds/sync`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT: `${API_PREFIX}/admin/sql/template_artifacts/draft`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/draft/${artifactId}`,
+  ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`
 };

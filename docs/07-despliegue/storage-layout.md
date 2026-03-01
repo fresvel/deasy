@@ -9,7 +9,7 @@ en IDs.
 
 - Variable: `SHARED_STORAGE_ROOT`
 - En MinIO, la estructura se separa por buckets:
-  - `deasy-templates` para `Plantillas`
+  - `deasy-templates` para `System`, `Seeds` y `Users`
   - `deasy-documents` para `Unidades`
   - `deasy-chat` para `Chat`
   - `deasy-spool` para `Firmas`
@@ -18,7 +18,7 @@ en IDs.
 ## Estructura principal (IDs primero)
 
 ```
-/Plantillas
+/System
   /{template_id}/
     /v0001/
       template/
@@ -26,6 +26,22 @@ en IDs.
     /v0002/
       template/
       schema.json
+
+/Seeds
+  /{seed_type}/
+    /{seed_name}/
+      /README.md
+      /render/
+      /src/
+
+/Users
+  /{owner_ref}/
+    /{template_code}/
+      /v0001/
+        meta.yaml
+        schema.json
+        /seed
+        /files
 
 /Unidades
   /{unidad_id}/

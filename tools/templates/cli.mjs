@@ -41,6 +41,7 @@ function usage() {
   node tools/templates/cli.mjs catalog
   node tools/templates/cli.mjs package
   node tools/templates/cli.mjs publish [--skip-package]
+  node tools/templates/cli.mjs publish-seeds
 
 Notas:
   - La fuente vive en tools/templates/templates
@@ -236,6 +237,15 @@ function resolveSeedRoot(seedArg, allowHere = false) {
   fail(`Semilla no encontrada: ${seedArg}`);
 }
 
+function getSeedCodeFromRoot(seedRoot) {
+  const resolved = path.resolve(seedRoot);
+  const relative = path.relative(SEEDS_DIR, resolved).replace(/\\/g, "/");
+  if (!relative || relative.startsWith("..")) {
+    return "";
+  }
+  return relative.replace(/^\/+|\/+$/g, "");
+}
+
 function resolveTemplateVersionDir(args) {
   if (args.here === true) {
     return resolveHereMetaDir();
@@ -350,11 +360,13 @@ function writeMinimalLatexFiles(targetDir) {
   }
 }
 
-function buildMetaContent({ key, name, version, mode, engine, includeSystem = false }) {
+function buildMetaContent({ key, name, version, mode, engine, includeSystem = false, seedCode = "", seedName = "" }) {
   if (includeSystem || mode === "user") {
     return `key: "${escapeYamlString(key)}"
 export_id: ""
 name: "${escapeYamlString(name)}"
+${seedCode ? `seed_code: "${escapeYamlString(seedCode)}"\n` : ""}${seedName ? `seed: "${escapeYamlString(seedName)}"\n` : ""}# repository_stage: draft | review | approved | published | archived
+repository_stage: published
 version: ${version}
 storage_version: v0001
 modes:
@@ -376,6 +388,8 @@ origins: []
   return `key: "${escapeYamlString(key)}"
 export_id: ""
 name: "${escapeYamlString(name)}"
+${seedCode ? `seed_code: "${escapeYamlString(seedCode)}"\n` : ""}${seedName ? `seed: "${escapeYamlString(seedName)}"\n` : ""}# repository_stage: draft | review | approved | published | archived
+repository_stage: published
 version: ${version}
 storage_version: v0001
 modes:
@@ -439,6 +453,8 @@ function createTemplate(args) {
     fs.writeFileSync(metaPath, metaContent, "utf8");
   } else if (mode === "user" && engine === "latex") {
     const seedRoot = resolveSeedRoot(args.seed, false);
+    const seedCode = getSeedCodeFromRoot(seedRoot);
+    const seedName = seedCode ? seedCode.split("/").pop() : "";
     const seedSrc = path.join(seedRoot, "src");
     const seedDefaults = path.join(seedRoot, "defaults.yaml");
     if (!fs.existsSync(seedSrc) || !fs.existsSync(seedDefaults)) {
@@ -457,7 +473,16 @@ function createTemplate(args) {
     ]);
     fs.copyFileSync(seedDefaults, path.join(dest, "data.yaml"));
     renderDataJson(dest);
-    fs.writeFileSync(path.join(dest, "meta.yaml"), buildMetaContent({ key, name, version, mode, engine, includeSystem: true }), "utf8");
+    fs.writeFileSync(path.join(dest, "meta.yaml"), buildMetaContent({
+      key,
+      name,
+      version,
+      mode,
+      engine,
+      includeSystem: true,
+      seedCode,
+      seedName
+    }), "utf8");
   } else {
     if (mode === "user") {
       createDefaultUserModeDirs(dest);
@@ -615,6 +640,12 @@ function publishTemplates(skipPackage) {
   });
 }
 
+function publishSeeds() {
+  runCommand("docker", ["compose", "--profile", "storage-publish-seeds", "run", "--rm", "minio-publish-seeds"], {
+    cwd: DOCKER_DIR,
+  });
+}
+
 function main() {
   const [command, ...rest] = process.argv.slice(2);
   if (!command || command === "help" || command === "--help" || command === "-h") {
@@ -648,6 +679,9 @@ function main() {
       return;
     case "publish":
       publishTemplates(args["skip-package"] === true);
+      return;
+    case "publish-seeds":
+      publishSeeds();
       return;
     default:
       fail(`Comando desconocido: ${command}`);

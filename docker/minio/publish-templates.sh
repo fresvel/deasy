@@ -4,7 +4,7 @@ set -eu
 MINIO_ALIAS="local"
 MINIO_URL="http://minio:9000"
 BUCKET="${MINIO_TEMPLATES_BUCKET:-deasy-templates}"
-TEMPLATES_PREFIX="${MINIO_TEMPLATES_PREFIX:-Plantillas}"
+TEMPLATES_PREFIX="${MINIO_TEMPLATES_PREFIX:-System}"
 
 echo "Esperando MinIO en ${MINIO_URL}..."
 until mc alias set "$MINIO_ALIAS" "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do

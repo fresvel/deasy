@@ -37,25 +37,42 @@
 ## Uso del modelo de procesos
 
 - Crear `processes` desde `/admin/sql/processes`.
-- Crear `process_definition_versions` desde `/admin/sql/process_definition_versions`.
+- Crear `process_definition_series` desde `/admin/sql/process_definition_series` y luego `process_definition_versions` desde `/admin/sql/process_definition_versions`.
   - Las nuevas definiciones se crean en `draft`.
+  - Si `has_document = 1`, no se pueden activar sin al menos un artifact vinculado en `process_definition_templates`.
   - Si se crea una nueva version desde una definicion existente, el backend puede clonar automaticamente `process_definition_templates` y `process_target_rules` desde la definicion origen.
 - Registrar el alcance con `/admin/sql/process_target_rules`.
+- Sincronizar seeds publicados en MinIO con `POST /admin/sql/template_seeds/sync`.
+- Consultar el preview PDF de un seed con `GET /admin/sql/template_seeds/:id/preview`.
 - Registrar templates publicados en MinIO con `/admin/sql/template_artifacts`.
 - Sincronizar automaticamente `template_artifacts` desde `tools/templates/dist` con `POST /admin/sql/template_artifacts/sync`.
+- Durante esa sincronizacion, si `meta.yaml` incluye `seed_code`, el backend enlaza automaticamente `template_artifacts.template_seed_id`.
+- Crear borradores de artifact con `POST /admin/sql/template_artifacts/draft`.
+- Actualizar artifacts de usuario con `PUT /admin/sql/template_artifacts/draft/:id`.
+  - El backend arma el paquete temporal en `backend/storage/minio-jobs/...`.
+  - Luego lo sube directamente a MinIO dentro de la misma peticion.
+  - Infiere `owner_ref` con la cedula y `owner_person_id` con el `persons.id` del usuario logueado.
+  - Solo cuando la subida termina correctamente se inserta o actualiza el registro en `template_artifacts`.
+  - Los artifacts creados por este flujo quedan con `artifact_origin=user`.
 - Vincular templates a cada definicion con `/admin/sql/process_definition_templates`.
   - Estas vinculaciones solo se deben editar mientras la definicion este en `draft`.
 
 Flujo recomendado:
 
 1) Crear el proceso base.
-2) Crear una definicion con `variation_key`, `definition_version` (formato `x.y.z`), vigencia y `execution_mode`.
+2) Crear una serie controlada (`process_definition_series`) y luego una definicion con `series_id`, `definition_version` (formato `x.y.z`), vigencia y `execution_mode`.
 3) Agregar una o varias reglas de alcance segun el publico objetivo.
 4) Editar la fuente del template en `tools/templates/templates/`.
 5) Ejecutar `node tools/templates/cli.mjs package`.
 6) Ejecutar `node tools/templates/cli.mjs publish` para subir el paquete a MinIO.
 7) Ejecutar `POST /admin/sql/template_artifacts/sync` o usar `Sincronizar dist` en el admin.
    - Este paso genera o actualiza `template_artifacts` desde el `dist` local.
+   - Si el paquete publicado declara `seed_code` en `meta.yaml`, se resuelve tambien `template_seed_id`.
+7.1) Para borradores creados desde el admin:
+   - sincronizar `template_seeds`
+   - crear el borrador con `POST /admin/sql/template_artifacts/draft`
+   - el backend deja el paquete en `backend/storage/minio-jobs/...`
+   - el backend lo sube directo a `deasy-templates/Users/<cedula>/...`
 8) Vincular los templates requeridos a la definicion mediante `process_definition_templates`.
 9) Crear el periodo o ejecutar `POST /admin/terms/:termId/generate-tasks`.
 
