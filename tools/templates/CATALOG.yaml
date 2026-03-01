@@ -129,17 +129,17 @@ templates:
         xlsx: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/xlsx/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2023/PPO2023/Investigación/Formativa/Formatos/03_artículo/Springer.zip"
-  - key: "investigación/productiva/testing"
-    export_id: "tpl_investigación_productiva_testing"
-    name: "investigación/productiva/testing"
+  - key: "investigación/productiva/informe-carrera"
+    export_id: "tpl_investigación_productiva_informe_carrera"
+    name: "Informe de Investigación Productiva por Carrera"
     version: "1.0.0"
     storage_version: "v0001"
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/productiva/testing/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/productiva/testing/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/productiva/testing/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/productiva/testing/1.0.0/modes/user/xlsx/src"
+        docx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/docx/src"
+        latex: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/latex/src"
+        pdf: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/pdf/src"
+        xlsx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/xlsx/src"
       system:
-        jinja2: "templates/investigación/productiva/testing/1.0.0/modes/system/jinja2/src"
+        jinja2: "templates/investigación/productiva/informe-carrera/1.0.0/modes/system/jinja2/src"

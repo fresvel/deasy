@@ -355,6 +355,47 @@ export default class SqlAdminService {
     }
   }
 
+  async retireActiveDefinitionsInSeries({ processId, variationKey, excludeId = null, connection = this.pool }) {
+    this.ensurePool();
+    const normalizedProcessId = Number(processId);
+    const normalizedVariationKey = String(variationKey || "").trim();
+    if (!normalizedProcessId || !normalizedVariationKey) {
+      return 0;
+    }
+
+    const params = [normalizedProcessId, normalizedVariationKey];
+    let excludeSql = "";
+    if (excludeId !== null && excludeId !== undefined && excludeId !== "") {
+      excludeSql = " AND id <> ?";
+      params.push(Number(excludeId));
+    }
+
+    const [activeRows] = await connection.query(
+      `SELECT id
+       FROM process_definition_versions
+       WHERE process_id = ?
+         AND variation_key = ?
+         AND status = 'active'${excludeSql}`,
+      params
+    );
+
+    if (!activeRows?.length) {
+      return 0;
+    }
+
+    await connection.query(
+      `UPDATE process_definition_versions
+       SET status = 'retired',
+           effective_to = COALESCE(effective_to, CURDATE())
+       WHERE process_id = ?
+         AND variation_key = ?
+         AND status = 'active'${excludeSql}`,
+      params
+    );
+
+    return activeRows.length;
+  }
+
   getMeta() {
     return Object.values(SQL_TABLE_MAP);
   }
@@ -419,6 +460,32 @@ export default class SqlAdminService {
         selectFields.push("pd_main.status AS active_definition_status");
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;
+    }
+
+    if (tableName === "process_target_rules") {
+      joinClause = "LEFT JOIN process_definition_versions pd_rule ON pd_rule.id = process_target_rules.process_definition_id";
+      columnPrefix = "process_target_rules.";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+
+      const definitionStatus = normalizedFilters.definition_status;
+      const definitionExecutionMode = normalizedFilters.definition_execution_mode;
+      delete normalizedFilters.definition_status;
+      delete normalizedFilters.definition_execution_mode;
+
+      if (definitionStatus !== undefined && definitionStatus !== null && definitionStatus !== "") {
+        conditions.push("pd_rule.status = ?");
+        params.push(definitionStatus);
+      }
+
+      if (
+        definitionExecutionMode !== undefined
+        && definitionExecutionMode !== null
+        && definitionExecutionMode !== ""
+      ) {
+        conditions.push("pd_rule.execution_mode = ?");
+        params.push(definitionExecutionMode);
+      }
     }
 
     if (q && config.searchFields?.length) {
@@ -491,10 +558,149 @@ export default class SqlAdminService {
     return rows?.[0] ?? null;
   }
 
+  async getProcessDefinitionVersion(definitionId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT id, process_id, variation_key, status
+       FROM process_definition_versions
+       WHERE id = ?
+       LIMIT 1`,
+      [definitionId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async ensureDraftDefinitionContext(definitionId, { connection = this.pool, entityLabel = "registros asociados" } = {}) {
+    const definition = await this.getProcessDefinitionVersion(definitionId, connection);
+    if (!definition) {
+      throw new Error("La definicion de proceso seleccionada no existe.");
+    }
+    if (String(definition.status || "") !== "draft") {
+      throw new Error(`Solo se pueden modificar ${entityLabel} cuando la definicion esta en draft.`);
+    }
+    return definition;
+  }
+
+  async cloneProcessDefinitionChildren({
+    sourceDefinitionId,
+    targetDefinitionId,
+    targetProcessId,
+    connection = this.pool
+  }) {
+    const normalizedSourceId = Number(sourceDefinitionId);
+    const normalizedTargetId = Number(targetDefinitionId);
+    const normalizedTargetProcessId = Number(targetProcessId);
+
+    if (!normalizedSourceId || !normalizedTargetId) {
+      return { clonedTemplates: 0, clonedRules: 0 };
+    }
+
+    const sourceDefinition = await this.getProcessDefinitionVersion(normalizedSourceId, connection);
+    if (!sourceDefinition) {
+      throw new Error("La definicion origen para clonar no existe.");
+    }
+    if (normalizedTargetProcessId && Number(sourceDefinition.process_id) !== normalizedTargetProcessId) {
+      throw new Error("Solo se puede clonar desde una definicion del mismo proceso.");
+    }
+
+    const [templateRows] = await connection.query(
+      `SELECT template_artifact_id, usage_role, creates_task, is_required, sort_order
+       FROM process_definition_templates
+       WHERE process_definition_id = ?
+       ORDER BY sort_order ASC, id ASC`,
+      [normalizedSourceId]
+    );
+
+    for (const row of templateRows) {
+      await connection.query(
+        `INSERT INTO process_definition_templates (
+          process_definition_id,
+          template_artifact_id,
+          usage_role,
+          creates_task,
+          is_required,
+          sort_order
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          normalizedTargetId,
+          row.template_artifact_id,
+          row.usage_role,
+          row.creates_task,
+          row.is_required,
+          row.sort_order
+        ]
+      );
+    }
+
+    const [ruleRows] = await connection.query(
+      `SELECT unit_scope_type,
+              unit_id,
+              unit_type_id,
+              include_descendants,
+              cargo_id,
+              position_id,
+              recipient_policy,
+              priority,
+              is_active,
+              effective_from,
+              effective_to
+       FROM process_target_rules
+       WHERE process_definition_id = ?
+       ORDER BY priority ASC, id ASC`,
+      [normalizedSourceId]
+    );
+
+    for (const row of ruleRows) {
+      await connection.query(
+        `INSERT INTO process_target_rules (
+          process_definition_id,
+          unit_scope_type,
+          unit_id,
+          unit_type_id,
+          include_descendants,
+          cargo_id,
+          position_id,
+          recipient_policy,
+          priority,
+          is_active,
+          effective_from,
+          effective_to
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          normalizedTargetId,
+          row.unit_scope_type,
+          row.unit_id,
+          row.unit_type_id,
+          row.include_descendants,
+          row.cargo_id,
+          row.position_id,
+          row.recipient_policy,
+          row.priority,
+          row.is_active,
+          row.effective_from,
+          row.effective_to
+        ]
+      );
+    }
+
+    return {
+      clonedTemplates: templateRows.length,
+      clonedRules: ruleRows.length
+    };
+  }
+
   async create(tableName, data) {
     this.ensurePool();
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
+    const cloneSourceDefinitionId = (
+      tableName === "process_definition_versions"
+      && data?.source_process_definition_id !== undefined
+      && data?.source_process_definition_id !== null
+      && data?.source_process_definition_id !== ""
+    )
+      ? Number(data.source_process_definition_id)
+      : null;
 
     if (tableName === "process_definition_versions") {
       if (typeof payload.variation_key === "string") {
@@ -529,6 +735,17 @@ export default class SqlAdminService {
       payload.process_definition_id = template.process_definition_id;
     }
 
+    if (tableName === "process_definition_templates" || tableName === "process_target_rules") {
+      await this.ensureDraftDefinitionContext(
+        payload.process_definition_id,
+        {
+          entityLabel: tableName === "process_definition_templates"
+            ? "las plantillas de definicion"
+            : "las reglas de alcance"
+        }
+      );
+    }
+
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
     const missing = required.filter((field) => payload[field.name] === undefined || payload[field.name] === "");
 
@@ -540,6 +757,11 @@ export default class SqlAdminService {
     validateTableRules(tableName, payload);
 
     if (tableName === "process_definition_versions") {
+      const requestedStatus = String(payload.status || "draft");
+      if (requestedStatus !== "draft") {
+        throw new Error("Las nuevas definiciones solo pueden crearse en estado draft.");
+      }
+      payload.status = "draft";
       await this.ensureProcessDefinitionVersionAvailable(payload);
     }
 
@@ -554,10 +776,55 @@ export default class SqlAdminService {
 
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
-    const [result] = await this.pool.query(
-      `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-      values
-    );
+    let result;
+    let createNotice = "";
+    try {
+      if (tableName === "process_definition_versions") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+
+          if (cloneSourceDefinitionId) {
+            const cloneSummary = await this.cloneProcessDefinitionChildren({
+              sourceDefinitionId: cloneSourceDefinitionId,
+              targetDefinitionId: insertResult.insertId,
+              targetProcessId: payload.process_id,
+              connection
+            });
+            if (cloneSummary.clonedTemplates || cloneSummary.clonedRules) {
+              createNotice = `Se clonaron ${cloneSummary.clonedTemplates} plantillas y ${cloneSummary.clonedRules} reglas desde la definicion origen.`;
+            }
+          }
+
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else {
+        const [insertResult] = await this.pool.query(
+          `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+          values
+        );
+        result = insertResult;
+      }
+    } catch (error) {
+      if (
+        tableName === "process_definition_versions"
+        && error?.code === "ER_DUP_ENTRY"
+        && String(error?.message || "").includes("uq_process_definition_one_active_series")
+      ) {
+        throw new Error("Solo puede existir una definicion activa por serie dentro del mismo proceso.");
+      }
+      throw error;
+    }
     const created = { id: result.insertId, ...payload };
     if (tableName === "terms") {
       try {
@@ -565,6 +832,12 @@ export default class SqlAdminService {
       } catch (error) {
         console.warn("⚠️  No se pudo generar tareas para el periodo:", error.message);
       }
+    }
+    if (createNotice) {
+      return {
+        ...sanitizePersonRow(tableName, created),
+        __notice: createNotice
+      };
     }
     return sanitizePersonRow(tableName, created);
   }
@@ -613,6 +886,26 @@ export default class SqlAdminService {
         updates.process_definition_id = template.process_definition_id;
       }
     }
+    if (tableName === "process_definition_templates" || tableName === "process_target_rules") {
+      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
+        if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
+          throw new Error("No se puede cambiar la definicion asociada de este registro.");
+        }
+        delete updates.process_definition_id;
+      }
+      await this.ensureDraftDefinitionContext(
+        existing.process_definition_id,
+        {
+          entityLabel: tableName === "process_definition_templates"
+            ? "las plantillas de definicion"
+            : "las reglas de alcance"
+        }
+      );
+    }
+    let activateDraftVersion = false;
+    let processDefinitionActivationNotice = "";
+    let processDefinitionSeriesContext = null;
+
     if (tableName === "process_definition_versions") {
       if (typeof updates.variation_key === "string") {
         updates.variation_key = updates.variation_key.trim();
@@ -713,6 +1006,15 @@ export default class SqlAdminService {
       if (disallowed.length) {
         throw new Error(errorMessage);
       }
+
+      if (currentStatus === "draft" && nextStatus === "active") {
+        activateDraftVersion = true;
+        processDefinitionSeriesContext = {
+          processId: existing.process_id,
+          variationKey: existing.variation_key,
+          excludeId: existing.id ?? keyPayload.id
+        };
+      }
     }
 
     const allowPrimaryKeyUpdate = config.allowPrimaryKeyUpdate === true;
@@ -730,15 +1032,57 @@ export default class SqlAdminService {
     validateFieldTypes(config, candidate);
     validateTableRules(tableName, candidate);
 
-    await this.pool.query(
-      `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
-      [...values, ...params]
-    );
+    try {
+      if (tableName === "process_definition_versions" && activateDraftVersion) {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const retiredCount = await this.retireActiveDefinitionsInSeries({
+            ...processDefinitionSeriesContext,
+            connection
+          });
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          await connection.commit();
+          if (retiredCount > 0) {
+            processDefinitionActivationNotice = "La definicion activa anterior de la misma serie fue retirada automaticamente.";
+          }
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else {
+        await this.pool.query(
+          `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+          [...values, ...params]
+        );
+      }
+    } catch (error) {
+      if (
+        tableName === "process_definition_versions"
+        && error?.code === "ER_DUP_ENTRY"
+        && String(error?.message || "").includes("uq_process_definition_one_active_series")
+      ) {
+        throw new Error("Solo puede existir una definicion activa por serie dentro del mismo proceso.");
+      }
+      throw error;
+    }
     if (tableName === "tasks" && Object.prototype.hasOwnProperty.call(updates, "status")) {
       const taskId = existing.id ?? keyPayload.id;
       await updateParentTaskStatusForTask(taskId);
     }
-    return sanitizePersonRow(tableName, { ...keyPayload, ...updates });
+    const updatedRow = sanitizePersonRow(tableName, { ...keyPayload, ...updates });
+    if (processDefinitionActivationNotice) {
+      return {
+        ...updatedRow,
+        __notice: processDefinitionActivationNotice
+      };
+    }
+    return updatedRow;
   }
 
   async syncTemplateArtifactsFromDist() {
@@ -921,6 +1265,21 @@ export default class SqlAdminService {
     const config = getConfig(tableName);
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
+
+    if (tableName === "process_definition_templates" || tableName === "process_target_rules") {
+      const existing = await this.getByKeys(tableName, keyPayload);
+      if (!existing) {
+        throw new Error("Registro no encontrado.");
+      }
+      await this.ensureDraftDefinitionContext(
+        existing.process_definition_id,
+        {
+          entityLabel: tableName === "process_definition_templates"
+            ? "las plantillas de definicion"
+            : "las reglas de alcance"
+        }
+      );
+    }
 
     await this.pool.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
     return keyPayload;

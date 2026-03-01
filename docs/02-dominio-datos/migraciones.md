@@ -25,6 +25,8 @@
 
 - Migrar una base existente al nombre y estructura nuevos:
   - `node scripts/migrate_process_templates.mjs`
+- Enforzar una sola definicion activa por serie y normalizar conflictos existentes:
+  - `node scripts/enforce_process_definition_active_series.mjs`
 - Resetear completamente el esquema MariaDB vigente:
   - `node scripts/reset_mariadb.mjs`
 - Aplicar la semilla PUCESA sobre un esquema limpio:
@@ -44,6 +46,12 @@ Pasos sugeridos:
 6) Actualizar `signature_flow_templates.process_version_id` -> `signature_flow_templates.process_definition_id`.
 7) Registrar templates publicados en `template_artifacts` y vincularlos con `process_definition_templates`.
 8) Cambiar la generacion automatica para crear una tarea por cada plantilla de definicion con `creates_task = 1`.
+
+Restriccion vigente sobre definiciones:
+
+- las nuevas definiciones se crean en `draft`
+- solo puede existir una definicion `active` por cada `process_id + variation_key`
+- al activar una definicion nueva de una serie, la activa anterior de esa misma serie se retira automaticamente (`retired`)
 
 Regla practica de migracion:
 
