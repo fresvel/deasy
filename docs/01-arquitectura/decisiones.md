@@ -5,7 +5,7 @@
 - Chat y notificaciones en tiempo real con EMQX (WebSocket/MQTT).
 - Mensajes de chat persistidos en MongoDB.
 - Publicacion en EMQX solo desde backend; frontend solo se suscribe.
-- Adjuntos hasta 100 MB en storage compartido (NFS u otro).
+- Adjuntos y paquetes publicados en MinIO por buckets funcionales.
 - Conversaciones: direct, group y thread (thread ligado a process_id).
 - Responsable del proceso puede agregar/remover participantes en threads.
 
@@ -16,7 +16,6 @@
 
 ## Pendientes
 
-- Definir ruta exacta de SHARED_STORAGE_ROOT en entorno docker/NFS.
+- Completar la politica de retencion y limpieza por bucket en MinIO.
 - Confirmar donde vive el "responsable del proceso" en BD (tabla/campo).
 - Detallar reglas ACL de EMQX segun topics y usuarios.
-

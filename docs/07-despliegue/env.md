@@ -75,10 +75,10 @@ Variables inyectadas en el contenedor backend desde docker-compose:
 
 - EMQX_ALLOW_ANONYMOUS (en docker-compose, por defecto true)
 
-## Storage compartido
+## Storage
 
-- SHARED_STORAGE_ROOT (ruta base para adjuntos y documentos)
-- Definirla en entorno backend cuando se habilite storage compartido.
+- El storage principal ya se resuelve con MinIO, no con `SHARED_STORAGE_ROOT`.
+- Mantener `SHARED_STORAGE_ROOT` solo si algun flujo legacy puntual vuelve a requerir filesystem local.
 
 ## Backend (.env local)
 

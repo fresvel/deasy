@@ -972,90 +972,56 @@
       "table": "process_definition_series",
       "columns": [
         "id",
-        "process_id",
         "source_type",
         "unit_type_id",
         "cargo_id",
         "code",
-        "label",
         "is_active",
         "created_at"
       ],
       "column_types": {
         "id": "int(11)",
-        "process_id": "int(11)",
         "source_type": "enum('unit_type','cargo','legacy')",
         "unit_type_id": "int(11)",
         "cargo_id": "int(11)",
         "code": "varchar(120)",
-        "label": "varchar(180)",
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
       "rows": [
         {
           "id": 1,
-          "process_id": 2,
           "source_type": "unit_type",
           "unit_type_id": 8,
           "cargo_id": null,
           "code": "sede",
-          "label": "Sede",
           "is_active": 1,
           "created_at": "2026-03-01 14:30:00"
         },
         {
           "id": 2,
-          "process_id": 1,
-          "source_type": "unit_type",
-          "unit_type_id": 8,
-          "cargo_id": null,
-          "code": "sede",
-          "label": "Sede",
+          "source_type": "cargo",
+          "unit_type_id": null,
+          "cargo_id": 2,
+          "code": "docentes",
           "is_active": 1,
           "created_at": "2026-03-01 14:30:00"
         },
         {
           "id": 3,
-          "process_id": 2,
-          "source_type": "cargo",
-          "unit_type_id": null,
-          "cargo_id": 2,
-          "code": "docentes",
-          "label": "Docentes",
+          "source_type": "unit_type",
+          "unit_type_id": 6,
+          "cargo_id": null,
+          "code": "carreras",
           "is_active": 1,
           "created_at": "2026-03-01 14:30:00"
         },
         {
           "id": 4,
-          "process_id": 2,
-          "source_type": "unit_type",
-          "unit_type_id": 6,
-          "cargo_id": null,
-          "code": "carreras",
-          "label": "Carreras",
-          "is_active": 1,
-          "created_at": "2026-03-01 14:30:00"
-        },
-        {
-          "id": 5,
-          "process_id": 2,
           "source_type": "unit_type",
           "unit_type_id": 4,
           "cargo_id": null,
           "code": "escuela",
-          "label": "Escuela",
-          "is_active": 1,
-          "created_at": "2026-03-01 14:30:00"
-        },
-        {
-          "id": 6,
-          "process_id": 1,
-          "source_type": "unit_type",
-          "unit_type_id": 4,
-          "cargo_id": null,
-          "code": "escuela",
-          "label": "Escuela",
           "is_active": 1,
           "created_at": "2026-03-01 14:30:00"
         }
@@ -1115,7 +1081,7 @@
         {
           "id": 6,
           "process_id": 1,
-          "series_id": 2,
+          "series_id": 1,
           "variation_key": "sede",
           "definition_version": "0.1.0",
           "name": "Memorandum",
@@ -1131,7 +1097,7 @@
         {
           "id": 8,
           "process_id": 2,
-          "series_id": 3,
+          "series_id": 2,
           "variation_key": "docentes",
           "definition_version": "0.1.0",
           "name": "Investigación Formativa Docentes",
@@ -1195,7 +1161,7 @@
         {
           "id": 12,
           "process_id": 2,
-          "series_id": 4,
+          "series_id": 3,
           "variation_key": "carreras",
           "definition_version": "0.0.1",
           "name": "Investigación Formativa Carreras",
@@ -1211,7 +1177,7 @@
         {
           "id": 13,
           "process_id": 2,
-          "series_id": 5,
+          "series_id": 4,
           "variation_key": "escuela",
           "definition_version": "0.0.1",
           "name": "Investigación Formativa por Escuela",
@@ -1227,7 +1193,7 @@
         {
           "id": 15,
           "process_id": 1,
-          "series_id": 6,
+          "series_id": 4,
           "variation_key": "escuela",
           "definition_version": "0.0.1",
           "name": "Memorandum Escuela",
@@ -1241,6 +1207,28 @@
           "created_at": "2026-03-01 13:27:20"
         }
       ]
+    },
+    {
+      "table": "process_definition_triggers",
+      "columns": [
+        "id",
+        "process_definition_id",
+        "trigger_mode",
+        "term_type_id",
+        "normalized_term_type_id",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_id": "int(11)",
+        "trigger_mode": "enum('automatic_by_term_type','manual_only','manual_custom_term')",
+        "term_type_id": "int(11)",
+        "normalized_term_type_id": "int(11)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": []
     },
     {
       "table": "process_target_rules",
@@ -1377,6 +1365,15 @@
         },
         {
           "id": 4,
+          "code": "CUS",
+          "name": "Custom",
+          "description": "Periodo operativo personalizado",
+          "is_active": 1,
+          "created_at": "2026-03-01 12:00:00",
+          "updated_at": "2026-03-01 12:00:00"
+        },
+        {
+          "id": 5,
           "code": "PPO",
           "name": "Primer Periodo Ordinario",
           "description": null,
@@ -1385,7 +1382,7 @@
           "updated_at": "2026-02-26 14:07:52"
         },
         {
-          "id": 5,
+          "id": 6,
           "code": "SPO",
           "name": "Segundo Periodo Ordinario",
           "description": null,
@@ -1394,7 +1391,7 @@
           "updated_at": "2026-02-26 14:08:11"
         },
         {
-          "id": 6,
+          "id": 7,
           "code": "AÑO",
           "name": "Año Calendario",
           "description": null,
@@ -1646,14 +1643,16 @@
       "table": "tasks",
       "columns": [
         "id",
-        "process_definition_template_id",
         "process_definition_id",
         "term_id",
+        "launch_mode",
+        "created_by_user_id",
+        "automatic_flag",
+        "manual_user_flag",
         "parent_task_id",
         "responsible_position_id",
         "description",
         "comments_thread_ref",
-        "is_main",
         "start_date",
         "end_date",
         "status",
@@ -1661,16 +1660,46 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "process_definition_template_id": "int(11)",
         "process_definition_id": "int(11)",
         "term_id": "int(11)",
+        "launch_mode": "enum('automatic','manual')",
+        "created_by_user_id": "int(11)",
+        "automatic_flag": "tinyint(1)",
+        "manual_user_flag": "int(11)",
         "parent_task_id": "int(11)",
         "responsible_position_id": "int(11)",
         "description": "text",
         "comments_thread_ref": "varchar(64)",
-        "is_main": "tinyint(1)",
         "start_date": "date",
         "end_date": "date",
+        "status": "varchar(30)",
+        "created_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "task_items",
+      "columns": [
+        "id",
+        "task_id",
+        "process_definition_template_id",
+        "template_artifact_id",
+        "template_usage_role",
+        "sort_order",
+        "responsible_position_id",
+        "assigned_person_id",
+        "status",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "task_id": "int(11)",
+        "process_definition_template_id": "int(11)",
+        "template_artifact_id": "int(11)",
+        "template_usage_role": "enum('system_render','manual_fill','attachment','support')",
+        "sort_order": "int(11)",
+        "responsible_position_id": "int(11)",
+        "assigned_person_id": "int(11)",
         "status": "varchar(30)",
         "created_at": "datetime"
       },
@@ -1702,7 +1731,7 @@
       "table": "documents",
       "columns": [
         "id",
-        "task_id",
+        "task_item_id",
         "status",
         "comments_thread_ref",
         "created_at",
@@ -1710,7 +1739,7 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "task_id": "int(11)",
+        "task_item_id": "int(11)",
         "status": "varchar(30)",
         "comments_thread_ref": "varchar(64)",
         "created_at": "datetime",
@@ -1810,7 +1839,7 @@
       "table": "signature_flow_templates",
       "columns": [
         "id",
-        "process_definition_id",
+        "process_definition_template_id",
         "name",
         "description",
         "is_active",
@@ -1818,7 +1847,7 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "process_definition_id": "int(11)",
+        "process_definition_template_id": "int(11)",
         "name": "varchar(180)",
         "description": "varchar(255)",
         "is_active": "tinyint(1)",

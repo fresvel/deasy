@@ -20,6 +20,8 @@ export const API_ROUTES = {
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
+  USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
+  USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
@@ -28,5 +30,6 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT: `${API_PREFIX}/admin/sql/template_artifacts/draft`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/draft/${artifactId}`,
   ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
-  ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`
+  ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
+  ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`
 };

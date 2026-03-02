@@ -13,16 +13,20 @@
 ## Broker
 
 - EMQX: realtime (WebSocket/MQTT).
-- RabbitMQ: cola de trabajos (uso pendiente).
+- RabbitMQ: cola de trabajos disponible para procesos asincronos (firmas, storage y jobs pesados).
 
-## Storage compartido
+## Storage
 
-- Volumen storage_data en docker-compose.
-- En despliegue real usar NFS u otro FS compartido.
-- Variable: SHARED_STORAGE_ROOT.
+- MinIO como storage principal por buckets de negocio.
+- Buckets actuales:
+  - `deasy-templates`
+  - `deasy-documents`
+  - `deasy-chat`
+  - `deasy-spool`
+  - `deasy-dossier`
+- El filesystem local queda solo para flujos legacy o temporales.
 
 ## Recomendaciones
 
-- Separar persistencia de contenedores y filesystem.
-- Definir backup coordinado BD + storage compartido.
-
+- Separar persistencia de contenedores y object storage.
+- Definir backup coordinado BD + MinIO.

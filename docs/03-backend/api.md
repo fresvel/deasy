@@ -28,20 +28,29 @@
   - `terms`: periodos (requiere `term_type_id`)
 
 - POST /admin/terms/:termId/generate-tasks
-  - Genera tareas y asignaciones para un periodo a partir de procesos activos.
-  - Toma la definicion activa mas reciente (`process_definition_versions`) por proceso y `variation_key`.
+  - Genera instancias de tareas, items y asignaciones para un periodo a partir de procesos activos.
+  - Toma definiciones `active`.
+  - Solo considera definiciones con `process_definition_triggers` activos de tipo `automatic_by_term_type` compatibles con el `term_type_id`.
   - Resuelve responsables via `process_target_rules` contra `units`, `unit_types`, `unit_positions` y `position_assignments`.
-  - Es idempotente: no duplica tareas existentes en el mismo periodo.
-  - Se ejecuta automaticamente al crear un periodo desde /admin/sql/terms.
+  - Crea una `task` por definicion y `task_items` por cada `process_definition_template` con `creates_task = 1`.
+  - Los `documents` de negocio cuelgan de `task_items`.
+  - Los `signature_flow_templates` cuelgan de `process_definition_templates`.
+  - Es idempotente: no duplica tareas automaticas existentes en el mismo periodo.
+  - No se ejecuta automaticamente al crear un periodo; el frontend puede sugerir lanzarlo despues del alta.
 
 ## Uso del modelo de procesos
 
 - Crear `processes` desde `/admin/sql/processes`.
 - Crear `process_definition_series` desde `/admin/sql/process_definition_series` y luego `process_definition_versions` desde `/admin/sql/process_definition_versions`.
   - Las nuevas definiciones se crean en `draft`.
-  - Si `has_document = 1`, no se pueden activar sin al menos un artifact vinculado en `process_definition_templates`.
-  - Si se crea una nueva version desde una definicion existente, el backend puede clonar automaticamente `process_definition_templates` y `process_target_rules` desde la definicion origen.
+  - No se pueden activar sin al menos una regla activa en `process_target_rules` y al menos un disparador activo en `process_definition_triggers`.
+  - Si `has_document = 1`, tampoco se pueden activar sin al menos un artifact vinculado en `process_definition_templates`.
+  - Si se crea una nueva version desde una definicion existente, el backend puede clonar automaticamente `process_definition_templates`, `process_target_rules` y `process_definition_triggers` desde la definicion origen.
 - Registrar el alcance con `/admin/sql/process_target_rules`.
+- Registrar la politica de disparo con `/admin/sql/process_definition_triggers`.
+- Las tareas manuales creadas desde `/admin/sql/tasks` tambien validan disparadores:
+  - `manual_only` para periodos normales.
+  - `manual_custom_term` para periodos con tipo `Custom`.
 - Sincronizar seeds publicados en MinIO con `POST /admin/sql/template_seeds/sync`.
 - Consultar el preview PDF de un seed con `GET /admin/sql/template_seeds/:id/preview`.
 - Registrar templates publicados en MinIO con `/admin/sql/template_artifacts`.
@@ -74,7 +83,24 @@ Flujo recomendado:
    - el backend deja el paquete en `backend/storage/minio-jobs/...`
    - el backend lo sube directo a `deasy-templates/Users/<cedula>/...`
 8) Vincular los templates requeridos a la definicion mediante `process_definition_templates`.
-9) Crear el periodo o ejecutar `POST /admin/terms/:termId/generate-tasks`.
+9) Crear el periodo y, si deseas instanciarlo de inmediato, ejecutar `POST /admin/terms/:termId/generate-tasks`.
+
+Panel operativo de definiciones para usuario:
+
+- `GET /users/:id/process-definitions/:definitionId/panel`
+  - Devuelve el contexto operativo de la definicion activa para el usuario actual:
+    - resumen
+    - tareas del usuario
+    - entregables
+    - documentos
+    - firmas
+    - dependencias
+    - paquetes del usuario
+    - periodos disponibles
+- `POST /users/:id/process-definitions/:definitionId/tasks`
+  - Crea una tarea manual para esa definicion usando:
+    - un periodo existente permitido por sus disparadores manuales
+    - o un periodo `Custom` si la definicion tiene `manual_custom_term`
 
 ## Dossier - Investigacion (Mongo)
 

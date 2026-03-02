@@ -342,18 +342,14 @@ CREATE TABLE IF NOT EXISTS processes (
 
 CREATE TABLE IF NOT EXISTS process_definition_series (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  process_id INT NOT NULL,
   source_type ENUM('unit_type', 'cargo', 'legacy') NOT NULL DEFAULT 'legacy',
   unit_type_id INT NULL,
   cargo_id INT NULL,
   code VARCHAR(120) NOT NULL,
-  label VARCHAR(180) NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_definition_series_code (process_id, code),
-  INDEX idx_process_definition_series_process (process_id, is_active),
-  CONSTRAINT fk_process_definition_series_process
-    FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_process_definition_series_code (code),
+  INDEX idx_process_definition_series_state (is_active),
   CONSTRAINT fk_process_definition_series_unit_type
     FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
   CONSTRAINT fk_process_definition_series_cargo
@@ -488,12 +484,29 @@ INSERT INTO term_types (id, code, name, description, is_active)
 VALUES
   (1, 'SEM', 'Semestre', 'Periodo academico semestral', 1),
   (2, 'TRI', 'Trimestre', 'Periodo academico trimestral', 1),
-  (3, 'INT', 'Intensivo', 'Periodo academico intensivo', 1)
+  (3, 'INT', 'Intensivo', 'Periodo academico intensivo', 1),
+  (4, 'CUS', 'Custom', 'Periodo operativo personalizado', 1)
 ON DUPLICATE KEY UPDATE
   code = VALUES(code),
   name = VALUES(name),
   description = VALUES(description),
   is_active = VALUES(is_active);
+
+CREATE TABLE IF NOT EXISTS process_definition_triggers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  trigger_mode ENUM('automatic_by_term_type', 'manual_only', 'manual_custom_term') NOT NULL,
+  term_type_id INT NULL,
+  normalized_term_type_id INT AS (IFNULL(term_type_id, 0)) PERSISTENT,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_process_definition_triggers (process_definition_id, trigger_mode, normalized_term_type_id),
+  INDEX idx_process_definition_triggers_lookup (process_definition_id, trigger_mode, is_active),
+  CONSTRAINT fk_process_definition_triggers_definition
+    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_definition_triggers_term_type
+    FOREIGN KEY (term_type_id) REFERENCES term_types(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS terms (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -508,28 +521,56 @@ CREATE TABLE IF NOT EXISTS terms (
 
 CREATE TABLE IF NOT EXISTS tasks (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  process_definition_template_id INT NOT NULL,
   process_definition_id INT NOT NULL,
   term_id INT NOT NULL,
+  launch_mode ENUM('automatic', 'manual') NOT NULL DEFAULT 'manual',
+  created_by_user_id INT NULL,
+  automatic_flag TINYINT(1) AS (IF(launch_mode = 'automatic', 1, NULL)) PERSISTENT,
+  manual_user_flag INT AS (IF(launch_mode = 'manual', created_by_user_id, NULL)) PERSISTENT,
   parent_task_id INT NULL,
   responsible_position_id INT NULL,
   description TEXT NULL,
   comments_thread_ref VARCHAR(64) NULL,
-  is_main TINYINT(1) NOT NULL DEFAULT 1,
   start_date DATE NOT NULL,
   end_date DATE NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_tasks_term_template (term_id, process_definition_template_id),
-  INDEX idx_tasks_template_term (process_definition_template_id, term_id),
+  UNIQUE KEY uq_tasks_automatic_term (process_definition_id, term_id, automatic_flag),
+  UNIQUE KEY uq_tasks_manual_term_user (process_definition_id, term_id, manual_user_flag),
   INDEX idx_tasks_definition_term (process_definition_id, term_id),
-  CONSTRAINT fk_tasks_process_definition_template
-    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
+  INDEX idx_tasks_launch (launch_mode, created_by_user_id),
   CONSTRAINT fk_tasks_process_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
   CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
+  CONSTRAINT fk_tasks_created_by_user FOREIGN KEY (created_by_user_id) REFERENCES persons(id),
   CONSTRAINT fk_tasks_parent FOREIGN KEY (parent_task_id) REFERENCES tasks(id),
   CONSTRAINT fk_tasks_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS task_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_id INT NOT NULL,
+  process_definition_template_id INT NOT NULL,
+  template_artifact_id INT NOT NULL,
+  template_usage_role ENUM('system_render', 'manual_fill', 'attachment', 'support') NOT NULL DEFAULT 'manual_fill',
+  sort_order INT NOT NULL DEFAULT 1,
+  responsible_position_id INT NULL,
+  assigned_person_id INT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_task_items_task_template (task_id, process_definition_template_id),
+  INDEX idx_task_items_task (task_id, sort_order),
+  INDEX idx_task_items_artifact (template_artifact_id),
+  CONSTRAINT fk_task_items_task
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_task_items_process_definition_template
+    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
+  CONSTRAINT fk_task_items_template_artifact
+    FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id),
+  CONSTRAINT fk_task_items_responsible_position
+    FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_task_items_assigned_person
+    FOREIGN KEY (assigned_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS task_assignments (
@@ -549,12 +590,13 @@ CREATE TABLE IF NOT EXISTS task_assignments (
 
 CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  task_id INT NOT NULL,
+  task_item_id INT NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
   comments_thread_ref VARCHAR(64) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
-  CONSTRAINT fk_documents_task FOREIGN KEY (task_id) REFERENCES tasks(id)
+  UNIQUE KEY uq_documents_task_item (task_item_id),
+  CONSTRAINT fk_documents_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS document_versions (
@@ -607,6 +649,34 @@ BEFORE UPDATE ON process_definition_versions
 FOR EACH ROW
 BEGIN
   DECLARE linked_template_count INT DEFAULT 0;
+  DECLARE active_rule_count INT DEFAULT 0;
+  DECLARE active_trigger_count INT DEFAULT 0;
+
+  IF NEW.status = 'active' AND OLD.status <> 'active' THEN
+    SELECT COUNT(*)
+      INTO active_rule_count
+    FROM process_target_rules
+    WHERE process_definition_id = NEW.id
+      AND is_active = 1;
+
+    IF active_rule_count < 1 THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos una regla activa en Reglas de alcance.';
+    END IF;
+  END IF;
+
+  IF NEW.status = 'active' AND OLD.status <> 'active' THEN
+    SELECT COUNT(*)
+      INTO active_trigger_count
+    FROM process_definition_triggers
+    WHERE process_definition_id = NEW.id
+      AND is_active = 1;
+
+    IF active_trigger_count < 1 THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un disparador activo en Disparadores de definiciones.';
+    END IF;
+  END IF;
 
   IF NEW.status = 'active' AND OLD.status <> 'active' AND NEW.has_document = 1 THEN
     SELECT COUNT(*)
@@ -711,13 +781,13 @@ DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS signature_flow_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  process_definition_id INT NOT NULL,
+  process_definition_template_id INT NOT NULL,
   name VARCHAR(180) NOT NULL,
   description VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_signature_flow_templates_definition
-    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id)
+  CONSTRAINT fk_signature_flow_templates_definition_template
+    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS signature_flow_steps (

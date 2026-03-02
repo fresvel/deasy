@@ -1,24 +1,28 @@
-# Storage compartido - layout de documentos
+# Storage - layout logico de objetos
 
-Esta guia define la estructura canonica del filesystem compartido para documentos
-generados por procesos, adjuntos de chat, archivos del dosier y spool de firmas. El objetivo es que
-los servicios compartan una misma raiz de archivos con rutas estables basadas
-en IDs.
+Esta guia define la estructura canonica de prefijos en MinIO para documentos
+generados por procesos, adjuntos de chat, archivos del dosier, spool de firmas
+y templates. El objetivo es mantener rutas estables basadas en IDs.
 
-## Raices
+## Buckets y raices
 
-- Variable: `SHARED_STORAGE_ROOT`
-- En MinIO, la estructura se separa por buckets:
-  - `deasy-templates` para `System`, `Seeds` y `Users`
-  - `deasy-documents` para `Unidades`
-  - `deasy-chat` para `Chat`
-  - `deasy-spool` para `Firmas`
-  - `deasy-dossier` para `Dosier`
+- `deasy-templates`
+  - `System`
+  - `Seeds`
+  - `Users`
+- `deasy-documents`
+  - `Unidades`
+- `deasy-chat`
+  - `Chat`
+- `deasy-spool`
+  - `Firmas`
+- `deasy-dossier`
+  - `Dosier`
 
 ## Estructura principal (IDs primero)
 
 ```
-/System
+deasy-templates/System
   /{template_id}/
     /v0001/
       template/
@@ -27,23 +31,22 @@ en IDs.
       template/
       schema.json
 
-/Seeds
+deasy-templates/Seeds
   /{seed_type}/
     /{seed_name}/
       /README.md
       /render/
       /src/
 
-/Users
+deasy-templates/Users
   /{owner_ref}/
     /{template_code}/
       /v0001/
         meta.yaml
         schema.json
-        /seed
-        /files
+        /template/modes/...
 
-/Unidades
+deasy-documents/Unidades
   /{unidad_id}/
     meta.json
     /PROCESOS
@@ -67,16 +70,16 @@ en IDs.
                             /firmas/
                           /v0002/...
 
-/Chat
+deasy-chat/Chat
   /{conversation_id}/
     /{message_id}/
       archivo.ext
 
-/Firmas
+deasy-spool/Firmas
   /PENDIENTES/{document_version_id}/...
   /FIRMADAS/{document_version_id}/...
 
-/Dosier
+deasy-dossier/Dosier
   /{person_id}/
     /{categoria}/
       /{item_id}/
@@ -121,7 +124,7 @@ Ejemplos:
 
 - Las rutas usan **IDs** para estabilidad; los slugs se guardan en `meta.json`.
 - Las bases de datos guardan **rutas relativas** respecto de la raiz logica de su dominio.
-  - Templates: relativas desde `Plantillas/`
+  - Templates: relativas desde `System/` o `Users/<cedula>/`
   - Documentos: relativas desde `Unidades/`
   - Chat: relativas desde `Chat/`
   - Spool: relativas desde `Firmas/`

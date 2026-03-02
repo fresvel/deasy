@@ -292,7 +292,7 @@
                     <font-awesome-icon icon="plus" />
                   </span>
                   <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">Nuevo artifact de usuario</strong>
+                    <strong class="admin-home-btn-title">Nuevo paquete de usuario</strong>
                     <span class="admin-home-btn-meta">Crear desde seed o archivos</span>
                   </span>
                   <span class="admin-home-btn-pill admin-home-btn-pill-secondary">Accion</span>
@@ -727,9 +727,11 @@ const GROUP_DEFS = [
     label: "Gestiones",
     main: [
       "processes",
+      "process_definition_triggers",
       "process_definition_versions",
       "process_target_rules",
       "tasks",
+      "task_items",
       "task_assignments",
       "template_seeds",
       "template_artifacts",
@@ -801,7 +803,7 @@ const GESTION_INDEX_ITEMS = [
     label: "Procesos",
     icon: "check-double",
     description: "Gestiona procesos base, definiciones y reglas de alcance.",
-    tables: ["processes", "process_definition_series", "process_definition_versions", "process_target_rules"]
+    tables: ["processes", "process_definition_series", "process_definition_versions", "process_definition_triggers", "process_target_rules"]
   },
   {
     key: "plantillas",
@@ -815,7 +817,7 @@ const GESTION_INDEX_ITEMS = [
     label: "Tareas",
     icon: "square-check",
     description: "Administra tareas y asignaciones de tareas.",
-    tables: ["tasks", "task_assignments"]
+    tables: ["tasks", "task_items", "task_assignments"]
   },
   {
     key: "documentos",

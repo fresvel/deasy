@@ -3,7 +3,7 @@
 ## Fuente de verdad
 
 - backend/database/mariadb_schema.sql
-- docs/02-dominio-datos/MER_LIMPIO.drawio
+- docs/02-dominio-datos/mariadb.drawio
 - docs/02-dominio-datos/er-resumen.md
 
 ## Relacional (MariaDB) - tablas principales
@@ -44,22 +44,24 @@
 ### Procesos, tareas y plantillas
 
 - processes(id, name, slug, parent_id, is_active, created_at)
-- process_definition_series(id, process_id, source_type, unit_type_id, cargo_id, code, label, is_active, created_at)
+- process_definition_series(id, source_type, unit_type_id, cargo_id, code, is_active, created_at)
 - process_definition_versions(id, process_id, series_id, variation_key, definition_version, name, description, has_document, execution_mode, status, effective_from, effective_to, created_at)
+- process_definition_triggers(id, process_definition_id, trigger_mode, term_type_id, is_active, created_at)
 - process_target_rules(id, process_definition_id, unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id, recipient_policy, priority, is_active, effective_from, effective_to, created_at)
 - term_types(id, code, name, description, is_active, created_at, updated_at)
 - terms(id, name, term_type_id, start_date, end_date, is_active)
-- tasks(id, process_definition_template_id, process_definition_id, term_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
+- tasks(id, process_definition_id, term_id, launch_mode, created_by_user_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
+- task_items(id, task_id, process_definition_template_id, template_artifact_id, template_usage_role, sort_order, responsible_position_id, assigned_person_id, status, created_at)
 - task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
 - template_seeds(id, seed_code, display_name, description, seed_type, source_path, preview_path, is_active, created_at)
 - template_artifacts(id, template_seed_id, owner_person_id, template_code, display_name, description, owner_ref, source_version, storage_version, artifact_origin, artifact_stage, bucket, base_object_prefix, available_formats, schema_object_key, meta_object_key, content_hash, is_active, created_at)
 - process_definition_templates(id, process_definition_id, template_artifact_id, usage_role, creates_task, is_required, sort_order, created_at)
-- documents(id, task_id, status, comments_thread_ref, created_at, updated_at)
+- documents(id, task_item_id, status, comments_thread_ref, created_at, updated_at)
 - document_versions(id, document_id, version, payload_mongo_id, payload_hash, latex_path, pdf_path, signed_pdf_path, status, created_at)
 - signature_types(id, code, name, description, is_active, created_at)
 - signature_statuses(id, code, name, description, is_active, created_at)
 - signature_request_statuses(id, code, name, description, is_active, created_at)
-- signature_flow_templates(id, process_definition_id, name, description, is_active, created_at)
+- signature_flow_templates(id, process_definition_template_id, name, description, is_active, created_at)
 - signature_flow_steps(id, template_id, step_order, step_type_id, required_cargo_id, selection_mode, required_signers_min, required_signers_max, is_required, created_at)
 - signature_flow_instances(id, template_id, document_version_id, status_id, created_at)
 - signature_requests(id, instance_id, step_id, assigned_person_id, status_id, is_manual, requested_at, notified_at, responded_at)
@@ -68,8 +70,9 @@
 ## Uso del modelo de procesos
 
 1) Crear `processes` para la identidad estable del proceso.
-2) Crear primero una fila en `process_definition_series` por cada serie controlada del proceso. Cada serie debe basarse en un `unit_type` o un `cargo` (las series `legacy` solo se usan para migracion). Luego crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. La definicion referencia `series_id` y conserva `variation_key` como snapshot derivado del codigo de la serie. Su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`). Las nuevas definiciones se crean en `draft` y, por restriccion de dominio, solo puede existir una definicion `active` por cada `process_id + variation_key`.
-   - Si `has_document = 1`, no se permite pasarla a `active` hasta que tenga al menos un registro vinculado en `process_definition_templates`.
+2) Crear primero una fila en `process_definition_series` en el catalogo global de series. Cada serie debe basarse en un `unit_type` o un `cargo` (las series `legacy` solo se usan para migracion). Luego crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. La definicion referencia `series_id` y conserva `variation_key` como snapshot derivado del codigo de la serie. Su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`). Las nuevas definiciones se crean en `draft` y, por restriccion de dominio, solo puede existir una definicion `active` por cada `process_id + variation_key`.
+   - No se permite pasarla a `active` hasta que tenga al menos un `process_target_rule` activo y al menos un `process_definition_trigger` activo.
+   - Si `has_document = 1`, ademas debe tener al menos un registro vinculado en `process_definition_templates`.
 3) Definir el alcance con una o varias filas en `process_target_rules`:
    - `unit_exact`: una unidad puntual.
    - `unit_subtree`: una unidad y toda su jerarquia.
@@ -82,9 +85,24 @@
    - Estas filas pertenecen a una definicion concreta; no deben "moverse" cuando otra version se activa.
    - Se editan mientras la definicion esta en `draft`.
    - Al crear una nueva version desde `Versionar`, el backend clona automaticamente las `process_definition_templates` y las `process_target_rules` de la definicion origen para conservar trazabilidad sin recapturar todo.
-6) Marcar `creates_task = 1` en cada plantilla de definicion que represente una plantilla ejecutable.
-7) Al crear un periodo (`terms`), el backend toma la definicion activa mas reciente por proceso y `variation_key`, genera una tarea por cada plantilla de definicion ejecutable y asigna destinatarios con las reglas de alcance.
-8) `parent_task_id` queda reservado para jerarquias manuales; el generador automatico no lo completa.
+6) Registrar la politica de disparo en `process_definition_triggers`.
+   - `automatic_by_term_type`: una fila por cada `term_type_id` que dispare automaticamente.
+   - `manual_only`: solo se instancia manualmente sobre un `term` existente.
+   - `manual_custom_term`: permite instanciar manualmente usando un `term` de tipo `Custom`.
+   - Estas filas tambien se editan solo mientras la definicion esta en `draft`.
+7) Marcar `creates_task = 1` en cada plantilla de definicion que represente un entregable ejecutable.
+8) Al instanciar un periodo (`terms`) mediante `POST /admin/terms/:termId/generate-tasks`, el backend:
+   - toma las definiciones `active`,
+   - filtra solo las que tengan `process_definition_triggers` activos compatibles con el `term_type_id`,
+   - crea una `task` por definicion,
+   - crea `task_items` por cada `process_definition_template` con `creates_task = 1`,
+   - y asigna destinatarios generales con `process_target_rules`.
+   - Los `documents` formales cuelgan de `task_items`, no de `tasks`.
+   - Los `signature_flow_templates` cuelgan de `process_definition_templates`, para que cada entregable pueda tener su propio flujo.
+9) Las tareas manuales tambien validan disparador:
+   - `manual_only` para periodos normales,
+   - `manual_custom_term` para periodos de tipo `Custom`.
+10) `parent_task_id` queda reservado para jerarquias manuales; el generador automatico no lo completa.
 
 ## NoSQL (MongoDB)
 
@@ -95,13 +113,22 @@ Modelos para chat/notificaciones (ver docs/01-arquitectura/chat-notificaciones.m
 
 ## Archivos y storage
 
-- Adjuntos y documentos en filesystem compartido.
-- Variable esperada: SHARED_STORAGE_ROOT.
+- Templates y seeds: MinIO (`deasy-templates`)
+- Documentos operativos: MinIO (`deasy-documents`)
+- Chat: MinIO (`deasy-chat`)
+- Spool de firmas: MinIO (`deasy-spool`)
+- Dosier: MinIO (`deasy-dossier`)
+
+Para el flujo de templates:
+
+- `System/`
+- `Seeds/`
+- `Users/<cedula>/`
 
 ## Pendientes
 
-- Revisar columna legacy template_version_id en process_templates (error conocido).
-- Separación de document_signatures en otra tabla (sería firmas).
-- Afinar la resolución de múltiples definiciones activas para un mismo proceso si negocio lo requiere.
-- Validar cierre de tareas padre cuando finalizan tareas hijas.
-- Verificar asignaciones por unidad y programa con datos reales (BD actualmente vacía).
+- Afinar el flujo operativo del dashboard para seguimiento de tareas derivadas o de subordinados.
+- Decidir si `artifact_stage` tendrá edición operativa o seguirá siendo principalmente un estado de repositorio.
+- Completar el flujo de generación/edición de documentos desde `task_items`.
+- Completar el flujo operacional de firmas en el dashboard del usuario.
+- Validar con datos reales las reglas de alcance y los disparadores por tipo de periodo.

@@ -2,7 +2,7 @@ import { getMariaDBPool } from "../../config/mariadb.js";
 
 const getTermById = async (connection, termId) => {
   const [rows] = await connection.query(
-    `SELECT id, start_date, end_date
+    `SELECT id, term_type_id, start_date, end_date
      FROM terms
      WHERE id = ?
      LIMIT 1`,
@@ -11,27 +11,32 @@ const getTermById = async (connection, termId) => {
   return rows[0] || null;
 };
 
-const getActiveDefinitions = async (connection, termStart, termEnd) => {
+const getActiveAutomaticDefinitions = async (connection, term) => {
   const [rows] = await connection.query(
-    `SELECT id, process_id, variation_key, definition_version
+    `SELECT ranked.id, ranked.process_id, ranked.variation_key, ranked.definition_version
      FROM (
        SELECT
-         id,
-         process_id,
-         variation_key,
-         definition_version,
+         pdv.id,
+         pdv.process_id,
+         pdv.variation_key,
+         pdv.definition_version,
          ROW_NUMBER() OVER (
-           PARTITION BY process_id, variation_key
-           ORDER BY effective_from DESC, id DESC
+           PARTITION BY pdv.process_id, pdv.variation_key
+           ORDER BY pdv.effective_from DESC, pdv.id DESC
          ) AS rn
-       FROM process_definition_versions
-       WHERE status = 'active'
-         AND effective_from <= ?
-         AND (effective_to IS NULL OR effective_to >= ?)
+       FROM process_definition_versions pdv
+       WHERE pdv.status = 'active'
+         AND pdv.effective_from <= ?
+         AND (pdv.effective_to IS NULL OR pdv.effective_to >= ?)
      ) AS ranked
-     WHERE rn = 1
-     ORDER BY process_id ASC, variation_key ASC`,
-    [termEnd, termStart]
+     INNER JOIN process_definition_triggers pdt
+       ON pdt.process_definition_id = ranked.id
+      AND pdt.is_active = 1
+      AND pdt.trigger_mode = 'automatic_by_term_type'
+      AND pdt.term_type_id = ?
+     WHERE ranked.rn = 1
+     ORDER BY ranked.process_id ASC, ranked.variation_key ASC`,
+    [term.end_date, term.start_date, term.term_type_id]
   );
   return rows;
 };
@@ -88,17 +93,18 @@ const getExecutableTemplatesMap = async (connection) => {
   return map;
 };
 
-const getExistingTasksMap = async (connection, termId) => {
+const getExistingAutomaticTasksMap = async (connection, termId) => {
   const [rows] = await connection.query(
-    `SELECT t.id, t.process_definition_template_id, t.process_definition_id, t.parent_task_id
-     FROM tasks t
-     WHERE t.term_id = ?`,
+    `SELECT id, process_definition_id, parent_task_id
+     FROM tasks
+     WHERE term_id = ?
+       AND launch_mode = 'automatic'`,
     [termId]
   );
   const map = new Map();
   rows.forEach((row) => {
-    if (!map.has(row.process_definition_template_id)) {
-      map.set(row.process_definition_template_id, {
+    if (!map.has(row.process_definition_id)) {
+      map.set(row.process_definition_id, {
         id: row.id,
         parent_task_id: row.parent_task_id,
         process_definition_id: row.process_definition_id
@@ -204,6 +210,148 @@ const getPositionsForRule = async (connection, rule) => {
   return applyRecipientPolicy(rows, rule.recipient_policy, rule.position_id);
 };
 
+const getTaskById = async (connection, taskId) => {
+  const [rows] = await connection.query(
+    `SELECT id, process_definition_id, term_id
+     FROM tasks
+     WHERE id = ?
+     LIMIT 1`,
+    [taskId]
+  );
+  return rows[0] || null;
+};
+
+const getExistingTaskItemTemplateIds = async (connection, taskId) => {
+  const [rows] = await connection.query(
+    `SELECT process_definition_template_id
+     FROM task_items
+     WHERE task_id = ?`,
+    [taskId]
+  );
+  return new Set(rows.map((row) => Number(row.process_definition_template_id)));
+};
+
+const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, executableTemplatesMap) => {
+  const templates = executableTemplatesMap.get(processDefinitionId) || [];
+  if (!templates.length) {
+    return { inserted: 0, total: 0 };
+  }
+
+  const existingTemplateIds = await getExistingTaskItemTemplateIds(connection, taskId);
+  let inserted = 0;
+  for (const template of templates) {
+    if (existingTemplateIds.has(Number(template.id))) {
+      continue;
+    }
+    await connection.query(
+      `INSERT INTO task_items (
+        task_id,
+        process_definition_template_id,
+        template_artifact_id,
+        template_usage_role,
+        sort_order,
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        taskId,
+        template.id,
+        template.template_artifact_id,
+        template.usage_role || "manual_fill",
+        template.sort_order ?? 1,
+        "pendiente"
+      ]
+    );
+    inserted += 1;
+  }
+
+  return {
+    inserted,
+    total: templates.length
+  };
+};
+
+const ensureTaskAssignmentsForDefinition = async (connection, taskId, processDefinitionId, targetRulesMap) => {
+  const rules = targetRulesMap.get(processDefinitionId) || [];
+  if (!rules.length) {
+    return {
+      created: 0,
+      hasRules: false,
+      hasAssignees: false,
+      responsiblePositionId: null
+    };
+  }
+
+  const positions = [];
+  for (const rule of rules) {
+    const matched = await getPositionsForRule(connection, rule);
+    positions.push(...matched);
+  }
+
+  if (!positions.length) {
+    return {
+      created: 0,
+      hasRules: true,
+      hasAssignees: false,
+      responsiblePositionId: null
+    };
+  }
+
+  const values = positions.map((row) => [taskId, row.position_id, row.person_id ?? null]);
+  const placeholders = values.map(() => "(?, ?, ?)").join(", ");
+  const flatValues = values.flat();
+  const [insertResult] = await connection.query(
+    `INSERT IGNORE INTO task_assignments (task_id, position_id, assigned_person_id)
+     VALUES ${placeholders}`,
+    flatValues
+  );
+
+  const responsiblePositionId = positions[0]?.position_id || null;
+  if (responsiblePositionId) {
+    await connection.query(
+      `UPDATE tasks
+       SET responsible_position_id = COALESCE(responsible_position_id, ?)
+       WHERE id = ?`,
+      [responsiblePositionId, taskId]
+    );
+  }
+
+  return {
+    created: insertResult?.affectedRows || 0,
+    hasRules: true,
+    hasAssignees: true,
+    responsiblePositionId
+  };
+};
+
+export const hydrateTaskFromDefinition = async ({
+  connection,
+  taskId,
+  processDefinitionId,
+  termId,
+  executableTemplatesMap = null,
+  targetRulesMap = null
+}) => {
+  const term = await getTermById(connection, termId);
+  if (!term) {
+    throw new Error("Periodo no encontrado.");
+  }
+
+  const templatesMap = executableTemplatesMap || await getExecutableTemplatesMap(connection);
+  const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
+
+  const taskItems = await ensureTaskItemsForTask(connection, taskId, processDefinitionId, templatesMap);
+  const assignments = await ensureTaskAssignmentsForDefinition(connection, taskId, processDefinitionId, rulesMap);
+
+  return {
+    task_items_inserted: taskItems.inserted,
+    task_items_total: taskItems.total,
+    assignments_created: assignments.created,
+    has_rules: assignments.hasRules,
+    has_assignees: assignments.hasAssignees,
+    responsible_position_id: assignments.responsiblePositionId
+  };
+};
+
 export const generateTasksForTerm = async (termId) => {
   const pool = getMariaDBPool();
   if (!pool) {
@@ -219,109 +367,74 @@ export const generateTasksForTerm = async (termId) => {
       throw new Error("Periodo no encontrado.");
     }
 
-    const activeDefinitions = await getActiveDefinitions(connection, term.start_date, term.end_date);
-    const definitionById = new Map(activeDefinitions.map((definition) => [definition.id, definition]));
+    const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
     const executableTemplatesMap = await getExecutableTemplatesMap(connection);
-    const existingTasksMap = await getExistingTasksMap(connection, term.id);
+    const existingTasksMap = await getExistingAutomaticTasksMap(connection, term.id);
+
     const createdTaskIds = [];
-    const definitionsWithoutTaskTemplates = [];
-    const processing = new Set();
-
-    const ensureTask = async (definition, template) => {
-      if (!definition || !template) {
-        return null;
-      }
-      if (processing.has(template.id)) {
-        return existingTasksMap.get(template.id)?.id || null;
-      }
-      processing.add(template.id);
-
-      const existing = existingTasksMap.get(template.id);
-      if (existing) {
-        return existing.id;
-      }
-
-      const [result] = await connection.query(
-        `INSERT INTO tasks
-         (
-           process_definition_template_id,
-           process_definition_id,
-           term_id,
-           parent_task_id,
-           responsible_position_id,
-           start_date,
-           end_date,
-           status
-        )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          template.id,
-          definition.id,
-          term.id,
-          null,
-          null,
-          term.start_date,
-          term.end_date,
-          "pendiente"
-        ]
-      );
-      const insertedId = result.insertId;
-      existingTasksMap.set(template.id, {
-        id: insertedId,
-        parent_task_id: null,
-        process_definition_id: definition.id
-      });
-      createdTaskIds.push(insertedId);
-      return insertedId;
-    };
-
-    for (const definition of activeDefinitions) {
-      const templates = executableTemplatesMap.get(definition.id) || [];
-      if (!templates.length) {
-        definitionsWithoutTaskTemplates.push(definition.id);
-        continue;
-      }
-      for (const template of templates) {
-        await ensureTask(definition, template);
-      }
-    }
-
+    let taskItemsCreated = 0;
     let assignmentsCreated = 0;
+    const definitionsWithoutTaskItems = [];
     const definitionsWithoutTargetRules = [];
     const definitionsWithoutAssignees = [];
 
-    for (const task of existingTasksMap.values()) {
+    for (const definition of activeDefinitions) {
+      let task = existingTasksMap.get(definition.id) || null;
       if (!task) {
-        continue;
+        const [result] = await connection.query(
+          `INSERT INTO tasks
+           (
+             process_definition_id,
+             term_id,
+             launch_mode,
+             parent_task_id,
+             responsible_position_id,
+             start_date,
+             end_date,
+             status
+          )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            definition.id,
+            term.id,
+            "automatic",
+            null,
+            null,
+            term.start_date,
+            term.end_date,
+            "pendiente"
+          ]
+        );
+        task = {
+          id: result.insertId,
+          parent_task_id: null,
+          process_definition_id: definition.id
+        };
+        existingTasksMap.set(definition.id, task);
+        createdTaskIds.push(task.id);
       }
-      const definitionEntry = definitionById.get(task.process_definition_id);
-      if (!definitionEntry) {
-        continue;
+
+      const hydrated = await hydrateTaskFromDefinition({
+        connection,
+        taskId: task.id,
+        processDefinitionId: definition.id,
+        termId: term.id,
+        executableTemplatesMap,
+        targetRulesMap
+      });
+
+      taskItemsCreated += hydrated.task_items_inserted;
+      assignmentsCreated += hydrated.assignments_created;
+
+      if (hydrated.task_items_total < 1) {
+        definitionsWithoutTaskItems.push(definition.id);
       }
-      const rules = targetRulesMap.get(definitionEntry.id) || [];
-      if (!rules.length) {
-        definitionsWithoutTargetRules.push(definitionEntry.id);
-        continue;
+      if (!hydrated.has_rules) {
+        definitionsWithoutTargetRules.push(definition.id);
+      } else if (!hydrated.has_assignees) {
+        definitionsWithoutAssignees.push(definition.id);
       }
-      const positions = [];
-      for (const rule of rules) {
-        const matched = await getPositionsForRule(connection, rule);
-        positions.push(...matched);
-      }
-      if (!positions.length) {
-        definitionsWithoutAssignees.push(definitionEntry.id);
-        continue;
-      }
-      const values = positions.map((row) => [task.id, row.position_id, row.person_id ?? null]);
-      const placeholders = values.map(() => "(?, ?, ?)").join(", ");
-      const flatValues = values.flat();
-      const [result] = await connection.query(
-        `INSERT IGNORE INTO task_assignments (task_id, position_id, assigned_person_id)
-         VALUES ${placeholders}`,
-        flatValues
-      );
-      assignmentsCreated += result.affectedRows || 0;
     }
 
     await connection.commit();
@@ -330,8 +443,9 @@ export const generateTasksForTerm = async (termId) => {
       term_id: term.id,
       tasks_created: createdTaskIds.length,
       tasks_existing: existingTasksMap.size,
+      task_items_created: taskItemsCreated,
       assignments_created: assignmentsCreated,
-      definitions_without_task_templates: definitionsWithoutTaskTemplates,
+      definitions_without_task_items: definitionsWithoutTaskItems,
       definitions_without_target_rules: definitionsWithoutTargetRules,
       definitions_without_assignees: definitionsWithoutAssignees
     };
@@ -352,28 +466,21 @@ export const updateParentTaskStatusForTask = async (taskId, externalConnection =
   let currentTaskId = taskId;
 
   while (currentTaskId) {
-    const [taskRows] = await connection.query(
-      `SELECT id, parent_task_id, term_id
-       FROM tasks
-       WHERE id = ?
-       LIMIT 1`,
-      [currentTaskId]
-    );
-    if (!taskRows.length) {
+    const task = await getTaskById(connection, currentTaskId);
+    if (!task) {
       break;
     }
-    const parentId = taskRows[0].parent_task_id;
+    const parentId = task.parent_task_id;
     if (!parentId) {
       break;
     }
 
-    const termId = taskRows[0].term_id;
     const [childRows] = await connection.query(
       `SELECT status, COUNT(*) AS count
        FROM tasks
        WHERE parent_task_id = ? AND term_id = ?
        GROUP BY status`,
-      [parentId, termId]
+      [parentId, task.term_id]
     );
 
     if (!childRows.length) {

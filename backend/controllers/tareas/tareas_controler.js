@@ -83,15 +83,15 @@ export const getuserTarea = async (req, res) => {
               t.start_date,
               t.end_date,
               t.term_id,
-              t.process_definition_template_id,
+              t.launch_mode,
               ta.id AS assignment_id,
               ta.status AS assignment_status,
               pdv.id AS process_definition_id,
               pdv.variation_key,
               pdv.definition_version,
               pdv.name AS process_definition_name,
-              pdtb.usage_role AS template_usage_role,
-              tar.display_name AS template_name,
+              tis.task_item_count,
+              tis.task_item_names,
               p.id AS process_id,
               p.name AS process_name,
               p.slug AS process_slug,
@@ -100,10 +100,17 @@ export const getuserTarea = async (req, res) => {
        FROM task_assignments ta
        INNER JOIN tasks t ON t.id = ta.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       LEFT JOIN process_definition_templates pdtb
-         ON pdtb.id = t.process_definition_template_id
-       LEFT JOIN template_artifacts tar
-         ON tar.id = pdtb.template_artifact_id
+       LEFT JOIN (
+         SELECT
+           ti.task_id,
+           COUNT(*) AS task_item_count,
+           GROUP_CONCAT(DISTINCT tar.display_name ORDER BY ti.sort_order SEPARATOR ' | ') AS task_item_names
+         FROM task_items ti
+         LEFT JOIN template_artifacts tar
+           ON tar.id = ti.template_artifact_id
+         GROUP BY ti.task_id
+       ) tis
+         ON tis.task_id = t.id
        INNER JOIN processes p ON p.id = pdv.process_id
        INNER JOIN unit_positions up ON up.id = ta.position_id
        INNER JOIN units u ON u.id = up.unit_id
@@ -160,15 +167,15 @@ export const getTareaspendientes = async (req, res) => {
               t.start_date,
               t.end_date,
               t.term_id,
-              t.process_definition_template_id,
+              t.launch_mode,
               ta.id AS assignment_id,
               ta.status AS assignment_status,
               pdv.id AS process_definition_id,
               pdv.variation_key,
               pdv.definition_version,
               pdv.name AS process_definition_name,
-              pdtb.usage_role AS template_usage_role,
-              tar.display_name AS template_name,
+              tis.task_item_count,
+              tis.task_item_names,
               p.id AS process_id,
               p.name AS process_name,
               p.slug AS process_slug,
@@ -177,10 +184,17 @@ export const getTareaspendientes = async (req, res) => {
        FROM task_assignments ta
        INNER JOIN tasks t ON t.id = ta.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       LEFT JOIN process_definition_templates pdtb
-         ON pdtb.id = t.process_definition_template_id
-       LEFT JOIN template_artifacts tar
-         ON tar.id = pdtb.template_artifact_id
+       LEFT JOIN (
+         SELECT
+           ti.task_id,
+           COUNT(*) AS task_item_count,
+           GROUP_CONCAT(DISTINCT tar.display_name ORDER BY ti.sort_order SEPARATOR ' | ') AS task_item_names
+         FROM task_items ti
+         LEFT JOIN template_artifacts tar
+           ON tar.id = ti.template_artifact_id
+         GROUP BY ti.task_id
+       ) tis
+         ON tis.task_id = t.id
        INNER JOIN processes p ON p.id = pdv.process_id
        INNER JOIN unit_positions up ON up.id = ta.position_id
        INNER JOIN units u ON u.id = up.unit_id

@@ -386,17 +386,15 @@ Table processes {
 
 Table process_definition_series {
   id int [pk, increment]
-  process_id int [not null, ref: > processes.id]
   source_type varchar(20) [not null, default: 'legacy', note: "unit_type|cargo|legacy"]
   unit_type_id int [ref: > unit_types.id]
   cargo_id int [ref: > cargos.id]
   code varchar(120) [not null]
-  label varchar(180) [not null]
   is_active boolean [not null, default: true]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_id, code) [name: "uq_process_definition_series_code", unique]
+    (code) [name: "uq_process_definition_series_code", unique]
   }
 }
 
@@ -464,25 +462,57 @@ Table terms {
   is_active boolean [not null, default: true]
 }
 
+Table process_definition_triggers {
+  id int [pk, increment]
+  process_definition_id int [not null, ref: > process_definition_versions.id]
+  trigger_mode varchar(30) [not null, note: "automatic_by_term_type|manual_only|manual_custom_term"]
+  term_type_id int [ref: > term_types.id]
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, trigger_mode, term_type_id) [name: "uq_process_definition_triggers", unique]
+    (process_definition_id, trigger_mode, is_active) [name: "idx_process_definition_triggers_lookup"]
+  }
+}
+
 Table tasks {
   id int [pk, increment]
-  process_definition_template_id int [not null, ref: > process_definition_templates.id]
   process_definition_id int [not null, ref: > process_definition_versions.id]
   term_id int [not null, ref: > terms.id]
+  launch_mode varchar(20) [not null, default: 'manual', note: "automatic|manual"]
+  created_by_user_id int [ref: > persons.id, note: "Se usa para evitar duplicados por usuario en lanzamientos manuales."]
   parent_task_id int [ref: > tasks.id, note: "Solo para jerarquias manuales; el generador automatico no la completa."]
   responsible_position_id int [ref: > unit_positions.id]
   description text
   comments_thread_ref varchar(64) [note: "Mongo thread id para comentarios de la tarea. Permisos/reportes se resuelven en backend al combinar SQL + Mongo."]
-  is_main boolean [not null, default: true, note: "Main task created by system per process instance."]
   start_date date [not null]
   end_date date
   status varchar(30) [not null, default: 'pendiente', note: "pendiente|en_proceso|completada|cancelada"]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (term_id, process_definition_template_id) [name: 'uq_tasks_term_template', unique]
-    (process_definition_template_id, term_id) [name: 'idx_tasks_template_term']
     (process_definition_id, term_id) [name: 'idx_tasks_definition_term']
+    (launch_mode, created_by_user_id) [name: 'idx_tasks_launch']
+  }
+}
+
+Table task_items {
+  id int [pk, increment]
+  task_id int [not null, ref: > tasks.id]
+  process_definition_template_id int [not null, ref: > process_definition_templates.id]
+  template_artifact_id int [not null, ref: > template_artifacts.id]
+  template_usage_role varchar(30) [not null, default: 'manual_fill', note: "Snapshot de usage_role al instanciar"]
+  sort_order int [not null, default: 1]
+  responsible_position_id int [ref: > unit_positions.id]
+  assigned_person_id int [ref: > persons.id]
+  status varchar(30) [not null, default: 'pendiente', note: "pendiente|en_proceso|completada|cancelada"]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_id, process_definition_template_id) [name: 'uq_task_items_task_template', unique]
+    (task_id, sort_order) [name: 'idx_task_items_task']
+    (template_artifact_id) [name: 'idx_task_items_artifact']
   }
 }
 
@@ -561,11 +591,15 @@ Table process_definition_templates {
 
 Table documents {
   id int [pk, increment]
-  task_id int [not null, ref: > tasks.id]
+  task_item_id int [not null, ref: > task_items.id]
   status varchar(30) [not null, default: 'Inicial', note: "Inicial|En proceso|Aprobado|Rechazado"]
   comments_thread_ref varchar(64) [note: "Mongo thread id para comentarios del documento. Permisos/reportes se resuelven en backend al combinar SQL + Mongo."]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
+
+  Indexes {
+    (task_item_id) [unique]
+  }
 }
 
 Table document_versions {
@@ -587,7 +621,7 @@ Table document_versions {
 
 Table signature_flow_templates {
   id int [pk, increment]
-  process_definition_id int [not null, ref: > process_definition_versions.id]
+  process_definition_template_id int [not null, ref: > process_definition_templates.id]
   name varchar(180) [not null]
   description varchar(255)
   is_active boolean [not null, default: true]
