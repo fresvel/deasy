@@ -29,7 +29,7 @@ La carpeta fuente para la carga manual en desarrollo es:
 - `minio-bootstrap`: tarea puntual que crea el bucket y sincroniza el contenido de `docker/minio/import/`.
 - `minio-publish`: publica `tools/templates/dist/Plantillas/` hacia MinIO.
 - `minio-publish-seeds`: publica `tools/templates/seeds/` hacia MinIO.
-- `storage-uploader`: worker que consume RabbitMQ y publica automaticamente borradores hacia MinIO.
+- `storage-uploader`: worker disponible para jobs asincronos de storage (no es el camino principal para paquetes de usuario).
 
 ## Flujo de uso en desarrollo
 
@@ -79,15 +79,14 @@ En el flujo normal del sistema, MinIO participa asi:
 5. Vincular esos `template_artifacts` en `process_definition_templates`.
    - Desde ahi, una definicion de proceso ya puede usar esos templates.
 
-Flujo adicional para borradores creados desde el admin:
+Flujo adicional para paquetes de usuario creados desde el admin:
 
 1. En `template_artifacts`, usa `Sincronizar seeds`.
-2. Crea el borrador con `Nuevo borrador`.
-3. El backend escribe el paquete en `backend/storage/minio-jobs/templates-drafts/...`.
-4. El backend encola un trabajo en RabbitMQ (`RABBITMQ_STORAGE_QUEUE`).
-5. `storage-uploader` consume la cola y publica esos artifacts en:
+2. Crea el paquete de usuario desde el modal del admin.
+3. El backend escribe el paquete temporal en `backend/storage/minio-jobs/templates-drafts/...`.
+4. El backend lo sube directamente a:
    - `s3://<MINIO_TEMPLATES_BUCKET>/Users/<cedula>/...`
-6. Al finalizar la carga, el worker deja `template_artifacts.is_active = 1`.
+5. Solo cuando la carga termina correctamente, se inserta o actualiza `template_artifacts`.
 
 Flujo manual para publicar seeds locales:
 

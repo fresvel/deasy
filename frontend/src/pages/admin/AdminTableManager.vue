@@ -201,13 +201,20 @@
                   </select>
                 </div>
                 <div class="col-12 col-md-12 col-lg-3">
-                  <input
+                  <select
                     v-model="processDefinitionInlineFilters.variation_key"
-                    type="text"
-                    class="form-control"
-                    placeholder="Filtrar por serie"
-                    @input="debouncedSearch"
-                  />
+                    class="form-select"
+                    @change="fetchRows"
+                  >
+                    <option value="">Serie</option>
+                    <option
+                      v-for="row in processDefinitionSeriesOptions"
+                      :key="row.id"
+                      :value="String(row.code || '')"
+                    >
+                      {{ formatFkOptionLabel("process_definition_series", row) }}
+                    </option>
+                  </select>
                 </div>
               </template>
               <template v-else-if="isProcessTargetRuleFilterTable">
@@ -392,6 +399,18 @@
                         >
                           <span class="btn-inner">
                             <font-awesome-icon icon="rotate-right" />
+                          </span>
+                        </button>
+                        <button
+                          v-if="table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
+                          type="button"
+                          class="btn btn-sm btn-icon hope-action-btn hope-action-assign"
+                          title="Activar"
+                          aria-label="Activar"
+                          @click="openProcessDefinitionActivationForRow(row)"
+                        >
+                          <span class="btn-inner">
+                            <font-awesome-icon icon="check" />
                           </span>
                         </button>
                         <button
@@ -1342,6 +1361,7 @@
                   v-model="formData[field.name]"
                   class="form-select"
                   :disabled="isFieldLocked(field)"
+                  @change="handleSelectChange(field)"
                 >
                   <option value="">Seleccionar</option>
                   <option v-for="option in field.options || []" :key="option" :value="option">
@@ -1366,6 +1386,40 @@
                 />
               </div>
             </form>
+            <div
+              v-if="table?.table === 'process_definition_versions'"
+              class="definition-checklist mt-4"
+            >
+              <div class="definition-checklist-head">
+                <strong>Checklist de activacion</strong>
+                <span v-if="processDefinitionChecklistLoading" class="text-muted">Validando...</span>
+                <span
+                  v-else-if="!selectedRow?.id || editorMode === 'create'"
+                  class="text-muted"
+                >
+                  Disponible despues de guardar la definicion.
+                </span>
+              </div>
+              <div class="definition-checklist-items">
+                <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.rules }">
+                  <font-awesome-icon :icon="processDefinitionChecklist.rules ? 'check' : 'times'" />
+                  <span>Al menos una regla activa</span>
+                </div>
+                <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.triggers }">
+                  <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
+                  <span>Al menos un disparador activo</span>
+                </div>
+                <div
+                  class="definition-checklist-item"
+                  :class="{ 'is-complete': processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts }"
+                >
+                  <font-awesome-icon :icon="(processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts) ? 'check' : 'times'" />
+                  <span>
+                    {{ requiresDefinitionArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}
+                  </span>
+                </div>
+              </div>
+            </div>
 
           </div>
           <div class="modal-footer">
@@ -1373,10 +1427,28 @@
               v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
               type="button"
               class="btn btn-outline-primary"
+              @click="openDefinitionRulesFromEditor"
+            >
+              <font-awesome-icon icon="sitemap" class="me-2" />
+              Reglas
+            </button>
+            <button
+              v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
+              type="button"
+              class="btn btn-outline-primary"
+              @click="openDefinitionTriggersFromEditor"
+            >
+              <font-awesome-icon icon="sitemap" class="me-2" />
+              Disparadores
+            </button>
+            <button
+              v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
+              type="button"
+              class="btn btn-outline-primary"
               @click="openDefinitionArtifactsFromEditor"
             >
               <font-awesome-icon icon="link" class="me-2" />
-              Artifacts
+              Paquetes
             </button>
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
               Cancelar
@@ -1397,7 +1469,7 @@
       aria-hidden="true"
       ref="processDefinitionVersioningModal"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="processDefinitionVersioningModalLabel">Crear nueva version</h5>
@@ -1436,7 +1508,7 @@
       aria-hidden="true"
       ref="processDefinitionActivationModal"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog definition-activation-modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="processDefinitionActivationModalLabel">Activar definicion</h5>
@@ -1448,18 +1520,173 @@
             ></button>
           </div>
           <div class="modal-body">
-            <p class="mb-2">
-              Vas a activar una definicion en borrador.
-            </p>
-            <p class="mb-0 text-muted">
-              Si ya existe una definicion activa en esta misma serie, se retirara automaticamente.
-            </p>
+            <div v-if="processDefinitionActivationChecking" class="text-muted">
+              Validando configuracion de la definicion...
+            </div>
+            <template v-else>
+              <p class="mb-2">
+                Vas a activar una definicion en borrador.
+              </p>
+              <div class="definition-activation-warning mt-3">
+                Despues de activarla ya no podras modificar reglas, disparadores ni paquetes en esta misma version.
+                Si ya existe una definicion activa en esta misma serie, se retirara automaticamente.
+              </div>
+
+              <div class="definition-activation-checklist mt-3">
+                <div class="definition-checklist-items">
+                  <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionActivationHasActiveRules }">
+                    <font-awesome-icon :icon="processDefinitionActivationHasActiveRules ? 'check' : 'times'" />
+                    <span>Al menos una regla activa</span>
+                  </div>
+                  <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionActivationHasActiveTriggers }">
+                    <font-awesome-icon :icon="processDefinitionActivationHasActiveTriggers ? 'check' : 'times'" />
+                    <span>Al menos un disparador activo</span>
+                  </div>
+                  <div
+                    class="definition-checklist-item"
+                    :class="{ 'is-complete': processDefinitionActivationHasRequiredArtifacts || !processDefinitionActivationRequiresArtifacts }"
+                  >
+                    <font-awesome-icon :icon="(processDefinitionActivationHasRequiredArtifacts || !processDefinitionActivationRequiresArtifacts) ? 'check' : 'times'" />
+                    <span>
+                      {{ processDefinitionActivationRequiresArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="definition-activation-panel mt-3">
+                <div class="btn-group btn-group-sm definition-activation-menu" role="group" aria-label="Resumen de activacion">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :class="{ active: processDefinitionActivationView === 'definition' }"
+                    @click="processDefinitionActivationView = 'definition'"
+                  >
+                    Definicion
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :class="{ active: processDefinitionActivationView === 'rules' }"
+                    @click="processDefinitionActivationView = 'rules'"
+                  >
+                    Reglas
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :class="{ active: processDefinitionActivationView === 'triggers' }"
+                    @click="processDefinitionActivationView = 'triggers'"
+                  >
+                    Disparadores
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :class="{ active: processDefinitionActivationView === 'artifacts' }"
+                    @click="processDefinitionActivationView = 'artifacts'"
+                  >
+                    Paquetes
+                  </button>
+                </div>
+
+                <div v-if="processDefinitionActivationView === 'definition'" class="mt-3">
+                  <div class="row g-2 small">
+                    <div class="col-12 col-md-6"><strong>Proceso:</strong> {{ formatCell(selectedRow?.process_id, { name: 'process_id' }, selectedRow || {}) }}</div>
+                    <div class="col-12 col-md-6"><strong>Serie:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
+                    <div class="col-12 col-md-6"><strong>Version:</strong> {{ selectedRow?.definition_version || "—" }}</div>
+                    <div class="col-12 col-md-6"><strong>Modo:</strong> {{ selectedRow?.execution_mode || "—" }}</div>
+                    <div class="col-12"><strong>Nombre:</strong> {{ selectedRow?.name || "—" }}</div>
+                    <div class="col-12"><strong>Descripcion:</strong> {{ selectedRow?.description || "—" }}</div>
+                  </div>
+                </div>
+
+                <div v-else-if="processDefinitionActivationView === 'rules'" class="mt-3">
+                  <div v-if="processDefinitionActivationRules.length" class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                      <thead>
+                        <tr>
+                          <th>Alcance</th>
+                          <th>Destino</th>
+                          <th>Activo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="row in processDefinitionActivationRules" :key="`activation-rule-${row.id}`">
+                          <td>{{ row.unit_scope_type || "—" }}</td>
+                          <td>{{ formatDefinitionRuleSummary(row) }}</td>
+                          <td>{{ Number(row.is_active) === 1 ? "Si" : "No" }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div v-else class="text-muted small">Sin reglas registradas.</div>
+                </div>
+
+                <div v-else-if="processDefinitionActivationView === 'triggers'" class="mt-3">
+                  <div v-if="processDefinitionActivationTriggers.length" class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                      <thead>
+                        <tr>
+                          <th>Modo</th>
+                          <th>Tipo de periodo</th>
+                          <th>Activo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="row in processDefinitionActivationTriggers" :key="`activation-trigger-${row.id}`">
+                          <td>{{ row.trigger_mode || "—" }}</td>
+                          <td>{{ formatCell(row.term_type_id, { name: 'term_type_id' }, row) }}</td>
+                          <td>{{ Number(row.is_active) === 1 ? "Si" : "No" }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div v-else class="text-muted small">Sin disparadores registrados.</div>
+                </div>
+
+                <div v-else class="mt-3">
+                  <div v-if="processDefinitionActivationArtifacts.length" class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                      <thead>
+                        <tr>
+                          <th>Paquete</th>
+                          <th>Uso</th>
+                          <th>Genera tarea</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="row in processDefinitionActivationArtifacts" :key="`activation-artifact-${row.id}`">
+                          <td>{{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }, row) }}</td>
+                          <td>{{ row.usage_role || "—" }}</td>
+                          <td>{{ Number(row.creates_task) === 1 ? "Si" : "No" }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div v-else class="text-muted small">Sin paquetes vinculados.</div>
+                </div>
+              </div>
+            </template>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" @click="cancelProcessDefinitionActivation">
               Cancelar
             </button>
-            <button type="button" class="btn btn-primary" @click="confirmProcessDefinitionActivation">
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              :disabled="processDefinitionActivationChecking || !processDefinitionActivationPrimaryAction"
+              @click="handleProcessDefinitionActivationPrimaryAction"
+            >
+              {{ processDefinitionActivationPrimaryActionLabel }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              :disabled="processDefinitionActivationChecking || !allProcessDefinitionActivationRequirementsMet"
+              @click="confirmProcessDefinitionActivation"
+            >
               Activar
             </button>
           </div>
@@ -1516,15 +1743,21 @@
               <span v-if="definitionArtifactsPromptContext?.name">
                 <strong>{{ definitionArtifactsPromptContext.name }}</strong>.
               </span>
-              ¿Deseas agregar artifacts ahora?
+              ¿Deseas agregar reglas o paquetes ahora? Recuerda registrar disparadores antes de activarla.
             </p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" @click="closeDefinitionArtifactsPrompt">
               Ahora no
             </button>
+            <button type="button" class="btn btn-outline-primary" @click="confirmDefinitionRulesPrompt">
+              Agregar reglas
+            </button>
+            <button type="button" class="btn btn-outline-primary" @click="confirmDefinitionTriggersPrompt">
+              Agregar disparadores
+            </button>
             <button type="button" class="btn btn-primary" @click="confirmDefinitionArtifactsPrompt">
-              Agregar artifacts
+              Agregar paquetes
             </button>
           </div>
         </div>
@@ -1697,6 +1930,462 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-danger" @click="closeDefinitionArtifactsManager">Cerrar</button>
+            <button type="button" class="btn btn-outline-primary" @click="acceptDefinitionArtifactsManager">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="definitionTriggersModal"
+      tabindex="-1"
+      aria-labelledby="definitionTriggersModalLabel"
+      aria-hidden="true"
+      ref="definitionTriggersModal"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="definitionTriggersModalLabel">Disparadores de la definicion</h5>
+            <button type="button" class="btn-close" @click="closeDefinitionTriggersManager" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="definitionTriggersContext" class="person-assignment-context mb-3">
+              <strong>{{ definitionTriggersContext.name || `Definicion #${definitionTriggersContext.id}` }}</strong>
+              <span class="text-muted ms-2">
+                Serie {{ definitionTriggersContext.variation_key || "—" }} | Version {{ definitionTriggersContext.definition_version || "—" }} | Estado {{ definitionTriggersContext.status || "—" }}
+              </span>
+            </div>
+
+            <div v-if="definitionTriggersError" class="alert alert-danger">{{ definitionTriggersError }}</div>
+            <div v-if="definitionTriggersContext && !canManageDefinitionTriggers" class="alert alert-info">
+              Esta definicion no esta en draft. Solo puedes gestionar disparadores cuando la definicion este en draft.
+            </div>
+
+            <div class="person-assignment-form">
+              <div class="row g-3">
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Modo de disparo</label>
+                  <select
+                    v-model="definitionTriggersForm.trigger_mode"
+                    class="form-select"
+                    :disabled="!canManageDefinitionTriggers"
+                    @change="handleDefinitionTriggerModeChange"
+                  >
+                    <option value="automatic_by_term_type">automatic_by_term_type</option>
+                    <option value="manual_only">manual_only</option>
+                    <option value="manual_custom_term">manual_custom_term</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Tipo de periodo</label>
+                  <div class="input-group">
+                    <input
+                      v-model="definitionTriggersLabels.term_type_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Selecciona un tipo"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="!canManageDefinitionTriggers || !definitionTriggersForm.term_type_id || !definitionTriggerRequiresTermType"
+                      @click="clearDefinitionTriggerTermType"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="!canManageDefinitionTriggers || !definitionTriggerRequiresTermType"
+                      @click="openDefinitionTriggerFkSearch"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Activo</label>
+                  <select v-model="definitionTriggersForm.is_active" class="form-select" :disabled="!canManageDefinitionTriggers">
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+              </div>
+              <div class="person-assignment-form-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  :disabled="!canSubmitDefinitionTrigger"
+                  @click="submitDefinitionTrigger"
+                >
+                  {{ definitionTriggersEditId ? "Guardar disparador" : "Agregar disparador" }}
+                </button>
+                <button
+                  v-if="definitionTriggersEditId"
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  @click="resetDefinitionTriggersForm"
+                >
+                  Cancelar edicion
+                </button>
+              </div>
+            </div>
+
+            <div v-if="definitionTriggersLoading" class="text-muted mt-3">Cargando disparadores vinculados...</div>
+            <div v-else class="table-responsive mt-3 person-assignment-table">
+              <table class="table table-sm table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Modo</th>
+                    <th>Tipo de periodo</th>
+                    <th>Activo</th>
+                    <th class="text-end">Accion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="definitionTriggersRows.length === 0">
+                    <td colspan="5" class="text-center text-muted">Sin disparadores vinculados.</td>
+                  </tr>
+                  <tr v-for="row in definitionTriggersRows" :key="row.id">
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.trigger_mode }}</td>
+                    <td>{{ formatCell(row.term_type_id, { name: 'term_type_id' }) }}</td>
+                    <td>{{ Number(row.is_active) === 1 ? "Si" : "No" }}</td>
+                    <td class="text-end">
+                      <div class="d-inline-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                          title="Visualizar"
+                          aria-label="Visualizar"
+                          @click="openRecordViewer(row, allTablesMap.process_definition_triggers)"
+                        >
+                          <span class="btn-inner">
+                            <font-awesome-icon icon="eye" />
+                          </span>
+                        </button>
+                        <BtnEdit tooltip="Editar disparador" @onpress="startDefinitionTriggerEdit(row)" />
+                        <BtnDelete message="Eliminar disparador" @onpress="deleteDefinitionTrigger(row)" />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" @click="closeDefinitionTriggersManager">Cerrar</button>
+            <button type="button" class="btn btn-outline-primary" @click="acceptDefinitionTriggersManager">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="definitionRulesModal"
+      tabindex="-1"
+      aria-labelledby="definitionRulesModalLabel"
+      aria-hidden="true"
+      ref="definitionRulesModal"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="definitionRulesModalLabel">Reglas de la definicion</h5>
+            <button type="button" class="btn-close" @click="closeDefinitionRulesManager" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="definitionRulesContext" class="person-assignment-context mb-3">
+              <strong>{{ definitionRulesContext.name || `Definicion #${definitionRulesContext.id}` }}</strong>
+              <span class="text-muted ms-2">
+                Serie {{ definitionRulesContext.variation_key || "—" }} | Version {{ definitionRulesContext.definition_version || "—" }} | Estado {{ definitionRulesContext.status || "—" }}
+              </span>
+            </div>
+
+            <div v-if="definitionRulesError" class="alert alert-danger">{{ definitionRulesError }}</div>
+            <div v-if="definitionRulesContext && !canManageDefinitionRules" class="alert alert-info">
+              Esta definicion no esta en draft. Solo puedes gestionar reglas cuando la definicion este en draft.
+            </div>
+            <div
+              v-else-if="canManageDefinitionRules && !canSubmitDefinitionRule"
+              class="alert alert-secondary"
+            >
+              Completa el alcance requerido para habilitar el boton de guardar.
+            </div>
+
+            <div class="person-assignment-form">
+              <div class="row g-3">
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Alcance</label>
+                  <select
+                    v-model="definitionRulesForm.unit_scope_type"
+                    class="form-select"
+                    :disabled="!canManageDefinitionRules"
+                    @change="handleDefinitionRuleScopeChange"
+                  >
+                    <option value="unit_exact">unit_exact</option>
+                    <option value="unit_subtree">unit_subtree</option>
+                    <option value="unit_type">unit_type</option>
+                    <option value="all_units">all_units</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Unidad</label>
+                  <div class="input-group">
+                    <input
+                      v-model="definitionRulesLabels.unit_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Selecciona una unidad"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="!canManageDefinitionRules || !definitionRulesForm.unit_id"
+                      @click="clearDefinitionRuleField('unit_id')"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="!canManageDefinitionRules"
+                      @click="openDefinitionRuleFkSearch('unit_id')"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Tipo de unidad</label>
+                  <div class="input-group">
+                    <input
+                      v-model="definitionRulesLabels.unit_type_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Selecciona un tipo"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="!canManageDefinitionRules || !definitionRulesForm.unit_type_id"
+                      @click="clearDefinitionRuleField('unit_type_id')"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="!canManageDefinitionRules"
+                      @click="openDefinitionRuleFkSearch('unit_type_id')"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Cargo</label>
+                  <div class="input-group">
+                    <input
+                      v-model="definitionRulesLabels.cargo_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Selecciona un cargo"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="!canManageDefinitionRules || !definitionRulesForm.cargo_id"
+                      @click="clearDefinitionRuleField('cargo_id')"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="!canManageDefinitionRules"
+                      @click="openDefinitionRuleFkSearch('cargo_id')"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-dark">Puesto exacto</label>
+                  <div class="input-group">
+                    <input
+                      v-model="definitionRulesLabels.position_id"
+                      type="text"
+                      class="form-control"
+                      placeholder="Selecciona un puesto"
+                      readonly
+                      @keydown.prevent
+                      @paste.prevent
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Limpiar"
+                      aria-label="Limpiar"
+                      :disabled="!canManageDefinitionRules || !definitionRulesForm.position_id"
+                      @click="clearDefinitionRuleField('position_id')"
+                    >
+                      <font-awesome-icon icon="times" />
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      title="Buscar"
+                      aria-label="Buscar"
+                      :disabled="!canManageDefinitionRules"
+                      @click="openDefinitionRuleFkSearch('position_id')"
+                    >
+                      <font-awesome-icon icon="search" />
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Entrega</label>
+                  <select v-model="definitionRulesForm.recipient_policy" class="form-select" :disabled="!canManageDefinitionRules">
+                    <option value="all_matches">all_matches</option>
+                    <option value="one_per_unit">one_per_unit</option>
+                    <option value="one_match_only">one_match_only</option>
+                    <option value="exact_position">exact_position</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-2">
+                  <label class="form-label text-dark">Prioridad</label>
+                  <input v-model="definitionRulesForm.priority" type="number" min="1" class="form-control" :disabled="!canManageDefinitionRules" />
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Activo</label>
+                  <select v-model="definitionRulesForm.is_active" class="form-select" :disabled="!canManageDefinitionRules">
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Incluye descendientes</label>
+                  <select v-model="definitionRulesForm.include_descendants" class="form-select" :disabled="!canManageDefinitionRules">
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Vigencia desde</label>
+                  <input v-model="definitionRulesForm.effective_from" type="date" class="form-control" :disabled="!canManageDefinitionRules" />
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-dark">Vigencia hasta</label>
+                  <input v-model="definitionRulesForm.effective_to" type="date" class="form-control" :disabled="!canManageDefinitionRules" />
+                </div>
+              </div>
+              <div class="person-assignment-form-actions">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  :disabled="!canSubmitDefinitionRule"
+                  @click="submitDefinitionRule"
+                >
+                  {{ definitionRulesEditId ? "Guardar regla" : "Agregar regla" }}
+                </button>
+                <button
+                  v-if="definitionRulesEditId"
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  @click="resetDefinitionRulesForm"
+                >
+                  Cancelar edicion
+                </button>
+              </div>
+            </div>
+
+            <div v-if="definitionRulesLoading" class="text-muted mt-3">Cargando reglas vinculadas...</div>
+            <div v-else class="table-responsive mt-3 person-assignment-table">
+              <table class="table table-sm table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Alcance</th>
+                    <th>Unidad</th>
+                    <th>Tipo de unidad</th>
+                    <th>Cargo</th>
+                    <th>Puesto</th>
+                    <th>Entrega</th>
+                    <th>Activo</th>
+                    <th class="text-end">Accion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="definitionRulesRows.length === 0">
+                    <td colspan="9" class="text-center text-muted">Sin reglas vinculadas.</td>
+                  </tr>
+                  <tr v-for="row in definitionRulesRows" :key="row.id">
+                    <td>{{ row.id }}</td>
+                    <td>{{ formatDefinitionRuleCell(row, "unit_scope_type") }}</td>
+                    <td>{{ formatDefinitionRuleCell(row, "unit_id") }}</td>
+                    <td>{{ formatDefinitionRuleCell(row, "unit_type_id") }}</td>
+                    <td>{{ formatDefinitionRuleCell(row, "cargo_id") }}</td>
+                    <td>{{ formatDefinitionRuleCell(row, "position_id") }}</td>
+                    <td>{{ formatDefinitionRuleCell(row, "recipient_policy") }}</td>
+                    <td>{{ Number(row.is_active) === 1 ? "Si" : "No" }}</td>
+                    <td class="text-end">
+                      <div class="d-inline-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-icon hope-action-btn hope-action-view"
+                          title="Visualizar"
+                          aria-label="Visualizar"
+                          @click="openRecordViewer(row, allTablesMap.process_target_rules)"
+                        >
+                          <span class="btn-inner">
+                            <font-awesome-icon icon="eye" />
+                          </span>
+                        </button>
+                        <BtnEdit tooltip="Editar regla" @onpress="startDefinitionRuleEdit(row)" />
+                        <BtnDelete message="Eliminar regla" @onpress="deleteDefinitionRule(row)" />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-danger" @click="closeDefinitionRulesManager">Cerrar</button>
+            <button type="button" class="btn btn-outline-primary" @click="acceptDefinitionRulesManager">Aceptar</button>
           </div>
         </div>
       </div>
@@ -2771,13 +3460,13 @@
       <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
-            <h5 class="modal-title">{{ draftArtifactEditId ? "Editar artifact de usuario" : "Crear artifact de usuario" }}</h5>
+            <h5 class="modal-title">{{ draftArtifactEditId ? "Editar paquete de usuario" : "Crear paquete de usuario" }}</h5>
             <button type="button" class="btn-close" aria-label="Cerrar" @click="closeDraftArtifactModal"></button>
           </div>
           <div class="modal-body">
             <div v-if="draftArtifactError" class="alert alert-danger">{{ draftArtifactError }}</div>
             <div class="alert alert-info">
-              Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} el artifact de usuario y lo sube directamente a <strong>MinIO</strong>. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
+              Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} el paquete de usuario y lo sube directamente a <strong>MinIO</strong>. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
             </div>
             <div v-if="draftArtifactLoading" class="alert alert-warning">
               Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
@@ -2957,6 +3646,7 @@ const templateArtifactInlineFilters = ref({
   artifact_stage: ""
 });
 const processDefinitionProcessOptions = ref([]);
+const processDefinitionSeriesOptions = ref([]);
 const editorMode = ref("create");
 const formData = ref({});
 const selectedRow = ref(null);
@@ -2966,6 +3656,8 @@ const fkDisplay = ref({});
 const editorModal = ref(null);
 const processDefinitionVersioningModal = ref(null);
 const processDefinitionActivationModal = ref(null);
+const definitionRulesModal = ref(null);
+const definitionTriggersModal = ref(null);
 const definitionArtifactsModal = ref(null);
 const definitionArtifactsPromptModal = ref(null);
 const draftArtifactModalRef = ref(null);
@@ -2980,6 +3672,8 @@ const searchInput = ref(null);
 let editorInstance = null;
 let processDefinitionVersioningInstance = null;
 let processDefinitionActivationInstance = null;
+let definitionRulesInstance = null;
+let definitionTriggersInstance = null;
 let definitionArtifactsInstance = null;
 let definitionArtifactsPromptInstance = null;
 let draftArtifactInstance = null;
@@ -2990,7 +3684,7 @@ let fkInstance = null;
 let fkViewerInstance = null;
 let fkFilterInstance = null;
 let fkCreateInstance = null;
-let returnModal = null;
+const modalOriginStack = ref([]);
 let searchTimeout = null;
 let vacantSearchTimeout = null;
 let unassignedTemplateArtifactSearchTimeout = null;
@@ -3006,6 +3700,59 @@ const recordViewerRelatedSections = ref([]);
 const processDefinitionVersioningSource = ref(null);
 const processDefinitionCloneSourceId = ref("");
 const processDefinitionActivationConfirmed = ref(false);
+const processDefinitionActivationFromEditor = ref(false);
+const processDefinitionActivationChecking = ref(false);
+const processDefinitionActivationHasActiveRules = ref(true);
+const processDefinitionActivationHasActiveTriggers = ref(true);
+const processDefinitionActivationHasRequiredArtifacts = ref(true);
+const processDefinitionActivationRequiresArtifacts = ref(false);
+const processDefinitionActivationView = ref("definition");
+const processDefinitionActivationRules = ref([]);
+const processDefinitionActivationTriggers = ref([]);
+const processDefinitionActivationArtifacts = ref([]);
+const processDefinitionChecklistLoading = ref(false);
+const processDefinitionChecklist = ref({
+  rules: false,
+  triggers: false,
+  artifacts: false
+});
+const definitionRulesContext = ref(null);
+const definitionRulesRows = ref([]);
+const definitionRulesLoading = ref(false);
+const definitionRulesError = ref("");
+const definitionRulesEditId = ref("");
+const definitionRulesForm = ref({
+  unit_scope_type: "unit_exact",
+  unit_id: "",
+  unit_type_id: "",
+  include_descendants: "0",
+  cargo_id: "",
+  position_id: "",
+  recipient_policy: "all_matches",
+  priority: "1",
+  is_active: "1",
+  effective_from: "",
+  effective_to: ""
+});
+const definitionRulesLabels = ref({
+  unit_id: "",
+  unit_type_id: "",
+  cargo_id: "",
+  position_id: ""
+});
+const definitionTriggersContext = ref(null);
+const definitionTriggersRows = ref([]);
+const definitionTriggersLoading = ref(false);
+const definitionTriggersError = ref("");
+const definitionTriggersEditId = ref("");
+const definitionTriggersForm = ref({
+  trigger_mode: "automatic_by_term_type",
+  term_type_id: "",
+  is_active: "1"
+});
+const definitionTriggersLabels = ref({
+  term_type_id: ""
+});
 const definitionArtifactsContext = ref(null);
 const definitionArtifactsRows = ref([]);
 const definitionArtifactsLoading = ref(false);
@@ -3224,8 +3971,14 @@ const PROCESS_INLINE_HIDDEN_FIELDS = new Set([
   "version_effective_to",
   "version_parent_version_id"
 ]);
+const PROCESS_DEFINITION_HIDDEN_FIELDS = new Set([
+  "variation_key"
+]);
 const visibleFormFields = computed(() => {
   if (!isProcessTable.value) {
+    if (props.table?.table === "process_definition_versions") {
+      return formFields.value.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
+    }
     return formFields.value;
   }
   return formFields.value.filter((field) => !PROCESS_INLINE_HIDDEN_FIELDS.has(field.name));
@@ -3250,6 +4003,9 @@ const tableListFields = computed(() => {
   }
   const fields = props.table.fields.filter((field) => !(isPersonTable.value && field.name === "password_hash"));
   let normalizedFields = fields;
+  if (props.table.table === "process_definition_versions") {
+    normalizedFields = normalizedFields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
+  }
   if (props.table.table === "template_artifacts") {
     const preferredOrder = [
       "id",
@@ -3434,8 +4190,83 @@ const isProcessTargetRuleFilterTable = computed(() => props.table?.table === "pr
 const canManageDefinitionArtifacts = computed(() =>
   String(definitionArtifactsContext.value?.status || "") === "draft"
 );
+const canManageDefinitionRules = computed(() =>
+  String(definitionRulesContext.value?.status || "") === "draft"
+);
+const canManageDefinitionTriggers = computed(() =>
+  String(definitionTriggersContext.value?.status || "") === "draft"
+);
 const canSubmitDefinitionArtifact = computed(() =>
   canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.template_artifact_id)
+);
+const canSubmitDefinitionRule = computed(() => {
+  if (!canManageDefinitionRules.value) {
+    return false;
+  }
+  const scopeType = String(definitionRulesForm.value.unit_scope_type || "");
+  if (scopeType === "unit_type") {
+    return Boolean(definitionRulesForm.value.unit_type_id);
+  }
+  if (scopeType === "unit_exact" || scopeType === "unit_subtree") {
+    return Boolean(definitionRulesForm.value.unit_id || definitionRulesForm.value.position_id);
+  }
+  if (scopeType === "all_units") {
+    return true;
+  }
+  return false;
+});
+const definitionTriggerRequiresTermType = computed(() =>
+  String(definitionTriggersForm.value.trigger_mode || "") === "automatic_by_term_type"
+);
+const canSubmitDefinitionTrigger = computed(() => {
+  if (!canManageDefinitionTriggers.value) {
+    return false;
+  }
+  if (definitionTriggerRequiresTermType.value) {
+    return Boolean(definitionTriggersForm.value.term_type_id);
+  }
+  return true;
+});
+const requiresDefinitionArtifacts = computed(() =>
+  Number(selectedRow.value?.has_document) === 1 || Number(formData.value?.has_document) === 1
+);
+const processDefinitionActivationPrimaryAction = computed(() => {
+  if (processDefinitionActivationChecking.value) {
+    return null;
+  }
+  if (processDefinitionActivationView.value === "definition") {
+    return {
+      type: "edit_definition",
+      label: "Editar definicion"
+    };
+  }
+  if (processDefinitionActivationView.value === "rules") {
+    return {
+      type: "rules",
+      label: processDefinitionActivationRules.value.length ? "Editar reglas" : "Agregar reglas"
+    };
+  }
+  if (processDefinitionActivationView.value === "triggers") {
+    return {
+      type: "triggers",
+      label: processDefinitionActivationTriggers.value.length ? "Editar disparadores" : "Agregar disparadores"
+    };
+  }
+  if (processDefinitionActivationView.value === "artifacts") {
+    return {
+      type: "artifacts",
+      label: processDefinitionActivationArtifacts.value.length ? "Editar paquetes" : "Agregar paquetes"
+    };
+  }
+  return null;
+});
+const processDefinitionActivationPrimaryActionLabel = computed(() =>
+  processDefinitionActivationPrimaryAction.value?.label || "Continuar"
+);
+const allProcessDefinitionActivationRequirementsMet = computed(() =>
+  processDefinitionActivationHasActiveRules.value
+  && processDefinitionActivationHasActiveTriggers.value
+  && processDefinitionActivationHasRequiredArtifacts.value
 );
 const draftArtifactPreviewUrl = computed(() => {
   if (!draftArtifactForm.value.template_seed_id) {
@@ -3616,6 +4447,9 @@ const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
   }
   if (tableMeta.table === "template_artifacts") {
     return fields.map((field) => formatTemplateArtifactFieldLabel(field));
+  }
+  if (tableMeta.table === "process_definition_versions") {
+    return fields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
   }
   if (tableMeta.table === "process_definition_templates" && includeVirtual) {
     const expandedFields = [];
@@ -3903,6 +4737,13 @@ const formatValueForTable = (tableMeta, value, field, row = null) => {
   if (["created_at", "updated_at", "created", "updated"].includes(fieldName)) {
     return formatDateTimeHour(value);
   }
+  if (tableMeta?.table === "process_definition_versions" && fieldName === "series_id") {
+    const seriesLabel = getFkCachedLabel("process_definition_series", value);
+    if (seriesLabel !== null && seriesLabel !== undefined && seriesLabel !== "") {
+      return seriesLabel;
+    }
+    return row?.variation_key || value || "—";
+  }
   if (tableMeta?.table === "process_target_rules") {
     if (["effective_from", "effective_to"].includes(fieldName)) {
       return formatDateOnly(value);
@@ -3936,6 +4777,14 @@ const formatValueForTable = (tableMeta, value, field, row = null) => {
 
 const formatCell = (value, field, row = null) =>
   formatValueForTable(props.table, value, field, row);
+
+const formatDefinitionRuleCell = (row, fieldName) =>
+  formatValueForTable(
+    allTablesMap.value.process_target_rules || { table: "process_target_rules", fields: [] },
+    row?.[fieldName],
+    { name: fieldName },
+    row
+  );
 
 const toDateInputValue = (value) => {
   if (!value) {
@@ -3999,6 +4848,21 @@ const getNextSemanticVersion = (value) => {
   return `${major}.${minor}.${patch}`;
 };
 
+const pushModalOrigin = (origin) => {
+  if (!origin) {
+    return;
+  }
+  modalOriginStack.value.push(origin);
+};
+
+const peekModalOrigin = () => (
+  modalOriginStack.value.length ? modalOriginStack.value[modalOriginStack.value.length - 1] : null
+);
+
+const clearModalOrigins = () => {
+  modalOriginStack.value = [];
+};
+
 const ensureEditorInstance = () => {
   if (!editorInstance && editorModal.value) {
     editorInstance = new Modal(editorModal.value);
@@ -4018,7 +4882,52 @@ const ensureProcessDefinitionActivationInstance = () => {
   if (!processDefinitionActivationInstance && processDefinitionActivationModal.value) {
     processDefinitionActivationInstance = new Modal(processDefinitionActivationModal.value);
     processDefinitionActivationModal.value.addEventListener("hidden.bs.modal", () => {
+      if (peekModalOrigin() === "definitionActivation") {
+        return;
+      }
       processDefinitionActivationConfirmed.value = false;
+      processDefinitionActivationFromEditor.value = false;
+      processDefinitionActivationChecking.value = false;
+      processDefinitionActivationHasActiveRules.value = true;
+      processDefinitionActivationHasActiveTriggers.value = true;
+      processDefinitionActivationHasRequiredArtifacts.value = true;
+      processDefinitionActivationRequiresArtifacts.value = false;
+      processDefinitionActivationView.value = "definition";
+      processDefinitionActivationRules.value = [];
+      processDefinitionActivationTriggers.value = [];
+      processDefinitionActivationArtifacts.value = [];
+    });
+  }
+};
+
+const ensureDefinitionRulesInstance = () => {
+  if (!definitionRulesInstance && definitionRulesModal.value) {
+    definitionRulesInstance = new Modal(definitionRulesModal.value);
+    definitionRulesModal.value.addEventListener("hidden.bs.modal", () => {
+      if (peekModalOrigin() === "definitionRules") {
+        return;
+      }
+      definitionRulesError.value = "";
+      definitionRulesContext.value = null;
+      definitionRulesRows.value = [];
+      resetDefinitionRulesForm();
+      restoreReturnModal();
+    });
+  }
+};
+
+const ensureDefinitionTriggersInstance = () => {
+  if (!definitionTriggersInstance && definitionTriggersModal.value) {
+    definitionTriggersInstance = new Modal(definitionTriggersModal.value);
+    definitionTriggersModal.value.addEventListener("hidden.bs.modal", () => {
+      if (peekModalOrigin() === "definitionTriggers") {
+        return;
+      }
+      definitionTriggersError.value = "";
+      definitionTriggersContext.value = null;
+      definitionTriggersRows.value = [];
+      resetDefinitionTriggersForm();
+      restoreReturnModal();
     });
   }
 };
@@ -4048,7 +4957,7 @@ const ensureDefinitionArtifactsInstance = () => {
   if (!definitionArtifactsInstance && definitionArtifactsModal.value) {
     definitionArtifactsInstance = new Modal(definitionArtifactsModal.value);
     definitionArtifactsModal.value.addEventListener("hidden.bs.modal", () => {
-      if (returnModal === "definitionArtifacts") {
+      if (peekModalOrigin() === "definitionArtifacts") {
         return;
       }
       definitionArtifactsError.value = "";
@@ -4056,6 +4965,7 @@ const ensureDefinitionArtifactsInstance = () => {
       definitionArtifactsContext.value = null;
       definitionArtifactsRows.value = [];
       resetDefinitionArtifactsForm();
+      restoreReturnModal();
     });
   }
 };
@@ -4099,7 +5009,11 @@ const ensureDraftArtifactInstance = () => {
 };
 
 const restoreReturnModal = () => {
+  const returnModal = modalOriginStack.value.length ? modalOriginStack.value.pop() : null;
   if (returnModal === "editor" && editorInstance) {
+    if (props.table?.table === "process_definition_versions" && selectedRow.value?.id) {
+      refreshProcessDefinitionChecklist(selectedRow.value);
+    }
     editorInstance.show();
   }
   if (returnModal === "processSearch" && processSearchInstance) {
@@ -4114,10 +5028,22 @@ const restoreReturnModal = () => {
   if (returnModal === "personAssignments" && personAssignmentsInstance) {
     personAssignmentsInstance.show();
   }
+  if (returnModal === "definitionRules" && definitionRulesInstance) {
+    definitionRulesInstance.show();
+  }
+  if (returnModal === "definitionActivation" && processDefinitionActivationInstance) {
+    if (selectedRow.value?.id) {
+      openProcessDefinitionActivationModal();
+      return;
+    }
+    processDefinitionActivationInstance.show();
+  }
+  if (returnModal === "definitionTriggers" && definitionTriggersInstance) {
+    definitionTriggersInstance.show();
+  }
   if (returnModal === "definitionArtifacts" && definitionArtifactsInstance) {
     definitionArtifactsInstance.show();
   }
-  returnModal = null;
 };
 
 const ensureFkInstance = () => {
@@ -4295,6 +5221,24 @@ const loadProcessDefinitionProcessOptions = async () => {
   }
 };
 
+const loadProcessDefinitionSeriesOptions = async () => {
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_series"), {
+      params: {
+        filter_is_active: 1,
+        orderBy: "code",
+        order: "asc",
+        limit: 500
+      }
+    });
+    processDefinitionSeriesOptions.value = (response.data || []).filter(
+      (row) => String(row?.source_type || "") !== "legacy"
+    );
+  } catch (error) {
+    processDefinitionSeriesOptions.value = [];
+  }
+};
+
 const loadVacantPositionUnitOptions = async () => {
   if (!vacantPositionFilters.value.unit_type_id) {
     vacantPositionUnitOptions.value = [];
@@ -4409,6 +5353,15 @@ const isFieldLocked = (field) => {
   if (field.readOnly) {
     return true;
   }
+  if (props.table?.table === "process_definition_series") {
+    const sourceType = String(formData.value?.source_type || "").trim();
+    if (field.name === "unit_type_id") {
+      return sourceType !== "unit_type";
+    }
+    if (field.name === "cargo_id") {
+      return sourceType !== "cargo";
+    }
+  }
   if (
     props.table?.table === "process_definition_versions"
     && editorMode.value === "create"
@@ -4431,6 +5384,45 @@ const isFieldLocked = (field) => {
     return true;
   }
   return false;
+};
+
+const handleSelectChange = (field) => {
+  if (props.table?.table !== "process_definition_series" || field?.name !== "source_type") {
+    return;
+  }
+  const sourceType = String(formData.value?.source_type || "").trim();
+  if (sourceType === "unit_type") {
+    formData.value = {
+      ...formData.value,
+      cargo_id: ""
+    };
+    fkDisplay.value = {
+      ...fkDisplay.value,
+      cargo_id: ""
+    };
+    return;
+  }
+  if (sourceType === "cargo") {
+    formData.value = {
+      ...formData.value,
+      unit_type_id: ""
+    };
+    fkDisplay.value = {
+      ...fkDisplay.value,
+      unit_type_id: ""
+    };
+    return;
+  }
+  formData.value = {
+    ...formData.value,
+    unit_type_id: "",
+    cargo_id: ""
+  };
+  fkDisplay.value = {
+    ...fkDisplay.value,
+    unit_type_id: "",
+    cargo_id: ""
+  };
 };
 
 const isInputField = (field) => {
@@ -4511,6 +5503,7 @@ const FK_TABLE_MAP = {
   relation_type_id: "relation_unit_types",
   template_id: "signature_flow_templates",
   template_artifact_id: "template_artifacts",
+  task_item_id: "task_items",
   document_id: "documents",
   document_version_id: "document_versions",
   person_id: "persons",
@@ -4543,6 +5536,12 @@ const resolveDisplayField = (tableMeta) => {
   if (!tableMeta) {
     return null;
   }
+  if (tableMeta.table === "template_artifacts") {
+    return "display_name";
+  }
+  if (tableMeta.table === "template_seeds") {
+    return "display_name";
+  }
   const preferred = ["name", "title", "email", "label", "code", "slug"];
   const match = preferred.find((field) => tableMeta.fields.some((meta) => meta.name === field));
   return match || tableMeta.fields.find((meta) => meta.name !== "id")?.name || "id";
@@ -4565,12 +5564,22 @@ const formatFkOptionLabel = (tableName, row) => {
   if (tableName === "process_definition_templates") {
     const parts = [
       row.process_definition_id ? `Def ${row.process_definition_id}` : null,
-      row.template_artifact_id ? `Art ${row.template_artifact_id}` : null,
+      row.template_artifact_id
+        ? (getFkCachedLabel("template_artifacts", row.template_artifact_id) || `Paquete ${row.template_artifact_id}`)
+        : null,
       row.usage_role
     ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
     if (parts.length) {
       return parts.join(" · ");
     }
+  }
+  if (tableName === "template_artifacts") {
+    const value = row.display_name ?? row.template_code ?? row.id;
+    return value !== null && value !== undefined && value !== "" ? String(value) : "—";
+  }
+  if (tableName === "template_seeds") {
+    const value = row.display_name ?? row.seed_code ?? row.id;
+    return value !== null && value !== undefined && value !== "" ? String(value) : "—";
   }
   const displayField = resolveDisplayField(allTablesMap.value?.[tableName]);
   const value = row[displayField] ?? row.name ?? row.title ?? row.code ?? row.id;
@@ -5381,6 +6390,11 @@ const fetchFkRows = async () => {
       });
       rowsData = response.data || [];
     }
+    if (fkTable.value.table === "process_definition_series" && fkField.value === "series_id") {
+      rowsData = rowsData.filter(
+        (row) => Number(row?.is_active) === 1 && String(row?.source_type || "") !== "legacy"
+      );
+    }
     fkRows.value = rowsData;
     const fkFields = (fkTable.value.fields || [])
       .filter((field) => isForeignKeyField(field))
@@ -5401,30 +6415,37 @@ const openFkSearch = async (field, onSelect = null) => {
   if (!tableName) {
     return;
   }
-  returnModal = null;
   if (editorInstance && editorModal.value?.classList.contains("show")) {
     editorInstance.hide();
-    returnModal = "editor";
+    pushModalOrigin("editor");
   }
   if (processSearchInstance && processSearchModal.value?.classList.contains("show")) {
     processSearchInstance.hide();
-    returnModal = "processSearch";
+    pushModalOrigin("processSearch");
   }
   if (templateSearchInstance && templateSearchModal.value?.classList.contains("show")) {
     templateSearchInstance.hide();
-    returnModal = "templateSearch";
+    pushModalOrigin("templateSearch");
   }
   if (documentSearchInstance && documentSearchModal.value?.classList.contains("show")) {
     documentSearchInstance.hide();
-    returnModal = "documentSearch";
+    pushModalOrigin("documentSearch");
   }
   if (personAssignmentsInstance && personAssignmentsModal.value?.classList.contains("show")) {
     personAssignmentsInstance.hide();
-    returnModal = "personAssignments";
+    pushModalOrigin("personAssignments");
+  }
+  if (definitionRulesInstance && definitionRulesModal.value?.classList.contains("show")) {
+    definitionRulesInstance.hide();
+    pushModalOrigin("definitionRules");
+  }
+  if (definitionTriggersInstance && definitionTriggersModal.value?.classList.contains("show")) {
+    definitionTriggersInstance.hide();
+    pushModalOrigin("definitionTriggers");
   }
   if (definitionArtifactsInstance && definitionArtifactsModal.value?.classList.contains("show")) {
     definitionArtifactsInstance.hide();
-    returnModal = "definitionArtifacts";
+    pushModalOrigin("definitionArtifacts");
   }
   fkSetter.value = onSelect;
   fkField.value = field.name;
@@ -5523,14 +6544,20 @@ const RELATED_RECORD_CONFIG = {
     { table: "process_definition_versions", label: "Definiciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
   ],
   process_definition_versions: [
+    { table: "process_definition_triggers", label: "Disparadores", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
     { table: "process_definition_templates", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
-    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }
   ],
+  process_definition_templates: [
+    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" }
+  ],
   tasks: [
-    { table: "task_assignments", label: "Asignaciones", foreignKey: "task_id", orderBy: "assigned_at", order: "desc" },
-    { table: "documents", label: "Documentos", foreignKey: "task_id", orderBy: "created_at", order: "desc" }
+    { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" },
+    { table: "task_assignments", label: "Asignaciones", foreignKey: "task_id", orderBy: "assigned_at", order: "desc" }
+  ],
+  task_items: [
+    { table: "documents", label: "Documentos", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" }
   ],
   documents: [
     { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }
@@ -5619,14 +6646,21 @@ const openRecordViewer = async (row, tableMeta = props.table) => {
     return;
   }
 
-  returnModal = null;
   if (personAssignmentsInstance && personAssignmentsModal.value?.classList.contains("show")) {
     personAssignmentsInstance.hide();
-    returnModal = "personAssignments";
+    pushModalOrigin("personAssignments");
+  }
+  if (definitionRulesInstance && definitionRulesModal.value?.classList.contains("show")) {
+    definitionRulesInstance.hide();
+    pushModalOrigin("definitionRules");
+  }
+  if (definitionTriggersInstance && definitionTriggersModal.value?.classList.contains("show")) {
+    definitionTriggersInstance.hide();
+    pushModalOrigin("definitionTriggers");
   }
   if (definitionArtifactsInstance && definitionArtifactsModal.value?.classList.contains("show")) {
     definitionArtifactsInstance.hide();
-    returnModal = "definitionArtifacts";
+    pushModalOrigin("definitionArtifacts");
   }
 
   recordViewerTable.value = tableMeta;
@@ -6418,13 +7452,13 @@ const submitDraftArtifact = async () => {
       kind: "success",
       title: isEditingDraft ? "Artifact actualizado" : "Artifact creado",
       message: response.data?.__notice || (isEditingDraft
-        ? "El artifact de usuario fue actualizado correctamente."
-        : "El artifact de usuario fue creado correctamente.")
+        ? "El paquete de usuario fue actualizado correctamente."
+        : "El paquete de usuario fue creado correctamente.")
     });
   } catch (err) {
     draftArtifactError.value = err?.response?.data?.message || (isEditingDraft
-      ? "No se pudo actualizar el artifact de usuario."
-      : "No se pudo crear el artifact de usuario.");
+      ? "No se pudo actualizar el paquete de usuario."
+      : "No se pudo crear el paquete de usuario.");
   } finally {
     draftArtifactLoading.value = false;
   }
@@ -6834,6 +7868,645 @@ const resetDefinitionArtifactsForm = () => {
   };
 };
 
+const resetDefinitionRulesForm = () => {
+  definitionRulesEditId.value = "";
+  definitionRulesForm.value = {
+    unit_scope_type: "unit_exact",
+    unit_id: "",
+    unit_type_id: "",
+    include_descendants: "0",
+    cargo_id: "",
+    position_id: "",
+    recipient_policy: "all_matches",
+    priority: "1",
+    is_active: "1",
+    effective_from: "",
+    effective_to: ""
+  };
+  definitionRulesLabels.value = {
+    unit_id: "",
+    unit_type_id: "",
+    cargo_id: "",
+    position_id: ""
+  };
+};
+
+const resetDefinitionTriggersForm = () => {
+  definitionTriggersEditId.value = "";
+  definitionTriggersForm.value = {
+    trigger_mode: "automatic_by_term_type",
+    term_type_id: "",
+    is_active: "1"
+  };
+  definitionTriggersLabels.value = {
+    term_type_id: ""
+  };
+};
+
+const formatDefinitionRuleSummary = (row) => {
+  if (!row) {
+    return "—";
+  }
+  const scopeType = String(row.unit_scope_type || "");
+  if (scopeType === "all_units") {
+    return "Todas las unidades";
+  }
+  if (scopeType === "unit_type") {
+    return formatCell(row.unit_type_id, { name: "unit_type_id" }, row);
+  }
+  const primaryLabel = row.position_id
+    ? formatCell(row.position_id, { name: "position_id" }, row)
+    : formatCell(row.unit_id, { name: "unit_id" }, row);
+  const cargoLabel = row.cargo_id ? formatCell(row.cargo_id, { name: "cargo_id" }, row) : "";
+  return cargoLabel ? `${primaryLabel} | ${cargoLabel}` : primaryLabel;
+};
+
+const handleDefinitionRuleScopeChange = () => {
+  const scopeType = String(definitionRulesForm.value.unit_scope_type || "");
+  if (scopeType === "unit_type") {
+    definitionRulesForm.value = {
+      ...definitionRulesForm.value,
+      unit_id: "",
+      position_id: "",
+      include_descendants: "0"
+    };
+    definitionRulesLabels.value = {
+      ...definitionRulesLabels.value,
+      unit_id: "",
+      position_id: ""
+    };
+    return;
+  }
+  if (scopeType === "all_units") {
+    definitionRulesForm.value = {
+      ...definitionRulesForm.value,
+      unit_id: "",
+      unit_type_id: "",
+      position_id: "",
+      include_descendants: "0"
+    };
+    definitionRulesLabels.value = {
+      ...definitionRulesLabels.value,
+      unit_id: "",
+      unit_type_id: "",
+      position_id: ""
+    };
+    return;
+  }
+  definitionRulesForm.value = {
+    ...definitionRulesForm.value,
+    unit_type_id: ""
+  };
+  definitionRulesLabels.value = {
+    ...definitionRulesLabels.value,
+    unit_type_id: ""
+  };
+};
+
+const loadDefinitionRules = async () => {
+  const definitionId = definitionRulesContext.value?.id;
+  if (!definitionId) {
+    definitionRulesRows.value = [];
+    definitionRulesError.value = "";
+    definitionRulesLoading.value = false;
+    return;
+  }
+  definitionRulesLoading.value = true;
+  definitionRulesError.value = "";
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
+      params: {
+        filter_process_definition_id: definitionId,
+        orderBy: "priority",
+        order: "asc",
+        limit: 200
+      }
+    });
+    definitionRulesRows.value = response.data || [];
+    await prefetchFkLabelsForRows(definitionRulesRows.value, ["unit_id", "unit_type_id", "cargo_id", "position_id"]);
+  } catch (error) {
+    definitionRulesRows.value = [];
+    definitionRulesError.value = "No se pudieron cargar las reglas vinculadas.";
+  } finally {
+    definitionRulesLoading.value = false;
+  }
+  await refreshProcessDefinitionChecklist(definitionRulesContext.value);
+};
+
+const openDefinitionRulesManager = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  definitionRulesContext.value = {
+    ...definitionRow
+  };
+  definitionRulesError.value = "";
+  resetDefinitionRulesForm();
+  ensureDefinitionRulesInstance();
+  definitionRulesInstance?.show();
+  await loadDefinitionRules();
+};
+
+const closeDefinitionRulesManager = () => {
+  clearModalOrigins();
+  definitionRulesInstance?.hide();
+};
+
+const acceptDefinitionRulesManager = () => {
+  definitionRulesInstance?.hide();
+};
+
+const confirmDefinitionRulesPrompt = async () => {
+  const context = definitionArtifactsPromptContext.value;
+  closeDefinitionArtifactsPrompt();
+  if (context?.id) {
+    await openDefinitionRulesManager(context);
+  }
+};
+
+const openDefinitionRulesFromEditor = async () => {
+  if (props.table?.table !== "process_definition_versions" || editorMode.value !== "edit" || !selectedRow.value?.id) {
+    return;
+  }
+  clearModalOrigins();
+  pushModalOrigin("editor");
+  editorInstance?.hide();
+  await openDefinitionRulesManager(selectedRow.value);
+};
+
+const openDefinitionRulesFromActivation = async () => {
+  const context = selectedRow.value;
+  clearModalOrigins();
+  pushModalOrigin("definitionActivation");
+  closeProcessDefinitionActivationModal();
+  if (context?.id) {
+    await openDefinitionRulesManager(context);
+  }
+};
+
+const openDefinitionArtifactsFromActivation = async () => {
+  const context = selectedRow.value;
+  clearModalOrigins();
+  pushModalOrigin("definitionActivation");
+  closeProcessDefinitionActivationModal();
+  if (context?.id) {
+    await openDefinitionArtifactsManager(context);
+  }
+};
+
+const openDefinitionRuleFkSearch = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  openFkSearch({ name: fieldName }, async (row) => {
+    const idValue = row.id ?? "";
+    definitionRulesForm.value = {
+      ...definitionRulesForm.value,
+      [fieldName]: idValue ? String(idValue) : ""
+    };
+    definitionRulesLabels.value = {
+      ...definitionRulesLabels.value,
+      [fieldName]: formatFkOptionLabel(resolveFkTable(fieldName), row)
+    };
+    if (fieldName === "position_id" && idValue) {
+      try {
+        const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
+          params: { filter_id: idValue, limit: 1 }
+        });
+        const positionRow = response.data?.[0];
+        if (positionRow?.unit_id) {
+          await fetchFkLabel("units", positionRow.unit_id);
+          definitionRulesForm.value = {
+            ...definitionRulesForm.value,
+            unit_id: String(positionRow.unit_id)
+          };
+          definitionRulesLabels.value = {
+            ...definitionRulesLabels.value,
+            unit_id: String(getFkCachedLabel("units", positionRow.unit_id) || positionRow.unit_id)
+          };
+        }
+        if (positionRow?.cargo_id) {
+          await fetchFkLabel("cargos", positionRow.cargo_id);
+          definitionRulesForm.value = {
+            ...definitionRulesForm.value,
+            cargo_id: String(positionRow.cargo_id)
+          };
+          definitionRulesLabels.value = {
+            ...definitionRulesLabels.value,
+            cargo_id: String(getFkCachedLabel("cargos", positionRow.cargo_id) || positionRow.cargo_id)
+          };
+        }
+      } catch {
+        // Best-effort autofill.
+      }
+    }
+  });
+};
+
+const clearDefinitionRuleField = (fieldName) => {
+  if (!fieldName) {
+    return;
+  }
+  definitionRulesForm.value = {
+    ...definitionRulesForm.value,
+    [fieldName]: ""
+  };
+  if (Object.prototype.hasOwnProperty.call(definitionRulesLabels.value, fieldName)) {
+    definitionRulesLabels.value = {
+      ...definitionRulesLabels.value,
+      [fieldName]: ""
+    };
+  }
+};
+
+const startDefinitionRuleEdit = (row) => {
+  if (!row) {
+    return;
+  }
+  if (!canManageDefinitionRules.value) {
+    definitionRulesError.value = "Solo puedes modificar reglas mientras la definicion este en draft.";
+    return;
+  }
+  definitionRulesEditId.value = row.id ? String(row.id) : "";
+  definitionRulesForm.value = {
+    unit_scope_type: row.unit_scope_type || "unit_exact",
+    unit_id: row.unit_id ? String(row.unit_id) : "",
+    unit_type_id: row.unit_type_id ? String(row.unit_type_id) : "",
+    include_descendants: Number(row.include_descendants) === 1 ? "1" : "0",
+    cargo_id: row.cargo_id ? String(row.cargo_id) : "",
+    position_id: row.position_id ? String(row.position_id) : "",
+    recipient_policy: row.recipient_policy || "all_matches",
+    priority: row.priority !== null && row.priority !== undefined ? String(row.priority) : "1",
+    is_active: Number(row.is_active) === 1 ? "1" : "0",
+    effective_from: row.effective_from ? formatDateOnly(row.effective_from) : "",
+    effective_to: row.effective_to ? formatDateOnly(row.effective_to) : ""
+  };
+  definitionRulesLabels.value = {
+    unit_id: row.unit_id ? String(getFkCachedLabel("units", row.unit_id) || row.unit_id) : "",
+    unit_type_id: row.unit_type_id ? String(getFkCachedLabel("unit_types", row.unit_type_id) || row.unit_type_id) : "",
+    cargo_id: row.cargo_id ? String(getFkCachedLabel("cargos", row.cargo_id) || row.cargo_id) : "",
+    position_id: row.position_id ? String(getFkCachedLabel("unit_positions", row.position_id) || row.position_id) : ""
+  };
+};
+
+const submitDefinitionRule = async () => {
+  const definitionId = definitionRulesContext.value?.id;
+  if (!definitionId) {
+    definitionRulesError.value = "No hay una definicion seleccionada.";
+    return;
+  }
+  if (!canManageDefinitionRules.value) {
+    definitionRulesError.value = "Solo puedes modificar reglas mientras la definicion este en draft.";
+    return;
+  }
+  if (!canSubmitDefinitionRule.value) {
+    definitionRulesError.value = "Completa el alcance requerido para guardar la regla.";
+    return;
+  }
+  const payload = {
+    process_definition_id: Number(definitionId),
+    unit_scope_type: definitionRulesForm.value.unit_scope_type || "unit_exact",
+    unit_id: definitionRulesForm.value.unit_id ? Number(definitionRulesForm.value.unit_id) : null,
+    unit_type_id: definitionRulesForm.value.unit_type_id ? Number(definitionRulesForm.value.unit_type_id) : null,
+    include_descendants: Number(definitionRulesForm.value.include_descendants) === 1 ? 1 : 0,
+    cargo_id: definitionRulesForm.value.cargo_id ? Number(definitionRulesForm.value.cargo_id) : null,
+    position_id: definitionRulesForm.value.position_id ? Number(definitionRulesForm.value.position_id) : null,
+    recipient_policy: definitionRulesForm.value.recipient_policy || "all_matches",
+    priority: Number(definitionRulesForm.value.priority || 1) || 1,
+    is_active: Number(definitionRulesForm.value.is_active) === 1 ? 1 : 0,
+    effective_from: definitionRulesForm.value.effective_from || null,
+    effective_to: definitionRulesForm.value.effective_to || null
+  };
+
+  definitionRulesError.value = "";
+  try {
+    if (definitionRulesEditId.value) {
+      await axios.put(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
+        keys: { id: Number(definitionRulesEditId.value) },
+        data: payload
+      });
+    } else {
+      await axios.post(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), payload);
+    }
+    resetDefinitionRulesForm();
+    await loadDefinitionRules();
+  } catch (error) {
+    definitionRulesError.value = error?.response?.data?.message || "No se pudo guardar la regla.";
+  }
+};
+
+const deleteDefinitionRule = async (row) => {
+  if (!row?.id) {
+    return;
+  }
+  if (!canManageDefinitionRules.value) {
+    definitionRulesError.value = "Solo puedes modificar reglas mientras la definicion este en draft.";
+    return;
+  }
+  const confirmed = window.confirm("¿Deseas eliminar esta regla de la definicion?");
+  if (!confirmed) {
+    return;
+  }
+  definitionRulesError.value = "";
+  try {
+    await axios.delete(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
+      data: {
+        keys: { id: row.id }
+      }
+    });
+    if (String(definitionRulesEditId.value) === String(row.id)) {
+      resetDefinitionRulesForm();
+    }
+    await loadDefinitionRules();
+  } catch (error) {
+    definitionRulesError.value = error?.response?.data?.message || "No se pudo eliminar la regla.";
+  }
+};
+
+const checkDefinitionHasActiveRules = async (definitionId) => {
+  if (!definitionId) {
+    return false;
+  }
+  const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
+    params: {
+      filter_process_definition_id: definitionId,
+      filter_is_active: 1,
+      limit: 1
+    }
+  });
+  return Array.isArray(response.data) && response.data.length > 0;
+};
+
+const checkDefinitionHasActiveTriggers = async (definitionId) => {
+  if (!definitionId) {
+    return false;
+  }
+  const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+    params: {
+      filter_process_definition_id: definitionId,
+      filter_is_active: 1,
+      limit: 1
+    }
+  });
+  return Array.isArray(response.data) && response.data.length > 0;
+};
+
+const checkDefinitionHasArtifactsForActivation = async (definitionId) => {
+  if (!definitionId) {
+    return false;
+  }
+  const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+    params: {
+      filter_process_definition_id: definitionId,
+      limit: 1
+    }
+  });
+  return Array.isArray(response.data) && response.data.length > 0;
+};
+
+const refreshProcessDefinitionChecklist = async (definitionRow = selectedRow.value) => {
+  const definitionId = definitionRow?.id;
+  processDefinitionChecklistLoading.value = true;
+  processDefinitionChecklist.value = {
+    rules: false,
+    triggers: false,
+    artifacts: false
+  };
+  if (!definitionId) {
+    processDefinitionChecklistLoading.value = false;
+    return;
+  }
+  try {
+    const [hasRules, hasTriggers, hasArtifacts] = await Promise.all([
+      checkDefinitionHasActiveRules(definitionId),
+      checkDefinitionHasActiveTriggers(definitionId),
+      checkDefinitionHasArtifactsForActivation(definitionId)
+    ]);
+    processDefinitionChecklist.value = {
+      rules: hasRules,
+      triggers: hasTriggers,
+      artifacts: hasArtifacts
+    };
+  } catch {
+    processDefinitionChecklist.value = {
+      rules: false,
+      triggers: false,
+      artifacts: false
+    };
+  } finally {
+    processDefinitionChecklistLoading.value = false;
+  }
+};
+
+const loadDefinitionTriggers = async () => {
+  const definitionId = definitionTriggersContext.value?.id;
+  if (!definitionId) {
+    definitionTriggersRows.value = [];
+    definitionTriggersError.value = "";
+    definitionTriggersLoading.value = false;
+    return;
+  }
+  definitionTriggersLoading.value = true;
+  definitionTriggersError.value = "";
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+      params: {
+        filter_process_definition_id: definitionId,
+        orderBy: "created_at",
+        order: "desc",
+        limit: 200
+      }
+    });
+    definitionTriggersRows.value = response.data || [];
+    await prefetchFkLabelsForRows(definitionTriggersRows.value, ["term_type_id"]);
+  } catch (error) {
+    definitionTriggersRows.value = [];
+    definitionTriggersError.value = "No se pudieron cargar los disparadores vinculados.";
+  } finally {
+    definitionTriggersLoading.value = false;
+  }
+};
+
+const openDefinitionTriggersManager = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  definitionTriggersContext.value = {
+    ...definitionRow
+  };
+  definitionTriggersError.value = "";
+  resetDefinitionTriggersForm();
+  ensureDefinitionTriggersInstance();
+  definitionTriggersInstance?.show();
+  await loadDefinitionTriggers();
+};
+
+const closeDefinitionTriggersManager = () => {
+  clearModalOrigins();
+  definitionTriggersInstance?.hide();
+};
+
+const acceptDefinitionTriggersManager = () => {
+  definitionTriggersInstance?.hide();
+};
+
+const confirmDefinitionTriggersPrompt = async () => {
+  const context = definitionArtifactsPromptContext.value;
+  closeDefinitionArtifactsPrompt();
+  if (context?.id) {
+    await openDefinitionTriggersManager(context);
+  }
+};
+
+const openDefinitionTriggersFromEditor = async () => {
+  if (props.table?.table !== "process_definition_versions" || editorMode.value !== "edit" || !selectedRow.value?.id) {
+    return;
+  }
+  clearModalOrigins();
+  pushModalOrigin("editor");
+  editorInstance?.hide();
+  await openDefinitionTriggersManager(selectedRow.value);
+};
+
+const openDefinitionTriggersFromActivation = async () => {
+  const context = selectedRow.value;
+  clearModalOrigins();
+  pushModalOrigin("definitionActivation");
+  closeProcessDefinitionActivationModal();
+  if (context?.id) {
+    await openDefinitionTriggersManager(context);
+  }
+};
+
+const handleDefinitionTriggerModeChange = () => {
+  if (!definitionTriggerRequiresTermType.value) {
+    definitionTriggersForm.value = {
+      ...definitionTriggersForm.value,
+      term_type_id: ""
+    };
+    definitionTriggersLabels.value = {
+      ...definitionTriggersLabels.value,
+      term_type_id: ""
+    };
+  }
+};
+
+const openDefinitionTriggerFkSearch = () => {
+  openFkSearch({ name: "term_type_id" }, (row) => {
+    const idValue = row.id ?? "";
+    definitionTriggersForm.value = {
+      ...definitionTriggersForm.value,
+      term_type_id: idValue ? String(idValue) : ""
+    };
+    definitionTriggersLabels.value = {
+      ...definitionTriggersLabels.value,
+      term_type_id: formatFkOptionLabel("term_types", row)
+    };
+  });
+};
+
+const clearDefinitionTriggerTermType = () => {
+  definitionTriggersForm.value = {
+    ...definitionTriggersForm.value,
+    term_type_id: ""
+  };
+  definitionTriggersLabels.value = {
+    ...definitionTriggersLabels.value,
+    term_type_id: ""
+  };
+};
+
+const startDefinitionTriggerEdit = (row) => {
+  if (!row) {
+    return;
+  }
+  if (!canManageDefinitionTriggers.value) {
+    definitionTriggersError.value = "Solo puedes modificar disparadores mientras la definicion este en draft.";
+    return;
+  }
+  definitionTriggersEditId.value = row.id ? String(row.id) : "";
+  definitionTriggersForm.value = {
+    trigger_mode: row.trigger_mode || "automatic_by_term_type",
+    term_type_id: row.term_type_id ? String(row.term_type_id) : "",
+    is_active: Number(row.is_active) === 1 ? "1" : "0"
+  };
+  definitionTriggersLabels.value = {
+    term_type_id: row.term_type_id
+      ? String(getFkCachedLabel("term_types", row.term_type_id) || row.term_type_id)
+      : ""
+  };
+};
+
+const submitDefinitionTrigger = async () => {
+  const definitionId = definitionTriggersContext.value?.id;
+  if (!definitionId) {
+    definitionTriggersError.value = "No hay una definicion seleccionada.";
+    return;
+  }
+  if (!canManageDefinitionTriggers.value) {
+    definitionTriggersError.value = "Solo puedes modificar disparadores mientras la definicion este en draft.";
+    return;
+  }
+  if (!canSubmitDefinitionTrigger.value) {
+    definitionTriggersError.value = "Selecciona el tipo de periodo requerido para este disparador.";
+    return;
+  }
+  const payload = {
+    process_definition_id: Number(definitionId),
+    trigger_mode: definitionTriggersForm.value.trigger_mode || "automatic_by_term_type",
+    term_type_id: definitionTriggerRequiresTermType.value && definitionTriggersForm.value.term_type_id
+      ? Number(definitionTriggersForm.value.term_type_id)
+      : null,
+    is_active: Number(definitionTriggersForm.value.is_active) === 1 ? 1 : 0
+  };
+
+  definitionTriggersError.value = "";
+  try {
+    if (definitionTriggersEditId.value) {
+      await axios.put(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+        keys: { id: Number(definitionTriggersEditId.value) },
+        data: payload
+      });
+    } else {
+      await axios.post(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), payload);
+    }
+    resetDefinitionTriggersForm();
+    await loadDefinitionTriggers();
+    await refreshProcessDefinitionChecklist(definitionTriggersContext.value);
+  } catch (error) {
+    definitionTriggersError.value = error?.response?.data?.message || "No se pudo guardar el disparador.";
+  }
+};
+
+const deleteDefinitionTrigger = async (row) => {
+  if (!row?.id) {
+    return;
+  }
+  if (!canManageDefinitionTriggers.value) {
+    definitionTriggersError.value = "Solo puedes modificar disparadores mientras la definicion este en draft.";
+    return;
+  }
+  const confirmed = window.confirm("¿Deseas eliminar este disparador de la definicion?");
+  if (!confirmed) {
+    return;
+  }
+  definitionTriggersError.value = "";
+  try {
+    await axios.delete(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+      data: {
+        keys: { id: row.id }
+      }
+    });
+    if (String(definitionTriggersEditId.value) === String(row.id)) {
+      resetDefinitionTriggersForm();
+    }
+    await loadDefinitionTriggers();
+    await refreshProcessDefinitionChecklist(definitionTriggersContext.value);
+  } catch (error) {
+    definitionTriggersError.value = error?.response?.data?.message || "No se pudo eliminar el disparador.";
+  }
+};
+
 const loadDefinitionArtifacts = async () => {
   const definitionId = definitionArtifactsContext.value?.id;
   if (!definitionId) {
@@ -6861,6 +8534,7 @@ const loadDefinitionArtifacts = async () => {
   } finally {
     definitionArtifactsLoading.value = false;
   }
+  await refreshProcessDefinitionChecklist(definitionArtifactsContext.value);
 };
 
 const openDefinitionArtifactsManager = async (definitionRow) => {
@@ -6878,6 +8552,11 @@ const openDefinitionArtifactsManager = async (definitionRow) => {
 };
 
 const closeDefinitionArtifactsManager = () => {
+  clearModalOrigins();
+  definitionArtifactsInstance?.hide();
+};
+
+const acceptDefinitionArtifactsManager = () => {
   definitionArtifactsInstance?.hide();
 };
 
@@ -6907,6 +8586,8 @@ const openDefinitionArtifactsFromEditor = async () => {
   if (props.table?.table !== "process_definition_versions" || editorMode.value !== "edit" || !selectedRow.value?.id) {
     return;
   }
+  clearModalOrigins();
+  pushModalOrigin("editor");
   editorInstance?.hide();
   await openDefinitionArtifactsManager(selectedRow.value);
 };
@@ -7470,6 +9151,12 @@ const openCreate = async () => {
   processDefinitionCloneSourceId.value = "";
   editorMode.value = "create";
   selectedRow.value = null;
+  processDefinitionChecklistLoading.value = false;
+  processDefinitionChecklist.value = {
+    rules: false,
+    triggers: false,
+    artifacts: false
+  };
   modalError.value = "";
   resetForm();
   fkDisplay.value = {};
@@ -7510,6 +9197,9 @@ const openEdit = async (row) => {
   modalError.value = "";
   buildFormFromRow(row);
   await refreshFormFkDisplayLabels();
+  if (props.table?.table === "process_definition_versions") {
+    await refreshProcessDefinitionChecklist(row);
+  }
   ensureEditorInstance();
   editorInstance?.show();
 };
@@ -7529,6 +9219,12 @@ const startProcessDefinitionTemplateFromArtifact = async (row) => {
   processDefinitionCloneSourceId.value = "";
   editorMode.value = "create";
   selectedRow.value = null;
+  processDefinitionChecklistLoading.value = false;
+  processDefinitionChecklist.value = {
+    rules: false,
+    triggers: false,
+    artifacts: false
+  };
   modalError.value = "";
   resetForm();
   fkDisplay.value = {};
@@ -7578,9 +9274,98 @@ const closeProcessDefinitionVersioningModal = () => {
   processDefinitionVersioningSource.value = null;
 };
 
-const openProcessDefinitionActivationModal = () => {
+const loadProcessDefinitionActivationDetail = async (definitionId) => {
+  processDefinitionActivationRules.value = [];
+  processDefinitionActivationTriggers.value = [];
+  processDefinitionActivationArtifacts.value = [];
+  if (!definitionId) {
+    return;
+  }
+  const [rulesResponse, triggersResponse, artifactsResponse] = await Promise.all([
+    axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
+      params: {
+        filter_process_definition_id: definitionId,
+        orderBy: "priority",
+        order: "asc",
+        limit: 100
+      }
+    }),
+    axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+      params: {
+        filter_process_definition_id: definitionId,
+        orderBy: "created_at",
+        order: "desc",
+        limit: 100
+      }
+    }),
+    axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+      params: {
+        filter_process_definition_id: definitionId,
+        orderBy: "sort_order",
+        order: "asc",
+        limit: 100
+      }
+    })
+  ]);
+  processDefinitionActivationRules.value = rulesResponse.data || [];
+  processDefinitionActivationTriggers.value = triggersResponse.data || [];
+  processDefinitionActivationArtifacts.value = artifactsResponse.data || [];
+  await prefetchFkLabelsForRows(processDefinitionActivationRules.value, ["unit_id", "unit_type_id", "cargo_id", "position_id"]);
+  await prefetchFkLabelsForRows(processDefinitionActivationTriggers.value, ["term_type_id"]);
+  await prefetchFkLabelsForRows(processDefinitionActivationArtifacts.value, ["template_artifact_id"]);
+};
+
+const openProcessDefinitionActivationForRow = async (row) => {
+  if (!row) {
+    return;
+  }
+  clearModalOrigins();
+  editorMode.value = "edit";
+  selectedRow.value = row;
+  buildFormFromRow(row);
+  await refreshFormFkDisplayLabels();
+  processDefinitionActivationConfirmed.value = false;
+  processDefinitionActivationFromEditor.value = false;
+  await openProcessDefinitionActivationModal();
+};
+
+const openProcessDefinitionActivationModal = async () => {
+  processDefinitionActivationChecking.value = true;
+  processDefinitionActivationHasActiveRules.value = true;
+  processDefinitionActivationHasActiveTriggers.value = true;
+  processDefinitionActivationHasRequiredArtifacts.value = true;
+  processDefinitionActivationView.value = "definition";
+  processDefinitionActivationRequiresArtifacts.value = Boolean(
+    editorInstance
+    && editorModal.value?.classList.contains("show")
+    && props.table?.table === "process_definition_versions"
+      ? Number(formData.value?.has_document) === 1
+      : Number(selectedRow.value?.has_document) === 1
+  );
   ensureProcessDefinitionActivationInstance();
   processDefinitionActivationInstance?.show();
+  try {
+    const definitionId = selectedRow.value?.id;
+    const requiresArtifacts = processDefinitionActivationRequiresArtifacts.value;
+    const [hasRules, hasTriggers, hasArtifacts] = await Promise.all([
+      checkDefinitionHasActiveRules(definitionId),
+      checkDefinitionHasActiveTriggers(definitionId),
+      requiresArtifacts ? checkDefinitionHasArtifactsForActivation(definitionId) : Promise.resolve(true)
+    ]);
+    await loadProcessDefinitionActivationDetail(definitionId);
+    processDefinitionActivationHasActiveRules.value = hasRules;
+    processDefinitionActivationHasActiveTriggers.value = hasTriggers;
+    processDefinitionActivationHasRequiredArtifacts.value = hasArtifacts;
+  } catch {
+    processDefinitionActivationHasActiveRules.value = false;
+    processDefinitionActivationHasActiveTriggers.value = true;
+    processDefinitionActivationHasRequiredArtifacts.value = true;
+    processDefinitionActivationRules.value = [];
+    processDefinitionActivationTriggers.value = [];
+    processDefinitionActivationArtifacts.value = [];
+  } finally {
+    processDefinitionActivationChecking.value = false;
+  }
 };
 
 const closeProcessDefinitionActivationModal = () => {
@@ -7589,10 +9374,58 @@ const closeProcessDefinitionActivationModal = () => {
 
 const cancelProcessDefinitionActivation = () => {
   processDefinitionActivationConfirmed.value = false;
+  processDefinitionActivationFromEditor.value = false;
   closeProcessDefinitionActivationModal();
 };
 
+const openDefinitionEditorFromActivation = () => {
+  const context = selectedRow.value;
+  if (!context) {
+    return;
+  }
+  closeProcessDefinitionActivationModal();
+  processDefinitionActivationConfirmed.value = false;
+  setTimeout(() => {
+    openEdit(context);
+  }, 120);
+};
+
+const handleProcessDefinitionActivationPrimaryAction = async () => {
+  const actionType = processDefinitionActivationPrimaryAction.value?.type;
+  if (!actionType) {
+    return;
+  }
+  if (actionType === "edit_definition") {
+    openDefinitionEditorFromActivation();
+    return;
+  }
+  if (actionType === "rules") {
+    await openDefinitionRulesFromActivation();
+    return;
+  }
+  if (actionType === "triggers") {
+    await openDefinitionTriggersFromActivation();
+    return;
+  }
+  if (actionType === "artifacts") {
+    await openDefinitionArtifactsFromActivation();
+    return;
+  }
+  await confirmProcessDefinitionActivation();
+};
+
 const confirmProcessDefinitionActivation = async () => {
+  if (props.table?.table === "process_definition_versions" && selectedRow.value) {
+    if (!processDefinitionActivationFromEditor.value) {
+      editorMode.value = "edit";
+      buildFormFromRow(selectedRow.value);
+      await refreshFormFkDisplayLabels();
+    }
+    formData.value = {
+      ...formData.value,
+      status: "active"
+    };
+  }
   processDefinitionActivationConfirmed.value = true;
   closeProcessDefinitionActivationModal();
   await submitForm();
@@ -7628,6 +9461,12 @@ const promoteProcessDefinitionToNewVersion = async () => {
   processDefinitionCloneSourceId.value = sourceRow.id ? String(sourceRow.id) : "";
   editorMode.value = "create";
   selectedRow.value = null;
+  processDefinitionChecklistLoading.value = false;
+  processDefinitionChecklist.value = {
+    rules: false,
+    triggers: false,
+    artifacts: false
+  };
   modalError.value = "";
   closeProcessDefinitionVersioningModal();
   await refreshFormFkDisplayLabels();
@@ -7667,12 +9506,14 @@ const submitForm = async () => {
       && String(payload.status || "") === "active"
       && !processDefinitionActivationConfirmed.value
     ) {
-      openProcessDefinitionActivationModal();
+      processDefinitionActivationFromEditor.value = true;
+      await openProcessDefinitionActivationModal();
       return;
     }
     const usesProcessDefinitionActivationConfirmation = processDefinitionActivationConfirmed.value;
     let createdPersonRow = null;
     let createdDefinitionRow = null;
+    let createdTermRow = null;
     let responseNotice = "";
     if (editorMode.value === "create") {
       const response = await axios.post(API_ROUTES.ADMIN_SQL_TABLE(props.table.table), payload);
@@ -7684,6 +9525,10 @@ const submitForm = async () => {
       if (props.table.table === "process_definition_versions") {
         const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
         createdDefinitionRow = { ...payload, ...responseRow };
+      }
+      if (props.table.table === "terms") {
+        const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
+        createdTermRow = { ...payload, ...responseRow };
       }
     } else {
       const keys = buildKeys(selectedRow.value || {});
@@ -7698,6 +9543,7 @@ const submitForm = async () => {
     await fetchRows();
     if (usesProcessDefinitionActivationConfirmation) {
       processDefinitionActivationConfirmed.value = false;
+      processDefinitionActivationFromEditor.value = false;
     }
     if (responseNotice) {
       showFeedbackToast({
@@ -7736,6 +9582,27 @@ const submitForm = async () => {
       }
       openDefinitionArtifactsPrompt(selectedDefinition);
     }
+    if (createdTermRow?.id) {
+      const shouldInstantiate = window.confirm("El periodo se creo correctamente. ¿Deseas instanciar ahora las tareas automaticas?");
+      if (shouldInstantiate) {
+        try {
+          const generationResponse = await axios.post(API_ROUTES.ADMIN_GENERATE_TERM_TASKS(createdTermRow.id));
+          const result = generationResponse?.data || {};
+          showFeedbackToast({
+            kind: "success",
+            title: "Instanciacion completada",
+            message: `Tareas: ${result.tasks_created ?? 0}. Items: ${result.task_items_created ?? 0}. Asignaciones: ${result.assignments_created ?? 0}.`,
+            duration: 6200
+          });
+        } catch (generationError) {
+          showFeedbackToast({
+            kind: "error",
+            title: "No se pudo instanciar",
+            message: generationError?.response?.data?.error || generationError?.response?.data?.message || "No se pudieron generar las tareas del periodo."
+          });
+        }
+      }
+    }
   } catch (err) {
     const responseMessage = err?.response?.data?.message || "";
     if (
@@ -7749,6 +9616,7 @@ const submitForm = async () => {
     }
     if (processDefinitionActivationConfirmed.value) {
       processDefinitionActivationConfirmed.value = false;
+      processDefinitionActivationFromEditor.value = false;
     }
     modalError.value = responseMessage || "No se pudo guardar el registro.";
   }
@@ -7854,6 +9722,7 @@ watch(
       artifact_stage: ""
     };
     processDefinitionProcessOptions.value = [];
+    processDefinitionSeriesOptions.value = [];
     if (isPositionFilterTable.value) {
       await loadUnitPositionUnitTypeOptions();
       await loadUnitPositionCargoOptions();
@@ -7864,6 +9733,7 @@ watch(
     }
     if (isProcessDefinitionFilterTable.value) {
       await loadProcessDefinitionProcessOptions();
+      await loadProcessDefinitionSeriesOptions();
     }
     await fetchRows();
   },
@@ -8097,6 +9967,121 @@ defineExpose({
   font-weight: 700;
   color: var(--brand-ink);
   margin-bottom: 0.9rem;
+}
+
+.definition-checklist {
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  border-radius: 1rem;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(var(--brand-primary-rgb), 0.025) 100%
+    );
+  padding: 1rem 1.05rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 12px 28px rgba(var(--brand-primary-rgb), 0.05);
+}
+
+.definition-checklist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.definition-checklist-head strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--brand-ink);
+  letter-spacing: 0.01em;
+}
+
+.definition-checklist-head .text-muted {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.definition-checklist-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.7rem;
+}
+
+.definition-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.1rem;
+  padding: 0.72rem 0.8rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.1);
+  background: rgba(var(--brand-primary-rgb), 0.03);
+  color: rgba(var(--brand-primary-rgb), 0.82);
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.definition-checklist-item svg {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  color: rgba(220, 53, 69, 0.9);
+}
+
+.definition-checklist-item span {
+  font-size: 0.87rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.definition-checklist-item.is-complete {
+  border-color: rgba(40, 167, 69, 0.24);
+  background: rgba(40, 167, 69, 0.08);
+  color: #1f6f41;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46);
+}
+
+.definition-checklist-item.is-complete svg {
+  color: #218838;
+}
+
+.definition-activation-panel {
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
+  border-radius: 1rem;
+  background: rgba(var(--brand-primary-rgb), 0.03);
+  padding: 0.95rem;
+}
+
+.definition-activation-modal-dialog {
+  width: min(70rem, calc(100vw - 2rem));
+  max-width: min(70rem, calc(100vw - 2rem));
+}
+
+.definition-activation-warning {
+  border: 1px solid rgba(255, 193, 7, 0.34);
+  border-radius: 0.9rem;
+  background: rgba(255, 193, 7, 0.12);
+  color: #7a5a00;
+  padding: 0.8rem 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.definition-activation-menu {
+  display: inline-flex;
+  flex-wrap: nowrap !important;
+  width: 100%;
+}
+
+.definition-activation-panel .btn-group .btn {
+  min-width: 0;
+  flex: 1 1 0;
+  white-space: nowrap;
+  font-size: 0.88rem !important;
+  padding: 0.5rem 0.8rem !important;
 }
 
 .admin-inline-error {

@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { createUser, getUsers, getUserMenu } from "../controllers/users/user_controler.js";
+import {
+  createUser,
+  getUsers,
+  getUserMenu,
+  getUserProcessDefinitionPanel,
+  createUserProcessTask
+} from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { updateUserPhoto } from "../controllers/users/user_controler.js";
@@ -16,6 +22,8 @@ router.post('/login', loginUser)
 router.post('/logout', logoutUser)
 
 router.get('/:id/menu', getUserMenu);
+router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
+router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
 
 router.put(
   '/:cedula/photo',

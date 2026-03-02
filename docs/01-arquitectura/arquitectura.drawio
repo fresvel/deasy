@@ -7,10 +7,10 @@
         <mxCell id="clients" value="Clientes Web/Mobile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
           <mxGeometry x="40" y="10" width="180" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="frontend" value="Frontend (Vue)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
+        <mxCell id="frontend" value="Frontend (Vue)&lt;br&gt;Admin + Dashboard operativo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
           <mxGeometry x="40" y="150" width="180" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="backend" value="Backend API (Node.js)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
+        <mxCell id="backend" value="Backend API (Node.js)&lt;br&gt;Procesos, tareas, documentos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
           <mxGeometry x="300" y="140" width="220" height="80" as="geometry" />
         </mxCell>
         <mxCell id="mariadb" value="MariaDB" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
@@ -19,10 +19,10 @@
         <mxCell id="mongodb" value="MongoDB" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
           <mxGeometry x="600" y="140" width="140" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="storage" value="Storage (FS/S3/MinIO)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
+        <mxCell id="storage" value="MinIO (buckets)&lt;br&gt;templates, documents, chat, spool, dossier" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
           <mxGeometry x="580" y="280" width="180" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="rabbit" value="RabbitMQ (jobs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
+        <mxCell id="rabbit" value="RabbitMQ (jobs)&lt;br&gt;firmas / storage / pesados" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">
           <mxGeometry x="320" y="290" width="180" height="60" as="geometry" />
         </mxCell>
         <mxCell id="emqx" value="EMQX (eventos realtime)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#1f2937;fontFamily=Helvetica;" parent="1" vertex="1">

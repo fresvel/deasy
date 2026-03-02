@@ -32,9 +32,9 @@ relation_unit_types ∞─∞ role_assignments (via role_assignment_relation_typ
 
 ## Documentos y firmas
 
-tasks 1─∞ documents
+task_items 1─∞ documents
 documents 1─∞ document_versions
-process_definition_versions 1─∞ signature_flow_templates
+process_definition_templates 1─∞ signature_flow_templates
 signature_flow_templates 1─∞ signature_flow_steps
 document_versions 1─∞ signature_flow_instances
 signature_flow_instances 1─∞ signature_requests

@@ -59,6 +59,34 @@ const main = async () => {
       FOR EACH ROW
       BEGIN
         DECLARE linked_template_count INT DEFAULT 0;
+        DECLARE active_rule_count INT DEFAULT 0;
+        DECLARE active_trigger_count INT DEFAULT 0;
+
+        IF NEW.status = 'active' AND OLD.status <> 'active' THEN
+          SELECT COUNT(*)
+            INTO active_rule_count
+          FROM process_target_rules
+          WHERE process_definition_id = NEW.id
+            AND is_active = 1;
+
+          IF active_rule_count < 1 THEN
+            SIGNAL SQLSTATE '45000'
+              SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos una regla activa en Reglas de alcance.';
+          END IF;
+        END IF;
+
+        IF NEW.status = 'active' AND OLD.status <> 'active' THEN
+          SELECT COUNT(*)
+            INTO active_trigger_count
+          FROM process_definition_triggers
+          WHERE process_definition_id = NEW.id
+            AND is_active = 1;
+
+          IF active_trigger_count < 1 THEN
+            SIGNAL SQLSTATE '45000'
+              SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un disparador activo en Disparadores de definiciones.';
+          END IF;
+        END IF;
 
         IF NEW.status = 'active' AND OLD.status <> 'active' AND NEW.has_document = 1 THEN
           SELECT COUNT(*)

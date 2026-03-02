@@ -16,10 +16,9 @@
 ## Persistencia (alto nivel)
 
 - Conversaciones y mensajes en MongoDB.
-- Adjuntos en storage compartido.
+- Adjuntos en MinIO (`deasy-chat/Chat/...`).
 
 ## Referencias
 
 - docs/01-arquitectura/chat-notificaciones.md
 - docs/05-broker-notificaciones/topics.md
-

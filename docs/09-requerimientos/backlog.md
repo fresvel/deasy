@@ -3,8 +3,8 @@
 ## Backlog tecnico
 
 - Definir ACL completas de EMQX por topic y rol.
-- Formalizar SHARED_STORAGE_ROOT en docker/NFS.
-- Revisar columna legacy template_version_id en process_templates.
+- Formalizar politicas de buckets, retencion y limpieza en MinIO.
+- Retirar o encapsular por completo cualquier remanente del runtime `templates_legacy`.
 - Comparar usuarios en Mongo, MariaDB y persons; unificar en un solo modelo maestro.
 
 ## Backlog funcional

@@ -1,6 +1,6 @@
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
-  generateTasksForTerm,
+  hydrateTaskFromDefinition,
   updateParentTaskStatusForTask
 } from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
@@ -444,9 +444,6 @@ const validateTableRules = (tableName, candidate) => {
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "definiciones de proceso");
       break;
     case "process_definition_series":
-      if (!candidate.process_id) {
-        throw new Error("Selecciona un proceso para la serie.");
-      }
       if (!candidate.source_type || !["unit_type", "cargo", "legacy"].includes(String(candidate.source_type))) {
         throw new Error("Selecciona el origen de la serie.");
       }
@@ -477,14 +474,64 @@ const validateTableRules = (tableName, candidate) => {
         throw new Error("El alcance por tipo requiere un tipo de unidad.");
       }
       break;
+    case "process_definition_triggers":
+      if (!candidate.process_definition_id) {
+        throw new Error("Selecciona una definicion de proceso.");
+      }
+      if (!candidate.trigger_mode) {
+        throw new Error("Selecciona un modo de disparo.");
+      }
+      if (
+        candidate.trigger_mode === "automatic_by_term_type"
+        && !candidate.term_type_id
+      ) {
+        throw new Error("El disparo automatico requiere un tipo de periodo.");
+      }
+      if (
+        ["manual_only", "manual_custom_term"].includes(String(candidate.trigger_mode))
+        && candidate.term_type_id
+      ) {
+        throw new Error("Los disparos manuales no deben fijar un tipo de periodo.");
+      }
+      break;
     case "tasks":
-      if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de definicion que genera la tarea.");
+      if (!candidate.process_definition_id) {
+        throw new Error("Selecciona una definicion de proceso.");
       }
       if (!candidate.term_id) {
         throw new Error("Selecciona un periodo para la tarea.");
       }
+      if (!candidate.launch_mode || !["automatic", "manual"].includes(String(candidate.launch_mode))) {
+        throw new Error("Selecciona un modo de lanzamiento valido.");
+      }
+      if (candidate.launch_mode === "manual" && !candidate.created_by_user_id) {
+        throw new Error("Las tareas manuales requieren indicar quien las crea.");
+      }
+      if (candidate.launch_mode === "automatic" && candidate.created_by_user_id) {
+        throw new Error("Las tareas automaticas no deben indicar usuario creador.");
+      }
       ensureDateOrder(candidate.start_date, candidate.end_date, "tareas");
+      break;
+    case "task_items":
+      if (!candidate.task_id) {
+        throw new Error("Selecciona una tarea.");
+      }
+      if (!candidate.process_definition_template_id) {
+        throw new Error("Selecciona la plantilla de proceso definido.");
+      }
+      if (!candidate.template_artifact_id) {
+        throw new Error("Selecciona el paquete.");
+      }
+      break;
+    case "documents":
+      if (!candidate.task_item_id) {
+        throw new Error("Selecciona el item de tarea que genera el documento.");
+      }
+      break;
+    case "signature_flow_templates":
+      if (!candidate.process_definition_template_id) {
+        throw new Error("Selecciona la plantilla de proceso definido.");
+      }
       break;
     case "task_assignments":
       if (!candidate.task_id) {
@@ -613,22 +660,20 @@ export default class SqlAdminService {
 
   async resolveProcessDefinitionSeries(candidate, { connection = this.pool, allowLegacy = false } = {}) {
     this.ensurePool();
-    const processId = Number(candidate?.process_id);
     const seriesId = Number(candidate?.series_id);
-    if (!processId || !seriesId) {
+    if (!seriesId) {
       throw new Error("Selecciona una serie valida para la definicion.");
     }
     const [rows] = await connection.query(
-      `SELECT id, process_id, source_type, unit_type_id, cargo_id, code, label, is_active
+      `SELECT id, source_type, unit_type_id, cargo_id, code, is_active
        FROM process_definition_series
        WHERE id = ?
-         AND process_id = ?
        LIMIT 1`,
-      [seriesId, processId]
+      [seriesId]
     );
     const series = rows?.[0] || null;
     if (!series) {
-      throw new Error("La serie seleccionada no pertenece al proceso indicado.");
+      throw new Error("La serie seleccionada no existe.");
     }
     if (!Number(series.is_active)) {
       throw new Error("La serie seleccionada esta inactiva.");
@@ -846,11 +891,23 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, creates_task
+      `SELECT id, process_definition_id, template_artifact_id, usage_role, sort_order, creates_task
        FROM process_definition_templates
        WHERE id = ?
        LIMIT 1`,
       [templateId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async getTaskItem(taskItemId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT id, task_id, process_definition_template_id, template_artifact_id
+       FROM task_items
+       WHERE id = ?
+       LIMIT 1`,
+      [taskItemId]
     );
     return rows?.[0] ?? null;
   }
@@ -863,6 +920,23 @@ export default class SqlAdminService {
        WHERE id = ?
        LIMIT 1`,
       [definitionId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async getTermWithType(termId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT
+         t.id,
+         t.term_type_id,
+         tt.code AS term_type_code
+       FROM terms t
+       INNER JOIN term_types tt
+         ON tt.id = t.term_type_id
+       WHERE t.id = ?
+       LIMIT 1`,
+      [termId]
     );
     return rows?.[0] ?? null;
   }
@@ -889,7 +963,7 @@ export default class SqlAdminService {
     const normalizedTargetProcessId = Number(targetProcessId);
 
     if (!normalizedSourceId || !normalizedTargetId) {
-      return { clonedTemplates: 0, clonedRules: 0 };
+      return { clonedTemplates: 0, clonedRules: 0, clonedTriggers: 0 };
     }
 
     const sourceDefinition = await this.getProcessDefinitionVersion(normalizedSourceId, connection);
@@ -980,9 +1054,37 @@ export default class SqlAdminService {
       );
     }
 
+    const [triggerRows] = await connection.query(
+      `SELECT trigger_mode,
+              term_type_id,
+              is_active
+       FROM process_definition_triggers
+       WHERE process_definition_id = ?
+       ORDER BY id ASC`,
+      [normalizedSourceId]
+    );
+
+    for (const row of triggerRows) {
+      await connection.query(
+        `INSERT INTO process_definition_triggers (
+          process_definition_id,
+          trigger_mode,
+          term_type_id,
+          is_active
+        ) VALUES (?, ?, ?, ?)`,
+        [
+          normalizedTargetId,
+          row.trigger_mode,
+          row.term_type_id,
+          row.is_active
+        ]
+      );
+    }
+
     return {
       clonedTemplates: templateRows.length,
-      clonedRules: ruleRows.length
+      clonedRules: ruleRows.length,
+      clonedTriggers: triggerRows.length
     };
   }
 
@@ -1012,6 +1114,110 @@ export default class SqlAdminService {
     }
   }
 
+  async ensureDefinitionHasActiveRulesForActivation(definitionId, connection = this.pool) {
+    const normalizedDefinitionId = Number(definitionId);
+    if (!normalizedDefinitionId) {
+      return;
+    }
+
+    const [rows] = await connection.query(
+      `SELECT COUNT(*) AS total
+       FROM process_target_rules
+       WHERE process_definition_id = ?
+         AND is_active = 1`,
+      [normalizedDefinitionId]
+    );
+
+    const total = Number(rows?.[0]?.total || 0);
+    if (total < 1) {
+      throw new Error(
+        "No se puede activar una definicion si no tiene al menos una regla activa en Reglas de alcance."
+      );
+    }
+  }
+
+  async ensureDefinitionHasActiveTriggersForActivation(definitionId, connection = this.pool) {
+    const normalizedDefinitionId = Number(definitionId);
+    if (!normalizedDefinitionId) {
+      return;
+    }
+
+    const [rows] = await connection.query(
+      `SELECT COUNT(*) AS total
+       FROM process_definition_triggers
+       WHERE process_definition_id = ?
+         AND is_active = 1`,
+      [normalizedDefinitionId]
+    );
+
+    const total = Number(rows?.[0]?.total || 0);
+    if (total < 1) {
+      throw new Error(
+        "No se puede activar una definicion si no tiene al menos un disparador activo en Disparadores de definiciones."
+      );
+    }
+  }
+
+  async ensureDefinitionTriggerAllowsTaskLaunch(
+    definitionId,
+    termId,
+    launchMode,
+    connection = this.pool
+  ) {
+    const normalizedDefinitionId = Number(definitionId);
+    const normalizedTermId = Number(termId);
+    const normalizedLaunchMode = String(launchMode || "manual");
+
+    if (!normalizedDefinitionId || !normalizedTermId) {
+      throw new Error("La tarea requiere una definicion y un periodo validos.");
+    }
+
+    const term = await this.getTermWithType(normalizedTermId, connection);
+    if (!term) {
+      throw new Error("El periodo seleccionado no existe.");
+    }
+
+    let triggerMode;
+    let triggerParams;
+    if (normalizedLaunchMode === "automatic") {
+      triggerMode = "automatic_by_term_type";
+      triggerParams = [normalizedDefinitionId, triggerMode, Number(term.term_type_id)];
+    } else if (String(term.term_type_code || "").toUpperCase() === "CUS") {
+      triggerMode = "manual_custom_term";
+      triggerParams = [normalizedDefinitionId, triggerMode];
+    } else {
+      triggerMode = "manual_only";
+      triggerParams = [normalizedDefinitionId, triggerMode];
+    }
+
+    const triggerSql =
+      triggerMode === "automatic_by_term_type"
+        ? `SELECT id
+           FROM process_definition_triggers
+           WHERE process_definition_id = ?
+             AND trigger_mode = ?
+             AND term_type_id = ?
+             AND is_active = 1
+           LIMIT 1`
+        : `SELECT id
+           FROM process_definition_triggers
+           WHERE process_definition_id = ?
+             AND trigger_mode = ?
+             AND is_active = 1
+           LIMIT 1`;
+
+    const [rows] = await connection.query(triggerSql, triggerParams);
+    if (!rows?.length) {
+      if (triggerMode === "automatic_by_term_type") {
+        throw new Error("La definicion no tiene un disparador automatico activo para el tipo de periodo seleccionado.");
+      }
+      if (triggerMode === "manual_custom_term") {
+        throw new Error("La definicion no tiene un disparador manual activo para periodos custom.");
+      }
+      throw new Error("La definicion no tiene un disparador manual activo para el periodo seleccionado.");
+    }
+  }
+
   async create(tableName, data) {
     this.ensurePool();
     const config = getConfig(tableName);
@@ -1032,10 +1238,9 @@ export default class SqlAdminService {
     }
 
     if (tableName === "process_definition_series") {
-      const sourceType = String(payload.source_type || "unit_type");
+      const sourceType = String(payload.source_type || "").trim();
       payload.source_type = sourceType;
       let code = "";
-      let label = "";
       if (sourceType === "unit_type") {
         const unitType = await this.getByKeys("unit_types", { id: payload.unit_type_id });
         if (!unitType) {
@@ -1043,7 +1248,6 @@ export default class SqlAdminService {
         }
         payload.cargo_id = null;
         code = slugify(unitType.name);
-        label = unitType.name;
       } else if (sourceType === "cargo") {
         const cargo = await this.getByKeys("cargos", { id: payload.cargo_id });
         if (!cargo) {
@@ -1051,23 +1255,20 @@ export default class SqlAdminService {
         }
         payload.unit_type_id = null;
         code = slugify(cargo.name);
-        label = cargo.name;
       } else {
-        throw new Error("Las series legacy solo se crean por migracion.");
+        throw new Error("Selecciona un origen de serie valido.");
       }
       const [dupRows] = await this.pool.query(
         `SELECT id
          FROM process_definition_series
-         WHERE process_id = ?
-           AND code = ?
+         WHERE code = ?
          LIMIT 1`,
-        [Number(payload.process_id), code]
+        [code]
       );
       if (dupRows?.length) {
-        throw new Error("Ya existe una serie con ese origen para el proceso seleccionado.");
+        throw new Error("Ya existe una serie con ese origen.");
       }
       payload.code = code;
-      payload.label = label;
     }
 
     if (tableName === "persons") {
@@ -1083,25 +1284,90 @@ export default class SqlAdminService {
       }
     }
 
-    if (tableName === "tasks" && payload.process_definition_template_id) {
-      const template = await this.getTaskTemplate(payload.process_definition_template_id);
-      if (!template) {
-        throw new Error("La plantilla de definicion seleccionada no existe.");
-      }
-      if (!Number(template.creates_task)) {
-        throw new Error("La plantilla de definicion seleccionada no esta marcada para generar tareas.");
-      }
-      payload.process_definition_id = template.process_definition_id;
-    }
-
-    if (tableName === "process_definition_templates" || tableName === "process_target_rules") {
+    if (
+      tableName === "process_definition_templates"
+      || tableName === "process_target_rules"
+      || tableName === "process_definition_triggers"
+    ) {
       await this.ensureDraftDefinitionContext(
         payload.process_definition_id,
         {
-          entityLabel: tableName === "process_definition_templates"
-            ? "las plantillas de definicion"
-            : "las reglas de alcance"
+          entityLabel:
+            tableName === "process_definition_templates"
+              ? "las plantillas de definicion"
+              : tableName === "process_target_rules"
+                ? "las reglas de alcance"
+                : "los disparadores de definicion"
         }
+      );
+    }
+
+    if (tableName === "process_definition_triggers") {
+      const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
+      if (!definition) {
+        throw new Error("La definicion de proceso seleccionada no existe.");
+      }
+      if (String(payload.trigger_mode || "") !== "automatic_by_term_type") {
+        payload.term_type_id = null;
+      }
+    }
+
+    if (tableName === "tasks") {
+      const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
+      if (!definition) {
+        throw new Error("La definicion de proceso seleccionada no existe.");
+      }
+      if (String(definition.status || "") !== "active") {
+        throw new Error("Solo se pueden instanciar tareas desde definiciones activas.");
+      }
+      payload.launch_mode = String(payload.launch_mode || "manual");
+      if (payload.launch_mode === "automatic") {
+        payload.created_by_user_id = null;
+      }
+      await this.ensureDefinitionTriggerAllowsTaskLaunch(
+        payload.process_definition_id,
+        payload.term_id,
+        payload.launch_mode
+      );
+    }
+
+    if (tableName === "task_items" && payload.process_definition_template_id) {
+      const template = await this.getTaskTemplate(payload.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso definido seleccionada no existe.");
+      }
+      if (!Number(template.creates_task)) {
+        throw new Error("La plantilla seleccionada no esta marcada para generar items de tarea.");
+      }
+      const task = await this.getByKeys("tasks", { id: payload.task_id });
+      if (!task) {
+        throw new Error("La tarea seleccionada no existe.");
+      }
+      if (Number(task.process_definition_id) !== Number(template.process_definition_id)) {
+        throw new Error("La plantilla seleccionada no pertenece a la definicion de proceso de la tarea.");
+      }
+      payload.template_artifact_id = template.template_artifact_id;
+      payload.template_usage_role = template.usage_role;
+      if (payload.sort_order === undefined || payload.sort_order === null || payload.sort_order === "") {
+        payload.sort_order = template.sort_order;
+      }
+    }
+
+    if (tableName === "documents" && payload.task_item_id) {
+      const taskItem = await this.getTaskItem(payload.task_item_id);
+      if (!taskItem) {
+        throw new Error("El item de tarea seleccionado no existe.");
+      }
+    }
+
+    if (tableName === "signature_flow_templates" && payload.process_definition_template_id) {
+      const template = await this.getTaskTemplate(payload.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso definido seleccionada no existe.");
+      }
+      await this.ensureDraftDefinitionContext(
+        template.process_definition_id,
+        { entityLabel: "los flujos de firma" }
       );
     }
 
@@ -1161,11 +1427,35 @@ export default class SqlAdminService {
               targetProcessId: payload.process_id,
               connection
             });
-            if (cloneSummary.clonedTemplates || cloneSummary.clonedRules) {
-              createNotice = `Se clonaron ${cloneSummary.clonedTemplates} plantillas y ${cloneSummary.clonedRules} reglas desde la definicion origen.`;
+            if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedTriggers) {
+              createNotice =
+                `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
+                + ` y ${cloneSummary.clonedTriggers} disparadores desde la definicion origen.`;
             }
           }
 
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "tasks") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          await hydrateTaskFromDefinition({
+            connection,
+            taskId: insertResult.insertId,
+            processDefinitionId: Number(payload.process_definition_id),
+            termId: Number(payload.term_id)
+          });
           await connection.commit();
         } catch (error) {
           await connection.rollback();
@@ -1188,16 +1478,15 @@ export default class SqlAdminService {
       ) {
         throw new Error("Solo puede existir una definicion activa por serie dentro del mismo proceso.");
       }
+      if (
+        tableName === "tasks"
+        && error?.code === "ER_DUP_ENTRY"
+      ) {
+        throw new Error("Ya existe una instancia de tarea con esa definicion, periodo y criterio de lanzamiento.");
+      }
       throw error;
     }
     const created = { id: result.insertId, ...payload };
-    if (tableName === "terms") {
-      try {
-        await generateTasksForTerm(created.id);
-      } catch (error) {
-        console.warn("⚠️  No se pudo generar tareas para el periodo:", error.message);
-      }
-    }
     if (createNotice) {
       return {
         ...sanitizePersonRow(tableName, created),
@@ -1233,25 +1522,94 @@ export default class SqlAdminService {
     if (tableName === "tasks") {
       if (
         Object.prototype.hasOwnProperty.call(updates, "process_definition_id")
-        && !Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")
       ) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("La definicion de la tarea se deriva de la plantilla vinculada.");
+          throw new Error("No se puede cambiar la definicion de una tarea ya instanciada.");
         }
         delete updates.process_definition_id;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
-        const template = await this.getTaskTemplate(updates.process_definition_template_id);
-        if (!template) {
-          throw new Error("La plantilla de definicion seleccionada no existe.");
+      if (Object.prototype.hasOwnProperty.call(updates, "term_id")) {
+        if (Number(updates.term_id) !== Number(existing.term_id)) {
+          throw new Error("No se puede cambiar el periodo de una tarea ya instanciada.");
         }
-        if (!Number(template.creates_task)) {
-          throw new Error("La plantilla de definicion seleccionada no esta marcada para generar tareas.");
+        delete updates.term_id;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "launch_mode")) {
+        if (String(updates.launch_mode) !== String(existing.launch_mode)) {
+          throw new Error("No se puede cambiar el modo de lanzamiento de una tarea existente.");
         }
-        updates.process_definition_id = template.process_definition_id;
+        delete updates.launch_mode;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "created_by_user_id")) {
+        if (Number(updates.created_by_user_id || 0) !== Number(existing.created_by_user_id || 0)) {
+          throw new Error("No se puede cambiar el usuario creador de una tarea existente.");
+        }
+        delete updates.created_by_user_id;
       }
     }
-    if (tableName === "process_definition_templates" || tableName === "process_target_rules") {
+    if (tableName === "task_items") {
+      if (Object.prototype.hasOwnProperty.call(updates, "task_id")) {
+        if (Number(updates.task_id) !== Number(existing.task_id)) {
+          throw new Error("No se puede cambiar la tarea asociada de un item.");
+        }
+        delete updates.task_id;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
+          throw new Error("No se puede cambiar la plantilla asociada de un item.");
+        }
+        delete updates.process_definition_template_id;
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, "template_artifact_id")) {
+        if (Number(updates.template_artifact_id) !== Number(existing.template_artifact_id)) {
+          throw new Error("No se puede cambiar el paquete asociado de un item.");
+        }
+        delete updates.template_artifact_id;
+      }
+    }
+    if (tableName === "documents") {
+      if (Object.prototype.hasOwnProperty.call(updates, "task_item_id")) {
+        if (Number(updates.task_item_id) !== Number(existing.task_item_id)) {
+          throw new Error("No se puede cambiar el item de tarea asociado de un documento.");
+        }
+        delete updates.task_item_id;
+      }
+    }
+    if (tableName === "signature_flow_templates") {
+      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
+          throw new Error("No se puede cambiar la plantilla asociada de un flujo de firma.");
+        }
+        delete updates.process_definition_template_id;
+      }
+      const template = await this.getTaskTemplate(existing.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso definido asociada al flujo ya no existe.");
+      }
+      await this.ensureDraftDefinitionContext(
+        template.process_definition_id,
+        { entityLabel: "los flujos de firma" }
+      );
+    }
+    if (tableName === "process_definition_triggers") {
+      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
+        if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
+          throw new Error("No se puede cambiar la definicion asociada de este disparador.");
+        }
+        delete updates.process_definition_id;
+      }
+      if (
+        Object.prototype.hasOwnProperty.call(updates, "trigger_mode")
+        && String(updates.trigger_mode || "") !== "automatic_by_term_type"
+      ) {
+        updates.term_type_id = null;
+      }
+    }
+    if (
+      tableName === "process_definition_templates"
+      || tableName === "process_target_rules"
+      || tableName === "process_definition_triggers"
+    ) {
       if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
           throw new Error("No se puede cambiar la definicion asociada de este registro.");
@@ -1261,26 +1619,22 @@ export default class SqlAdminService {
       await this.ensureDraftDefinitionContext(
         existing.process_definition_id,
         {
-          entityLabel: tableName === "process_definition_templates"
-            ? "las plantillas de definicion"
-            : "las reglas de alcance"
+          entityLabel:
+            tableName === "process_definition_templates"
+              ? "las plantillas de definicion"
+              : tableName === "process_target_rules"
+                ? "las reglas de alcance"
+                : "los disparadores de definicion"
         }
       );
     }
     if (tableName === "process_definition_series") {
-      if (Object.prototype.hasOwnProperty.call(updates, "process_id")) {
-        if (Number(updates.process_id) !== Number(existing.process_id)) {
-          throw new Error("No se puede cambiar el proceso de una serie.");
-        }
-        delete updates.process_id;
-      }
       const candidateSeries = { ...existing, ...updates };
-      const sourceType = String(candidateSeries.source_type || existing.source_type || "legacy");
+      const sourceType = String(candidateSeries.source_type || existing.source_type || "").trim();
       if (sourceType === "legacy") {
         throw new Error("Las series legacy no se editan manualmente.");
       }
       let code = "";
-      let label = "";
       if (sourceType === "unit_type") {
         if (!candidateSeries.unit_type_id) {
           throw new Error("La serie requiere un tipo de unidad.");
@@ -1291,7 +1645,6 @@ export default class SqlAdminService {
         }
         updates.cargo_id = null;
         code = slugify(unitType.name);
-        label = unitType.name;
       } else if (sourceType === "cargo") {
         if (!candidateSeries.cargo_id) {
           throw new Error("La serie requiere un cargo.");
@@ -1302,24 +1655,21 @@ export default class SqlAdminService {
         }
         updates.unit_type_id = null;
         code = slugify(cargo.name);
-        label = cargo.name;
       } else {
         throw new Error("El origen de serie no es valido.");
       }
       const [dupRows] = await this.pool.query(
         `SELECT id
          FROM process_definition_series
-         WHERE process_id = ?
-           AND code = ?
+         WHERE code = ?
            AND id <> ?
          LIMIT 1`,
-        [Number(existing.process_id), code, Number(existing.id)]
+        [code, Number(existing.id)]
       );
       if (dupRows?.length) {
-        throw new Error("Ya existe otra serie con ese origen para el proceso seleccionado.");
+        throw new Error("Ya existe otra serie con ese origen.");
       }
       updates.code = code;
-      updates.label = label;
     }
     if (tableName === "template_artifacts") {
       if (String(existing.artifact_origin || "system") === "system") {
@@ -1470,6 +1820,8 @@ export default class SqlAdminService {
         const connection = await this.pool.getConnection();
         try {
           await connection.beginTransaction();
+          await this.ensureDefinitionHasActiveRulesForActivation(existing.id ?? keyPayload.id, connection);
+          await this.ensureDefinitionHasActiveTriggersForActivation(existing.id ?? keyPayload.id, connection);
           await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, candidate, connection);
           const retiredCount = await this.retireActiveDefinitionsInSeries({
             ...processDefinitionSeriesContext,
@@ -2264,7 +2616,11 @@ export default class SqlAdminService {
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
     const { where, params } = buildWhere(config.primaryKeys, keyPayload);
 
-    if (tableName === "process_definition_templates" || tableName === "process_target_rules") {
+    if (
+      tableName === "process_definition_templates"
+      || tableName === "process_target_rules"
+      || tableName === "process_definition_triggers"
+    ) {
       const existing = await this.getByKeys(tableName, keyPayload);
       if (!existing) {
         throw new Error("Registro no encontrado.");
@@ -2272,10 +2628,28 @@ export default class SqlAdminService {
       await this.ensureDraftDefinitionContext(
         existing.process_definition_id,
         {
-          entityLabel: tableName === "process_definition_templates"
-            ? "las plantillas de definicion"
-            : "las reglas de alcance"
+          entityLabel:
+            tableName === "process_definition_templates"
+              ? "las plantillas de definicion"
+              : tableName === "process_target_rules"
+                ? "las reglas de alcance"
+                : "los disparadores de definicion"
         }
+      );
+    }
+
+    if (tableName === "signature_flow_templates") {
+      const existing = await this.getByKeys(tableName, keyPayload);
+      if (!existing) {
+        throw new Error("Registro no encontrado.");
+      }
+      const template = await this.getTaskTemplate(existing.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso definido asociada al flujo ya no existe.");
+      }
+      await this.ensureDraftDefinitionContext(
+        template.process_definition_id,
+        { entityLabel: "los flujos de firma" }
       );
     }
 

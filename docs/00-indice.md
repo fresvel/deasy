@@ -13,6 +13,7 @@ Este indice organiza la documentacion del repositorio y enlaza a los documentos 
 
 1) Arquitectura
    - docs/01-arquitectura/overview.md
+   - docs/01-arquitectura/arquitectura.drawio
    - docs/01-arquitectura/decisiones.md
    - docs/01-arquitectura/chat-notificaciones.md
    - docs/01-arquitectura/firmas.md
@@ -24,9 +25,8 @@ Este indice organiza la documentacion del repositorio y enlaza a los documentos 
    - docs/02-dominio-datos/er-resumen.md
    - docs/02-dominio-datos/nomenclatura.md
    - docs/02-dominio-datos/migraciones.md
-   - docs/02-dominio-datos/MER_SQL.sql
-   - docs/02-dominio-datos/MER_LIMPIO.drawio
-   - docs/02-dominio-datos/base-datos.drawio
+   - docs/02-dominio-datos/mariadb.dbml
+   - docs/02-dominio-datos/mariadb.drawio
    - docs/02-dominio-datos/
 
 3) Backend

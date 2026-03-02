@@ -12,8 +12,8 @@
 - Mantener relacion definicion de proceso -> plantillas de definicion -> artifacts publicados.
 - Los artifacts publicados del sistema se almacenan en MinIO dentro del bucket `deasy-templates`, bajo `System`, y se referencian desde `template_artifacts`.
 - Los seeds base pueden publicarse manualmente a `deasy-templates/Seeds`.
-- Los artifacts creados desde el admin se encolan y se publican automaticamente a `deasy-templates/Users/<cedula>/...` por medio de `storage-uploader`.
-- Documentos generados siguen saliendo a storage compartido; MinIO se usa para plantillas fuente/publicadas.
+- Los paquetes de usuario creados desde el admin se suben directo a `deasy-templates/Users/<cedula>/...` en la misma operacion.
+- Documentos generados ya se modelan para salir hacia MinIO en `deasy-documents`.
 - La fuente editable vive en `tools/templates/` y se gestiona con `node tools/templates/cli.mjs`.
 
 ## Flujo recomendado
@@ -58,7 +58,7 @@ El panel de `template_seeds` y el flujo de artifacts de usuario agregan dos acci
    - `template_seeds` funciona como catalogo de esos seeds publicados; no hace falta una tabla separada.
 
 2. `Agregar` en `template_artifacts` (flujo de usuario)
-   - Abre el modal de artifact de usuario.
+   - Abre el modal de paquete de usuario.
    - Permite crear un `template_artifact` en etapa `draft`.
    - Puede basarse en un `template_seed` y/o archivos subidos por el usuario (`pdf`, `docx`, `xlsx`, `pptx`).
    - El backend arma la estructura temporal en `backend/storage/minio-jobs/templates-drafts/...`.
@@ -69,6 +69,19 @@ El panel de `template_seeds` y el flujo de artifacts de usuario agregan dos acci
    - Antes de publicar, el backend valida que esa estructura exista y que cada formato declarado tenga archivos visibles.
    - Los artifacts `system` no se crean ni se editan manualmente; se registran con `Sincronizar dist`.
    - Cuando se usa un `Seed LaTeX`, el artifact genera tanto `template/modes/system/jinja2/src/` como `template/modes/user/latex/src/`.
+
+## Estado de repositorio
+
+`artifact_stage` se sincroniza o controla con estos valores:
+
+- `draft`
+- `review`
+- `approved`
+- `published`
+- `archived`
+
+Para los artifacts `system`, `Sincronizar dist` toma `repository_stage` desde `meta.yaml`.
+Para los artifacts `user`, hoy el flujo empieza en `draft`.
 
 ## Seed en meta.yaml
 

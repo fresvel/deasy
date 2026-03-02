@@ -79,7 +79,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_versions",
-    label: "Definiciones de proceso",
+    label: "Definicion de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -113,27 +113,26 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_series",
-    label: "Series de definicion",
+    label: "Variantes de procesos definidos",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
       {
         name: "source_type",
         label: "Origen de serie",
         type: "select",
-        options: ["unit_type", "cargo", "legacy"],
-        defaultValue: "unit_type"
+        options: ["unit_type", "cargo"],
+        defaultValue: "",
+        required: true
       },
       { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
       { name: "cargo_id", label: "Cargo", type: "number" },
       { name: "code", label: "Codigo", type: "text", readOnly: true },
-      { name: "label", label: "Nombre", type: "text", readOnly: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["code", "label", "source_type"]
+    searchFields: ["code", "source_type"]
   },
   {
     table: "process_target_rules",
@@ -202,6 +201,27 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
+    table: "process_definition_triggers",
+    label: "Disparadores de definiciones",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      {
+        name: "trigger_mode",
+        label: "Modo de disparo",
+        type: "select",
+        options: ["automatic_by_term_type", "manual_only", "manual_custom_term"],
+        required: true
+      },
+      { name: "term_type_id", label: "Tipo de periodo", type: "number" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["trigger_mode"]
+  },
+  {
     table: "tasks",
     label: "Tareas",
     category: "Procesos",
@@ -209,23 +229,24 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
-        name: "process_definition_template_id",
-        label: "Plantilla de definicion",
-        type: "number",
-        required: true
-      },
-      {
         name: "process_definition_id",
         label: "Definicion de proceso",
         type: "number",
-        readOnly: true
+        required: true
       },
       { name: "term_id", label: "Periodo", type: "number", required: true },
+      {
+        name: "launch_mode",
+        label: "Modo de lanzamiento",
+        type: "select",
+        options: ["automatic", "manual"],
+        defaultValue: "manual"
+      },
+      { name: "created_by_user_id", label: "Creada por", type: "number" },
       { name: "parent_task_id", label: "Tarea padre (manual)", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
-      { name: "is_main", label: "Tarea principal", type: "boolean", defaultValue: 1 },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       {
@@ -238,6 +259,42 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["status"]
+  },
+  {
+    table: "task_items",
+    label: "Items de tareas",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "task_id", label: "Tarea", type: "number", required: true },
+      {
+        name: "process_definition_template_id",
+        label: "Plantilla de proceso definido",
+        type: "number",
+        required: true
+      },
+      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
+      {
+        name: "template_usage_role",
+        label: "Uso",
+        type: "select",
+        options: ["system_render", "manual_fill", "attachment", "support"],
+        defaultValue: "manual_fill"
+      },
+      { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
+      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
+      { name: "assigned_person_id", label: "Responsable", type: "number" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_proceso", "completada", "cancelada"],
+        defaultValue: "pendiente"
+      },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["template_usage_role", "status"]
   },
   {
     table: "task_assignments",
@@ -281,7 +338,7 @@ export const SQL_TABLES = [
   },
   {
     table: "template_artifacts",
-    label: "Artifacts de plantilla",
+    label: "Paquetes de plantilla",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
@@ -322,13 +379,13 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_templates",
-    label: "Plantillas de definicion",
+    label: "Plantillas de procesos definidos",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Definicion", type: "number", required: true },
-      { name: "template_artifact_id", label: "Artifact", type: "number", required: true },
+      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
         name: "usage_role",
         label: "Uso",
@@ -528,7 +585,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "task_id", label: "Tarea", type: "number", required: true },
+      { name: "task_item_id", label: "Item de tarea", type: "number", required: true },
       {
         name: "status",
         label: "Estado",
@@ -638,7 +695,12 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion proceso", type: "number", required: true },
+      {
+        name: "process_definition_template_id",
+        label: "Plantilla de proceso definido",
+        type: "number",
+        required: true
+      },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },

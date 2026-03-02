@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Definir la arquitectura base para chat y notificaciones en Deasy usando EMQX (WebSocket) y MongoDB, con adjuntos en storage compartido.
+Definir la arquitectura base para chat y notificaciones en Deasy usando EMQX (WebSocket) y MongoDB, con adjuntos en MinIO.
 
 ## Alcance
 
@@ -17,7 +17,7 @@ Definir la arquitectura base para chat y notificaciones en Deasy usando EMQX (We
 - Publicacion: solo backend publica en EMQX.
 - Suscripcion: frontend se suscribe a sus topics.
 - Persistencia: MongoDB para conversaciones y mensajes.
-- Adjuntos: filesystem compartido montado en el backend.
+- Adjuntos: MinIO en el bucket `deasy-chat`.
 - Credenciales EMQX: usuario por persona, derivado de la contrasena del sistema.
 - ACL: usuario solo puede suscribirse a conversaciones propias; publicar reservado al backend.
 
@@ -62,13 +62,13 @@ Definir la arquitectura base para chat y notificaciones en Deasy usando EMQX (We
 3) Backend publica en EMQX el evento del mensaje.
 4) Frontend recibe en tiempo real via WebSocket y actualiza UI.
 
-## Adjuntos (storage compartido)
+## Adjuntos (MinIO)
 
-- Variable de entorno en backend:
-  - SHARED_STORAGE_ROOT=/data/shared
-- Ruta sugerida:
-  - ${SHARED_STORAGE_ROOT}/chat/{conversationId}/
-- Metadatos en Mongo (messages.attachments).
+- Bucket:
+  - `deasy-chat`
+- Prefijo sugerido:
+  - `Chat/{conversationId}/`
+- Metadatos en Mongo (messages.attachments) con referencia al objeto publicado.
 
 ## Autenticacion EMQX
 
@@ -99,4 +99,3 @@ Definir la arquitectura base para chat y notificaciones en Deasy usando EMQX (We
 - docs/05-broker-notificaciones/topics.md
 - docs/05-broker-notificaciones/auth-acl.md
 - docs/05-broker-notificaciones/mensajeria.md
-
