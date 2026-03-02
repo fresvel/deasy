@@ -1,0 +1,23 @@
+key: "investigación/productiva/informe-docente"
+export_id: "tpl_investigación_productiva_informe_docente"
+name: "Informe de Investigación Productiva por Docente"
+seed_code: "informe-docente"
+seed: "informe-docente"
+# repository_stage: draft | review | approved | published | archived
+repository_stage: published
+version: 1.0.0
+storage_version: v0001
+modes:
+  system:
+    jinja2:
+      path: "modes/system/jinja2/src"
+  user:
+    docx:
+      path: "modes/user/docx/src"
+    latex:
+      path: "modes/user/latex/src"
+    pdf:
+      path: "modes/user/pdf/src"
+    xlsx:
+      path: "modes/user/xlsx/src"
+origins: []
