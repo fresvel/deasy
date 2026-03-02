@@ -1,6 +1,6 @@
 key: "investigación/formativa/plan-carrera"
 export_id: "tpl_investigación_formativa_plan_carrera"
-name: "Plan de Carrera PUCE"
+name: "Plan de Investigación Formativa por Carrera"
 seed: "informe-docente"
 version: 1.0.0
 storage_version: v0001

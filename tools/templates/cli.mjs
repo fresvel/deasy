@@ -33,15 +33,25 @@ const GENERATED_FILES = new Set([
 function usage() {
   console.log(`Uso:
   node tools/templates/cli.mjs new --key <path> [--version 1.0.0] [--name "Nombre"] [--seed <name|path>]
+    Crea un template fuente nuevo dentro de tools/templates/templates. Si usas --seed, inicializa la base desde una semilla LaTeX.
   node tools/templates/cli.mjs version --key <path> --from <version> --to <version> [--name "Nombre"]
+    Crea una nueva version de un template existente copiando la estructura de una version anterior.
   node tools/templates/cli.mjs render --key <path> --version <version>
+    Renderiza localmente una version especifica del template usando los scripts Python de apoyo.
   node tools/templates/cli.mjs render --here
+    Renderiza el template de la carpeta actual detectando meta.yaml automaticamente.
   node tools/templates/cli.mjs seed [--seed <name|path>] [--compile]
+    Trabaja con una semilla LaTeX: prepara la estructura base y, con --compile, genera su preview PDF.
   node tools/templates/cli.mjs json --key <path> --version <version>
+    Genera o refresca archivos JSON derivados del template (metadatos/listados de apoyo).
   node tools/templates/cli.mjs catalog
+    Recalcula y sincroniza el CATALOG.yaml a partir de los templates fuente existentes.
   node tools/templates/cli.mjs package
+    Empaqueta todos los templates fuente y genera tools/templates/dist/Plantillas listo para publicacion.
   node tools/templates/cli.mjs publish [--skip-package]
+    Publica los templates oficiales a MinIO bajo deasy-templates/System. Con --skip-package reutiliza el dist actual.
   node tools/templates/cli.mjs publish-seeds
+    Publica las semillas LaTeX a MinIO bajo deasy-templates/Seeds.
 
 Notas:
   - La fuente vive en tools/templates/templates

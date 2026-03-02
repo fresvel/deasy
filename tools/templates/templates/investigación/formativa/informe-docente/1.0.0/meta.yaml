@@ -1,6 +1,6 @@
 key: "investigación/formativa/informe-docente"
 export_id: "tpl_investigación_formativa_informe_docente"
-name: "Informe Docente PUCE"
+name: "Informe de Investigación Formativa por Docente"
 seed: "informe-docente"
 version: 1.0.0
 storage_version: v0001

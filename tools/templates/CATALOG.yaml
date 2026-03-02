@@ -3,7 +3,7 @@
 templates:
   - key: "investigación/formativa/informe-carrera"
     export_id: "tpl_investigación_formativa_informe_carrera"
-    name: "Informe de Carrera PUCE"
+    name: "Informe de Investigación Formativa por Carrera"
     version: "1.0.0"
     storage_version: "v0001"
     template_id: null
@@ -17,7 +17,7 @@ templates:
         jinja2: "templates/investigación/formativa/informe-carrera/1.0.0/modes/system/jinja2/src"
   - key: "investigación/formativa/informe-docente"
     export_id: "tpl_investigación_formativa_informe_docente"
-    name: "Informe Docente PUCE"
+    name: "Informe de Investigación Formativa por Docente"
     version: "1.0.0"
     storage_version: "v0001"
     template_id: null
@@ -31,7 +31,7 @@ templates:
         jinja2: "templates/investigación/formativa/informe-docente/1.0.0/modes/system/jinja2/src"
   - key: "investigación/formativa/informe-estudiantes"
     export_id: "tpl_investigación_formativa_informe_estudiantes"
-    name: "Informe Estudiantil PUCE"
+    name: "Informes de Estudiantes"
     version: "1.0.0"
     storage_version: "v0001"
     template_id: null
@@ -47,7 +47,7 @@ templates:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/GLOBAL/0000/Devs/pucese-libs/docs/Latex/Formato/Latex/Informes Estudiantes"
   - key: "investigación/formativa/plan-carrera"
     export_id: "tpl_investigación_formativa_plan_carrera"
-    name: "Plan de Carrera PUCE"
+    name: "Plan de Investigación Formativa por Carrera"
     version: "1.0.0"
     storage_version: "v0001"
     template_id: null
@@ -61,7 +61,7 @@ templates:
         jinja2: "templates/investigación/formativa/plan-carrera/1.0.0/modes/system/jinja2/src"
   - key: "investigación/formativa/plan-docente"
     export_id: "tpl_investigación_formativa_plan_docente"
-    name: "Plan Docente PUCE"
+    name: "Plan de Investigación Formativa por Docente"
     version: "1.0.0"
     storage_version: "v0001"
     template_id: null
@@ -143,3 +143,17 @@ templates:
         xlsx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/productiva/informe-carrera/1.0.0/modes/system/jinja2/src"
+  - key: "investigación/productiva/informe-docente"
+    export_id: "tpl_investigación_productiva_informe_docente"
+    name: "Informe de Investigación Productiva por Docente"
+    version: "1.0.0"
+    storage_version: "v0001"
+    template_id: null
+    modes:
+      user:
+        docx: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/docx/src"
+        latex: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/latex/src"
+        pdf: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/pdf/src"
+        xlsx: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/xlsx/src"
+      system:
+        jinja2: "templates/investigación/productiva/informe-docente/1.0.0/modes/system/jinja2/src"

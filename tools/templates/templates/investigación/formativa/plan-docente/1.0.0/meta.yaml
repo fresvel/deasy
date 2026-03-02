@@ -1,6 +1,6 @@
 key: "investigación/formativa/plan-docente"
 export_id: "tpl_investigación_formativa_plan_docente"
-name: "Plan Docente PUCE"
+name: "Plan de Investigación Formativa por Docente"
 seed: "informe-docente"
 version: 1.0.0
 storage_version: v0001

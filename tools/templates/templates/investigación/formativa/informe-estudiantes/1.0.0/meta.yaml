@@ -1,6 +1,6 @@
 key: "investigación/formativa/informe-estudiantes"
 export_id: "tpl_investigación_formativa_informe_estudiantes"
-name: "Informe Estudiantil PUCE"
+name: "Informes de Estudiantes"
 seed: "informe-estudiantes"
 domain: investigacion
 version: 1.0.0
