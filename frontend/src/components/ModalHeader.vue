@@ -10,7 +10,7 @@
 
 </script>
 
-<style scoped lang="scss">
+<style scoped lang="postcss">
 .modal-header {
     background-color: var(--brand-info-soft) !important;
 }

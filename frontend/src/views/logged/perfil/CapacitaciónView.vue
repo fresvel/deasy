@@ -310,7 +310,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/bootstrapModal";
 import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import { API_PREFIX } from "@/services/apiConfig";

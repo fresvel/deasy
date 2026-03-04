@@ -142,7 +142,7 @@
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/bootstrapModal";
 import AgregarReferencia from "./AgregarReferencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";

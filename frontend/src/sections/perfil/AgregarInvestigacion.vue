@@ -202,7 +202,7 @@
 
 <script setup>
 import { reactive, ref, onMounted, defineEmits } from "vue";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/bootstrapModal";
 import axios from "axios";
 import { API_PREFIX } from "@/services/apiConfig";
 

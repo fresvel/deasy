@@ -176,7 +176,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/bootstrapModal";
 import AgregarCertificacion from "./AgregarCertificacion.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
@@ -290,7 +290,7 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped lang="scss">
+<style scoped lang="postcss">
 .table thead th {
   color: var(--brand-ink);
   font-weight: 600;
