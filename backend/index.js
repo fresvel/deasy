@@ -14,14 +14,12 @@ import swaggerUi from "swagger-ui-express";
 import { API_PREFIX, PATHS, ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
 
 import program_router from "./routes/program_router.js";
+import unit_router from "./routes/unit_router.js";
 import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import webtemplate from "./routes/webtemplate_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
-import email_router from "./routes/email_router.js";
-import reset_password_router from "./routes/reset_password_router.js";
-
 
 const app = express();
 
@@ -56,7 +54,7 @@ const swaggerDefinition = {
     schemas: {
       RegisterRequest: {
         type: "object",
-        required: ["cedula", "password", "nombre", "apellido", "email"],
+        required: ["cedula", "password", "first_name", "last_name", "email"],
         properties: {
           cedula: {
             type: "string",
@@ -75,12 +73,12 @@ const swaggerDefinition = {
             description: "Confirmación de la contraseña para validaciones en el cliente",
             example: "Password123"
           },
-          nombre: {
+          first_name: {
             type: "string",
             description: "Nombres del usuario",
             example: "María Fernanda"
           },
-          apellido: {
+          last_name: {
             type: "string",
             description: "Apellidos del usuario",
             example: "García López"
@@ -155,8 +153,8 @@ const swaggerDefinition = {
         properties: {
           _id: { type: "string", example: "661f1b34fe5ed4e7a4a3f1c2" },
           cedula: { type: "string", example: "0954321876" },
-          nombre: { type: "string", example: "María" },
-          apellido: { type: "string", example: "García" },
+          first_name: { type: "string", example: "María" },
+          last_name: { type: "string", example: "García" },
           email: { type: "string", format: "email", example: "maria.garcia@pucese.edu.ec" },
           whatsapp: { type: "string", example: "+593987654321" },
           direccion: { type: "string", example: "Esmeraldas, Ecuador" },
@@ -977,6 +975,7 @@ app.use(ROUTES.tutorias,tutorias_router)
 app.use(ROUTES.admin,admin_router)
 
 app.use(ROUTES.program,program_router)
+app.use(ROUTES.units, unit_router)
 
 app.use(ROUTES.area,area_router)
 
@@ -985,10 +984,6 @@ app.use(ROUTES.tarea,tarea_router)
 app.use(ROUTES.whatsapp,whatsapp_router)
 
 app.use(ROUTES.dossier,dossier_router)
-
-app.use(ROUTES.email, email_router);
-
-app.use(ROUTES.resetPassword, reset_password_router);
 
 app.use("/easym/v1/webtemplate",webtemplate)
 
@@ -999,9 +994,10 @@ app.use(express.static("public"));
 
 const startServer = async () => {
   try {
+    const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
     await ensureMariaDBDatabase();
     await assertMariaDBConnection();
-    await ensureMariaDBSchema();
+    await ensureMariaDBSchema({ reset: shouldResetSchema });
   } catch (error) {
     console.error("⚠️  No se pudo inicializar MariaDB:", error.message);
   }

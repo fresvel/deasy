@@ -49,14 +49,14 @@
                     <se-input
                         label="Nombre"
                         placeholder="Nombres completos"
-                        v-model="newuser.nombre"
+                        v-model="newuser.first_name"
                     />
                 </div>
                 <div class="col-lg-6">
                     <se-input
                         label="Apellidos"
                         placeholder="Apellidos completos"
-                        v-model="newuser.apellido"
+                        v-model="newuser.last_name"
                     />
                 </div>
 
@@ -193,8 +193,8 @@ const contentClass = computed(() => {
 const newuser= ref({
     cedula:"",
     password:"",
-    nombre:"",
-    apellido:"",
+    first_name:"",
+    last_name:"",
     email:"",
     correo:"",
     direccion:"",

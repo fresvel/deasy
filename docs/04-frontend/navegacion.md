@@ -14,6 +14,31 @@ Rutas registradas:
 - /admin
 - /logout
 
+## Dashboard
+
+La ruta `/dashboard` tiene dos estados de trabajo dentro de la misma vista:
+
+1) Estado general
+- muestra el resumen del usuario
+- tarjetas de estado
+- resumen rapido
+
+2) Estado operativo por definicion de proceso
+- se activa cuando el usuario hace click en un proceso del menu lateral
+- no cambia de ruta; cambia el contenido de `DashboardHome.vue`
+- abre la consola operativa de la `process_definition` recibida desde el menu
+
+La consola operativa actual muestra:
+
+- contexto de la definicion
+- tareas del usuario actual
+- entregables
+- documentos
+- firmas del usuario
+- dependencias
+- paquetes de usuario
+- creacion manual de tareas
+
 ## Guard de autenticacion
 
 - Se valida token JWT desde localStorage.
@@ -39,3 +64,10 @@ Reglas principales:
 - frontend/src/layouts/SFooter.vue
 - frontend/src/layouts/SBody.vue
 
+## Servicios ligados al dashboard
+
+- `frontend/src/services/logged/UserMenuService.js`
+  - obtiene el menu del usuario y los procesos visibles por cargo
+- `frontend/src/services/logged/ProcessDefinitionPanelService.js`
+  - obtiene el panel operativo de una definicion
+  - crea tareas manuales desde el dashboard

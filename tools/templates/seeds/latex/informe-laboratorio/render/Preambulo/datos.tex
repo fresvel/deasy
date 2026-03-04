@@ -1,0 +1,56 @@
+% Plantilla Jinja2: completar variables y renderizar a Preambulo/datos.tex
+
+\newif\ifshowfirmas
+\showfirmastrue
+
+\newif\ifshowbibliografia
+\showbibliografiafalse
+% Si make.sh genera Preambulo/bibflag.tex, se usa como override automático
+\IfFileExists{Preambulo/bibflag.tex}{\input{Preambulo/bibflag}}{}
+
+% Parámetros de firma (definidos aquí; sobrescribir con \def o \renewcommand si es necesario)
+\def\firmaElaboradoToken{!-1804326534-!}
+\def\firmaRevisadoToken{!-0000000000-!}
+\def\firmaAprobadoToken{!-0000000000-!}
+\def\nombreElaborado{Mgt. Nombre del Docente}
+\def\nombreRevisado{Mgt. Carvajal Carvajal José Luis}
+\def\nombreAprobado{Mgt. Velasteguí Izurieta Homero Javier}
+\def\cargoElaborado{Docente de la Asignatura}
+\def\cargoRevisado{Responsable de Aseguramiento de la Calidad}
+\def\cargoAprobado{Coordinador de Carrera}
+\def\fechaElaborado{\mydate\today}
+\def\fechaRevisado{\mydate\AdvanceDate[2]\today}
+\def\fechaAprobado{\mydate\AdvanceDate[4]\today}
+
+\def\semestre{2025-I}
+\def\titulo{\textbf{INFORME DE LABORATORIO}}
+\def\carrera{Carrera de Ingeniería en Tecnologías de la Información}
+\def\coordinador{Velasteguí Izurieta Homero Javier}
+\def\unidadacademica{Ingeniería en Sistemas de Información}
+\def\asignatura{Cálculo I}
+\def\nivel{Primero}
+\def\horasacd{40}
+\def\horasape{40}
+\def\horasaa{40}
+\def\periodo{2025-I}
+\def\docenteresponsable{Mgt. Carvajal Carvajal José Luis}
+\def\escenariopracticas{}
+\def\numeropractica{01}
+\def\temapractica{Tema de la Práctica}
+\def\paralelo{A}
+\def\integranteuno{Apellido Nombre - Matrícula}
+\def\integrantedos{Apellido Nombre - Matrícula}
+\def\integrantetres{}
+\def\integrantecuatro{}
+\def\fechaentrega{\mydate\today}
+
+% Layouts
+\def\layoutDefaultName{portrait}
+
+
+\def\layoutOptionsportrait{a4paper,portrait, total={160mm,247mm}, left=25mm, top=0mm}
+
+
+
+\def\layoutOptionslandscape{a4paper,landscape, total={289mm,170mm}, left=4mm, top=0mm}
+

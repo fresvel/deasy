@@ -9,13 +9,13 @@ Soportar firma de documentos y flujos asociados a procesos academicos, con sopor
 1) Seleccion y generacion de documento.
 2) Definicion de posiciones de firma por usuario.
 3) Envio a servicio de firma (signflow/multisigner).
-4) Persistencia y versionado en storage compartido.
+4) Persistencia y versionado en MinIO (`deasy-documents` y `deasy-spool` segun etapa).
 
 ## Componentes
 
 - Backend: orquesta, valida permisos y registra estado.
 - Signflow: firma y manejo de certificados.
-- Storage compartido: archivos firmados y originales.
+- MinIO: archivos originales, spool temporal y firmados.
 
 ## Integraciones
 
@@ -26,4 +26,3 @@ Soportar firma de documentos y flujos asociados a procesos academicos, con sopor
 
 - docs/01-arquitectura/firmas.drawio
 - docs/06-reportes-firmas/signflow.md
-

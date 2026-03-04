@@ -1,23 +1,12 @@
 <template>
   <div class="container-fluid py-4">
+    <ProfileSectionShell
+      title="Experiencia laboral"
+      subtitle="Detalla tu experiencia docente y profesional."
+      @add="openModal"
+    >
 
-
-    <div class="profile-section-header">
-      <div>
-        <h2 class="text-start profile-section-title">Experiencia laboral</h2>
-        <p class="profile-section-subtitle">Detalla tu experiencia docente y profesional.</p>
-      </div>
-      <div class="profile-section-actions">
-        <button class="btn btn-primary btn-lg profile-add-btn" @click="openModal">
-          <font-awesome-icon icon="plus" class="me-2" />
-          Agregar
-        </button>
-      </div>
-    </div>
-
-    <div class="row mb-4">
-      <div class="col-12">
-        <h3 class="text-start mb-3">Experiencia Docente</h3>
+    <ProfileTableBlock title="Experiencia profesional">
         <div class="table-responsive">
           <table class="table table-striped table-hover table-institutional align-middle">
             <thead >
@@ -25,48 +14,6 @@
                 <th width="5%"></th>
                 <th class="text-start">INSTITUCIÓN</th>
                 <th class="text-start">CÁTEDRA / ASIGNATURA</th>
-                <th class="text-start">MODALIDAD</th>
-                <th class="text-start">DESDE</th>
-                <th class="text-start">HASTA</th>
-                <th class="text-start">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="!experienciaDocente.length">
-                <td colspan="7" class="text-center text-muted">
-                  <p class="my-3">No has registrado experiencia docente todavía.</p>
-                </td>
-              </tr>
-              <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
-                <td><BtnSera :type="getSeraType(experiencia.sera)" /></td>
-                <td>{{ experiencia.institucion }}</td>
-                <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-                <td>-</td>
-                <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
-                <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-                <td>
-                  <div class="btn-group" role="group">
-                    <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
-                    <BtnEdit @onpress="() => editarExperiencia(experiencia)" />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="row mb-4">
-      <div class="col-12">
-        <h3 class="text-start mb-3">Experiencia profesional</h3>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover table-institutional align-middle">
-            <thead >
-              <tr>
-                <th width="5%"></th>
-                <th class="text-start">INSTITUCIÓN</th>
-                <th class="text-start">FUNCIONES</th>
                 <th class="text-start">MODALIDAD</th>
                 <th class="text-start">DESDE</th>
                 <th class="text-start">HASTA</th>
@@ -96,8 +43,47 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+    </ProfileTableBlock>
+
+    <ProfileTableBlock title="Experiencia docente">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover table-institutional align-middle">
+            <thead >
+              <tr>
+                <th width="5%"></th>
+                <th class="text-start">INSTITUCIÓN</th>
+                <th class="text-start">FUNCIONES</th>
+                <th class="text-start">MODALIDAD</th>
+                <th class="text-start">DESDE</th>
+                <th class="text-start">HASTA</th>
+                <th class="text-start">ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="!experienciaDocente.length">
+                <td colspan="7" class="text-center text-muted">
+                  <p class="my-3">No has registrado experiencia docente todavía.</p>
+                </td>
+              </tr>
+              <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
+                <td><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td>{{ experiencia.institucion }}</td>
+                <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+                <td>-</td>
+                <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
+                <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
+                    <BtnEdit @onpress="() => editarExperiencia(experiencia)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+    </ProfileTableBlock>
+    </ProfileSectionShell>
 
     <div class="modal fade" id="experienciaModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="modal-dialog modal-xl">
@@ -124,6 +110,8 @@ import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
+import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 
 const modal = ref(null);
 const dossier = ref(null);

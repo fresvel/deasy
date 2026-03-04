@@ -1,0 +1,29 @@
+% Datos generales del informe de laboratorio (estudiantes)
+{
+\centering
+\SetTblrTemplate{caption}{empty}
+
+\begin{tblr}{
+  colspec={X[l,m,0.35] X[l,m,0.325] X[l,m,0.325]},
+  hlines,vlines,
+  row{1-Z} = {font=\small\scshape},
+}
+% NOTA: Evita \textbf{\textsc{...}} porque muchas fuentes no tienen bold small caps.
+% Usa \bfseries dentro del contexto \scshape ya aplicado a la tabla.
+
+{\bfseries Carrera} & \SetCell[c=2]{l} \carrera & \\
+{\bfseries Asignatura} & \SetCell[c=2]{l} \asignatura & \\
+{\bfseries Docente} & \SetCell[c=2]{l} \docenteresponsable & \\
+{\bfseries Nivel:} \nivel & {\bfseries Paralelo/Grupo:} \paralelo & {\bfseries Fecha de entrega:} \fechaentrega \\
+\SetCell[c=3]{c}{\bfseries Integrantes:} \\
+\SetCell[c=3]{l}{\shortstack[l]{\integranteuno \\ \integrantedos \\ \integrantetres \\ \integrantecuatro}} \\
+\end{tblr}
+}
+
+\begin{center}
+  \textbf{Práctica N°: }\numeropractica \\[0.25cm]
+  \textsc{\temapractica}
+\end{center}
+
+\noindent
+\rule{\linewidth}{1pt}

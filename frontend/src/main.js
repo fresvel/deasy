@@ -18,15 +18,15 @@ import {    faEdit, faCheck, faTrash, faCertificate,
             faBackward, faUser, faLock, faUserPlus,
             faIdCard, faEnvelope, faPhone, faMapMarkerAlt,
             faGlobe, faCheckCircle, faExclamationTriangle,
-            faSignInAlt, faEye, faEyeSlash, faTimesCircle,
-            faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle, faEllipsis, faEllipsisVertical, faHome, faBars, faCog, faArrowUp, faArrowDown, faSave, faDownload, faSync} from '@fortawesome/free-solid-svg-icons';
+            faSignInAlt, faEye, faEyeSlash, faTimesCircle, faListCheck,
+            faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle, faEllipsis, faEllipsisVertical, faRotateRight, faSearch} from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-solid-svg-icons';
 
 // Agregar íconos a la biblioteca
 library.add(faEdit, faSignOutAlt,faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck,faForward,
     faBackward, faUser, faLock, faUserPlus, faIdCard, faEnvelope,
     faPhone, faMapMarkerAlt, faGlobe, faCheckCircle, faExclamationTriangle, faSignInAlt,
-    faEye, faEyeSlash, faTimesCircle, faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle, faEllipsis, faEllipsisVertical, faBell, faHome, faBars, faCog, faArrowUp, faArrowDown, faSave, faDownload, faSync);
+    faEye, faEyeSlash, faTimesCircle, faListCheck, faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle, faEllipsis, faEllipsisVertical, faRotateRight, faSearch, faBell);
 
 
 const app=createApp(App)

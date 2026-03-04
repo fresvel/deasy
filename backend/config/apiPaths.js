@@ -6,9 +6,11 @@ export const PATHS = {
   usersLogin: "/users/login",
   tutorias: "/tutorias",
   admin: "/admin",
+  units: "/units",
   program: "/program",
   area: "/area",
   tarea: "/tarea",
+  vacancies: "/vacancies",
   whatsapp: "/whatsapp",
   dossier: "/dossier",
   email: "/email",
@@ -21,4 +23,3 @@ export const ROUTES = Object.fromEntries(
 
 export const DOCS_PATH = "/easym/docs";
 export const DOCS_JSON_PATH = "/easym/docs.json";
-

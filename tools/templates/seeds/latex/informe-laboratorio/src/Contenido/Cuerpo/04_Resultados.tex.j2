@@ -1,0 +1,117 @@
+\section{Resultados}
+
+En esta sección, el estudiante debe presentar los resultados obtenidos en la práctica de forma clara y ordenada. Los resultados deben responder a los objetivos planteados y estar respaldados por evidencias (tablas, figuras, registros o salidas de ejecución).
+
+\subsection*{Presentación de resultados}
+
+Describa los resultados de manera objetiva y estructurada. Cada resultado relevante debe incluir:
+
+\begin{itemize}
+  \item Una descripción breve de lo observado.
+  \item La evidencia asociada (tabla, figura, log, métrica, etc.).
+  \item Un comentario interpretativo breve (cuando aplique).
+\end{itemize}
+
+\subsection*{Uso de tablas y figuras}
+
+La plantilla permite gestionar recursos gráficos y tabulares desde los directorios \texttt{figures} y \texttt{tables}. Puede declarar tablas directamente en el documento o en archivos externos. Para tablas cortas use \texttt{bodytblr} dentro de \texttt{table}; para tablas grandes use \texttt{bodylongtblr} (sin \texttt{table}) para que la tabla se parta entre páginas.
+
+Ejemplo de tabla:
+
+\begin{codeblock}[latex]{Tabla de resultados (ejemplo)}
+\begin{table}[ht]
+\centering
+\caption{Resultados observados en la práctica}
+\begin{bodytblr}{
+  colspec = {X[l] X[c] X[l]}
+}
+Indicador & Valor & Observación \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+\end{bodytblr}
+\end{table}
+\end{codeblock}
+
+\begin{bodylongtblr}[
+  caption = {Resultados observados en la práctica}
+]{
+  colspec = {X[l] X[c] X[l]}
+}
+Indicador & Valor & Observación \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+Estado del servicio & Activo & Sin errores detectados \\
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+
+Tiempo de ejecución & 120 s & {Medido en condiciones normales \\ NUEVO} \\
+Puerto configurado & 3306 & Acceso habilitado correctamente \\
+Estado del servicio & Activo & Sin errores detectados \\
+\end{bodylongtblr}
+
+\subsection*{Análisis e interpretación}
+
+Incluya un análisis breve que relacione los resultados con los objetivos de la práctica. Destaque patrones, errores, limitaciones o hallazgos relevantes. Evite repetir la tabla o la figura; interprete su significado.

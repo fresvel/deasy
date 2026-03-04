@@ -1,0 +1,72 @@
+%Márgenes
+
+\newlength{\mleftLength}
+\newlength{\mrightLength}
+\newlength{\mtopLength}
+\newlength{\mbottomLength}
+\newlength{\bodyWidth}
+\newlength{\bodyHeight}
+
+
+
+\pgfmathsetlength{\mleftLength}{\mleft*\paperwidth}
+\pgfmathsetlength{\mrightLength}{\mright*\paperwidth}
+\pgfmathsetlength{\mtopLength}{(\mtop)*\paperheight}
+\pgfmathsetlength{\mbottomLength}{\mbottom*\paperheight}
+
+\pgfmathsetlength{\bodyWidth}{\paperwidth - \mleftLength - \mrightLength}
+\pgfmathsetlength{\bodyHeight}{\paperheight - \mtopLength - \mbottomLength}
+
+% --- Barras Laterales ---
+\newcommand{\barLeftWidthPercent}{0.5}       % 60% del ancho para el primer bloque
+
+% --- Longitudes calculadas ---
+\newlength{\barHeight}
+\newlength{\barLeftWidth}
+\newlength{\barRightWidth}
+
+\pgfmathsetlength{\barHeight}{\mbottom*\paperheight}
+\pgfmathsetlength{\barLeftWidth}{\barLeftWidthPercent*\paperwidth}
+\pgfmathsetlength{\barRightWidth}{(1-\barLeftWidthPercent)*\paperwidth}
+
+
+%Barra vertical
+\newcommand{\sideBarWidthPercent}{\mleft}   % Ancho como 1% del ancho del papel
+\newcommand{\sideBarHeightPercent}{(1-\mtop)}  % Altura como 15% del alto del papel
+
+\newlength{\sideBarWidth}
+\newlength{\sideBarHeight}
+
+\pgfmathsetlength{\sideBarWidth}{\sideBarWidthPercent*\paperwidth}
+\pgfmathsetlength{\sideBarHeight}{\sideBarHeightPercent*\paperheight}
+
+
+\usepackage{xparse} % ← Asegúrate de tener esto antes de usar \NewDocumentEnvironment
+\usepackage{ragged2e}
+
+
+
+\usepackage{xparse}
+
+\NewDocumentEnvironment{coreLayout}{mmm}{%
+  \sldBase
+
+  \vspace*{\mtopLength}
+  \noindent\hspace*{\mleftLength}
+  \begin{minipage}[t][\bodyHeight][t]{0.97\bodyWidth}
+    \textcolor{lightblue}{\textbf{\LARGE #1}} \textcolor{darkblue}{\textbf{\LARGE #2}}\\ 
+    #3 % ← tamaño del texto, opcional
+    \justifying
+}{%
+  \end{minipage}
+
+  \input{templates/sld_core}
+  %\sldBlanktitle{#1}{#2}
+}
+
+% Atajo para ocultar \fsize en el uso diario
+\NewDocumentEnvironment{core}{m m}{%
+  \begin{coreLayout}{#1}{#2}{\fsize}
+}{%
+  \end{coreLayout}
+}

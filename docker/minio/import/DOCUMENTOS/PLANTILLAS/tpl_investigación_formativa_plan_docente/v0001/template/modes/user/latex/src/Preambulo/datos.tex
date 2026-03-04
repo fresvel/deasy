@@ -1,0 +1,39 @@
+% Plantilla Jinja2: completar variables y renderizar a Preambulo/datos.tex
+
+\newif\ifshowfirmas
+\showfirmastrue
+
+\newif\ifshowbibliografia
+\showbibliografiafalse
+% Si make.sh genera Preambulo/bibflag.tex, se usa como override automático
+\IfFileExists{Preambulo/bibflag.tex}{\input{Preambulo/bibflag}}{}
+
+% Parámetros de firma (definidos aquí; sobrescribir con \def o \renewcommand si es necesario)
+\def\firmaElaboradoToken{!-1804326534-!}
+\def\firmaRevisadoToken{!-0000000000-!}
+\def\firmaAprobadoToken{!-0000000000-!}
+\def\nombreElaborado{Mgt. Velasteguí Izurieta Homero Javier}
+\def\nombreRevisado{Mgt. Carvajal Carvajal José Luis}
+\def\nombreAprobado{Mgt. Puente Holguín Washington David}
+\def\cargoElaborado{Coordinador de Carrera}
+\def\cargoRevisado{Responsable de Aseguramiento de la Calidad}
+\def\cargoAprobado{Director de Escuela}
+\def\fechaElaborado{\mydate\today}
+\def\fechaRevisado{\mydate\AdvanceDate[2]\today}
+\def\fechaAprobado{\mydate\AdvanceDate[4]\today}
+
+\def\semestre{2025-I}
+\def\titulo{\textbf{PLAN DOCENTE}}
+\def\carrera{Carrera de Ingeniería en Tecnologías de la Información}
+\def\coordinador{Velasteguí Izurieta Homero Javier}
+
+% Layouts
+\def\layoutDefaultName{portrait}
+
+
+\def\layoutOptionsportrait{a4paper,portrait, total={160mm,247mm}, left=25mm, top=0mm}
+
+
+
+\def\layoutOptionslandscape{a4paper,landscape, total={289mm,170mm}, left=4mm, top=0mm}
+

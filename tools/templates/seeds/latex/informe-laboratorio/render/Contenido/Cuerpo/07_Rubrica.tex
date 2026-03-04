@@ -1,0 +1,106 @@
+\section{Rúbrica de evaluación}
+
+En esta sección, el estudiante debe proponer los criterios de evaluación de su informe. La plantilla incluye un ejemplo de \textbf{formulario interactivo} para que el estudiante complete los criterios y evidencias, mientras que el docente registre comentarios y el valor cuantitativo de cada criterio.
+
+\subsection*{Ejemplo de formulario interactivo}
+
+\begin{Form}
+\noindent
+\begin{bodytblr}{
+  colspec = {X[l,1] X[l,0.5] X[l,1] Q[c,m,1cm] Q[c,m,1cm]},
+}
+\textbf{Criterio} & \textbf{Evidencia \\ (estudiante)} & \textbf{Comentarios (docente)} & \textbf{Peso (pts.)} & \textbf{Valor} \\
+
+\textbf{Criterio 1} &
+{\href{https://www.example.com}{Enlace o Vínculo} } &
+\RubricField[name=comm1,width=0.95\linewidth,height=2\baselineskip,multiline=true]{} &
+\RubricField[name=weight1,width=1cm]{} &
+\RubricField[name=score1,width=1cm]{} \\
+
+\textbf{Criterio 2} &
+{\href{https://www.example.com}{Enlace o Vínculo} } &
+\RubricField[name=comm2,width=0.95\linewidth,height=2\baselineskip,multiline=true]{} &
+\RubricField[name=weight2,width=1cm]{} &
+\RubricField[name=score2,width=1cm]{} \\
+
+\textbf{Criterio 3} &
+{\href{https://www.example.com}{Enlace o Vínculo} } &
+\RubricField[name=comm3,width=0.95\linewidth,height=2\baselineskip,multiline=true]{} &
+\RubricField[name=weight3,width=1cm]{} &
+\RubricField[name=score3,width=1cm]{} \\
+
+\end{bodytblr}
+
+
+\vspace{4pt}
+\noindent
+\textbf{Total:}\ 
+\RubricField[
+  name=total,
+  width=1cm,
+  readonly=true,
+  calculate={
+    var s = function(n){
+      var v = this.getField(n).value;
+      v = (v === "" || v === null) ? 0 : parseFloat(v);
+      return isNaN(v) ? 0 : v;
+    };
+    var w = function(n){
+      var v = this.getField(n).value;
+      v = (v === "" || v === null) ? 0 : parseFloat(v);
+      return isNaN(v) ? 0 : v;
+    };
+    var w1 = w("weight1");
+    var w2 = w("weight2");
+    var w3 = w("weight3");
+    var sumWeighted = s("score1") * w1 + s("score2") * w2 + s("score3") * w3;
+    event.value = sumWeighted / 100;
+  }
+]{}%
+\hspace{0.6cm}
+\textbf{/}\ 
+\RubricField[
+  name=total_max,
+  width=1cm,
+  readonly=true,
+  calculate={
+    var w = function(n){
+      var v = this.getField(n).value;
+      v = (v === "" || v === null) ? 0 : parseFloat(v);
+      return isNaN(v) ? 0 : v;
+    };
+    event.value = w("weight1") + w("weight2") + w("weight3");
+  }
+]{}%
+
+\vspace{6pt}
+\noindent
+\PushButton[
+  name=btnsavepdf,
+  bordercolor=puce_blue,
+  backgroundcolor=puce_gray,
+  width=4.2cm,
+  height=0.6cm,
+  onclick={this.saveAs();}
+]{Guardar PDF}
+\hspace{0.6cm}
+\PushButton[
+  name=btnprintpdf,
+  bordercolor=puce_blue,
+  backgroundcolor=puce_gray,
+  width=4.2cm,
+  height=0.6cm,
+  onclick={this.print(true);}
+]{Imprimir}
+\end{Form}
+
+
+
+\subsection*{Instrucciones de uso}
+
+\begin{itemize}
+  \item El estudiante debe completar los criterios y evidencias asociados a su trabajo.
+  \item El docente utilizará las columnas de comentarios, peso y valor para registrar la evaluación.
+  \item Al compilar el documento a PDF, los campos pueden ser editados en pantalla.
+  \item En Firefox, el botón \textit{Guardar PDF} puede no conservar los valores. Use \textit{Imprimir} y guarde como PDF, o abra el archivo en un visor compatible (por ejemplo, Adobe Acrobat Reader).
+\end{itemize}

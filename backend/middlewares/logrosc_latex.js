@@ -19,7 +19,7 @@
 
 import { compileLatexjs } from '../utils/latex.js';
 import { Template } from '../models/informes/templates.js';
-import { dailc_va } from '../templates/javascript/dailc_va.js';
+import { dailc_va } from '../templates_legacy/javascript/dailc_va.js';
 
 
 const fntemplates = {dailc_va}
@@ -45,7 +45,6 @@ export const logroscJslatex= async(req, res, next)=>{
       next(error); // Pasa el error al siguiente middleware de manejo de errores
     }
 }
-
 
 
 

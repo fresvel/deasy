@@ -13,6 +13,22 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
+    table: "relation_unit_types",
+    label: "Tipos de relacion",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_inheritance_allowed", label: "Herencia", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
     table: "units",
     label: "Unidades",
     category: "Estructura",
@@ -20,10 +36,12 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "label", label: "Etiqueta", type: "text" },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "unit_type_id", label: "Tipo de unidad", type: "number", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
@@ -31,48 +49,13 @@ export const SQL_TABLES = [
     table: "unit_relations",
     label: "Relaciones de unidades",
     category: "Estructura",
-    primaryKeys: ["parent_unit_id", "child_unit_id"],
+    primaryKeys: ["id"],
     fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
       { name: "parent_unit_id", label: "Unidad padre", type: "number", required: true },
       { name: "child_unit_id", label: "Unidad hija", type: "number", required: true },
-      { name: "relation_type", label: "Tipo de relacion", type: "text", defaultValue: "parent" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["relation_type"]
-  },
-  {
-    table: "programs",
-    label: "Programas",
-    category: "Academico",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "slug", label: "Slug", type: "text", required: true },
-      {
-        name: "level_type",
-        label: "Nivel",
-        type: "select",
-        required: true,
-        options: ["grado", "maestria", "doctorado", "tecnico", "tecnologico"]
-      },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["name", "slug", "level_type"]
-  },
-  {
-    table: "program_unit_history",
-    label: "Historial programa-unidad",
-    category: "Academico",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "program_id", label: "Programa", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number", required: true },
-      { name: "start_date", label: "Inicio", type: "date", required: true },
-      { name: "end_date", label: "Fin", type: "date" },
-      { name: "is_current", label: "Actual", type: "boolean", defaultValue: 1 }
     ],
     searchFields: []
   },
@@ -86,39 +69,121 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
-      { name: "person_id", label: "Responsable", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
-      { name: "term_id", label: "Periodo", type: "number", required: true },
-      { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "active_definition_version", label: "Definicion activa", type: "text", readOnly: true, virtual: true },
+      { name: "active_execution_mode", label: "Modo activo", type: "text", readOnly: true, virtual: true },
+      { name: "active_definition_status", label: "Estado definicion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
   {
-    table: "unit_processes",
-    label: "Procesos por unidad",
+    table: "process_definition_versions",
+    label: "Definicion de procesos",
     category: "Procesos",
-    primaryKeys: ["unit_id", "process_id"],
-    allowPrimaryKeyUpdate: true,
+    primaryKeys: ["id"],
     fields: [
-      { name: "unit_id", label: "Unidad", type: "number", required: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true }
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "series_id", label: "Serie", type: "number", required: true },
+      { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "general" },
+      { name: "definition_version", label: "Version", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
+      {
+        name: "execution_mode",
+        label: "Modo",
+        type: "select",
+        options: ["manual", "system", "hybrid"],
+        defaultValue: "manual"
+      },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["draft", "active", "retired"],
+        defaultValue: "draft"
+      },
+      { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: []
+    searchFields: ["variation_key", "definition_version", "name", "status"]
   },
   {
-    table: "program_processes",
-    label: "Procesos por programa",
+    table: "process_definition_series",
+    label: "Variantes de procesos definidos",
     category: "Procesos",
-    primaryKeys: ["program_id", "process_id"],
-    allowPrimaryKeyUpdate: true,
+    primaryKeys: ["id"],
     fields: [
-      { name: "program_id", label: "Programa", type: "number", required: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true }
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      {
+        name: "source_type",
+        label: "Origen de serie",
+        type: "select",
+        options: ["unit_type", "cargo"],
+        defaultValue: "",
+        required: true
+      },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "cargo_id", label: "Cargo", type: "number" },
+      { name: "code", label: "Codigo", type: "text", readOnly: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: []
+    searchFields: ["code", "source_type"]
+  },
+  {
+    table: "process_target_rules",
+    label: "Reglas de alcance",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      {
+        name: "unit_scope_type",
+        label: "Alcance",
+        type: "select",
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
+        defaultValue: "unit_exact"
+      },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "include_descendants", label: "Incluye descendientes", type: "boolean", defaultValue: 0 },
+      { name: "cargo_id", label: "Cargo", type: "number" },
+      { name: "position_id", label: "Puesto exacto", type: "number" },
+      {
+        name: "recipient_policy",
+        label: "Entrega",
+        type: "select",
+        options: ["all_matches", "one_per_unit", "one_match_only", "exact_position"],
+        defaultValue: "all_matches"
+      },
+      { name: "priority", label: "Prioridad", type: "number", defaultValue: 1 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "effective_from", label: "Vigencia desde", type: "date" },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["unit_scope_type", "recipient_policy"]
+  },
+  {
+    table: "term_types",
+    label: "Tipos de periodo",
+    category: "Academico",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
   },
   {
     table: "terms",
@@ -128,6 +193,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "term_type_id", label: "Tipo de periodo", type: "number", required: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 }
@@ -135,37 +201,209 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
-    table: "templates",
-    label: "Plantillas",
+    table: "process_definition_triggers",
+    label: "Disparadores de definiciones",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      {
+        name: "trigger_mode",
+        label: "Modo de disparo",
+        type: "select",
+        options: ["automatic_by_term_type", "manual_only", "manual_custom_term"],
+        required: true
+      },
+      { name: "term_type_id", label: "Tipo de periodo", type: "number" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["trigger_mode"]
+  },
+  {
+    table: "tasks",
+    label: "Tareas",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      {
+        name: "process_definition_id",
+        label: "Definicion de proceso",
+        type: "number",
+        required: true
+      },
+      { name: "term_id", label: "Periodo", type: "number", required: true },
+      {
+        name: "launch_mode",
+        label: "Modo de lanzamiento",
+        type: "select",
+        options: ["automatic", "manual"],
+        defaultValue: "manual"
+      },
+      { name: "created_by_user_id", label: "Creada por", type: "number" },
+      { name: "parent_task_id", label: "Tarea padre (manual)", type: "number" },
+      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
+      { name: "start_date", label: "Inicio", type: "date", required: true },
+      { name: "end_date", label: "Fin", type: "date" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_proceso", "completada", "cancelada"],
+        defaultValue: "pendiente"
+      },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["status"]
+  },
+  {
+    table: "task_items",
+    label: "Items de tareas",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "task_id", label: "Tarea", type: "number", required: true },
+      {
+        name: "process_definition_template_id",
+        label: "Plantilla de proceso definido",
+        type: "number",
+        required: true
+      },
+      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
+      {
+        name: "template_usage_role",
+        label: "Uso",
+        type: "select",
+        options: ["system_render", "manual_fill", "attachment", "support"],
+        defaultValue: "manual_fill"
+      },
+      { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
+      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
+      { name: "assigned_person_id", label: "Responsable", type: "number" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_proceso", "completada", "cancelada"],
+        defaultValue: "pendiente"
+      },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["template_usage_role", "status"]
+  },
+  {
+    table: "task_assignments",
+    label: "Asignaciones de tareas",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "task_id", label: "Tarea", type: "number", required: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
+      { name: "assigned_person_id", label: "Responsable (snapshot)", type: "number" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_proceso", "completada", "cancelada"],
+        defaultValue: "pendiente"
+      },
+      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
+      { name: "unassigned_at", label: "Desasignado", type: "datetime" }
+    ],
+    searchFields: ["status"]
+  },
+  {
+    table: "template_seeds",
+    label: "Seeds de plantilla",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_name", label: "Proceso", type: "text", readOnly: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "version", label: "Version", type: "text", defaultValue: "0.1", readOnly: true },
+      { name: "seed_code", label: "Codigo", type: "text", required: true },
+      { name: "display_name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "seed_type", label: "Tipo", type: "text", required: true },
+      { name: "source_path", label: "Ruta fuente", type: "text", required: true },
+      { name: "preview_path", label: "Ruta preview", type: "text" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["name", "slug"]
+    searchFields: ["seed_code", "display_name", "seed_type"]
   },
   {
-    table: "process_templates",
-    label: "Plantillas por proceso",
+    table: "template_artifacts",
+    label: "Paquetes de plantilla",
     category: "Plantillas",
-    primaryKeys: ["process_id", "template_id"],
-    allowPrimaryKeyUpdate: true,
+    primaryKeys: ["id"],
     fields: [
-      { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "template_id", label: "Plantilla", type: "number", required: true }
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_seed_id", label: "Seed", type: "number", readOnly: true },
+      { name: "owner_person_id", label: "Persona propietaria", type: "number", readOnly: true },
+      { name: "template_code", label: "Codigo", type: "text", required: true },
+      { name: "display_name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "owner_ref", label: "Propietario", type: "text" },
+      { name: "source_version", label: "Version fuente", type: "text", required: true },
+      { name: "storage_version", label: "Version storage", type: "text", required: true },
+      {
+        name: "artifact_origin",
+        label: "Origen",
+        type: "select",
+        options: ["system", "user"],
+        defaultValue: "system"
+      },
+      {
+        name: "artifact_stage",
+        label: "Etapa",
+        type: "select",
+        options: ["draft", "review", "approved", "published", "archived"],
+        defaultValue: "published"
+      },
+      { name: "bucket", label: "Bucket", type: "text", required: true },
+      { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
+      { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
+      { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
+      { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
+      { name: "content_hash", label: "Hash", type: "text" },
+      { name: "seed_display_name", label: "Nombre del seed", type: "text", readOnly: true, virtual: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: []
+    searchFields: ["template_code", "display_name", "storage_version", "owner_ref", "artifact_origin", "artifact_stage"]
+  },
+  {
+    table: "process_definition_templates",
+    label: "Plantillas de procesos definidos",
+    category: "Plantillas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
+      {
+        name: "usage_role",
+        label: "Uso",
+        type: "select",
+        options: ["system_render", "manual_fill", "attachment", "support"],
+        defaultValue: "manual_fill"
+      },
+      { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
+      { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
+      { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["usage_role"]
   },
   {
     table: "persons",
-    label: "Personas",
-    category: "Personas",
+    label: "Usuarios",
+    category: "Usuarios",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -174,8 +412,22 @@ export const SQL_TABLES = [
       { name: "last_name", label: "Apellido", type: "text", required: true },
       { name: "email", label: "Email", type: "email" },
       { name: "whatsapp", label: "Whatsapp", type: "text" },
+      { name: "direccion", label: "Direccion", type: "text" },
+      { name: "pais", label: "Pais", type: "text" },
+      { name: "password_hash", label: "Password Hash", type: "text", required: true },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["Inactivo", "Activo", "Verificado", "Reportado"],
+        defaultValue: "Inactivo"
+      },
+      { name: "verify_email", label: "Email verificado", type: "boolean", defaultValue: 0 },
+      { name: "verify_whatsapp", label: "Whatsapp verificado", type: "boolean", defaultValue: 0 },
+      { name: "photo_url", label: "Foto", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["cedula", "first_name", "last_name", "email"]
   },
@@ -193,6 +445,18 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
+    table: "cargo_role_map",
+    label: "Mapa cargo-rol",
+    category: "Seguridad",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "cargo_id", label: "Cargo", type: "number", required: true },
+      { name: "role_id", label: "Rol", type: "number", required: true }
+    ],
+    searchFields: []
+  },
+  {
     table: "permissions",
     label: "Permisos",
     category: "Seguridad",
@@ -208,9 +472,9 @@ export const SQL_TABLES = [
     table: "role_permissions",
     label: "Permisos por rol",
     category: "Seguridad",
-    primaryKeys: ["role_id", "permission_id"],
-    allowPrimaryKeyUpdate: true,
+    primaryKeys: ["id"],
     fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "role_id", label: "Rol", type: "number", required: true },
       { name: "permission_id", label: "Permiso", type: "number", required: true }
     ],
@@ -225,9 +489,35 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
       { name: "role_id", label: "Rol", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
-      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true }
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
+      { name: "derived_from_assignment_id", label: "Derivado de ocupacion", type: "number" },
+      {
+        name: "source",
+        label: "Origen",
+        type: "select",
+        options: ["manual", "derived"],
+        defaultValue: "manual"
+      },
+      { name: "max_depth", label: "Profundidad", type: "number", defaultValue: 0 },
+      { name: "start_date", label: "Inicio", type: "date", required: true },
+      { name: "end_date", label: "Fin", type: "date" },
+      { name: "is_current", label: "Actual", type: "boolean", defaultValue: 1 },
+      { name: "current_flag", label: "Marca actual", type: "boolean", readOnly: true },
+      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
+      { name: "revoked_at", label: "Revocado", type: "datetime" },
+      { name: "revoked_reason", label: "Motivo", type: "text" }
+    ],
+    searchFields: []
+  },
+  {
+    table: "role_assignment_relation_types",
+    label: "Relaciones de asignacion de rol",
+    category: "Seguridad",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
+      { name: "role_assignment_id", label: "Asignacion de rol", type: "number", required: true }
     ],
     searchFields: []
   },
@@ -245,20 +535,46 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
-    table: "person_cargos",
-    label: "Cargos por persona",
-    category: "Personas",
+    table: "unit_positions",
+    label: "Puestos",
+    category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
       { name: "cargo_id", label: "Cargo", type: "number", required: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
+      { name: "slot_no", label: "Plaza", type: "number", required: true },
+      { name: "title", label: "Titulo", type: "text" },
+      { name: "profile_ref", label: "Perfil (Mongo)", type: "text" },
+      {
+        name: "position_type",
+        label: "Tipo de puesto",
+        type: "select",
+        options: ["real", "promocion", "simbolico"],
+        defaultValue: "real"
+      },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "deactivated_at", label: "Desactivado", type: "datetime" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["title"]
+  },
+  {
+    table: "position_assignments",
+    label: "Ocupaciones",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       { name: "is_current", label: "Actual", type: "boolean", defaultValue: 1 },
-      { name: "current_flag", label: "Marca actual", type: "boolean", readOnly: true }
+      { name: "current_flag", label: "Marca actual", type: "boolean", readOnly: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: []
   },
@@ -269,7 +585,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "task_item_id", label: "Item de tarea", type: "number", required: true },
       {
         name: "status",
         label: "Estado",
@@ -277,6 +593,7 @@ export const SQL_TABLES = [
         options: ["Inicial", "En proceso", "Aprobado", "Rechazado"],
         defaultValue: "Inicial"
       },
+      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
@@ -314,28 +631,139 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "signature_request_id", label: "Solicitud", type: "number" },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
       { name: "signer_user_id", label: "Firmante", type: "number", required: true },
-      {
-        name: "signature_role",
-        label: "Rol firma",
-        type: "select",
-        options: ["autor", "revisor", "aprobador"],
-        required: true
-      },
-      {
-        name: "signature_status",
-        label: "Estado firma",
-        type: "select",
-        options: ["pendiente", "firmado", "rechazado"],
-        defaultValue: "pendiente"
-      },
+      { name: "signature_type_id", label: "Tipo firma", type: "number", required: true },
+      { name: "signature_status_id", label: "Estado firma", type: "number", required: true },
       { name: "note_short", label: "Nota", type: "textarea" },
       { name: "signed_file_path", label: "Ruta firmada", type: "text" },
       { name: "signed_at", label: "Firmado", type: "datetime" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["signature_role", "signature_status"]
+    searchFields: ["signature_type_id", "signature_status_id"]
+  },
+  {
+    table: "signature_types",
+    label: "Tipos de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "signature_statuses",
+    label: "Estados de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "signature_request_statuses",
+    label: "Estados de solicitud",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "signature_flow_templates",
+    label: "Plantillas de flujo",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      {
+        name: "process_definition_template_id",
+        label: "Plantilla de proceso definido",
+        type: "number",
+        required: true
+      },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name"]
+  },
+  {
+    table: "signature_flow_steps",
+    label: "Pasos de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_id", label: "Plantilla", type: "number", required: true },
+      { name: "step_order", label: "Orden", type: "number", required: true },
+      { name: "step_type_id", label: "Tipo", type: "number", required: true },
+      { name: "required_cargo_id", label: "Cargo", type: "number", required: true },
+      {
+        name: "selection_mode",
+        label: "Seleccion",
+        type: "select",
+        options: ["auto_all", "select", "auto_quorum"],
+        defaultValue: "auto_all"
+      },
+      { name: "required_signers_min", label: "Min firmantes", type: "number" },
+      { name: "required_signers_max", label: "Max firmantes", type: "number" },
+      { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  {
+    table: "signature_flow_instances",
+    label: "Instancias de flujo",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "template_id", label: "Plantilla", type: "number", required: true },
+      { name: "document_version_id", label: "Version documento", type: "number", required: true },
+      { name: "status_id", label: "Estado", type: "number", required: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  {
+    table: "signature_requests",
+    label: "Solicitudes de firma",
+    category: "Firmas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "instance_id", label: "Instancia", type: "number", required: true },
+      { name: "step_id", label: "Paso", type: "number", required: true },
+      { name: "assigned_person_id", label: "Persona", type: "number" },
+      { name: "status_id", label: "Estado", type: "number", required: true },
+      { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
+      { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
+      { name: "notified_at", label: "Notificado", type: "datetime" },
+      { name: "responded_at", label: "Respondido", type: "datetime" }
+    ],
+    searchFields: []
   },
   {
     table: "vacancies",
@@ -344,8 +772,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "program_id", label: "Programa", type: "number" },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
       { name: "title", label: "Titulo", type: "text", required: true },
       { name: "category", label: "Categoria", type: "text" },
       {
@@ -359,19 +786,33 @@ export const SQL_TABLES = [
         name: "relation_type",
         label: "Relacion",
         type: "select",
-        options: ["dependencia", "servicios"],
+        options: ["dependencia", "servicios", "promocion"],
         required: true
       },
       {
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["abierta", "cerrada", "ocupada"],
+        options: ["abierta", "cubierta", "cerrada", "cancelada"],
         defaultValue: "abierta"
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["title", "category", "status"]
+  },
+  {
+    table: "vacancy_visibility",
+    label: "Visibilidad de vacante",
+    category: "Contratos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "vacancy_id", label: "Vacante", type: "number", required: true },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "role_id", label: "Rol", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
   },
   {
     table: "contracts",
@@ -381,12 +822,12 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
-      { name: "vacancy_id", label: "Vacante", type: "number", required: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
       {
         name: "relation_type",
         label: "Relacion",
         type: "select",
-        options: ["dependencia", "servicios"],
+        options: ["dependencia", "servicios", "promocion"],
         required: true
       },
       {
@@ -402,34 +843,14 @@ export const SQL_TABLES = [
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["activo", "terminado", "suspendido"],
+        options: ["activo", "finalizado", "cancelado"],
         defaultValue: "activo"
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["status"]
   },
-  {
-    table: "student_program_terms",
-    label: "Matriculas",
-    category: "Academico",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "person_id", label: "Persona", type: "number", required: true },
-      { name: "program_id", label: "Programa", type: "number", required: true },
-      { name: "term_id", label: "Periodo", type: "number", required: true },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["activo", "inactivo", "retirado"],
-        defaultValue: "activo"
-      },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["status"]
-  }
+  
 ];
 
 export const SQL_TABLE_MAP = Object.fromEntries(SQL_TABLES.map((table) => [table.table, table]));

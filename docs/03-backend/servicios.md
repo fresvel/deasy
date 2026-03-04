@@ -11,7 +11,8 @@
 - Servicio: backend/services/latex/
 - Builder: backend/services/latex/src/builder/
 - Transpiler: backend/services/latex/src/transpiler/
-- Templates: backend/services/latex/templates/
+- Templates LaTeX runtime: backend/services/latex/templates/
+- Templates legacy auxiliares: backend/templates_legacy/
 
 ## Reportes (WebTemplate)
 
@@ -33,4 +34,3 @@
 
 - Broker: docker/emqx/emqx.conf
 - RabbitMQ: docker/rabbitmq/rabbitmq.conf
-

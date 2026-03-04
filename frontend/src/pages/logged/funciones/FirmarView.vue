@@ -1,7 +1,7 @@
 <template>  
 
   
-    <s-header @onclick="onClick('Menu')">
+    <s-header :menu-open="vmenu" @onclick="onClick('Menu')">
         <div class="header-left">
             <router-link to="/" class="nav-link text-white" @click="onClick('Academia')">Academia</router-link>
             <router-link to="/auth" class="nav-link text-white">Investigación</router-link>
@@ -10,6 +10,12 @@
         </div>
 
         <div class="header-right">
+            <router-link to="/logout" class="nav-link text-white p-0 ms-lg-3">
+                <img class="avatar" src="/images/logout.svg" alt="User Avatar">
+            </router-link>              
+            <router-link to="/firmar" class="nav-link text-white" @click="resetSigner"> 
+                <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
+            </router-link>
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
                 <font-awesome-icon icon="bell" class="avatar" />
             </button>
@@ -86,7 +92,9 @@
     const currentUser = ref(null);
     const userFullName = computed(() => {
         if (currentUser.value) {
-            return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+            const firstName = currentUser.value.first_name ?? '';
+            const lastName = currentUser.value.last_name ?? '';
+            return `${firstName} ${lastName}`.trim() || 'Usuario';
         }
         return 'Usuario';
     });
