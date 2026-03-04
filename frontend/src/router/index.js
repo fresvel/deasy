@@ -10,6 +10,8 @@ import { API_ROUTES } from "../services/apiConfig";
 import FirmarPdf from "../pages/logged/funciones/FirmarView.vue";
 import AdminView from "../pages/admin/AdminView.vue";
 import RolesView from "../pages/logged/RolesView.vue";
+import VerifyEmail from "@/pages/login/VerifyEmail.vue";
+
 const routes = [
   {
     path: "/",
@@ -47,6 +49,11 @@ const routes = [
     component: RolesView,
   },
   {
+    path: '/verify-email',
+    name: 'verify-email',
+    component: VerifyEmail,
+  },
+  {
     path: "/logout",
     name: "logout",
     beforeEnter: async (to, from, next) => {
@@ -79,7 +86,7 @@ const router = createRouter({
 // Guard para proteger rutas que requieren autenticación
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
-  const publicRoutes = ['/', '/register'];
+  const publicRoutes = ['/', '/register', '/verify-email'];
   
   // Si la ruta es pública, permitir acceso
   if (publicRoutes.includes(to.path)) {

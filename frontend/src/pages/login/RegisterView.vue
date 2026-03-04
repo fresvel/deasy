@@ -313,6 +313,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Modal } from 'bootstrap';
 
+
 // Fix para iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -631,16 +632,27 @@ const createnewUser = async() => {
     }
     
     try {
-        await axios.post(API_ROUTES.USERS, newuser.value)
+        // await axios.post(API_ROUTES.USERS, newuser.value)
         
-        // Mostrar modal de éxito
-        await nextTick();
-        if (successModalInstance) {
-            successModalInstance.show();
-        } else if (successModal.value) {
-            successModalInstance = Modal.getOrCreateInstance(successModal.value);
-            successModalInstance.show();
-        }
+        // // Mostrar modal de éxito
+        // await nextTick();
+        // if (successModalInstance) {
+        //     successModalInstance.show();
+        // } else if (successModal.value) {
+        //     successModalInstance = Modal.getOrCreateInstance(successModal.value);
+        //     successModalInstance.show();
+        // }
+
+        const response = await axios.post(API_ROUTES.USERS, newuser.value);
+
+        // 👉 REDIRIGIR A VERIFICACIÓN DE EMAIL
+        router.push({
+          name: 'verify-email', // o la ruta que tengas
+          query: {
+            email: newuser.value.email,
+            user_id: response.data.user.id // IMPORTANTE
+          }
+        });
         
         // Limpiar formulario
         newuser.value = {

@@ -9,6 +9,8 @@ import './scss/theme.scss'
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons'
+
 
 // Importar los íconos específicos que deseas utilizar
 import {    faEdit, faCheck, faTrash, faCertificate,
@@ -21,7 +23,7 @@ import {    faEdit, faCheck, faTrash, faCertificate,
 import { faBell } from '@fortawesome/free-solid-svg-icons';
 
 // Agregar íconos a la biblioteca
-library.add(faEdit, faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck,faForward,
+library.add(faEdit, faSignOutAlt,faCheck, faTrash, faCertificate, faCheckDouble, faSquareCheck,faForward,
     faBackward, faUser, faLock, faUserPlus, faIdCard, faEnvelope,
     faPhone, faMapMarkerAlt, faGlobe, faCheckCircle, faExclamationTriangle, faSignInAlt,
     faEye, faEyeSlash, faTimesCircle, faCircle, faPlus, faTimes, faMapMarkedAlt, faInfoCircle, faEllipsis, faEllipsisVertical, faBell, faHome, faBars, faCog, faArrowUp, faArrowDown, faSave, faDownload, faSync);

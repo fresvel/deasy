@@ -2,6 +2,8 @@ import path from "path";
 import fs from "fs-extra";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
+import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
+
 
 const userRepository = new UserRepository();
 
@@ -25,6 +27,17 @@ export const createUser = async (req, res) => {
 
     const createdUser = await userRepository.create(userPayload);
     console.log(`Usuario creado en MariaDB con id ${createdUser.id}`);
+
+    try {
+      await sendEmailVerification({
+        userId: createdUser.id,
+        email: createdUser.email
+      });
+
+      console.log("Correo de verificación enviado");
+    } catch (error) {
+      console.error("No se pudo enviar el correo de verificación:", error.message);
+    }
 
     if (whatsappBot.isReady && createdUser.whatsapp) {
       try {
@@ -82,7 +95,7 @@ export const updateUserPhoto = async (req, res) => {
   try {
     const existingUser = await userRepository.findByCedulaOrEmail({ cedula });
     if (!existingUser) {
-      await fs.remove(file.path).catch(() => {});
+      await fs.remove(file.path).catch(() => { });
       return res.status(404).send({ message: "Usuario no encontrado" });
     }
 
@@ -95,13 +108,13 @@ export const updateUserPhoto = async (req, res) => {
     if (previousPath && !previousPath.startsWith("data:")) {
       const absolutePrev = path.resolve(process.cwd(), previousPath.replace(/^\/+/, ""));
       if (await fs.pathExists(absolutePrev)) {
-        await fs.remove(absolutePrev).catch(() => {});
+        await fs.remove(absolutePrev).catch(() => { });
       }
     }
 
     res.json({ result: "ok", user: updatedUser });
   } catch (error) {
-    await fs.remove(file.path).catch(() => {});
+    await fs.remove(file.path).catch(() => { });
     console.error("Error actualizando foto de usuario", error);
     res.status(500).send({ message: "Error al actualizar la foto", error: error.message });
   }
