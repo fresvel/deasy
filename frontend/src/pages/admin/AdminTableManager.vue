@@ -3604,7 +3604,7 @@
 <script setup>
 import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
 import axios from "axios";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/bootstrapModal";
 import { API_ROUTES } from "@/services/apiConfig";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";

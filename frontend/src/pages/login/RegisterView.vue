@@ -311,7 +311,7 @@ import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Modal } from 'bootstrap';
+import { Modal } from '@/utils/bootstrapModal';
 
 // Fix para iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;

@@ -163,7 +163,7 @@ import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/bootstrapModal";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);

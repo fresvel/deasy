@@ -50,7 +50,7 @@
   
   </script>
   
-<style scoped lang="scss">
+<style scoped lang="postcss">
   
 #hmenu {
   margin-top: 0.18rem;

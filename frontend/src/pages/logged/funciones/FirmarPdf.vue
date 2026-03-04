@@ -381,7 +381,7 @@
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose } from 'vue';
   import * as pdfjsLib from "pdfjs-dist/webpack"; // Usa esta línea para Webpack
-  import { Modal } from 'bootstrap';
+  import { Modal } from '@/utils/bootstrapModal';
   import { API_ROUTES } from '@/services/apiConfig';
   
   let ctx;
