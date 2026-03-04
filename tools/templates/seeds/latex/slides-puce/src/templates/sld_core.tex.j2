@@ -1,0 +1,18 @@
+% Rectángulos Azules y Gris 
+\begin{tikzpicture}[remember picture, overlay]
+
+    % Barra lateral izquierda con altura configurable
+    \fill[lightgray]
+      (current page.south west) rectangle
+      ([xshift=\sideBarWidth, yshift=\sideBarHeight]current page.south west);
+
+  % Primer rectángulo (izquierda)
+  \fill[lightblue]
+    (current page.south west) rectangle
+    ([xshift=\barLeftWidth, yshift=\barHeight]current page.south west);
+
+  % Segundo rectángulo (derecha)
+  \fill[darkblue]
+    ([xshift=\barLeftWidth]current page.south west) rectangle
+    ([yshift=\barHeight]current page.south east);
+\end{tikzpicture}

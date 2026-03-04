@@ -11,6 +11,60 @@ export const getSqlMeta = (req, res) => {
   }
 };
 
+export const syncTemplateArtifacts = async (_req, res) => {
+  try {
+    const result = await service.syncTemplateArtifactsFromDist();
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const syncTemplateSeeds = async (_req, res) => {
+  try {
+    const result = await service.syncTemplateSeedsFromSource();
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getTemplateSeedPreview = async (req, res) => {
+  try {
+    const result = await service.getTemplateSeedPreview(req.params.id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename=\"${result.fileName}\"`);
+    result.stream.on("error", (error) => {
+      if (!res.headersSent) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      res.end();
+    });
+    result.stream.pipe(res);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const createTemplateArtifactDraft = async (req, res) => {
+  try {
+    const created = await service.createTemplateArtifactDraft(req.body ?? {}, req.files ?? {});
+    res.json(created);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateTemplateArtifactDraft = async (req, res) => {
+  try {
+    const updated = await service.updateTemplateArtifactDraft(req.params.id, req.body ?? {}, req.files ?? {});
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

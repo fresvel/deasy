@@ -1,0 +1,14 @@
+key: "investigación/formativa/informe-carrera"
+export_id: "tpl_investigación_formativa_informe_carrera"
+name: "Informe de Carrera PUCE"
+seed: "informe-docente"
+version: 1.0.0
+storage_version: v0001
+modes:
+  system:
+    jinja2:
+      path: "modes/system/jinja2/src"
+  user:
+    latex:
+      path: "modes/user/latex/src"
+origins: []

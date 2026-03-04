@@ -44,4 +44,4 @@ Servidor por defecto:
 
 - El backend crea la base `deasy` y la tabla `users` si no existen.
 - El schema base esta en backend/database/mariadb_schema.sql
-
+- Catalogo de periodos: `term_types`; cada `terms` referencia `term_type_id`.

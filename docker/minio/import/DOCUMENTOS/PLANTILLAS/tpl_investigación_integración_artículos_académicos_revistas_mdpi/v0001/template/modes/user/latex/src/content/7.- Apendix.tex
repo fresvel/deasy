@@ -1,0 +1,79 @@
+\section[\appendixname~\thesection]{}
+\subsection[\appendixname~\thesubsection]{}
+The appendix is an optional section that can contain details and data supplemental to the main text---for example, explanations of experimental details that would disrupt the flow of the main text but nonetheless remain crucial to understanding and reproducing the research shown; figures of replicates for experiments of which representative data are shown in the main text can be added here if brief, or as Supplementary Data. Mathematical proofs of results not central to the paper can be added as an appendix.
+
+\begin{table}[H] 
+\caption{This is a table caption.\label{tab5}}
+%\newcolumntype{C}{>{\centering\arraybackslash}X}
+\begin{tabularx}{\textwidth}{CCC}
+\toprule
+\textbf{Title 1}	& \textbf{Title 2}	& \textbf{Title 3}\\
+\midrule
+Entry 1		& Data			& Data\\
+Entry 2		& Data			& Data\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section[\appendixname~\thesection]{}
+All appendix sections must be cited in the main text. In the appendices, Figures, Tables, etc. should be labeled, starting with ``A''---e.g., Figure A1, Figure A2, etc.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+\section*{Supplementary Material S1: Matriz Completa de Selección y Evaluación}
+
+Este archivo suplementario contiene la matriz completa de estudios identificados en el proceso de revisión sistemática, incluyendo: (1) identificación inicial, (2) decisiones de cribado, (3) evaluación de elegibilidad a texto completo, (4) resultado final (incluido o excluido) y (5) evaluación de calidad metodológica cuando aplica. Los identificadores (ID) asignados a cada estudio son independientes de la numeración bibliográfica IEEE del manuscrito principal.
+
+\begin{longtblr}[
+  caption = {Matriz completa de estudios identificados y evaluación PRISMA 2020.},
+  label   = {tab:matriz_S1}
+]{
+  width = \textwidth,
+  colspec = {X[c,m,0.08] X[l,m,0.32] X[c,m,0.10] X[c,m,0.10] X[c,m,0.10] X[l,m,0.20] X[c,m,0.10]},
+  rowhead = 1,
+  row{1} = {font=\bfseries},
+}
+\toprule
+\textbf{ID} & \textbf{Referencia breve} & \textbf{Screening} & \textbf{Full-text} & \textbf{Calidad} & \textbf{Razón de exclusión} & \textbf{Estado} \\ 
+\midrule
+
+% ----------- EJEMPLOS (reemplazar con tus datos) -------------
+ID001 & Smith et al., 2018 & Incluido & Excluido & Media & Sin métricas cuantitativas & Excluido \\
+ID002 & Zhang et al., 2017 & Incluido & Incluido & Alta & --- & Incluido \\
+ID003 & Pérez et al., 2015 & Excluido & --- & --- & Población no pertinente & Excluido \\
+ID004 & Tanaka et al., 2020 & Incluido & Excluido & Baja & Solo datos clínicos, sin imágenes & Excluido \\
+ID005 & Ruiz et al., 2019 & Incluido & Incluido & Media & --- & Incluido \\
+% --------------------------------------------------------------
+
+\bottomrule
+\end{longtblr}
+
+\textbf{Leyenda:}
+
+\begin{itemize}
+    \item \textbf{Screening}: decisión basada en título y resumen.
+    \item \textbf{Full-text}: evaluación completa según criterios de inclusión/exclusión.
+    \item \textbf{Calidad}: evaluación metodológica cualitativa (Alta / Media / Baja).
+    \item \textbf{Razón de exclusión}: motivo principal según los criterios definidos para esta revisión.
+    \item \textbf{Estado}: “Incluido” (pasa a síntesis y bibliografía) o “Excluido” (no pasa).
+\end{itemize}
+
+
+
+\section*{Recommended Data Repositories}
+
+Los siguientes repositorios son recomendados para publicar el archivo suplementario S1 y garantizar accesibilidad, persistencia y asignación de DOI:
+
+\begin{itemize}
+    \item \textbf{Zenodo (Highly recommended)}: \url{https://zenodo.org/}
+    \item \textbf{Figshare}: \url{https://figshare.com/}
+    \item \textbf{OSF – Open Science Framework}: \url{https://osf.io/}
+    \item \textbf{Dryad}: \url{https://datadryad.org/}
+    \item \textbf{Harvard Dataverse}: \url{https://dataverse.harvard.edu/}
+    \item \textbf{SRDR – Systematic Review Data Repository}: \url{https://srdr.ahrq.gov/}
+\end{itemize}
+
+Cada repositorio asigna un identificador DOI permanente, lo que cumple con las normas de reproducibilidad y transparencia establecidas por PRISMA 2020 y las políticas editoriales de revistas internacionales.

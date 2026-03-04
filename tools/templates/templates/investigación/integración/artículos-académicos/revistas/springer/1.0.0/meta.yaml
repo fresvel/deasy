@@ -1,0 +1,12 @@
+key: "investigación/integración/artículos-académicos/revistas/springer"
+export_id: "tpl_investigación_integración_artículos_académicos_revistas_springer"
+name: "Springer LNCS Template"
+domain: investigacion
+version: 1.0.0
+storage_version: v0001
+modes:
+  user:
+    latex:
+      path: "modes/user/latex/src"
+origins:
+  - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2023/PPO2023/Investigación/Formativa/Formatos/03_artículo/Springer.zip"

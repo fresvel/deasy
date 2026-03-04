@@ -1,8 +1,8 @@
 <template>  
 
-    <s-header @onclick="onClick('Menu')">
+    <s-header :menu-open="vmenu" @onclick="handleHeaderToggle">
         <div class="header-left">
-            <button class="nav-link text-white p-0" type="button" @click="navigateToPerfil" title="Ir al perfil">
+            <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick">
                 <img class="avatar" :src="userPhoto" alt="User Avatar">
             </button>
             <router-link to="/roles" class="nav-link text-white p-0" title="Roles">
@@ -22,6 +22,12 @@
         </div>
 
         <div class="header-right">
+            <router-link to="/logout" class="nav-link text-white p-0">
+                <img class="avatar" src="/images/logout.svg" alt="User Avatar">
+            </router-link>              
+            <button class="nav-link text-white p-0" type="button" @click="onheadClick({name:'Firmar'})"> 
+                <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
+            </button>
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
                 <font-awesome-icon icon="bell" class="avatar" />
             </button>
@@ -50,18 +56,24 @@
                     :class="{ 'is-open': showCoordinacion }"
                     @click="showCoordinacion = !showCoordinacion"
                   >
-                      Perfil
+                      <span class="menu-title-left">
+                        <font-awesome-icon :icon="menuSectionIcons.coordinacion" class="menu-title-icon" />
+                        <span>Coordinación</span>
+                      </span>
                   </button>
 
                   <div v-show="showCoordinacion" class="menu-section-body">
                     <div class="list-group list-group-flush">
                       <button v-for="(item, index) of mainmenu" :key="index"
-                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                        class="list-group-item list-group-item-action"
                         :class="{ active: item.active }"
                         type="button"
                         @click="onmenuClick(item.label)">
-                        <span>{{ item.label }}</span>
-                        <span v-if="item.key" class="badge bg-primary rounded-pill">
+                        <span class="menu-item-content">
+                          <font-awesome-icon :icon="item.icon || 'circle'" class="menu-item-icon" />
+                          <span>{{ item.label }}</span>
+                        </span>
+                        <span v-if="item.key" class="menu-indicator">
                           {{ dossierCounts[item.key] ?? 0 }}
                         </span>
                       </button>
@@ -76,7 +88,10 @@
                     :class="{ 'is-open': showDocencia }"
                     @click="showDocencia = !showDocencia"
                   >
-                    Docencia
+                    <span class="menu-title-left">
+                      <font-awesome-icon :icon="menuSectionIcons.docencia" class="menu-title-icon" />
+                      <span>Docencia</span>
+                    </span>
                   </button>
                   <div v-show="showDocencia" class="menu-section-body"></div>
                 </div>
@@ -91,11 +106,19 @@
 
 
         <div v-if="area=='Perfil'" id="validar">
-            <TitulosView v-if="process==='Formación'"></TitulosView>
+            <ProfileHomePanel
+              v-if="process==='Inicio'"
+              :current-user="currentUser"
+              :photo="userPhoto"
+              :dossier-counts="dossierCounts"
+              @navigate-section="onmenuClick"
+            />
+            <TitulosView v-else-if="process==='Formación'"></TitulosView>
             <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
             <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
             <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
+            <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
         </div>
         <div v-else-if="area=='Academia'">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
@@ -122,7 +145,7 @@
     
     
 import { ref, computed, onMounted, onBeforeUnmount} from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
     import SMenu from '@/layouts/SMenu.vue';
     import SMessage from '@/layouts/SNotify.vue';
@@ -135,6 +158,8 @@ import LaboralView from '@/sections/perfil/LaboralView.vue';
 import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
 import CertificacionView from '@/sections/perfil/CertificacionView.vue';
 import CapacitacionView from '@/views/logged/perfil/CapacitaciónView.vue';
+import ProfileHomePanel from '@/sections/perfil/ProfileHomePanel.vue';
+import InvestigacionView from '@/sections/perfil/InvestigacionView.vue';
 
 import IndexAcademia from '@/sections/academia/AcademiaView.vue';
 import LogrosView from '@/sections/academia/LogrosView.vue';
@@ -148,6 +173,7 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     import { API_PREFIX, API_ROUTES } from '@/services/apiConfig';
 
     const router = useRouter();
+    const route = useRoute();
     const service = new EasymServices();
     const API_BASE_URL = API_ROUTES.BASE;
 
@@ -157,7 +183,9 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const userPhoto = ref(defaultPhoto);
     const userFullName = computed(() => {
         if (currentUser.value) {
-            return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+            const firstName = currentUser.value.first_name ?? '';
+            const lastName = currentUser.value.last_name ?? '';
+            return `${firstName} ${lastName}`.trim() || 'Usuario';
         }
         return 'Usuario';
     });
@@ -178,33 +206,51 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         experiencia: 0,
         referencias: 0,
         capacitacion: 0,
-        certificacion: 0
+        certificacion: 0,
+        investigacion: 0
     });
 
     const buildPerfilMenu = () => ([
         {
+            label: 'Inicio',
+            key: null,
+            icon: 'user',
+            active: true,
+        },
+        {
             label: 'Formación',
             key: 'formacion',
-            active: true,
+            icon: 'certificate',
+            active: false,
         },
         {
             label: 'Experiencia',
             key: 'experiencia',
+            icon: 'check-double',
             active: false,
         },
         {
             label: 'Referencias',
             key: 'referencias',
+            icon: 'id-card',
             active: false,
         },
         {
             label: 'Capacitación',
             key: 'capacitacion',
+            icon: 'square-check',
             active: false,
         },
         {
             label: 'Certificación',
             key: 'certificacion',
+            icon: 'check-circle',
+            active: false,
+        },
+        {
+            label: 'Investigación',
+            key: 'investigacion',
+            icon: 'certificate',
             active: false,
         }
     ]);
@@ -227,6 +273,11 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
                 dossierCounts.value.referencias = dossier.referencias?.length ?? 0;
                 dossierCounts.value.capacitacion = dossier.formacion?.length ?? 0;
                 dossierCounts.value.certificacion = dossier.certificaciones?.length ?? 0;
+                dossierCounts.value.investigacion = (dossier.investigacion?.articulos?.length ?? 0)
+                    + (dossier.investigacion?.libros?.length ?? 0)
+                    + (dossier.investigacion?.ponencias?.length ?? 0)
+                    + (dossier.investigacion?.tesis?.length ?? 0)
+                    + (dossier.investigacion?.proyectos?.length ?? 0);
             }
         } catch (error) {
             console.error('Error al cargar conteos del dossier:', error);
@@ -259,13 +310,16 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const areas =service.getEasymdata().areas
     const tareas=service.getEasymdata().tareas
     const vmenu = ref(true);
-    const vnotify = ref(false);
-    const showNavMenu = ref(false);
-    const process= ref("Formación")
+    const vnotify = ref(true);
+    const process= ref("Inicio")
 
     const area= ref("Perfil")
     const showCoordinacion = ref(true);
     const showDocencia = ref(false);
+    const menuSectionIcons = {
+        coordinacion: 'id-card',
+        docencia: 'certificate'
+    };
     
     
     const toggleVmenu = () => {
@@ -335,6 +389,21 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         } 
             
     }
+
+    const handleHeaderToggle = (target) => {
+        if (target === 'User') {
+            router.push('/dashboard');
+        }
+    };
+
+    const handleUserIconClick = () => {
+        if (route.name !== 'perfil') {
+            router.push('/perfil');
+        } else {
+            toggleVmenu();
+        }
+        onheadClick({ name: 'Perfil' });
+    };
     
 
     const onmenuClick=(item)=>{
@@ -365,7 +434,7 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
         switch(item.name){
             case 'Perfil':
                 mainmenu.value = buildPerfilMenu();
-                process.value="Formación";
+                process.value="Inicio";
                 break;
             case 'Academia':
                 console.log("Academia detected")
@@ -373,26 +442,31 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
                     {
                         label: 'Logros Académicos',
                         key: null,
+                        icon: 'certificate',
                         active: true,
                     },
                     {
                         label: 'Tutorías',
                         key: null,
+                        icon: 'check-double',
                         active: false,
                     },
                     {
                         label: 'Horarios',
                         key: null,
+                        icon: 'info-circle',
                         active: false,
                     },
                     {
                         label: 'Gestión',
                         key: null,
+                        icon: 'id-card',
                         active: false,
                     },
                     {
                         label: 'Eventos',
                         key: null,
+                        icon: 'globe',
                         active: false,
                     }
                 ]
@@ -424,12 +498,4 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
       
       
     </script>
-          
-    <style scoped>
-    .menu-section-title {
-      text-align: center;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    </style>
           

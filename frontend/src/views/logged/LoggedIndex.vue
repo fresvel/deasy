@@ -1,6 +1,6 @@
 <template>  
 
-<s-header @onclick="handleHeaderClick">
+<s-header :menu-open="show_menu" @onclick="handleHeaderClick">
   <div class="header-left">
     <button
       v-if="avatar.enable"
@@ -24,7 +24,7 @@
   </div>
 
   <div class="header-right">
-    <router-link to="/logout" class="nav-link text-white px-2 ms-lg-3">
+    <router-link to="/logout" class="nav-link text-white p-0 ms-lg-3">
       <img class="avatar" src="/images/logout.svg" alt="User Avatar">
     </router-link>
     <button class="nav-link text-white p-0" type="button" @click="layout_service.onHeaderClick('signer')">

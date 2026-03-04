@@ -8,3 +8,6 @@ passfile
 *.pem
 *.p12
 passfile
+tools/templates/dist/Plantillas/
+tools/templates/dist/DOCUMENTOS/
+backend/templates_legacy/_runtime/

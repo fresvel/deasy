@@ -1,0 +1,34 @@
+% Plantilla Jinja2: completar variables y renderizar a Preambulo/datos.tex
+
+\newif\ifshowfirmas
+[[% if show_firmas %]]\showfirmastrue[[% else %]]\showfirmasfalse[[% endif %]]
+
+\newif\ifshowbibliografia
+[[% if show_bibliography %]]\showbibliografiatrue[[% else %]]\showbibliografiafalse[[% endif %]]
+% Si make.sh genera Preambulo/bibflag.tex, se usa como override automático
+\IfFileExists{Preambulo/bibflag.tex}{\input{Preambulo/bibflag}}{}
+
+% Parámetros de firma (definidos aquí; sobrescribir con \def o \renewcommand si es necesario)
+\def\firmaElaboradoToken{ {{- firmaElaboradoToken -}} }
+\def\firmaRevisadoToken{ {{- firmaRevisadoToken -}} }
+\def\firmaAprobadoToken{ {{- firmaAprobadoToken -}} }
+\def\nombreElaborado{ {{- nombreElaborado -}} }
+\def\nombreRevisado{ {{- nombreRevisado -}} }
+\def\nombreAprobado{ {{- nombreAprobado -}} }
+\def\cargoElaborado{ {{- cargoElaborado -}} }
+\def\cargoRevisado{ {{- cargoRevisado -}} }
+\def\cargoAprobado{ {{- cargoAprobado -}} }
+\def\fechaElaborado{ {{- fechaElaborado -}} }
+\def\fechaRevisado{ {{- fechaRevisado -}} }
+\def\fechaAprobado{ {{- fechaAprobado -}} }
+
+\def\semestre{ {{- semestre -}} }
+\def\titulo{ {{- titulo -}} }
+\def\carrera{ {{- carrera -}} }
+\def\coordinador{ {{- coordinador -}} }
+
+% Layouts
+\def\layoutDefaultName{ {{- layout_default -}} }
+[[% for lname, cfg in layout.items() %]]
+\def\layoutOptions{{ lname }}{ {{- cfg.pagesize -}}, {{- cfg.orientopt -}}, total={{- cfg.total -}}, left={{- cfg.left -}}, right={{- cfg.right -}}, top={{- cfg.top -}}, bottom={{- cfg.bottom -}} }
+[[% endfor %]]

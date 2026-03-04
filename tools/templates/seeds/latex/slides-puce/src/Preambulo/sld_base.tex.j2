@@ -1,0 +1,59 @@
+% --- Grosor de línea ---
+\newcommand{\lineWidth}{0.6pt}
+
+% --- Porcentajes de posición de líneas ---
+\newcommand{\lineHorYPercent}{\mtop}   % 15% desde arriba
+\newcommand{\lineVerXPercent}{(1-\mright)}   % 85% desde la izquierda
+
+% --- Offsets horizontales como porcentaje de ancho ---
+\newcommand{\lineHorStartOffsetPercent}{0.00} % 5% desde la izquierda
+\newcommand{\lineHorEndOffsetPercent}{(0.05}   % 5% desde la derecha
+
+% --- Offsets verticales como porcentaje de alto ---
+\newcommand{\lineVerStartOffsetPercent}{0.00} % 5% desde abajo
+\newcommand{\lineVerEndOffsetPercent}{(\mtop-0.02)}   % 5% desde arriba
+
+% --- Longitudes calculadas ---
+\newlength{\lineHorY}
+\newlength{\lineVerX}
+\newlength{\lineHorStartOffset}
+\newlength{\lineHorEndOffset}
+\newlength{\lineVerStartOffset}
+\newlength{\lineVerEndOffset}
+
+\pgfmathsetlength{\lineHorY}{\lineHorYPercent*\paperheight}
+\pgfmathsetlength{\lineVerX}{\lineVerXPercent*\paperwidth}
+\pgfmathsetlength{\lineHorStartOffset}{\lineHorStartOffsetPercent*\paperwidth}
+\pgfmathsetlength{\lineHorEndOffset}{\lineHorEndOffsetPercent*\paperwidth}
+\pgfmathsetlength{\lineVerStartOffset}{\lineVerStartOffsetPercent*\paperheight}
+\pgfmathsetlength{\lineVerEndOffset}{\lineVerEndOffsetPercent*\paperheight}
+
+
+
+% --- Configuración de las imágenes ---
+% --- Logo PUCE lateral derecho (centrado verticalmente) ---
+\newcommand{\logopath}{ {{- logos.puce -}} }
+\newcommand{\pucelogoHeightPercent}{ {{- logos.puce_height_percent -}} }
+\newcommand{\pucelogoRightOffsetPercent}{ {{- logos.puce_right_offset_percent -}} }
+
+% --- Logo PUCESE superior derecho ---
+\newcommand{\puceselogo}{ {{- logos.pucese -}} }
+\newcommand{\puceselogoHeightPercent}{ {{- logos.pucese_height_percent -}} }
+\newcommand{\puceselogoRightOffsetPercent}{ {{- logos.pucese_right_offset_percent -}} }
+\newcommand{\puceselogoTopOffsetPercent}{ {{- logos.pucese_top_offset_percent -}} }
+
+% --- Cálculo de longitudes para pucelogo ---
+\newlength{\pucelogoHeight}
+\newlength{\pucelogoRightOffset}
+\pgfmathsetlength{\pucelogoHeight}{\pucelogoHeightPercent*\paperheight}
+\pgfmathsetlength{\pucelogoRightOffset}{\pucelogoRightOffsetPercent*\paperwidth}
+
+% --- Cálculo de longitudes para puceselogo ---
+\newlength{\puceselogoHeight}
+\newlength{\puceselogoRightOffset}
+\newlength{\puceselogoTopOffset}
+\pgfmathsetlength{\puceselogoHeight}{\puceselogoHeightPercent*\paperheight}
+\pgfmathsetlength{\puceselogoRightOffset}{\puceselogoRightOffsetPercent*\paperwidth}
+\pgfmathsetlength{\puceselogoTopOffset}{\puceselogoTopOffsetPercent*\paperheight}
+
+\newcommand{\sldBase}{\input{templates/sld_base}}

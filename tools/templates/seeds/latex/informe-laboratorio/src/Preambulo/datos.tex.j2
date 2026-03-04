@@ -1,0 +1,55 @@
+% Plantilla Jinja2: completar variables y renderizar a Preambulo/datos.tex
+
+\newif\ifshowfirmas
+[[% if show_firmas %]]\showfirmastrue[[% else %]]\showfirmasfalse[[% endif %]]
+
+\newif\ifshowbibliografia
+[[% if show_bibliography %]]\showbibliografiatrue[[% else %]]\showbibliografiafalse[[% endif %]]
+% Si make.sh genera Preambulo/bibflag.tex, se usa como override automático
+\IfFileExists{Preambulo/bibflag.tex}{\input{Preambulo/bibflag}}{}
+
+% Parámetros de firma (definidos aquí; sobrescribir con \def o \renewcommand si es necesario)
+\def\firmaElaboradoToken{ {{- firmaElaboradoToken -}} }
+\def\firmaRevisadoToken{ {{- firmaRevisadoToken -}} }
+\def\firmaAprobadoToken{ {{- firmaAprobadoToken -}} }
+\def\nombreElaborado{ {{- nombreElaborado -}} }
+\def\nombreRevisado{ {{- nombreRevisado -}} }
+\def\nombreAprobado{ {{- nombreAprobado -}} }
+\def\cargoElaborado{ {{- cargoElaborado -}} }
+\def\cargoRevisado{ {{- cargoRevisado -}} }
+\def\cargoAprobado{ {{- cargoAprobado -}} }
+\def\fechaElaborado{ {{- fechaElaborado -}} }
+\def\fechaRevisado{ {{- fechaRevisado -}} }
+\def\fechaAprobado{ {{- fechaAprobado -}} }
+
+\def\semestre{ {{- semestre -}} }
+\def\titulo{ {{- titulo -}} }
+\def\carrera{ {{- carrera -}} }
+\def\coordinador{ {{- coordinador -}} }
+\def\unidadacademica{ {{- unidad_academica -}} }
+\def\asignatura{ {{- asignatura -}} }
+\def\nivel{ {{- nivel -}} }
+\def\horasacd{ {{- horas_acd -}} }
+\def\horasape{ {{- horas_ape -}} }
+\def\horasaa{ {{- horas_aa -}} }
+\def\periodo{ {{- periodo -}} }
+\def\docenteresponsable{ {{- docente_responsable -}} }
+\def\escenariopracticas{ {{- escenario_practicas -}} }
+\def\numeropractica{ {{- numero_practica -}} }
+\def\temapractica{ {{- tema_practica -}} }
+\def\paralelo{ {{- paralelo -}} }
+\def\integranteuno{ {{- integrante_1 -}} }
+\def\integrantedos{ {{- integrante_2 -}} }
+\def\integrantetres{ {{- integrante_3 -}} }
+\def\integrantecuatro{ {{- integrante_4 -}} }
+\def\fechaentrega{ {{- fecha_entrega -}} }
+
+% Layouts
+\def\layoutDefaultName{ {{- layout_default -}} }
+[[% for lname, cfg in layout.items() %]]
+[[% if cfg.total %]]
+\def\layoutOptions{{ lname }}{ {{- cfg.pagesize -}}, {{- cfg.orientopt -}}, total={{- cfg.total -}}, left={{- cfg.left -}}, top={{- cfg.top -}} }
+[[% else %]]
+\def\layoutOptions{{ lname }}{ {{- cfg.pagesize -}}, {{- cfg.orientopt -}}, left={{- cfg.left -}}, right={{- cfg.right -}}, top={{- cfg.top -}}, bottom={{- cfg.bottom -}} }
+[[% endif %]]
+[[% endfor %]]

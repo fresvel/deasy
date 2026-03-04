@@ -24,7 +24,7 @@
               type="text"
               class="register-input"
               placeholder="Nombres completos"
-              v-model="newuser.nombre"
+              v-model="newuser.first_name"
               required
             />
           </div>
@@ -60,7 +60,7 @@
               type="text"
               class="register-input"
               placeholder="Apellidos completos"
-              v-model="newuser.apellido"
+              v-model="newuser.last_name"
               required
             />
           </div>
@@ -326,8 +326,8 @@ const newuser = ref({
     cedula: "",
     password: "",
     repassword: "",
-    nombre: "",
-    apellido: "",
+    first_name: "",
+    last_name: "",
     email: "",
     correo: "",
     direccion: "",
@@ -659,8 +659,8 @@ const createnewUser = async() => {
             cedula: "",
             password: "",
             repassword: "",
-            nombre: "",
-            apellido: "",
+            first_name: "",
+            last_name: "",
             email: "",
             correo: "",
             direccion: "",

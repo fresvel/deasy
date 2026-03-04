@@ -1,0 +1,38 @@
+\usepackage{tikz}
+\usepackage{pgfmath} % si estás usando Overleaf, a veces esto es necesario aparte
+
+% --- Colores institucionales ---
+\definecolor{azulPUCED}{RGB}{ {{- brand_rgb -}} }
+% --- Colores de los rectángulos inferiores ---
+\definecolor{lightblue}{HTML}{ {{- palette.puce_blue | replace('#','') -}} } % Puedes redefinir luego
+\definecolor{darkblue}{HTML}{ {{- palette.puce_navy | replace('#','') -}} }
+\definecolor{lightgray}{HTML}{ {{- palette.puce_gray | replace('#','') -}} }
+\definecolor{darckgray}{HTML}{ {{- palette.puce_black | replace('#','') -}} }
+\definecolor{logopuce}{HTML}{ {{- palette.puce_blue_alt | replace('#','') -}} }
+\definecolor{puce_blue}{HTML}{ {{- palette.puce_blue | replace('#','') -}} }
+\definecolor{puce_gray}{HTML}{ {{- palette.puce_gray | replace('#','') -}} }
+\definecolor{puce_navy}{HTML}{ {{- palette.puce_navy | replace('#','') -}} }
+\definecolor{puce_dark}{HTML}{ {{- palette.puce_dark | replace('#','') -}} }
+
+%% Márgenes%%
+\newcommand{\mtop}{ {{- margins.mtop -}} }
+\newcommand{\mbottom}{ {{- margins.mbottom -}} }
+\newcommand{\mleft}{ {{- margins.mleft -}} }
+\newcommand{\mright}{ {{- margins.mright -}} }
+
+
+
+\newcommand{\slideTitleNum}{}      % Por defecto vacío
+\newcommand{\slideTitleText}{}     % Por defecto vacío
+
+\input{Preambulo/sld_code}
+\input{Preambulo/sld_base}
+\input{Preambulo/sld_core}
+
+
+\usepackage{fontawesome5}
+\setbeamertemplate{itemize item}{\raisebox{0.15ex}{\color{lightblue}\faCaretRight}}
+\setbeamertemplate{itemize subitem}{\color{darkblue!black}\scriptsize $ast$}
+
+\newcommand{\topic}[1]{\textbf{\textcolor{darkblue}{#1}}}
+\newcommand{\subtopic}[1]{\textbf{\textcolor{lightblue}{#1}}}

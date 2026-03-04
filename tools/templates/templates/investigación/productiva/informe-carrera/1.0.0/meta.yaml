@@ -1,0 +1,13 @@
+key: "investigación/productiva/informe-carrera"
+export_id: "tpl_investigación_productiva_informe_carrera"
+name: "Informe de Investigación Productiva por Carrera"
+version: 1.0.0
+storage_version: v0001
+modes:
+  system:
+    jinja2:
+      path: "modes/system/jinja2/src"
+  user:
+    latex:
+      path: "modes/user/latex/src"
+origins: []

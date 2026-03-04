@@ -88,17 +88,45 @@ MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
 
 const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
 
-const stripSqlComments = (sql) =>
-  sql
-    .split("\n")
-    .filter((line) => !line.trim().startsWith("--"))
-    .join("\n");
+const splitSqlStatements = (sql) => {
+  const statements = [];
+  let delimiter = ";";
+  let buffer = "";
 
-const splitSqlStatements = (sql) =>
-  stripSqlComments(sql)
-    .split(";")
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.length);
+  for (const rawLine of sql.split("\n")) {
+    const line = rawLine;
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith("--")) {
+      continue;
+    }
+
+    const delimiterMatch = trimmed.match(/^DELIMITER\s+(.+)$/i);
+    if (delimiterMatch) {
+      delimiter = delimiterMatch[1];
+      continue;
+    }
+
+    buffer += line + "\n";
+
+    let idx = buffer.indexOf(delimiter);
+    while (idx !== -1) {
+      const statement = buffer.slice(0, idx).trim();
+      if (statement) {
+        statements.push(statement);
+      }
+      buffer = buffer.slice(idx + delimiter.length);
+      idx = buffer.indexOf(delimiter);
+    }
+  }
+
+  const tail = buffer.trim();
+  if (tail) {
+    statements.push(tail);
+  }
+
+  return statements;
+};
 
 export const ensureMariaDBDatabase = async () => {
   const baseConfig = getMariaDBBaseConfig();
@@ -118,7 +146,57 @@ export const ensureMariaDBDatabase = async () => {
   }
 };
 
-export const ensureMariaDBSchema = async () => {
+const DROP_TABLES = [
+  "document_signatures",
+  "signature_requests",
+  "signature_flow_instances",
+  "signature_flow_steps",
+  "signature_flow_templates",
+  "signature_types",
+  "signature_statuses",
+  "signature_request_statuses",
+  "document_versions",
+  "documents",
+  "task_items",
+  "process_definition_templates",
+  "template_artifacts",
+  "template_seeds",
+  "task_assignments",
+  "tasks",
+  "terms",
+  "term_types",
+  "process_definition_triggers",
+  "process_target_rules",
+  "process_definition_versions",
+  "process_definition_series",
+  "processes",
+  "contract_origin_recruitment",
+  "contract_origin_renewal",
+  "contract_origins",
+  "offers",
+  "aplications",
+  "contracts",
+  "vacancy_visibility",
+  "vacancies",
+  "position_assignments",
+  "unit_positions",
+  "cargo_role_map",
+  "role_assignment_relation_types",
+  "role_assignments",
+  "role_permissions",
+  "permissions",
+  "actions",
+  "resources",
+  "roles",
+  "cargos",
+  "unit_relations",
+  "relation_unit_types",
+  "units",
+  "unit_types",
+  "persons"
+];
+
+export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
   const pool = getMariaDBPool();
 
   if (!pool) {
@@ -302,14 +380,18 @@ export const ensureMariaDBSchema = async () => {
       }
     }
 
-    const schemaSql = await fs.readFile(SCHEMA_FILE_URL, "utf-8");
-    const statements = splitSqlStatements(schemaSql);
+    const schemaSQL = await fs.readFile(SCHEMA_FILE_URL, "utf8");
+    const statements = splitSqlStatements(schemaSQL);
 
     for (const statement of statements) {
       await connection.query(statement);
     }
 
-    console.log("✅ Esquema MariaDB verificado/creado desde mariadb_schema.sql");
+    if (reset) {
+      console.log("✅ Esquema MariaDB recreado desde mariadb_schema.sql");
+    } else {
+      console.log("✅ Esquema MariaDB verificado/actualizado sin reset");
+    }
   } finally {
     connection.release();
   }
