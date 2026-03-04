@@ -3,12 +3,12 @@
 ## Requisitos
 
 - Node.js 22
-- NPM
+- PNPM
 
 ## Instalacion
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Variables de entorno
@@ -29,7 +29,7 @@ Por defecto usa el host actual y puerto 3030:
 ## Arranque
 
 ```bash
-npm run serve
+pnpm run dev
 ```
 
 Servidor por defecto:
@@ -39,10 +39,6 @@ Servidor por defecto:
 ## Build
 
 ```bash
-npm run build
+pnpm run build
 ```
-
-## Notas
-
-- Bootstrap y estilos globales cargan en frontend/src/main.js.
 
