@@ -18,6 +18,7 @@ Este repositorio contiene la aplicación web C-DEASY, orientada a la gestión y 
 ## Requisitos Globales
 - Node.js >= 18.x
 - npm >= 9.x
+- pnpm >= 10.x
 - Sistema operativo Windows, Linux o macOS
 
 ## Instalación Rápida
@@ -28,7 +29,7 @@ Este repositorio contiene la aplicación web C-DEASY, orientada a la gestión y 
 2. Instalar dependencias en cada subcarpeta (`frontend` y `backend`):
    ```
    cd backend && npm install
-   cd ../frontend && npm install
+   cd ../frontend && pnpm install
    ```
 3. Configurar los archivos de entorno según las instrucciones de cada proyecto.
 

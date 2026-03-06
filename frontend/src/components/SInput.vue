@@ -1,14 +1,14 @@
 <template>
-  <div class="col" :class="bootstrapColumnClass">
-    <div class="mb-3">
-      <label :for="inputId" class="form-label">{{ label }}</label>
+  <div class="deasy-field-wrapper" :class="columnClass">
+    <div>
+      <label :for="inputId" class="deasy-field-label">{{ label }}</label>
       <input 
         :id="inputId"
         :type="type" 
         :placeholder="placeholder" 
         :value="input"
         @input="updateValue"
-        class="form-control"
+        class="deasy-field-input"
       />
     </div>
   </div>
@@ -38,29 +38,26 @@
       type: String,
     }
   });
-  
-
-  // Mapear clases de Semantic UI a Bootstrap
-  const bootstrapColumnClass = computed(() => {
+    const columnClass = computed(() => {
     const wideMap = {
-      'one': 'col-1',
-      'two': 'col-2', 
-      'three': 'col-3',
-      'four': 'col-4',
-      'five': 'col-5',
-      'six': 'col-6',
-      'seven': 'col-7',
-      'eight': 'col-8',
-      'nine': 'col-9',
-      'ten': 'col-10',
-      'eleven': 'col-11',
-      'twelve': 'col-12',
-      'thirteen': 'col-12',
-      'fourteen': 'col-12',
-      'fifteen': 'col-12',
-      'sixteen': 'col-12'
+        'one': 'deasy-col-1',
+        'two': 'deasy-col-2', 
+        'three': 'deasy-col-3',
+        'four': 'deasy-col-4',
+        'five': 'deasy-col-5',
+        'six': 'deasy-col-6',
+        'seven': 'deasy-col-7',
+        'eight': 'deasy-col-8',
+        'nine': 'deasy-col-9',
+        'ten': 'deasy-col-10',
+        'eleven': 'deasy-col-11',
+        'twelve': 'deasy-col-12',
+        'thirteen': 'deasy-col-12',
+        'fourteen': 'deasy-col-12',
+        'fifteen': 'deasy-col-12',
+        'sixteen': 'deasy-col-12'
     };
-    return props.wide ? wideMap[props.wide] || 'col' : 'col';
+      return props.wide ? wideMap[props.wide] || 'deasy-col-12' : 'deasy-col-12';
   });
   
   // Generar ID único para el input

@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory} from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import Login from "../pages/login/LoginView.vue";
 import Register from "../pages/login/RegisterView.vue";
 import DashboardHome from "../pages/logged/DashboardHome.vue";
@@ -56,7 +56,7 @@ const routes = [
   {
     path: "/logout",
     name: "logout",
-    beforeEnter: async (to, from, next) => {
+    beforeEnter: async () => {
       try {
         // Llamar al endpoint de logout del backend para limpiar la cookie del refreshToken
         await axios.post(API_ROUTES.USERS_LOGOUT, {}, { withCredentials: true });
@@ -64,14 +64,14 @@ const routes = [
         // Si falla, continuar de todas formas para limpiar el frontend
         console.error('Error al cerrar sesión en el servidor:', error);
       }
-      
+
       // Limpiar cookies/tokens/datos de usuario del frontend
       clearAuthData();
-      
+
       console.log('🔓 Sesión cerrada');
-      
+
       // Redirigir al login
-      next('/');
+      return '/';
     }
   }
 
@@ -79,12 +79,12 @@ const routes = [
 
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 });
 
 // Guard para proteger rutas que requieren autenticación
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const token = localStorage.getItem('token');
   const publicRoutes = ['/', '/register', '/verify-email'];
   
@@ -92,30 +92,25 @@ router.beforeEach((to, from, next) => {
   if (publicRoutes.includes(to.path)) {
     // Si hay token válido y está intentando acceder a la raíz (login), redirigir al dashboard
     if (token && isTokenValid(token) && to.path === '/') {
-      next('/dashboard');
-      return;
+      return '/dashboard';
     }
-    
+
     // Si el token está expirado, limpiarlo antes de continuar
     if (token && !isTokenValid(token)) {
       clearAuthData();
     }
-    
-    next();
+
     return;
   }
-  
+
   // Si no hay token o está expirado, limpiar y redirigir al login
   if (!token || !isTokenValid(token)) {
     if (token) {
       // El token existe pero está expirado, limpiarlo
       clearAuthData();
     }
-    next('/');
-    return;
+    return '/';
   }
-  
-  next();
 });
 
 export default router;
