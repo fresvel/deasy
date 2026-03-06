@@ -281,7 +281,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-0 pb-0">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
         </div>
         <div class="modal-body text-center py-4">
           <div class="mb-4">
@@ -311,7 +311,7 @@ import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Modal } from 'bootstrap';
+import { Modal } from '@/utils/modalController';
 
 
 // Fix para iconos de Leaflet

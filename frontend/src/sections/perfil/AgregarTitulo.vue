@@ -107,7 +107,7 @@
 
 <script setup>
 import { reactive, ref, onMounted, defineEmits } from "vue";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/modalController";
 import axios from "axios";
 import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";

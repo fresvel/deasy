@@ -6,51 +6,59 @@ import { LatexText } from "../../latex/src/transpiler/document/elements/LatexSec
 
 import Groq from 'groq-sdk';
 
-const groq = new Groq({
-    apiKey: process.env.GROQ_KEY, // This is the default and can be omitted
-});
+const resolveGroqApiKey = () => process.env.GROQ_KEY || process.env.GROQ_API_KEY || '';
 
-
-
-class BodyReport{
-    #data
-    constructor(set,label, desc){
-        this.body=[]
-        this.label=label
-        this.desc=desc
-        
+const getGroqClient = () => {
+    const apiKey = resolveGroqApiKey();
+    if (!apiKey) {
+        throw new Error('GROQ_KEY no esta configurada');
     }
 
-    async getBody(set){
-        if(set instanceof SectionSet){
-            this.#data=set.sections
+    return new Groq({ apiKey });
+};
+
+
+
+class BodyReport {
+    #data
+    constructor(set, label, desc) {
+        this.body = []
+        this.label = label
+        this.desc = desc
+
+    }
+
+    async getBody(set) {
+        if (set instanceof SectionSet) {
+            this.#data = set.sections
             await this.#sectionSetToBody();
             return this.body
-        }else if(set instanceof ColSetAction){
+        } else if (set instanceof ColSetAction) {
             console.log("Type 'ColSetAction'");
-        }else {
+        } else {
             throw new Error(`El tipo ${typeof data} no es admitido para generar un body`);
         }
     }
 
 
 
-    async #sectionSetToBody(){
+    async #sectionSetToBody() {
         console.log("sectionSetToBody");
-        for(let key in this.#data){
-            const section=this.#data[key];
+        for (let key in this.#data) {
+            const section = this.#data[key];
             this.body.push({
-                "type": "section", 
-                "title": `${this.label}: ${key}`, 
-                "content": `${this.desc?this.desc.replace("!-id-!",key):""}`});
+                "type": "section",
+                "title": `${this.label}: ${key}`,
+                "content": `${this.desc ? this.desc.replace("!-id-!", key) : ""}`
+            });
             await this.#sectionToTables(section);
         }
     }
-    async #sectionToTables(section){
-        for(let key in section){
-            const col_set=section[key];
+    async #sectionToTables(section) {
+        for (let key in section) {
+            const col_set = section[key];
             this.body.push({
-                "type": "table",  
+                "type": "table",
                 "content": this.#colsetToTable(col_set)
             });
             /*
@@ -79,54 +87,54 @@ class BodyReport{
     }
 
 
-    #colsetToTable(col_set, col_ids=[
-        {id:"titulo_curso", desc:"Materia"},
-        {id:"nombres_completos_docente", desc:"Docente"},
-        {id:"nota_parcial_1", desc:"N1"},
-        {id:"nota_parcial_2", desc:"N2"},
-        {id:"nota_parcial_3", desc:"N3"},
-        {id:"nota_exam_final", desc:"Examen"},
+    #colsetToTable(col_set, col_ids = [
+        { id: "titulo_curso", desc: "Materia" },
+        { id: "nombres_completos_docente", desc: "Docente" },
+        { id: "nota_parcial_1", desc: "N1" },
+        { id: "nota_parcial_2", desc: "N2" },
+        { id: "nota_parcial_3", desc: "N3" },
+        { id: "nota_exam_final", desc: "Examen" },
         //{id:"nota_final", desc:"Promedio"},
-        {id:"Media", desc:"Media"},
-        {id:"estado", desc:"Estado"}
-        ]){
+        { id: "Media", desc: "Media" },
+        { id: "estado", desc: "Estado" }
+    ]) {
         console.log("ColsetToTable");
         //console.log(col_set)
-        const headers=[]
-        for(let header of col_ids){
+        const headers = []
+        for (let header of col_ids) {
             headers.push({ content: header.desc, props: { multicolumn: false, multirow: false } })
         }
 
-        const rows=[]
-        for(let obj of col_set.values){
-            const row =[]
-            for (let cell of col_ids){
-                row.push({ content: obj[cell.id]?obj[cell.id]:'-', props: { multicolumn: false, multirow: false } })
+        const rows = []
+        for (let obj of col_set.values) {
+            const row = []
+            for (let cell of col_ids) {
+                row.push({ content: obj[cell.id] ? obj[cell.id] : '-', props: { multicolumn: false, multirow: false } })
             }
             rows.push(row)
         }
         console.log("Rows: ")
         //console.log(rows)
-        let title=`${col_set.props['nombres_completos_estudiante']}`
+        let title = `${col_set.props['nombres_completos_estudiante']}`
 
         return {
             "headers": headers,
             "rows": rows,
             "title": title,
-            "caption":""
+            "caption": ""
         }
     }
 
-    #propsTotext(col_set){
+    #propsTotext(col_set) {
 
-        let beca=''
-        if(col_set.props['DESCRIPCION_BECA']){
+        let beca = ''
+        if (col_set.props['DESCRIPCION_BECA']) {
             beca = `${col_set.props['DESCRIPCION_BECA']}`
         }
-        if(col_set.props['BECA_COMPLEMENTARIA']){
+        if (col_set.props['BECA_COMPLEMENTARIA']) {
             beca += `\nComplementaria: ${col_set.props['BECA_COMPLEMENTARIA']}`
         }
-        if (col_set.props['CATEGORIA_BECA_SOCIOECONOMICA']){
+        if (col_set.props['CATEGORIA_BECA_SOCIOECONOMICA']) {
             beca += `\nCategoría: ${col_set.props['CATEGORIA_BECA_SOCIOECONOMICA']}`
         }
         //const ltext = new LatexText(beca)
@@ -136,21 +144,23 @@ class BodyReport{
         return beca
     }
 
-    async #commonTotext(data){
+    async #commonTotext(data) {
         console.log("Beca: +++++++++++++++++++++++++++++++++++++++++?")
         console.log(data)
 
+        const groq = getGroqClient();
         const chatCompletion = await groq.chat.completions.create({
-          messages: [{ role: 'user', content: `${data.Atenciones}
+            messages: [{
+                role: 'user', content: `${data.Atenciones}
             Los datos dados pertenecen al los registros de tutorías de  un estudiante que reprobó alguna asignatura. Haz un análisis concreto de la atención entregada en dos párrafos` }],
-          model: 'llama3-8b-8192',
+            model: 'llama3-8b-8192',
         });
-      
+
         console.log(chatCompletion.choices[0].message.content);
         return chatCompletion.choices[0].message.content
     }
 
-    
+
 }
 
 
