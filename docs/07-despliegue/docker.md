@@ -34,14 +34,14 @@
 ## Imagenes base
 
 - Backend: rockylinux/rockylinux:10.1.20251123-ubi
-- Frontend: rockylinux/rockylinux:10.1.20251123-ubi
+- Frontend: node:22.12.0-alpine
 - Signer: python:3.11-slim
 - Analytics: python:3.11-slim
 
 ## Runtime
 
 - Backend: Node.js 22 (NodeSource)
-- Frontend: Node.js 22 (NodeSource)
+- Frontend: Node.js 22.12.0 + pnpm 10
 
 ## Puertos expuestos (host -> contenedor)
 
@@ -75,12 +75,13 @@ Montajes relevantes en desarrollo:
 
 - Iniciar stack principal: docker compose up -d
 - Iniciar con workers: docker compose --profile workers up -d
+- Script de arranque Linux/macOS: scripts/start-services.sh
+- Script de arranque Windows PowerShell: scripts/start-services.ps1
 - Cargar templates en MinIO: docker compose --profile storage-init run --rm minio-bootstrap
 - Publicar templates desde tools/templates/dist: docker compose --profile storage-publish run --rm minio-publish
 - Publicar seeds desde tools/templates/seeds: docker compose --profile storage-publish-seeds run --rm minio-publish-seeds
 - Ver logs: docker compose logs -f
 - Detener: docker compose down
-- Script de arranque: scripts/start-services.sh
 
 ## Notas
 

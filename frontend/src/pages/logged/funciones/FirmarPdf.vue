@@ -265,7 +265,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Eliminar campos</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div v-if="!fields.length" class="text-muted">No hay firmas para eliminar.</div>
@@ -323,7 +323,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Asignar firmante</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -364,7 +364,7 @@
         <p v-if="userSearchError" class="text-danger small mt-2 mb-0">{{ userSearchError }}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
           Cancelar
         </button>
         <button type="button" class="btn btn-primary" @click="confirmSigner">
@@ -381,7 +381,7 @@
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose } from 'vue';
   import * as pdfjsLib from "pdfjs-dist/webpack"; // Usa esta línea para Webpack
-  import { Modal } from '@/utils/bootstrapModal';
+  import { Modal } from '@/utils/modalController';
   import { API_ROUTES } from '@/services/apiConfig';
   
   let ctx;
@@ -426,8 +426,8 @@
   let viewport = null;
   let pdfScale = 1.75; 
   let pdfObjectUrl = null;
-  let bootstrapDeleteModal = null;
-  let bootstrapAssignSignerModal = null;
+  let deleteModalInstance = null;
+  let assignSignerModalInstance = null;
   let searchTimeout = null;
   let resizeObserver = null;
   let resizeTimer = null;
@@ -586,10 +586,10 @@
   onMounted(() => {
     registerEvents();
     if (deleteModal.value) {
-      bootstrapDeleteModal = Modal.getOrCreateInstance(deleteModal.value);
+      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value);
     }
     if (assignSignerModal.value) {
-      bootstrapAssignSignerModal = Modal.getOrCreateInstance(assignSignerModal.value);
+      assignSignerModalInstance = Modal.getOrCreateInstance(assignSignerModal.value);
     }
     const userDataString = localStorage.getItem('user');
     if (userDataString) {
@@ -1023,8 +1023,8 @@
 
     const openDeleteModal = () => {
       if (!deleteModal.value) return;
-      bootstrapDeleteModal = Modal.getOrCreateInstance(deleteModal.value);
-      bootstrapDeleteModal.show();
+      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value);
+      deleteModalInstance.show();
     };
 
     const openAssignSignerModal = () => {
@@ -1033,8 +1033,8 @@
       userSearchError.value = '';
       selectedSigner.value = null;
       statusFilter.value = 'all';
-      bootstrapAssignSignerModal = Modal.getOrCreateInstance(assignSignerModal.value);
-      bootstrapAssignSignerModal.show();
+      assignSignerModalInstance = Modal.getOrCreateInstance(assignSignerModal.value);
+      assignSignerModalInstance.show();
       fetchUsers('');
     };
 
@@ -1048,7 +1048,7 @@
         return;
       }
       saveFieldWithSigner(selectedSigner.value);
-      bootstrapAssignSignerModal?.hide();
+      assignSignerModalInstance?.hide();
     };
 
     const resetToStart = () => {

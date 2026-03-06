@@ -836,7 +836,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="personAssignmentsModalLabel">Asignaciones del usuario</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="person-assignment-panel">
@@ -1241,7 +1241,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-outline-danger" data-modal-dismiss>Cerrar</button>
           </div>
         </div>
       </div>
@@ -1265,7 +1265,7 @@
                   : "Editar registro"
               }}
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div v-if="modalError" class="alert alert-danger mb-3">
@@ -1450,7 +1450,7 @@
               <font-awesome-icon icon="link" class="me-2" />
               Paquetes
             </button>
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
               Cancelar
             </button>
             <button type="button" class="btn btn-primary" @click="submitForm">
@@ -1706,13 +1706,13 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="sqlDeleteModalLabel">Eliminar registro</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <p>Confirma la eliminacion del registro seleccionado.</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
               Cancelar
             </button>
             <button type="button" class="btn btn-outline-danger" @click="confirmDelete">
@@ -2408,7 +2408,7 @@
             <h5 class="modal-title" id="sqlFkModalLabel">
               Buscar referencia {{ fkTable?.label || "" }}
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="row g-3 align-items-end mb-3">
@@ -2785,7 +2785,7 @@
               <font-awesome-icon icon="plus" class="me-2" />
               Crear nuevo
             </button>
-            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-danger" data-modal-dismiss>
               Cerrar
             </button>
           </div>
@@ -3150,7 +3150,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="processSearchModalLabel">Buscar procesos</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="row g-3">
@@ -3198,7 +3198,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
               Cancelar
             </button>
             <button type="button" class="btn btn-outline-primary" @click="clearProcessFilter">
@@ -3224,7 +3224,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="templateSearchModalLabel">Buscar plantillas</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="row g-3">
@@ -3276,7 +3276,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
               Cancelar
             </button>
             <button type="button" class="btn btn-outline-primary" @click="clearTemplateFilter">
@@ -3302,7 +3302,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="documentSearchModalLabel">Buscar documentos</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="row g-3">
@@ -3352,7 +3352,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
               Cancelar
             </button>
             <button type="button" class="btn btn-outline-primary" @click="clearDocumentFilter">
@@ -3378,7 +3378,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="unitPositionSearchModalLabel">Buscar puestos</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="row g-3">
@@ -3437,7 +3437,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
               Cancelar
             </button>
             <button type="button" class="btn btn-outline-primary" @click="clearUnitPositionFilter">
@@ -3604,7 +3604,7 @@
 <script setup>
 import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
 import axios from "axios";
-import { Modal } from "@/utils/bootstrapModal";
+import { Modal } from "@/utils/modalController";
 import { API_ROUTES } from "@/services/apiConfig";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";

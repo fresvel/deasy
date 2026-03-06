@@ -5,13 +5,20 @@ class ModalController {
         this.element = element;
         this.backdrop = null;
         this.boundOnDismiss = this.onDismissClick.bind(this);
+        this.boundOnKeydown = this.onKeydown.bind(this);
         this.element.addEventListener('click', this.boundOnDismiss);
     }
 
     onDismissClick(event) {
-        const dismissTarget = event.target.closest('[data-bs-dismiss="modal"]');
+        const dismissTarget = event.target.closest('[data-modal-dismiss]');
         if (dismissTarget) {
             event.preventDefault();
+            this.hide();
+        }
+    }
+
+    onKeydown(event) {
+        if (event.key === 'Escape') {
             this.hide();
         }
     }
@@ -36,6 +43,7 @@ class ModalController {
         }
 
         document.body.classList.add('modal-open');
+        document.addEventListener('keydown', this.boundOnKeydown);
     }
 
     hide() {
@@ -49,6 +57,8 @@ class ModalController {
             this.backdrop.remove();
             this.backdrop = null;
         }
+
+        document.removeEventListener('keydown', this.boundOnKeydown);
 
         if (!document.querySelector('.modal.show')) {
             document.body.classList.remove('modal-open');

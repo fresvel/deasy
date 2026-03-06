@@ -123,13 +123,13 @@
   </ProfileSectionShell>
 </div>
 
-<!-- Modal Bootstrap -->
+<!-- Modal -->
 <div class="modal fade" id="referenciaModal" tabindex="-1" aria-labelledby="referenciaModalLabel" aria-hidden="true" ref="modal">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="referenciaModalLabel">Agregar Referencia</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
       </div>
           <div class="modal-body">
         <AgregarReferencia @referencia-added="handleReferenciaAdded" />
@@ -142,7 +142,7 @@
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
-import { Modal } from "@/utils/bootstrapModal";
+import { Modal } from "@/utils/modalController";
 import AgregarReferencia from "./AgregarReferencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
@@ -155,7 +155,7 @@ const modal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
-let bootstrapModal = null;
+let modalInstance = null;
 
 // Computed properties para agrupar referencias por tipo
 const referenciasLaborales = computed(() => {
@@ -239,8 +239,8 @@ const openModal = () => {
     if (!modal.value) {
         return;
     }
-    bootstrapModal = Modal.getOrCreateInstance(modal.value);
-    bootstrapModal.show();
+    modalInstance = Modal.getOrCreateInstance(modal.value);
+    modalInstance.show();
 };
 
 const handleReferenciaAdded = () => {
@@ -254,10 +254,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (bootstrapModal) {
-        bootstrapModal.hide();
-        bootstrapModal.dispose();
-        bootstrapModal = null;
+    if (modalInstance) {
+        modalInstance.hide();
+        modalInstance.dispose();
+        modalInstance = null;
     }
     window.removeEventListener('dossier-updated', loadDossier);
 });

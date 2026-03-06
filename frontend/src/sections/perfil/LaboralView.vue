@@ -90,7 +90,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Agregar Experiencia</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <AgregarExperiencia @experiencia-added="handleExperienciaAdded" />
@@ -105,7 +105,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { API_PREFIX } from "@/services/apiConfig";
-import { Modal } from "@/utils/bootstrapModal";
+import { Modal } from "@/utils/modalController";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
@@ -117,7 +117,7 @@ const modal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
-let bootstrapModal = null;
+let modalInstance = null;
 
 // Computed properties para agrupar experiencia por tipo
 const experienciaDocente = computed(() => {
@@ -179,8 +179,8 @@ const openModal = () => {
     if (!modal.value) {
         return;
     }
-    bootstrapModal = Modal.getOrCreateInstance(modal.value);
-    bootstrapModal.show();
+    modalInstance = Modal.getOrCreateInstance(modal.value);
+    modalInstance.show();
 };
 
 const handleExperienciaAdded = () => {
@@ -214,10 +214,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (bootstrapModal) {
-        bootstrapModal.hide();
-        bootstrapModal.dispose();
-        bootstrapModal = null;
+    if (modalInstance) {
+        modalInstance.hide();
+        modalInstance.dispose();
+        modalInstance = null;
     }
     window.removeEventListener('dossier-updated', loadDossier);
 });

@@ -43,7 +43,7 @@ const routes = [
   {
     path: "/logout",
     name: "logout",
-    beforeEnter: async (to, from, next) => {
+    beforeEnter: async () => {
       try {
         // Llamar al endpoint de logout del backend para limpiar la cookie del refreshToken
         await axios.post(API_ROUTES.USERS_LOGOUT, {}, { withCredentials: true });
@@ -58,7 +58,7 @@ const routes = [
       console.log('🔓 Sesión cerrada');
 
       // Redirigir al login
-      next('/');
+      return '/';
     }
   }
 
@@ -71,7 +71,7 @@ const router = createRouter({
 });
 
 // Guard para proteger rutas que requieren autenticación
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const token = localStorage.getItem('token');
   const publicRoutes = ['/', '/register'];
 
@@ -79,8 +79,7 @@ router.beforeEach((to, from, next) => {
   if (publicRoutes.includes(to.path)) {
     // Si hay token válido y está intentando acceder a la raíz (login), redirigir al dashboard
     if (token && isTokenValid(token) && to.path === '/') {
-      next('/dashboard');
-      return;
+      return '/dashboard';
     }
 
     // Si el token está expirado, limpiarlo antes de continuar
@@ -88,7 +87,6 @@ router.beforeEach((to, from, next) => {
       clearAuthData();
     }
 
-    next();
     return;
   }
 
@@ -98,11 +96,8 @@ router.beforeEach((to, from, next) => {
       // El token existe pero está expirado, limpiarlo
       clearAuthData();
     }
-    next('/');
-    return;
+    return '/';
   }
-
-  next();
 });
 
 export default router;

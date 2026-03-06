@@ -206,7 +206,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Agregar registro de investigación</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <AgregarInvestigacion @investigacion-added="handleInvestigacionAdded" />
@@ -220,7 +220,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
-import { Modal } from "@/utils/bootstrapModal";
+import { Modal } from "@/utils/modalController";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
@@ -232,7 +232,7 @@ import { API_PREFIX } from "@/services/apiConfig";
 const modal = ref(null);
 const dossier = ref(null);
 const currentUser = ref(null);
-let bootstrapModal = null;
+let modalInstance = null;
 
 const investigacion = computed(() => dossier.value?.investigacion || {});
 const articulos = computed(() => investigacion.value?.articulos || []);
@@ -277,8 +277,8 @@ const loadDossier = async () => {
 
 const openModal = () => {
   if (!modal.value) return;
-  bootstrapModal = Modal.getOrCreateInstance(modal.value);
-  bootstrapModal.show();
+  modalInstance = Modal.getOrCreateInstance(modal.value);
+  modalInstance.show();
 };
 
 const handleInvestigacionAdded = () => {
@@ -310,10 +310,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (bootstrapModal) {
-    bootstrapModal.hide();
-    bootstrapModal.dispose();
-    bootstrapModal = null;
+  if (modalInstance) {
+    modalInstance.hide();
+    modalInstance.dispose();
+    modalInstance = null;
   }
   window.removeEventListener("dossier-updated", loadDossier);
 });

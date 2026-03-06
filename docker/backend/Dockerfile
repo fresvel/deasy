@@ -24,6 +24,8 @@ RUN curl -fsSL https://rpm.nodesource.com/setup_22.x | bash - && \
   dnf -y install nodejs && \
   dnf clean all
 
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 COPY backend/package*.json ./backend/
 RUN cd backend && npm install
 
