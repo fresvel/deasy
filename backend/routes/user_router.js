@@ -4,7 +4,9 @@ import {
   getUsers,
   getUserMenu,
   getUserProcessDefinitionPanel,
-  createUserProcessTask
+  createUserProcessTask,
+  getMyProfile,
+  updateMyProfile
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -13,6 +15,7 @@ import { updateUserPhoto } from "../controllers/users/user_controler.js";
 import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validation_controller.js";
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router=new Router();
 
@@ -26,6 +29,9 @@ router.post('/refresh-token', refreshToken)
 router.get('/:id/menu', getUserMenu);
 router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
 router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
+
+router.get('/me', authMiddleware, getMyProfile);
+router.patch('/me', authMiddleware, updateMyProfile);
 
 router.put(
   '/:cedula/photo',

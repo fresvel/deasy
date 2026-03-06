@@ -1132,3 +1132,59 @@ export const createUserProcessTask = async (req, res) => {
     connection.release();
   }
 };
+
+//update user data
+export const updateMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    const payload = {
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      whatsapp: req.body.whatsapp,
+      direccion: req.body.direccion,
+      pais: req.body.pais
+    };
+
+    const updatedUser = await userRepository.update(userId, payload);
+
+    res.json({
+      result: "ok",
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error actualizando perfil"
+    });
+  }
+};
+
+//get user by id
+export const getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    const user = await userRepository.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Usuario no encontrado"
+      });
+    }
+
+    res.json({
+      result: "ok",
+      user: userRepository.toPublicUser(user)
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error obteniendo perfil"
+    });
+  }
+};
