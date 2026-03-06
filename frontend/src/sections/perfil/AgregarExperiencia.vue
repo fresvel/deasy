@@ -70,7 +70,7 @@
 
 <script setup>
 import { reactive, ref, onMounted, defineEmits } from "vue";
-import { Modal } from "@/utils/bootstrapModal";
+import { Modal } from "@/utils/modalController";
 import axios from "axios";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";

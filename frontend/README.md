@@ -2,6 +2,11 @@
 
 Proyecto frontend basado en Vue 3 + Vite + Tailwind CSS.
 
+Requisito de runtime:
+
+- Node.js `^20.19.0` o `>=22.12.0`
+- pnpm `>=10`
+
 1. **Instala dependencias**
 
    ```bash
@@ -20,7 +25,7 @@ Proyecto frontend basado en Vue 3 + Vite + Tailwind CSS.
    pnpm run dev
    ```
 
-   Por defecto Vite expone la app en `http://localhost:5173/`.
+   Por defecto Vite expone la app en `http://localhost:8080/`.
 
 4. **Compila para produccion**
 
