@@ -138,13 +138,13 @@
 </div>
 
 
-<!-- Modal Bootstrap -->
+<!-- Modal -->
 <div class="modal fade" id="tituloModal" tabindex="-1" aria-labelledby="tituloModalLabel" aria-hidden="true" ref="modal">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="tituloModalLabel">Agregar Título</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <AgregarTitulo @title-added="handleTituloAdded" />
@@ -163,14 +163,14 @@ import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/modalController";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
-let bootstrapModal = null;
+let modalInstance = null;
 
 // Computed properties para agrupar títulos por nivel
 const titulosTecnicos = computed(() => {
@@ -267,8 +267,8 @@ const openModal = () => {
     if (!modal.value) {
         return;
     }
-    bootstrapModal = Modal.getOrCreateInstance(modal.value);
-    bootstrapModal.show();
+    modalInstance = Modal.getOrCreateInstance(modal.value);
+    modalInstance.show();
 };
 
 const handleTituloAdded = () => {
@@ -282,10 +282,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (bootstrapModal) {
-        bootstrapModal.hide();
-        bootstrapModal.dispose();
-        bootstrapModal = null;
+    if (modalInstance) {
+        modalInstance.hide();
+        modalInstance.dispose();
+        modalInstance = null;
     }
     window.removeEventListener('dossier-updated', loadDossier);
 });
