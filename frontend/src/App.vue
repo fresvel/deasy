@@ -8,7 +8,7 @@
 
 </script>
     
-<style lang="scss">
+<style lang="postcss">
 
   #app{
       height: 100vh;

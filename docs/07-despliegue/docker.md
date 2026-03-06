@@ -33,15 +33,15 @@
 
 ## Imagenes base
 
-- Backend: rockylinux/rockylinux:10.1.20251123-ubi
-- Frontend: rockylinux/rockylinux:10.1.20251123-ubi
-- Signer: python:3.11-slim
-- Analytics: python:3.11-slim
+- Backend: node:22.12.0-bookworm-slim (multi-stage)
+- Frontend: node:22.12.0-bookworm-slim
+- Signer: python:3.11-slim-bookworm
+- Analytics: python:3.11-slim-bookworm
 
 ## Runtime
 
-- Backend: Node.js 22 (NodeSource)
-- Frontend: Node.js 22 (NodeSource)
+- Backend: Node.js 22.12.0
+- Frontend: Node.js 22.12.0 + pnpm 10
 
 ## Puertos expuestos (host -> contenedor)
 
@@ -75,15 +75,20 @@ Montajes relevantes en desarrollo:
 
 - Iniciar stack principal: docker compose up -d
 - Iniciar con workers: docker compose --profile workers up -d
+- Script de arranque Linux/macOS: scripts/start-services.sh
+- Script de arranque Windows PowerShell: scripts/start-services.ps1
 - Cargar templates en MinIO: docker compose --profile storage-init run --rm minio-bootstrap
 - Publicar templates desde tools/templates/dist: docker compose --profile storage-publish run --rm minio-publish
 - Publicar seeds desde tools/templates/seeds: docker compose --profile storage-publish-seeds run --rm minio-publish-seeds
 - Ver logs: docker compose logs -f
 - Detener: docker compose down
-- Script de arranque: scripts/start-services.sh
 
 ## Notas
 
+- `start-services.sh` y `start-services.ps1` solo levantan `docker compose up -d` y `docker compose --profile workers up -d`.
+- Esos scripts no ejecutan seeds de backend, no publican seeds de MinIO y no corren perfiles `storage-init`, `storage-publish` ni `storage-publish-seeds`.
+- Al iniciar, el backend si verifica o crea la base y aplica el esquema MariaDB automaticamente, pero eso no equivale a sembrar datos.
+- Las imagenes del proyecto corren con usuario no root y usan `tini` en frontend/backend para mejorar manejo de procesos y senales.
 - Backend usa node --watch para recarga en caliente.
 - Frontend usa vue-cli-service serve con HMR.
 - EMQX_ALLOW_ANONYMOUS=true en compose (ajustar en prod).

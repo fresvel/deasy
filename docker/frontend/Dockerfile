@@ -1,18 +1,28 @@
-FROM rockylinux/rockylinux:10.1.20251123-ubi
+FROM node:22.12.0-bookworm-slim
 
-WORKDIR /app
+ENV PNPM_HOME=/pnpm
+ENV PATH=${PNPM_HOME}:${PATH}
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV npm_config_fund=false
 
-RUN dnf -y install curl --allowerasing && \
-  curl -fsSL https://rpm.nodesource.com/setup_22.x | bash - && \
-  dnf -y install nodejs && \
-  dnf clean all
-
-COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install
-
-COPY frontend ./frontend
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends tini ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g pnpm@10.17.1 \
+  && npm cache clean --force
 
 WORKDIR /app/frontend
+
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY frontend ./
+
+RUN chown -R node:node /app/frontend /pnpm
+
+USER node
+
 EXPOSE 8080
 
-CMD ["npm", "run", "serve", "--", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["tini", "--"]
+CMD ["pnpm", "run", "dev"]
