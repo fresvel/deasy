@@ -33,14 +33,14 @@
 
 ## Imagenes base
 
-- Backend: rockylinux/rockylinux:10.1.20251123-ubi
-- Frontend: node:22.12.0-alpine
-- Signer: python:3.11-slim
-- Analytics: python:3.11-slim
+- Backend: node:22.12.0-bookworm-slim (multi-stage)
+- Frontend: node:22.12.0-bookworm-slim
+- Signer: python:3.11-slim-bookworm
+- Analytics: python:3.11-slim-bookworm
 
 ## Runtime
 
-- Backend: Node.js 22 (NodeSource)
+- Backend: Node.js 22.12.0
 - Frontend: Node.js 22.12.0 + pnpm 10
 
 ## Puertos expuestos (host -> contenedor)
@@ -85,6 +85,10 @@ Montajes relevantes en desarrollo:
 
 ## Notas
 
+- `start-services.sh` y `start-services.ps1` solo levantan `docker compose up -d` y `docker compose --profile workers up -d`.
+- Esos scripts no ejecutan seeds de backend, no publican seeds de MinIO y no corren perfiles `storage-init`, `storage-publish` ni `storage-publish-seeds`.
+- Al iniciar, el backend si verifica o crea la base y aplica el esquema MariaDB automaticamente, pero eso no equivale a sembrar datos.
+- Las imagenes del proyecto corren con usuario no root y usan `tini` en frontend/backend para mejorar manejo de procesos y senales.
 - Backend usa node --watch para recarga en caliente.
 - Frontend usa vue-cli-service serve con HMR.
 - EMQX_ALLOW_ANONYMOUS=true en compose (ajustar en prod).
