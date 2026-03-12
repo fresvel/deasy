@@ -32,8 +32,8 @@
           </button>
         </div>
       </div>
-    
-      <div :class="contentClass">
+</div>  
+<div :class="contentClass">
           <div class="card shadow-sm">
             <div class="card-body">
 

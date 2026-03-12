@@ -104,14 +104,6 @@
               <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <IconMapPin class="w-5 h-5 text-sky-600" /> Dirección de Residencia
               </h3>
-              <!-- Tooltip nativo con group-hover Tailwind -->
-              <div class="group relative flex items-center justify-center cursor-help">
-                <IconHelpSquareRounded class="w-5 h-5 text-slate-400 hover:text-sky-500 transition-colors" />
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-800 text-white text-xs font-medium rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-xl z-20 pointer-events-none">
-                  Por favor, ingresa los datos completos de tu lugar de residencia actual. Esta información nos ayudará a mantener nuestro registro actualizado.
-                  <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-800"></div>
-                </div>
-              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
