@@ -1,141 +1,83 @@
 <template>
-  <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-4xl w-full bg-white rounded-[2rem] shadow-2xl shadow-slate-300/50 overflow-hidden flex flex-col md:flex-row border border-slate-200">
-      
-      <!-- Left side (Image/Gradient info) -->
-      <div class="hidden md:flex md:w-5/12 bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-12 flex-col justify-between text-white relative overflow-hidden">
-        <!-- Abstract shapes -->
-        <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-          <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
-          <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
-          <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
+  <div class="login-container">
+    <div class="content-wrapper">
+      <div class="text-center mb-5">
+        <div class="title-container">
+          <span class="title-puce">PUCE</span>
+          <span class="title-space">&nbsp;</span>
+          <span class="title-esmeraldas">ESMERALDAS</span>
         </div>
-        
-        <div class="relative z-10">
-          <div class="flex items-center gap-2 mb-10">
-            <span class="text-3xl font-extrabold tracking-tight">PUCE</span>
-            <span class="text-3xl font-light tracking-wide">ESMERALDAS</span>
-          </div>
-          <h2 class="text-4xl font-bold mb-4 leading-tight">Excelencia académica<br>con sentido humano</h2>
-          <p class="text-sky-100/90 text-lg font-medium">Sistema DEASY</p>
-        </div>
-        
-        <div class="relative z-10 mt-auto text-sm text-sky-200/80 font-medium">
-          &copy; {{ new Date().getFullYear() }} DEASY. Todos los derechos reservados.
+        <div class="subtitle">
+          Excelencia academica con sentido humano
         </div>
       </div>
 
-      <!-- Right side (Form) -->
-      <div class="w-full md:w-7/12 p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
-        <!-- Mobile Header -->
-        <div class="md:hidden text-center mb-10">
-           <div class="flex justify-center items-center gap-2 text-sky-800">
-            <span class="text-3xl font-extrabold tracking-tight">PUCE</span>
-            <span class="text-3xl font-light tracking-wide">ESMERALDAS</span>
+      <div class="card login-card">
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <h1 class="login-title">
+              INICIAR SESIÓN
+            </h1>
+            <p class="login-subtitle">
+              Sistema DEASY PUCESE
+            </p>
           </div>
-          <p class="text-slate-500 text-sm mt-2 font-medium">Sistema DEASY</p>
-        </div>
 
-        <div class="mb-10">
-          <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Iniciar Sesión</h1>
-          <p class="text-slate-500 mt-2.5 font-medium text-sm">Ingresa tus credenciales para acceder a tu cuenta.</p>
-        </div>
-
-        <form @submit.prevent="loginFunction" class="space-y-6">
-          <div>
-            <label for="identifier" class="block text-sm font-semibold text-slate-700 mb-2">
-              Usuario
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <IconUser class="h-5 w-5 text-slate-400" />
-              </div>
+          <form @submit.prevent="loginFunction">
+            <div class="mb-4">
+              <label class="form-label-custom" for="identifier">
+                Usuario
+              </label>
               <input
                 id="identifier"
                 type="text"
-                v-model="identifier"
-                class="block w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 placeholder:text-sm"
+                class="form-control form-control-custom"
                 placeholder="Cédula o correo electrónico"
+                v-model="identifier"
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label for="password" class="block text-sm font-semibold text-slate-700 mb-2">
-              Contraseña
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <IconLock class="h-5 w-5 text-slate-400" />
-              </div>
+            <div class="mb-4">
+              <label class="form-label-custom" for="password">
+                Contraseña
+              </label>
               <input
                 id="password"
-                :type="showPassword ? 'text' : 'password'"
+                type="password"
+                class="form-control form-control-custom"
+                placeholder="Ingresa tu contraseña"
                 v-model="password"
-                class="block w-full pl-11 pr-12 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 placeholder:text-sm"
-                placeholder="••••••••••••"
                 required
               />
-              <button 
-                type="button"
-                @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-sky-600 transition-colors"
-              >
-                <IconEye v-if="!showPassword" class="h-5 w-5" />
-                <IconEyeOff v-else class="h-5 w-5" />
-              </button>
             </div>
-          </div>
 
-          <div class="flex items-center justify-end">
-            <router-link to="/recover-password" class="text-sm font-semibold text-sky-600 hover:text-sky-700 hover:underline transition-all">
-              ¿Olvidaste tu contraseña?
-            </router-link>
-          </div>
-
-          <button 
-            type="submit" 
-            class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-white text-sm font-semibold bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500/30 transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98]"
-          >
-            Ingresar
-            <IconArrowRight class="h-5 w-5" />
-          </button>
-
-          <div class="relative mt-8 mb-6">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-slate-100"></div>
-            </div>
-            <div class="relative flex justify-center text-sm font-medium">
-              <span class="px-4 bg-white text-slate-400">¿No tienes una cuenta?</span>
-            </div>
-          </div>
-
-          <router-link 
-            to="/register" 
-            class="w-full flex justify-center py-3 px-4 rounded-xl text-slate-700 text-sm font-semibold bg-white border-2 border-slate-100 hover:border-sky-200 hover:bg-slate-50 hover:text-sky-700 focus:outline-none focus:ring-4 focus:ring-slate-500/10 transition-all active:scale-[0.98]"
-          >
-            Crear usuario
-          </router-link>
-        </form>
-
-        <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="transform -translate-y-2 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="transform translate-y-0 opacity-100"
-          leave-to-class="transform -translate-y-2 opacity-0"
-        >
-          <div v-if="errorMessage" class="mt-6 flex bg-red-50 p-4 rounded-2xl border border-red-100 text-red-600">
-            <IconAlertCircle class="h-5 w-5 shrink-0 mr-3 mt-0.5 text-red-500" />
-            <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
-            <button @click="clearToast" class="ml-3 text-red-400 hover:text-red-600 transition-colors">
-              <IconX class="h-5 w-5" />
+            <button type="submit" class="btn btn-primary-custom w-100 mb-3">
+              Iniciar sesión
             </button>
-          </div>
-        </Transition>
 
+            <button
+              type="button"
+              class="btn btn-link forgot-password"
+              @click="handleForgotPassword"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+
+            <router-link to="/register" class="btn btn-outline-custom w-100">
+              Crear usuario
+            </router-link>
+          </form>
+
+          <div
+            v-if="errorMessage"
+            class="alert alert-danger mt-4 error-alert"
+            role="alert"
+          >
+            {{ errorMessage }}
+            <button type="button" class="btn-close" @click="clearToast"></button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -146,14 +88,11 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { API_ROUTES } from '@/services/apiConfig';
-// Import Tabler Icons
-import { IconUser, IconLock, IconEye, IconEyeOff, IconAlertCircle, IconX, IconArrowRight } from '@tabler/icons-vue';
 
 const identifier = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const router = useRouter();
-const showPassword = ref(false);
 
 const loginFunction = async () => {
   try {
@@ -176,17 +115,20 @@ const loginFunction = async () => {
     }
 
     const res = await axios.post(url, body, { withCredentials: true });
-    
+    console.log(res.data);
+
     if (res.data.token) {
       localStorage.setItem('token', res.data.token);
     }
 
     if (res.data.user) {
       localStorage.setItem('user', JSON.stringify(res.data.user));
+      console.log('✅ Datos del usuario guardados:', res.data.user);
     }
 
     router.push('/dashboard');
   } catch (error) {
+    console.log(error.message);
     errorMessage.value = error.response?.data?.message || 'Error al iniciar sesión';
   }
 };
@@ -194,4 +136,205 @@ const loginFunction = async () => {
 const clearToast = () => {
   errorMessage.value = '';
 };
+
+const handleForgotPassword = () => {
+  console.info('Recuperación de contraseña pendiente de implementación');
+};
 </script>
+
+<style scoped>
+.login-container {
+  background: var(--brand-gradient);
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: var(--font-base);
+  padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) clamp(3.75rem, vw, 6rem);
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 760px;
+  margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+  padding: 0;
+}
+
+.title-container {
+  font-weight: 400;
+  color: white;
+  font-size: clamp(1.65rem, 4vw, 2.45rem);
+  margin-bottom: 0.5rem;
+  line-height: normal;
+}
+
+.title-puce {
+  font-weight: 700;
+}
+
+.title-space {
+  font-weight: 700;
+  font-size: clamp(2rem, 4.8vw, 3.2rem);
+}
+
+.title-esmeraldas {
+  font-weight: 500;
+  font-size: clamp(1.38rem, 3.6vw, 1.9rem);
+}
+
+.subtitle {
+  font-weight: 400;
+  color: white;
+  font-size: clamp(0.86rem, 2.1vw, 1.05rem);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--brand-surface);
+  border-radius: 36px;
+  box-shadow: var(--brand-shadow);
+  border: 0;
+}
+
+.login-card .card-body {
+  padding: clamp(1.4rem, 3.6vw, 1.9rem);
+}
+
+.login-title {
+  font-weight: 700;
+  color: var(--brand-navy);
+  font-size: clamp(1.42rem, 3.6vw, 1.7rem);
+  margin-bottom: 1rem;
+}
+
+.login-subtitle {
+  font-weight: 500;
+  color: var(--brand-navy);
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  margin-bottom: 0;
+}
+
+.form-label-custom {
+  font-weight: 500;
+  color: var(--brand-ink);
+  font-size: clamp(0.9rem, 2.3vw, 1.05rem);
+  margin-bottom: 0.5rem;
+}
+
+.form-control-custom {
+  width: 100%;
+  height: clamp(2.45rem, 5.6vw, 3.4rem);
+  background-color: white;
+  border-radius: 17px;
+  box-shadow: var(--brand-shadow-soft);
+  border: 0;
+  font-size: clamp(0.86rem, 2vw, 1rem);
+  padding: 0 1rem;
+}
+
+.form-control-custom:focus {
+  box-shadow: var(--brand-shadow-soft);
+  border: 0;
+  outline: none;
+}
+
+.btn-primary-custom {
+  width: 100%;
+  height: clamp(2.45rem, 5.6vw, 3.4rem);
+  border-radius: 17px;
+  box-shadow: var(--brand-shadow-soft);
+  background: var(--brand-gradient);
+  border: none;
+  font-weight: 700;
+  color: white;
+  font-size: clamp(0.95rem, 2.2vw, 1.2rem);
+}
+
+.btn-primary-custom:hover {
+  opacity: 0.9;
+  background: var(--brand-gradient);
+}
+
+.forgot-password {
+  font-weight: 500;
+  color: var(--brand-navy);
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+  color: var(--brand-navy);
+}
+
+.btn-outline-custom {
+  width: 100%;
+  height: clamp(2.45rem, 5.6vw, 3.4rem);
+  border-radius: 17px;
+  border: 1px solid var(--brand-navy);
+  box-shadow: var(--brand-shadow-soft);
+  background-color: transparent;
+  font-weight: 700;
+  color: var(--brand-navy);
+  font-size: clamp(0.95rem, 2.2vw, 1.2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.btn-outline-custom:hover {
+  background-color: rgba(3, 49, 100, 0.05);
+  color: var(--brand-navy);
+  border-color: var(--brand-navy);
+}
+
+.error-alert {
+  position: relative;
+  border-radius: 17px;
+  box-shadow: var(--brand-shadow-soft);
+  font-size: clamp(0.8rem, 1.9vw, 0.95rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.error-alert .btn-close {
+  filter: invert(1);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .title-container {
+    font-size: clamp(2rem, 8vw, 2.25rem);
+  }
+
+  .title-space {
+    font-size: clamp(2.5rem, 10vw, 3.125rem);
+  }
+
+  .title-esmeraldas {
+    font-size: clamp(1.5rem, 7vw, 1.75rem);
+  }
+
+  .subtitle {
+    font-size: clamp(1rem, 5vw, 1.125rem);
+  }
+
+  .login-card .card-body {
+    padding: clamp(1.5rem, 6vw, 2rem);
+  }
+}
+</style>

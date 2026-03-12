@@ -95,9 +95,6 @@ const loadEnv = async () => {
       }
     });
   } catch (error) {
-    if (error?.code === "ENOENT") {
-      return;
-    }
     console.warn(`No se pudo leer ${envPath}: ${formatError(error)}`);
   }
 };
