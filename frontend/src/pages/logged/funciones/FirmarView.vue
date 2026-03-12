@@ -19,6 +19,9 @@
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
                 <font-awesome-icon icon="bell" class="avatar" />
             </button>
+            <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
+                <font-awesome-icon icon="bars" class="avatar" />
+            </button>
         </div>
     
     </s-header>
@@ -57,16 +60,17 @@
         <s-body
         :showmenu="vmenu"
         :shownotify="vnotify"
+        :shownavmenu="showNavMenu"
         >
         <FirmarPdf ref="firmarPdfRef"></FirmarPdf>
 
         </s-body>
         
-
-      
         <s-message
         :show="vnotify"
         />
+        
+        <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
           
       </div>
       
@@ -80,6 +84,7 @@
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
     import SHeader from '@/layouts/SHeader.vue';
+    import SNavMenu from '@/layouts/SNavMenu.vue';
     import UserProfile from '@/components/UserProfile.vue';
     import FirmarPdf from './FirmarPdf.vue';
 
@@ -108,7 +113,8 @@
     });
 
     const vmenu = ref(true);
-    const vnotify = ref(true);
+    const vnotify = ref(false);
+    const showNavMenu = ref(false);
     const selected= ref("Formación")
     const showFormacion = ref(true);
     const firmarPdfRef = ref(null);
@@ -119,7 +125,17 @@
     };
       
     const toggleNotify = () => {
+        if (showNavMenu.value) {
+            showNavMenu.value = false;
+        }
         vnotify.value = !vnotify.value;
+    };
+    
+    const toggleNavMenu = () => {
+        if (vnotify.value) {
+            vnotify.value = false;
+        }
+        showNavMenu.value = !showNavMenu.value;
     };
     
     const menu=ref([
@@ -175,9 +191,6 @@
         }
     }
 
-    const resetSigner = () => {
-        firmarPdfRef.value?.resetToStart?.();
-    }
     
       
       

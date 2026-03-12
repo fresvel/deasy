@@ -17,6 +17,7 @@ export const API_ROUTES = {
   GENERAR_REPORTE: `${API_PREFIX}/academia/co/logros.web`,
   OBTENER_REPORTE: `${API_PREFIX}/academia/co/logros.pdf`,
   USERS: `${API_PREFIX}/users`,
+  VERIFY_EMAIL: `${API_PREFIX}/email/verify`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
