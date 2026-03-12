@@ -13,6 +13,17 @@ export default class UserRepository {
     }
   }
 
+  async findById(id) {
+    this.ensurePool();
+
+    const [rows] = await this.pool.query(
+      "SELECT * FROM persons WHERE id = ? LIMIT 1",
+      [id]
+    );
+
+    return rows?.[0] ?? null;
+  }
+
   async findByCedulaOrEmail({ cedula, email }) {
     this.ensurePool();
 
@@ -43,7 +54,11 @@ export default class UserRepository {
 
   async findAll() {
     this.ensurePool();
-    const [rows] = await this.pool.query("SELECT * FROM persons ORDER BY created_at DESC");
+
+    const [rows] = await this.pool.query(
+      "SELECT * FROM persons ORDER BY created_at DESC"
+    );
+
     return rows;
   }
 
@@ -51,7 +66,10 @@ export default class UserRepository {
     this.ensurePool();
 
     const normalized = term?.trim();
-    const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : 20;
+    const safeLimit = Number.isFinite(Number(limit))
+      ? Math.max(1, Number(limit))
+      : 20;
+
     const statusFilter = status?.trim();
 
     const conditions = [];
@@ -59,7 +77,11 @@ export default class UserRepository {
 
     if (normalized) {
       const like = `%${normalized}%`;
-      conditions.push("(cedula LIKE ? OR email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)");
+
+      conditions.push(
+        "(cedula LIKE ? OR email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)"
+      );
+
       params.push(like, like, like, like);
     }
 
@@ -68,7 +90,10 @@ export default class UserRepository {
       params.push(statusFilter);
     }
 
-    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
     const [rows] = await this.pool.query(
       `SELECT * FROM persons
         ${whereClause}
@@ -76,6 +101,7 @@ export default class UserRepository {
         LIMIT ?`,
       [...params, safeLimit]
     );
+
     return rows;
   }
 
@@ -99,10 +125,15 @@ export default class UserRepository {
     };
 
     const requiredFields = ["cedula", "password_hash", "first_name", "last_name"];
-    const missingFields = requiredFields.filter((field) => !payload[field]);
+
+    const missingFields = requiredFields.filter(
+      (field) => !payload[field]
+    );
 
     if (missingFields.length) {
-      throw new Error(`Datos incompletos del usuario: ${missingFields.join(", ")}`);
+      throw new Error(
+        `Datos incompletos del usuario: ${missingFields.join(", ")}`
+      );
     }
 
     const columns = Object.keys(payload);
@@ -121,9 +152,7 @@ export default class UserRepository {
   }
 
   toPublicUser(userRow) {
-    if (!userRow) {
-      return null;
-    }
+    if (!userRow) return null;
 
     return {
       id: userRow.id ?? userRow._id,
@@ -159,6 +188,55 @@ export default class UserRepository {
     );
 
     const updated = await this.findByCedulaOrEmail({ cedula });
+
     return this.toPublicUser(updated);
+  }
+
+  async update(userId, data) {
+    this.ensurePool();
+
+    const fields = [];
+    const values = [];
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined) {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+    });
+
+    if (!fields.length) return null;
+
+    values.push(userId);
+
+    await this.pool.query(
+      `UPDATE persons SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      values
+    );
+
+    const updated = await this.findById(userId);
+
+    return this.toPublicUser(updated);
+  }
+
+  async updateMe(userId, data) {
+    const allowedFields = [
+      "first_name",
+      "last_name",
+      "email",
+      "whatsapp",
+      "direccion",
+      "pais"
+    ];
+
+    const filtered = {};
+
+    allowedFields.forEach((field) => {
+      if (data[field] !== undefined) {
+        filtered[field] = data[field];
+      }
+    });
+
+    return this.update(userId, filtered);
   }
 }

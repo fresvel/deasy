@@ -2,13 +2,13 @@
 
 ## Requisitos
 
-- Node.js 22
-- NPM
+- Node.js `^20.19.0` o `>=22.12.0`
+- pnpm `>=10`
 
 ## Instalacion
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Variables de entorno
@@ -18,31 +18,26 @@ npm install
 
 Variables soportadas:
 
-- VUE_APP_API_BASE_URL (URL completa base)
-- VUE_APP_API_PORT (puerto si no se define base URL)
+- VITE_API_BASE_URL (URL completa base)
+- VITE_API_PORT (puerto si no se define base URL)
 
 Por defecto usa el host actual y puerto 3030:
 
-- API_BASE_URL = http://<hostname>:3030
+- `API_BASE_URL = http://hostname:3030`
 - API_PREFIX = /easym/v1
 
 ## Arranque
 
 ```bash
-npm run serve
+pnpm run dev
 ```
 
 Servidor por defecto:
 
-- http://localhost:8080/
+- `http://localhost:8080/`
 
 ## Build
 
 ```bash
-npm run build
+pnpm run build
 ```
-
-## Notas
-
-- Bootstrap y estilos globales cargan en frontend/src/main.js.
-
