@@ -3,7 +3,7 @@
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="#">
         <img src="/images/menu.svg" alt="DEASY Logo" class="me-2" style="border-radius: 10px;">
-        <span class="fw-bold">DEASY PUCESE</span>
+        <span class="fw-bold">DEASY</span>
       </a>
       
       <div class="navbar-nav ms-auto">

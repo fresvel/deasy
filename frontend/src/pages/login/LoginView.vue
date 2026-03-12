@@ -21,7 +21,7 @@
         </div>
         
         <div class="relative z-10 mt-auto text-sm text-sky-200/80 font-medium">
-          &copy; {{ new Date().getFullYear() }} PUCESE. Todos los derechos reservados.
+          &copy; {{ new Date().getFullYear() }} DEASY. Todos los derechos reservados.
         </div>
       </div>
 
