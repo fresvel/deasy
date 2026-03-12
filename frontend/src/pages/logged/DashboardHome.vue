@@ -60,6 +60,9 @@
         <button class="nav-link text-white p-0" type="button" @click="toggleNotify" title="Notificaciones">
           <font-awesome-icon icon="bell" class="avatar" />
         </button>
+        <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
+          <font-awesome-icon icon="bars" class="avatar" />
+        </button>
       </div>
     </s-header>
 
@@ -445,6 +448,8 @@
       </s-body>
 
       <s-message :show="showNotify" />
+      
+      <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
     </div>
 
     <div v-if="showTaskLaunchModal" class="floating-dialog-backdrop" @click.self="closeTaskLaunchModal">
@@ -525,6 +530,7 @@ import SHeader from '@/layouts/SHeader.vue';
 import SMenu from '@/layouts/SMenu.vue';
 import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
+import SNavMenu from '@/layouts/SNavMenu.vue';
 import UserProfile from '@/components/UserProfile.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
@@ -941,7 +947,17 @@ const handleUserIconClick = () => {
 };
 
 const toggleNotify = () => {
+  if (showNavMenu.value) {
+    showNavMenu.value = false;
+  }
   showNotify.value = !showNotify.value;
+};
+
+const toggleNavMenu = () => {
+  if (showNotify.value) {
+    showNotify.value = false;
+  }
+  showNavMenu.value = !showNavMenu.value;
 };
 </script>
 

@@ -2,8 +2,8 @@
 // Puedes adaptar HOST, PORT, y rutas aquí según el entorno
 
 const DEFAULT_HOST = typeof window !== "undefined" ? window.location.hostname : "localhost";
-const DEFAULT_PORT = process.env.VUE_APP_API_PORT || "3030";
-const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || `http://${DEFAULT_HOST}:${DEFAULT_PORT}`;
+const API_PORT = import.meta.env.VITE_API_PORT || "3030";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${DEFAULT_HOST}:${API_PORT}`;
 export const API_PREFIX = `${API_BASE_URL}/easym/v1`;
 
 export const API_ROUTES = {
@@ -17,6 +17,7 @@ export const API_ROUTES = {
   GENERAR_REPORTE: `${API_PREFIX}/academia/co/logros.web`,
   OBTENER_REPORTE: `${API_PREFIX}/academia/co/logros.pdf`,
   USERS: `${API_PREFIX}/users`,
+  VERIFY_EMAIL: `${API_PREFIX}/email/verify`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,

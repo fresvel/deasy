@@ -83,7 +83,7 @@
 
 <script setup>
 import { reactive, ref, onMounted, defineEmits } from "vue";
-import { Modal } from "bootstrap";
+import { Modal } from "@/utils/modalController";
 import axios from "axios";
 import { API_PREFIX } from "@/services/apiConfig";
 import SSelect from "@/components/SSelect.vue";

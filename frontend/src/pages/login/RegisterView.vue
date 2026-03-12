@@ -281,7 +281,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-0 pb-0">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
         </div>
         <div class="modal-body text-center py-4">
           <div class="mb-4">
@@ -311,7 +311,8 @@ import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Modal } from 'bootstrap';
+import { Modal } from '@/utils/modalController';
+
 
 // Fix para iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -631,16 +632,27 @@ const createnewUser = async() => {
     }
     
     try {
-        await axios.post(API_ROUTES.USERS, newuser.value)
+        // await axios.post(API_ROUTES.USERS, newuser.value)
         
-        // Mostrar modal de éxito
-        await nextTick();
-        if (successModalInstance) {
-            successModalInstance.show();
-        } else if (successModal.value) {
-            successModalInstance = Modal.getOrCreateInstance(successModal.value);
-            successModalInstance.show();
-        }
+        // // Mostrar modal de éxito
+        // await nextTick();
+        // if (successModalInstance) {
+        //     successModalInstance.show();
+        // } else if (successModal.value) {
+        //     successModalInstance = Modal.getOrCreateInstance(successModal.value);
+        //     successModalInstance.show();
+        // }
+
+        const response = await axios.post(API_ROUTES.USERS, newuser.value);
+
+        // 👉 REDIRIGIR A VERIFICACIÓN DE EMAIL
+        router.push({
+          name: 'verify-email', // o la ruta que tengas
+          query: {
+            email: newuser.value.email,
+            user_id: response.data.user.id // IMPORTANTE
+          }
+        });
         
         // Limpiar formulario
         newuser.value = {
