@@ -1,4 +1,6 @@
-<template>
+const fs = require('fs');
+
+const content = `<template>
   <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
     <div class="max-w-6xl w-full bg-white rounded-[2rem] shadow-2xl shadow-slate-300/50 overflow-hidden flex flex-col md:flex-row border border-slate-200 h-[92vh]">
       
@@ -179,7 +181,7 @@
                 <!-- Medidor de contraseña -->
                 <div v-if="newuser.password" class="mt-2 pl-1">
                   <div class="flex h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-1">
-                    <div class="h-full transition-all duration-300" :class="passwordStrengthColors[passwordStrengthScore]" :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"></div>
+                    <div class="h-full transition-all duration-300" :class="passwordStrengthColors[passwordStrengthScore]" :style="{ width: \`\${(passwordStrengthScore / 5) * 100}%\` }"></div>
                   </div>
                   <p class="text-[11px] font-medium" :class="passwordTextColors[passwordStrengthScore]">{{ passwordStrengthText }}</p>
                 </div>
@@ -363,7 +365,7 @@ const updateWhatsappField = () => {
 };
 
 watch(() => newuser.value.cedula, (value) => {
-  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
+  const digits = (value || "").replace(/\\D/g, "").slice(0, 10);
   if (digits !== value) {
     newuser.value.cedula = digits;
     return;
@@ -372,7 +374,7 @@ watch(() => newuser.value.cedula, (value) => {
 });
 
 watch(phoneNumber, (value) => {
-  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
+  const digits = (value || "").replace(/\\D/g, "").slice(0, 10);
   if (digits !== value) {
     phoneNumber.value = digits;
     return;
@@ -387,7 +389,7 @@ const validatePassword = (password) => {
     if (/[a-z]/.test(password)) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(password)) score++;
+    if (/[!@#$%^&*()_+\\-=\\[\\]{};':"\\\\|,.<>/?]/.test(password)) score++;
     
     passwordStrengthScore.value = score;
     
@@ -458,3 +460,6 @@ onMounted(() => {
   scrollbar-width: none;
 }
 </style>
+`;
+fs.writeFileSync('src/pages/login/RegisterView.vue', content, 'utf8');
+console.log("Archivo generado correctamente");

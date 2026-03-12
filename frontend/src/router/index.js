@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "../pages/login/LoginView.vue";
 import Register from "../pages/login/RegisterView.vue";
+import RecoverPassword from "../pages/login/RecoverPasswordView.vue";
 import DashboardHome from "../pages/logged/DashboardHome.vue";
 import IndexPage from "../pages/logged/LoggedView.vue";
 import { isTokenValid, clearAuthData } from "../utils/tokenUtils.js";
@@ -29,6 +30,11 @@ const routes = [
     path: "/register",
     name: "register",
     component: Register
+  },
+  {
+    path: "/recover-password",
+    name: "recover-password",
+    component: RecoverPassword
   },
   {
     path: "/firmar",
@@ -73,7 +79,7 @@ const router = createRouter({
 // Guard para proteger rutas que requieren autenticación
 router.beforeEach((to) => {
   const token = localStorage.getItem('token');
-  const publicRoutes = ['/', '/register'];
+  const publicRoutes = ['/', '/register', '/recover-password'];
 
   // Si la ruta es pública, permitir acceso
   if (publicRoutes.includes(to.path)) {

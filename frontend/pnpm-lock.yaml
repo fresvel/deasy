@@ -23,12 +23,12 @@ importers:
       '@fortawesome/vue-fontawesome':
         specifier: ^3.1.3
         version: 3.1.3(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.29(typescript@5.4.2))
+      '@tabler/icons-vue':
+        specifier: ^3.40.0
+        version: 3.40.0(vue@3.5.29(typescript@5.4.2))
       axios:
         specifier: ^1.13.6
         version: 1.13.6
-      leaflet:
-        specifier: ^1.9.4
-        version: 1.9.4
       pdfjs-dist:
         specifier: ^5.5.207
         version: 5.5.207
@@ -616,6 +616,14 @@ packages:
   '@swc/types@0.1.25':
     resolution: {integrity: sha512-iAoY/qRhNH8a/hBvm3zKj9qQ4oc2+3w1unPJa2XvTK3XjeLXtzcCingVPw/9e5mn1+0yPqxcBGp9Jf0pkfMb1g==}
 
+  '@tabler/icons-vue@3.40.0':
+    resolution: {integrity: sha512-DyAOsnL6p3THhI8/74WvCFu86vlNI8U6DKtNHnYYjQpljtENLIy6i/bLiug3Lr04S71yKTWNxYyfd/8K8YFzQw==}
+    peerDependencies:
+      vue: '>=3.0.1'
+
+  '@tabler/icons@3.40.0':
+    resolution: {integrity: sha512-V/Q4VgNPKubRTiLdmWjV/zscYcj5IIk+euicUtaVVqF6luSC9rDngYWgST5/yh3Mrg/mYUwRv1YVTk71Jp0twQ==}
+
   '@tailwindcss/node@4.2.1':
     resolution: {integrity: sha512-jlx6sLk4EOwO6hHe1oCGm1Q4AN/s0rSrTTPBGPM0/RQ6Uylwq17FuU8IeJJKEjtc6K6O07zsvP+gDO6MMWo7pg==}
 
@@ -1091,9 +1099,6 @@ packages:
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
-
-  leaflet@1.9.4:
-    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -1830,6 +1835,13 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
+  '@tabler/icons-vue@3.40.0(vue@3.5.29(typescript@5.4.2))':
+    dependencies:
+      '@tabler/icons': 3.40.0
+      vue: 3.5.29(typescript@5.4.2)
+
+  '@tabler/icons@3.40.0': {}
+
   '@tailwindcss/node@4.2.1':
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -2313,8 +2325,6 @@ snapshots:
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
-
-  leaflet@1.9.4: {}
 
   levn@0.4.1:
     dependencies:
