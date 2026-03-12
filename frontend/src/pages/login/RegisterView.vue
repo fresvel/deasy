@@ -183,7 +183,7 @@
             </div>
             <div class="ml-3 text-sm">
               <label class="font-medium text-slate-600">
-                Acepto los <a href="#" class="text-sky-600 hover:underline">términos y condiciones</a> de la plataforma.
+                Acepto los <router-link to="/terminos" target="_blank" class="text-sky-600 hover:underline">términos y condiciones</router-link> de la plataforma.
               </label>
             </div>
           </div>
