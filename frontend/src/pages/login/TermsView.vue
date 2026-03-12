@@ -20,7 +20,7 @@
             <p class="text-sky-100/90 mt-2 font-medium">Políticas de uso del sistema DEASY</p>
           </div>
           
-          <router-link to="/register" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-sky-800 hover:bg-sky-50 shadow-sm font-bold transition-all w-fit flex-shrink-0">
+          <router-link to="/register" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white !text-sky-800 hover:bg-sky-50 shadow-sm font-bold transition-all w-fit flex-shrink-0">
             <IconArrowLeft class="w-5 h-5" />
             Volver al registro
           </router-link>
@@ -54,7 +54,7 @@
           <p class="text-sm font-medium text-slate-500">
             Al registrarte en el sistema, confirmas tu conformidad con estas políticas.
           </p>
-          <router-link :to="{ path: '/register', query: { terms: 'accepted' } }" class="inline-flex justify-center items-center gap-2 py-3 px-8 rounded-xl text-white text-base font-bold bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500/30 transition-all shadow-lg shadow-sky-600/30 w-full sm:w-auto">
+          <router-link :to="{ path: '/register', query: { terms: 'accepted' } }" class="inline-flex justify-center items-center gap-2 py-3 px-8 rounded-xl !text-white text-base font-bold bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500/30 transition-all shadow-lg shadow-sky-600/30 w-full sm:w-auto">
             Entendido
           </router-link>
         </div>
