@@ -1,31 +1,9 @@
 <template>
-  <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-6xl w-full bg-white rounded-[2rem] shadow-2xl shadow-slate-300/50 overflow-hidden flex flex-col md:flex-row border border-slate-200 h-[92vh]">
+  <div class="min-h-screen bg-slate-100 py-8 md:py-12 px-4 sm:px-6 flex justify-center font-sans">
+    <div class="max-w-3xl w-full h-fit bg-white rounded-[2rem] shadow-2xl shadow-slate-300/50 flex flex-col border border-slate-200">
       
-      <!-- Left side (Image/Gradient info) -->
-      <div class="hidden md:flex md:w-4/12 bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-12 flex-col justify-between text-white relative overflow-hidden">
-        <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-          <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
-          <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
-          <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
-        </div>
-        
-        <div class="relative z-10">
-          <div class="flex items-center gap-2 mb-10">
-            <span class="text-3xl font-extrabold tracking-tight">PUCE</span>
-            <span class="text-3xl font-light tracking-wide">ESMERALDAS</span>
-          </div>
-          <h2 class="text-4xl font-bold mb-4 leading-tight">Únete a nuestra comunidad</h2>
-          <p class="text-sky-100/90 text-lg font-medium">Sistema DEASY</p>
-        </div>
-        
-        <div class="relative z-10 mt-auto text-sm text-sky-200/80 font-medium">
-          &copy; {{ new Date().getFullYear() }} PUCESE. Todos los derechos reservados.
-        </div>
-      </div>
-
-      <!-- Right side (Form) -->
-      <div class="w-full md:w-8/12 p-8 sm:p-10 lg:p-12 overflow-y-auto relative no-scrollbar">
+      <!-- Form Container -->
+      <div class="w-full p-8 sm:p-10 lg:p-12 relative">
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Crear Cuenta</h1>
@@ -439,14 +417,3 @@ onMounted(() => {
   updatePhonePrefix();
 });
 </script>
-
-<style scoped>
-/* Ocultar barra de scroll para estética limpia en el contenedor del formulario */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-</style>
