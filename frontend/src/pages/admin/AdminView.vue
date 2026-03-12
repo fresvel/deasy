@@ -684,12 +684,14 @@ import SMenu from "@/layouts/SMenu.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import SHeader from "@/layouts/SHeader.vue";
+import SNavMenu from "@/layouts/SNavMenu.vue";
 import UserProfile from "@/components/UserProfile.vue";
 import AdminTableManager from "./AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const vmenu = ref(true);
 const vnotify = ref(false);
+const showNavMenu = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
@@ -1452,10 +1454,20 @@ const goAdminHome = () => {
 
 const onClick = (item) => {
   if (item === "Message") {
+    if (showNavMenu.value) {
+      showNavMenu.value = false;
+    }
     vnotify.value = !vnotify.value;
     return;
   }
   vmenu.value = !vmenu.value;
+};
+
+const toggleNavMenu = () => {
+  if (vnotify.value) {
+    vnotify.value = false;
+  }
+  showNavMenu.value = !showNavMenu.value;
 };
 
 const fetchMeta = async () => {
