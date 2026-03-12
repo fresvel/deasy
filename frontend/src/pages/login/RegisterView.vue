@@ -105,7 +105,7 @@
                   class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
                   placeholder="Ej. Esmeraldas" />
               </div>
-              <div class="md:col-span-2">
+              <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1.5">Calle Primaria</label>
                 <input type="text" v-model="newuser.calle_primaria" required
                   class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
@@ -183,7 +183,7 @@
             </div>
             <div class="ml-3 text-sm">
               <label class="font-medium text-slate-600">
-                Acepto los <router-link to="/terminos" target="_blank" class="text-sky-600 hover:underline">términos y condiciones</router-link> de la plataforma.
+                Acepto los <router-link to="/terminos" class="text-sky-600 hover:underline">términos y condiciones</router-link> de la plataforma.
               </label>
             </div>
           </div>
@@ -249,7 +249,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { API_ROUTES } from '@/services/apiConfig';
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
@@ -267,6 +267,7 @@ import {
 } from '@tabler/icons-vue';
 
 const router = useRouter();
+const route = useRoute();
 
 // Datos del formulario
 const newuser = ref({
@@ -415,5 +416,9 @@ const goToLogin = () => {
 
 onMounted(() => {
   updatePhonePrefix();
+  
+  if (route.query.terms === 'accepted') {
+    termsAccepted.value = true;
+  }
 });
 </script>
