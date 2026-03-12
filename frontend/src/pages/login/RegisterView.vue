@@ -377,6 +377,19 @@ const validatePasswordMatch = () => {
     passwordsMatch.value = Boolean(newuser.value.password && newuser.value.repassword && newuser.value.password === newuser.value.repassword);
 };
 
+const saveDraft = () => {
+  const draft = {
+    newuser: newuser.value,
+    phoneNumber: phoneNumber.value,
+    selectedCountryCode: selectedCountryCode.value
+  };
+  sessionStorage.setItem('register_draft', JSON.stringify(draft));
+};
+
+watch(() => newuser.value, saveDraft, { deep: true });
+watch(phoneNumber, saveDraft);
+watch(selectedCountryCode, saveDraft);
+
 const createnewUser = async() => {
     errorMessage.value = "";
     
@@ -403,6 +416,7 @@ const createnewUser = async() => {
     
     try {
         await axios.post(API_ROUTES.USERS, newuser.value);
+        sessionStorage.removeItem('register_draft');
         showSuccessModal.value = true;
     } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario. Por favor intenta de nuevo.";
@@ -415,6 +429,23 @@ const goToLogin = () => {
 };
 
 onMounted(() => {
+  const draftVal = sessionStorage.getItem('register_draft');
+  if (draftVal) {
+    try {
+      const draft = JSON.parse(draftVal);
+      if (draft.newuser) newuser.value = draft.newuser;
+      if (draft.phoneNumber) phoneNumber.value = draft.phoneNumber;
+      if (draft.selectedCountryCode) {
+        const found = countriesData.value.find(c => c.es_name === draft.selectedCountryCode.es_name);
+        if (found) selectedCountryCode.value = found;
+      }
+      
+      if (newuser.value.password) validatePassword(newuser.value.password);
+    } catch (e) {
+      console.error('Error restaurando borrador de registro:', e);
+    }
+  }
+
   updatePhonePrefix();
   
   if (route.query.terms === 'accepted') {
