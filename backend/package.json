@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "bun --hot index.js"
+    "dev": "bun --env-file=../docker/.env --hot index.js"
   },
   "keywords": [],
   "author": "",
