@@ -1,0 +1,45 @@
+logging:
+    root-level: ERROR
+    root-output: stderr
+    by-module:
+        pyhanko_certvalidator:
+            level: DEBUG
+            output: pyhanko_certvalidator.log
+        pyhanko.sign:
+            level: DEBUG
+
+fields:
+  signatures:
+    - name: "Firma_Responsable"
+      page: 1
+      box: [100, 500, 250, 550]  # [x1, y1, x2, y2]
+    - name: "Firma_Aprobador"
+      page: 2
+      box: [300, 400, 450, 450]
+
+stamp-styles:
+    default:
+        type: text
+        stamp-text: "Signed by %(signer)s\nTimestamp: %(ts)s"
+        text-box-style:
+            font: NotoSerif-Regular.ttf
+            font-size: 10
+
+    noto-qr:
+        type: text
+        stamp-text: ""
+        background: firma.png
+        background-opacity: 1
+        border-width: 0
+        background-layout:
+          x-align: left
+          inner-content-scaling: 'shrink-to-fit'
+        inner-content-layout:
+          x-align: left
+          y-align: top
+          margins:
+            right: 10
+          inner-content-scaling: 'none'
+        text-box-style:
+            font-size: 10
+            vertical-text: bottom
