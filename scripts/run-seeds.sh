@@ -56,15 +56,14 @@ load_compose_env() {
 }
 
 ensure_backend_dependencies() {
-  ensure_command node
-  ensure_command npm
+  ensure_command bun
 
   if [ -f "$BACKEND_DIR/node_modules/mysql2/package.json" ]; then
     return 0
   fi
 
-  echo "Instalando dependencias del backend con npm install sin modificar package-lock.json..."
-  npm install --prefix "$BACKEND_DIR" --no-audit --no-fund --no-package-lock
+  echo "Instalando dependencias del backend con bun install..."
+  bun install --cwd "$BACKEND_DIR" --frozen-lockfile
 }
 
 wait_for_mariadb() {
@@ -90,7 +89,7 @@ run_db_seed() {
   MARIADB_USER="$MARIADB_USER" \
   MARIADB_PASSWORD="$MARIADB_PASSWORD" \
   MARIADB_DATABASE="$MARIADB_DATABASE" \
-  node "$ROOT_DIR/scripts/seed_pucese.mjs" apply --file "$SEED_FILE"
+  bun "$ROOT_DIR/scripts/seed_pucese.mjs" apply --file "$SEED_FILE"
 }
 
 run_storage_seeds() {

@@ -26,21 +26,21 @@
 - minio-publish (profile storage-publish, minio/mc)
 - minio-publish-seeds (profile storage-publish-seeds, minio/mc)
 - backend (build docker/backend/Dockerfile)
-- storage-uploader (worker Node para cargas a MinIO via RabbitMQ)
+- storage-uploader (worker Bun para cargas a MinIO via RabbitMQ)
 - frontend (build docker/frontend/Dockerfile)
 - signer (profile workers)
 - analytics (profile workers)
 
 ## Imagenes base
 
-- Backend: node:22.12.0-bookworm-slim (multi-stage)
+- Backend: oven/bun:1.2 (multi-stage)
 - Frontend: node:22.12.0-bookworm-slim
 - Signer: python:3.11-slim-bookworm
 - Analytics: python:3.11-slim-bookworm
 
 ## Runtime
 
-- Backend: Node.js 22.12.0
+- Backend: Bun 1.2
 - Frontend: Node.js 22.12.0 + pnpm 10
 
 ## Puertos expuestos (host -> contenedor)
@@ -89,7 +89,7 @@ Montajes relevantes en desarrollo:
 - Esos scripts no ejecutan seeds de backend, no publican seeds de MinIO y no corren perfiles `storage-init`, `storage-publish` ni `storage-publish-seeds`.
 - Al iniciar, el backend si verifica o crea la base y aplica el esquema MariaDB automaticamente, pero eso no equivale a sembrar datos.
 - Las imagenes del proyecto corren con usuario no root y usan `tini` en frontend/backend para mejorar manejo de procesos y senales.
-- Backend usa node --watch para recarga en caliente.
+- Backend usa bun --watch para recarga en caliente.
 - Frontend usa vue-cli-service serve con HMR.
 - EMQX_ALLOW_ANONYMOUS=true en compose (ajustar en prod).
 - `minio-bootstrap` no se ejecuta en el arranque normal; solo cuando quieras subir el contenido de `docker/minio/import/`.

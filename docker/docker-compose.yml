@@ -193,7 +193,7 @@ services:
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
       RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
-    command: ["node", "workers/storage_uploader.js"]
+    command: ["bun", "workers/storage_uploader.js"]
     volumes:
       - ../backend:/app/backend
       - backend_node_modules_v2:/app/backend/node_modules

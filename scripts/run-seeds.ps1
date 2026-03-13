@@ -61,16 +61,15 @@ function Read-ComposeEnv {
 }
 
 function Ensure-BackendDependencies {
-    Ensure-Command 'node'
-    Ensure-Command 'npm'
+    Ensure-Command 'bun'
 
     $mysqlPackage = Join-Path $BackendDir 'node_modules/mysql2/package.json'
     if (Test-Path $mysqlPackage) {
         return
     }
 
-    Write-Host 'Instalando dependencias del backend con npm install sin modificar package-lock.json...'
-    npm install --prefix $BackendDir --no-audit --no-fund --no-package-lock
+    Write-Host 'Instalando dependencias del backend con bun install...'
+    bun install --cwd $BackendDir --frozen-lockfile
 }
 
 function Wait-ForMariaDb($ComposeEnv) {
@@ -111,7 +110,7 @@ function Run-DbSeed($ComposeEnv) {
     }
 
     try {
-        node (Join-Path $RootDir 'scripts/seed_pucese.mjs') apply --file $SeedFile
+        bun (Join-Path $RootDir 'scripts/seed_pucese.mjs') apply --file $SeedFile
     } finally {
         foreach ($entry in $seedEnv.GetEnumerator()) {
             [Environment]::SetEnvironmentVariable($entry.Key, $previous[$entry.Key])

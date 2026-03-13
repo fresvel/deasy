@@ -2,13 +2,13 @@
 
 ## Requisitos
 
-- Node.js 22
+- Bun 1.2+
 - MariaDB y MongoDB accesibles
 
 ## Instalacion
 
 ```bash
-npm install
+bun install
 ```
 
 ## Variables de entorno
@@ -28,17 +28,23 @@ Variables clave:
 ## Arranque
 
 ```bash
-node index.js
+bun run dev
+```
+
+Opcional (hot reload sin reinicio de proceso):
+
+```bash
+bun run dev:hot
 ```
 
 Servidor por defecto:
 
-- http://localhost:3000/easym/v1/
+- `http://localhost:3000/easym/v1/`
 
 ## Swagger
 
-- UI: http://localhost:3000/easym/docs
-- JSON: http://localhost:3000/easym/docs.json
+- UI: `http://localhost:3000/easym/docs`
+- JSON: `http://localhost:3000/easym/docs.json`
 
 ## Notas de DB
 

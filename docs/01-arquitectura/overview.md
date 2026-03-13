@@ -8,7 +8,7 @@ El motor de negocio usa procesos base, variantes controladas, definiciones versi
 ## Componentes principales
 
 - Frontend (Vue): dashboard de usuario, consola operativa por definicion de proceso, panel admin y flujos de firma.
-- Backend (Node.js): API REST, autenticacion, reglas de negocio, instanciacion de tareas y orquestacion documental.
+- Backend (Bun runtime): API REST, autenticacion, reglas de negocio, instanciacion de tareas y orquestacion documental.
 - MariaDB: datos relacionales principales.
 - MongoDB: conversaciones y mensajes (chat/notificaciones).
 - EMQX: mensajeria en tiempo real (WebSocket/MQTT), aun no integrada al flujo operativo principal.

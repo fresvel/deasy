@@ -1,9 +1,7 @@
-FROM node:22.12.0-bookworm-slim AS build
+FROM oven/bun:1.2 AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV NPM_CONFIG_UPDATE_NOTIFIER=false
-ENV npm_config_fund=false
 
 WORKDIR /app/backend
 
@@ -21,17 +19,14 @@ RUN apt-get update \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-COPY backend/package*.json ./
-RUN npm install --omit=dev \
-  && npm cache clean --force
+COPY backend/package.json backend/bun.lock ./
+RUN bun install --frozen-lockfile --production
 
-FROM node:22.12.0-bookworm-slim
+FROM oven/bun:1.2
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV NODE_ENV=development
-ENV NPM_CONFIG_UPDATE_NOTIFIER=false
-ENV npm_config_fund=false
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -47,14 +42,14 @@ RUN apt-get update \
 WORKDIR /app/backend
 
 COPY --from=build /app/backend/node_modules ./node_modules
-COPY backend/package*.json ./
+COPY backend/package.json backend/bun.lock ./
 COPY backend ./
 
-RUN chown -R node:node /app/backend
+RUN chown -R bun:bun /app/backend
 
-USER node
+USER bun
 
 EXPOSE 3030
 
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "--watch", "index.js"]
+CMD ["bun", "run", "dev"]
