@@ -64,14 +64,14 @@ Todos los comandos se ejecutan desde la raíz del proyecto:
 
 | Paquete                       | Versión | Rol                              |
 | :---------------------------- | :------ | :------------------------------- |
-| `astro`                       | ^5.17   | Framework base                   |
-| `@astrojs/starlight`          | ^0.37   | Tema de documentación            |
-| `@astrojs/starlight-tailwind` | ^4.0    | Integración Starlight + Tailwind |
-| `tailwindcss`                 | ^4.1    | Framework CSS                    |
-| `@tailwindcss/vite`           | ^4.1    | Plugin Vite para Tailwind v4     |
-| `astro-mermaid`               | ^1.3    | Integración de diagramas Mermaid |
-| `mermaid`                     | ^11.12  | Motor de diagramas               |
-| `@mermaid-js/layout-elk`      | ^0.2    | Layout ELK para Mermaid          |
+| `astro`                       | ^6.0.4   | Framework base                   |
+| `@astrojs/starlight`          | ^0.38.1   | Tema de documentación            |
+| `@astrojs/starlight-tailwind` | ^5.0    | Integración Starlight + Tailwind |
+| `tailwindcss`                 | ^4.2.1    | Framework CSS                    |
+| `@tailwindcss/vite`           | ^4.2.1    | Plugin Vite para Tailwind v4     |
+| `astro-mermaid`               | ^1.3.1    | Integración de diagramas Mermaid |
+| `mermaid`                     | ^11.13.0  | Motor de diagramas               |
+| `@mermaid-js/layout-elk`      | ^0.2.1    | Layout ELK para Mermaid          |
 
 ## 👀 Recursos
 
