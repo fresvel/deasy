@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "../pages/login/LoginView.vue";
 import Register from "../pages/login/RegisterView.vue";
-import RecoverPassword from "../pages/login/RecoverPasswordView.vue";
-import TermsView from "../pages/login/TermsView.vue";
 import DashboardHome from "../pages/logged/DashboardHome.vue";
 import IndexPage from "../pages/logged/LoggedView.vue";
 import { isTokenValid, clearAuthData } from "../utils/tokenUtils.js";
@@ -11,6 +9,9 @@ import { API_ROUTES } from "../services/apiConfig";
 
 import FirmarPdf from "../pages/logged/funciones/FirmarView.vue";
 import AdminView from "../pages/admin/AdminView.vue";
+import RolesView from "../pages/logged/RolesView.vue";
+import VerifyEmail from "@/pages/login/VerifyEmail.vue";
+
 const routes = [
   {
     path: "/",
@@ -33,16 +34,6 @@ const routes = [
     component: Register
   },
   {
-    path: "/recover-password",
-    name: "recover-password",
-    component: RecoverPassword
-  },
-  {
-    path: "/terminos",
-    name: "terminos",
-    component: TermsView
-  },
-  {
     path: "/firmar",
     name: "firmar",
     component: FirmarPdf,
@@ -51,6 +42,16 @@ const routes = [
     path: "/admin",
     name: "admin",
     component: AdminView,
+  },
+  {
+    path: "/roles",
+    name: "roles",
+    component: RolesView,
+  },
+  {
+    path: '/verify-email',
+    name: 'verify-email',
+    component: VerifyEmail,
   },
   {
     path: "/logout",
@@ -85,8 +86,8 @@ const router = createRouter({
 // Guard para proteger rutas que requieren autenticación
 router.beforeEach((to) => {
   const token = localStorage.getItem('token');
-  const publicRoutes = ['/', '/register', '/recover-password', '/terminos'];
-
+  const publicRoutes = ['/', '/register', '/verify-email'];
+  
   // Si la ruta es pública, permitir acceso
   if (publicRoutes.includes(to.path)) {
     // Si hay token válido y está intentando acceder a la raíz (login), redirigir al dashboard
