@@ -1,6 +1,6 @@
 services:
   mariadb:
-    image: mariadb:11.4
+    image: mariadb:latest
     container_name: deasy-mariadb
     restart: unless-stopped
     environment:
@@ -23,7 +23,7 @@ services:
       - mongodb_data:/data/db
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     container_name: deasy-rabbitmq
     restart: unless-stopped
     ports:
@@ -215,6 +215,7 @@ services:
     volumes:
       - ../frontend:/app/frontend
       - frontend_node_modules:/app/frontend/node_modules
+      - frontend_pnpm_store:/pnpm/store
     depends_on:
       - backend
 
@@ -229,6 +230,7 @@ services:
     volumes:
       - ../docs:/app/docs
       - docs_node_modules:/app/docs/node_modules
+      - docs_pnpm_store:/pnpm/store
 
   signer:
     build:
@@ -261,6 +263,8 @@ volumes:
   minio_data:
   backend_node_modules_v2:
   frontend_node_modules:
+  frontend_pnpm_store:
   docs_node_modules:
+  docs_pnpm_store:
   uploads_data:
   storage_data:

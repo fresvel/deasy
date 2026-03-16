@@ -120,8 +120,95 @@ function Test-ServiceSelected {
     return $SelectedServices -contains $Name
 }
 
+function Get-CacheVolumes {
+    param([string[]]$SelectedServices)
+
+    $result = @()
+    foreach ($service in $SelectedServices) {
+        switch ($service) {
+            'backend' {
+                $result += 'backend_node_modules_v2'
+            }
+            'storage-uploader' {
+                $result += 'backend_node_modules_v2'
+            }
+            'frontend' {
+                $result += 'frontend_node_modules'
+                $result += 'frontend_pnpm_store'
+            }
+            'docs' {
+                $result += 'docs_node_modules'
+                $result += 'docs_pnpm_store'
+            }
+        }
+    }
+
+    return $result | Select-Object -Unique
+}
+
+function Get-PersistentVolumes {
+    param([string[]]$SelectedServices)
+
+    $result = @()
+    foreach ($service in $SelectedServices) {
+        switch ($service) {
+            'mariadb' {
+                $result += 'mariadb_data'
+            }
+            'mongodb' {
+                $result += 'mongodb_data'
+            }
+            'rabbitmq' {
+                $result += 'rabbitmq_data'
+            }
+            'emqx' {
+                $result += 'emqx_data'
+                $result += 'emqx_log'
+            }
+            'minio' {
+                $result += 'minio_data'
+            }
+            'backend' {
+                $result += 'uploads_data'
+                $result += 'storage_data'
+            }
+            'storage-uploader' {
+                $result += 'storage_data'
+            }
+            'signer' {
+                $result += 'storage_data'
+            }
+            'analytics' {
+                $result += 'storage_data'
+            }
+        }
+    }
+
+    return $result | Select-Object -Unique
+}
+
+function Remove-VolumesBySuffix {
+    param([string]$Suffix)
+
+    $allVolumes = @(& docker volume ls --format '{{.Name}}')
+    $matches = @($allVolumes | Where-Object { $_ -match "(^|_)$([regex]::Escape($Suffix))$" })
+
+    if (-not $matches -or $matches.Count -eq 0) {
+        Write-Host " - (sin coincidencias para $Suffix)"
+        return
+    }
+
+    foreach ($volume in $matches) {
+        & docker volume rm $volume | Out-Null
+        Write-Host " - $volume"
+    }
+}
+
 function Invoke-Reload {
     param([string[]]$SelectedServices)
+
+    $removeCacheVolumes = $false
+    $removePersistentVolumes = $false
 
     Write-Host ''
     Write-Host '--------------------------------------------------------------' -ForegroundColor Yellow
@@ -141,6 +228,24 @@ function Invoke-Reload {
         exit 0
     }
 
+    $prune = Read-Host 'Eliminar tambien volumenes de cache/dependencias de estos servicios? (y/N)'
+    if ($prune -match '^(y|yes)$') {
+        $removeCacheVolumes = $true
+    }
+
+    $persistentVolumes = @(Get-PersistentVolumes -SelectedServices $SelectedServices)
+    if ($persistentVolumes.Count -gt 0) {
+        $fullReset = Read-Host 'FULL RESET: eliminar tambien datos persistentes (BD, colas, storage) de estos servicios? (y/N)'
+        if ($fullReset -match '^(y|yes)$') {
+            $token = Read-Host 'Confirmacion final. Escribe RESET-DATA para borrar datos persistentes'
+            if ($token -eq 'RESET-DATA') {
+                $removePersistentVolumes = $true
+            } else {
+                Write-Host 'Token incorrecto. Se omite borrado de datos persistentes.'
+            }
+        }
+    }
+
     Write-Host ''
     Write-Host 'Deteniendo servicios seleccionados...'
     & docker compose stop @SelectedServices | Out-Null
@@ -148,11 +253,34 @@ function Invoke-Reload {
     Write-Host 'Eliminando contenedores seleccionados...'
     & docker compose rm -f @SelectedServices | Out-Null
 
+    if ($removeCacheVolumes) {
+        Write-Host 'Eliminando volumenes de cache/dependencias asociados...'
+        $cacheVolumes = Get-CacheVolumes -SelectedServices $SelectedServices
+        foreach ($volumeSuffix in $cacheVolumes) {
+            Remove-VolumesBySuffix -Suffix $volumeSuffix
+        }
+    }
+
+    if ($removePersistentVolumes) {
+        Write-Host 'Eliminando volumenes persistentes (FULL RESET)...'
+        foreach ($volumeSuffix in $persistentVolumes) {
+            Remove-VolumesBySuffix -Suffix $volumeSuffix
+        }
+    }
+
     if (Test-ServiceSelected -Name 'frontend' -SelectedServices $SelectedServices) {
         Write-Host 'Preparando dependencias de frontend dentro del volumen Docker...'
-        & docker compose run --rm --no-deps frontend pnpm install --frozen-lockfile
+        & docker compose run --rm --no-deps frontend pnpm install --frozen-lockfile --store-dir /pnpm/store
         if ($LASTEXITCODE -ne 0) {
             throw 'Fallo al preparar dependencias de frontend.'
+        }
+    }
+
+    if ((Test-ServiceSelected -Name 'backend' -SelectedServices $SelectedServices) -or (Test-ServiceSelected -Name 'storage-uploader' -SelectedServices $SelectedServices)) {
+        Write-Host 'Preparando dependencias de backend dentro del volumen Docker...'
+        & docker compose run --rm --no-deps --user root backend sh -lc 'npm install && chown -R node:node /app/backend/node_modules'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Fallo al preparar dependencias de backend.'
         }
     }
 
