@@ -110,6 +110,18 @@ collect_selected_services() {
   printf "%s\n" "${result[@]}"
 }
 
+has_service_selected() {
+  local target="$1"
+  shift
+  local service
+  for service in "$@"; do
+    if [ "$service" = "$target" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 run_reload() {
   local selected_services=("$@")
 
@@ -135,6 +147,11 @@ run_reload() {
 
   echo "Eliminando contenedores seleccionados..."
   docker compose rm -f "${selected_services[@]}" >/dev/null 2>&1 || true
+
+  if has_service_selected "frontend" "${selected_services[@]}"; then
+    echo "Preparando dependencias de frontend dentro del volumen Docker..."
+    docker compose run --rm --no-deps frontend pnpm install --frozen-lockfile
+  fi
 
   echo "Reconstruyendo y levantando solo los servicios seleccionados (sin dependencias)..."
   docker compose up -d --build --force-recreate --no-deps "${selected_services[@]}"

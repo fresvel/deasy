@@ -111,6 +111,15 @@ function Get-SelectedServices {
     return $result
 }
 
+function Test-ServiceSelected {
+    param(
+        [string]$Name,
+        [string[]]$SelectedServices
+    )
+
+    return $SelectedServices -contains $Name
+}
+
 function Invoke-Reload {
     param([string[]]$SelectedServices)
 
@@ -138,6 +147,14 @@ function Invoke-Reload {
 
     Write-Host 'Eliminando contenedores seleccionados...'
     & docker compose rm -f @SelectedServices | Out-Null
+
+    if (Test-ServiceSelected -Name 'frontend' -SelectedServices $SelectedServices) {
+        Write-Host 'Preparando dependencias de frontend dentro del volumen Docker...'
+        & docker compose run --rm --no-deps frontend pnpm install --frozen-lockfile
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Fallo al preparar dependencias de frontend.'
+        }
+    }
 
     Write-Host 'Reconstruyendo y levantando solo los servicios seleccionados (sin dependencias)...'
     & docker compose up -d --build --force-recreate --no-deps @SelectedServices
