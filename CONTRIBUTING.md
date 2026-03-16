@@ -40,7 +40,7 @@ Backend:
 cd backend
 npm install
 cp .env_model .env
-node index.js
+npm run start
 ```
 
 Frontend:
