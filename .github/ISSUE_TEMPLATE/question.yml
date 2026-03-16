@@ -1,0 +1,28 @@
+name: "Question"
+description: "Hacer una pregunta tecnica o funcional"
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Pregunta
+      placeholder: "Como se deberia configurar ...?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto
+      description: Describe lo que intentaste y donde te bloqueaste.
+      placeholder: "Estoy trabajando en ... y ya revise ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Codigo o logs relevantes
+      render: shell
