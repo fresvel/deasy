@@ -5,6 +5,9 @@
             <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick">
                 <img class="avatar" :src="userPhoto" alt="User Avatar">
             </button>
+            <router-link to="/roles" class="nav-link text-white p-0" title="Roles">
+                <font-awesome-icon icon="user" class="avatar" />
+            </router-link>
 
             <button
             class="nav-link text-white"
@@ -27,6 +30,9 @@
             </button>
             <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
                 <font-awesome-icon icon="bell" class="avatar" />
+            </button>
+            <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
+                <font-awesome-icon icon="bars" class="avatar" />
             </button>
         </div>
     </s-header>
@@ -95,6 +101,7 @@
         <s-body
         :showmenu="vmenu"
         :shownotify="vnotify"
+        :shownavmenu="showNavMenu"
         >
 
 
@@ -124,11 +131,11 @@
 
         </s-body>
         
-
-      
         <s-message
         :show="vnotify"
         />
+        
+        <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
           
       </div>
       
@@ -144,6 +151,7 @@ import axios from 'axios';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
     import SHeader from '@/layouts/SHeader.vue';
+    import SNavMenu from '@/layouts/SNavMenu.vue';
     import UserProfile from '@/components/UserProfile.vue';
 import TitulosView from '@/sections/perfil/TitulosView.vue';
 import LaboralView from '@/sections/perfil/LaboralView.vue';
@@ -319,7 +327,21 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     };
       
     const toggleNotify = () => {
+        if (showNavMenu.value) {
+            showNavMenu.value = false;
+        }
         vnotify.value = !vnotify.value;
+    };
+    
+    const toggleNavMenu = () => {
+        if (vnotify.value) {
+            vnotify.value = false;
+        }
+        showNavMenu.value = !showNavMenu.value;
+    };
+    
+    const navigateToPerfil = () => {
+        router.push('/perfil');
     };
     
     
