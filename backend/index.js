@@ -20,7 +20,6 @@ import tarea_router from "./routes/tarea_router.js"
 import webtemplate from "./routes/webtemplate_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
-import vacancy_router from "./routes/vacancy_router.js"
 
 const app = express();
 
@@ -183,7 +182,7 @@ const swaggerDefinition = {
       ErrorResponse: {
         type: "object",
         properties: {
-          message: { type: "string", example: "Error al crear el usuario" },
+          message: { type: "string", example: "Descripción del error" },
           code: { type: "integer", example: 400 }
         }
       },
@@ -323,6 +322,13 @@ const swaggerDefinition = {
           message: { type: "string", example: "Operación realizada exitosamente" },
           data: { type: "object" }
         }
+      },
+      MyProfileResponse: {
+        type: "object",
+        properties: {
+          result: { type: "string", example: "ok" },
+          user: { $ref: "#/components/schemas/UserPublic" }
+        }
       }
     }
   },
@@ -405,6 +411,150 @@ const swaggerDefinition = {
         }
       }
     },
+    [`${PATHS.users}/me`]: {
+      get: {
+        tags: ["Auth"],
+        summary: "Obtener mi perfil",
+        description: "Recupera los datos del perfil del usuario autenticado usando el token presente en la cabecera de autorización.",
+        security: [
+          {
+            bearerAuth: []
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Perfil obtenido exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MyProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            description: "No autorizado o token inválido",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  unauthorized: {
+                    summary: "Credenciales faltantes o token inválido",
+                    value: { message: "Token inválido", code: 401 }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Usuario no encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  notfound: {
+                    summary: "No existe el usuario asociado al token",
+                    value: { message: "Usuario no encontrado", code: 404 }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Error interno obteniendo perfil",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  serverError: {
+                    summary: "Error en el servidor al recuperar perfil",
+                    value: { message: "Error interno obteniendo perfil", code: 500 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      patch: {
+        tags: ["Auth"],
+        summary: "Actualizar mi perfil",
+        description: "Modifica los campos del perfil del usuario autenticado. Solo se permiten cambios en los datos personales y de contacto.",
+        security: [
+          {
+            bearerAuth: []
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  first_name: { type: "string" },
+                  last_name: { type: "string" },
+                  whatsapp: { type: "string" },
+                  direccion: { type: "string" },
+                  pais: { type: "string" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Perfil actualizado exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MyProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            description: "No autorizado o token inválido",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  unauthorized: {
+                    summary: "Token ausente o inválido",
+                    value: { message: "Token inválido", code: 401 }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Error interno actualizando perfil",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  serverError: {
+                    summary: "Excepción en el servidor al aplicar cambios",
+                    value: { message: "Error interno actualizando perfil", code: 500 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     [`${PATHS.dossier}/{cedula}`]: {
       get: {
         tags: ["Dossier"],
@@ -986,11 +1136,11 @@ app.use(ROUTES.whatsapp,whatsapp_router)
 
 app.use(ROUTES.dossier,dossier_router)
 
-app.use(ROUTES.vacancies, vacancy_router)
-
 app.use("/easym/v1/webtemplate",webtemplate)
 
 app.use(express.static("public"));
+
+
 
 
 const startServer = async () => {

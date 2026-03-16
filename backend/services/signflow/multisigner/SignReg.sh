@@ -68,13 +68,18 @@ for input in "${pdf_list[@]}"; do
     dest_dir="$DEST/$(dirname "$rel_path")"
     mkdir -p "$dest_dir"
 
+    cleaned="$dest_dir/$(basename "$input" .pdf)-clean.pdf"
     output="$dest_dir/$(basename "$input" .pdf)-tmp.pdf"
     signed="$dest_dir/$(basename "$input" .pdf)-signed.pdf"
 
     # ---------------------------------------------------------------
     # BUSCAR MARCADOR
     # ---------------------------------------------------------------
-    marker=$(python3 "$MARKER_SCRIPT" "$input")
+    gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress \
+        -o "$cleaned" "$input" \
+        > /dev/null 2>&1
+
+    marker=$(python3 "$MARKER_SCRIPT" "$cleaned")
 
     if [[ "$marker" == "NOT_FOUND" ]]; then
         echo
@@ -92,7 +97,7 @@ for input in "${pdf_list[@]}"; do
     # ---------------------------------------------------------------
     pyhanko sign addfields \
         --field ${page}/${x},${y},${x2},${y2}/ela \
-        "$input" "$output"
+        "$cleaned" "$output"
 
     # ---------------------------------------------------------------
     # 2) FIRMAR (APR)
@@ -104,7 +109,7 @@ for input in "${pdf_list[@]}"; do
         --passfile "$PASS" \
         "$output" "$signed" "$CERT" 
 
-    rm "$output"
+    rm -f "$output" "$cleaned"
 done
 
 echo "********" > $PASS

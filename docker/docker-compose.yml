@@ -9,7 +9,7 @@ services:
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3308:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
 
@@ -218,6 +218,18 @@ services:
     depends_on:
       - backend
 
+  docs:
+    build:
+      context: ..
+      dockerfile: docker/docs/Dockerfile
+    container_name: deasy-docs
+    restart: unless-stopped
+    ports:
+      - "${DOCS_PORT:-4321}:4321"
+    volumes:
+      - ../docs:/app/docs
+      - docs_node_modules:/app/docs/node_modules
+
   signer:
     build:
       context: ..
@@ -249,5 +261,6 @@ volumes:
   minio_data:
   backend_node_modules_v2:
   frontend_node_modules:
+  docs_node_modules:
   uploads_data:
   storage_data:
