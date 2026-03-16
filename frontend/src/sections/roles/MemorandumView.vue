@@ -248,81 +248,80 @@
 
     <!-- Modal para ver/editar memorándum -->
     <div
-      class="modal fade"
-      id="memorandumModal"
-      tabindex="-1"
-      ref="modal"
-      aria-hidden="true"
+      v-if="isModalOpen"
+      class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
     >
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              {{ editingMemorandum ? 'Editar' : 'Ver' }} Memorándum
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="viewingMemorandum">
-              <div class="mb-3">
-                <strong>Fecha:</strong> {{ formatDate(viewingMemorandum.fecha) }}
-              </div>
-              <div class="mb-3">
-                <strong>Título:</strong> {{ viewingMemorandum.titulo }}
-              </div>
-              <div class="mb-3">
-                <strong>Cuerpo:</strong>
-                <div class="mt-2">
-                  <ColabEditor 
-                    v-if="editingMemorandum && viewingMemorandum.celdas"
-                    v-model="viewingMemorandum.celdas"
-                  />
-                  <div v-else class="border p-3" style="min-height: 200px; white-space: pre-wrap">
-                    {{ viewingMemorandum.cuerpo || (viewingMemorandum.celdas ? viewingMemorandum.celdas.join('\n\n') : '') }}
-                  </div>
+      <div class="w-full max-w-4xl rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h5 class="text-lg font-semibold text-slate-800">
+            {{ editingMemorandum ? 'Editar' : 'Ver' }} Memorándum
+          </h5>
+          <button
+            type="button"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100"
+            @click="closeModal"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="px-5 py-4">
+          <div v-if="viewingMemorandum">
+            <div class="mb-3">
+              <strong>Fecha:</strong> {{ formatDate(viewingMemorandum.fecha) }}
+            </div>
+            <div class="mb-3">
+              <strong>Título:</strong> {{ viewingMemorandum.titulo }}
+            </div>
+            <div class="mb-3">
+              <strong>Cuerpo:</strong>
+              <div class="mt-2">
+                <ColabEditor 
+                  v-if="editingMemorandum && viewingMemorandum.celdas"
+                  v-model="viewingMemorandum.celdas"
+                />
+                <div v-else class="min-h-52 whitespace-pre-wrap rounded-xl border border-slate-200 p-3">
+                  {{ viewingMemorandum.cuerpo || (viewingMemorandum.celdas ? viewingMemorandum.celdas.join('\n\n') : '') }}
                 </div>
               </div>
-              <div v-if="viewingMemorandum.camposPersonalizados?.length" class="mb-3">
-                <strong>Campos Personalizados:</strong>
-                <ul class="list-group mt-2">
-                  <li
-                    v-for="(field, index) in viewingMemorandum.camposPersonalizados"
-                    :key="index"
-                    class="list-group-item"
-                  >
-                    <strong>{{ field.nombre }}:</strong> {{ field.valor }}
-                  </li>
-                </ul>
-              </div>
-              <div v-if="editingMemorandum" class="mb-3">
-                <label class="form-label">Observaciones</label>
-                <textarea
-                  v-model="viewingMemorandum.observaciones"
-                  class="form-control"
-                  rows="4"
-                  placeholder="Agregar observaciones..."
-                ></textarea>
-              </div>
+            </div>
+            <div v-if="viewingMemorandum.camposPersonalizados?.length" class="mb-3">
+              <strong>Campos Personalizados:</strong>
+              <ul class="mt-2 overflow-hidden rounded-xl border border-slate-200">
+                <li
+                  v-for="(field, index) in viewingMemorandum.camposPersonalizados"
+                  :key="index"
+                  class="border-b border-slate-100 px-3 py-2 text-sm last:border-b-0"
+                >
+                  <strong>{{ field.nombre }}:</strong> {{ field.valor }}
+                </li>
+              </ul>
+            </div>
+            <div v-if="editingMemorandum" class="mb-3">
+              <label class="form-label">Observaciones</label>
+              <textarea
+                v-model="viewingMemorandum.observaciones"
+                class="form-control"
+                rows="4"
+                placeholder="Agregar observaciones..."
+              ></textarea>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cerrar
-            </button>
-            <button
-              v-if="editingMemorandum"
-              type="button"
-              class="btn btn-primary"
-              @click="saveObservations"
-            >
-              Guardar Observaciones
-            </button>
-          </div>
+        </div>
+        <div class="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
+          <button type="button" class="btn bg-slate-600 text-white hover:bg-slate-700" @click="closeModal">
+            Cerrar
+          </button>
+          <button
+            v-if="editingMemorandum"
+            type="button"
+            class="btn btn-primary"
+            @click="saveObservations"
+          >
+            Guardar Observaciones
+          </button>
         </div>
       </div>
     </div>
@@ -331,7 +330,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
 import ColabEditor from '@/components/ColabEditor.vue';
 
 const activeMenu = ref('Nuevo');
@@ -339,8 +337,7 @@ const menuOptions = ['Nuevo', 'Guardados', 'Enviar', 'Enviados firmados'];
 const searchDestinatario = ref('');
 const searchRemitente = ref('');
 const memorandums = ref([]);
-const modal = ref(null);
-let bootstrapModal = null;
+const isModalOpen = ref(false);
 
 const newMemorandum = ref({
   fecha: new Date().toISOString().split('T')[0],
@@ -369,9 +366,6 @@ onMounted(() => {
     }
   }
 
-  if (modal.value) {
-    bootstrapModal = new Modal(modal.value);
-  }
 });
 
 const addCustomField = () => {
@@ -476,9 +470,7 @@ const viewMemorandum = (memorandum) => {
     celdas: memorandum.celdas || (memorandum.cuerpo ? [memorandum.cuerpo] : [])
   };
   editingMemorandum.value = false;
-  if (bootstrapModal) {
-    bootstrapModal.show();
-  }
+  isModalOpen.value = true;
 };
 
 const editMemorandum = (memorandum) => {
@@ -487,9 +479,11 @@ const editMemorandum = (memorandum) => {
     celdas: memorandum.celdas || (memorandum.cuerpo ? [memorandum.cuerpo] : [])
   };
   editingMemorandum.value = true;
-  if (bootstrapModal) {
-    bootstrapModal.show();
-  }
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
 };
 
 const canEdit = (memorandum) => {
@@ -511,9 +505,7 @@ const saveObservations = async () => {
       localStorage.setItem('memorandums', JSON.stringify(saved));
       memorandums.value = saved;
     }
-    if (bootstrapModal) {
-      bootstrapModal.hide();
-    }
+    closeModal();
     alert('Observaciones guardadas exitosamente');
   } catch (error) {
     console.error('Error al guardar observaciones:', error);
@@ -549,11 +541,11 @@ const formatDate = (date) => {
 
 const getStatusBadgeClass = (estado) => {
   const classes = {
-    Borrador: 'bg-secondary',
-    Enviado: 'bg-info',
-    Firmado: 'bg-success'
+    Borrador: 'inline-flex rounded-full bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700',
+    Enviado: 'inline-flex rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700',
+    Firmado: 'inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700'
   };
-  return classes[estado] || 'bg-secondary';
+  return classes[estado] || classes.Borrador;
 };
 </script>
 
