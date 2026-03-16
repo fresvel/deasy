@@ -122,8 +122,81 @@ has_service_selected() {
   return 1
 }
 
+collect_cache_volumes() {
+  local service
+  for service in "$@"; do
+    case "$service" in
+      backend|storage-uploader)
+        echo "backend_node_modules_v2"
+        ;;
+      frontend)
+        echo "frontend_node_modules"
+        echo "frontend_pnpm_store"
+        ;;
+      docs)
+        echo "docs_node_modules"
+        echo "docs_pnpm_store"
+        ;;
+    esac
+  done | awk '!seen[$0]++'
+}
+
+collect_persistent_volumes() {
+  local service
+  for service in "$@"; do
+    case "$service" in
+      mariadb)
+        echo "mariadb_data"
+        ;;
+      mongodb)
+        echo "mongodb_data"
+        ;;
+      rabbitmq)
+        echo "rabbitmq_data"
+        ;;
+      emqx)
+        echo "emqx_data"
+        echo "emqx_log"
+        ;;
+      minio)
+        echo "minio_data"
+        ;;
+      backend)
+        echo "uploads_data"
+        echo "storage_data"
+        ;;
+      storage-uploader|signer|analytics)
+        echo "storage_data"
+        ;;
+    esac
+  done | awk '!seen[$0]++'
+}
+
+remove_volume_by_suffix() {
+  local suffix="$1"
+  local found=0
+  local volume_name
+
+  while IFS= read -r volume_name; do
+    if [ -z "$volume_name" ]; then
+      continue
+    fi
+    found=1
+    docker volume rm "$volume_name" >/dev/null 2>&1 || true
+    echo " - $volume_name"
+  done < <(docker volume ls --format '{{.Name}}' | grep -E "(^|_)${suffix}$" || true)
+
+  if [ "$found" -eq 0 ]; then
+    echo " - (sin coincidencias para $suffix)"
+  fi
+}
+
 run_reload() {
   local selected_services=("$@")
+  local remove_cache_volumes=0
+  local remove_persistent_volumes=0
+  local full_reset_token=""
+  local persistent_volume_suffixes=()
 
   echo
   echo "--------------------------------------------------------------"
@@ -141,6 +214,28 @@ run_reload() {
     exit 0
   fi
 
+  read -r -p "Eliminar tambien volumenes de cache/dependencias de estos servicios? (y/N): " prune_confirm
+  case "$prune_confirm" in
+    y|Y|yes|YES)
+      remove_cache_volumes=1
+      ;;
+  esac
+
+  mapfile -t persistent_volume_suffixes < <(collect_persistent_volumes "${selected_services[@]}")
+  if [ "${#persistent_volume_suffixes[@]}" -gt 0 ]; then
+    read -r -p "FULL RESET: eliminar tambien datos persistentes (BD, colas, storage) de estos servicios? (y/N): " full_reset_confirm
+    case "$full_reset_confirm" in
+      y|Y|yes|YES)
+        read -r -p "Confirmacion final. Escribe RESET-DATA para borrar datos persistentes: " full_reset_token
+        if [ "$full_reset_token" = "RESET-DATA" ]; then
+          remove_persistent_volumes=1
+        else
+          echo "Token incorrecto. Se omite borrado de datos persistentes."
+        fi
+        ;;
+    esac
+  fi
+
   echo
   echo "Deteniendo servicios seleccionados..."
   docker compose stop "${selected_services[@]}" >/dev/null 2>&1 || true
@@ -148,9 +243,35 @@ run_reload() {
   echo "Eliminando contenedores seleccionados..."
   docker compose rm -f "${selected_services[@]}" >/dev/null 2>&1 || true
 
+  if [ "$remove_cache_volumes" -eq 1 ]; then
+    echo "Eliminando volumenes de cache/dependencias asociados..."
+    while IFS= read -r volume_suffix; do
+      if [ -z "$volume_suffix" ]; then
+        continue
+      fi
+      remove_volume_by_suffix "$volume_suffix"
+    done < <(collect_cache_volumes "${selected_services[@]}")
+  fi
+
+  if [ "$remove_persistent_volumes" -eq 1 ]; then
+    echo "Eliminando volumenes persistentes (FULL RESET)..."
+    local volume_suffix
+    for volume_suffix in "${persistent_volume_suffixes[@]}"; do
+      if [ -z "$volume_suffix" ]; then
+        continue
+      fi
+      remove_volume_by_suffix "$volume_suffix"
+    done
+  fi
+
   if has_service_selected "frontend" "${selected_services[@]}"; then
     echo "Preparando dependencias de frontend dentro del volumen Docker..."
-    docker compose run --rm --no-deps frontend pnpm install --frozen-lockfile
+    docker compose run --rm --no-deps frontend pnpm install --frozen-lockfile --store-dir /pnpm/store
+  fi
+
+  if has_service_selected "backend" "${selected_services[@]}" || has_service_selected "storage-uploader" "${selected_services[@]}"; then
+    echo "Preparando dependencias de backend dentro del volumen Docker..."
+    docker compose run --rm --no-deps --user root backend sh -lc 'npm install && chown -R node:node /app/backend/node_modules'
   fi
 
   echo "Reconstruyendo y levantando solo los servicios seleccionados (sin dependencias)..."

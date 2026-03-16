@@ -1,6 +1,7 @@
-FROM node:22.12.0-bookworm-slim
+FROM node:25.8.1
 
 ENV PNPM_HOME=/pnpm
+ENV PNPM_STORE_DIR=/pnpm/store
 ENV PATH=${PNPM_HOME}:${PATH}
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV npm_config_fund=false
@@ -14,7 +15,8 @@ RUN apt-get update \
 WORKDIR /app/docs
 
 COPY docs/package.json docs/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set store-dir ${PNPM_STORE_DIR} \
+  && pnpm install --frozen-lockfile
 
 COPY docs ./
 
@@ -25,4 +27,4 @@ USER node
 EXPOSE 4321
 
 ENTRYPOINT ["tini", "--"]
-CMD ["pnpm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "4321"]
+CMD ["pnpm", "run", "dev"]
