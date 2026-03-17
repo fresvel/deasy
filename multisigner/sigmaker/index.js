@@ -143,9 +143,10 @@ class QRCodeGenerator {
 }
 
 // Ejemplo
+const text = process.argv[2] || 'Docente Demo Principal';
 const qrGenerator = new QRCodeGenerator(
   '../firma.png',
-  'Docente Demo Principal',
+  text,
   './puce_logo.png'
 );
 
