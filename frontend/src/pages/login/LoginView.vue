@@ -156,22 +156,30 @@ const router = useRouter();
 const showPassword = ref(false);
 
 const loginFunction = async () => {
+  const body = {
+    password: password.value,
+  };
+
   try {
+    errorMessage.value = '';
     const url = API_ROUTES.USERS_LOGIN;
-    const body = {
-      password: password.value,
-    };
 
     const trimmedIdentifier = identifier.value.trim();
 
     if (trimmedIdentifier.includes('@')) {
-      body.email = trimmedIdentifier;
+      const normalizedEmail = trimmedIdentifier.toLowerCase();
+      body.email = normalizedEmail;
     } else {
-      body.cedula = trimmedIdentifier;
+      body.cedula = trimmedIdentifier.replace(/\D/g, '');
     }
 
     if (!body.email && !body.cedula) {
       errorMessage.value = 'Ingresa tu cédula o correo electrónico';
+      return;
+    }
+
+    if (body.cedula && body.cedula.length !== 10) {
+      errorMessage.value = 'La cédula debe contener 10 dígitos';
       return;
     }
 
@@ -187,7 +195,23 @@ const loginFunction = async () => {
 
     router.push('/dashboard');
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Error al iniciar sesión';
+    const statusCode = error.response?.status;
+    const backendMessage = error.response?.data?.message;
+
+    if (statusCode === 500) {
+      errorMessage.value = 'No se pudo iniciar sesión por un error interno del servidor. Intenta nuevamente en unos minutos.';
+    } else {
+      errorMessage.value = backendMessage || 'Error al iniciar sesión';
+    }
+
+    console.error('Login error:', {
+      status: statusCode,
+      data: error.response?.data,
+      payload: {
+        ...body,
+        password: body.password ? '[hidden]' : ''
+      }
+    });
   }
 };
 
