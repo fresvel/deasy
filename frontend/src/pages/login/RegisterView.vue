@@ -124,6 +124,37 @@
                   placeholder="Ej. 080150" />
               </div>
             </div>
+
+            <div class="mt-6">
+              <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+                Ubicación Exacta
+                <div class="relative group">
+                  <IconHelp class="w-4 h-4 text-sky-600 cursor-help" />
+                  <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-800 text-white text-xs leading-relaxed rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 shadow-xl pointer-events-none">
+                    Sé sincero a la hora de marcar tu ubicación exacta, esto ayudará a ver si eres de una zona vulnerable y poder llevarte ayuda allá donde estés.
+                    <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-6 border-x-transparent border-t-6 border-t-slate-800"></div>
+                  </div>
+                </div>
+              </label>
+              
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <button type="button" @click="toggleMap" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 border text-slate-700 rounded-xl font-semibold transition-all text-sm focus:ring-4 focus:ring-slate-200" :class="!newuser.direccion ? 'border-red-300 hover:bg-red-50' : 'border-slate-200 hover:bg-slate-100 hover:border-slate-300'">
+                  <IconMap class="w-4 h-4" :class="!newuser.direccion ? 'text-red-500' : 'text-sky-600'" />
+                  {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
+                </button>
+                
+                <div v-if="newuser.direccion" class="flex items-center gap-1.5 px-3 py-2.5 bg-green-50 text-green-700 text-xs font-semibold rounded-xl border border-green-200 w-fit">
+                  <IconCheck class="w-4 h-4" /> Coordenadas: {{ newuser.direccion }}
+                </div>
+                <div v-else class="flex items-center gap-1.5 px-3 py-2.5 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-200 w-fit">
+                  <IconAlertCircle class="w-4 h-4" /> Requerido (*Haz click en el mapa*)
+                </div>
+              </div>
+              
+              <div v-show="showMap" class="mt-4 relative">
+                <div ref="mapElement" class="h-[300px] w-full rounded-xl border border-slate-200 z-10 shadow-inner"></div>
+              </div>
+            </div>
           </div>
 
           <hr class="border-slate-100" />
@@ -248,11 +279,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { API_ROUTES } from '@/services/apiConfig';
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { 
   IconUser, 
   IconLock, 
@@ -263,8 +296,17 @@ import {
   IconArrowRight, 
   IconCheck,
   IconMapPin,
-  IconHelpSquareRounded
+  IconHelp,
+  IconMap
 } from '@tabler/icons-vue';
+
+// Fix para iconos de Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const router = useRouter();
 const route = useRoute();
@@ -283,7 +325,8 @@ const newuser = ref({
     ciudad_residencia: "",
     calle_primaria: "",
     calle_secundaria: "",
-    codigo_postal: ""
+    codigo_postal: "",
+    direccion: ""
 });
 
 // UI states
@@ -320,6 +363,88 @@ const passwordTextColors = {
   3: 'text-amber-500',
   4: 'text-lime-600',
   5: 'text-green-600'
+};
+
+// Control del mapa
+const showMap = ref(false);
+const mapElement = ref(null);
+let mapInstance = null;
+let marker = null;
+
+// Función para toggle del mapa
+const toggleMap = async () => {
+  showMap.value = !showMap.value;
+  
+  if (showMap.value) {
+    // Pequeño timeout para asegurar que el DOM actualice el v-show antes de inyectar el mapa
+    setTimeout(() => {
+      initMap();
+    }, 100);
+  } else {
+    if (mapInstance) {
+      mapInstance.remove();
+      mapInstance = null;
+    }
+  }
+};
+
+// Función para inicializar el mapa
+const initMap = () => {
+  if (!mapElement.value || mapInstance) return;
+  
+  // Coordenadas por defecto (Ecuador - Esmeraldas aprox. o Quito)
+  // Dejaremos Quito como en el código original: -0.1807, -78.4678
+  const defaultLat = -0.1807;
+  const defaultLng = -78.4678;
+  
+  // Crear mapa
+  mapInstance = L.map(mapElement.value).setView([defaultLat, defaultLng], 13);
+  
+  // Agregar capa de tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
+  }).addTo(mapInstance);
+
+  // Si ya había coordenadas guardadas en el draft, colocamos el marker
+  if (newuser.value.direccion) {
+    const coords = newuser.value.direccion.split(',');
+    if(coords.length === 2) {
+      const lat = parseFloat(coords[0].trim());
+      const lng = parseFloat(coords[1].trim());
+      marker = L.marker([lat, lng]).addTo(mapInstance);
+      mapInstance.setView([lat, lng], 15);
+    }
+  }
+  
+  // Agregar evento de click en el mapa
+  mapInstance.on('click', (e) => {
+    const { lat, lng } = e.latlng;
+    
+    if (marker) {
+      mapInstance.removeLayer(marker);
+    }
+    
+    marker = L.marker([lat, lng]).addTo(mapInstance);
+    newuser.value.direccion = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  });
+  
+  // Intentar obtener la ubicación actual del usuario si no hay marker previo
+  if (navigator.geolocation && !newuser.value.direccion) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        mapInstance.setView([lat, lng], 15);
+        
+        marker = L.marker([lat, lng]).addTo(mapInstance);
+        newuser.value.direccion = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      },
+      (error) => {
+        console.log('Error obteniendo ubicación:', error);
+      }
+    );
+  }
 };
 
 const updatePhonePrefix = () => {
@@ -409,6 +534,10 @@ const createnewUser = async() => {
         errorMessage.value = "El número telefónico debe tener 10 dígitos.";
         return;
     }
+    if (!newuser.value.direccion) {
+        errorMessage.value = "La ubicación exacta es obligatoria. Da click en 'Seleccionar ubicación en el mapa' para poner un punto que te identifique geográficamente.";
+        return;
+    }
     if (passwordStrengthScore.value < 3) {
         errorMessage.value = "La contraseña es muy débil. Asegúrate de incluir mayúsculas, minúsculas, números y al menos 8 caracteres.";
         return;
@@ -450,6 +579,13 @@ onMounted(() => {
   
   if (route.query.terms === 'accepted') {
     termsAccepted.value = true;
+  }
+});
+
+onUnmounted(() => {
+  if (mapInstance) {
+    mapInstance.remove();
+    mapInstance = null;
   }
 });
 </script>
