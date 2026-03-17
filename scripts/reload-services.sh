@@ -26,7 +26,8 @@ ensure_docker_ready() {
       ;;
   esac
 
-  for _ in $(seq 1 30); do
+  local i
+  for ((i = 0; i < 30; i++)); do
     if docker info >/dev/null 2>&1; then
       return 0
     fi
@@ -221,7 +222,12 @@ run_reload() {
       ;;
   esac
 
-  mapfile -t persistent_volume_suffixes < <(collect_persistent_volumes "${selected_services[@]}")
+  persistent_volume_suffixes=()
+  while IFS= read -r volume_suffix; do
+    if [ -n "$volume_suffix" ]; then
+      persistent_volume_suffixes+=("$volume_suffix")
+    fi
+  done < <(collect_persistent_volumes "${selected_services[@]}")
   if [ "${#persistent_volume_suffixes[@]}" -gt 0 ]; then
     read -r -p "FULL RESET: eliminar tambien datos persistentes (BD, colas, storage) de estos servicios? (y/N): " full_reset_confirm
     case "$full_reset_confirm" in
