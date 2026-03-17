@@ -4,21 +4,6 @@ import { LatexText } from "../../latex/src/transpiler/document/elements/LatexSec
 
 
 
-import Groq from 'groq-sdk';
-
-const resolveGroqApiKey = () => process.env.GROQ_KEY || process.env.GROQ_API_KEY || '';
-
-const getGroqClient = () => {
-    const apiKey = resolveGroqApiKey();
-    if (!apiKey) {
-        throw new Error('GROQ_KEY no esta configurada');
-    }
-
-    return new Groq({ apiKey });
-};
-
-
-
 class BodyReport {
     #data
     constructor(set, label, desc) {
@@ -147,17 +132,7 @@ class BodyReport {
     async #commonTotext(data) {
         console.log("Beca: +++++++++++++++++++++++++++++++++++++++++?")
         console.log(data)
-
-        const groq = getGroqClient();
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [{
-                role: 'user', content: `${data.Atenciones}
-            Los datos dados pertenecen al los registros de tutorías de  un estudiante que reprobó alguna asignatura. Haz un análisis concreto de la atención entregada en dos párrafos` }],
-            model: 'llama3-8b-8192',
-        });
-
-        console.log(chatCompletion.choices[0].message.content);
-        return chatCompletion.choices[0].message.content
+        return "Resumen IA deshabilitado (integracion eliminada)."
     }
 
 
