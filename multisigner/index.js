@@ -24,20 +24,38 @@ const RESPONSE_QUEUE = 'multisigner/response';
 
 // Función para descargar de MinIO
 async function downloadFromMinio(bucket, objectName, localPath) {
-  return new Promise((resolve, reject) => {
-    const stream = minioClient.getObject(bucket, objectName);
-    const writeStream = fs.createWriteStream(localPath);
-    stream.pipe(writeStream);
-    writeStream.on('finish', resolve);
-    writeStream.on('error', reject);
-  });
+  // Verificar que el objeto exista antes de descargarlo.
+  await minioClient.statObject(bucket, objectName);
+
+  const obj = await minioClient.getObject(bucket, objectName);
+
+  // El cliente puede devolver un stream o directamente un buffer.
+  if (obj && typeof obj.pipe === 'function') {
+    return new Promise((resolve, reject) => {
+      const writeStream = fs.createWriteStream(localPath);
+      obj.on('error', (err) => {
+        reject(new Error(`MinIO download error (${bucket}/${objectName}): ${err.message}`));
+      });
+      writeStream.on('error', reject);
+      writeStream.on('finish', resolve);
+      obj.pipe(writeStream);
+    });
+  }
+
+  // Si viene como buffer/Uint8Array
+  if (Buffer.isBuffer(obj) || obj instanceof Uint8Array) {
+    await fs.writeFile(localPath, obj);
+    return;
+  }
+
+  throw new Error(`Unknown object type returned by MinIO for ${bucket}/${objectName}`);
 }
 
 // Función para subir a MinIO
 async function uploadToMinio(bucket, objectName, localPath) {
   return new Promise((resolve, reject) => {
     minioClient.fPutObject(bucket, objectName, localPath, {}, (err, etag) => {
-      if (err) reject(err);
+      if (err) reject(new Error(`MinIO upload error (${bucket}/${objectName}): ${err.message}`));
       else resolve(etag);
     });
   });
@@ -131,6 +149,7 @@ async function startService() {
       console.log('Received request:', data);
 
       const result = await processSignature(data);
+      console.log('Result:', result);
 
       channel.sendToQueue(RESPONSE_QUEUE, Buffer.from(JSON.stringify(result)));
       channel.ack(msg);

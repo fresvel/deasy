@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install pyhanko pdfplumber --break-system-packages
+RUN pip3 install pyhanko pyhanko-cli pdfplumber --break-system-packages
 
 RUN useradd --create-home --uid 10001 appuser
 
@@ -17,6 +17,9 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Install sigmaker dependencies so QR code generation works
+RUN cd sigmaker && npm install
 
 USER appuser
 
