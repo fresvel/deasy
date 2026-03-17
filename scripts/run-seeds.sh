@@ -25,6 +25,21 @@ Opciones:
 EOF
 }
 
+is_service_running() {
+  local service_name="$1"
+  cd "$DOCKER_DIR"
+  docker compose ps --status running --services | grep -Fx "$service_name" >/dev/null 2>&1
+}
+
+ensure_service_running() {
+  local service_name="$1"
+  if is_service_running "$service_name"; then
+    return 0
+  fi
+  echo "El servicio '$service_name' no esta en ejecucion. Inicialo antes de correr run-seeds."
+  exit 1
+}
+
 ensure_command() {
   local command_name="$1"
   if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -83,10 +98,33 @@ wait_for_mariadb() {
   exit 1
 }
 
+resolve_mariadb_host_port() {
+  local published_port
+  cd "$DOCKER_DIR"
+
+  published_port="$(docker compose port mariadb 3306 2>/dev/null | awk -F: 'END { print $NF }')"
+
+  if [ -n "$published_port" ]; then
+    echo "$published_port"
+    return 0
+  fi
+
+  if [ -n "${MARIADB_PORT:-}" ]; then
+    echo "$MARIADB_PORT"
+    return 0
+  fi
+
+  # Fallback al puerto publicado actual en docker-compose.yml.
+  echo "3308"
+}
+
 run_db_seed() {
+  local mariadb_port
+  mariadb_port="$(resolve_mariadb_host_port)"
+
   echo "Aplicando semilla SQL desde $SEED_FILE..."
   MARIADB_HOST=127.0.0.1 \
-  MARIADB_PORT=3306 \
+  MARIADB_PORT="$mariadb_port" \
   MARIADB_USER="$MARIADB_USER" \
   MARIADB_PASSWORD="$MARIADB_PASSWORD" \
   MARIADB_DATABASE="$MARIADB_DATABASE" \
@@ -96,7 +134,7 @@ run_db_seed() {
 run_storage_seeds() {
   echo "Publicando seeds de plantillas en MinIO..."
   cd "$DOCKER_DIR"
-  docker compose --profile storage-publish-seeds run --rm minio-publish-seeds
+  docker compose --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
 }
 
 while [ $# -gt 0 ]; do
@@ -146,15 +184,15 @@ ensure_command docker
 ensure_compose_env
 load_compose_env
 
-"$ROOT_DIR/scripts/start-services.sh"
-
 if [ "$RUN_DB_SEED" -eq 1 ]; then
+  ensure_service_running mariadb
   ensure_backend_dependencies
   wait_for_mariadb
   run_db_seed
 fi
 
 if [ "$RUN_STORAGE_SEEDS" -eq 1 ]; then
+  ensure_service_running minio
   run_storage_seeds
 fi
 
