@@ -90,7 +90,6 @@ const fetchTerms = async () => {
     // Parse the markdown string to HTML
     markdownContent.value = marked.parse(text);
   } catch (err) {
-    console.error('Error cargando Terms.md:', err);
     error.value = 'Hubo un problema al cargar los términos y condiciones. Por favor verifica tu conexión.';
   } finally {
     loading.value = false;

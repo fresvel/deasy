@@ -290,30 +290,46 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     try {
       await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
     } catch (error) {
-      if (error?.code !== "ER_CONSTRAINT_NOT_FOUND") {
+      if (error?.code !== "ER_CONSTRAINT_NOT_FOUND" && error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
         console.warn("⚠️  No se pudo eliminar el CHECK de processes:", error.message);
       }
     }
 
-    const [templateColumns] = await connection.query(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'templates'`
+    const [existingTemplateTables] = await connection.query(
+      `SELECT TABLE_NAME
+       FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME IN ('templates', 'process_templates')`
     );
-    const templateColumnNames = templateColumns.map((col) => col.COLUMN_NAME);
-    if (!templateColumnNames.includes("version")) {
-      await connection.query("ALTER TABLE templates ADD COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+    const existingTemplateTableNames = new Set(existingTemplateTables.map((row) => row.TABLE_NAME));
+
+    const hasTemplatesTable = existingTemplateTableNames.has("templates");
+    const hasProcessTemplatesTable = existingTemplateTableNames.has("process_templates");
+
+    if (hasTemplatesTable) {
+      const [templateColumns] = await connection.query(
+        `SELECT COLUMN_NAME
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'templates'`
+      );
+      const templateColumnNames = templateColumns.map((col) => col.COLUMN_NAME);
+      if (!templateColumnNames.includes("version")) {
+        await connection.query("ALTER TABLE templates ADD COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+      } else {
+        await connection.query("ALTER TABLE templates MODIFY COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+      }
     } else {
-      await connection.query("ALTER TABLE templates MODIFY COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+      console.warn("⚠️  Se omite migración de templates: tabla 'templates' no existe.");
     }
 
-    const [processTemplateColumns] = await connection.query(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_templates'`
-    );
-    const processTemplateColumnNames = processTemplateColumns.map((col) => col.COLUMN_NAME);
-    if (processTemplateColumnNames.includes("template_version_id")) {
+    if (hasProcessTemplatesTable) {
+      const [processTemplateColumns] = await connection.query(
+        `SELECT COLUMN_NAME
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_templates'`
+      );
+      const processTemplateColumnNames = processTemplateColumns.map((col) => col.COLUMN_NAME);
+      if (processTemplateColumnNames.includes("template_version_id")) {
       try {
         const [fkRows] = await connection.query(
           `SELECT CONSTRAINT_NAME
@@ -343,37 +359,69 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       } catch (error) {
         console.warn("⚠️  No se pudo eliminar template_version_id:", error.message);
       }
-    }
-    if (!processTemplateColumnNames.includes("template_id")) {
-      await connection.query("ALTER TABLE process_templates ADD COLUMN template_id INT NOT NULL");
-    }
-    try {
-      await connection.query("ALTER TABLE process_templates DROP PRIMARY KEY");
-    } catch (error) {
-      if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
-        console.warn("⚠️  No se pudo eliminar PK antigua de process_templates:", error.message);
       }
-    }
-    try {
-      await connection.query("ALTER TABLE process_templates ADD PRIMARY KEY (process_id, template_id)");
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear PK nueva de process_templates:", error.message);
+      if (!processTemplateColumnNames.includes("template_id")) {
+        await connection.query("ALTER TABLE process_templates ADD COLUMN template_id INT NOT NULL");
       }
+      try {
+        await connection.query("ALTER TABLE process_templates DROP PRIMARY KEY");
+      } catch (error) {
+        if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
+          console.warn("⚠️  No se pudo eliminar PK antigua de process_templates:", error.message);
+        }
+      }
+      try {
+        await connection.query("ALTER TABLE process_templates ADD PRIMARY KEY (process_id, template_id)");
+      } catch (error) {
+        if (error?.code !== "ER_DUP_KEYNAME") {
+          console.warn("⚠️  No se pudo crear PK nueva de process_templates:", error.message);
+        }
+      }
+      if (hasTemplatesTable) {
+        try {
+          await connection.query(
+            "ALTER TABLE process_templates ADD CONSTRAINT fk_process_templates_template FOREIGN KEY (template_id) REFERENCES templates(id)"
+          );
+        } catch (error) {
+          if (error?.code !== "ER_DUP_KEYNAME") {
+            console.warn("⚠️  No se pudo crear FK de process_templates:", error.message);
+          }
+        }
+      } else {
+        console.warn("⚠️  Se omite FK process_templates -> templates: tabla 'templates' no existe.");
+      }
+    } else {
+      console.warn("⚠️  Se omiten migraciones de process_templates: tabla 'process_templates' no existe.");
     }
     try {
-      await connection.query(
-        "ALTER TABLE process_templates ADD CONSTRAINT fk_process_templates_template FOREIGN KEY (template_id) REFERENCES templates(id)"
+      const [existingCheckRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME
+         FROM information_schema.TABLE_CONSTRAINTS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'processes'
+           AND CONSTRAINT_TYPE = 'CHECK'
+           AND CONSTRAINT_NAME = 'chk_process_unit_program'`
       );
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear FK de process_templates:", error.message);
+
+      if (!existingCheckRows.length) {
+        const [violatingRows] = await connection.query(
+          `SELECT COUNT(*) AS total
+           FROM processes
+           WHERE unit_id IS NULL AND program_id IS NULL`
+        );
+
+        const violatingTotal = Number(violatingRows?.[0]?.total ?? 0);
+
+        if (violatingTotal === 0) {
+          await connection.query(
+            "ALTER TABLE processes ADD CONSTRAINT chk_process_unit_program CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL)"
+          );
+        } else {
+          console.warn(
+            `⚠️  Se omite crear CHECK chk_process_unit_program: ${violatingTotal} filas en processes no cumplen (unit_id/program_id nulos).`
+          );
+        }
       }
-    }
-    try {
-      await connection.query(
-        "ALTER TABLE processes ADD CONSTRAINT chk_process_unit_program CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL)"
-      );
     } catch (error) {
       if (error?.code !== "ER_CHECK_CONSTRAINT_EXISTS") {
         console.warn("⚠️  No se pudo crear el CHECK de processes:", error.message);

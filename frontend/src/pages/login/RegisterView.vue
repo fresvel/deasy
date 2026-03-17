@@ -576,7 +576,6 @@ onMounted(() => {
       
       if (newuser.value.password) validatePassword(newuser.value.password);
     } catch (e) {
-      console.error('Error restaurando borrador de registro:', e);
     }
   }
 

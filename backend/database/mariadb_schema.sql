@@ -30,6 +30,12 @@ CREATE TABLE IF NOT EXISTS persons (
   whatsapp VARCHAR(30),
   direccion VARCHAR(255),
   pais VARCHAR(80),
+  pais_residencia VARCHAR(80),
+  provincia_residencia VARCHAR(120),
+  ciudad_residencia VARCHAR(120),
+  calle_primaria VARCHAR(180),
+  calle_secundaria VARCHAR(180),
+  codigo_postal VARCHAR(30),
   password_hash VARCHAR(255) NOT NULL,
   status ENUM('Inactivo','Activo','Verificado','Reportado') DEFAULT 'Inactivo',
   verify_email TINYINT(1) DEFAULT 0,
@@ -39,6 +45,14 @@ CREATE TABLE IF NOT EXISTS persons (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE persons
+  ADD COLUMN IF NOT EXISTS pais_residencia VARCHAR(80) NULL AFTER pais,
+  ADD COLUMN IF NOT EXISTS provincia_residencia VARCHAR(120) NULL AFTER pais_residencia,
+  ADD COLUMN IF NOT EXISTS ciudad_residencia VARCHAR(120) NULL AFTER provincia_residencia,
+  ADD COLUMN IF NOT EXISTS calle_primaria VARCHAR(180) NULL AFTER ciudad_residencia,
+  ADD COLUMN IF NOT EXISTS calle_secundaria VARCHAR(180) NULL AFTER calle_primaria,
+  ADD COLUMN IF NOT EXISTS codigo_postal VARCHAR(30) NULL AFTER calle_secundaria;
 
 CREATE TABLE IF NOT EXISTS relation_unit_types (
   id INT AUTO_INCREMENT PRIMARY KEY,
