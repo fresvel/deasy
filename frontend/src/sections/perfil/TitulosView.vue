@@ -39,6 +39,9 @@
               <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
+                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
+                    <IconUpload size="16" />
+                  </button>
                   <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
                   <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
                 </div>
@@ -82,6 +85,9 @@
               <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
+                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
+                    <IconUpload size="16" />
+                  </button>
                   <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
                   <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
                 </div>
@@ -125,6 +131,9 @@
               <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
+                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
+                    <IconUpload size="16" />
+                  </button>
                   <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
                   <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
                 </div>
@@ -152,6 +161,15 @@
     </div>
   </div>
 </div>
+
+<!-- Input file oculto para subir documentos -->
+<input 
+  type="file" 
+  ref="fileInput" 
+  accept="application/pdf" 
+  style="display: none" 
+  @change="handleFileSelect"
+>
 </template>
 
 <script setup>
@@ -165,8 +183,11 @@ import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { Modal } from "@/utils/modalController";
 import { API_PREFIX } from "@/services/apiConfig";
+import { IconUpload } from '@tabler/icons-vue';
 
 const modal = ref(null);
+const fileInput = ref(null);
+const selectedTituloId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
@@ -273,6 +294,57 @@ const openModal = () => {
 
 const handleTituloAdded = () => {
     loadDossier();
+};
+
+// Función para activar el input file
+const triggerFileUpload = (tituloId) => {
+    selectedTituloId.value = tituloId;
+    fileInput.value.click();
+};
+
+// Función para manejar la selección del archivo
+const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf') {
+        alert('Solo se permiten archivos PDF');
+        event.target.value = '';
+        return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+        alert('El archivo no puede superar los 10MB');
+        event.target.value = '';
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('archivo', file);
+        
+        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${selectedTituloId.value}`;
+        
+        const response = await axios.post(url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        if (response.data.success) {
+            alert('Documento subido correctamente');
+            await loadDossier();
+        } else {
+            alert('Error al subir documento: ' + response.data.message);
+        }
+        
+    } catch (error) {
+        console.error('Error al subir documento:', error);
+        alert('Error al subir el documento');
+    }
+    
+    // Limpiar el input
+    event.target.value = '';
 };
 
 // Cargar datos al montar el componente
