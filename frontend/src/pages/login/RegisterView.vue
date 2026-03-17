@@ -544,7 +544,12 @@ const createnewUser = async() => {
     }
     
     try {
-        await axios.post(API_ROUTES.USERS, newuser.value);
+      const payload = {
+        ...newuser.value,
+        pais: newuser.value.pais_residencia
+      };
+
+      await axios.post(API_ROUTES.USERS, payload);
         sessionStorage.removeItem('register_draft');
         showSuccessModal.value = true;
     } catch (error) {

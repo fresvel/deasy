@@ -77,6 +77,8 @@
 
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
+import { API_ROUTES } from '@/services/apiConfig';
 import { IconArrowLeft, IconKey, IconMail, IconSend, IconLoader2, IconAlertCircle, IconCheck } from '@tabler/icons-vue';
 
 const email = ref('');
@@ -92,11 +94,7 @@ const recoverPassword = async () => {
   isError.value = false;
 
   try {
-    // Simulación de llamado API
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Aquí iría el backend request
-    // await axios.post(API_ROUTES.USERS_RECOVER_PASSWORD, { email: email.value })
+    await axios.post(API_ROUTES.USERS_RECOVER_PASSWORD, { email: email.value.trim() });
     
     statusMessage.value = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
     isError.value = false;
