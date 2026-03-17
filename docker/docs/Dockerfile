@@ -12,19 +12,19 @@ RUN apt-get update \
   && npm install -g pnpm@10.17.1 \
   && npm cache clean --force
 
-WORKDIR /app/frontend
+WORKDIR /app/docs
 
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+COPY docs/package.json docs/pnpm-lock.yaml ./
 RUN pnpm config set store-dir ${PNPM_STORE_DIR} \
   && pnpm install --frozen-lockfile
 
-COPY frontend ./
+COPY docs ./
 
-RUN chown -R node:node /app/frontend /pnpm
+RUN chown -R node:node /app/docs /pnpm
 
 USER node
 
-EXPOSE 8080
+EXPOSE 4321
 
 ENTRYPOINT ["tini", "--"]
 CMD ["pnpm", "run", "dev"]

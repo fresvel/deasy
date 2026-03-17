@@ -28,7 +28,7 @@ Variables clave:
 ## Arranque
 
 ```bash
-node index.js
+npm run start
 ```
 
 Servidor por defecto:

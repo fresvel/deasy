@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd sigmaker/ && node index.js && cd -
+cd sigmaker/ && npm run start && cd -
 
 
 # Carpetas

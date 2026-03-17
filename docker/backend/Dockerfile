@@ -1,4 +1,4 @@
-FROM node:22.12.0-bookworm-slim AS build
+FROM node:25.8.1 AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_DOWNLOAD=true
@@ -25,7 +25,7 @@ COPY backend/package*.json ./
 RUN npm install --omit=dev \
   && npm cache clean --force
 
-FROM node:22.12.0-bookworm-slim
+FROM node:25.8.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_DOWNLOAD=true
