@@ -39,6 +39,9 @@
               <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
+                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
+                    <IconFile size="16" />
+                  </button>
                   <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
                     <IconUpload size="16" />
                   </button>
@@ -85,6 +88,9 @@
               <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
+                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
+                    <IconFile size="16" />
+                  </button>
                   <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
                     <IconUpload size="16" />
                   </button>
@@ -131,6 +137,9 @@
               <td>{{ titulo.pais }}</td>
               <td>
                 <div class="btn-group" role="group">
+                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
+                    <IconFile size="16" />
+                  </button>
                   <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
                     <IconUpload size="16" />
                   </button>
@@ -183,7 +192,7 @@ import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { Modal } from "@/utils/modalController";
 import { API_PREFIX } from "@/services/apiConfig";
-import { IconUpload } from '@tabler/icons-vue';
+import { IconUpload, IconFile } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const fileInput = ref(null);
@@ -294,6 +303,30 @@ const openModal = () => {
 
 const handleTituloAdded = () => {
     loadDossier();
+};
+
+// Función para abrir el documento 
+const openDocument = async (titulo) => {
+    try {
+        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${titulo._id}`;
+        
+        const response = await axios.get(url, {
+            responseType: 'blob'
+        });
+        
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        window.open(blobUrl, '_blank');
+        
+        setTimeout(() => {
+            window.URL.revokeObjectURL(blobUrl);
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error al abrir documento:', error);
+        alert('Error al abrir el documento');
+    }
 };
 
 // Función para activar el input file

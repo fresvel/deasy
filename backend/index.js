@@ -1092,7 +1092,7 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3]
+const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3, "http://localhost:8080"]
 
 app.use(cors({
     origin:(origin, callback)=> {
