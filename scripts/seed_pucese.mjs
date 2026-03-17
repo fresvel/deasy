@@ -354,11 +354,27 @@ const applySeed = async (connection, filePath) => {
   const snapshot = JSON.parse(raw);
   const originalTables = Array.isArray(snapshot.tables) ? snapshot.tables : [];
   const tableMap = new Map(originalTables.map((table) => [table.table, table]));
-  const tables = getTableOrder(originalTables.map((table) => table.table))
+  const orderedTables = getTableOrder(originalTables.map((table) => table.table))
     .map((tableName) => tableMap.get(tableName))
     .filter(Boolean);
-  if (!tables.length) {
+  if (!orderedTables.length) {
     throw new Error("La semilla no contiene tablas.");
+  }
+
+  const schemaTables = new Set(await getDatabaseTables(connection, connection.config.database));
+  const missingTables = orderedTables
+    .map((tableData) => tableData.table)
+    .filter((tableName) => !schemaTables.has(tableName));
+
+  if (missingTables.length) {
+    console.warn(
+      `[seed_pucese] Se omitiran ${missingTables.length} tabla(s) inexistentes en la base actual: ${missingTables.join(", ")}`
+    );
+  }
+
+  const tables = orderedTables.filter((tableData) => schemaTables.has(tableData.table));
+  if (!tables.length) {
+    throw new Error("Ninguna tabla de la semilla existe en la base de datos actual.");
   }
 
   await connection.beginTransaction();
@@ -414,6 +430,9 @@ const applySeed = async (connection, filePath) => {
     await connection.commit();
     console.log(`Semilla aplicada: ${filePath}`);
     console.log(`Tablas procesadas: ${tables.length}`);
+    if (missingTables.length) {
+      console.log(`Tablas omitidas: ${missingTables.length}`);
+    }
   } catch (error) {
     try {
       await connection.query("SET FOREIGN_KEY_CHECKS = 1");
