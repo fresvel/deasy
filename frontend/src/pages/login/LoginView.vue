@@ -203,15 +203,6 @@ const loginFunction = async () => {
     } else {
       errorMessage.value = backendMessage || 'Error al iniciar sesión';
     }
-
-    console.error('Login error:', {
-      status: statusCode,
-      data: error.response?.data,
-      payload: {
-        ...body,
-        password: body.password ? '[hidden]' : ''
-      }
-    });
   }
 };
 
