@@ -143,9 +143,10 @@ class QRCodeGenerator {
 }
 
 // Ejemplo
+const text = process.argv[2] || 'Homero Javier Velasteguí Izurieta';
 const qrGenerator = new QRCodeGenerator(
   '../firma.png',
-  'Homero Javier Velasteguí Izurieta',
+  text,
   './puce_logo.png'
 );
 
