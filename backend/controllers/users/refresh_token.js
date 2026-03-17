@@ -1,6 +1,21 @@
 import jwt from "jsonwebtoken";
 import { generateToken } from "../../utils/login/generate_token.js";
 
+const isNonProduction = () => (process.env.NODE_ENV || "development") !== "production";
+
+const getRefreshTokenSecret = () => {
+  const envSecret = process.env.JWT_REFRESH || process.env.JWT_SECRET;
+  if (envSecret) {
+    return envSecret;
+  }
+
+  if (isNonProduction()) {
+    return "deasy-dev-refresh-secret";
+  }
+
+  return null;
+};
+
 /**
  * Controlador para refrescar el token de acceso
  * Usa el refreshToken de la cookie para generar un nuevo access token
@@ -19,7 +34,16 @@ export const refreshToken = async (req, res) => {
     // Verificar el refresh token
     let decoded;
     try {
-      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH);
+      const secret = getRefreshTokenSecret();
+
+      if (!secret) {
+        return res.status(500).json({
+          message: 'JWT no configurado',
+          code: 500
+        });
+      }
+
+      decoded = jwt.verify(refreshToken, secret);
     } catch (error) {
       return res.status(401).json({
         message: 'Refresh token inválido o expirado',
