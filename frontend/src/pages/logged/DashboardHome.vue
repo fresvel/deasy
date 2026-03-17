@@ -1,121 +1,117 @@
 <template>
-  <div class="dashboard-page dashboard-typography">
+  <div class="min-h-screen bg-slate-100 font-sans pb-10">
     <s-header :menu-open="showMenu" @onclick="handleHeaderToggle">
-      <div class="header-left">
-        <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
-          <img class="avatar" :src="userPhoto" alt="Perfil" />
+      <div class="flex items-center gap-3 overflow-hidden flex-1">
+        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 shrink-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
+          <img class="w-9 h-9 rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
         </button>
 
-        <div v-if="unitGroups.length" class="group-menu">
+        <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <div
-            class="group-item"
-            :class="{ active: selectedGroupId === null }"
+            class="inline-flex items-center gap-2 min-w-[198px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
+            :class="selectedGroupId === null ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             role="button"
             tabindex="0"
             @click="selectConsolidated"
             @keydown.enter="selectConsolidated"
           >
-            <span class="group-icon">
-              <font-awesome-icon icon="globe" />
+            <span class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-lg shrink-0 border-none" :class="selectedGroupId === null ? 'bg-sky-600/10' : 'bg-white/20'">
+              <IconGlobe class="w-5 h-5" />
             </span>
-            <div class="group-content">
-              <div class="group-title">Consolidado</div>
+            <div class="min-w-0 block flex-1">
+              <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Consolidado</div>
             </div>
           </div>
 
           <div
             v-for="group in unitGroups"
             :key="group.id"
-            class="group-item"
-            :class="{ active: group.id === selectedGroupId }"
+            class="inline-flex items-center gap-2 min-w-[198px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
+             :class="group.id === selectedGroupId ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             role="button"
             tabindex="0"
             @click="selectGroup(group)"
             @keydown.enter="selectGroup(group)"
           >
-            <span class="group-icon">
-              <font-awesome-icon :icon="iconForUnitGroup(group)" />
+            <span class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-lg shrink-0 border-none" :class="group.id === selectedGroupId ? 'bg-sky-600/10' : 'bg-white/20'">
+              <component :is="iconForUnitGroup(group)" class="w-5 h-5" />
             </span>
-            <div class="group-content">
-              <div class="group-title" :title="group.name">
+            <div class="min-w-0 block flex-1">
+              <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis" :title="group.name">
                 {{ group.label || group.name }}
               </div>
             </div>
           </div>
         </div>
-        <span v-if="!userUnits.length && !menuLoading" class="nav-link text-white-50">
+        <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
       </div>
 
-      <div class="header-right">
-        <router-link to="/logout" class="nav-link text-white p-0 ms-lg-3" title="Cerrar sesión">
-          <img class="avatar" src="/images/logout.svg" alt="Cerrar sesión" />
+      <div class="flex items-center gap-2 shrink-0">
+        <router-link to="/logout" class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 sm:ms-3" title="Cerrar sesión">
+          <IconLogout class="w-5 h-5" />
         </router-link>
 
-        <button class="nav-link text-white p-0" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
-          <img class="avatar" src="/images/pen_line.svg" alt="Firmar" />
+        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
+          <IconSignature class="w-5 h-5" />
         </button>
 
-        <button class="nav-link text-white p-0" type="button" @click="toggleNotify" title="Notificaciones">
-          <font-awesome-icon icon="bell" class="avatar" />
+        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5" type="button" @click="toggleNotify" title="Notificaciones">
+          <IconBell class="w-5 h-5" />
         </button>
-        <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
-          <font-awesome-icon icon="bars" class="avatar" />
+        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 md:hidden" type="button" @click="toggleNavMenu" title="Menú de navegación">
+          <IconMenu2 class="w-5 h-5" />
         </button>
       </div>
     </s-header>
 
-    <div class="row g-3">
+    <div class="flex flex-col lg:flex-row gap-6 px-4 lg:px-8 py-6 max-w-[1920px] mx-auto w-full items-start">
       <s-menu :show="showMenu">
-        <div class="admin-menu">
+        <div class="flex flex-col">
           <UserProfile :photo="userPhoto" :username="userFullName" />
-          <div class="menu-context text-white">
+          <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white">
             {{ menuContextLabel }}
           </div>
 
-          <div v-if="menuLoading" class="menu-feedback text-white">
+          <div v-if="menuLoading" class="text-sm my-2 text-white">
             Cargando menú...
           </div>
-          <div v-else-if="menuError" class="menu-feedback text-white">
+          <div v-else-if="menuError" class="text-sm my-2 text-white">
             {{ menuError }}
           </div>
-          <div v-else-if="!menuCargos.length" class="menu-feedback text-white">
+          <div v-else-if="!menuCargos.length" class="bg-white/20 rounded-xl text-white text-sm my-2 py-2 px-3">
             No hay cargos asignados para mostrar.
           </div>
 
-          <div v-else>
-            <div v-for="cargo in menuCargos" :key="cargo.id" class="menu-section">
+          <div v-else class="flex flex-col gap-1 mt-2">
+            <div v-for="cargo in menuCargos" :key="cargo.id" class="flex flex-col mb-1">
               <button
-                class="menu-section-title text-white w-100"
+                class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
+                :class="{ 'bg-white/10 font-bold': cargo.open }"
                 type="button"
-                :class="{ 'is-open': cargo.open }"
                 @click="toggleCargo(cargo)"
               >
-                <span class="menu-title-left">
-                  <font-awesome-icon :icon="iconForCargo(cargo.name)" class="menu-title-icon" />
-                  <span>{{ cargo.name }}</span>
+                <span class="flex items-center gap-3 text-sm font-semibold">
+                  <component :is="iconForCargo(cargo.name)" class="w-5 h-5 shrink-0 opacity-90" />
+                  <span class="truncate">{{ cargo.name }}</span>
                 </span>
               </button>
 
-              <div v-show="cargo.open" class="menu-section-body">
-                <div class="list-group list-group-flush">
-                  <button
-                    v-for="process in cargo.processes"
-                    :key="process.id"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: selectedProcessKey === String(process.process_definition_id) }"
-                    type="button"
-                    @click="handleProcessSelect(process, cargo)"
-                  >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="iconForProcess(process.name)" class="menu-item-icon" />
-                      <span>{{ process.name }}</span>
-                    </span>
-                  </button>
-                  <div v-if="!cargo.processes.length" class="menu-empty">
-                    Sin procesos asignados.
-                  </div>
+              <div v-show="cargo.open" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
+                <button
+                  v-for="process in cargo.processes"
+                  :key="process.id"
+                  class="w-full text-left bg-transparent border-none py-2 px-3 rounded-lg text-sm transition-all focus:outline-none flex flex-row items-center gap-2 hover:bg-white/10 hover:text-white"
+                  :class="selectedProcessKey === String(process.process_definition_id) ? 'bg-white text-sky-700 font-bold shadow-sm shadow-sky-900/20' : 'text-white/80'"
+                  type="button"
+                  @click="handleProcessSelect(process, cargo)"
+                >
+                  <component :is="iconForProcess(process.name)" class="w-4 h-4 shrink-0" />
+                  <span class="truncate block w-full">{{ process.name }}</span>
+                </button>
+                <div v-if="!cargo.processes.length" class="text-sm text-white/50 italic px-3 py-1">
+                  Sin procesos asignados.
                 </div>
               </div>
             </div>
@@ -125,102 +121,114 @@
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">
         <template v-if="!selectedProcessKey && !processPanelLoading">
-        <section class="overview-card">
-          <div>
-            <h1>Bienvenido(a), {{ userFullName }}</h1>
-            <p>
+        <section class="bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 text-white rounded-[2rem] p-8 md:p-10 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-10 shadow-2xl shadow-slate-300/50 relative overflow-hidden">
+          <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+            <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
+            <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
+            <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
+          </div>
+          <div class="relative z-10 flex-1">
+            <h1 class="text-3xl md:text-4xl font-bold mb-3 tracking-tight">Bienvenido(a), {{ userFullName }}</h1>
+            <p class="max-w-2xl text-sky-100/90 text-lg font-medium">
               Este es tu panel general. Revisa el estado de tus módulos, firmas pendientes y completa tu perfil académico.
             </p>
           </div>
-          <button class="primary-btn" @click="navigateTo('perfil')">
+          <button class="relative z-10 bg-white text-sky-700 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-500/30 whitespace-nowrap px-6 py-3.5 rounded-full font-bold shadow-lg shadow-sky-900/20 transition-all active:scale-[0.98]" @click="navigateTo('perfil')">
             Ir a mi perfil
           </button>
         </section>
 
-        <section class="summary-grid">
-          <article class="summary-card" v-for="card in summaryCards" :key="card.title">
-            <header>
-              <h3>{{ card.title }}</h3>
-              <span :class="['status-pill', card.statusClass]">{{ card.status }}</span>
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-4 min-h-[190px]" v-for="card in summaryCards" :key="card.title">
+            <header class="flex justify-between items-start gap-4">
+              <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm whitespace-nowrap shrink-0" :class="getStatusTailwindClass(card.statusClass)">{{ card.status }}</span>
             </header>
-            <p>{{ card.description }}</p>
-            <footer>
-              <span class="summary-count">{{ card.count }}</span>
-              <button class="link-btn" @click="navigateTo(card.route)">
-                {{ card.action }} →
+            <p class="text-slate-500 text-sm font-medium flex-1">{{ card.description }}</p>
+            <footer class="flex justify-between items-end mt-2">
+              <span class="text-3xl font-extrabold text-slate-800">{{ card.count }}</span>
+              <button class="text-sky-600 hover:text-sky-700 font-bold bg-transparent border-none p-0 inline-flex items-center gap-1 transition-colors" @click="navigateTo(card.route)">
+                {{ card.action }} <IconArrowRight class="w-4 h-4 ml-1" />
               </button>
             </footer>
           </article>
         </section>
 
-        <section class="table-card">
-          <header>
-            <h2>Resumen rápido</h2>
-            <button class="secondary-btn" @click="navigateTo('perfil')">
+        <section class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 overflow-hidden mb-6">
+          <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <h2 class="text-xl font-bold text-slate-800">Resumen rápido</h2>
+            <button class="bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-sky-700 px-5 py-2.5 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 active:scale-[0.98]" @click="navigateTo('perfil')">
               Gestionar perfil
             </button>
           </header>
 
-          <table class="table table-institutional table-striped table-hover align-middle">
-            <thead>
-              <tr>
-                <th>Sección</th>
-                <th>Registros</th>
-                <th>Estado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in summaryRows" :key="row.section">
-                <td>{{ row.section }}</td>
-                <td>{{ row.count }}</td>
-                <td>
-                  <span :class="['status-pill', row.statusClass]">{{ row.status }}</span>
-                </td>
-                <td>
-                  <button class="tiny-btn" @click="navigateTo(row.route)">
-                    Gestionar
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="overflow-x-auto w-full rounded-2xl border border-slate-100">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr class="bg-slate-50/80 border-b border-slate-100">
+                  <th class="py-4 px-6 font-bold text-slate-600 text-sm">Sección</th>
+                  <th class="py-4 px-6 font-bold text-slate-600 text-sm">Registros</th>
+                  <th class="py-4 px-6 font-bold text-slate-600 text-sm">Estado</th>
+                  <th class="py-4 px-6 font-bold text-slate-600 text-sm text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in summaryRows" :key="row.section" class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                  <td class="py-4 px-6 font-semibold text-slate-800">{{ row.section }}</td>
+                  <td class="py-4 px-6 font-medium text-slate-600">{{ row.count }}</td>
+                  <td class="py-4 px-6">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
+                  </td>
+                  <td class="py-4 px-6 text-right">
+                    <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all" @click="navigateTo(row.route)">
+                      Gestionar
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
         </template>
 
         <template v-else>
-          <section class="process-console-shell">
-            <section class="process-console-hero">
-              <div class="process-console-hero-main">
-                <div class="process-console-kicker">
+          <section class="flex flex-col gap-8">
+            <section class="bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-[2rem] text-white shadow-2xl shadow-sky-900/20 flex flex-col md:flex-row justify-between gap-8 relative overflow-hidden">
+               <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+                  <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
+                  <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
+                  <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
+              </div>
+              <div class="flex flex-col gap-3 relative z-10">
+                <div class="text-sky-200 text-sm uppercase tracking-widest font-bold">
                   {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
                 </div>
-                <h1>{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
-                <p>
+                <h1 class="text-3xl md:text-4xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
+                <p class="max-w-3xl opacity-90 text-sm md:text-base font-medium m-0 mt-1">
                   Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
                   documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
                 </p>
-                <div class="process-console-badges">
-                  <span v-if="selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key" class="console-pill">
+                <div class="flex flex-wrap gap-2 mt-2">
+                  <span v-if="selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
                     {{ selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key }}
                   </span>
-                  <span v-if="selectedProcessPanel?.definition?.definition_version" class="console-pill">
+                  <span v-if="selectedProcessPanel?.definition?.definition_version" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
                     Versión {{ selectedProcessPanel.definition.definition_version }}
                   </span>
-                  <span v-if="selectedProcessPanel?.definition?.execution_mode" class="console-pill">
+                  <span v-if="selectedProcessPanel?.definition?.execution_mode" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
                     {{ selectedProcessPanel.definition.execution_mode || 'manual' }}
                   </span>
-                  <span class="console-pill" :class="{ 'console-pill--accent': selectedProcessPanel?.permissions?.has_document }">
+                  <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm shadow-sm" :class="selectedProcessPanel?.permissions?.has_document ? 'bg-sky-400 text-sky-950' : 'bg-white/20 text-white'">
                     {{ selectedProcessPanel?.permissions?.has_document ? 'Con documento' : 'Sin documento' }}
                   </span>
                 </div>
               </div>
-              <div class="process-console-hero-actions">
-                <button class="secondary-btn" type="button" @click="clearSelectedProcess">
+              <div class="flex flex-col sm:flex-row md:flex-col gap-3 items-start md:items-end justify-start relative z-10 shrink-0">
+                <button class="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none" type="button" @click="clearSelectedProcess">
                   Volver al panel general
                 </button>
                 <button
-                  class="primary-btn"
+                  class="w-full sm:w-auto bg-white text-sky-700 hover:bg-sky-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   type="button"
                   :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
                   @click="openTaskLaunchModal"
@@ -230,50 +238,48 @@
               </div>
             </section>
 
-            <section v-if="processPanelLoading" class="console-feedback-card">
+            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la definición seleccionada...
             </section>
 
-            <section v-else-if="processPanelError" class="console-feedback-card console-feedback-card--error">
+            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
               {{ processPanelError }}
             </section>
 
             <template v-else>
-              <section class="process-summary-grid">
-                <article class="process-summary-card">
-                  <header><span>Tareas</span><strong>{{ selectedProcessPanel.summary.tasks_total }}</strong></header>
-                  <p>{{ selectedProcessPanel.summary.tasks_pending }} pendientes o en curso.</p>
+              <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Tareas</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.tasks_total }}</strong></header>
+                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">{{ selectedProcessPanel.summary.tasks_pending }} pendientes o en curso.</p>
                 </article>
-                <article class="process-summary-card">
-                  <header><span>Entregables</span><strong>{{ selectedProcessPanel.summary.task_items_pending }}</strong></header>
-                  <p>Items pendientes ligados a tus tareas.</p>
+                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Entregables</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.task_items_pending }}</strong></header>
+                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">Items pendientes ligados a tus tareas.</p>
                 </article>
-                <article class="process-summary-card">
-                  <header><span>Documentos</span><strong>{{ selectedProcessPanel.summary.documents_total }}</strong></header>
-                  <p>Documentos vinculados a tus entregables.</p>
+                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Documentos</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.documents_total }}</strong></header>
+                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">Documentos vinculados a tus entregables.</p>
                 </article>
-                <article class="process-summary-card">
-                  <header><span>Firmas</span><strong>{{ selectedProcessPanel.summary.signatures_pending }}</strong></header>
-                  <p>Solicitudes de firma pendientes para ti.</p>
+                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Firmas</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.signatures_pending }}</strong></header>
+                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">Solicitudes de firma pendientes para ti.</p>
                 </article>
               </section>
 
-              <section v-if="processActionMessage" class="console-feedback-card" :class="{
-                'console-feedback-card--error': processActionMessage.type === 'error',
-                'console-feedback-card--success': processActionMessage.type === 'success'
-              }">
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'">
                 {{ processActionMessage.text }}
               </section>
 
-              <section class="process-console-grid">
-                <article class="console-card console-card--span-2">
-                  <header class="console-card-header">
+              <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Tareas -->
+                <article class="lg:col-span-8 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                  <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2>Tareas asignadas</h2>
-                      <p>Solo se muestran las tareas donde participas o que creaste manualmente.</p>
+                      <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
+                      <p class="text-slate-500 text-sm mt-1 mb-0 font-medium">Solo se muestran las tareas donde participas o que creaste manualmente.</p>
                     </div>
                     <button
-                      class="tiny-btn"
+                      class="shrink-0 bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       type="button"
                       :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
                       @click="openTaskLaunchModal"
@@ -282,52 +288,58 @@
                     </button>
                   </header>
 
-                  <div v-if="!selectedProcessPanel.tasks.length" class="console-empty">
+                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta definición.
                   </div>
 
-                  <div v-else class="task-stack">
-                    <article v-for="task in selectedProcessPanel.tasks" :key="task.id" class="task-card">
-                      <header class="task-card-header">
-                        <div>
-                          <h3>{{ task.term_name }}</h3>
-                          <div class="task-meta-line">
-                            <span class="console-chip">{{ task.term_type_name }}</span>
-                            <span class="console-chip" :class="task.launch_mode === 'manual' ? 'console-chip--accent' : ''">
+                  <div v-else class="flex flex-col gap-4">
+                    <article v-for="task in selectedProcessPanel.tasks" :key="task.id" class="border border-slate-200 rounded-[1.5rem] p-5 lg:p-6 bg-slate-50/30">
+                      <header class="flex flex-col sm:flex-row justify-between gap-4 items-start mb-3">
+                        <div class="flex flex-col gap-2">
+                          <h3 class="text-lg font-bold text-slate-800 m-0 leading-tight">{{ task.term_name }}</h3>
+                          <div class="flex flex-wrap gap-2">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200/70 text-slate-700">{{ task.term_type_name }}</span>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold" :class="task.launch_mode === 'manual' ? 'bg-sky-100 text-sky-700' : 'bg-slate-200/70 text-slate-700'">
                               {{ task.launch_mode === 'manual' ? 'Manual' : 'Automática' }}
                             </span>
-                            <span class="console-chip">{{ task.status }}</span>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200/70 text-slate-700">{{ task.status }}</span>
                           </div>
                         </div>
-                        <div class="task-card-meta">
+                        <div class="flex flex-col gap-1 text-slate-500 text-sm font-semibold sm:text-right shrink-0">
                           <span>{{ formatDate(task.start_date) }}</span>
                           <span v-if="task.end_date">hasta {{ formatDate(task.end_date) }}</span>
                         </div>
                       </header>
 
-                      <p v-if="task.description" class="task-description">{{ task.description }}</p>
+                      <p v-if="task.description" class="text-slate-600 text-sm mt-3 mb-0 font-medium leading-relaxed">{{ task.description }}</p>
 
-                      <div class="task-inline-stats">
-                        <span>{{ task.task_item_count }} entregables</span>
-                        <span>{{ task.pending_task_items }} pendientes</span>
-                        <span v-if="task.responsible_position_title">Responsable general: {{ task.responsible_position_title }}</span>
-                        <span v-if="task.is_current_user_creator">Creada por ti</span>
+                      <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-sm font-semibold text-slate-500">
+                        <span>• {{ task.task_item_count }} entregables</span>
+                        <span>• {{ task.pending_task_items }} pendientes</span>
+                        <span v-if="task.responsible_position_title">• Responsable general: {{ task.responsible_position_title }}</span>
+                        <span v-if="task.is_current_user_creator" class="text-sky-600">• Creada por ti</span>
                       </div>
 
-                      <div v-if="task.items.length" class="task-items-list">
-                        <div v-for="item in task.items" :key="item.id" class="task-item-row">
-                          <div class="task-item-main">
-                            <strong>{{ item.template_artifact_name || `Entregable #${item.id}` }}</strong>
-                            <div class="task-item-meta">
+                      <div v-if="task.items.length" class="flex flex-col gap-2.5 mt-5">
+                        <div v-for="item in task.items" :key="item.id" class="flex flex-col sm:flex-row justify-between gap-3 p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-sky-200 transition-colors">
+                          <div class="flex flex-col gap-1.5 flex-1 min-w-0">
+                            <strong class="block text-[0.95rem] font-bold text-slate-800 leading-tight">{{ item.template_artifact_name || `Entregable #${item.id}` }}</strong>
+                            <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500 mt-1">
                               <span>{{ item.template_usage_role }}</span>
-                              <span>{{ item.status }}</span>
-                              <span v-if="item.responsible_position_title">Responsable específico: {{ item.responsible_position_title }}</span>
+                              <span class="text-slate-400">|</span>
+                              <span :class="item.status === 'completado' ? 'text-emerald-600' : 'text-amber-600'">{{ item.status }}</span>
+                              <template v-if="item.responsible_position_title">
+                                <span class="text-slate-400">|</span>
+                                <span>Responsable: {{ item.responsible_position_title }}</span>
+                              </template>
                             </div>
                           </div>
-                          <div class="task-item-doc">
-                            <span v-if="item.document_id">Documento {{ item.document_version ? `v${item.document_version}` : 'creado' }}</span>
-                            <span v-else>Sin documento</span>
-                            <span v-if="item.pending_signature_count">Firmas pendientes: {{ item.pending_signature_count }}</span>
+                          <div class="flex flex-col gap-1.5 sm:items-end text-sm font-semibold text-slate-500 shrink-0">
+                            <span class="inline-flex items-center gap-1.5" :class="item.document_id ? 'text-sky-700' : 'text-slate-400'">
+                              <IconSignature v-if="item.document_id" class="w-4 h-4" />
+                              {{ item.document_id ? (item.document_version ? `Doc v${item.document_version}` : 'Doc creado') : 'Sin doc' }}
+                            </span>
+                            <span v-if="item.pending_signature_count" class="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md text-xs">Firmas pendientes: {{ item.pending_signature_count }}</span>
                           </div>
                         </div>
                       </div>
@@ -335,106 +347,117 @@
                   </div>
                 </article>
 
-                <article class="console-card">
-                  <header class="console-card-header">
-                    <div>
-                      <h2>Mis paquetes</h2>
-                      <p>Paquetes de usuario asociados a tu cuenta.</p>
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                  <!-- Paquetes -->
+                  <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                    <header class="flex flex-col gap-2">
+                      <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Mis paquetes</h2>
+                      <p class="text-slate-500 text-sm m-0 font-medium leading-snug">Paquetes de usuario asociados a tu cuenta.</p>
+                    </header>
+                    <div v-if="!selectedProcessPanel.user_packages.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
+                      Aún no tienes paquetes registrados.
                     </div>
-                  </header>
-                  <div v-if="!selectedProcessPanel.user_packages.length" class="console-empty">
-                    Aún no tienes paquetes de usuario registrados.
-                  </div>
-                  <div v-else class="simple-list">
-                    <div v-for="item in selectedProcessPanel.user_packages" :key="item.id" class="simple-list-item">
-                      <strong>{{ item.display_name }}</strong>
-                      <span>{{ item.artifact_stage }}</span>
+                    <div v-else class="flex flex-col gap-3">
+                      <div v-for="item in selectedProcessPanel.user_packages" :key="item.id" class="flex justify-between items-center gap-3 p-3.5 rounded-xl bg-slate-50/50 border border-slate-100">
+                        <strong class="text-sm font-bold text-slate-800 leading-tight">{{ item.display_name }}</strong>
+                        <span class="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200 shrink-0">{{ item.artifact_stage }}</span>
+                      </div>
                     </div>
-                  </div>
-                </article>
+                  </article>
 
-                <article class="console-card console-card--wide">
-                  <header class="console-card-header">
-                    <div>
-                      <h2>Documentos</h2>
-                      <p>Documentos de tus entregables en esta definición.</p>
+                  <!-- Firmas -->
+                  <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                    <header class="flex flex-col gap-4">
+                      <div>
+                        <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Flujo de firmas</h2>
+                        <p class="text-slate-500 text-sm mt-1 mb-0 font-medium leading-snug">Solicitudes de firma que te corresponden.</p>
+                      </div>
+                      <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm self-start" type="button" @click="navigateTo('firmar')">
+                        Ir a firmas
+                      </button>
+                    </header>
+                    <div v-if="!selectedProcessPanel.signatures.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
+                      No tienes solicitudes de firma activas.
                     </div>
+                    <div v-else class="flex flex-col gap-3">
+                      <div v-for="signature in selectedProcessPanel.signatures" :key="signature.id" class="flex flex-col gap-1.5 p-4 rounded-xl bg-slate-50/50 border border-slate-100 relative overflow-hidden group">
+                        <div v-if="!signature.responded_at" class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                        <strong class="text-sm font-bold text-slate-800 leading-tight pl-1 block truncate">{{ signature.template_artifact_name || 'Documento' }}</strong>
+                        <div class="flex flex-wrap justify-between items-center gap-2 pl-1 mt-1 text-xs font-semibold">
+                          <span class="text-slate-500">{{ signature.signature_type_name || 'Firma' }} · Paso {{ signature.step_order || 1 }}</span>
+                          <span :class="signature.responded_at ? 'text-emerald-600' : 'text-amber-600'">{{ signature.status_name || (signature.responded_at ? 'Respondida' : 'Pendiente') }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+
+                <!-- Documentos (Wide) -->
+                <article class="lg:col-span-8 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                  <header class="flex flex-col gap-2 mb-2">
+                    <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
+                    <p class="text-slate-500 text-sm m-0 font-medium">Documentos de tus entregables en esta definición.</p>
                   </header>
-                  <div v-if="!selectedProcessPanel.documents.length" class="console-empty">
+                  <div v-if="!selectedProcessPanel.documents.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No hay documentos generados todavía.
                   </div>
-                  <div v-else class="simple-list">
-                    <div v-for="doc in selectedProcessPanel.documents" :key="doc.document_id" class="simple-list-item simple-list-item--stacked">
-                      <strong>{{ doc.template_artifact_name || `Documento #${doc.document_id}` }}</strong>
-                      <span>{{ doc.document_status || 'Inicial' }}</span>
-                      <span v-if="doc.document_version">Versión {{ doc.document_version }}</span>
-                      <span v-if="doc.pending_signature_count">Firmas pendientes: {{ doc.pending_signature_count }}</span>
+                  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="doc in selectedProcessPanel.documents" :key="doc.document_id" class="flex flex-col gap-2 p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div class="flex items-start gap-3">
+                        <IconSignature class="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
+                        <div class="flex flex-col gap-1 min-w-0">
+                          <strong class="text-[0.95rem] font-bold text-slate-800 leading-tight">{{ doc.template_artifact_name || `Documento #${doc.document_id}` }}</strong>
+                          <span class="text-sm font-semibold text-slate-500 mt-1">{{ doc.document_status || 'Inicial' }}</span>
+                        </div>
+                      </div>
+                      <div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-100 text-xs font-bold text-slate-500">
+                        <span v-if="doc.document_version" class="bg-slate-100 px-2 py-1 rounded-md">v{{ doc.document_version }}</span>
+                        <span v-if="doc.pending_signature_count" class="text-amber-600 ml-auto flex items-center gap-1"><IconSignature class="w-3.5 h-3.5"/> Pendientes: {{ doc.pending_signature_count }}</span>
+                      </div>
                     </div>
                   </div>
                 </article>
 
-                <article class="console-card">
-                  <header class="console-card-header">
-                    <div>
-                      <h2>Flujo de firmas</h2>
-                      <p>Solicitudes de firma que te corresponden dentro de esta definición.</p>
-                    </div>
-                    <button class="tiny-btn" type="button" @click="navigateTo('firmar')">
-                      Ir a firmas
-                    </button>
+                <!-- Dependencies (Full width) -->
+                <article class="lg:col-span-12 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-6">
+                  <header class="flex flex-col gap-2">
+                    <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
+                    <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y paquetes del sistema que hacen operativa esta definición.</p>
                   </header>
-                  <div v-if="!selectedProcessPanel.signatures.length" class="console-empty">
-                    No tienes solicitudes de firma para esta definición.
-                  </div>
-                  <div v-else class="simple-list">
-                    <div v-for="signature in selectedProcessPanel.signatures" :key="signature.id" class="simple-list-item simple-list-item--stacked">
-                      <strong>{{ signature.template_artifact_name || 'Documento' }}</strong>
-                      <span>{{ signature.signature_type_name || 'Firma' }} · Paso {{ signature.step_order || 1 }}</span>
-                      <span>{{ signature.status_name || (signature.responded_at ? 'Respondida' : 'Pendiente') }}</span>
-                    </div>
-                  </div>
-                </article>
-
-                <article class="console-card console-card--full">
-                  <header class="console-card-header">
-                    <div>
-                      <h2>Dependencias de la definición</h2>
-                      <p>Resumen de reglas, disparadores y paquetes del sistema que hacen operativa esta definición.</p>
-                    </div>
-                  </header>
-                  <div class="dependencies-grid">
-                    <section class="dependency-block">
-                      <h3>Reglas</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.rules.length" class="console-empty console-empty--inline">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconSquareCheck class="w-4 h-4 text-slate-400"/> Reglas</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.rules.length" class="text-sm text-slate-500 font-medium italic">
                         Sin reglas activas para tu alcance.
                       </div>
-                      <ul v-else class="dependency-list">
-                        <li v-for="rule in selectedProcessPanel.dependencies.rules" :key="rule.id">
-                          {{ rule.display_label }}
+                      <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
+                        <li v-for="rule in selectedProcessPanel.dependencies.rules" :key="rule.id" class="text-sm font-medium text-slate-600 flex items-start gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ rule.display_label }}
                         </li>
                       </ul>
                     </section>
-                    <section class="dependency-block">
-                      <h3>Disparadores</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.triggers.length" class="console-empty console-empty--inline">
+                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-slate-400"/> Disparadores</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.triggers.length" class="text-sm text-slate-500 font-medium italic">
                         Sin disparadores activos.
                       </div>
-                      <ul v-else class="dependency-list">
-                        <li v-for="trigger in selectedProcessPanel.dependencies.triggers" :key="trigger.id">
-                          {{ formatTriggerLabel(trigger) }}
+                      <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
+                        <li v-for="trigger in selectedProcessPanel.dependencies.triggers" :key="trigger.id" class="text-sm font-medium text-slate-600 flex items-start gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(trigger) }}
                         </li>
                       </ul>
                     </section>
-                    <section class="dependency-block">
-                      <h3>Paquetes</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.templates.length" class="console-empty console-empty--inline">
+                    <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-slate-400"/> Paquetes</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-slate-500 font-medium italic">
                         Sin paquetes vinculados.
                       </div>
-                      <ul v-else class="dependency-list">
-                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id">
-                          {{ template.template_artifact_name }}
-                          <span class="dependency-inline-meta">
-                            · {{ template.usage_role }} · {{ template.creates_task ? 'Genera tarea' : 'Soporte' }}
+                      <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
+                        <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                          <span>{{ template.template_artifact_name }}</span>
+                          <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                            <span class="bg-slate-100 px-2 py-0.5 rounded">{{ template.usage_role }}</span>
+                            <span :class="template.creates_task ? 'text-sky-600' : 'text-slate-400'">{{ template.creates_task ? 'Genera tarea' : 'Soporte' }}</span>
                           </span>
                         </li>
                       </ul>
@@ -452,69 +475,76 @@
       <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
     </div>
 
-    <div v-if="showTaskLaunchModal" class="floating-dialog-backdrop" @click.self="closeTaskLaunchModal">
-      <div class="floating-dialog">
-        <header class="floating-dialog-header">
+    <div v-if="showTaskLaunchModal" class="fixed inset-0 z-[1200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" @click.self="closeTaskLaunchModal">
+      <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <header class="px-6 lg:px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
           <div>
-            <h2>Crear tarea manual</h2>
-            <p>{{ selectedProcessPanel?.definition?.name || 'Definición seleccionada' }}</p>
+            <h2 class="text-2xl font-bold text-slate-800 m-0 tracking-tight">Crear tarea manual</h2>
+            <p class="text-slate-500 text-sm font-medium mt-1 mb-0">{{ selectedProcessPanel?.definition?.name || 'Definición seleccionada' }}</p>
           </div>
-          <button class="dialog-close-btn" type="button" @click="closeTaskLaunchModal">×</button>
+          <button class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-200/50 hover:bg-slate-200 text-slate-600 transition-colors focus:outline-none" type="button" @click="closeTaskLaunchModal">
+            <IconX class="w-5 h-5" />
+          </button>
         </header>
 
-        <div class="floating-dialog-body">
-          <div v-if="taskLaunchError" class="console-feedback-card console-feedback-card--error">
+        <div class="p-6 lg:p-8 overflow-y-auto flex flex-col gap-6 custom-scrollbar">
+          <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
             {{ taskLaunchError }}
           </div>
 
-          <div class="dialog-grid">
-            <label class="dialog-field dialog-field--full">
-              <span>Descripción</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
+            <label class="flex flex-col gap-2 md:col-span-2">
+              <span class="font-bold text-slate-700 text-sm">Descripción</span>
               <textarea
                 v-model="taskLaunchForm.description"
-                class="form-control"
+                class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
                 rows="3"
                 placeholder="Describe brevemente la tarea manual que vas a lanzar."
               />
             </label>
 
-            <label class="dialog-field">
-              <span>Periodo existente</span>
-              <select v-model="taskLaunchForm.term_id" class="form-select" :disabled="taskLaunchUseCustomTerm">
-                <option value="">Seleccionar</option>
-                <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
-                  {{ term.name }} · {{ term.term_type_name }}
-                </option>
-              </select>
+            <label class="flex flex-col gap-2">
+              <span class="font-bold text-slate-700 text-sm">Periodo existente</span>
+              <div class="relative">
+                <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
+                  <option value="">Seleccionar</option>
+                  <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
+                    {{ term.name }} · {{ term.term_type_name }}
+                  </option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
             </label>
 
-            <label v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="dialog-field dialog-field--switch">
-              <span>Crear periodo custom</span>
-              <input v-model="taskLaunchUseCustomTerm" type="checkbox" />
+            <label v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-7 p-3 rounded-2xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+              <span class="font-bold text-slate-700 text-sm select-none">Crear periodo custom</span>
+              <input v-model="taskLaunchUseCustomTerm" type="checkbox" class="w-5 h-5 rounded text-sky-600 focus:ring-sky-500 border-slate-300 transition-colors" />
             </label>
 
             <template v-if="taskLaunchUseCustomTerm">
-              <label class="dialog-field dialog-field--full">
-                <span>Nombre del periodo custom</span>
-                <input v-model="taskLaunchForm.custom_name" class="form-control" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
+              <label class="flex flex-col gap-2 md:col-span-2">
+                <span class="font-bold text-slate-700 text-sm">Nombre del periodo custom</span>
+                <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
               </label>
-              <label class="dialog-field">
-                <span>Fecha inicial</span>
-                <input v-model="taskLaunchForm.custom_start_date" class="form-control" type="date" />
+              <label class="flex flex-col gap-2">
+                <span class="font-bold text-slate-700 text-sm">Fecha inicial</span>
+                <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
               </label>
-              <label class="dialog-field">
-                <span>Fecha final</span>
-                <input v-model="taskLaunchForm.custom_end_date" class="form-control" type="date" />
+              <label class="flex flex-col gap-2">
+                <span class="font-bold text-slate-700 text-sm">Fecha final</span>
+                <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
               </label>
             </template>
           </div>
         </div>
 
-        <footer class="floating-dialog-footer">
-          <button class="secondary-btn" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+        <footer class="px-6 lg:px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4 shrink-0">
+          <button class="bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-800 text-slate-600 px-6 py-3 rounded-full text-sm font-bold transition-all focus:outline-none" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
             Cancelar
           </button>
-          <button class="primary-btn" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
+          <button class="bg-gradient-to-br from-sky-700 to-sky-600 hover:from-sky-800 hover:to-sky-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
             {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
           </button>
         </footer>
@@ -536,6 +566,24 @@ import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
 import { API_ROUTES } from '@/services/apiConfig';
 
+import {
+  IconGlobe,
+  IconLock,
+  IconCertificate,
+  IconIdBadge,
+  IconMapPins,
+  IconCircleCheck,
+  IconUser,
+  IconSquareCheck,
+  IconBell,
+  IconMenu2,
+  IconLogout,
+  IconSignature,
+  IconX,
+  IconArrowRight,
+  IconBuildingMonument
+} from '@tabler/icons-vue';
+
 const router = useRouter();
 const menuService = new UserMenuService();
 const processPanelService = new ProcessDefinitionPanelService();
@@ -545,6 +593,7 @@ const userPhoto = ref('/images/avatar.png');
 
 const showMenu = ref(true);
 const showNotify = ref(false);
+const showNavMenu = ref(false);
 
 const menuLoading = ref(false);
 const menuError = ref('');
@@ -630,6 +679,13 @@ const summaryRows = ref([
   { section: 'Firmas electrónicas', count: 0, status: 'Acción requerida', statusClass: 'status--warning', route: 'firmar' }
 ]);
 
+const getStatusTailwindClass = (statusClass) => {
+  if (statusClass === 'status--warning') return 'bg-amber-500';
+  if (statusClass === 'status--danger') return 'bg-rose-500';
+  if (statusClass === 'status--success') return 'bg-emerald-500';
+  return 'bg-slate-500';
+};
+
 const resolvePhotoUrl = (value) => {
   if (!value) {
     return '/images/avatar.png';
@@ -692,28 +748,28 @@ const toggleCargo = (cargo) => {
 
 const iconForCargo = (name = '') => {
   const normalized = name.toLowerCase();
-  if (normalized.includes('docen')) return 'certificate';
-  if (normalized.includes('coord')) return 'id-card';
-  if (normalized.includes('admin')) return 'lock';
-  return 'id-card';
+  if (normalized.includes('docen')) return IconCertificate;
+  if (normalized.includes('coord')) return IconIdBadge;
+  if (normalized.includes('admin')) return IconLock;
+  return IconIdBadge;
 };
 
 const iconForProcess = (name = '') => {
   const normalized = name.toLowerCase();
-  if (normalized.includes('firma')) return 'check-circle';
-  if (normalized.includes('perfil')) return 'user';
-  if (normalized.includes('academ')) return 'certificate';
-  if (normalized.includes('unidad')) return 'globe';
-  return 'square-check';
+  if (normalized.includes('firma')) return IconCircleCheck;
+  if (normalized.includes('perfil')) return IconUser;
+  if (normalized.includes('academ')) return IconCertificate;
+  if (normalized.includes('unidad')) return IconGlobe;
+  return IconSquareCheck;
 };
 
 const iconForUnitGroup = (group) => {
   const label = `${group?.label ?? ''} ${group?.name ?? ''}`.toLowerCase();
-  if (label.includes('univers')) return 'globe';
-  if (label.includes('facult')) return 'map-marked-alt';
-  if (label.includes('carrera')) return 'certificate';
-  if (label.includes('depart')) return 'id-card';
-  return 'id-card';
+  if (label.includes('univers')) return IconGlobe;
+  if (label.includes('facult')) return IconMapPins;
+  if (label.includes('carrera')) return IconCertificate;
+  if (label.includes('depart')) return IconIdBadge;
+  return IconIdBadge;
 };
 
 const resetTaskLaunchForm = () => {
@@ -960,754 +1016,3 @@ const toggleNavMenu = () => {
   showNavMenu.value = !showNavMenu.value;
 };
 </script>
-
-<style scoped>
-.dashboard-page {
-  min-height: 100vh;
-  background: #f1f5fb;
-}
-
-.header-left {
-  min-width: 0;
-}
-
-.group-menu {
-  display: flex;
-  align-items: stretch;
-  gap: 0.52rem;
-  overflow-x: auto;
-  padding: 0.12rem 0.2rem;
-  scrollbar-width: thin;
-}
-
-.group-menu::-webkit-scrollbar {
-  height: 6px;
-}
-
-.group-menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
-}
-
-.group-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.58rem;
-  min-width: 198px;
-  padding: 0.46rem 0.72rem;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.12);
-  border: none;
-  color: rgba(255, 255, 255, 0.94);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.group-item:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.group-item.active {
-  background: rgba(255, 255, 255, 0.96);
-  color: var(--brand-primary);
-  box-shadow: 0 10px 20px rgba(var(--brand-primary-rgb), 0.26);
-}
-
-.group-icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.18);
-  border: none;
-  font-size: 1rem;
-  flex: 0 0 auto;
-}
-
-.group-item.active .group-icon {
-  background: rgba(var(--color-puce-light-rgb), 0.12);
-}
-
-.group-content {
-  min-width: 0;
-  display: block;
-}
-
-.group-title {
-  font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1.2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-}
-
-.overview-card {
-  background: var(--brand-gradient);
-  color: var(--brand-white);
-  border-radius: 22px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 2rem;
-  box-shadow: var(--brand-shadow-strong);
-}
-
-.overview-card h1 {
-  font-size: 1.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.overview-card p {
-  max-width: 540px;
-  font-size: 1rem;
-  opacity: 0.9;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-.summary-card {
-  background: var(--brand-white);
-  padding: 1.5rem;
-  border-radius: 18px;
-  box-shadow: var(--brand-shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-height: 170px;
-}
-
-.summary-card header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.summary-card footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.summary-count {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--brand-navy);
-}
-
-.table-card {
-  background: var(--brand-white);
-  border-radius: 18px;
-  padding: 1.75rem;
-  box-shadow: var(--brand-shadow);
-}
-
-.table-card header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.status-pill {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.status--warning {
-  background: var(--state-warning);
-}
-
-.status--danger {
-  background: var(--state-danger);
-}
-
-.status--success {
-  background: var(--state-success);
-}
-
-.primary-btn {
-  background: var(--brand-gradient);
-  color: var(--brand-white);
-  border: none;
-  border-radius: 999px;
-  padding: 0.75rem 1.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 12px 26px rgba(var(--brand-primary-rgb), 0.22);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.primary-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(var(--brand-primary-rgb), 0.28);
-}
-
-.secondary-btn {
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  color: var(--brand-navy);
-  border: none;
-  border-radius: 999px;
-  padding: 0.5rem 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tiny-btn {
-  background: var(--brand-gradient);
-  color: var(--brand-white);
-  border: none;
-  border-radius: 999px;
-  padding: 0.35rem 0.85rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.link-btn {
-  background: transparent;
-  color: var(--brand-accent);
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-
-.center {
-  text-align: center !important;
-}
-
-.menu-context {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin: 0.75rem 0 0.5rem;
-  opacity: 0.85;
-}
-
-.menu-feedback {
-  font-size: 0.9rem;
-  margin: 0.5rem 0;
-}
-
-.menu-empty {
-  background: rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  color: var(--brand-white);
-  font-size: 0.85rem;
-  margin: 0.5rem 0;
-  padding: 0.5rem 0.75rem;
-}
-
-.process-console-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.process-console-hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 1.4rem;
-  padding: 2rem;
-  border-radius: 24px;
-  background:
-    linear-gradient(140deg, rgba(var(--brand-primary-rgb), 0.97), rgba(var(--brand-accent-rgb), 0.86)),
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 36%);
-  color: var(--brand-white);
-  box-shadow: 0 24px 50px rgba(var(--brand-primary-rgb), 0.2);
-}
-
-.process-console-hero-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.process-console-kicker {
-  font-size: 0.92rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.78;
-  font-weight: 700;
-}
-
-.process-console-hero h1 {
-  font-size: 2.2rem;
-  margin: 0;
-}
-
-.process-console-hero p {
-  margin: 0;
-  max-width: 760px;
-  opacity: 0.94;
-  font-size: 1.02rem;
-  line-height: 1.65;
-}
-
-.process-console-hero-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: flex-end;
-  justify-content: flex-start;
-}
-
-.process-console-badges,
-.task-meta-line,
-.task-inline-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.console-pill,
-.console-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.42rem 0.9rem;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.16);
-  color: inherit;
-}
-
-.console-pill--accent,
-.console-chip--accent {
-  background: rgba(var(--color-puce-light-rgb), 0.22);
-}
-
-.console-feedback-card {
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
-  color: var(--brand-navy);
-  border-radius: 16px;
-  padding: 1rem 1.1rem;
-  font-weight: 600;
-  font-size: 0.98rem;
-}
-
-.console-feedback-card--error {
-  background: rgba(220, 53, 69, 0.08);
-  border-color: rgba(220, 53, 69, 0.2);
-  color: #9a2330;
-}
-
-.console-feedback-card--success {
-  background: rgba(25, 135, 84, 0.08);
-  border-color: rgba(25, 135, 84, 0.2);
-  color: #1f6a47;
-}
-
-.process-summary-grid,
-.process-console-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 1.1rem;
-}
-
-.process-summary-card,
-.console-card {
-  grid-column: span 3;
-  background: var(--brand-white);
-  border-radius: 20px;
-  padding: 1.35rem 1.4rem;
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.08);
-  box-shadow: 0 14px 30px rgba(28, 43, 61, 0.06);
-}
-
-.process-summary-card header,
-.console-card-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.process-summary-card header strong {
-  font-size: 1.65rem;
-  color: var(--brand-navy);
-}
-
-.process-summary-card p,
-.console-card-header p {
-  margin: 0.6rem 0 0;
-  color: #5c6b7a;
-  font-size: 1rem;
-  line-height: 1.55;
-}
-
-.process-summary-card header span {
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: #44566b;
-}
-
-.console-card {
-  grid-column: span 4;
-}
-
-.console-card--span-2 {
-  grid-column: span 8;
-}
-
-.console-card--wide {
-  grid-column: span 8;
-}
-
-.console-card--full {
-  grid-column: 1 / -1;
-}
-
-.console-card h2,
-.console-card h3 {
-  margin: 0;
-  font-size: 1.28rem;
-  color: var(--brand-navy);
-}
-
-.console-empty {
-  border: 1px dashed rgba(var(--brand-primary-rgb), 0.18);
-  border-radius: 14px;
-  padding: 1rem 1.05rem;
-  color: #708295;
-  background: rgba(var(--brand-primary-rgb), 0.03);
-  font-size: 0.98rem;
-  line-height: 1.55;
-}
-
-.console-empty--inline {
-  padding: 0.7rem 0.8rem;
-}
-
-.task-stack,
-.simple-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.task-card,
-.simple-list-item {
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.12);
-  border-radius: 18px;
-  padding: 1.05rem 1.1rem;
-  background: rgba(var(--brand-primary-rgb), 0.02);
-}
-
-.task-card-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.task-card-header h3 {
-  margin: 0;
-  font-size: 1.14rem;
-}
-
-.task-card-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  color: #607285;
-  text-align: right;
-  font-size: 0.96rem;
-}
-
-.task-description {
-  margin: 0.9rem 0 0;
-  color: #4b5c6f;
-  font-size: 0.98rem;
-  line-height: 1.6;
-}
-
-.task-inline-stats {
-  margin-top: 0.8rem;
-  color: #5e7185;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.task-items-list {
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.task-item-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.95rem 1rem;
-  border-radius: 16px;
-  background: #f5f8fd;
-}
-
-.task-item-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.task-item-main strong,
-.simple-list-item strong {
-  display: block;
-  font-size: 1.04rem;
-  line-height: 1.45;
-  font-weight: 800;
-  color: var(--brand-navy);
-}
-
-.task-item-meta,
-.dependency-inline-meta {
-  color: #64768a;
-  font-size: 0.92rem;
-  line-height: 1.45;
-}
-
-.task-item-doc {
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  align-items: flex-end;
-  text-align: right;
-  color: #5c7086;
-  font-size: 0.92rem;
-  line-height: 1.45;
-}
-
-.simple-list-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: center;
-  font-size: 0.96rem;
-}
-
-.simple-list-item--stacked {
-  align-items: flex-start;
-  flex-direction: column;
-}
-
-.dependencies-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.dependency-block {
-  padding: 1.1rem;
-  border-radius: 18px;
-  background: rgba(var(--brand-primary-rgb), 0.03);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.1);
-}
-
-.dependency-block h3 {
-  font-size: 1.08rem;
-}
-
-.dependency-list {
-  margin: 0.85rem 0 0;
-  padding-left: 1rem;
-  color: #55677b;
-  font-size: 0.98rem;
-  line-height: 1.6;
-}
-
-.dependency-list li + li {
-  margin-top: 0.45rem;
-}
-
-.floating-dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  background: rgba(11, 28, 45, 0.46);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.floating-dialog {
-  width: min(52rem, calc(100vw - 2rem));
-  max-height: calc(100vh - 2rem);
-  overflow: auto;
-  background: var(--brand-white);
-  border-radius: 24px;
-  box-shadow: 0 36px 70px rgba(15, 32, 52, 0.24);
-}
-
-.floating-dialog-header,
-.floating-dialog-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.2rem;
-}
-
-.floating-dialog-header {
-  border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.08);
-}
-
-.floating-dialog-header h2 {
-  margin: 0;
-  font-size: 1.35rem;
-}
-
-.floating-dialog-header p {
-  margin: 0.2rem 0 0;
-  color: #63778a;
-  font-size: 0.98rem;
-}
-
-.floating-dialog-body {
-  padding: 1.1rem 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dialog-close-btn {
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 999px;
-  border: none;
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  color: var(--brand-navy);
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.dialog-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.dialog-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.dialog-field span {
-  font-weight: 700;
-  color: var(--brand-navy);
-  font-size: 0.96rem;
-}
-
-.dialog-field--full {
-  grid-column: 1 / -1;
-}
-
-.dialog-field--switch {
-  justify-content: flex-end;
-}
-
-.dialog-field--switch input {
-  width: 1.1rem;
-  height: 1.1rem;
-}
-
-.process-console-hero .primary-btn,
-.process-console-hero .secondary-btn,
-.console-card .tiny-btn,
-.floating-dialog-footer .primary-btn,
-.floating-dialog-footer .secondary-btn {
-  min-height: 2.75rem;
-  padding: 0.7rem 1.2rem;
-  border-radius: 14px;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.process-console-hero .primary-btn,
-.console-card .tiny-btn,
-.floating-dialog-footer .primary-btn {
-  background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.96), rgba(var(--brand-accent-rgb), 0.88));
-  box-shadow: 0 12px 24px rgba(var(--brand-primary-rgb), 0.16);
-}
-
-.process-console-hero .secondary-btn,
-.process-console-hero .secondary-btn {
-  background: rgba(255, 255, 255, 0.14);
-  color: var(--brand-white);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.console-card .tiny-btn {
-  color: var(--brand-navy);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.08);
-}
-
-.floating-dialog-footer .secondary-btn {
-  background: rgba(var(--brand-primary-rgb), 0.08);
-  color: var(--brand-navy);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.1);
-}
-
-@media (max-width: 960px) {
-  .overview-card {
-    flex-direction: column;
-  }
-
-  .process-console-hero,
-  .task-card-header,
-  .task-item-row,
-  .simple-list-item,
-  .floating-dialog-header,
-  .floating-dialog-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .process-summary-card,
-  .console-card,
-  .console-card--wide,
-  .console-card--full,
-  .console-card--span-2 {
-    grid-column: span 12;
-  }
-
-  .dependencies-grid,
-  .dialog-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .task-item-doc {
-    align-items: flex-start;
-    text-align: left;
-    min-width: 0;
-  }
-}
-</style>
