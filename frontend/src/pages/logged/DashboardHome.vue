@@ -152,14 +152,34 @@
         </section>
 
         <section class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
-          <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
+          <header class="flex items-center justify-between gap-4 mb-5">
             <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Resumen rápido</h2>
-            <button class="bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-sky-700 px-4 py-2 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 active:scale-[0.98]" @click="navigateTo('perfil')">
+            <button class="hidden sm:inline-flex bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-sky-700 px-4 py-2 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 active:scale-[0.98]" @click="navigateTo('perfil')">
               Gestionar perfil
             </button>
           </header>
 
-          <div class="overflow-x-auto w-full rounded-[1rem] border border-slate-100">
+          <!-- Vista móvil: Tarjetas -->
+          <div class="flex flex-col gap-3 sm:hidden">
+            <div v-for="row in summaryRows" :key="'mob-' + row.section" class="bg-white border border-slate-100 rounded-[1rem] p-4 shadow-sm flex flex-col gap-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex flex-col gap-0.5">
+                  <span class="font-bold text-slate-800 text-sm leading-tight">{{ row.section }}</span>
+                  <span class="text-slate-500 font-medium text-xs">{{ row.count }} registros</span>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm shrink-0" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
+              </div>
+              <button class="w-full mt-1 bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white py-2 rounded-lg text-xs font-bold transition-all" @click="navigateTo(row.route)">
+                Gestionar sección
+              </button>
+            </div>
+            <button class="w-full mt-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none" @click="navigateTo('perfil')">
+              Gestionar perfil completo
+            </button>
+          </div>
+
+          <!-- Vista desktop: Tabla -->
+          <div class="hidden sm:block overflow-x-auto w-full rounded-[1rem] border border-slate-100">
             <table class="w-full text-left border-collapse min-w-[600px] text-sm">
               <thead>
                 <tr class="bg-slate-50/80 border-b border-slate-100">
@@ -170,7 +190,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in summaryRows" :key="row.section" class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                <tr v-for="row in summaryRows" :key="'desk-' + row.section" class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
                   <td class="py-3.5 px-5 font-semibold text-slate-800">{{ row.section }}</td>
                   <td class="py-3.5 px-5 font-medium text-slate-600">{{ row.count }}</td>
                   <td class="py-3.5 px-5">
