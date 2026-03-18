@@ -60,9 +60,6 @@
         <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5" type="button" @click="toggleNotify" title="Notificaciones">
           <IconBell class="w-5 h-5" />
         </button>
-        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 md:hidden" type="button" @click="toggleNavMenu" title="Menú de navegación">
-          <IconMenu2 class="w-5 h-5" />
-        </button>
       </div>
     </s-header>
 
@@ -148,7 +145,7 @@
             <footer class="flex justify-between items-end mt-2">
               <span class="text-3xl font-extrabold text-slate-800">{{ card.count }}</span>
               <button class="text-sky-600 hover:text-sky-700 font-bold bg-transparent border-none p-0 inline-flex items-center gap-1 transition-colors" @click="navigateTo(card.route)">
-                {{ card.action }} <IconArrowRight class="w-4 h-4 ml-1" />
+                {{ card.action }} <IconArrowRight class="w-6 h-6 ml-1" />
               </button>
             </footer>
           </article>
@@ -576,7 +573,6 @@ import {
   IconUser,
   IconSquareCheck,
   IconBell,
-  IconMenu2,
   IconLogout,
   IconSignature,
   IconX,
@@ -862,6 +858,9 @@ const loadSelectedProcessPanel = async (process) => {
 const handleProcessSelect = async (process) => {
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
+  if (window.innerWidth < 1024) {
+    showMenu.value = false;
+  }
   await loadSelectedProcessPanel(process);
 };
 
