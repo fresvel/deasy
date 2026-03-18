@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid py-4">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
       title="Investigación y producción académica"
       subtitle="Gestiona artículos, libros, ponencias, tesis y proyectos."

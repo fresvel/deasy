@@ -1,111 +1,110 @@
 <template>  
-
+  <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <s-header :menu-open="vmenu" @onclick="handleHeaderToggle">
-        <div class="header-left">
-            <button class="nav-link text-white p-0" type="button" @click="handleUserIconClick">
-                <img class="avatar" :src="userPhoto" alt="User Avatar">
-            </button>
-            <router-link to="/roles" class="nav-link text-white p-0" title="Roles">
-                <font-awesome-icon icon="user" class="avatar" />
-            </router-link>
-
-            <button
-            class="nav-link text-white"
-            v-for="(area, index) in areas"
+       <div class="flex items-center gap-3 overflow-hidden flex-1">
+        <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
+          <button
+            v-for="(item, index) in areas"
             :key="index"
-            :class="{'active':area.active==true}"
+            class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
+            :class="item.active ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             type="button"
-            @click="onheadClick(area)"
-            >
-              {{ area.name}}
-            </button>
+            @click="onheadClick(item)"
+          >
+             <span class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
+          </button>
         </div>
+       </div>
 
-        <div class="header-right">
-            <router-link to="/logout" class="nav-link text-white p-0">
-                <img class="avatar" src="/images/logout.svg" alt="User Avatar">
-            </router-link>              
-            <button class="nav-link text-white p-0" type="button" @click="onheadClick({name:'Firmar'})"> 
-                <img class="avatar" src="/images/pen_line.svg" alt="User Avatar">
-            </button>
-            <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
-                <font-awesome-icon icon="bell" class="avatar" />
-            </button>
-            <button class="nav-link text-white p-0" type="button" @click="toggleNavMenu" title="Menú de navegación">
-                <font-awesome-icon icon="bars" class="avatar" />
-            </button>
-        </div>
+       <div class="flex items-center gap-2 shrink-0">
+          <router-link to="/roles" class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" title="Roles">
+            <IconUsers class="w-5 h-5" />
+          </router-link>
+
+          <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onheadClick({name:'Firmar'})" title="Firmar documentos">
+            <IconSignature class="w-5 h-5" />
+          </button>
+
+          <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
+            <IconBell class="w-5 h-5" />
+          </button>
+
+          <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Ir al perfil">
+            <img class="w-9 h-9 rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
+          </button>
+
+          <router-link to="/logout" class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
+            <IconLogout class="w-5 h-5" />
+          </router-link>
+       </div>
     </s-header>
-    
-      
-      <div class="row g-3">
-    
-        <s-menu :show="vmenu">
 
-            <div class="admin-menu">
-                <UserProfile
-                    :photo="userPhoto"
-                    :username="userFullName"
-                    :editable="true"
-                    @photo-selected="handlePhotoSelected"
-                />
-                <div class="menu-section">
-                  <button
-                    class="menu-section-title text-white w-100"
-                    type="button"
-                    :class="{ 'is-open': showCoordinacion }"
-                    @click="showCoordinacion = !showCoordinacion"
-                  >
-                      <span class="menu-title-left">
-                        <font-awesome-icon :icon="menuSectionIcons.coordinacion" class="menu-title-icon" />
-                        <span>Coordinación</span>
-                      </span>
-                  </button>
-
-                  <div v-show="showCoordinacion" class="menu-section-body">
-                    <div class="list-group list-group-flush">
-                      <button v-for="(item, index) of mainmenu" :key="index"
-                        class="list-group-item list-group-item-action"
-                        :class="{ active: item.active }"
-                        type="button"
-                        @click="onmenuClick(item.label)">
-                        <span class="menu-item-content">
-                          <font-awesome-icon :icon="item.icon || 'circle'" class="menu-item-icon" />
-                          <span>{{ item.label }}</span>
-                        </span>
-                        <span v-if="item.key" class="menu-indicator">
-                          {{ dossierCounts[item.key] ?? 0 }}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="menu-section">
-                  <button
-                    class="menu-section-title text-white w-100"
-                    type="button"
-                    :class="{ 'is-open': showDocencia }"
-                    @click="showDocencia = !showDocencia"
-                  >
-                    <span class="menu-title-left">
-                      <font-awesome-icon :icon="menuSectionIcons.docencia" class="menu-title-icon" />
-                      <span>Docencia</span>
-                    </span>
-                  </button>
-                  <div v-show="showDocencia" class="menu-section-body"></div>
-                </div>
+    <div class="flex flex-col lg:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+      <s-menu :show="vmenu" @close-mobile="vmenu = false">
+        <div class="flex flex-col">
+            <UserProfile
+                :photo="userPhoto"
+                :username="userFullName"
+                :editable="true"
+                @photo-selected="handlePhotoSelected"
+            />
+            
+            <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white px-2">
+                Secciones
             </div>
-        </s-menu>
-    
-        <s-body
-        :showmenu="vmenu"
-        :shownotify="vnotify"
-        :shownavmenu="showNavMenu"
-        >
 
+            <div class="flex flex-col gap-1 mt-2">
+              <div class="flex flex-col mb-1">
+                <button
+                  class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
+                  :class="{ 'bg-white/10 font-bold': showCoordinacion }"
+                  type="button"
+                  @click="showCoordinacion = !showCoordinacion"
+                >
+                    <span class="flex items-center gap-3 text-sm font-semibold">
+                      <IconId class="w-5 h-5 shrink-0 opacity-90" />
+                      <span class="truncate">Coordinación</span>
+                    </span>
+                </button>
 
-        <div v-if="area=='Perfil'" id="validar">
+                <div v-show="showCoordinacion" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
+                    <button v-for="(item, index) of mainmenu" :key="index"
+                      class="w-full text-left bg-transparent border-none py-2 px-3 rounded-lg text-sm transition-all focus:outline-none flex flex-row items-center justify-between hover:bg-white/10 hover:text-white"
+                      :class="item.active ? 'bg-white text-sky-700 font-bold shadow-sm shadow-sky-900/20' : 'text-white/80'"
+                      type="button"
+                      @click="onmenuClick(item.label)">
+                      <span class="flex items-center gap-2 truncate">
+                        <component :is="getMenuIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                        <span class="truncate">{{ item.label }}</span>
+                      </span>
+                      <span v-if="item.key" class="bg-sky-500/20 text-white text-xs py-0.5 px-2 rounded-full font-bold ml-2 shrink-0">
+                        {{ dossierCounts[item.key] ?? 0 }}
+                      </span>
+                    </button>
+                </div>
+              </div>
+
+              <div class="flex flex-col mb-1">
+                <button
+                  class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
+                  :class="{ 'bg-white/10 font-bold': showDocencia }"
+                  type="button"
+                  @click="showDocencia = !showDocencia"
+                >
+                  <span class="flex items-center gap-3 text-sm font-semibold">
+                    <IconCertificate class="w-5 h-5 shrink-0 opacity-90" />
+                    <span class="truncate">Docencia</span>
+                  </span>
+                </button>
+                <div v-show="showDocencia" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
+                </div>
+              </div>
+            </div>
+        </div>
+      </s-menu>
+
+      <s-body :showmenu="vmenu" :shownotify="vnotify">
+        <div v-if="area=='Perfil'" id="validar" class="w-full">
             <ProfileHomePanel
               v-if="process==='Inicio'"
               :current-user="currentUser"
@@ -120,26 +119,20 @@
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
             <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
         </div>
-        <div v-else-if="area=='Academia'">
+        <div v-else-if="area=='Academia'" class="w-full">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
             <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
             <TutoriasView v-else-if="process==='Tutorías'"></TutoriasView>
         </div>
-        <div v-else-if="area=='Firmar'">
+        <div v-else-if="area=='Firmar'" class="w-full">
             <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
         </div>
-
-        </s-body>
+      </s-body>
         
-        <s-message
-        :show="vnotify"
-        />
-        
-        <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
-          
-      </div>
-      
-      </template>
+      <s-message :show="vnotify" @close="vnotify = false" />
+    </div>
+  </div>
+</template>
           
     <script setup>  
     
@@ -151,8 +144,24 @@ import axios from 'axios';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
     import SHeader from '@/layouts/SHeader.vue';
-    import SNavMenu from '@/layouts/SNavMenu.vue';
     import UserProfile from '@/components/UserProfile.vue';
+    import { 
+      IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
+      IconInfoCircle, IconSignature, IconBell, IconUsers, IconLogout, IconMenu2 
+    } from '@tabler/icons-vue';
+
+    const getMenuIcon = (iconName) => {
+      const map = {
+        'user': IconUser,
+        'certificate': IconCertificate,
+        'check-double': IconChecks,
+        'id-card': IconId,
+        'square-check': IconSquareCheck,
+        'check-circle': IconCircleCheck,
+        'info-circle': IconInfoCircle
+      };
+      return map[iconName] || IconCircleCheck;
+    };
 import TitulosView from '@/sections/perfil/TitulosView.vue';
 import LaboralView from '@/sections/perfil/LaboralView.vue';
 import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
@@ -310,7 +319,7 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const areas =service.getEasymdata().areas
     const tareas=service.getEasymdata().tareas
     const vmenu = ref(true);
-    const vnotify = ref(true);
+    const vnotify = ref(false);
     const process= ref("Inicio")
 
     const area= ref("Perfil")
@@ -327,17 +336,7 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     };
       
     const toggleNotify = () => {
-        if (showNavMenu.value) {
-            showNavMenu.value = false;
-        }
         vnotify.value = !vnotify.value;
-    };
-    
-    const toggleNavMenu = () => {
-        if (vnotify.value) {
-            vnotify.value = false;
-        }
-        showNavMenu.value = !showNavMenu.value;
     };
     
     const navigateToPerfil = () => {

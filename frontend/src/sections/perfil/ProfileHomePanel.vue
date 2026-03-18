@@ -1,45 +1,48 @@
 <template>
-  <div class="profile-home container-fluid py-4">
-    <div class="card profile-home-card">
-      <div class="card-body">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-          <div class="d-flex align-items-center gap-3">
-            <img class="profile-home-avatar" :src="photo" alt="Foto de perfil" />
-            <div>
-              <h4 class="mb-1">{{ displayName }}</h4>
-              <p class="mb-0 profile-home-id">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
-            </div>
-          </div>
-        </div>
-
-        <p class="profile-home-copy mb-3">
-          Selecciona una sección para continuar con la gestión de tu dossier académico.
+  <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 w-full flex flex-col font-sans">
+    
+    <!-- User Context Card -->
+    <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left transition-shadow hover:shadow-md">
+      <img class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-slate-100" :src="photo" alt="Foto de perfil" />
+      <div class="flex-1 flex flex-col justify-center mt-2 sm:mt-0">
+        <h4 class="text-2xl font-bold text-slate-800 mb-1 tracking-tight">{{ displayName }}</h4>
+        <p class="text-sm font-medium text-slate-500 mb-3">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
+        <p class="text-slate-600 leading-relaxed text-sm max-w-2xl bg-sky-50/50 p-4 rounded-xl border border-sky-100">
+          Selecciona una sección para continuar con la gestión de tu dossier académico y actualizar tu información profesional.
         </p>
-
-        <div class="profile-home-grid">
-          <button
-            v-for="section in sectionCards"
-            :key="section.label"
-            class="profile-home-btn"
-            type="button"
-            @click="$emit('navigate-section', section.label)"
-          >
-            <span class="profile-home-btn-icon">
-              <font-awesome-icon :icon="section.icon" />
-            </span>
-            <span class="profile-home-btn-content">
-              <strong class="profile-home-btn-title">{{ section.label }}</strong>
-              <span class="profile-home-btn-meta">{{ section.meta }}</span>
-            </span>
-          </button>
-        </div>
       </div>
     </div>
+
+    <!-- Sections Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <button
+        v-for="section in sectionCards"
+        :key="section.label"
+        class="group bg-white rounded-xl border border-slate-200 p-5 text-left flex items-start gap-4 transition-all hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 hover:-translate-y-1"
+        type="button"
+        @click="$emit('navigate-section', section.label)"
+      >
+        <span class="w-12 h-12 flex-shrink-0 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+          <component :is="getIcon(section.icon)" class="w-6 h-6 stroke-[1.5]" />
+        </span>
+        <span class="flex flex-col flex-1 min-w-0 pt-0.5">
+          <strong class="text-slate-800 font-bold text-base block truncate group-hover:text-sky-700 transition-colors">{{ section.label }}</strong>
+          <span class="text-slate-500 text-sm font-medium mt-1 inline-flex items-center gap-1.5 opacity-80">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-sky-400 transition-colors"></span>
+            {{ section.meta }}
+          </span>
+        </span>
+      </button>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import { computed, defineProps, defineEmits } from "vue";
+import { 
+  IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe 
+} from '@tabler/icons-vue';
 
 const props = defineProps({
   currentUser: {
@@ -57,6 +60,18 @@ const props = defineProps({
 });
 
 defineEmits(["navigate-section"]);
+
+const getIcon = (name) => {
+  const map = {
+    'certificate': IconCertificate,
+    'check-double': IconChecks,
+    'id-card': IconId,
+    'square-check': IconSquareCheck,
+    'check-circle': IconCircleCheck,
+    'globe': IconGlobe
+  };
+  return map[name] || IconCircleCheck;
+};
 
 const sections = [
   { label: "Formación", key: "formacion", icon: "certificate" },
@@ -85,102 +100,5 @@ const displayName = computed(() => {
 </script>
 
 <style scoped>
-.profile-home-card {
-  border: 0;
-  border-radius: var(--radius-lg);
-}
-
-.profile-home-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.profile-home-copy {
-  color: var(--brand-muted);
-  font-size: 1rem;
-  line-height: 1.45;
-}
-
-.profile-home-id {
-  color: var(--brand-muted);
-  font-size: 0.92rem;
-  line-height: 1.35;
-}
-
-.profile-home-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.profile-home-btn {
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
-  border-radius: 12px;
-  background: #fff;
-  padding: 0.75rem 0.9rem;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  color: var(--brand-navy);
-  font-size: 0.95rem;
-  min-height: 74px;
-}
-
-.profile-home-btn-icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--brand-primary-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
-  color: var(--brand-primary);
-  flex: 0 0 auto;
-}
-
-.profile-home-btn-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
-  min-width: 0;
-}
-
-.profile-home-btn-title {
-  font-size: 1.03rem;
-  line-height: 1.2;
-  color: var(--brand-navy);
-}
-
-.profile-home-btn-meta {
-  font-size: 0.86rem;
-  opacity: 0.84;
-  line-height: 1.2;
-}
-
-.profile-home-btn:hover {
-  border-color: transparent;
-  color: #fff;
-  background: var(--brand-gradient);
-}
-
-.profile-home-btn:hover .profile-home-btn-title,
-.profile-home-btn:hover .profile-home-btn-meta {
-  color: #fff;
-}
-
-.profile-home-btn:hover .profile-home-btn-icon {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.26);
-  color: #fff;
-}
-
-@media (max-width: 575px) {
-  .profile-home-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* Scoped styles removed in favor of Tailwind CSS */
 </style>

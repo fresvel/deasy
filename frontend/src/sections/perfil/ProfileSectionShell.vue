@@ -1,18 +1,22 @@
 <template>
-  <section class="profile-shell">
-    <div class="profile-shell-surface">
-      <header class="profile-shell-header">
-        <div>
-          <h2 class="profile-shell-title">{{ title }}</h2>
-          <p class="profile-shell-subtitle">{{ subtitle }}</p>
+  <section class="max-w-[2560px] mx-auto px-4 sm:px-6 lg:px-8 w-full mt-10 mb-8 font-sans">
+    <div class="bg-white rounded-2xl shadow-[0_2px_15px_rgba(2,132,199,0.06)] border border-slate-200 relative pt-12 p-5 sm:px-8 sm:pb-8">
+      
+      <!-- Elevated Header -->
+      <header class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] sm:w-[90%] bg-white rounded-2xl border border-slate-200 p-4 sm:px-6 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+        <div class="flex-1">
+          <h2 class="m-0 font-bold text-xl sm:text-2xl text-slate-800 tracking-tight flex items-center gap-2">
+            {{ title }}
+          </h2>
+          <p class="mt-1 mb-0 text-sm text-slate-500 font-medium">{{ subtitle }}</p>
         </div>
-        <button v-if="showAdd" class="btn btn-primary btn-lg profile-add-btn" type="button" @click="$emit('add')">
-          <font-awesome-icon icon="plus" class="me-2" />
+        <button v-if="showAdd" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 hover:-translate-y-0.5" type="button" @click="$emit('add')">
+          <IconPlus class="w-5 h-5 stroke-[2.5]" />
           {{ addLabel }}
         </button>
       </header>
 
-      <div class="profile-shell-body">
+      <div class="mt-4 sm:mt-2">
         <slot />
       </div>
     </div>
@@ -21,6 +25,7 @@
 
 <script setup>
 import { defineProps, defineEmits } from "vue";
+import { IconPlus } from '@tabler/icons-vue';
 
 defineProps({
   title: {
@@ -43,59 +48,3 @@ defineProps({
 
 defineEmits(["add"]);
 </script>
-
-<style scoped>
-.profile-shell {
-  margin-bottom: 1rem;
-}
-
-.profile-shell-surface {
-  background: var(--brand-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--brand-shadow-soft);
-  padding: 0 1rem 1rem;
-}
-
-.profile-shell-header {
-  width: 97%;
-  margin: 0 auto;
-  transform: translateY(-28px);
-  border-radius: 20px;
-  background: var(--brand-white);
-  color: var(--brand-navy);
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.18);
-  padding: 1rem 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  box-shadow: 0 12px 20px rgba(var(--brand-primary-rgb), 0.14);
-}
-
-.profile-shell-title {
-  margin: 0;
-  font-weight: 700;
-  font-size: clamp(1.1rem, 2vw, 1.35rem);
-}
-
-.profile-shell-subtitle {
-  margin: 0.2rem 0 0;
-  color: var(--brand-ink);
-  font-size: 0.92rem;
-}
-
-.profile-shell-body {
-  margin-top: -0.6rem;
-}
-
-@media (max-width: 767px) {
-  .profile-shell-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .profile-shell-header .btn {
-    width: 100%;
-  }
-}
-</style>

@@ -1,5 +1,5 @@
 <template>
-<div class="container-fluid py-4">
+<div class="w-full animate-fade-in">
   <ProfileSectionShell
     title="Formación Profesional"
     subtitle="Registra tu formación académica y títulos obtenidos."
