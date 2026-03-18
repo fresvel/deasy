@@ -487,7 +487,7 @@
         </template>
       </s-body>
 
-      <s-message :show="showNotify" />
+      <s-message :show="showNotify" @close="showNotify = false" />
       
       <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
     </div>
