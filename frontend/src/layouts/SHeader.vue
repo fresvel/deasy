@@ -1,8 +1,8 @@
 <template>
   <header
-    class="sticky top-0 z-30 flex flex-col justify-center w-full bg-gradient-to-r from-sky-900 via-sky-800 to-sky-700 text-white shadow-xl border-b border-sky-600/50 px-4 py-2 min-h-[4rem] transition-all duration-300"
+    class="sticky top-0 z-30 flex flex-col justify-center w-full bg-gradient-to-r from-sky-900 via-sky-800 to-sky-700 text-white shadow-md border-b border-sky-600/50 px-4 py-2 min-h-[4rem] transition-all duration-300"
   >
-    <div class="flex items-center gap-4 w-full max-w-[1920px] mx-auto">
+    <div class="flex items-center gap-4 w-full max-w-[2560px] mx-auto">
       <button 
         class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30"
         type="button" 

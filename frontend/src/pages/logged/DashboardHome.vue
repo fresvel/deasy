@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-100 font-sans pb-10">
+  <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <s-header :menu-open="showMenu" @onclick="handleHeaderToggle">
       <div class="flex items-center gap-3 overflow-hidden flex-1">
         <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 shrink-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
@@ -66,8 +66,8 @@
       </div>
     </s-header>
 
-    <div class="flex flex-col lg:flex-row gap-6 px-4 lg:px-8 py-6 max-w-[1920px] mx-auto w-full items-start">
-      <s-menu :show="showMenu">
+    <div class="flex flex-col lg:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+      <s-menu :show="showMenu" @close-mobile="showMenu = false">
         <div class="flex flex-col">
           <UserProfile :photo="userPhoto" :username="userFullName" />
           <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white">
