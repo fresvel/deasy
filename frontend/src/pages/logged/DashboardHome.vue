@@ -2,9 +2,6 @@
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <s-header :menu-open="showMenu" @onclick="handleHeaderToggle">
       <div class="flex items-center gap-3 overflow-hidden flex-1">
-        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 shrink-0" type="button" @click="handleUserIconClick" title="Ir al perfil">
-          <img class="w-9 h-9 rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
-        </button>
 
         <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <div
@@ -49,17 +46,21 @@
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <router-link to="/logout" class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5 sm:ms-3" title="Cerrar sesión">
-          <IconLogout class="w-5 h-5" />
-        </router-link>
-
-        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
+        <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
           <IconSignature class="w-5 h-5" />
         </button>
 
-        <button class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/5" type="button" @click="toggleNotify" title="Notificaciones">
+        <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="toggleNotify" title="Notificaciones">
           <IconBell class="w-5 h-5" />
         </button>
+
+        <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Ir al perfil">
+          <img class="w-9 h-9 rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
+        </button>
+
+        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
+          <IconLogout class="w-5 h-5" />
+        </router-link>
       </div>
     </s-header>
 

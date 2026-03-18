@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid py-4">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
       title="Experiencia laboral"
       subtitle="Detalla tu experiencia docente y profesional."

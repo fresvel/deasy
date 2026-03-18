@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid py-4">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
       title="Certificaciones y reconocimientos"
       subtitle="Registra los certificados o reconocimientos relevantes para tu carrera."

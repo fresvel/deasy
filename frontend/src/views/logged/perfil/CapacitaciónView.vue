@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid py-4">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
       title="Formación continua y conferencias"
       subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."

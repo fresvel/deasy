@@ -1,10 +1,10 @@
 <template>
-  <section class="profile-table-block">
-    <div class="profile-table-block__surface">
-      <header class="profile-table-block__header">
-        <h3 class="profile-table-block__title">{{ title }}</h3>
+  <section class="mt-8 mb-6 font-sans">
+    <div class="bg-white rounded-xl border border-slate-200 p-1 sm:p-5 relative pt-8 shadow-sm">
+      <header class="absolute top-0 left-4 sm:left-6 -translate-y-1/2 bg-sky-600/10 text-sky-800 border border-sky-600/20 px-4 py-1.5 rounded-lg backdrop-blur-sm">
+        <h3 class="m-0 text-xs sm:text-sm font-bold tracking-wide uppercase">{{ title }}</h3>
       </header>
-      <div class="profile-table-block__content">
+      <div class="overflow-x-auto rounded-xl mt-1">
         <slot />
       </div>
     </div>
@@ -21,35 +21,3 @@ defineProps({
   }
 });
 </script>
-
-<style scoped>
-.profile-table-block {
-  margin-bottom: 1rem;
-}
-
-.profile-table-block__surface {
-  background: var(--brand-white);
-  border-radius: var(--radius-md);
-  box-shadow: var(--brand-shadow-soft);
-  padding: 0 0.9rem 0.9rem;
-}
-
-.profile-table-block__header {
-  transform: translateY(-14px);
-  background: var(--brand-gradient);
-  color: var(--brand-white);
-  border-radius: 14px;
-  padding: 0.65rem 0.9rem;
-  box-shadow: 0 10px 18px rgba(var(--brand-primary-rgb), 0.2);
-}
-
-.profile-table-block__title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.profile-table-block__content {
-  margin-top: -0.35rem;
-}
-</style>
