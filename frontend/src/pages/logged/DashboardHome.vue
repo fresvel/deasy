@@ -125,59 +125,59 @@
             <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
           </div>
           <div class="relative z-10 flex-1">
-            <h1 class="text-3xl md:text-4xl font-bold mb-3 tracking-tight">Bienvenido(a), {{ userFullName }}</h1>
-            <p class="max-w-2xl text-sky-100/90 text-lg font-medium">
+            <h1 class="text-2xl md:text-3xl font-bold mb-3 tracking-tight">Bienvenido(a), {{ userFullName }}</h1>
+            <p class="max-w-2xl text-sky-100/90 text-sm md:text-base font-medium">
               Este es tu panel general. Revisa el estado de tus módulos, firmas pendientes y completa tu perfil académico.
             </p>
           </div>
-          <button class="relative z-10 bg-white text-sky-700 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-500/30 whitespace-nowrap px-6 py-3.5 rounded-full font-bold shadow-lg shadow-sky-900/20 transition-all active:scale-[0.98]" @click="navigateTo('perfil')">
+          <button class="relative z-10 bg-white text-sky-700 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-500/30 whitespace-nowrap px-5 py-2.5 text-sm rounded-full font-bold shadow-lg shadow-sky-900/20 transition-all active:scale-[0.98]" @click="navigateTo('perfil')">
             Ir a mi perfil
           </button>
         </section>
 
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-4 min-h-[190px]" v-for="card in summaryCards" :key="card.title">
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+          <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-[160px]" v-for="card in summaryCards" :key="card.title">
             <header class="flex justify-between items-start gap-4">
-              <h3 class="text-lg font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm whitespace-nowrap shrink-0" :class="getStatusTailwindClass(card.statusClass)">{{ card.status }}</span>
+              <h3 class="text-base font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm whitespace-nowrap shrink-0" :class="getStatusTailwindClass(card.statusClass)">{{ card.status }}</span>
             </header>
-            <p class="text-slate-500 text-sm font-medium flex-1">{{ card.description }}</p>
-            <footer class="flex justify-between items-end mt-2">
-              <span class="text-3xl font-extrabold text-slate-800">{{ card.count }}</span>
-              <button class="text-sky-600 hover:text-sky-700 font-bold bg-transparent border-none p-0 inline-flex items-center gap-1 transition-colors" @click="navigateTo(card.route)">
-                {{ card.action }} <IconArrowRight class="w-6 h-6 ml-1" />
+            <p class="text-slate-500 text-xs md:text-sm font-medium flex-1 m-0">{{ card.description }}</p>
+            <footer class="flex justify-between items-center mt-1">
+              <span class="text-2xl md:text-3xl font-extrabold text-slate-800 leading-none">{{ card.count }}</span>
+              <button class="text-sky-600 hover:text-sky-700 text-sm font-bold bg-transparent border-none p-0 inline-flex items-center gap-1.5 transition-colors group" @click="navigateTo(card.route)">
+                {{ card.action }} <IconArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </footer>
           </article>
         </section>
 
-        <section class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 overflow-hidden mb-6">
-          <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <h2 class="text-xl font-bold text-slate-800">Resumen rápido</h2>
-            <button class="bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-sky-700 px-5 py-2.5 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 active:scale-[0.98]" @click="navigateTo('perfil')">
+        <section class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
+          <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
+            <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Resumen rápido</h2>
+            <button class="bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-sky-700 px-4 py-2 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 active:scale-[0.98]" @click="navigateTo('perfil')">
               Gestionar perfil
             </button>
           </header>
 
-          <div class="overflow-x-auto w-full rounded-2xl border border-slate-100">
-            <table class="w-full text-left border-collapse min-w-[600px]">
+          <div class="overflow-x-auto w-full rounded-[1rem] border border-slate-100">
+            <table class="w-full text-left border-collapse min-w-[600px] text-sm">
               <thead>
                 <tr class="bg-slate-50/80 border-b border-slate-100">
-                  <th class="py-4 px-6 font-bold text-slate-600 text-sm">Sección</th>
-                  <th class="py-4 px-6 font-bold text-slate-600 text-sm">Registros</th>
-                  <th class="py-4 px-6 font-bold text-slate-600 text-sm">Estado</th>
-                  <th class="py-4 px-6 font-bold text-slate-600 text-sm text-right">Acción</th>
+                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider">Sección</th>
+                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider">Registros</th>
+                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider">Estado</th>
+                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider text-right">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="row in summaryRows" :key="row.section" class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                  <td class="py-4 px-6 font-semibold text-slate-800">{{ row.section }}</td>
-                  <td class="py-4 px-6 font-medium text-slate-600">{{ row.count }}</td>
-                  <td class="py-4 px-6">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
+                  <td class="py-3.5 px-5 font-semibold text-slate-800">{{ row.section }}</td>
+                  <td class="py-3.5 px-5 font-medium text-slate-600">{{ row.count }}</td>
+                  <td class="py-3.5 px-5">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
                   </td>
-                  <td class="py-4 px-6 text-right">
-                    <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all" @click="navigateTo(row.route)">
+                  <td class="py-3.5 px-5 text-right">
+                    <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all" @click="navigateTo(row.route)">
                       Gestionar
                     </button>
                   </td>
@@ -200,7 +200,7 @@
                 <div class="text-sky-200 text-sm uppercase tracking-widest font-bold">
                   {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
                 </div>
-                <h1 class="text-3xl md:text-4xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
+                <h1 class="text-2xl md:text-3xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
                 <p class="max-w-3xl opacity-90 text-sm md:text-base font-medium m-0 mt-1">
                   Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
                   documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
@@ -245,21 +245,21 @@
 
             <template v-else>
               <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Tareas</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.tasks_total }}</strong></header>
-                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">{{ selectedProcessPanel.summary.tasks_pending }} pendientes o en curso.</p>
+                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tareas</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.tasks_total }}</strong></header>
+                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Pendientes o en curso.</p>
                 </article>
-                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Entregables</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.task_items_pending }}</strong></header>
-                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">Items pendientes ligados a tus tareas.</p>
+                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Entregables</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.task_items_pending }}</strong></header>
+                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Pendientes de tus tareas.</p>
                 </article>
-                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Documentos</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.documents_total }}</strong></header>
-                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">Documentos vinculados a tus entregables.</p>
+                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Documentos</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.documents_total }}</strong></header>
+                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Ligados a entregables.</p>
                 </article>
-                <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-1">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Firmas</span><strong class="text-3xl font-extrabold text-sky-800">{{ selectedProcessPanel.summary.signatures_pending }}</strong></header>
-                  <p class="text-sm font-medium text-slate-500 mt-1 leading-snug">Solicitudes de firma pendientes para ti.</p>
+                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Firmas</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.signatures_pending }}</strong></header>
+                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Solicitudes pendientes.</p>
                 </article>
               </section>
 
@@ -269,10 +269,10 @@
 
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-8 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-8 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
+                      <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
                       <p class="text-slate-500 text-sm mt-1 mb-0 font-medium">Solo se muestran las tareas donde participas o que creaste manualmente.</p>
                     </div>
                     <button
@@ -293,7 +293,7 @@
                     <article v-for="task in selectedProcessPanel.tasks" :key="task.id" class="border border-slate-200 rounded-[1.5rem] p-5 lg:p-6 bg-slate-50/30">
                       <header class="flex flex-col sm:flex-row justify-between gap-4 items-start mb-3">
                         <div class="flex flex-col gap-2">
-                          <h3 class="text-lg font-bold text-slate-800 m-0 leading-tight">{{ task.term_name }}</h3>
+                          <h3 class="text-base font-bold text-slate-800 m-0 leading-tight">{{ task.term_name }}</h3>
                           <div class="flex flex-wrap gap-2">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200/70 text-slate-700">{{ task.term_type_name }}</span>
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold" :class="task.launch_mode === 'manual' ? 'bg-sky-100 text-sky-700' : 'bg-slate-200/70 text-slate-700'">
@@ -346,9 +346,9 @@
 
                 <div class="lg:col-span-4 flex flex-col gap-6">
                   <!-- Paquetes -->
-                  <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                  <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                     <header class="flex flex-col gap-2">
-                      <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Mis paquetes</h2>
+                      <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Mis paquetes</h2>
                       <p class="text-slate-500 text-sm m-0 font-medium leading-snug">Paquetes de usuario asociados a tu cuenta.</p>
                     </header>
                     <div v-if="!selectedProcessPanel.user_packages.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
@@ -363,10 +363,10 @@
                   </article>
 
                   <!-- Firmas -->
-                  <article class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                  <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                     <header class="flex flex-col gap-4">
                       <div>
-                        <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Flujo de firmas</h2>
+                        <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Flujo de firmas</h2>
                         <p class="text-slate-500 text-sm mt-1 mb-0 font-medium leading-snug">Solicitudes de firma que te corresponden.</p>
                       </div>
                       <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm self-start" type="button" @click="navigateTo('firmar')">
@@ -390,9 +390,9 @@
                 </div>
 
                 <!-- Documentos (Wide) -->
-                <article class="lg:col-span-8 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-8 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col gap-2 mb-2">
-                    <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
+                    <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
                     <p class="text-slate-500 text-sm m-0 font-medium">Documentos de tus entregables en esta definición.</p>
                   </header>
                   <div v-if="!selectedProcessPanel.documents.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
@@ -416,9 +416,9 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 border border-slate-100 flex flex-col gap-6">
+                <article class="lg:col-span-12 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
-                    <h2 class="text-xl font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
+                    <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
                     <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y paquetes del sistema que hacen operativa esta definición.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
