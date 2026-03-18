@@ -118,7 +118,7 @@
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">
         <template v-if="!selectedProcessKey && !processPanelLoading">
-        <section class="bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 text-white rounded-[2rem] p-8 md:p-10 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-10 shadow-2xl shadow-slate-300/50 relative overflow-hidden">
+        <section class="bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 text-white rounded-[1.5rem] p-6 md:p-8 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 md:gap-8 shadow-2xl shadow-slate-300/50 relative overflow-hidden">
           <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
             <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
             <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
@@ -143,7 +143,7 @@
             </header>
             <p class="text-slate-500 text-xs md:text-sm font-medium flex-1 m-0">{{ card.description }}</p>
             <footer class="flex justify-between items-center mt-1">
-              <span class="text-2xl md:text-3xl font-extrabold text-slate-800 leading-none">{{ card.count }}</span>
+              <span class="font-extrabold text-slate-800 leading-none">{{ card.count }}</span>
               <button class="text-sky-600 hover:text-sky-700 text-sm font-bold bg-transparent border-none p-0 inline-flex items-center gap-1.5 transition-colors group" @click="navigateTo(card.route)">
                 {{ card.action }} <IconArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -190,7 +190,7 @@
 
         <template v-else>
           <section class="flex flex-col gap-8">
-            <section class="bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-[2rem] text-white shadow-2xl shadow-sky-900/20 flex flex-col md:flex-row justify-between gap-8 relative overflow-hidden">
+            <section class="bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-[1.5rem] text-white shadow-2xl shadow-sky-900/20 flex flex-col md:flex-row justify-between gap-5 md:gap-7 relative overflow-hidden">
                <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
                   <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
                   <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
@@ -206,16 +206,16 @@
                   documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
                 </p>
                 <div class="flex flex-wrap gap-2 mt-2">
-                  <span v-if="selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
+                  <span v-if="selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
                     {{ selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key }}
                   </span>
-                  <span v-if="selectedProcessPanel?.definition?.definition_version" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
+                  <span v-if="selectedProcessPanel?.definition?.definition_version" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
                     Versión {{ selectedProcessPanel.definition.definition_version }}
                   </span>
-                  <span v-if="selectedProcessPanel?.definition?.execution_mode" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
+                  <span v-if="selectedProcessPanel?.definition?.execution_mode" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
                     {{ selectedProcessPanel.definition.execution_mode || 'manual' }}
                   </span>
-                  <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm shadow-sm" :class="selectedProcessPanel?.permissions?.has_document ? 'bg-sky-400 text-sky-950' : 'bg-white/20 text-white'">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold backdrop-blur-sm shadow-sm" :class="selectedProcessPanel?.permissions?.has_document ? 'bg-sky-400 text-sky-950' : 'bg-white/20 text-white'">
                     {{ selectedProcessPanel?.permissions?.has_document ? 'Con documento' : 'Sin documento' }}
                   </span>
                 </div>
