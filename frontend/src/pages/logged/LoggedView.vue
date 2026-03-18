@@ -29,8 +29,8 @@
             <IconBell class="w-5 h-5" />
           </button>
 
-          <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Ir al perfil">
-            <img class="w-9 h-9 rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
+          <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Regresar al Dashboard">
+            <IconHome class="w-5 h-5" />
           </button>
 
           <router-link to="/logout" class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
@@ -147,7 +147,7 @@ import axios from 'axios';
     import UserProfile from '@/components/UserProfile.vue';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
-      IconInfoCircle, IconSignature, IconBell, IconUsers, IconLogout, IconMenu2 
+      IconInfoCircle, IconSignature, IconBell, IconUsers, IconLogout, IconMenu2, IconHome
     } from '@tabler/icons-vue';
 
     const getMenuIcon = (iconName) => {
@@ -391,17 +391,12 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
 
     const handleHeaderToggle = (target) => {
         if (target === 'User') {
-            router.push('/dashboard');
+            toggleVmenu();
         }
     };
 
     const handleUserIconClick = () => {
-        if (route.name !== 'perfil') {
-            router.push('/perfil');
-        } else {
-            toggleVmenu();
-        }
-        onheadClick({ name: 'Perfil' });
+        router.push('/dashboard');
     };
     
 
