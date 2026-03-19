@@ -1,17 +1,17 @@
 <template>
   <header
-    class="sticky top-0 z-30 flex flex-col justify-center w-full bg-gradient-to-r from-sky-900 via-sky-800 to-sky-700 text-white shadow-md border-b border-sky-600/50 px-4 py-2 min-h-[4rem] transition-all duration-300"
+    class="sticky top-0 z-30 flex flex-col justify-center w-full bg-gradient-to-r from-sky-900 via-sky-800 to-sky-700 text-white shadow-md border-b border-sky-600/50 px-2 sm:px-4 py-2 min-h-[3.5rem] sm:min-h-[4rem] transition-all duration-300"
   >
-    <div class="flex items-center gap-4 w-full max-w-[2560px] mx-auto">
+    <div class="flex items-center gap-2 sm:gap-4 w-full max-w-[2560px] mx-auto">
       <button 
-        class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+        class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30"
         type="button" 
         @click="onClick('User')" 
         aria-label="Abrir menú"
       >
-        <IconMenu2 class="w-6 h-6" />
+        <IconMenu2 class="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
-      <div class="flex items-center justify-between w-full gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div class="flex items-center justify-between w-full gap-2 sm:gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <slot></slot>
       </div>
     </div>
