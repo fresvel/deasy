@@ -1,387 +1,382 @@
 <template>
-  
-<div class="container-fluid py-4">
-  <div class="profile-section-header">
-    <div>
-      <h2 class="text-start profile-section-title">Firmas electronicas</h2>
-      <p class="profile-section-subtitle">
-        Carga documentos y define las areas de estampado para la firma.
-      </p>
-    </div>
-  </div>
-
-  <div v-if="pdfReady" :class="['firmar-top-bar', { 'firmar-top-bar--compact': compactTopBar }]">
-    <div class="firmar-top-group firmar-top-group--left">
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-lg profile-add-btn top-action-btn"
-        title="Regresar"
-        aria-label="Regresar"
-        @click="goBackToStart"
-      >
-        <font-awesome-icon icon="backward" />
-      </button>
-      <button type="button" class="btn btn-outline-primary btn-lg profile-add-btn top-action-btn" @click="triggerChangePdf">
-        Cambiar PDF
-      </button>
-      <input
-        ref="changePdfInput"
-        type="file"
-        class="file-input-hidden"
-        accept="application/pdf"
-        @change="onChangePdf"
-      />
-      <select
-        v-if="!compactTopBar"
-        v-model="selectionMode"
-        class="mode-select top-action-control"
-        @change="setSelectionMode(selectionMode)"
-      >
-        <option value="drag">Manual</option>
-        <option value="preset">Predefinida</option>
-      </select>
-    </div>
-    <div class="firmar-top-group firmar-top-group--center">
-      <div class="page-controls">
-        <button @click="prevPageBtn" class="btnav">
-          <font-awesome-icon icon="backward" class="icon" />
-          <span class="tooltip">Página Anterior</span>
-        </button>
-        <div class="page-info">
-          <span class="page-info-label">P</span>
-          <input
-            v-model="pageInput"
-            class="page-input"
-            type="number"
-            min="1"
-            :max="totalPages"
-            @keyup.enter="goToPage"
-          />
-          <span class="page-total">de {{ totalPages }}</span>
-        </div>
-        <button @click="nextPageBtn" class="btnav">
-          <font-awesome-icon icon="forward" class="icon" />
-          <span class="tooltip">Página Siguiente</span>
-        </button>
+  <div class="w-full h-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
+        <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
+          Carga documentos y define las areas de estampado para la firma.
+        </p>
       </div>
-      <div v-if="compactTopBar" class="page-actions">
+    </div>
+
+    <div v-if="pdfReady" class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start lg:items-center mt-4 border-b border-slate-100 pb-4">
+      <div class="flex flex-wrap gap-3 items-center justify-start order-1 lg:order-1">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+          title="Regresar"
+          aria-label="Regresar"
+          @click="goBackToStart"
+        >
+          <IconArrowLeft class="w-5 h-5" />
+        </button>
+        <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-sky-700 text-sky-700 hover:bg-sky-50 transition font-semibold text-sm" @click="triggerChangePdf">
+          Cambiar PDF
+        </button>
+        <input
+          ref="changePdfInput"
+          type="file"
+          class="hidden"
+          accept="application/pdf"
+          @change="onChangePdf"
+        />
         <select
+          v-if="!compactTopBar"
           v-model="selectionMode"
-          class="mode-select top-action-control"
+          class="block rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
           @change="setSelectionMode(selectionMode)"
         >
           <option value="drag">Manual</option>
           <option value="preset">Predefinida</option>
         </select>
-        <button type="button" class="btn btn-primary btn-lg profile-add-btn top-action-btn" @click="submitAction">
+      </div>
+      
+      <div class="flex flex-col items-center gap-3 order-2 lg:order-2">
+        <div class="flex items-center gap-3">
+          <button @click="prevPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
+            <IconChevronLeft class="w-6 h-6" />
+            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Anterior</span>
+          </button>
+          <div class="flex items-center gap-2 bg-sky-50 text-slate-800 rounded-xl px-4 py-2 font-semibold">
+            <span class="text-sm">P</span>
+            <input
+              v-model="pageInput"
+              class="w-16 px-2 py-1 rounded-lg bg-white border border-slate-300 text-center text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              type="number"
+              min="1"
+              :max="totalPages"
+              @keyup.enter="goToPage"
+            />
+            <span class="text-sm">de {{ totalPages }}</span>
+          </div>
+          <button @click="nextPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
+            <IconChevronRight class="w-6 h-6" />
+            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Siguiente</span>
+          </button>
+        </div>
+        
+        <div v-if="compactTopBar" class="flex flex-wrap gap-3 justify-center w-full mt-2">
+          <select
+            v-model="selectionMode"
+            class="block rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            @change="setSelectionMode(selectionMode)"
+          >
+            <option value="drag">Manual</option>
+            <option value="preset">Predefinida</option>
+          </select>
+          <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm" @click="submitAction">
+            {{ requestMode ? 'Enviar' : 'Firmar' }}
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-3 items-center justify-end order-3 lg:order-3">
+        <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-sky-700 text-sky-700 hover:bg-sky-50 transition font-semibold text-sm" @click="addFieldAction">
+          Agregar firma
+        </button>
+        <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-red-600 text-red-600 hover:bg-red-50 transition font-semibold text-sm" @click="openDeleteModal">
+          Eliminar
+        </button>
+        <button
+          v-if="!compactTopBar"
+          type="button"
+          class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm"
+          @click="submitAction"
+        >
           {{ requestMode ? 'Enviar' : 'Firmar' }}
         </button>
       </div>
     </div>
-    <div class="firmar-top-group firmar-top-group--right">
-      <button type="button" class="btn btn-outline-primary btn-lg profile-add-btn top-action-btn" @click="addFieldAction">
-        Agregar firma
-      </button>
-      <button type="button" class="btn btn-outline-danger btn-lg profile-add-btn top-action-btn" @click="openDeleteModal">
-        Eliminar
-      </button>
-      <button
-        v-if="!compactTopBar"
-        type="button"
-        class="btn btn-primary btn-lg profile-add-btn top-action-btn"
-        @click="submitAction"
-      >
-        {{ requestMode ? 'Enviar' : 'Firmar' }}
-      </button>
-    </div>
-  </div>
 
-  <div v-if="!pdfReady" class="row mt-3">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-body p-4">
-          <h3 class="text-start mb-3">Selecciona el documento a firmar</h3>
-          <div class="row g-4 align-items-stretch">
-            <div class="col-12 col-lg-4">
-              <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                  <h3 class="text-start mb-3">Firmar documento</h3>
-                  <div
-                    class="drop-button btn btn-primary btn-lg w-100"
-                    :class="{ 'drop-button--active': activeDropZone === 'sign' }"
-                    @dragover.prevent="setActiveDrop('sign')"
-                    @dragleave="clearActiveDrop('sign')"
-                    @drop="onDropFiles($event, 'sign')"
-                  >
-                    <input
-                      id="sign_pdf_input"
-                      type="file"
-                      class="file-input-hidden"
-                      accept="application/pdf"
-                      @change="onFileInput($event, 'sign')"
-                    />
-                    <label class="w-100 m-0" for="sign_pdf_input">
-                      Seleccionar documento
-                    </label>
-                  </div>
-                  <p class="text-muted mt-2 drop-help">
-                    Arrastra y suelta o selecciona un PDF.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-lg-4">
-              <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                  <h3 class="text-start mb-3">Buscar en base de datos</h3>
-                  <button type="button" class="btn btn-primary btn-lg w-100" disabled>
-                  Proximamente
-                  </button>
-                  <p class="text-muted mt-2 drop-help">
-                    Se mostraran solicitudes pendientes con detalles del documento.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-lg-4">
-              <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                  <h3 class="text-start mb-3">Solicitar firmas</h3>
-                  <div
-                    class="drop-button btn btn-primary btn-lg w-100"
-                    :class="{ 'drop-button--active': activeDropZone === 'request' }"
-                    @dragover.prevent="setActiveDrop('request')"
-                    @dragleave="clearActiveDrop('request')"
-                    @drop="onDropFiles($event, 'request')"
-                  >
-                    <input
-                      id="request_pdf_input"
-                      type="file"
-                      class="file-input-hidden"
-                      accept="application/pdf"
-                      @change="onFileInput($event, 'request')"
-                    />
-                    <label class="w-100 m-0" for="request_pdf_input">
-                      Iniciar solicitud
-                    </label>
-                  </div>
-                  <p class="text-muted mt-2 drop-help">
-                    Envia el documento a otros usuarios para firmarlo.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-lg-4">
-              <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                  <h3 class="text-start mb-3">Validar documento</h3>
-                  <div
-                    class="drop-button btn btn-primary btn-lg w-100"
-                    :class="{ 'drop-button--active': activeDropZone === 'validate' }"
-                    @dragover.prevent="setActiveDrop('validate')"
-                    @dragleave="clearActiveDrop('validate')"
-                    @drop="onDropFiles($event, 'validate')"
-                  >
-                    <input
-                      id="validate_pdf_input"
-                      type="file"
-                      class="file-input-hidden"
-                      accept="application/pdf"
-                      @change="onFileInput($event, 'validate')"
-                    />
-                    <label class="w-100 m-0" for="validate_pdf_input">
-                      Validar documento
-                    </label>
-                  </div>
-                  <p class="text-muted mt-2 drop-help">
-                    Verifica firmas y estado del documento.
-                  </p>
-                </div>
-              </div>
-            </div>
+    <div v-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+      <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Firmar documento</h3>
+          <div
+            class="relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition cursor-pointer w-full flex-grow"
+            :class="activeDropZone === 'sign' ? 'border-sky-500 bg-sky-50/50' : 'border-slate-300 bg-white hover:bg-slate-50'"
+            @dragover.prevent="setActiveDrop('sign')"
+            @dragleave="clearActiveDrop('sign')"
+            @drop="onDropFiles($event, 'sign')"
+          >
+            <IconSignature class="w-8 h-8 text-sky-600 mb-3" />
+            <input
+              id="sign_pdf_input"
+              type="file"
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept="application/pdf"
+              @change="onFileInput($event, 'sign')"
+            />
+            <label class="text-sm font-semibold text-slate-700 w-full m-0 pointer-events-none" for="sign_pdf_input">
+              Seleccionar documento
+            </label>
+            <p class="text-slate-500 text-xs mt-2">Arrastra y suelta o selecciona un PDF.</p>
           </div>
-          <p v-if="uploadError" class="text-danger mt-3 mb-0">{{ uploadError }}</p>
         </div>
+        
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en base de datos</h3>
+          <div class="flex flex-col items-center justify-center flex-grow">
+            <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
+              Próximamente
+            </button>
+            <p class="text-slate-500 text-xs mt-3 text-left">Se mostraran solicitudes pendientes con detalles del documento.</p>
+          </div>
+        </div>
+        
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitar firmas</h3>
+          <div
+            class="relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition cursor-pointer w-full flex-grow"
+            :class="activeDropZone === 'request' ? 'border-sky-500 bg-sky-50/50' : 'border-slate-300 bg-white hover:bg-slate-50'"
+            @dragover.prevent="setActiveDrop('request')"
+            @dragleave="clearActiveDrop('request')"
+            @drop="onDropFiles($event, 'request')"
+          >
+            <IconSend class="w-8 h-8 text-sky-600 mb-3" />
+            <input
+              id="request_pdf_input"
+              type="file"
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept="application/pdf"
+              @change="onFileInput($event, 'request')"
+            />
+            <label class="text-sm font-semibold text-slate-700 w-full m-0 pointer-events-none" for="request_pdf_input">
+              Iniciar solicitud
+            </label>
+            <p class="text-slate-500 text-xs mt-2">Envía el documento a otros usuarios.</p>
+          </div>
+        </div>
+        
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Validar documento</h3>
+          <div
+            class="relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition cursor-pointer w-full flex-grow"
+            :class="activeDropZone === 'validate' ? 'border-sky-500 bg-sky-50/50' : 'border-slate-300 bg-white hover:bg-slate-50'"
+            @dragover.prevent="setActiveDrop('validate')"
+            @dragleave="clearActiveDrop('validate')"
+            @drop="onDropFiles($event, 'validate')"
+          >
+            <IconShieldCheck class="w-8 h-8 text-sky-600 mb-3" />
+            <input
+              id="validate_pdf_input"
+              type="file"
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept="application/pdf"
+              @change="onFileInput($event, 'validate')"
+            />
+            <label class="text-sm font-semibold text-slate-700 w-full m-0 pointer-events-none" for="validate_pdf_input">
+              Validar documento
+            </label>
+            <p class="text-slate-500 text-xs mt-2">Verifica firmas y estado del documento.</p>
+          </div>
+        </div>
+
       </div>
+      <p v-if="uploadError" class="text-red-500 font-medium mt-4 text-sm">{{ uploadError }}</p>
     </div>
-  </div>
 
-  <div v-else class="row mt-3">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-body p-2 pdf-container" ref="colPdf">
-              <div class="pdf-viewer" ref="pdfViewer">
-              <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
-            </div>
-          </div>
-        </div>
-        </div>        
-  </div>
-  <div v-if="pdfReady" class="row">
-        <p class="col-12 text-center mt-3 coordinates-text" ref="coordinatesDisplay">
-          Haz clic y arrastra para dibujar cuadros. Cada cuadro queda fijado.
-        </p>
-  </div>
-  <div v-if="pdfReady && fields.length" class="row">
-        <div class="col-12">
-          <div class="card shadow-sm mt-3">
-          <div class="card-body">
-              <h4 class="text-start mb-3">Campos agregados</h4>
-              <div class="list-group">
-                <div
-                  v-for="field in fields"
-                  :key="field.id"
-                  class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                  :class="{ active: field.id === lastFieldId }"
-                  @click="selectField(field.id)"
-                >
-                  <span>
-                    Pagina {{ field.page }}: x1={{ formatCoord(field.x1) }},
-                    y1={{ formatCoord(field.y1) }}, x2={{ formatCoord(field.x2) }},
-                    y2={{ formatCoord(field.y2) }}
-                    <span v-if="field.signer">
-                      · {{ field.signer.first_name }} {{ field.signer.last_name }}
-                    </span>
-                  </span>
-                  <button type="button" class="btn btn-outline-danger btn-sm" @click.stop="removeField(field.id)">
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-  </div>
-  <div v-if="pdfReady && fields.length" class="row">
-        <div class="col-12">
-          <pre class="fields-json">{{ fieldsJson }}</pre>
-        </div>
-  </div>
-
-</div>
-
-<div class="modal fade" id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Eliminar campos</h5>
-        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div v-if="!fields.length" class="text-muted">No hay firmas para eliminar.</div>
-        <div v-else>
-          <div class="row g-3 align-items-start">
-            <div class="col-12 col-lg-6">
-              <div class="d-flex align-items-center gap-2 mb-3">
-                <label class="form-label mb-0">Filtrar por pagina</label>
-                <select v-model="filterPage" class="form-select form-select-sm w-auto">
-                  <option value="all">Todas</option>
-                  <option v-for="page in pagesWithFields" :key="page" :value="page">
-                    {{ page }}
-                  </option>
-                </select>
-              </div>
-              <div class="list-group">
-                <div
-                  v-for="field in filteredFields"
-                  :key="field.id"
-                  class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                  :class="{ active: field.id === lastFieldId }"
-                  @mouseenter="selectField(field.id, true)"
-                  @focus="selectField(field.id, true)"
-                >
-                  <span>
-                    {{ field.name }}
-                    <span class="field-signer text-muted">
-                      · {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
-                    </span>
-                  </span>
-                  <button type="button" class="btn btn-outline-danger btn-sm" @click.stop="removeField(field.id)">
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-lg-6">
-              <div class="preview-card">
-                <h6 class="mb-2">Previsualizacion</h6>
-                <canvas ref="previewCanvas" class="preview-canvas"></canvas>
-                <p v-if="!selectedField" class="text-muted small mt-2 mb-0">
-                  Selecciona un campo para ver el recorte.
-                </p>
-              </div>
-            </div>
+    <div v-else class="mt-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+        <div class="w-full relative flex justify-center" ref="colPdf">
+          <div class="relative shadow-sm border border-slate-200" ref="pdfViewer">
+            <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="modal fade" id="assignSignerModal" tabindex="-1" aria-hidden="true" ref="assignSignerModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Asignar firmante</h5>
-        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-          <label class="form-label mb-0">Buscar usuario</label>
-          <select v-model="statusFilter" class="form-select form-select-sm w-auto">
-            <option value="all">Todos</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-            <option value="Verificado">Verificado</option>
-            <option value="Reportado">Reportado</option>
-          </select>
-        </div>
-        <input
-          v-model="signerInput"
-          type="text"
-          class="form-control"
-          placeholder="Correo, cedula o nombre"
-        />
-        <div class="user-results mt-3">
-          <div v-if="isSearchingUsers" class="text-muted small">Buscando usuarios...</div>
-          <div v-else-if="userResults.length === 0" class="text-muted small">
-            No hay usuarios disponibles.
-          </div>
-          <div v-else class="list-group">
-            <button
-              v-for="user in userResults"
-              :key="user.id || user._id"
-              type="button"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedSigner?.id === user.id || selectedSigner?._id === user._id }"
-              @click="selectSigner(user)"
-            >
-              <div class="fw-semibold">{{ user.first_name }} {{ user.last_name }}</div>
-              <div class="small text-muted">{{ user.email }} · {{ user.cedula }}</div>
+    <div v-if="pdfReady" class="text-center font-medium text-slate-500 mt-2 text-sm" ref="coordinatesDisplay">
+      Haz clic y arrastra para dibujar cuadros. Cada cuadro queda fijado.
+    </div>
+
+    <div v-if="pdfReady && fields.length" class="mt-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h4 class="text-lg font-semibold text-slate-800 mb-4 text-left">Campos agregados</h4>
+        <div class="flex flex-col gap-3">
+          <div
+            v-for="field in fields"
+            :key="field.id"
+            class="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer gap-4"
+            :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+            @click="selectField(field.id)"
+          >
+            <span class="text-sm text-slate-700">
+              <span class="font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded mr-1">Pag {{ field.page }}</span>
+              <span class="mx-2 text-slate-400">|</span>
+              x1={{ formatCoord(field.x1) }}, y1={{ formatCoord(field.y1) }}, 
+              x2={{ formatCoord(field.x2) }}, y2={{ formatCoord(field.y2) }}
+              <template v-if="field.signer">
+                <span class="mx-2 text-slate-400">|</span>
+                <span class="text-sky-700 font-medium">
+                  {{ field.signer.first_name }} {{ field.signer.last_name }}
+                </span>
+              </template>
+            </span>
+            <button type="button" class="inline-flex px-3 py-1.5 text-sm rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium" @click.stop="removeField(field.id)">
+              Eliminar
             </button>
           </div>
         </div>
-        <p v-if="userSearchError" class="text-danger small mt-2 mb-0">{{ userSearchError }}</p>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
-          Cancelar
-        </button>
-        <button type="button" class="btn btn-primary" @click="confirmSigner">
-          Guardar
-        </button>
+    </div>
+    
+    <div v-if="pdfReady && fields.length" class="mt-6 mb-8">
+      <div class="bg-slate-800 text-slate-300 rounded-2xl shadow-sm border border-slate-700 p-4">
+        <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">JSON Output</div>
+        <pre class="text-xs whitespace-pre-wrap overflow-auto font-mono custom-scrollbar">{{ fieldsJson }}</pre>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/40 backdrop-blur-sm" id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
+    <div class="flex items-center justify-center min-h-screen px-4 py-8">
+      <div class="modal-dialog relative w-full max-w-4xl mx-auto my-12">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-100">
+          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <h5 class="text-xl font-bold text-slate-800">Eliminar campos</h5>
+            <button type="button" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition" data-modal-dismiss aria-label="Close">
+              <IconX class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6 overflow-y-auto max-h-[80vh]">
+            <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
+            <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                  <label class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
+                  <select v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+                    <option value="all">Todas</option>
+                    <option v-for="page in pagesWithFields" :key="page" :value="page">
+                      Pagina {{ page }}
+                    </option>
+                  </select>
+                </div>
+                <div class="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div
+                    v-for="field in filteredFields"
+                    :key="field.id"
+                    class="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                    :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+                    @mouseenter="selectField(field.id, true)"
+                    @focus="selectField(field.id, true)"
+                  >
+                    <span class="text-sm font-medium text-slate-800 flex flex-col gap-1">
+                      {{ field.name }}
+                      <span class="text-slate-500 text-xs font-normal">
+                        {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
+                      </span>
+                    </span>
+                    <button type="button" class="inline-flex px-3 py-1.5 text-xs rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium" @click.stop="removeField(field.id)">
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 min-h-[320px] flex flex-col relative sticky top-0">
+                <h6 class="text-sm font-semibold text-slate-700 mb-3">Previsualizacion del área</h6>
+                <div class="flex-grow flex items-center justify-center bg-slate-200/50 rounded-lg overflow-hidden border border-slate-200 relative">
+                  <canvas ref="previewCanvas" class="max-w-full block bg-white"></canvas>
+                  <p v-if="!selectedField" class="text-slate-500 text-sm absolute">
+                    Selecciona un campo.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-
-  </template>
-  
+  <div class="modal fixed inset-0 z-50 hidden bg-slate-950/40 backdrop-blur-sm" id="assignSignerModal" tabindex="-1" aria-hidden="true" ref="assignSignerModal">
+    <div class="flex items-center justify-center min-h-[calc(100vh-3rem)] px-4 py-8">
+      <div class="modal-dialog relative w-full max-w-lg mx-auto">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-100">
+          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <h5 class="text-xl font-bold text-slate-800">Asignar firmante</h5>
+            <button type="button" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition" data-modal-dismiss aria-label="Close">
+              <IconX class="w-5 h-5" />
+            </button>
+          </div>
+          <div class="p-6">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-wrap items-center gap-3">
+                <label class="font-semibold text-sm text-slate-700 mb-0">Listado de usuarios</label>
+                <select v-model="statusFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+                  <option value="all">Todos</option>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                  <option value="Verificado">Verificado</option>
+                  <option value="Reportado">Reportado</option>
+                </select>
+              </div>
+              <input
+                v-model="signerInput"
+                type="text"
+                class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                placeholder="Correo, cédula o nombre"
+              />
+              
+              <div class="mt-2 min-h-[220px] max-h-[300px] overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
+                <div v-if="isSearchingUsers" class="text-slate-500 text-sm text-center py-10 font-medium">Buscando usuarios...</div>
+                <div v-else-if="userResults.length === 0" class="text-slate-500 text-sm text-center py-10 font-medium">
+                  No se han encontrado resultados.
+                </div>
+                <div v-else class="flex flex-col gap-2">
+                  <button
+                    v-for="user in userResults"
+                    :key="user.id || user._id"
+                    type="button"
+                    class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-sm"
+                    :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+                    @click="selectSigner(user)"
+                  >
+                    <div class="font-semibold text-slate-800 text-sm flex items-center justify-between w-full">
+                      <span>{{ user.first_name }} {{ user.last_name }}</span>
+                      <span v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" class="text-sky-600 bg-sky-100 px-2 py-0.5 rounded text-xs">Seleccionado</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                      <span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{{ user.cedula }}</span>
+                      <span>{{ user.email }}</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <p v-if="userSearchError" class="text-red-500 text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-slate-50 rounded-b-2xl">
+            <button type="button" class="inline-flex items-center px-4 py-2 font-semibold text-slate-600 hover:text-slate-800 transition" data-modal-dismiss>
+              Cancelar
+            </button>
+            <button type="button" class="inline-flex items-center justify-center px-6 py-2 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold shadow-sm" @click="confirmSigner">
+              Guardar y Asignar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose } from 'vue';
   import * as pdfjsLib from "pdfjs-dist/webpack"; // Usa esta línea para Webpack
   import { Modal } from '@/utils/modalController';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   
   let ctx;
@@ -1073,299 +1068,58 @@
     defineExpose({ resetToStart });
 
   </script>
-  
-  <style scoped>
+<style scoped>
+.pdf-viewer {
+  position: relative;
+  max-width: 100%;
+}
 
-    .page-info-column {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .page-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background-color: var(--brand-info-soft);
-      color: var(--brand-navy);
-      border-radius: var(--radius-md);
-      padding: 0.6rem 1rem;
-      font-size: 1rem;
-      font-weight: 600;
-      min-width: var(--top-control-width);
-      min-height: var(--top-control-height);
-    }
-
-    .page-info-label {
-      font-size: 1rem;
-    }
-
-    .page-input {
-      width: 5rem;
-      padding: 0.35rem 0.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--brand-navy);
-      font-size: 1rem;
-      text-align: center;
-      color: var(--brand-navy);
-      background-color: var(--brand-white);
-    }
-
-    .page-total {
-      font-size: 1rem;
-    }
-
-    .firmar-top-bar {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      grid-template-areas: "left center right";
-      gap: 1rem;
-      align-items: center;
-      margin-top: 1rem;
-      --top-control-width: 200px;
-      --top-control-height: 2.6rem;
-    }
-
-    .firmar-top-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .firmar-top-group--left {
-      grid-area: left;
-      justify-content: flex-start;
-    }
-
-    .firmar-top-group--center {
-      grid-area: center;
-      justify-content: center;
-      gap: 0.75rem;
-    }
-
-    .firmar-top-group--right {
-      grid-area: right;
-      justify-content: flex-end;
-    }
-
-    .top-action-btn,
-    .top-action-control {
-      min-width: var(--top-control-width);
-      min-height: var(--top-control-height);
-    }
-
-    .top-action-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .page-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-
-    .page-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-
-    .firmar-top-bar--compact .firmar-top-group--center {
-      align-items: flex-start;
-    }
-
-    .firmar-top-bar--compact .page-controls {
-      justify-content: center;
-    }
-
-    .firmar-top-bar--compact .page-actions {
-      margin-top: 0.35rem;
-    }
-
-    .mode-select {
-      border: 1px solid var(--brand-navy);
-      border-radius: 10px;
-      padding: 0.65rem 1.75rem;
-      font-size: 1.25rem;
-      font-weight: 400;
-      color: var(--brand-navy);
-      background-color: var(--brand-white);
-      line-height: 1.2;
-    }
-
-    @media (max-width: 992px) {
-      .firmar-top-bar {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "left"
-          "center"
-          "right";
-      }
-
-      .firmar-top-group--center {
-        order: 2;
-      }
-
-      .firmar-top-group--right {
-        order: 3;
-      }
-    }
-
-    .pdf-viewer {
-      position: relative;
-      max-width: 100%;
-    }
-
-    .drop-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      background: rgba(44, 123, 229, 0.08);
-      border: 2px dashed rgba(44, 123, 229, 0.5);
-      color: var(--brand-navy);
-    }
-
-    .drop-button label {
-      cursor: pointer;
-    }
-
-    .drop-button--active {
-      background: rgba(44, 123, 229, 0.18);
-      border-color: rgba(44, 123, 229, 0.85);
-      color: var(--brand-navy);
-    }
-
-    .drop-help {
-      font-size: 1rem;
-    }
-
-    .user-results {
-      max-height: 280px;
-      overflow: auto;
-    }
-
-    .list-group-item.active .field-signer.text-muted {
-      color: var(--brand-white) !important;
-    }
-
-    .file-input-hidden {
-      display: none;
-    }
-
-    .pdf-canvas {
-      border: 1px solid var(--brand-navy);
-      cursor: crosshair;
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    :deep(.box) {
-      border: 2px dashed var(--brand-accent, #2b8a3e);
-      position: absolute;
-      background-color: rgba(var(--brand-accent-rgb, 0, 150, 80), 0.25);
-      z-index: 2;
-    }
-
-    :deep(.saved-box) {
-      cursor: pointer;
-    }
-
-    :deep(.saved-box-delete) {
-      position: absolute;
-      top: -0.5rem;
-      right: -0.5rem;
-      background: var(--brand-danger, #dc3545);
-      color: var(--brand-white, #fff);
-      border: none;
-      border-radius: 999px;
-      padding: 0.2rem 0.45rem;
-      font-size: 0.7rem;
-      z-index: 3;
-      pointer-events: auto;
-      cursor: pointer;
-    }
-
-    :deep(.saved-box--active) {
-      border-color: var(--brand-accent);
-      box-shadow: 0 0 0 2px rgba(var(--brand-accent-rgb, 0, 150, 80), 0.35);
-    }
-
-    .coordinates-text {
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    .fields-json {
-      background: var(--brand-info-soft);
-      border-radius: var(--radius-md);
-      padding: 1rem;
-      font-size: 0.9rem;
-      color: var(--brand-navy);
-      white-space: pre-wrap;
-    }
-
-    .preview-card {
-      border: 1px solid var(--brand-line);
-      border-radius: var(--radius-md);
-      padding: 0.9rem;
-      background: var(--brand-surface-alt);
-      min-height: 320px;
-    }
-
-    .preview-canvas {
-      width: 100%;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--brand-line);
-      background: var(--brand-white);
-      display: block;
-    }
-
-  .btnav {
-    position: relative;
-    margin-left: 5px;
-    margin-top: 5px;
-    padding: 0.35rem 0.6rem;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 2.4rem;
-    font-weight: bold;
-    color: var(--brand-accent);
-    --tooltip-bg: var(--brand-accent);
-    transition: color 0.3s ease-in-out;
-  }
-
-.tooltip {
-  visibility: hidden; /* Inicialmente oculto */
+:deep(.box) {
+  border: 2px dashed var(--brand-accent, #0ea5e9);
   position: absolute;
-  bottom: 100%; /* Lo coloca justo encima del botón */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--tooltip-bg);
-  color: var(--brand-white);
-  padding: 5px;
-  height:100%;
-  font-family: var(--font-base);
-  border-radius: 3px;
-  font-size: 16px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s;
+  background-color: rgba(14, 165, 233, 0.25);
+  z-index: 2;
 }
 
-.btnav:hover .tooltip {
-  visibility: visible;
-  opacity: 1; /* Lo hace visible cuando el hover es activado */
+:deep(.saved-box) {
+  cursor: pointer;
 }
-  </style>
-  
+
+:deep(.saved-box-delete) {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: var(--state-danger, #dc3545);
+  color: var(--brand-white, #fff);
+  border: none;
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 3;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+:deep(.saved-box-delete:hover) {
+  background: #b02a37;
+}
+
+:deep(.saved-box--active) {
+  border-color: var(--brand-accent, #0ea5e9);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--brand-border, #e2e8f0);
+  border-radius: 10px;
+}
+</style>
