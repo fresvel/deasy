@@ -39,7 +39,7 @@
        </div>
     </s-header>
 
-    <div class="flex flex-col lg:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <s-menu :show="vmenu" @close-mobile="vmenu = false">
         <div class="flex flex-col">
             <UserProfile

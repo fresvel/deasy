@@ -1,15 +1,5 @@
 <template>
-  <div class="modal-body w-full w-full px-2 px-md-3 py-3">
-    <header class="mb-4">
-      <h2 class="modal-title fw-semibold mb-1">Registrar certificación</h2>
-      <p class="text-muted mb-0">Ingresa los datos de la certificación o reconocimiento obtenido.</p>
-    </header>
-
-    <div v-if="errorMessage" class="alert alert-danger mb-3" role="alert">
-      {{ errorMessage }}
-    </div>
-
-    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+<ProfileModalLayout title="Agregar certificación" description="Detalla tus certificaciones o avales obtenidos." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
       <div class="w-full">
         <label for="cert-tema" class="form-label">Nombre de la certificación</label>
         <textarea
@@ -69,20 +59,11 @@
         ></textarea>
       </div>
 
-      <div class="col-12 flex justify-end gap-2 mt-3">
-        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
-          Cancelar
-        </button>
-        <button type="submit" class="btn btn-primary btn-lg" :disabled="isSubmitting">
-          <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          {{ isSubmitting ? "Guardando..." : "Guardar" }}
-        </button>
-      </div>
-    </form>
-  </div>
+      </ProfileModalLayout>
 </template>
 
 <script setup>
+import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
 import axios from "axios";
