@@ -125,15 +125,9 @@
 
 <!-- Modal -->
 <div class="modal fade" id="referenciaModal" tabindex="-1" aria-labelledby="referenciaModalLabel" aria-hidden="true" ref="modal">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="referenciaModalLabel">Agregar Referencia</h5>
-        <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
-      </div>
-          <div class="modal-body">
-        <AgregarReferencia @referencia-added="handleReferenciaAdded" />
-      </div>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-2xl overflow-hidden p-0">
+      <AgregarReferencia @referencia-added="handleReferenciaAdded" />
     </div>
   </div>
 </div>

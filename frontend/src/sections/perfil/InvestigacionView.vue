@@ -202,15 +202,9 @@
     </ProfileSectionShell>
 
     <div class="modal fade" id="investigacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Agregar registro de investigación</h5>
-            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <AgregarInvestigacion @investigacion-added="handleInvestigacionAdded" />
-          </div>
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-2xl overflow-hidden p-0">
+          <AgregarInvestigacion @investigacion-added="handleInvestigacionAdded" />
         </div>
       </div>
     </div>

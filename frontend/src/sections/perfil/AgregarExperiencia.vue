@@ -18,7 +18,7 @@
         <input
           v-if="form.institucion === 'Otra'"
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Especifica la institución"
           v-model="form.institucionPersonalizada"
         />
@@ -35,7 +35,7 @@
       <div class="w-full">
         <label class="form-label">Funciones, cátedras o actividades</label>
         <textarea
-          class="form-control form-control-lg"
+          class="form-control "
           rows="3"
           v-model="form.actividades"
           placeholder="Describe las funciones o cátedras separadas por comas"

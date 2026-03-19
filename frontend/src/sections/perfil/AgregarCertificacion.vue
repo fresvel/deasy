@@ -4,7 +4,7 @@
         <label for="cert-tema" class="form-label">Nombre de la certificación</label>
         <textarea
           id="cert-tema"
-          class="form-control form-control-lg"
+          class="form-control "
           rows="2"
           v-model="form.titulo"
           placeholder="Ej. Certificación en Gestión de Proyectos"
@@ -21,7 +21,7 @@
         <input
           v-if="form.institucion === 'Otra'"
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Especifica la institución"
           v-model="form.institucionPersonalizada"
         />
@@ -52,7 +52,7 @@
         <label for="cert-descripcion" class="form-label">Descripción (opcional)</label>
         <textarea
           id="cert-descripcion"
-          class="form-control form-control-lg"
+          class="form-control "
           rows="2"
           v-model="form.descripcion"
           placeholder="Información adicional relevante"

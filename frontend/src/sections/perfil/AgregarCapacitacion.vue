@@ -4,7 +4,7 @@
         <label for="cap-tema" class="form-label">Tema</label>
         <textarea
           id="cap-tema"
-          class="form-control form-control-lg"
+          class="form-control "
           rows="2"
           v-model="form.tema"
           placeholder="Nombre del evento o curso"
@@ -21,7 +21,7 @@
         <input
           v-if="form.institucion === 'Otra'"
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Especifica la institución"
           v-model="form.institucionPersonalizada"
         />
