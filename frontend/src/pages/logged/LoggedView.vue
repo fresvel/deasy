@@ -17,7 +17,7 @@
        </div>
 
        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-          <router-link to="/roles" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3 !text-white/90" title="Roles">
+          <router-link to="/roles" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" title="Roles">
             <IconUsers class="w-4 h-4 sm:w-5 sm:h-5" />
           </router-link>
 
@@ -33,7 +33,7 @@
             <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 !text-white/90" title="Cerrar sesión">
+          <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
             <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
           </router-link>
        </div>
