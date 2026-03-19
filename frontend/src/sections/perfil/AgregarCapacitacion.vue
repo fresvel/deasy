@@ -9,8 +9,8 @@
       {{ errorMessage }}
     </div>
 
-    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
-      <div class="col-md-6">
+    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+      <div class="w-full">
         <label for="cap-tema" class="form-label">Tema</label>
         <textarea
           id="cap-tema"
@@ -21,7 +21,7 @@
         ></textarea>
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Institución</label>
         <s-select
           :options="instituciones"
@@ -37,7 +37,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Tipo</label>
         <s-select
           :options="['Docente', 'Profesional']"
@@ -45,7 +45,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Rol</label>
         <s-select
           :options="['Asistencia', 'Instructor', 'Aprobación']"
@@ -53,7 +53,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">País</label>
         <s-select
           :options="escountries"
@@ -77,7 +77,7 @@
         />
       </div>
 
-      <div class="col-md-4">
+      <div class="w-full">
         <s-input
           label="Duración (horas)"
           type="number"

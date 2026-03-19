@@ -9,8 +9,8 @@
       {{ errorMessage }}
     </div>
 
-    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
-      <div class="col-md-6">
+    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+      <div class="w-full">
         <label class="form-label">Tipo de referencia</label>
         <SSelect
           :options="['laboral', 'personal', 'familiar']"
@@ -18,7 +18,7 @@
         />
       </div>
 
-      <div class="col-md-6" v-if="form.tipo === 'laboral'">
+      <div class="w-full" v-if="form.tipo === 'laboral'">
         <label class="form-label">Institución</label>
         <input
           type="text"
@@ -28,7 +28,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Nombres</label>
         <input
           type="text"
@@ -38,7 +38,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
         <input
           type="text"
@@ -48,7 +48,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Correo electrónico</label>
         <input
           type="email"
@@ -58,7 +58,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Teléfono</label>
         <input
           type="text"

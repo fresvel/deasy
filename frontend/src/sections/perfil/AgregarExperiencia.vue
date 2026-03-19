@@ -5,8 +5,8 @@
       <p class="text-muted mb-0">Describe la experiencia profesional o docente que deseas registrar.</p>
     </header>
 
-    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
-      <div class="col-md-4">
+    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+      <div class="w-full">
         <label class="form-label">Tipo</label>
         <SSelect
           :options="['Docencia', 'Profesional']"
@@ -14,7 +14,7 @@
         />
       </div>
 
-      <div class="col-md-8">
+      <div class="w-full">
         <label class="form-label">Institución</label>
         <SSelect
           :options="instituciones"
@@ -30,15 +30,15 @@
         />
       </div>
 
-      <div class="col-md-4">
+      <div class="w-full">
         <SDate label="Fecha de inicio" placeholder="Selecciona la fecha" v-model="form.fecha_inicio" />
       </div>
 
-      <div class="col-md-4">
+      <div class="w-full">
         <SDate label="Fecha de fin" placeholder="Selecciona la fecha" v-model="form.fecha_fin" />
       </div>
 
-      <div class="col-12">
+      <div class="w-full">
         <label class="form-label">Funciones, cátedras o actividades</label>
         <textarea
           class="form-control form-control-lg"
@@ -49,7 +49,7 @@
         <small class="text-muted">Separa múltiples funciones o cátedras con comas</small>
       </div>
 
-      <div v-if="errorMessage" class="col-12">
+      <div v-if="errorMessage" class="w-full">
         <div class="alert alert-danger" role="alert">
           {{ errorMessage }}
         </div>

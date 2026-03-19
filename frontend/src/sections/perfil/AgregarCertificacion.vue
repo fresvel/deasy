@@ -9,8 +9,8 @@
       {{ errorMessage }}
     </div>
 
-    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
-      <div class="col-md-6">
+    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+      <div class="w-full">
         <label for="cert-tema" class="form-label">Nombre de la certificación</label>
         <textarea
           id="cert-tema"
@@ -21,7 +21,7 @@
         ></textarea>
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Institución emisora</label>
         <s-select
           :options="instituciones"
@@ -37,7 +37,7 @@
         />
       </div>
 
-      <div class="col-md-4">
+      <div class="w-full">
         <label class="form-label">Ámbito</label>
         <s-select
           :options="['Nacional', 'Internacional']"
@@ -45,11 +45,11 @@
         />
       </div>
 
-      <div class="col-md-4">
+      <div class="w-full">
         <s-date label="Fecha de emisión" placeholder="Selecciona la fecha" v-model="form.fecha" />
       </div>
 
-      <div class="col-md-4">
+      <div class="w-full">
         <s-input
           label="Horas o créditos"
           type="number"
@@ -58,7 +58,7 @@
         />
       </div>
 
-      <div class="col-12">
+      <div class="w-full">
         <label for="cert-descripcion" class="form-label">Descripción (opcional)</label>
         <textarea
           id="cert-descripcion"

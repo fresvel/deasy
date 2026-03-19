@@ -9,8 +9,8 @@
       {{ errorMessage }}
     </div>
 
-    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
-      <div class="col-md-6">
+    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+      <div class="w-full">
         <label class="form-label">Título</label>
         <s-select
           :options="carreras"
@@ -26,7 +26,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label class="form-label">Institución</label>
         <s-select
           :options="universidades"
@@ -42,7 +42,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label for="pais" class="form-label">País de emisión</label>
         <s-select
           id="pais"
@@ -52,7 +52,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label for="registro" class="form-label">Número de registro</label>
         <s-input
           id="registro"
@@ -61,7 +61,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label for="tipo" class="form-label">Modalidad</label>
         <s-select
           id="tipo"
@@ -71,7 +71,7 @@
         />
       </div>
 
-      <div class="col-md-6">
+      <div class="w-full">
         <label for="nivel" class="form-label">Nivel</label>
         <s-select
           id="nivel"
@@ -81,7 +81,7 @@
         />
       </div>
 
-      <div class="col-12">
+      <div class="w-full">
         <label for="campo" class="form-label">Campo de conocimiento</label>
         <textarea
           id="campo"
