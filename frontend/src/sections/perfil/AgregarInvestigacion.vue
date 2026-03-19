@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-body px-2 px-md-3 py-3">
+  <div class="modal-body w-full w-full px-2 px-md-3 py-3">
     <header class="mb-4">
       <h2 class="modal-title fw-semibold mb-1">Registrar investigación</h2>
       <p class="text-muted mb-0">Selecciona el tipo de producción y completa la información.</p>
@@ -9,7 +9,7 @@
       {{ errorMessage }}
     </div>
 
-    <form class="row g-4" @submit.prevent="onSubmit">
+    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
       <div class="col-md-6">
         <label class="form-label">Tipo de producción</label>
         <select v-model="form.tipoProduccion" class="form-select form-select-lg">
@@ -187,7 +187,7 @@
         <input v-model="form.pais" type="text" class="form-control form-control-lg" />
       </div>
 
-      <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+      <div class="col-12 flex justify-end gap-2 mt-3">
         <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
           Cancelar
         </button>

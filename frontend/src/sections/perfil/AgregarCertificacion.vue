@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-body px-2 px-md-3 py-3">
+  <div class="modal-body w-full w-full px-2 px-md-3 py-3">
     <header class="mb-4">
       <h2 class="modal-title fw-semibold mb-1">Registrar certificación</h2>
       <p class="text-muted mb-0">Ingresa los datos de la certificación o reconocimiento obtenido.</p>
@@ -9,7 +9,7 @@
       {{ errorMessage }}
     </div>
 
-    <form class="row g-4" @submit.prevent="onSubmit">
+    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
       <div class="col-md-6">
         <label for="cert-tema" class="form-label">Nombre de la certificación</label>
         <textarea
@@ -26,7 +26,7 @@
         <s-select
           :options="instituciones"
           v-model="form.institucion"
-          class="w-100 mb-2"
+          class="w-full mb-2"
         />
         <input
           v-if="form.institucion === 'Otra'"
@@ -69,7 +69,7 @@
         ></textarea>
       </div>
 
-      <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+      <div class="col-12 flex justify-end gap-2 mt-3">
         <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
           Cancelar
         </button>

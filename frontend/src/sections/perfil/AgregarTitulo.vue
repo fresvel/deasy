@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-body px-2 px-md-3 py-3">
+  <div class="modal-body w-full w-full px-2 px-md-3 py-3">
     <header class="mb-4">
       <h2 class="modal-title fw-semibold mb-1">Agregar título académico</h2>
       <p class="text-muted mb-0">Completa los campos con los datos oficiales del título registrado.</p>
@@ -9,13 +9,13 @@
       {{ errorMessage }}
     </div>
 
-    <form class="row g-4" @submit.prevent="onSubmit">
+    <form class="flex flex-col gap-4 w-full" @submit.prevent="onSubmit">
       <div class="col-md-6">
         <label class="form-label">Título</label>
         <s-select
           :options="carreras"
           v-model="form.titulo"
-          class="w-100 mb-2"
+          class="w-full mb-2"
         />
         <input
           v-if="form.titulo === 'Otro'"
@@ -31,7 +31,7 @@
         <s-select
           :options="universidades"
           v-model="form.ies"
-          class="w-100 mb-2"
+          class="w-full mb-2"
         />
         <input
           v-if="form.ies === 'Otra'"
@@ -48,7 +48,7 @@
           id="pais"
           :options="escountries"
           v-model="form.pais"
-          class="w-100"
+          class="w-full"
         />
       </div>
 
@@ -67,7 +67,7 @@
           id="tipo"
           :options="modalidades"
           v-model="form.tipo"
-          class="w-100"
+          class="w-full"
         />
       </div>
 
@@ -77,7 +77,7 @@
           id="nivel"
           :options="niveles"
           v-model="form.nivel"
-          class="w-100"
+          class="w-full"
         />
       </div>
 
@@ -92,7 +92,7 @@
         ></textarea>
       </div>
 
-      <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+      <div class="col-12 flex justify-end gap-2 mt-3">
         <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
           Cancelar
         </button>
