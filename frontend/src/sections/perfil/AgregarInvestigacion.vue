@@ -1,15 +1,5 @@
 <template>
-  <div class="modal-body w-full w-full px-2 px-md-3 py-3">
-    <header class="mb-4">
-      <h2 class="modal-title fw-semibold mb-1">Registrar investigación</h2>
-      <p class="text-muted mb-0">Selecciona el tipo de producción y completa la información.</p>
-    </header>
-
-    <div v-if="errorMessage" class="alert alert-danger mb-3" role="alert">
-      {{ errorMessage }}
-    </div>
-
-    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+<ProfileModalLayout title="Agregar investigación" description="Registra tus proyectos de investigación formales." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
       <div class="w-full">
         <label class="form-label">Tipo de producción</label>
         <select v-model="form.tipoProduccion" class="form-select form-select-lg">
@@ -187,20 +177,11 @@
         <input v-model="form.pais" type="text" class="form-control form-control-lg" />
       </div>
 
-      <div class="col-12 flex justify-end gap-2 mt-3">
-        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
-          Cancelar
-        </button>
-        <button type="submit" class="btn btn-primary btn-lg" :disabled="isSubmitting">
-          <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          {{ isSubmitting ? "Guardando..." : "Guardar" }}
-        </button>
-      </div>
-    </form>
-  </div>
+      </ProfileModalLayout>
 </template>
 
 <script setup>
+import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
 import axios from "axios";

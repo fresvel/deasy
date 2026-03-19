@@ -1,15 +1,5 @@
 <template>
-  <div class="modal-body w-full w-full px-2 px-md-3 py-3">
-    <header class="mb-4">
-      <h2 class="modal-title fw-semibold mb-1">Agregar título académico</h2>
-      <p class="text-muted mb-0">Completa los campos con los datos oficiales del título registrado.</p>
-    </header>
-
-    <div v-if="errorMessage" class="alert alert-danger" role="alert">
-      {{ errorMessage }}
-    </div>
-
-    <form class="flex flex-col gap-4 w-full max-w-lg mx-auto" @submit.prevent="onSubmit">
+<ProfileModalLayout title="Agregar título académico" description="Completa los campos con los datos oficiales del título registrado." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
       <div class="w-full">
         <label class="form-label">Título</label>
         <s-select
@@ -92,20 +82,11 @@
         ></textarea>
       </div>
 
-      <div class="col-12 flex justify-end gap-2 mt-3">
-        <button type="button" class="btn btn-outline-secondary btn-lg" @click="onCancel" :disabled="isSubmitting">
-          Cancelar
-        </button>
-        <button type="submit" class="btn btn-primary btn-lg" :disabled="isSubmitting">
-          <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          {{ isSubmitting ? "Guardando..." : "Guardar título" }}
-        </button>
-      </div>
-    </form>
-  </div>
+      </ProfileModalLayout>
 </template>
 
 <script setup>
+import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
 import axios from "axios";
