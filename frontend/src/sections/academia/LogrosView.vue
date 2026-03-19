@@ -1,101 +1,73 @@
 <template>
-
-
-<div v-if="1==1" class="card shadow-sm mb-4">
-  <div class="card-body">
+  <div class="w-full animate-fade-in flex flex-col gap-6">
     
-    <h4 class="text-center text-uppercase fw-semibold mb-4">
-        Tareas Pendientes
-    </h4>
+    <!-- Tareas Pendientes -->
+    <div v-if="1==1" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <h4 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+        <span>Tareas Pendientes</span>
+      </h4>
       
-
-    <div class="row">
-    
-    <div class="col-12">
-    
-      <table class="table table-institutional table-striped table-hover align-middle">
-              <thead>
-              <tr>
-                  <th class="text-left">
-                  Número
-                  </th>
-                  <th class="text-left">
-                  Actividad
-                  </th>
-                  <th class="text-left">
-                  Vencimiento
-                  </th>
-                  <th class="text-left">
-                  Estado
-                  </th>
-                  <th>
-                  Periodo
-                  </th>
-                  <th class="text-left">
-                  Acción
-                  </th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="(item, index) in props.tareas" :key="index">
-                  <td>{{ index }}</td>
-                  <td>{{ item.process_name || item.process_slug || 'Proceso' }}</td>
-                  <td>{{ formatDate(item.start_date || item.end_date) }}</td>
-                  <td>{{ item.assignment_status || item.task_status }}</td>
-                  <td>{{ item.term_id ?? '' }}</td>
-                  <td>
-                    <button 
-                    @click="removeRow(index, level)"
-                    class="btn btn-outline-danger btn-sm">
-                        Eliminar {{ index }}-{{ level }}
-                    </button>
-                  </td>
-              </tr>
-              </tbody>
-          </table>
-    
-    </div>
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200">
+        <table class="w-full text-sm text-left border-collapse">
+          <thead class="text-xs text-sky-800 uppercase bg-sky-50 border-b border-sky-100">
+            <tr>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-left">Número</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-left">Actividad</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-left">Vencimiento</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-left">Estado</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-left">Periodo</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!props.tareas || props.tareas.length === 0">
+              <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">No hay tareas pendientes asignadas.</td>
+            </tr>
+            <tr v-for="(item, index) in props.tareas" :key="index" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 font-medium text-slate-700">{{ index }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ item.process_name || item.process_slug || 'Proceso' }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ formatDate(item.start_date || item.end_date) }}</td>
+              <td class="px-4 py-3 text-slate-600">
+                <span class="px-2 py-1 bg-sky-100 text-sky-700 rounded-lg text-xs font-semibold">
+                  {{ item.assignment_status || item.task_status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-slate-600">{{ item.term_id ?? '' }}</td>
+              <td class="px-4 py-3 text-right">
+                <button 
+                  @click="removeRow(index, level)"
+                  class="px-3 py-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium transition-colors border border-red-100 whitespace-nowrap">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-</div>
-</div>
+    <!-- Revisar Informes -->
+    <div v-if="1==1" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <h4 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+        <span>Revisar Informes</span>
+      </h4>
+      <div class="w-full">
+        <ObtenerInformes process="ac_cca_logros" url=""></ObtenerInformes>
+      </div>
+    </div>
 
-<div v-if="1==1" class="card shadow-sm mb-4">
-  <div class="card-body">
-
-    <h4 class="text-center text-uppercase fw-semibold mb-4">
-        Revisar Informes
-    </h4>          
-      
-<ObtenerInformes class="row" process="ac_cca_logros" url=""></ObtenerInformes>
-</div>
-</div>
-
-
-
-
+  </div>
 </template>
 
 <script setup>
 import ObtenerInformes from '@/components/ObtenerInformes.vue';
-import {defineProps, onMounted} from 'vue'
+import { defineProps, onMounted } from 'vue'
 
-
-/*const informes = ref([
-  { desc: 'Logros académicos 2024 II', status: 'Aprobado' },
-  { desc: 'Informe 2', status: 'Elaborado' },
-  { desc: 'Informe 3', status: 'Aprobado' },
-  { desc: 'Informe 4', status: 'Guardado' },])
-
-const filteredInformes = computed(()=>{
-    return informes.value.filter((informe)=>informe.status!='Aprobado')
-})*/
-
-const props= defineProps({
-    tareas:{
-        type:Array,
-        required:true
-    }
+const props = defineProps({
+  tareas: {
+    type: Array,
+    required: true
+  }
 })
 
 const formatDate = (value) => {
@@ -104,7 +76,6 @@ const formatDate = (value) => {
 };
 
 onMounted(()=>{
-    console.log('mounted', props.tareas)
+  console.log('mounted', props.tareas)
 })
-
 </script>

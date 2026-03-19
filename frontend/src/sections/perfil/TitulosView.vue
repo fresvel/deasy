@@ -9,35 +9,35 @@
   
   <!-- Títulos de Cuarto Nivel -->
   <ProfileTableBlock title="Títulos de Cuarto Nivel">
-      <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle table-institutional">
-          <thead >
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th class="text-start">TÍTULO</th>
-              <th class="text-start">INSTITUCIÓN</th>
-              <th class="text-start">TIPO</th>
-              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
-              <th class="text-start">CAMPO</th>
-              <th class="text-start">PAÍS</th>
-              <th class="text-start">ACCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">N.° DE REGISTRO SENESCYT</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CAMPO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="titulosCuartoNivel.length === 0">
-              <td colspan="8" class="text-center text-muted">
+            <tr v-if="titulosCuartoNivel.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                 <p class="my-3">No hay títulos de cuarto nivel registrados</p>
               </td>
             </tr>
-            <tr v-for="titulo in titulosCuartoNivel" :key="titulo._id">
-              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
-              <td>{{ titulo.titulo }}</td>
-              <td>{{ titulo.ies }}</td>
-              <td>{{ titulo.tipo }}</td>
-              <td>{{ titulo.sreg || 'N/A' }}</td>
-              <td>{{ titulo.campo_amplio }}</td>
-              <td>{{ titulo.pais }}</td>
-              <td>
+            <tr v-for="titulo in titulosCuartoNivel" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <div class="btn-group" role="group">
                   <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
                     <IconFile size="16" />
@@ -58,35 +58,35 @@
   
   <!-- Títulos de Grado -->
   <ProfileTableBlock title="Títulos de Grado">
-      <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle table-institutional">
-          <thead >
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th class="text-start">TÍTULO</th>
-              <th class="text-start">INSTITUCIÓN</th>
-              <th class="text-start">TIPO</th>
-              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
-              <th class="text-start">CAMPO</th>
-              <th class="text-start">PAÍS</th>
-              <th class="text-start">ACCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">N.° DE REGISTRO SENESCYT</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CAMPO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="titulosGrado.length === 0">
-              <td colspan="8" class="text-center text-muted">
+            <tr v-if="titulosGrado.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                 <p class="my-3">No hay títulos de grado registrados</p>
               </td>
             </tr>
-            <tr v-for="titulo in titulosGrado" :key="titulo._id">
-              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
-              <td>{{ titulo.titulo }}</td>
-              <td>{{ titulo.ies }}</td>
-              <td>{{ titulo.tipo }}</td>
-              <td>{{ titulo.sreg || 'N/A' }}</td>
-              <td>{{ titulo.campo_amplio }}</td>
-              <td>{{ titulo.pais }}</td>
-              <td>
+            <tr v-for="titulo in titulosGrado" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <div class="btn-group" role="group">
                   <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
                     <IconFile size="16" />
@@ -107,35 +107,35 @@
   
   <!-- Títulos Técnicos y Tecnológicos -->
   <ProfileTableBlock title="Títulos Técnicos y Tecnológicos">
-      <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle table-institutional">
-          <thead >
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th class="text-start">TÍTULO</th>
-              <th class="text-start">INSTITUCIÓN</th>
-              <th class="text-start">TIPO</th>
-              <th class="text-start">N.° DE REGISTRO SENESCYT</th>
-              <th class="text-start">CAMPO</th>
-              <th class="text-start">PAÍS</th>
-              <th class="text-start">ACCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">N.° DE REGISTRO SENESCYT</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CAMPO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="titulosTecnicos.length === 0">
-              <td colspan="8" class="text-center text-muted">
+            <tr v-if="titulosTecnicos.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                 <p class="my-3">No hay títulos técnicos/tecnológicos registrados</p>
               </td>
             </tr>
-            <tr v-for="titulo in titulosTecnicos" :key="titulo._id">
-              <td><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
-              <td>{{ titulo.titulo }}</td>
-              <td>{{ titulo.ies }}</td>
-              <td>{{ titulo.tipo }}</td>
-              <td>{{ titulo.sreg || 'N/A' }}</td>
-              <td>{{ titulo.campo_amplio }}</td>
-              <td>{{ titulo.pais }}</td>
-              <td>
+            <tr v-for="titulo in titulosTecnicos" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" @onpress="() => clickBtnsera(titulo)"/></td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <div class="btn-group" role="group">
                   <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
                     <IconFile size="16" />

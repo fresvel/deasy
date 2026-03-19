@@ -6,33 +6,33 @@
       @add="openModal"
     >
       <ProfileTableBlock title="Artículos">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle table-institutional">
-            <thead>
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">TÍTULO</th>
-                <th class="text-start">REVISTA</th>
-                <th class="text-start">DOI</th>
-                <th class="text-start">FECHA</th>
-                <th class="text-start">ESTADO</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REVISTA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">DOI</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">FECHA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ESTADO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!articulos.length">
-                <td colspan="7" class="text-center text-muted">
+              <tr v-if="!articulos.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No hay artículos registrados.</p>
                 </td>
               </tr>
-              <tr v-for="item in articulos" :key="item._id">
-                <td><BtnSera :type="getSeraType(item.sera)" /></td>
-                <td>{{ item.titulo }}</td>
-                <td>{{ item.revista || "N/A" }}</td>
-                <td>{{ item.doi || "N/A" }}</td>
-                <td>{{ formatDate(item.fecha) || "N/A" }}</td>
-                <td>{{ item.estado || "N/A" }}</td>
-                <td>
+              <tr v-for="item in articulos" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ item.titulo }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.revista || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.doi || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(item.fecha) || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.estado || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => removeItem('articulos', item)" />
                     <BtnEdit @onpress="() => editItem('articulos', item)" />
@@ -45,33 +45,33 @@
       </ProfileTableBlock>
 
       <ProfileTableBlock title="Libros y capítulos">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle table-institutional">
-            <thead>
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">TÍTULO</th>
-                <th class="text-start">EDITORIAL</th>
-                <th class="text-start">ISBN</th>
-                <th class="text-start">AÑO</th>
-                <th class="text-start">TIPO</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">EDITORIAL</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ISBN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">AÑO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!libros.length">
-                <td colspan="7" class="text-center text-muted">
+              <tr v-if="!libros.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No hay libros o capítulos registrados.</p>
                 </td>
               </tr>
-              <tr v-for="item in libros" :key="item._id">
-                <td><BtnSera :type="getSeraType(item.sera)" /></td>
-                <td>{{ item.titulo }}</td>
-                <td>{{ item.editorial || "N/A" }}</td>
-                <td>{{ item.isbn || item.isnn || "N/A" }}</td>
-                <td>{{ item['año'] || "N/A" }}</td>
-                <td>{{ item.tipo || "N/A" }}</td>
-                <td>
+              <tr v-for="item in libros" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ item.titulo }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.editorial || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.isbn || item.isnn || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.tipo || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => removeItem('libros', item)" />
                     <BtnEdit @onpress="() => editItem('libros', item)" />
@@ -84,31 +84,31 @@
       </ProfileTableBlock>
 
       <ProfileTableBlock title="Ponencias">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle table-institutional">
-            <thead>
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">TÍTULO</th>
-                <th class="text-start">EVENTO</th>
-                <th class="text-start">AÑO</th>
-                <th class="text-start">PAÍS</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">EVENTO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">AÑO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!ponencias.length">
-                <td colspan="6" class="text-center text-muted">
+              <tr v-if="!ponencias.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No hay ponencias registradas.</p>
                 </td>
               </tr>
-              <tr v-for="item in ponencias" :key="item._id">
-                <td><BtnSera :type="getSeraType(item.sera)" /></td>
-                <td>{{ item.titulo }}</td>
-                <td>{{ item.evento || "N/A" }}</td>
-                <td>{{ item['año'] || "N/A" }}</td>
-                <td>{{ item.pais || "N/A" }}</td>
-                <td>
+              <tr v-for="item in ponencias" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ item.titulo }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.evento || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.pais || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => removeItem('ponencias', item)" />
                     <BtnEdit @onpress="() => editItem('ponencias', item)" />
@@ -121,33 +121,33 @@
       </ProfileTableBlock>
 
       <ProfileTableBlock title="Tesis dirigidas o revisadas">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle table-institutional">
-            <thead>
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">INSTITUCIÓN</th>
-                <th class="text-start">TEMA</th>
-                <th class="text-start">NIVEL</th>
-                <th class="text-start">AÑO</th>
-                <th class="text-start">ROL</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TEMA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">NIVEL</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">AÑO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ROL</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!tesis.length">
-                <td colspan="7" class="text-center text-muted">
+              <tr v-if="!tesis.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No hay tesis registradas.</p>
                 </td>
               </tr>
-              <tr v-for="item in tesis" :key="item._id">
-                <td><BtnSera :type="getSeraType(item.sera)" /></td>
-                <td>{{ item.ies || "N/A" }}</td>
-                <td>{{ item.tema || "N/A" }}</td>
-                <td>{{ item.nivel || "N/A" }}</td>
-                <td>{{ item['año'] || "N/A" }}</td>
-                <td>{{ item.rol || "N/A" }}</td>
-                <td>
+              <tr v-for="item in tesis" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ item.ies || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.tema || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.nivel || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.rol || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => removeItem('tesis', item)" />
                     <BtnEdit @onpress="() => editItem('tesis', item)" />
@@ -160,35 +160,35 @@
       </ProfileTableBlock>
 
       <ProfileTableBlock title="Proyectos">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle table-institutional">
-            <thead>
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">TEMA</th>
-                <th class="text-start">INSTITUCIÓN</th>
-                <th class="text-start">TIPO</th>
-                <th class="text-start">INICIO</th>
-                <th class="text-start">FIN</th>
-                <th class="text-start">AVANCE</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TEMA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INICIO</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">FIN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">AVANCE</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!proyectos.length">
-                <td colspan="8" class="text-center text-muted">
+              <tr v-if="!proyectos.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No hay proyectos registrados.</p>
                 </td>
               </tr>
-              <tr v-for="item in proyectos" :key="item._id">
-                <td><BtnSera :type="getSeraType(item.sera)" /></td>
-                <td>{{ item.tema || "N/A" }}</td>
-                <td>{{ item.institucion || "N/A" }}</td>
-                <td>{{ item.tipo || "N/A" }}</td>
-                <td>{{ formatDate(item.inicio) || "N/A" }}</td>
-                <td>{{ formatDate(item.fin) || "N/A" }}</td>
-                <td>{{ item.avance !== undefined ? `${item.avance}%` : "N/A" }}</td>
-                <td>
+              <tr v-for="item in proyectos" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ item.tema || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.institucion || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.tipo || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(item.inicio) || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(item.fin) || "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ item.avance !== undefined ? `${item.avance}%` : "N/A" }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => removeItem('proyectos', item)" />
                     <BtnEdit @onpress="() => editItem('proyectos', item)" />

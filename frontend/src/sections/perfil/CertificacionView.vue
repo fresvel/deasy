@@ -8,30 +8,30 @@
 
     <ProfileTableBlock title="Certificaciones registradas">
       <div class="table-responsive table-actions">
-        <table class="table table-hover align-middle table-institutional table-striped table-actions">
-          <thead >
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th scope="col">Certificación</th>
-              <th scope="col">Institución</th>
-              <th scope="col">Horas</th>
-              <th scope="col">Fecha</th>
-              <th scope="col">Ámbito</th>
-              <th scope="col" class="text-end">Acciones</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Certificación</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fecha</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Ámbito</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="!certificaciones.length">
-              <td colspan="6" class="text-center text-muted py-4">
+            <tr v-if="!certificaciones.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado certificaciones aún.
               </td>
             </tr>
-            <tr v-for="certificacion in certificaciones" :key="certificacion._id">
-              <td>{{ certificacion.titulo }}</td>
-              <td>{{ certificacion.institution }}</td>
-              <td>{{ certificacion.horas || 'N/A' }}</td>
-              <td>{{ formatDate(certificacion.fecha) }}</td>
-              <td>{{ certificacion.tipo || 'N/A' }}</td>
-              <td class="text-end">
+            <tr v-for="certificacion in certificaciones" :key="certificacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700">{{ certificacion.titulo }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ certificacion.institution }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ certificacion.horas || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ formatDate(certificacion.fecha) }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ certificacion.tipo || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <RowActionMenu
                   @edit="editarCertificacion(certificacion)"
                   @delete="openDelete(certificacion)"

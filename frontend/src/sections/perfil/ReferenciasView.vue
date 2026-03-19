@@ -9,33 +9,33 @@
   
   <!-- Referencias Laborales -->
   <ProfileTableBlock title="Referencias laborales">
-      <div class="table-responsive">
-        <table class="table table-striped table-hover table-institutional align-middle">
-          <thead >
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th class="text-start">REFERENCIA</th>
-              <th class="text-start">CARGO</th>
-              <th class="text-start">CORREO</th>
-              <th class="text-start">TELÉFONO</th>
-              <th class="text-start">INSTITUCIÓN</th>
-              <th class="text-start">ACCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REFERENCIA</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CARGO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CORREO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TELÉFONO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="referenciasLaborales.length === 0">
-              <td colspan="7" class="text-center text-muted">
+            <tr v-if="referenciasLaborales.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                 <p class="my-3">No hay referencias laborales registradas</p>
               </td>
             </tr>
-            <tr v-for="ref in referenciasLaborales" :key="ref._id">
-              <td><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
-              <td>{{ ref.nombre }}</td>
-              <td>{{ ref.cargo_parentesco }}</td>
-              <td>{{ ref.email }}</td>
-              <td>{{ ref.telefono }}</td>
-              <td>{{ ref.institution }}</td>
-              <td>
+            <tr v-for="ref in referenciasLaborales" :key="ref._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.nombre }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.cargo_parentesco }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.institution }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <div class="btn-group" role="group">
                   <BtnDelete @onpress="() => deleteReferencia(ref._id)"/>
                   <BtnEdit @onpress="() => clickBtnedit(ref)"/>
@@ -49,31 +49,31 @@
 
   <!-- Referencias Familiares -->
   <ProfileTableBlock title="Referencias familiares">
-      <div class="table-responsive">
-        <table class="table table-striped table-hover table-institutional align-middle">
-          <thead >
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th class="text-start">REFERENCIA</th>
-              <th class="text-start">PARENTESCO</th>
-              <th class="text-start">CORREO</th>
-              <th class="text-start">TELÉFONO</th>
-              <th class="text-start">ACCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REFERENCIA</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PARENTESCO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CORREO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TELÉFONO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="referenciasFamiliares.length === 0">
-              <td colspan="6" class="text-center text-muted">
+            <tr v-if="referenciasFamiliares.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">
                 <p class="my-3">No hay referencias familiares registradas</p>
               </td>
             </tr>
-            <tr v-for="ref in referenciasFamiliares" :key="ref._id">
-              <td><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
-              <td>{{ ref.nombre }}</td>
-              <td>{{ ref.cargo_parentesco }}</td>
-              <td>{{ ref.email }}</td>
-              <td>{{ ref.telefono }}</td>
-              <td>
+            <tr v-for="ref in referenciasFamiliares" :key="ref._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.nombre }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.cargo_parentesco }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <div class="btn-group" role="group">
                   <BtnDelete @onpress="() => deleteReferencia(ref._id)"/>
                   <BtnEdit @onpress="() => clickBtnedit(ref)"/>
@@ -87,29 +87,29 @@
 
   <!-- Referencias Personales -->
   <ProfileTableBlock title="Referencias personales">
-      <div class="table-responsive">
-        <table class="table table-striped table-hover table-institutional align-middle">
-          <thead >
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th class="text-start">REFERENCIA</th>
-              <th class="text-start">CORREO</th>
-              <th class="text-start">TELÉFONO</th>
-              <th class="text-start">ACCIÓN</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REFERENCIA</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CORREO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TELÉFONO</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="referenciasPersonales.length === 0">
-              <td colspan="5" class="text-center text-muted">
+            <tr v-if="referenciasPersonales.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="5" class="px-4 py-8 text-center text-slate-500 italic">
                 <p class="my-3">No hay referencias personales registradas</p>
               </td>
             </tr>
-            <tr v-for="ref in referenciasPersonales" :key="ref._id">
-              <td><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
-              <td>{{ ref.nombre }}</td>
-              <td>{{ ref.email }}</td>
-              <td>{{ ref.telefono }}</td>
-              <td>
+            <tr v-for="ref in referenciasPersonales" :key="ref._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(ref.sera)" @onpress="() => clickBtnsera(ref)"/></td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.nombre }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <div class="btn-group" role="group">
                   <BtnDelete @onpress="() => deleteReferencia(ref._id)"/>
                   <BtnEdit @onpress="() => clickBtnedit(ref)"/>

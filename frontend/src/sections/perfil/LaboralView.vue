@@ -7,33 +7,33 @@
     >
 
     <ProfileTableBlock title="Experiencia profesional">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover table-institutional align-middle">
-            <thead >
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">INSTITUCIÓN</th>
-                <th class="text-start">CÁTEDRA / ASIGNATURA</th>
-                <th class="text-start">MODALIDAD</th>
-                <th class="text-start">DESDE</th>
-                <th class="text-start">HASTA</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CÁTEDRA / ASIGNATURA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">MODALIDAD</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">DESDE</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">HASTA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!experienciaProfesional.length">
-                <td colspan="7" class="text-center text-muted">
+              <tr v-if="!experienciaProfesional.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No has registrado experiencia profesional todavía.</p>
                 </td>
               </tr>
-              <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id">
-                <td><BtnSera :type="getSeraType(experiencia.sera)" /></td>
-                <td>{{ experiencia.institucion }}</td>
-                <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-                <td>-</td>
-                <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
-                <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-                <td>
+              <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ experiencia.institucion }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+                <td class="px-4 py-3 text-slate-700">-</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(experiencia.fecha_inicio) }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
                     <BtnEdit @onpress="() => editarExperiencia(experiencia)" />
@@ -46,33 +46,33 @@
     </ProfileTableBlock>
 
     <ProfileTableBlock title="Experiencia docente">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover table-institutional align-middle">
-            <thead >
+        <div class="overflow-x-auto w-full rounded-xl border border-slate-200 mt-4">
+          <table class="w-full text-sm text-left border-collapse min-w-max">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th width="5%"></th>
-                <th class="text-start">INSTITUCIÓN</th>
-                <th class="text-start">FUNCIONES</th>
-                <th class="text-start">MODALIDAD</th>
-                <th class="text-start">DESDE</th>
-                <th class="text-start">HASTA</th>
-                <th class="text-start">ACCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">FUNCIONES</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">MODALIDAD</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">DESDE</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">HASTA</th>
+                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!experienciaDocente.length">
-                <td colspan="7" class="text-center text-muted">
+              <tr v-if="!experienciaDocente.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                   <p class="my-3">No has registrado experiencia docente todavía.</p>
                 </td>
               </tr>
-              <tr v-for="experiencia in experienciaDocente" :key="experiencia._id">
-                <td><BtnSera :type="getSeraType(experiencia.sera)" /></td>
-                <td>{{ experiencia.institucion }}</td>
-                <td>{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-                <td>-</td>
-                <td>{{ formatDate(experiencia.fecha_inicio) }}</td>
-                <td>{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-                <td>
+              <tr v-for="experiencia in experienciaDocente" :key="experiencia._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ experiencia.institucion }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
+                <td class="px-4 py-3 text-slate-700">-</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(experiencia.fecha_inicio) }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
+                <td class="px-4 py-3 text-slate-700">
                   <div class="btn-group" role="group">
                     <BtnDelete @onpress="() => eliminarExperiencia(experiencia)" />
                     <BtnEdit @onpress="() => editarExperiencia(experiencia)" />
