@@ -12,7 +12,7 @@
         <label class="form-label">Institución</label>
         <input
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Nombre de la institución o empresa"
           v-model="form.institution"
         />
@@ -22,7 +22,7 @@
         <label class="form-label">Nombres</label>
         <input
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Nombres completos"
           v-model="form.nombre"
         />
@@ -32,7 +32,7 @@
         <label class="form-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
         <input
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           :placeholder="form.tipo === 'laboral' ? 'Cargo en la institución' : form.tipo === 'familiar' ? 'Ej: Padre, Madre, Hermano' : 'Cargo o parentesco'"
           v-model="form.cargo_parentesco"
         />
@@ -42,7 +42,7 @@
         <label class="form-label">Correo electrónico</label>
         <input
           type="email"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="usuario@dominio.com"
           v-model="form.email"
         />
@@ -52,7 +52,7 @@
         <label class="form-label">Teléfono</label>
         <input
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="+593987654321"
           v-model="form.telefono"
         />

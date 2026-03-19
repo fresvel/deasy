@@ -10,7 +10,7 @@
         <input
           v-if="form.titulo === 'Otro'"
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Especifique el título"
           v-model="form.tituloPersonalizado"
         />
@@ -26,7 +26,7 @@
         <input
           v-if="form.ies === 'Otra'"
           type="text"
-          class="form-control form-control-lg"
+          class="form-control "
           placeholder="Especifique la institución"
           v-model="form.iesPersonalizada"
         />
@@ -76,7 +76,7 @@
         <textarea
           id="campo"
           v-model="form.campo_amplio"
-          class="form-control form-control-lg"
+          class="form-control "
           rows="2"
           placeholder="Ej. Ingeniería, Ciencias Sociales, Educación..."
         ></textarea>

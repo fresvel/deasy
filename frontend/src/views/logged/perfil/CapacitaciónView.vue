@@ -95,15 +95,9 @@
     </section>
 
     <div class="modal fade" id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Agregar Capacitación</h5>
-            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <AgregarCapacitacion @capacitacion-added="handleCapacitacionAdded" />
-          </div>
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-2xl overflow-hidden p-0">
+          <AgregarCapacitacion @capacitacion-added="handleCapacitacionAdded" />
         </div>
       </div>
     </div>

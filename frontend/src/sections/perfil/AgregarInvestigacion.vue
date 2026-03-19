@@ -2,7 +2,7 @@
 <ProfileModalLayout title="Agregar investigación" description="Registra tus proyectos de investigación formales." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
       <div class="w-full">
         <label class="form-label">Tipo de producción</label>
-        <select v-model="form.tipoProduccion" class="form-select form-select-lg">
+        <select v-model="form.tipoProduccion" class="form-select ">
           <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
@@ -12,38 +12,38 @@
       <template v-if="form.tipoProduccion === 'articulos'">
         <div class="w-full">
           <label class="form-label">Título</label>
-          <input v-model="form.titulo" type="text" class="form-control form-control-lg" />
+          <input v-model="form.titulo" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Revista</label>
-          <input v-model="form.revista" type="text" class="form-control form-control-lg" />
+          <input v-model="form.revista" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Base indexada</label>
-          <input v-model="form.base_indexada" type="text" class="form-control form-control-lg" />
+          <input v-model="form.base_indexada" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">DOI</label>
-          <input v-model="form.doi" type="text" class="form-control form-control-lg" />
+          <input v-model="form.doi" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">ISSN</label>
-          <input v-model="form.issn" type="text" class="form-control form-control-lg" />
+          <input v-model="form.issn" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">SJR</label>
-          <input v-model="form.sjr" type="number" step="0.01" min="0" class="form-control form-control-lg" />
+          <input v-model="form.sjr" type="number" step="0.01" min="0" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Estado</label>
-          <select v-model="form.estado" class="form-select form-select-lg">
+          <select v-model="form.estado" class="form-select ">
             <option value="Aceptado">Aceptado</option>
             <option value="Publicado">Publicado</option>
           </select>
         </div>
         <div class="w-full">
           <label class="form-label">Rol</label>
-          <select v-model="form.rolArticulo" class="form-select form-select-lg">
+          <select v-model="form.rolArticulo" class="form-select ">
             <option value="Autor">Autor</option>
             <option value="Coautor">Coautor</option>
             <option value="Revisor">Revisor</option>
@@ -51,34 +51,34 @@
         </div>
         <div class="w-full">
           <label class="form-label">Fecha</label>
-          <input v-model="form.fecha" type="date" class="form-control form-control-lg" />
+          <input v-model="form.fecha" type="date" class="form-control " />
         </div>
       </template>
 
       <template v-if="form.tipoProduccion === 'libros'">
         <div class="w-full">
           <label class="form-label">Título</label>
-          <input v-model="form.titulo" type="text" class="form-control form-control-lg" />
+          <input v-model="form.titulo" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Editorial</label>
-          <input v-model="form.editorial" type="text" class="form-control form-control-lg" />
+          <input v-model="form.editorial" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">ISBN</label>
-          <input v-model="form.isbn" type="text" class="form-control form-control-lg" />
+          <input v-model="form.isbn" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">ISNN</label>
-          <input v-model="form.isnn" type="text" class="form-control form-control-lg" />
+          <input v-model="form.isnn" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Año</label>
-          <input v-model="form.anio" type="number" min="1900" class="form-control form-control-lg" />
+          <input v-model="form.anio" type="number" min="1900" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Tipo</label>
-          <select v-model="form.tipoLibro" class="form-select form-select-lg">
+          <select v-model="form.tipoLibro" class="form-select ">
             <option value="Libro">Libro</option>
             <option value="Capítulo">Capítulo</option>
           </select>
@@ -88,34 +88,34 @@
       <template v-if="form.tipoProduccion === 'ponencias'">
         <div class="w-full">
           <label class="form-label">Título</label>
-          <input v-model="form.titulo" type="text" class="form-control form-control-lg" />
+          <input v-model="form.titulo" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Evento</label>
-          <input v-model="form.evento" type="text" class="form-control form-control-lg" />
+          <input v-model="form.evento" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Año</label>
-          <input v-model="form.anio" type="number" min="1900" class="form-control form-control-lg" />
+          <input v-model="form.anio" type="number" min="1900" class="form-control " />
         </div>
       </template>
 
       <template v-if="form.tipoProduccion === 'tesis'">
         <div class="w-full">
           <label class="form-label">Institución</label>
-          <input v-model="form.ies" type="text" class="form-control form-control-lg" />
+          <input v-model="form.ies" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Tema</label>
-          <input v-model="form.tema" type="text" class="form-control form-control-lg" />
+          <input v-model="form.tema" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Programa</label>
-          <input v-model="form.programa" type="text" class="form-control form-control-lg" />
+          <input v-model="form.programa" type="text" class="form-control " />
         </div>
         <div class="col-md-3">
           <label class="form-label">Nivel</label>
-          <select v-model="form.nivel" class="form-select form-select-lg">
+          <select v-model="form.nivel" class="form-select ">
             <option v-for="nivel in nivelOptions" :key="nivel" :value="nivel">
               {{ nivel }}
             </option>
@@ -123,11 +123,11 @@
         </div>
         <div class="col-md-3">
           <label class="form-label">Año</label>
-          <input v-model="form.anio" type="number" min="1900" class="form-control form-control-lg" />
+          <input v-model="form.anio" type="number" min="1900" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Rol</label>
-          <select v-model="form.rolTesis" class="form-select form-select-lg">
+          <select v-model="form.rolTesis" class="form-select ">
             <option value="Revisor">Revisor</option>
             <option value="Asesor">Asesor</option>
           </select>
@@ -137,44 +137,44 @@
       <template v-if="form.tipoProduccion === 'proyectos'">
         <div class="w-full">
           <label class="form-label">Tema</label>
-          <input v-model="form.tema" type="text" class="form-control form-control-lg" />
+          <input v-model="form.tema" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Institución</label>
-          <input v-model="form.institucion" type="text" class="form-control form-control-lg" />
+          <input v-model="form.institucion" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Tipo</label>
-          <select v-model="form.tipoProyecto" class="form-select form-select-lg">
+          <select v-model="form.tipoProyecto" class="form-select ">
             <option value="Investigación">Investigación</option>
             <option value="Vinculación">Vinculación</option>
           </select>
         </div>
         <div class="w-full">
           <label class="form-label">Programa / grupo</label>
-          <input v-model="form.programa_grupo" type="text" class="form-control form-control-lg" />
+          <input v-model="form.programa_grupo" type="text" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Avance (%)</label>
-          <input v-model="form.avance" type="number" min="0" max="100" class="form-control form-control-lg" />
+          <input v-model="form.avance" type="number" min="0" max="100" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Inicio</label>
-          <input v-model="form.inicio" type="date" class="form-control form-control-lg" />
+          <input v-model="form.inicio" type="date" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Fin</label>
-          <input v-model="form.fin" type="date" class="form-control form-control-lg" />
+          <input v-model="form.fin" type="date" class="form-control " />
         </div>
         <div class="w-full">
           <label class="form-label">Presupuesto</label>
-          <input v-model="form.presupuesto" type="number" min="0" class="form-control form-control-lg" />
+          <input v-model="form.presupuesto" type="number" min="0" class="form-control " />
         </div>
       </template>
 
       <div class="w-full">
         <label class="form-label">País</label>
-        <input v-model="form.pais" type="text" class="form-control form-control-lg" />
+        <input v-model="form.pais" type="text" class="form-control " />
       </div>
 
       </ProfileModalLayout>
