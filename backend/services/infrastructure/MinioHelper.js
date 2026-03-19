@@ -27,7 +27,6 @@ export class MinioHelper {
 
         return _client;
     }
-
     /**
      * Crea el bucket si no existe.
      * @param {string} bucketName
@@ -39,9 +38,8 @@ export class MinioHelper {
             await client.makeBucket(bucketName);
         }
     }
-
     /**
-     * Sube un Buffer a MinIO y devuelve etag + metadata básica.
+     * Sube un Buffer a MinIO y devuelve etag  metadata básica.
      * @param {string} bucketName
      * @param {string} objectKey
      * @param {Buffer} buffer
