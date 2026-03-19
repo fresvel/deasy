@@ -8,34 +8,34 @@
 
     <ProfileTableBlock title="Capacitación en el área docente">
       <div class="table-responsive table-actions">
-        <table class="table table-hover align-middle table-institutional table-striped table-actions">
-          <thead >
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th scope="col">Tema</th>
-              <th scope="col">Institución</th>
-              <th scope="col">Horas</th>
-              <th scope="col">Inicio</th>
-              <th scope="col">Fin</th>
-              <th scope="col">Rol</th>
-              <th scope="col" class="text-end">Acciones</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Tema</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Inicio</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fin</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Rol</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="!capacitacionesDocentes.length">
-              <td colspan="8" class="text-center text-muted py-4">
+            <tr v-if="!capacitacionesDocentes.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado capacitación docente.
               </td>
             </tr>
-            <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id">
-              <td><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
-              <td>{{ capacitacion.tema }}</td>
-              <td>{{ capacitacion.institution }}</td>
-              <td>{{ capacitacion.horas || 'N/A' }}</td>
-              <td>{{ formatDate(capacitacion.fecha_inicio) }}</td>
-              <td>{{ formatDate(capacitacion.fecha_fin) }}</td>
-              <td>{{ capacitacion.rol || 'N/A' }}</td>
-              <td class="text-end">
+            <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <RowActionMenu
                   @edit="editarCapacitacion(capacitacion)"
                   @delete="openDelete(capacitacion)"
@@ -49,34 +49,34 @@
 
     <ProfileTableBlock title="Capacitación profesional">
       <div class="table-responsive table-actions">
-        <table class="table table-hover align-middle table-institutional table-striped table-actions">
-          <thead >
+        <table class="w-full text-sm text-left border-collapse min-w-max">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th width="5%"></th>
-              <th scope="col">Tema</th>
-              <th scope="col">Institución</th>
-              <th scope="col">Horas</th>
-              <th scope="col">Inicio</th>
-              <th scope="col">Fin</th>
-              <th scope="col">Rol</th>
-              <th scope="col" class="text-end">Acciones</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Tema</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Inicio</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fin</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Rol</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="!capacitacionesProfesionales.length">
-              <td colspan="8" class="text-center text-muted py-4">
+            <tr v-if="!capacitacionesProfesionales.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado capacitación profesional.
               </td>
             </tr>
-            <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id">
-              <td><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
-              <td>{{ capacitacion.tema }}</td>
-              <td>{{ capacitacion.institution }}</td>
-              <td>{{ capacitacion.horas || 'N/A' }}</td>
-              <td>{{ formatDate(capacitacion.fecha_inicio) }}</td>
-              <td>{{ formatDate(capacitacion.fecha_fin) }}</td>
-              <td>{{ capacitacion.rol || 'N/A' }}</td>
-              <td class="text-end">
+            <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">
                 <RowActionMenu
                   @edit="editarCapacitacion(capacitacion)"
                   @delete="openDelete(capacitacion)"
@@ -91,7 +91,7 @@
     </ProfileSectionShell>
 
     <section class="mt-5">
-      <LogrosView2 />
+      <GeneradorLogros />
     </section>
 
     <div class="modal fade" id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
@@ -147,7 +147,7 @@ import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import RowActionMenu from "@/components/RowActionMenu.vue";
 import { API_PREFIX } from "@/services/apiConfig";
-import LogrosView2 from "@/sections/academia/LogrosView2.vue";
+import GeneradorLogros from "@/sections/academia/GeneradorLogros.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 

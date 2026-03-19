@@ -1,187 +1,133 @@
 <template>
-
-    <div class="row align-items-center g-3 mb-4">
-    
-      <div class="col-lg-6">
-        <h1>Informe de Logros Académicos</h1>
+  <div class="w-full animate-fade-in p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+      <h1 class="text-2xl font-bold text-slate-800">Informe de Logros Académicos</h1>
+      <div class="flex flex-wrap items-center gap-3">
+        <button class="px-4 py-2 bg-sky-100 text-sky-700 font-medium rounded-xl hover:bg-sky-200 transition-colors" @click="generarReporte()">Revisar</button>
+        <button class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors">Guardar</button>
+        <button class="px-4 py-2 bg-sky-600 text-white font-medium rounded-xl hover:bg-sky-700 shadow-sm transition-colors" @click="obtenerReporte()">Enviar</button>
       </div>
+    </div>
     
-      <div class="col-lg-6 text-lg-end">
-        <button class="btn btn-primary me-2" @click="generarReporte()">Revisar</button>
-        <button class="btn btn-primary me-2">Guardar</button>
-        <button class="btn btn-primary" @click="obtenerReporte()">Enviar</button>
-        
-    
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+      <div class="md:col-span-4 lg:col-span-4 flex flex-col gap-1.5">
+        <label class="text-sm font-semibold text-slate-700">Carrera</label>
+        <input type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" placeholder="Ej. Ingeniería" v-model="informe.header.programa">
       </div>
+      <div class="md:col-span-3 lg:col-span-3 flex flex-col gap-1.5">
+        <label class="text-sm font-semibold text-slate-700">Ciclo Académico</label>
+        <select class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" v-model="informe.header.periodo.ciclo">
+          <option value="" disabled>Seleccione...</option>
+          <option value="I">Primer Periodo</option>
+          <option value="II">Segundo Periodo</option>
+        </select>
+      </div>
+      <div class="md:col-span-2 lg:col-span-2 flex flex-col gap-1.5">
+        <label class="text-sm font-semibold text-slate-700">Año</label>
+        <input type="number" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" placeholder="2024" v-model="informe.header.periodo.anio">
+      </div>
+      <div class="md:col-span-3 lg:col-span-3 flex flex-col justify-end gap-1.5 pt-6 lg:pt-0">
+        <input type="file" id="csv_input" class="hidden" v-on:change="onfileChange()" name="file" ref="csv_input">
+        <label for="csv_input" class="w-full px-4 py-2.5 bg-white border-2 border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500 rounded-xl text-center font-medium cursor-pointer transition-all flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
+          <span class="truncate">{{csv_filename}}</span>
+        </label>
+      </div>
+    </div>
     
+    <div v-for="(table, level) in levels" :key="level" class="flex flex-col gap-6 mb-8">
+      <div class="bg-sky-50 text-sky-800 px-4 py-3 rounded-xl border border-sky-100 font-semibold shadow-sm">
+        Nivel {{ level }}
+      </div>
       
+      <div class="overflow-x-auto w-full rounded-xl border border-slate-200 shadow-sm">
+        <table class="w-full text-sm text-left border-collapse">
+          <thead class="text-xs text-sky-800 uppercase bg-sky-50 border-b border-sky-100">
+            <tr>
+              <th class="px-4 py-3 font-bold whitespace-nowrap">Materia</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap">Docente</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap">Estudiantes</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap">Aprobados</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap">Promedio</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap">% Supera el Promedio</th>
+              <th class="px-4 py-3 font-bold whitespace-nowrap text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in table" :key="index" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700 font-medium">{{ item.Asignatura }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ item.Docente }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ item.Total_estudiantes }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ item.Aprobados }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ item.Calificación_promedio }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ item.Porcentaje_supera_promedio }}</td>
+              <td class="px-4 py-3 text-right">
+                <button @click="removeRow(index, level)" class="px-3 py-1.5 text-xs text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium transition-colors border border-red-100 whitespace-nowrap">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       
-      <div class="col-12">
-        <div class="row g-3">
-          <div class="col-lg-5">
-            <div class="input-group">
-              <span class="input-group-text">Carrera</span>
-              <input type="text" class="form-control" placeholder="mysite.com" v-model="informe.header.programa">
-            </div>
-          </div>
-          <div class="col-lg-5">
-            <div class="input-group">
-              <span class="input-group-text">Ciclo Académico</span>
-              <select class="form-select" v-model="informe.header.periodo.ciclo">
-                <option selected="" value="" ></option>
-                <option value="I">Primer Periodo</option>
-                <option value="II">Segundo Periodo</option>
-              </select>
-            </div>
-          </div>
-          <div class="col-lg-2">
-            <div class="input-group">
-              <span class="input-group-text">Año</span>
-              <input type="number" class="form-control" placeholder="Año" v-model="informe.header.periodo.anio">
-            </div>
-          </div>
-          <div class="col-lg-3">
-            <input type="file" id="csv_input" class="file-input-hidden" v-on:change="onfileChange()" name="file" ref="csv_input">
-            <label for="csv_input" class="btn btn-outline-primary w-100">{{csv_filename}}</label>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8">
+          <textarea v-model="surveys[level]" rows="8" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-slate-700 leading-relaxed resize-y min-h-[200px] shadow-sm" placeholder="Resumen..."></textarea>
+        </div>
+        <div class="lg:col-span-4 flex flex-col gap-3">
+          <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un prompt personalizado" rows="5" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-slate-700 leading-relaxed resize-y shadow-sm"></textarea>
+          <div class="grid grid-cols-2 gap-3 mt-auto">
+            <button @click="removeRow(index, level)" class="w-full px-4 py-2.5 bg-sky-600 text-white font-medium rounded-xl hover:bg-sky-700 shadow-sm transition-colors text-sm">
+              Analizar Prompt
+            </button>
+            <button @click="removeRow(index, level)" class="w-full px-4 py-2.5 bg-white text-sky-700 border border-sky-300 font-medium rounded-xl hover:bg-sky-50 shadow-sm transition-colors text-sm">
+              Analizar Tabla
+            </button>
           </div>
         </div>
       </div>
     </div>
-    
-    
-    <div v-for="(table, level) in levels" :key="level" class="row g-3 mb-4">
-    
-        <div class="col-12">
-          <div class="alert alert-info mb-3">
-            <strong>Nivel {{ level }}</strong>
-          </div>
-        
-          <table class="table table-institutional table-striped table-hover align-middle">
-                  <thead>
-                  <tr>
-                      <th class="text-left">
-                      Materia
-                      </th>
-                      <th class="text-left">
-                      Docente
-                      </th>
-                      <th class="text-left">
-                      Estudiantes
-                      </th>
-                      <th class="text-left">
-                      Aprobados
-                      </th>
-                      <th class="text-left">
-                      Promedio
-                      </th>
-                      <th class="text-left">
-                      % Supera el Promedio
-                      </th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr v-for="(item, index) in table" :key="index">
-                      <td>{{ item.Asignatura }}</td>
-                      <td>{{ item.Docente }}</td>
-                      <td>{{ item.Total_estudiantes }}</td>
-                      <td>{{ item.Aprobados }}</td>
-                      <td>{{ item.Calificación_promedio }}</td>
-                      <td>{{ item.Porcentaje_supera_promedio }}</td>
-                      <td>
-                        <button 
-                        @click="removeRow(index, level)"
-                        class="btn btn-outline-danger btn-sm">
-                            Eliminar {{ index }}-{{ level }}
-                        </button>
-                      </td>
-                  </tr>
-                  </tbody>
-              </table>
-        
-        </div>
-    
-        <div class="col-lg-8">
-          <textarea v-model="surveys[level]" rows="10" class="form-control summary-textarea"></textarea>
-        </div>
-        <div class="col-lg-4">
-    
-        <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un promt personalizado" rows="7" class="form-control summary-textarea"></textarea>
-        <button @click="removeRow(index, level)" class="btn btn-primary w-100 action-button">
-            Analizar Promt
-        </button>
-        <button @click="removeRow(index, level)" class="btn btn-outline-primary w-100 action-button">
-            Analizar Tabla
-        </button>
-        </div>
-    
-    </div>
-    
-    
-    
-    
-    </template>
-    
-    
-    
-    
-    
-    <script setup>
-    
-    import { ref } from 'vue';
-    import EasymServices from '@/services/EasymServices';
-    
-    const service= new EasymServices()
-    const levels=service.getEasymdata().levels;
-    const surveys=service.getEasymdata().surveys;
-    const csv_input = service.getEasymdata().file_grades;
-    
-    const csv_filename = ref("Subir CSV");
-    
-    const informe=ref({
-      header:{
-        programa:"Ingeniería en Tecnologı́as de la Información",
-        periodo:{anio:2024, ciclo:""},
-      },
-      content:{},
-      footer:{}
-    })
-    
-    
-    
-    const onfileChange =() => {
-      
-      csv_filename.value = csv_input.value.files[0].name;  
-    
-    }
-    
-    
-    const generarReporte = async()=>{
-    await service.generarReporte()
-    console.log(surveys)
-    }
-    
-    const obtenerReporte = async()=>{
-    await service.obtenerReporte()
-    console.log(surveys)
-    }
-    
-    const removeRow=(index,level)=>{
-        levels.value[level].splice(index,1)
-    }
-    
-    </script>
-    
-    <style scoped>
-    .file-input-hidden {
-      display: none;
-    }
+  </div>
+</template>
 
-    .summary-textarea {
-      font-size: 1.25em;
-      text-align: justify;
-    }
+<script setup>
+import { ref } from 'vue';
+import EasymServices from '@/services/EasymServices';
 
-    .action-button {
-      margin: 2%;
-    }
-    </style>
+const service = new EasymServices();
+const levels = service.getEasymdata().levels;
+const surveys = service.getEasymdata().surveys;
+const csv_input = service.getEasymdata().file_grades;
+
+const csv_filename = ref("Subir CSV");
+
+const informe = ref({
+  header: {
+    programa: "Ingeniería en Tecnologías de la Información",
+    periodo: { anio: 2024, ciclo: "" },
+  },
+  content: {},
+  footer: {}
+});
+
+const onfileChange = () => {
+  if(csv_input.value?.files?.length > 0) {
+    csv_filename.value = csv_input.value.files[0].name;  
+  }
+}
+
+const generarReporte = async () => {
+  await service.generarReporte();
+  console.log(surveys);
+}
+
+const obtenerReporte = async () => {
+  await service.obtenerReporte();
+  console.log(surveys);
+}
+
+const removeRow = (index, level) => {
+  levels.value[level].splice(index, 1);
+}
+</script>
