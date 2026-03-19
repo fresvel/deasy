@@ -3,16 +3,16 @@
     <s-header :menu-open="vmenu" @onclick="onClick('Menu')">
         <div class="flex items-center gap-3 overflow-hidden flex-1">
             <div class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-                <router-link to="/" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 text-white/95 hover:bg-white/20" @click="onClick('Academia')">
+                <router-link to="/" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white" @click="onClick('Academia')">
                   <span class="text-sm font-semibold">Academia</span>
                 </router-link>
-                <router-link to="/auth" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 text-white/95 hover:bg-white/20">
+                <router-link to="/auth" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white">
                   <span class="text-sm font-semibold">Investigación</span>
                 </router-link>
-                <router-link to="/" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 text-white/95 hover:bg-white/20">
+                <router-link to="/" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white">
                   <span class="text-sm font-semibold">Vinculación</span>
                 </router-link>
-                <router-link to="/auth" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 text-white/95 hover:bg-white/20">
+                <router-link to="/auth" class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white">
                   <span class="text-sm font-semibold">Internacionalización</span>
                 </router-link>
             </div>
@@ -23,11 +23,11 @@
                 <IconUsers class="w-4 h-4 sm:w-5 sm:h-5" />
             </router-link>
 
-            <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
+            <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
                 <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Regresar al Dashboard">
+            <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Regresar al Dashboard">
                 <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
             </router-link>
 
@@ -38,7 +38,7 @@
     </s-header>
     
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
-        <s-menu :show="vmenu">
+        <s-menu :show="vmenu" @close-mobile="vmenu = false">
             <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
                 <UserProfile photo="/images/avatar.png" :username="userFullName" />
                 <div class="flex flex-col gap-1">
@@ -82,7 +82,9 @@
 </template>
           
 <script setup>  
-import { ref, computed, onMounted} from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+
+const isClient = typeof window !== 'undefined';
 import { IconUsers, IconBell, IconHome, IconLogout, IconChevronDown } from '@tabler/icons-vue';
 import SMenu from '@/layouts/SMenu.vue';
     import SMessage from '@/layouts/SNotify.vue';
@@ -116,7 +118,32 @@ import SMenu from '@/layouts/SMenu.vue';
         }
     });
 
-    const vmenu = ref(true);
+    const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
+
+    let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true;
+
+    const handleResize = () => {
+        if (!isClient) return;
+        const isNowDesktop = window.innerWidth >= 1280;
+        if (isDesktopStatus !== isNowDesktop) {
+            isDesktopStatus = isNowDesktop;
+            vmenu.value = isNowDesktop;
+        }
+    };
+    
+    onMounted(() => {
+        if (isClient) {
+            window.addEventListener('resize', handleResize);
+            handleResize();
+        }
+    });
+
+    onBeforeUnmount(() => {
+        if (isClient) {
+            window.removeEventListener('resize', handleResize);
+        }
+    });
+
     const vnotify = ref(false);
     const showNavMenu = ref(false);
     const selected= ref("Formación")
