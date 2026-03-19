@@ -5,7 +5,7 @@
 
         <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <div
-            class="inline-flex items-center gap-2 min-w-[198px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
+            class="inline-flex items-center justify-center lg:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
             :class="selectedGroupId === null ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             role="button"
             tabindex="0"
@@ -15,7 +15,7 @@
             <span class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-lg shrink-0 border-none" :class="selectedGroupId === null ? 'bg-sky-600/10' : 'bg-white/20'">
               <IconGlobe class="w-5 h-5" />
             </span>
-            <div class="min-w-0 block flex-1">
+            <div class="min-w-0 hidden lg:block flex-1">
               <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Consolidado</div>
             </div>
           </div>
@@ -23,7 +23,7 @@
           <div
             v-for="group in unitGroups"
             :key="group.id"
-            class="inline-flex items-center gap-2 min-w-[198px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
+            class="inline-flex items-center justify-center lg:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
              :class="group.id === selectedGroupId ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             role="button"
             tabindex="0"
@@ -33,7 +33,7 @@
             <span class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-lg shrink-0 border-none" :class="group.id === selectedGroupId ? 'bg-sky-600/10' : 'bg-white/20'">
               <component :is="iconForUnitGroup(group)" class="w-5 h-5" />
             </span>
-            <div class="min-w-0 block flex-1">
+            <div class="min-w-0 hidden lg:block flex-1">
               <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis" :title="group.name">
                 {{ group.label || group.name }}
               </div>

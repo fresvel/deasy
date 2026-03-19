@@ -6,12 +6,13 @@
           <button
             v-for="(item, index) in areas"
             :key="index"
-            class="inline-flex items-center gap-2 min-w-[140px] px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
+            class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]" :title="item.name"
             :class="item.active ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             type="button"
             @click="onheadClick(item)"
           >
-             <span class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
+             <component :is="resolveAreaIcon(item.name)" class="w-5 h-5 shrink-0" />
+            <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
           </button>
         </div>
        </div>
@@ -148,7 +149,7 @@ import axios from 'axios';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
       IconInfoCircle, IconSignature, IconBell, IconUsers, IconLogout, IconMenu2, IconHome
-    } from '@tabler/icons-vue';
+    , IconBook, IconMicroscope, IconLink, IconWorld, IconAppWindow } from '@tabler/icons-vue';
 
     const getMenuIcon = (iconName) => {
       const map = {
@@ -321,7 +322,20 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     service.getEasymAreas()
     const areas =service.getEasymdata().areas
     const tareas=service.getEasymdata().tareas
-    const isClient = typeof window !== 'undefined';
+    
+const isClient = typeof window !== 'undefined';
+
+const resolveAreaIcon = (name) => {
+    switch(name) {
+        case 'Academia': return IconBook;
+        case 'Investigación': return IconMicroscope;
+        case 'Vinculación': return IconLink;
+        case 'Internacionalización': return IconWorld;
+        case 'Perfil': return IconUser;
+        default: return IconAppWindow;
+    }
+};
+
     const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
     const vnotify = ref(false);
     const process= ref("Inicio")
