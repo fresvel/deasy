@@ -1,43 +1,43 @@
 <template>
-  <div class="w-full animate-fade-in p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-      <h1 class="text-2xl font-bold text-slate-800">Informe de Logros Académicos</h1>
-      <div class="flex flex-wrap items-center gap-3">
-        <button class="px-4 py-2 bg-sky-100 text-sky-700 font-medium rounded-xl hover:bg-sky-200 transition-colors" @click="generarReporte()">Revisar</button>
-        <button class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors">Guardar</button>
-        <button class="px-4 py-2 bg-sky-600 text-white font-medium rounded-xl hover:bg-sky-700 shadow-sm transition-colors" @click="obtenerReporte()">Enviar</button>
+  <div class="w-full animate-fade-in p-5 bg-white rounded-2xl shadow-sm border border-slate-100">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+      <h1 class="text-xl font-bold text-slate-800">Informe de Logros Académicos</h1>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="px-3 py-1.5 text-sm bg-sky-100 text-sky-700 font-medium rounded-lg hover:bg-sky-200 transition-colors" @click="generarReporte()">Revisar</button>
+        <button class="px-3 py-1.5 text-sm bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">Guardar</button>
+        <button class="px-3 py-1.5 text-sm bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 shadow-sm transition-colors" @click="obtenerReporte()">Enviar</button>
       </div>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100">
-      <div class="md:col-span-5 lg:col-span-3 flex flex-col gap-1.5">
-        <label class="text-sm font-semibold text-slate-700">Carrera</label>
-        <input type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" placeholder="Ej. Ingeniería" v-model="informe.header.programa">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+      <div class="md:col-span-5 lg:col-span-3 flex flex-col gap-1">
+        <label class="text-xs font-semibold text-slate-700">Carrera</label>
+        <input type="text" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" placeholder="Ej. Ingeniería" v-model="informe.header.programa">
       </div>
-      <div class="md:col-span-4 lg:col-span-3 flex flex-col gap-1.5">
-        <label class="text-sm font-semibold text-slate-700">Ciclo Académico</label>
-        <select class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" v-model="informe.header.periodo.ciclo">
+      <div class="md:col-span-4 lg:col-span-3 flex flex-col gap-1">
+        <label class="text-xs font-semibold text-slate-700">Ciclo Académico</label>
+        <select class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" v-model="informe.header.periodo.ciclo">
           <option value="" disabled>Seleccione...</option>
           <option value="I">Primer Periodo</option>
           <option value="II">Segundo Periodo</option>
         </select>
       </div>
-      <div class="md:col-span-3 lg:col-span-2 flex flex-col gap-1.5">
-        <label class="text-sm font-semibold text-slate-700">Año</label>
-        <input type="number" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" placeholder="2024" v-model="informe.header.periodo.anio">
+      <div class="md:col-span-3 lg:col-span-2 flex flex-col gap-1">
+        <label class="text-xs font-semibold text-slate-700">Año</label>
+        <input type="number" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all bg-white" placeholder="2024" v-model="informe.header.periodo.anio">
       </div>
-      <div class="md:col-span-12 lg:col-span-4 flex flex-col xl:flex-row gap-3 pt-6 lg:pt-0 items-end">
+      <div class="md:col-span-12 lg:col-span-4 flex flex-col xl:flex-row gap-3 pt-4 lg:pt-0 items-end">
         <div class="w-full flex-1">
-          <input type="file" id="file_grades" class="hidden" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
-          <label for="file_grades" class="w-full h-full min-h-[46px] px-4 py-2.5 bg-white border-2 border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500 rounded-xl text-center font-medium cursor-pointer transition-all flex items-center justify-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload shrink-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
+          <input type="file" accept=".csv" id="file_grades" class="hidden" v-on:change="onfileChange('grades')" name="file" ref="file_grades">
+          <label for="file_grades" class="w-full h-full min-h-[38px] px-3 py-2 bg-white border border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500 rounded-lg text-center font-medium cursor-pointer transition-all flex items-center justify-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload shrink-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
             <span class="truncate text-sm">{{csv_grades}}</span>
           </label>
         </div>
         <div class="w-full flex-1">
-          <input type="file" id="file_tutorias" class="hidden" v-on:change="onfileChange('tutorias')" name="file_t" ref="file_tutorias">
-          <label for="file_tutorias" class="w-full h-full min-h-[46px] px-4 py-2.5 bg-white border-2 border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500 rounded-xl text-center font-medium cursor-pointer transition-all flex items-center justify-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload shrink-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
+          <input type="file" accept=".csv" id="file_tutorias" class="hidden" v-on:change="onfileChange('tutorias')" name="file_t" ref="file_tutorias">
+          <label for="file_tutorias" class="w-full h-full min-h-[38px] px-3 py-2 bg-white border border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-500 rounded-lg text-center font-medium cursor-pointer transition-all flex items-center justify-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload shrink-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
             <span class="truncate text-sm">{{csv_tutorias}}</span>
           </label>
         </div>
