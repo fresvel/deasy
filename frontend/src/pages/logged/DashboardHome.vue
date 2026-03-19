@@ -45,26 +45,26 @@
         </span>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
-        <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
-          <IconSignature class="w-5 h-5" />
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
+          <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="toggleNotify" title="Notificaciones">
-          <IconBell class="w-5 h-5" />
+        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="toggleNotify" title="Notificaciones">
+          <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        <button class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Ir al perfil">
-          <img class="w-9 h-9 rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
+        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Ir al perfil">
+          <img class="w-7 h-7 sm:w-9 sm:h-9 rounded-md sm:rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
         </button>
 
-        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-11 h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
-          <IconLogout class="w-5 h-5" />
+        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
+          <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
         </router-link>
       </div>
     </s-header>
 
-    <div class="flex flex-col lg:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <s-menu :show="showMenu" @close-mobile="showMenu = false">
         <div class="flex flex-col">
           <UserProfile :photo="userPhoto" :username="userFullName" />
@@ -572,7 +572,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import SHeader from '@/layouts/SHeader.vue';
 import SMenu from '@/layouts/SMenu.vue';
@@ -608,9 +608,21 @@ const processPanelService = new ProcessDefinitionPanelService();
 const currentUser = ref(null);
 const userPhoto = ref('/images/avatar.png');
 
-const showMenu = ref(true);
+const isClient = typeof window !== 'undefined';
+let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true; // xl en Tailwind es 1280px
+
+const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const showNotify = ref(false);
 const showNavMenu = ref(false);
+
+const handleResize = () => {
+  if (!isClient) return;
+  const isNowDesktop = window.innerWidth >= 1280;
+  if (isDesktopStatus !== isNowDesktop) {
+    isDesktopStatus = isNowDesktop;
+    showMenu.value = isNowDesktop;
+  }
+};
 
 const menuLoading = ref(false);
 const menuError = ref('');
@@ -991,7 +1003,18 @@ onMounted(async () => {
       console.error('Error al cargar datos del usuario:', error);
     }
   }
+  
+  if (isClient) {
+    window.addEventListener('resize', handleResize);
+  }
+  
   await loadUserMenu();
+});
+
+onBeforeUnmount(() => {
+  if (isClient) {
+    window.removeEventListener('resize', handleResize);
+  }
 });
 
 const navigateTo = (destination) => {
