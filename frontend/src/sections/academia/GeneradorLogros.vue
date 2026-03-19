@@ -71,17 +71,17 @@
         </table>
       </div>
       
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-2">
         <div class="lg:col-span-8">
-          <textarea v-model="surveys[level]" rows="8" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-slate-700 leading-relaxed resize-y min-h-[200px] shadow-sm" placeholder="Resumen..."></textarea>
+          <textarea v-model="surveys[level]" rows="6" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-sm text-slate-700 leading-relaxed resize-y min-h-[150px] shadow-sm" placeholder="Resumen..."></textarea>
         </div>
-        <div class="lg:col-span-4 flex flex-col gap-3">
-          <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un prompt personalizado" rows="5" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-slate-700 leading-relaxed resize-y shadow-sm"></textarea>
-          <div class="grid grid-cols-2 gap-3 mt-auto">
-            <button @click="removeRow(index, level)" class="w-full px-4 py-2.5 bg-sky-600 text-white font-medium rounded-xl hover:bg-sky-700 shadow-sm transition-colors text-sm">
+        <div class="lg:col-span-4 flex flex-col gap-2.5">
+          <textarea v-model="surveys[`promt${level}`]" placeholder="Ingrese un prompt personalizado" rows="4" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-sm text-slate-700 leading-relaxed resize-y shadow-sm"></textarea>
+          <div class="grid grid-cols-2 gap-2 mt-auto pt-1">
+            <button @click="removeRow(index, level)" class="w-full px-3 py-2 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 shadow-sm transition-colors text-sm">
               Analizar Prompt
             </button>
-            <button @click="removeRow(index, level)" class="w-full px-4 py-2.5 bg-white text-sky-700 border border-sky-300 font-medium rounded-xl hover:bg-sky-50 shadow-sm transition-colors text-sm">
+            <button @click="removeRow(index, level)" class="w-full px-3 py-2 bg-white text-sky-700 border border-sky-300 font-medium rounded-lg hover:bg-sky-50 shadow-sm transition-colors text-sm">
               Analizar Tabla
             </button>
           </div>
@@ -113,7 +113,13 @@ const informe = ref({
 
 const onfileChange = () => {
   if(csv_input.value?.files?.length > 0) {
-    csv_filename.value = csv_input.value.files[0].name;  
+    const file = csv_input.value.files[0];
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert('Solo se permiten archivos CSV');
+      csv_input.value.value = '';
+      return;
+    }
+    csv_filename.value = file.name;  
   }
 }
 
