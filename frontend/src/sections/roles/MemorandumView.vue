@@ -380,9 +380,13 @@ const memorandums = ref([
 const currentUser = ref({ id: 1, name: 'Usuario Actual' });
 const currentUserId = computed(() => currentUser.value.id);
 
-const menuOptions = ['Todos', 'Borradores', 'Enviados', 'Archivados', 'Nuevo'];
+const menuOptions = ['Todos', 'Borradores', 'Enviados', 'Archivados'];
 const activeMenu = ref('Todos');
 const searchQuery = ref('');
+
+const setActiveMenu = (menu) => {
+  activeMenu.value = menu;
+};
 
 // --- NUEVO MEMORÁNDUM ---
 const newMemorandum = ref({
