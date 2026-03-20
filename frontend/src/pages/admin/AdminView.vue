@@ -195,11 +195,16 @@
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
                  <template v-if="showAcademyCrudIndex">
                     <button v-for="table in academyCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
@@ -213,13 +218,18 @@
 
                  <template v-else-if="showAcademiaIndex">
                     <button v-for="item in academyMenuItems" :key="item.key" type="button" @click="openAcademyItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
                     </button>
@@ -227,11 +237,16 @@
 
                  <template v-else-if="showGestionCrudIndex">
                     <button v-for="table in gestionCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
@@ -259,13 +274,18 @@
 
                  <template v-else-if="showGestionesIndex">
                     <button v-for="item in gestionMenuItems" :key="item.key" type="button" @click="openGestionItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
                     </button>
@@ -273,11 +293,16 @@
 
                  <template v-else-if="showUsersCrudIndex">
                     <button v-for="table in usersCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
@@ -291,13 +316,18 @@
 
                  <template v-else-if="showUsersIndex">
                     <button v-for="item in usersMenuItems" :key="item.key" type="button" @click="openUsersItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
                     </button>
@@ -305,11 +335,16 @@
 
                  <template v-else-if="showContractsCrudIndex">
                     <button v-for="table in contractsCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
@@ -323,13 +358,18 @@
 
                  <template v-else-if="showContractsIndex">
                     <button v-for="item in contractsMenuItems" :key="item.key" type="button" @click="openContractsItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
                     </button>
@@ -337,11 +377,16 @@
 
                  <template v-else-if="showSecurityCrudIndex">
                     <button v-for="table in securityCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
@@ -355,13 +400,18 @@
 
                  <template v-else-if="showSecurityIndex">
                     <button v-for="item in securityMenuItems" :key="item.key" type="button" @click="openSecurityItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
                     </button>
@@ -369,11 +419,16 @@
 
                  <template v-else-if="showGroupCrudIndex">
                     <button v-for="item in selectedGroupCrudTables" :key="item.table" type="button" @click="selectTable(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForTable(item.table))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForTable(item.table))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
                           <span class="text-sm font-medium text-slate-400">{{ item.bucket }}</span>
                         </div>
@@ -387,13 +442,18 @@
                  
                  <template v-else>
                     <button v-for="group in homeGroups" :key="group.key" type="button" @click="openGroupFromHome(group)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                          <component :is="resolveIcon(iconForGroup(group))" class="w-6 h-6" />
+                      <div class="flex flex-col h-full w-full">
+                        <div class="flex items-start justify-between mb-4">
+                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
+                            <component :is="resolveIcon(iconForGroup(group))" class="w-6 h-6" />
+                          </div>
+                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                            <IconChevronRight class="w-6 h-6" />
+                          </div>
                         </div>
-                        <div>
+                        <div class="flex flex-col flex-1">
                           <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ group.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ tablesCountForGroup(group) }} tablas</span>
+                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ descriptionForGroup(group) }}</span>
                         </div>
                       </div>
                     </button>
@@ -438,6 +498,7 @@ import {
   IconBell,
   IconLogout,
   IconChevronDown,
+  IconChevronRight,
   IconHome,
   IconBuildingBank
 } from '@tabler/icons-vue'
@@ -880,6 +941,16 @@ const resolveIcon = (iconName) => {
 }
 
 const iconForGroup = (group) => groupIconMap[group?.key] || "circle";
+
+const groupDescMap = {
+  'estructura_academico': 'Administración de facultades, carreras, currículos y periodos académicos.',
+  'procesos': 'Definición y control de flujos de trabajo, tareas complejas y plantillas doc.',
+  'usuarios': 'Gestión de personas, perfiles, autenticación y cuenta de ingreso.',
+  'contratacion': 'Manejo de requerimientos de vacantes, contratos y registros de origen.',
+  'seguridad': 'Auditoría de roles, asignaciones de permisos, recursos y control de acceso.'
+};
+const descriptionForGroup = (group) => groupDescMap[group?.key] || 'Gestión segura de módulos del sistema.';
+
 
 const iconForTable = (tableName = "") => {
   const normalized = tableName.toLowerCase();
