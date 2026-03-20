@@ -37,16 +37,17 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <div class="btn-group" role="group">
-                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
-                    <IconFile size="16" />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
                   </button>
-                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
-                    <IconUpload size="16" />
+                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
                   </button>
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -86,16 +87,17 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <div class="btn-group" role="group">
-                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
-                    <IconFile size="16" />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
                   </button>
-                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
-                    <IconUpload size="16" />
+                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
                   </button>
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -135,16 +137,17 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <div class="btn-group" role="group">
-                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
-                    <IconFile size="16" />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
                   </button>
-                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
-                    <IconUpload size="16" />
+                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
                   </button>
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -186,7 +189,7 @@ import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { Modal } from "@/utils/modalController";
 import { API_PREFIX } from "@/services/apiConfig";
-import { IconUpload, IconFile } from '@tabler/icons-vue';
+import { IconUpload, IconFile, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const fileInput = ref(null);
