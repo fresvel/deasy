@@ -1,9 +1,7 @@
 import * as Minio from 'minio';
-
 // Singleton del cliente MinIO compartido entre servicios.
 // NO duplicar esta lógica en otros servicios nuevos; importar desde aquí.
 let _client = null;
-
 export class MinioHelper {
     /**
      * Devuelve (o crea) el cliente MinIO singleton.
@@ -31,6 +29,8 @@ export class MinioHelper {
      * Crea el bucket si no existe.
      * @param {string} bucketName
      */
+
+    
     static async ensureBucket(bucketName) {
         const client = MinioHelper.getClient();
         const exists = await client.bucketExists(bucketName);
@@ -38,6 +38,8 @@ export class MinioHelper {
             await client.makeBucket(bucketName);
         }
     }
+
+
     /**
      * Sube un Buffer a MinIO y devuelve etag  metadata básica.
      * @param {string} bucketName
@@ -46,6 +48,7 @@ export class MinioHelper {
      * @param {Record<string,string>} [metadata]
      * @returns {Promise<{etag: string}>}
      */
+
     static async putBuffer(bucketName, objectKey, buffer, metadata = {}) {
         const client = MinioHelper.getClient();
         const result = await client.putObject(
