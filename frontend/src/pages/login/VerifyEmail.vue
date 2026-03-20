@@ -8,7 +8,7 @@
         Volver al login
       </router-link>
 
-      <div class="mb-8">
+      <div class="mb-8 flex flex-col items-center text-center">
         <div class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mb-6">
           <IconMailCheck class="h-7 w-7" />
         </div>
@@ -19,8 +19,8 @@
         </p>
       </div>
 
-      <div class="mb-8 items-center flex justify-center">
-        <div class="flex justify-between gap-2 sm:gap-3 w-full max-w-[280px]">
+      <div class="mb-8 flex justify-center w-full">
+        <div class="flex justify-between gap-1 sm:gap-2 w-full max-w-xs">
           <input
             v-for="(digit, index) in code"
             :key="index"
@@ -29,7 +29,7 @@
             inputmode="numeric"
             pattern="[0-9]*"
             maxlength="1"
-            class="w-11 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
+            class="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
             v-model="code[index]"
             @input="onInput(index, $event)"
             @keydown.backspace="onBackspace(index, $event)"
@@ -50,7 +50,7 @@
 
       <button
         type="button"
-        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/30 flex items-center justify-center gap-2 shadow-md shadow-sky-600/20 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-sky-600/30 active:scale-[0.98]"
+        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/30 flex items-center justify-center gap-2 shadow-md shadow-sky-600/20 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-sky-600/30 active:scale-[0.98]"
         :disabled="loading || !isCodeComplete"
         @click="submit"
       >
