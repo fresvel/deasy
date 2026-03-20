@@ -7,17 +7,17 @@
         </button>
       </div>
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Dashboard">
-          <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
+        <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Dashboard">
+          <IconHome class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </router-link>
-        <router-link to="/perfil" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Perfil">
-          <IconUser class="w-4 h-4 sm:w-5 sm:h-5" />
+        <router-link to="/perfil" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Perfil">
+          <IconUser class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </router-link>
-        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
-          <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
+        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
+          <IconBell class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </button>
-        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
-          <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
+        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
+          <IconLogout class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </router-link>
       </div>
     </s-header>
