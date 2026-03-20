@@ -1,11 +1,7 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <s-header :menu-open="vmenu" @onclick="onClick" class="sticky top-0 z-50">
-      <div class="flex items-center gap-3 overflow-hidden flex-1">
-        <button type="button" @click="goAdminHome" class="flex flex-row items-center gap-2 text-lg font-bold tracking-wide text-white hover:text-sky-200 transition-colors hidden sm:inline-flex ml-2 outline-none">
-          Panel de Administración
-        </button>
-      </div>
+      <div class="flex items-center gap-3 overflow-hidden flex-1"></div>
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Dashboard">
           <IconHome class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -26,6 +22,16 @@
       <s-menu :show="vmenu" @close-mobile="vmenu = false">
         <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
           <UserProfile :photo="userPhoto" :username="userFullName" :editable="false" />
+          
+          <button 
+            type="button" 
+            @click="goAdminHome" 
+            class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 font-bold -mb-2 z-10 relative shadow-sm"
+            :class="isHomeActive ? 'bg-white text-sky-800 border-none' : 'bg-white/10 text-white/90 hover:bg-white/20 border border-white/10'"
+          >
+            <IconHome class="w-5 h-5 shrink-0" />
+            <span>Inicio</span>
+          </button>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
             <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
@@ -1290,6 +1296,14 @@ const handleManagerGoBack = () => {
     goAdminHome();
   }
 };
+
+const isHomeActive = computed(() => {
+  return !selectedTable.value && !selectedSection.value && !selectedAcademyItem.value && 
+         !selectedGestionItem.value && !selectedUsuarioItem.value && 
+         !selectedContratoItem.value && !selectedSeguridadItem.value && 
+         !showAcademiaIndex.value && !showGestionesIndex.value && !showUsersIndex.value && 
+         !showContractsIndex.value && !showSecurityIndex.value && !showGroupCrudIndex.value;
+});
 
 const goAdminHome = () => {
   selectedTable.value = null;
