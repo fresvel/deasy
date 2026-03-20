@@ -177,6 +177,28 @@
         <input v-model="form.pais" type="text" class="form-control " />
       </div>
 
+      <div class="w-full">
+        <label for="documento" class="form-label">Documento PDF (opcional)</label>
+        <input
+          type="file"
+          id="documento"
+          ref="fileInput"
+          class="form-control"
+          accept="application/pdf"
+          @change="handleFileSelect"
+        />
+        <small class="text-muted d-block">Máximo 10MB. Solo archivos PDF.</small>
+        <div v-if="selectedFile" class="mt-2">
+          <span class="badge bg-success d-inline-flex align-items-center gap-1">
+            <IconFile :size="14" />
+            {{ selectedFile.name }}
+          </span>
+          <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2" @click="clearFile">
+            Eliminar
+          </button>
+        </div>
+      </div>
+
       </ProfileModalLayout>
 </template>
 
@@ -186,6 +208,7 @@ import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
 import axios from "axios";
 import { API_PREFIX } from "@/services/apiConfig";
+import { IconFile } from '@tabler/icons-vue';
 
 const emit = defineEmits(["investigacion-added"]);
 
@@ -242,6 +265,8 @@ const form = reactive({
 const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
+const fileInput = ref(null);
+const selectedFile = ref(null);
 
 onMounted(() => {
   const storedUser = localStorage.getItem("user");
@@ -292,11 +317,72 @@ const resetForm = () => {
   form.programa_grupo = "";
   form.pais = "Ecuador";
   errorMessage.value = "";
+  selectedFile.value = null;
 };
 
 const onCancel = () => {
   resetForm();
   closeModal();
+};
+
+const getDocumentType = () => {
+  const typeMap = {
+    'articulos': 'articulo',
+    'libros': 'libro',
+    'ponencias': 'ponencia',
+    'tesis': 'tesis',
+    'proyectos': 'proyecto'
+  };
+  return typeMap[form.tipoProduccion] || form.tipoProduccion;
+};
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (file.type !== 'application/pdf') {
+    alert('Solo se permiten archivos PDF');
+    event.target.value = '';
+    selectedFile.value = null;
+    return;
+  }
+  
+  if (file.size > 10 * 1024 * 1024) {
+    alert('El archivo no puede superar los 10MB');
+    event.target.value = '';
+    selectedFile.value = null;
+    return;
+  }
+  
+  selectedFile.value = file;
+};
+
+const clearFile = () => {
+  selectedFile.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+
+const uploadDocument = async (registroId) => {
+  if (!selectedFile.value) return;
+  
+  try {
+    const formData = new FormData();
+    formData.append('archivo', selectedFile.value);
+    
+    const tipoDocumento = getDocumentType();
+    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/${tipoDocumento}/${registroId}`;
+    
+    await axios.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  } catch (error) {
+    console.error('Error al subir documento:', error);
+    throw error;
+  }
 };
 
 const parseOptionalNumber = (value) => {
@@ -418,7 +504,16 @@ const onSubmit = async () => {
     errorMessage.value = "";
 
     const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/investigacion/${form.tipoProduccion}`;
-    await axios.post(url, payload);
+    const response = await axios.post(url, payload);
+
+    const investigacionField = form.tipoProduccion;
+    const investigacionData = response.data?.data?.investigacion;
+    const items = investigacionData?.[investigacionField] || [];
+    const itemCreado = items.slice(-1)[0];
+
+    if (selectedFile.value && itemCreado?._id) {
+      await uploadDocument(itemCreado._id);
+    }
 
     emit("investigacion-added", payload);
     window.dispatchEvent(new Event("dossier-updated"));

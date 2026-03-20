@@ -59,6 +59,28 @@
         ></textarea>
       </div>
 
+      <div class="w-full">
+        <label for="documento" class="form-label">Documento PDF (opcional)</label>
+        <input
+          type="file"
+          id="documento"
+          ref="fileInput"
+          class="form-control"
+          accept="application/pdf"
+          @change="handleFileSelect"
+        />
+        <small class="text-muted d-block">Máximo 10MB. Solo archivos PDF.</small>
+        <div v-if="selectedFile" class="mt-2">
+          <span class="badge bg-success d-inline-flex align-items-center gap-1">
+            <IconFile :size="14" />
+            {{ selectedFile.name }}
+          </span>
+          <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2" @click="clearFile">
+            Eliminar
+          </button>
+        </div>
+      </div>
+
       </ProfileModalLayout>
 </template>
 
@@ -71,6 +93,7 @@ import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";
 import { API_PREFIX } from "@/services/apiConfig";
+import { IconFile } from '@tabler/icons-vue';
 
 const emit = defineEmits(["certificacion-added"]);
 
@@ -87,6 +110,8 @@ const form = reactive({
 const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
+const fileInput = ref(null);
+const selectedFile = ref(null);
 
 const instituciones = [
   "Pontificia Universidad Católica del Ecuador",
@@ -124,11 +149,60 @@ const resetForm = () => {
   form.horas = "";
   form.descripcion = "";
   errorMessage.value = "";
+  selectedFile.value = null;
 };
 
 const onCancel = () => {
   resetForm();
   closeModal();
+};
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (file.type !== 'application/pdf') {
+    alert('Solo se permiten archivos PDF');
+    event.target.value = '';
+    selectedFile.value = null;
+    return;
+  }
+  
+  if (file.size > 10 * 1024 * 1024) {
+    alert('El archivo no puede superar los 10MB');
+    event.target.value = '';
+    selectedFile.value = null;
+    return;
+  }
+  
+  selectedFile.value = file;
+};
+
+const clearFile = () => {
+  selectedFile.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+
+const uploadDocument = async (registroId) => {
+  if (!selectedFile.value) return;
+  
+  try {
+    const formData = new FormData();
+    formData.append('archivo', selectedFile.value);
+    
+    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/certificacion/${registroId}`;
+    
+    await axios.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  } catch (error) {
+    console.error('Error al subir documento:', error);
+    throw error;
+  }
 };
 
 const buildPayload = () => {
@@ -184,7 +258,13 @@ const onSubmit = async () => {
     errorMessage.value = "";
 
     const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/certificaciones`;
-    await axios.post(url, payload);
+    const response = await axios.post(url, payload);
+
+    const certCreada = response.data?.data?.certificaciones?.slice(-1)[0];
+
+    if (selectedFile.value && certCreada?._id) {
+      await uploadDocument(certCreada._id);
+    }
 
     emit("certificacion-added", payload);
     window.dispatchEvent(new Event("dossier-updated"));
