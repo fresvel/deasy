@@ -1,675 +1,419 @@
 <template>
-  <div class="admin-page admin-typography">
-    <s-header :menu-open="vmenu" @onclick="onClick('Menu')">
-      <div class="header-left">
-        <button class="nav-link text-white fw-semibold admin-home-link" type="button" @click="goAdminHome">
-          Administrador
+  <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
+    <s-header :menu-open="vmenu" @onclick="toggleNavMenu" class="sticky top-0 z-50">
+      <div class="flex items-center gap-3 overflow-hidden flex-1">
+        <button class="inline-flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all bg-white/10 text-white/95 hover:bg-white/20" type="button" @click="goAdminHome">
+          <IconLock class="w-5 h-5 shrink-0" />
+          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Administrador</span>
         </button>
-        <router-link to="/dashboard" class="nav-link text-white fw-semibold">
-          Dashboard
+        <router-link to="/dashboard" class="inline-flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all bg-white/10 text-white/95 hover:bg-white/20">
+          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Dashboard</span>
         </router-link>
-        <router-link to="/perfil" class="nav-link text-white fw-semibold">
-          Perfil
+        <router-link to="/perfil" class="inline-flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all bg-white/10 text-white/95 hover:bg-white/20">
+          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Perfil</span>
         </router-link>
       </div>
-      <div class="header-right">
-        <router-link to="/logout" class="nav-link text-white p-0">
-          <img class="avatar" src="/images/logout.svg" alt="Cerrar sesion" />
-        </router-link>
-        <button class="nav-link text-white p-0" type="button" @click="onClick('Message')">
-          <font-awesome-icon icon="bell" class="avatar" />
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
+          <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
+        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
+          <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
+        </router-link>
       </div>
     </s-header>
 
-    <div class="row g-3">
-      <s-menu :show="vmenu">
-        <div class="admin-menu">
-          <UserProfile :photo="userPhoto" :username="userFullName" />
+    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+      <s-menu :show="vmenu" @close-mobile="vmenu = false">
+        <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
+          <UserProfile :photo="userPhoto" :username="userFullName" :editable="false" />
 
-          <div v-for="group in groupedTables" :key="group.key" class="menu-section">
-            <button
-              class="menu-section-title text-white w-100"
-              type="button"
-              :class="{ 'is-open': openCategories[group.label] }"
-              @click="onGroupTitleClick(group)"
-            >
-              <span class="menu-title-left">
-                <font-awesome-icon :icon="iconForGroup(group)" class="menu-title-icon" />
-                <span>{{ group.label }}</span>
-              </span>
-            </button>
-            <div v-show="openCategories[group.label]" class="menu-section-body">
-              <template v-if="isAcademiaGroup(group)">
-                <div class="list-group list-group-flush">
+          <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
+            <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
+              <button
+                class="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-white/90 hover:text-white transition-colors"
+                type="button"
+                @click="onGroupTitleClick(group)"
+              >
+                <div class="flex items-center gap-2">
+                  <component :is="resolveIcon(iconForGroup(group))" class="w-5 h-5 shrink-0" />
+                  <span>{{ group.label }}</span>
+                </div>
+                <IconChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openCategories[group.label] }" />
+              </button>
+
+              <div v-show="openCategories[group.label]" class="flex flex-col gap-1 mt-2 pl-2">
+                <template v-if="isAcademiaGroup(group)">
                   <button
                     v-for="item in academyMenuItems"
                     :key="item.key"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: isAcademyItemActive(item) }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isAcademyItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openAcademyItem(item)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
-                      <span>{{ item.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span>{{ item.label }}</span>
                   </button>
-                </div>
-              </template>
-              <template v-else-if="isGestionGroup(group)">
-                <div class="list-group list-group-flush">
+                </template>
+                <template v-else-if="isGestionGroup(group)">
                   <button
                     v-for="item in gestionMenuItems"
                     :key="item.key"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: isGestionItemActive(item) }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isGestionItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openGestionItem(item)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
-                      <span>{{ item.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span>{{ item.label }}</span>
                   </button>
-                </div>
-              </template>
-              <template v-else-if="isUsuariosGroup(group)">
-                <div class="list-group list-group-flush">
+                </template>
+                <template v-else-if="isUsuariosGroup(group)">
                   <button
                     v-for="item in usersMenuItems"
                     :key="item.key"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: isUsersItemActive(item) }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isUsersItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openUsersItem(item)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
-                      <span>{{ item.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span>{{ item.label }}</span>
                   </button>
-                </div>
-              </template>
-              <template v-else-if="isContratosGroup(group)">
-                <div class="list-group list-group-flush">
+                </template>
+                <template v-else-if="isContratosGroup(group)">
                   <button
                     v-for="item in contractsMenuItems"
                     :key="item.key"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: isContractsItemActive(item) }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isContractsItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openContractsItem(item)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
-                      <span>{{ item.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span>{{ item.label }}</span>
                   </button>
-                </div>
-              </template>
-              <template v-else-if="isSeguridadGroup(group)">
-                <div class="list-group list-group-flush">
+                </template>
+                <template v-else-if="isSeguridadGroup(group)">
                   <button
                     v-for="item in securityMenuItems"
                     :key="item.key"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: isSecurityItemActive(item) }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isSecurityItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openSecurityItem(item)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="item.icon" class="menu-item-icon" />
-                      <span>{{ item.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span>{{ item.label }}</span>
                   </button>
-                </div>
-              </template>
-              <template v-else>
-                <div class="list-group list-group-flush">
+                </template>
+                <template v-else>
                   <button
                     v-for="table in group.mainTables"
                     :key="table.table"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: selectedTable?.table === table.table }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="selectTable(table)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="iconForTable(table.table)" class="menu-item-icon" />
-                      <span>{{ table.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
+                    <span>{{ table.label }}</span>
                   </button>
-                </div>
-                <div v-if="group.supportTables.length" class="menu-section-label small">
-                  Relaciones y soporte
-                </div>
-                <div v-if="group.supportTables.length" class="list-group list-group-flush">
+                  <div v-if="group.supportTables.length" class="text-[0.65rem] font-bold text-white/40 uppercase tracking-widest pl-3 mt-3 mb-1">
+                    Relaciones y soporte
+                  </div>
                   <button
                     v-for="table in group.supportTables"
                     :key="table.table"
-                    class="list-group-item list-group-item-action"
-                    :class="{ active: selectedTable?.table === table.table }"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="selectTable(table)"
                   >
-                    <span class="menu-item-content">
-                      <font-awesome-icon :icon="iconForTable(table.table)" class="menu-item-icon" />
-                      <span>{{ table.label }}</span>
-                    </span>
+                    <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
+                    <span>{{ table.label }}</span>
                   </button>
-                </div>
-              </template>
+                </template>
+              </div>
             </div>
           </div>
         </div>
       </s-menu>
 
-      <s-body :showmenu="vmenu" :shownotify="vnotify">
-        <div v-if="showAcademyCrudIndex" class="admin-home academia-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon :icon="selectedAcademyCrudItem?.icon || 'map-marked-alt'" />
+      <s-body class="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8" :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
+        
+        <div v-if="!selectedTable" class="w-full max-w-6xl mx-auto space-y-6">
+          <div class="bg-white rounded-[2rem] p-6 sm:p-8 lg:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col min-h-[400px]">
+            <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
+               <div class="inline-flex items-center gap-3">
+                 <div class="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+                 <span class="text-slate-500 font-medium">Cargando catálogos...</span>
+               </div>
+            </div>
+            <div v-else-if="metaError" class="text-red-500 font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100">{{ metaError }}</div>
+            <template v-else>
+               <div class="flex items-center gap-5 mb-8">
+                  <div class="w-16 h-16 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100/50 shadow-inner">
+                    <component :is="resolveIcon(showAcademyCrudIndex ? (selectedAcademyCrudItem?.icon || 'map-marked-alt') : showAcademiaIndex ? 'map-marked-alt' : showGestionCrudIndex ? (selectedGestionCrudItem?.icon || 'check-double') : showGestionesIndex ? 'check-double' : showUsersCrudIndex ? (selectedUsersCrudItem?.icon || 'user') : showUsersIndex ? 'user' : showContractsCrudIndex ? (selectedContractsCrudItem?.icon || 'certificate') : showContractsIndex ? 'certificate' : showSecurityCrudIndex ? (selectedSecurityCrudItem?.icon || 'lock') : showSecurityIndex ? 'lock' : showGroupCrudIndex ? iconForGroup(selectedGroup) : 'lock')" class="w-8 h-8" />
                   </div>
                   <div>
-                    <h2 class="mb-1">{{ selectedAcademyCrudItem?.label || "Academia" }}</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      {{ selectedAcademyCrudItem?.description || "Gestiona el CRUD de catálogos y relaciones." }}
+                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
+                      {{ 
+                        showAcademyCrudIndex ? (selectedAcademyCrudItem?.label || 'Academia') :
+                        showAcademiaIndex ? 'Academia' :
+                        showGestionCrudIndex ? (selectedGestionCrudItem?.label || 'Gestiones') :
+                        showGestionesIndex ? 'Gestiones' :
+                        showUsersCrudIndex ? (selectedUsersCrudItem?.label || 'Usuarios') :
+                        showUsersIndex ? 'Usuarios' :
+                        showContractsCrudIndex ? (selectedContractsCrudItem?.label || 'Contratos') :
+                        showContractsIndex ? 'Contratos' :
+                        showSecurityCrudIndex ? (selectedSecurityCrudItem?.label || 'Seguridad') :
+                        showSecurityIndex ? 'Seguridad' :
+                        showGroupCrudIndex ? (selectedGroup?.label || 'Administración') :
+                        'Panel de administración'
+                      }}
+                    </h2>
+                    <p class="text-slate-500 mt-1.5 font-medium text-sm sm:text-base">
+                      {{ 
+                        showAcademyCrudIndex ? (selectedAcademyCrudItem?.description || 'Gestiona el CRUD de catálogos y relaciones.') :
+                        showAcademiaIndex ? 'Accesos principales para administrar Unidades, Periodos y Cargos.' :
+                        showGestionCrudIndex ? (selectedGestionCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
+                        showGestionesIndex ? 'Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.' :
+                        showUsersCrudIndex ? (selectedUsersCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
+                        showUsersIndex ? 'Accesos por subgrupo para administrar personas del sistema.' :
+                        showContractsCrudIndex ? (selectedContractsCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
+                        showContractsIndex ? 'Accesos por subgrupo para administrar vacantes, contratos y orígenes.' :
+                        showSecurityCrudIndex ? (selectedSecurityCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
+                        showSecurityIndex ? 'Accesos por subgrupo para administrar roles y permisos.' :
+                        showGroupCrudIndex ? 'Gestiona el CRUD de las tablas del grupo.' :
+                        'Accesos organizados para crear, editar, leer y eliminar datos del sistema.'
+                      }}
                     </p>
                   </div>
-                </div>
-              </div>
+               </div>
+               
+               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
+                 <template v-if="showAcademyCrudIndex">
+                    <button v-for="table in academyCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
+                        </div>
+                      </div>
+                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
+                        {{ adminTagForTable(table).label }}
+                      </div>
+                    </button>
+                    <div v-if="!academyCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
+                 </template>
 
-              <div v-if="academyCrudTables.length" class="admin-home-grid">
-                <button
-                  v-for="table in academyCrudTables"
-                  :key="table.table"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForTable(table.table)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
-                    <span class="admin-home-btn-meta">Gestionar</span>
-                  </span>
-                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
-                    {{ adminTagForTable(table).label }}
-                  </span>
-                </button>
-              </div>
-              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
-            </div>
+                 <template v-else-if="showAcademiaIndex">
+                    <button v-for="item in academyMenuItems" :key="item.key" type="button" @click="openAcademyItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                        </div>
+                      </div>
+                    </button>
+                 </template>
+
+                 <template v-else-if="showGestionCrudIndex">
+                    <button v-for="table in gestionCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
+                        </div>
+                      </div>
+                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
+                        {{ adminTagForTable(table).label }}
+                      </div>
+                    </button>
+                    <button v-if="selectedGestionCrudItem?.key === 'plantillas'" type="button" @click="openTemplateArtifactDraftFromHome" class="group bg-gradient-to-br from-sky-50 to-white border border-sky-200 rounded-2xl p-5 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:bg-sky-500 group-hover:text-white transition-colors">
+                          <component :is="resolveIcon('plus')" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-sky-900 text-lg leading-tight group-hover:text-sky-700 transition-colors">Nuevo paquete de usuario</h3>
+                          <span class="text-sm font-medium text-slate-500">Crear desde seed o archivos</span>
+                        </div>
+                      </div>
+                      <div class="mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none bg-sky-100 text-sky-700 border border-sky-200">
+                        Acción especial
+                      </div>
+                    </button>
+                    <div v-if="!gestionCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
+                 </template>
+
+                 <template v-else-if="showGestionesIndex">
+                    <button v-for="item in gestionMenuItems" :key="item.key" type="button" @click="openGestionItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                        </div>
+                      </div>
+                    </button>
+                 </template>
+
+                 <template v-else-if="showUsersCrudIndex">
+                    <button v-for="table in usersCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
+                        </div>
+                      </div>
+                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
+                        {{ adminTagForTable(table).label }}
+                      </div>
+                    </button>
+                    <div v-if="!usersCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
+                 </template>
+
+                 <template v-else-if="showUsersIndex">
+                    <button v-for="item in usersMenuItems" :key="item.key" type="button" @click="openUsersItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                        </div>
+                      </div>
+                    </button>
+                 </template>
+
+                 <template v-else-if="showContractsCrudIndex">
+                    <button v-for="table in contractsCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
+                        </div>
+                      </div>
+                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
+                        {{ adminTagForTable(table).label }}
+                      </div>
+                    </button>
+                    <div v-if="!contractsCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
+                 </template>
+
+                 <template v-else-if="showContractsIndex">
+                    <button v-for="item in contractsMenuItems" :key="item.key" type="button" @click="openContractsItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                        </div>
+                      </div>
+                    </button>
+                 </template>
+
+                 <template v-else-if="showSecurityCrudIndex">
+                    <button v-for="table in securityCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
+                        </div>
+                      </div>
+                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
+                        {{ adminTagForTable(table).label }}
+                      </div>
+                    </button>
+                    <div v-if="!securityCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
+                 </template>
+
+                 <template v-else-if="showSecurityIndex">
+                    <button v-for="item in securityMenuItems" :key="item.key" type="button" @click="openSecurityItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ item.tableCount }} tablas</span>
+                        </div>
+                      </div>
+                    </button>
+                 </template>
+
+                 <template v-else-if="showGroupCrudIndex">
+                    <button v-for="item in selectedGroupCrudTables" :key="item.table" type="button" @click="selectTable(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForTable(item.table))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ item.bucket }}</span>
+                        </div>
+                      </div>
+                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(item).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
+                        {{ adminTagForTable(item).label }}
+                      </div>
+                    </button>
+                    <div v-if="!selectedGroupCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles en este grupo.</div>
+                 </template>
+                 
+                 <template v-else>
+                    <button v-for="group in homeGroups" :key="group.key" type="button" @click="openGroupFromHome(group)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                      <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          <component :is="resolveIcon(iconForGroup(group))" class="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ group.label }}</h3>
+                          <span class="text-sm font-medium text-slate-400">{{ tablesCountForGroup(group) }} tablas</span>
+                        </div>
+                      </div>
+                    </button>
+                 </template>
+               </div>
+            </template>
           </div>
         </div>
 
-        <div v-else-if="showAcademiaIndex" class="admin-home academia-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon icon="map-marked-alt" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">Academia</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Accesos principales para administrar Unidades, Periodos y Cargos.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-home-grid">
-                <button
-                  v-for="item in academyMenuItems"
-                  :key="item.key"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="openAcademyItem(item)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="item.icon" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
-                  </span>
-                </button>
-              </div>
-            </div>
+        <div v-else class="w-full flex-1 bg-white border border-slate-200 p-0 sm:p-2 rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative flex flex-col min-h-0">
+          <div class="admin-page admin-typography w-full h-full relative overflow-y-auto">
+             <AdminTableManager
+               ref="adminManager"
+               :table="selectedTable"
+               :all-tables="tables"
+               @go-back="handleManagerGoBack"
+             />
           </div>
         </div>
-
-        <div v-else-if="showGestionCrudIndex" class="admin-home gestiones-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon :icon="selectedGestionCrudItem?.icon || 'check-double'" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">{{ selectedGestionCrudItem?.label || "Gestiones" }}</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      {{ selectedGestionCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="gestionCrudTables.length" class="admin-home-grid">
-                <button
-                  v-for="table in gestionCrudTables"
-                  :key="table.table"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForTable(table.table)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
-                    <span class="admin-home-btn-meta">Gestionar</span>
-                  </span>
-                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
-                    {{ adminTagForTable(table).label }}
-                  </span>
-                </button>
-                <button
-                  v-if="selectedGestionCrudItem?.key === 'plantillas'"
-                  class="admin-home-btn admin-home-btn-accent"
-                  type="button"
-                  @click="openTemplateArtifactDraftFromHome"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon icon="plus" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">Nuevo paquete de usuario</strong>
-                    <span class="admin-home-btn-meta">Crear desde seed o archivos</span>
-                  </span>
-                  <span class="admin-home-btn-pill admin-home-btn-pill-secondary">Accion</span>
-                </button>
-              </div>
-              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showGestionesIndex" class="admin-home gestiones-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon icon="check-double" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">Gestiones</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-home-grid">
-                <button
-                  v-for="item in gestionMenuItems"
-                  :key="item.key"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="openGestionItem(item)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="item.icon" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showUsersCrudIndex" class="admin-home usuarios-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon :icon="selectedUsersCrudItem?.icon || 'user'" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">{{ selectedUsersCrudItem?.label || "Usuarios" }}</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      {{ selectedUsersCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="usersCrudTables.length" class="admin-home-grid">
-                <button
-                  v-for="table in usersCrudTables"
-                  :key="table.table"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForTable(table.table)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
-                    <span class="admin-home-btn-meta">Gestionar</span>
-                  </span>
-                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
-                    {{ adminTagForTable(table).label }}
-                  </span>
-                </button>
-              </div>
-              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showUsersIndex" class="admin-home usuarios-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon icon="user" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">Usuarios</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Accesos por subgrupo para administrar personas del sistema.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-home-grid">
-                <button
-                  v-for="item in usersMenuItems"
-                  :key="item.key"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="openUsersItem(item)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="item.icon" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showContractsCrudIndex" class="admin-home contratos-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon :icon="selectedContractsCrudItem?.icon || 'certificate'" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">{{ selectedContractsCrudItem?.label || "Contratos" }}</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      {{ selectedContractsCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="contractsCrudTables.length" class="admin-home-grid">
-                <button
-                  v-for="table in contractsCrudTables"
-                  :key="table.table"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForTable(table.table)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
-                    <span class="admin-home-btn-meta">Gestionar</span>
-                  </span>
-                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
-                    {{ adminTagForTable(table).label }}
-                  </span>
-                </button>
-              </div>
-              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showContractsIndex" class="admin-home contratos-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon icon="certificate" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">Contratos</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Accesos por subgrupo para administrar vacantes, contratos y orígenes.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-home-grid">
-                <button
-                  v-for="item in contractsMenuItems"
-                  :key="item.key"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="openContractsItem(item)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="item.icon" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showSecurityCrudIndex" class="admin-home seguridad-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon :icon="selectedSecurityCrudItem?.icon || 'lock'" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">{{ selectedSecurityCrudItem?.label || "Seguridad" }}</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      {{ selectedSecurityCrudItem?.description || "Gestiona tablas relacionadas al subgrupo." }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="securityCrudTables.length" class="admin-home-grid">
-                <button
-                  v-for="table in securityCrudTables"
-                  :key="table.table"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="selectTable(table)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForTable(table.table)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ table.label }}</strong>
-                    <span class="admin-home-btn-meta">Gestionar</span>
-                  </span>
-                  <span :class="['admin-home-btn-pill', adminTagForTable(table).className]">
-                    {{ adminTagForTable(table).label }}
-                  </span>
-                </button>
-              </div>
-              <p v-else class="text-muted mb-0">No hay tablas disponibles para este subgrupo.</p>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showSecurityIndex" class="admin-home seguridad-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon icon="lock" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">Seguridad</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Accesos por subgrupo para administrar roles y permisos.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-home-grid">
-                <button
-                  v-for="item in securityMenuItems"
-                  :key="item.key"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="openSecurityItem(item)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="item.icon" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ item.tableCount }} tablas</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="showGroupCrudIndex" class="admin-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon :icon="iconForGroup(selectedGroup)" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">{{ selectedGroup?.label || "Administración" }}</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Gestiona el CRUD de las tablas del grupo.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="selectedGroupCrudTables.length" class="admin-home-grid">
-                <button
-                  v-for="item in selectedGroupCrudTables"
-                  :key="item.table"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="selectTable(item)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForTable(item.table)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ item.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ item.bucket }}</span>
-                  </span>
-                  <span :class="['admin-home-btn-pill', adminTagForTable(item).className]">
-                    {{ adminTagForTable(item).label }}
-                  </span>
-                </button>
-              </div>
-              <p v-else class="text-muted mb-0">No hay tablas disponibles en este grupo.</p>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="!selectedTable" class="admin-home container-fluid py-4">
-          <div class="card admin-home-card">
-            <div class="card-body">
-              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="admin-home-avatar" aria-hidden="true">
-                    <font-awesome-icon icon="lock" />
-                  </div>
-                  <div>
-                    <h2 class="mb-1">Panel de administración</h2>
-                    <p class="mb-0 admin-home-subtitle">
-                      Accesos organizados para crear, editar, leer y eliminar datos del sistema.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="loadingMeta" class="text-muted">Cargando catálogos...</div>
-              <div v-else-if="metaError" class="text-danger">{{ metaError }}</div>
-              <div v-else class="admin-home-grid">
-                <button
-                  v-for="group in homeGroups"
-                  :key="group.key"
-                  class="admin-home-btn"
-                  type="button"
-                  @click="openGroupFromHome(group)"
-                >
-                  <span class="admin-home-btn-icon">
-                    <font-awesome-icon :icon="iconForGroup(group)" />
-                  </span>
-                  <span class="admin-home-btn-content">
-                    <strong class="admin-home-btn-title">{{ group.label }}</strong>
-                    <span class="admin-home-btn-meta">{{ tablesCountForGroup(group) }} tablas</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <AdminTableManager
-          v-else
-          ref="adminManager"
-          :table="selectedTable"
-          :all-tables="tables"
-          @go-back="handleManagerGoBack"
-        />
       </s-body>
 
       <s-message :show="vnotify" />
@@ -678,7 +422,27 @@
 </template>
 
 <script setup>
+
 import { computed, nextTick, onMounted, ref } from "vue";
+
+import { 
+  IconSchool, 
+  IconChecklist, 
+  IconUser, 
+  IconAddressBook, 
+  IconLock,
+  IconCircle,
+  IconCheckbox,
+  IconCertificate,
+  IconInfoCircle,
+  IconPlus,
+  IconBell,
+  IconLogout,
+  IconChevronDown,
+  IconHome,
+  IconBuildingBank
+} from '@tabler/icons-vue'
+
 import axios from "axios";
 import SMenu from "@/layouts/SMenu.vue";
 import SMessage from "@/layouts/SNotify.vue";
@@ -1098,6 +862,24 @@ const groupIconMap = {
   otros: "circle"
 };
 
+
+const resolveIcon = (iconName) => {
+  const map = {
+    'map-marked-alt': IconSchool,
+    'check-double': IconChecklist,
+    'user': IconUser,
+    'id-card': IconAddressBook,
+    'lock': IconLock,
+    'square-check': IconCheckbox,
+    'certificate': IconCertificate,
+    'info-circle': IconInfoCircle,
+    'plus': IconPlus,
+    'circle': IconCircle,
+    'bell': IconBell
+  }
+  return map[iconName] || IconCircle
+}
+
 const iconForGroup = (group) => groupIconMap[group?.key] || "circle";
 
 const iconForTable = (tableName = "") => {
@@ -1499,172 +1281,18 @@ onMounted(() => {
   }
   fetchMeta();
 });
+
 </script>
 
 <style scoped>
-.admin-home-card {
-  border: 0;
-  border-radius: var(--radius-lg);
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
 }
-
-.admin-home-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--color-puce-light-rgb), 0.12);
-  border: 1px solid rgba(var(--color-puce-light-rgb), 0.2);
-  color: var(--color-puce-light);
-  font-size: 1.65rem;
-  flex: 0 0 auto;
-}
-
-.admin-home-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.admin-home-subtitle {
-  color: var(--brand-ink);
-  opacity: 0.9;
-  font-size: 1rem;
-  line-height: 1.45;
-}
-
-.admin-home-btn {
-  border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
-  border-radius: 12px;
-  background: #fff;
-  padding: 1.45rem 1.5rem;
-  text-align: left;
-  display: grid;
-  grid-template-columns: 3.35rem minmax(0, 1fr);
-  column-gap: 1rem;
-  row-gap: 0.95rem;
-  align-items: start;
-  color: var(--brand-navy);
-  font-size: 0.95rem;
-  min-height: 188px;
-  box-shadow: var(--brand-shadow-soft);
-}
-
-.admin-home-btn-icon {
-  width: 3.35rem;
-  height: 3.35rem;
-  border-radius: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--color-puce-light-rgb), 0.1);
-  border: 1px solid rgba(var(--color-puce-light-rgb), 0.2);
-  color: var(--color-puce-light);
-  flex: 0 0 auto;
-  font-size: 1.28rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
-}
-
-.admin-home-btn-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.28rem;
-  min-width: 0;
-  width: 100%;
-  align-self: start;
-}
-
-.admin-home-btn-title {
-  font-size: 1.08rem;
-  line-height: 1.28;
-  color: var(--brand-navy);
-}
-
-.admin-home-btn-pill {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  grid-column: 1 / -1;
-  width: 100%;
-  padding: 0.6rem 0.85rem;
-  border-radius: 12px;
-  font-size: 0.76rem;
-  font-weight: 700;
-  line-height: 1.1;
-  white-space: nowrap;
-  margin-top: auto;
-}
-
-.admin-home-btn-pill.is-success {
-  background: rgba(40, 167, 69, 0.14);
-  color: #1d7b35;
-}
-
-.admin-home-btn-pill.is-warning {
-  background: rgba(253, 126, 20, 0.16);
-  color: #b85e11;
-}
-
-.admin-home-btn-pill.is-danger {
-  background: rgba(220, 53, 69, 0.14);
-  color: #b32638;
-}
-
-.admin-home-btn-meta {
-  font-size: 0.84rem;
-  opacity: 0.88;
-  line-height: 1.35;
-}
-
-.admin-home-btn:hover {
-  border-color: rgba(var(--brand-primary-rgb), 0.3);
-  color: var(--brand-navy);
-  background: linear-gradient(
-    90deg,
-    rgba(var(--brand-primary-rgb), 0.18) 0%,
-    var(--color-puce-soft) 100%
-  );
-  box-shadow: 0 16px 28px rgba(var(--brand-primary-rgb), 0.1);
-}
-
-.admin-home-btn:hover .admin-home-btn-title,
-.admin-home-btn:hover .admin-home-btn-meta {
-  color: var(--brand-navy);
-}
-
-.admin-home-btn:hover .admin-home-btn-icon {
-  background: rgba(var(--brand-primary-rgb), 0.16);
-  border-color: rgba(var(--brand-primary-rgb), 0.28);
-  color: var(--brand-primary);
-}
-
-.admin-home-btn-accent .admin-home-btn-icon {
-  background: rgba(var(--brand-primary-rgb), 0.14);
-  border-color: rgba(var(--brand-primary-rgb), 0.24);
-  color: var(--brand-primary);
-}
-
-.admin-home-btn-pill-secondary {
-  background: rgba(var(--brand-primary-rgb), 0.14);
-  color: var(--brand-primary);
-}
-
-.admin-home-link {
-  border: 0;
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
-  padding: 0;
 }
-
-@media (max-width: 991px) {
-  .admin-home-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 575px) {
-  .admin-home-grid {
-    grid-template-columns: 1fr;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 </style>
