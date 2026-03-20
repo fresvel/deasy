@@ -1,19 +1,18 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <s-header :menu-open="vmenu" @onclick="toggleNavMenu" class="sticky top-0 z-50">
+    <s-header :menu-open="vmenu" @onclick="onClick" class="sticky top-0 z-50">
       <div class="flex items-center gap-3 overflow-hidden flex-1">
-        <button class="inline-flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all bg-white/10 text-white/95 hover:bg-white/20" type="button" @click="goAdminHome">
-          <IconLock class="w-5 h-5 shrink-0" />
-          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Administrador</span>
+        <button type="button" @click="goAdminHome" class="flex flex-row items-center gap-2 text-lg font-bold tracking-wide text-white hover:text-sky-200 transition-colors hidden sm:inline-flex ml-2 outline-none">
+          Panel de Administración
         </button>
-        <router-link to="/dashboard" class="inline-flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all bg-white/10 text-white/95 hover:bg-white/20">
-          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Dashboard</span>
-        </router-link>
-        <router-link to="/perfil" class="inline-flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all bg-white/10 text-white/95 hover:bg-white/20">
-          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Perfil</span>
-        </router-link>
       </div>
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Dashboard">
+          <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
+        </router-link>
+        <router-link to="/perfil" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Perfil">
+          <IconUser class="w-4 h-4 sm:w-5 sm:h-5" />
+        </router-link>
         <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
           <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
