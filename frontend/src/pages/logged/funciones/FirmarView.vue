@@ -2,24 +2,7 @@
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <s-header :menu-open="vmenu" @onclick="onClick('Menu')">
         <div class="flex items-center gap-3 overflow-hidden flex-1">
-            <div class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-                <router-link to="/" class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white" @click="onClick('Academia')">
-                  <IconBook class="w-5 h-5 shrink-0" />
-                    <span class="text-sm font-semibold hidden sm:inline-block">Academia</span>
-                </router-link>
-                <router-link to="/auth" class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white">
-                  <IconMicroscope class="w-5 h-5 shrink-0" />
-                    <span class="text-sm font-semibold hidden sm:inline-block">Investigación</span>
-                </router-link>
-                <router-link to="/" class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white">
-                  <IconLink class="w-5 h-5 shrink-0" />
-                    <span class="text-sm font-semibold hidden sm:inline-block">Vinculación</span>
-                </router-link>
-                <router-link to="/auth" class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 bg-white/10 !text-white/95 hover:bg-white/20 hover:!text-white">
-                  <IconWorld class="w-5 h-5 shrink-0" />
-                    <span class="text-sm font-semibold hidden sm:inline-block">Internacionalización</span>
-                </router-link>
-            </div>
+            <!-- Opciones nativas de areas deprecadas -->
         </div>
 
         <div class="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -89,7 +72,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
 const isClient = typeof window !== 'undefined';
-import { IconUsers, IconBell, IconHome, IconLogout, IconChevronDown, IconBook, IconMicroscope, IconLink, IconWorld } from '@tabler/icons-vue';
+import { IconUsers, IconBell, IconHome, IconLogout, IconChevronDown } from '@tabler/icons-vue';
 import SMenu from '@/layouts/SMenu.vue';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
