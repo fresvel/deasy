@@ -18,11 +18,7 @@
        </div>
 
        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-          <router-link to="/roles" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" title="Roles">
-             <IconUsers class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-
-          <router-link to="/firmar" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Firmar documentos">
+          <router-link to="/firmar" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" title="Firmar documentos">
             <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
           </router-link>
 
@@ -30,7 +26,7 @@
              <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Regresar al Dashboard">
+          <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Regresar al Dashboard">
              <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
           </router-link>
 
@@ -46,7 +42,7 @@
                 <UserProfile
                     :photo="userPhoto"
                     :username="userFullName"
-                    :editable="true"
+                    :editable="false"
                     @photo-selected="handlePhotoSelected"
                 />
                 
@@ -169,7 +165,10 @@ import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
     const userPhoto = ref(defaultPhoto);
     const userFullName = computed(() => {
         if (currentUser.value) {
-            return `${currentUser.value.nombre} ${currentUser.value.apellido}`;
+            const nombre = currentUser.value.first_name || currentUser.value.nombre || currentUser.value.name || '';
+            const apellido = currentUser.value.last_name || currentUser.value.apellido || currentUser.value.lastName || currentUser.value.lastname || '';
+            const fullName = `${nombre} ${apellido}`.trim();
+            return fullName || 'Usuario';
         }
         return 'Usuario';
     });
