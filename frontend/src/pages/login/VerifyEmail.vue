@@ -1,77 +1,78 @@
 <template>
-  <div class="login-container">
-    <div class="content-wrapper">
+  <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
+    <div class="max-w-md w-full bg-white rounded-[2rem] shadow-xl shadow-slate-300/50 p-8 sm:p-12 border border-slate-200 relative overflow-hidden">
+      
+      <!-- Go back button -->
+      <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-sky-500/40 rounded-lg pr-2">
+        <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
+        Volver al login
+      </router-link>
 
-      <!-- HEADER -->
-      <div class="text-center mb-5">
-        <div class="title-container">
-          <span class="title-puce">PUCE</span>
-          <span class="title-space">&nbsp;</span>
-          <span class="title-esmeraldas">ESMERALDAS</span>
+      <div class="mb-8">
+        <div class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mb-6">
+          <IconMailCheck class="h-7 w-7" />
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Verificar correo</h1>
+        <p class="text-slate-500 mt-2.5 font-medium text-sm">
+          Hemos enviado un código a <br class="hidden sm:block" />
+          <strong class="text-slate-800">{{ email || 'tu correo' }}</strong>
+        </p>
+      </div>
+
+      <div class="mb-8 items-center flex justify-center">
+        <div class="flex justify-between gap-2 sm:gap-3 w-full max-w-[280px]">
+          <input
+            v-for="(digit, index) in code"
+            :key="index"
+            ref="inputs"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="1"
+            class="w-11 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
+            v-model="code[index]"
+            @input="onInput(index, $event)"
+            @keydown.backspace="onBackspace(index, $event)"
+            @paste.prevent="onPaste"
+          />
         </div>
       </div>
 
-      <!-- CARD -->
-      <div class="card login-card">
-        <div class="card-body">
-          <div class="text-center mb-4">
-            <h1 class="login-title">VERIFICAR CORREO</h1>
-            <p class="login-subtitle">
-              Código enviado a <br />
-              <strong>{{ email }}</strong>
-            </p>
-          </div>
-
-          <!-- INPUTS 6 DÍGITOS -->
-          <div class="code-inputs mb-4">
-            <input
-              v-for="(digit, index) in code"
-              :key="index"
-              ref="inputs"
-              type="text"
-              maxlength="1"
-              class="code-input"
-              v-model="code[index]"
-              @input="onInput(index)"
-              @keydown.backspace="onBackspace(index)"
-            />
-          </div>
-
-          <button
-            class="btn btn-primary-custom w-100"
-            :disabled="loading"
-            @click="submit"
-          >
-            {{ loading ? 'Verificando...' : 'Verificar correo' }}
-          </button>
-
-          <!-- MENSAJES -->
-          <div
-            v-if="error"
-            class="alert alert-danger mt-4 error-alert"
-          >
-            {{ error }}
-          </div>
-
-          <div
-            v-if="success"
-            class="alert alert-success mt-4"
-          >
-            ✅ Correo verificado correctamente
-          </div>
-
-        </div>
+      <div v-if="error" class="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-xl flex items-start gap-3">
+        <IconAlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
+        <p>{{ error }}</p>
       </div>
+
+      <div v-if="success" class="mb-6 p-4 bg-green-50 border border-green-100 text-green-600 text-sm font-semibold rounded-xl flex items-start gap-3">
+        <IconCheck class="w-5 h-5 shrink-0 mt-0.5" />
+        <p>¡Correo verificado correctamente! Redirigiendo...</p>
+      </div>
+
+      <button
+        type="button"
+        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/30 flex items-center justify-center gap-2 shadow-md shadow-sky-600/20 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-sky-600/30 active:scale-[0.98]"
+        :disabled="loading || !isCodeComplete"
+        @click="submit"
+      >
+        <span v-if="loading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+        <span>{{ loading ? 'Verificando...' : 'Verificar correo' }}</span>
+      </button>
 
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { API_ROUTES } from '@/services/apiConfig'
+import { 
+  IconArrowLeft, 
+  IconMailCheck, 
+  IconAlertCircle, 
+  IconCheck 
+} from '@tabler/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -85,20 +86,62 @@ const loading = ref(false)
 const error = ref(null)
 const success = ref(false)
 
-const onInput = async (index) => {
-  if (code.value[index] && index < 5) {
+const isCodeComplete = computed(() => {
+  return code.value.every(digit => digit.trim() !== '')
+})
+
+const onInput = async (index, event) => {
+  const value = event.target.value.replace(/[^0-9]/g, '')
+  code.value[index] = value
+  
+  if (value && index < 5) {
     await nextTick()
-    inputs.value[index + 1]?.focus()
+    const nextInput = inputs.value[index + 1]
+    if (nextInput) {
+      nextInput.focus()
+    }
   }
 }
 
-const onBackspace = (index) => {
+const onBackspace = async (index, event) => {
   if (!code.value[index] && index > 0) {
-    inputs.value[index - 1]?.focus()
+    const prevInput = inputs.value[index - 1]
+    if (prevInput) {
+      prevInput.focus()
+      code.value[index - 1] = ''
+    }
+  }
+}
+
+const onPaste = async (event) => {
+  const pastedData = event.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6)
+  if (!pastedData) return
+
+  for (let i = 0; i < pastedData.length; i++) {
+    if (i < 6) {
+      code.value[i] = pastedData[i]
+    }
+  }
+  
+  error.value = null
+  
+  await nextTick()
+  const focusIndex = Math.min(pastedData.length, 5)
+  if (inputs.value[focusIndex]) {
+    inputs.value[focusIndex].focus()
+  }
+  
+  if (isCodeComplete.value) {
+    submit()
   }
 }
 
 const submit = async () => {
+  if (!isCodeComplete.value) {
+    error.value = 'Por favor, ingresa los 6 dígitos del código.'
+    return
+  }
+
   error.value = null
   loading.value = true
 
@@ -115,96 +158,9 @@ const submit = async () => {
     }, 1500)
 
   } catch (err) {
-    error.value =
-      err.response?.data?.error || 'Código inválido'
+    error.value = err.response?.data?.error || err.response?.data?.message || 'El código ingresado es inválido o ha expirado.'
   } finally {
     loading.value = false
   }
 }
 </script>
-
-<style scoped>
-/* === reutiliza EXACTAMENTE el layout del login === */
-
-.login-container {
-  background: var(--brand-gradient);
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  padding: clamp(1rem, 4vw, 3rem);
-}
-
-.content-wrapper {
-  max-width: 760px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.title-container {
-  color: white;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-}
-
-.subtitle {
-  color: white;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 480px;
-  border-radius: 36px;
-  box-shadow: var(--brand-shadow);
-  border: 0;
-}
-
-.login-title {
-  font-size: clamp(1.2rem, 3vw, 1.45rem); /* antes más grande */
-}
-
-.login-subtitle {
-  font-size: clamp(0.9rem, 2.4vw, 1rem);
-}
-
-/* === INPUTS DE CÓDIGO === */
-
-.code-input {
-  width: 50px;
-  height: 58px;
-  text-align: center;
-  font-size: 1.4rem;
-  font-weight: 600;
-
-  border-radius: 16px;
-
-  /* 🔥 MÁS VISIBILIDAD */
-  border: 2px solid #1e5aa8; /* azul visible */
-  background-color: #f2f7ff; /* azul muy suave */
-
-  box-shadow: 0 6px 14px rgba(3, 49, 100, 0.18);
-  transition: all 0.2s ease;
-}
-
-.code-input:focus {
-  outline: none;
-  border-color: #033164;
-  background-color: #ffffff;
-
-  /* glow azul */
-  box-shadow:
-    0 0 0 3px rgba(3, 49, 100, 0.25),
-    0 8px 18px rgba(3, 49, 100, 0.3);
-
-  transform: translateY(-1px);
-}
-
-
-/* === ALERTAS === */
-
-.error-alert {
-  border-radius: 17px;
-  box-shadow: var(--brand-shadow-soft);
-}
-</style>
