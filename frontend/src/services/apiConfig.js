@@ -21,6 +21,7 @@ export const API_ROUTES = {
   USERS_RECOVER_PASSWORD: `${API_PREFIX}/reset-password/request`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
+  USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
   USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
   USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
