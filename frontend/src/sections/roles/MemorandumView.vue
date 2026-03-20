@@ -2,12 +2,12 @@
   <div class="flex flex-col gap-6 max-w-[1400px] w-full mx-auto px-4 py-8">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
       <div class="flex flex-col gap-1">
-        <h2 class="text-3xl font-extrabold tracking-tight text-slate-800">Memorándum</h2>
-        <p class="text-slate-500 font-medium">Gestiona y crea memorándums con editor dinámico.</p>
+        <h2 class="text-2xl font-extrabold tracking-tight text-slate-800">Memorándum</h2>
+        <p class="text-sm text-slate-500 font-medium">Gestiona y crea memorándums con editor dinámico.</p>
       </div>
       <div class="flex items-center">
-        <button class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-700 transition-colors shadow-sm whitespace-nowrap" @click="setActiveMenu('Nuevo')">
-          <IconPlus class="w-5 h-5" />
+        <button class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 transition-colors shadow-sm whitespace-nowrap" @click="setActiveMenu('Nuevo')">
+          <IconPlus class="w-4 h-4" />
           Nuevo Memorándum
         </button>
       </div>
@@ -20,7 +20,7 @@
           v-for="option in menuOptions"
           :key="option"
           type="button"
-          class="px-6 py-3 text-sm font-semibold rounded-t-lg transition-colors whitespace-nowrap border-b-2"
+          class="px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors whitespace-nowrap border-b-2"
           :class="activeMenu === option ? 'text-sky-600 border-sky-600 bg-sky-50/50' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'"
           @click="setActiveMenu(option)"
         >
@@ -97,14 +97,14 @@
           </div>
 
           <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
-            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 transition-colors shadow-sm">
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 transition-colors shadow-sm">
               <IconDeviceFloppy class="w-4 h-4" />
               Guardar
             </button>
-            <button type="button" class="inline-flex items-center px-5 py-2.5 bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-colors" @click="resetForm">
+            <button type="button" class="inline-flex items-center px-4 py-2 bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-colors" @click="resetForm">
               Cancelar
             </button>
-            <button type="button" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm ml-auto" @click="exportToJSON">
+            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm ml-auto" @click="exportToJSON">
               <IconDownload class="w-4 h-4" />
               Exportar JSON
             </button>
@@ -248,10 +248,10 @@
 
               <!-- Action buttons edit -->
               <div class="flex flex-wrap gap-3 pt-6 border-t border-slate-100 justify-end">
-                <button type="button" class="inline-flex items-center px-5 py-2 w-full sm:w-auto justify-center bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-colors" @click="cancelEdit">
+                <button type="button" class="inline-flex items-center px-4 py-2 w-full sm:w-auto justify-center bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-colors" @click="cancelEdit">
                   Cancelar
                 </button>
-                <button type="submit" class="inline-flex items-center w-full sm:w-auto justify-center gap-2 px-6 py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 transition-colors shadow-sm">
+                <button type="submit" class="inline-flex items-center w-full sm:w-auto justify-center gap-2 px-4 py-2 bg-sky-600 text-white text-sm font-semibold rounded-xl hover:bg-sky-700 transition-colors shadow-sm">
                    <IconDeviceFloppy class="w-4 h-4" />
                   Guardar Cambios
                 </button>
@@ -325,11 +325,11 @@
            <button type="button" class="hidden text-slate-500">
              <!-- Placeholder -->
           </button>
-           <button v-if="!isEditing && canEdit(selectedMemorandum)" type="button" class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-sm order-first sm:order-none mr-auto sm:mr-0" @click="startEditing">
+           <button v-if="!isEditing && canEdit(selectedMemorandum)" type="button" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-sm order-first sm:order-none mr-auto sm:mr-0" @click="startEditing">
             <IconEdit class="w-4 h-4" />
             Editar Documento
           </button>
-          <button type="button" class="inline-flex items-center px-6 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-colors shadow-sm w-full sm:w-auto justify-center" @click="closeModal">
+          <button type="button" class="inline-flex items-center px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-colors shadow-sm w-full sm:w-auto justify-center" @click="closeModal">
             Cerrar
           </button>
         </div>
@@ -358,7 +358,7 @@ const memorandums = ref([
     destinatario: 'Equipo de Desarrollo',
     estado: 'Borrador',
     autorId: 1, 
-    cuerpo: '[{"type":"text","value":"Hola, nos reuniremos mañana a las 10am para discutir el sprint."}]',
+    cuerpo: ["Hola, nos reuniremos mañana a las 10am para discutir el sprint."],
     camposPersonalizados: [
       { nombre: 'Prioridad', valor: 'Alta' }
     ]
@@ -371,7 +371,7 @@ const memorandums = ref([
     destinatario: 'Toda la empresa',
     estado: 'Enviado',
     autorId: 2,
-    cuerpo: '[{"type":"text","value":"Hemos actualizado las políticas de trabajo remoto."}]',
+    cuerpo: ["Hemos actualizado las políticas de trabajo remoto."],
     camposPersonalizados: []
   },
 ]);
@@ -389,7 +389,7 @@ const newMemorandum = ref({
   fecha: new Date().toISOString().split('T')[0],
   titulo: '',
   destinatario: '',
-  cuerpo: '[{"type":"text","value":"Agrega aquí el contenido del memorándum..."}]',
+  cuerpo: ["Agrega aquí el contenido del memorándum..."],
   camposPersonalizados: []
 });
 
@@ -398,7 +398,7 @@ const resetForm = () => {
     fecha: new Date().toISOString().split('T')[0],
     titulo: '',
     destinatario: '',
-    cuerpo: '[{"type":"text","value":"Agrega aquí el contenido del memorándum..."}]',
+    cuerpo: ["Agrega aquí el contenido del memorándum..."],
     camposPersonalizados: []
   };
 };
@@ -445,7 +445,15 @@ const filteredMemorandums = computed(() => {
   let filtered = memorandums.value;
 
   if (activeMenu.value !== 'Todos') {
-    filtered = filtered.filter(m => m.estado === activeMenu.value);
+    const statusMap = {
+      'Borradores': 'Borrador',
+      'Enviados': 'Enviado',
+      'Archivados': 'Archivado'
+    };
+    const targetStatus = statusMap[activeMenu.value];
+    if (targetStatus) {
+      filtered = filtered.filter(m => m.estado === targetStatus);
+    }
   }
 
   if (searchQuery.value) {
