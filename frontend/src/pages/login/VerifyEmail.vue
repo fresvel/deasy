@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-md w-full bg-white rounded-[2rem] shadow-xl shadow-slate-300/50 p-8 sm:p-12 border border-slate-200 relative overflow-hidden">
+    <div class="max-w-md w-full bg-white rounded-[2rem] shadow-xl shadow-slate-300/50 p-5 sm:p-12 border border-slate-200 relative overflow-hidden">
       
       <!-- Go back button -->
       <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-sky-500/40 rounded-lg pr-2">
@@ -20,7 +20,7 @@
       </div>
 
       <div class="mb-8 flex justify-center w-full">
-        <div class="flex justify-between gap-1 sm:gap-2 w-full max-w-xs">
+        <div class="flex justify-between gap-1.5 sm:gap-3 w-full max-w-[18rem]">
           <input
             v-for="(digit, index) in code"
             :key="index"
@@ -29,7 +29,7 @@
             inputmode="numeric"
             pattern="[0-9]*"
             maxlength="1"
-            class="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
+            class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
             v-model="code[index]"
             @input="onInput(index, $event)"
             @keydown.backspace="onBackspace(index, $event)"
