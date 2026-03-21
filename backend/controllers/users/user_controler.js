@@ -5,6 +5,7 @@ import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { hydrateTaskFromDefinition } from "../../services/admin/TaskGenerationService.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
+import { generateUniqueToken } from "../../utils/tokenGenerator.js";
 
 
 const userRepository = new UserRepository();
@@ -548,6 +549,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
   };
 };
 
+const token = await generateUniqueToken();
 export const createUser = async (req, res) => {
   console.log("Creando usuario");
   try {
@@ -563,7 +565,8 @@ export const createUser = async (req, res) => {
       status: req.body.status,
       verify_email: req.body.verify?.email,
       verify_whatsapp: req.body.verify?.whatsapp,
-      photo_url: req.body.photoUrl ?? req.body.photo_url ?? null
+      photo_url: req.body.photoUrl ?? req.body.photo_url ?? null,
+      token
     };
 
     const createdUser = await userRepository.create(userPayload);
