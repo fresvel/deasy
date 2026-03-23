@@ -281,8 +281,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import axios from 'axios';
-import { API_ROUTES } from '@/services/apiConfig';
+import AuthService from '@/services/auth/AuthService';
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -549,9 +548,9 @@ const createnewUser = async() => {
         pais: newuser.value.pais_residencia
       };
 
-      await axios.post(API_ROUTES.USERS, payload);
-        sessionStorage.removeItem('register_draft');
-        showSuccessModal.value = true;
+      await AuthService.register(payload);
+      sessionStorage.removeItem('register_draft');
+      showSuccessModal.value = true;
     } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario. Por favor intenta de nuevo.";
     }
