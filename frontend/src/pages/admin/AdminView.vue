@@ -23,15 +23,17 @@
         <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
           <UserProfile :photo="userPhoto" :username="userFullName" :editable="false" />
           
-          <button 
-            type="button" 
-            @click="goAdminHome" 
-            class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 font-bold -mb-2 z-10 relative shadow-sm"
-            :class="isHomeActive ? 'bg-white text-sky-800 border-none' : 'bg-white/10 text-white/90 hover:bg-white/20 border border-white/10'"
-          >
-            <IconHome class="w-5 h-5 shrink-0" />
-            <span>Inicio</span>
-          </button>
+          <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
+            <button 
+              type="button" 
+              @click="goAdminHome" 
+              class="flex items-center w-full px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 gap-2"
+              :class="isHomeActive ? 'bg-white text-sky-800 shadow-sm' : 'text-white/90 hover:bg-white/10 hover:text-white'"
+            >
+              <IconHome class="w-5 h-5 shrink-0" />
+              <span>Inicio</span>
+            </button>
+          </div>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
             <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
