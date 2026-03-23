@@ -247,6 +247,10 @@ services:
       SIGNER_PORT: "4000"
     ports:
       - "4000:4000"
+    volumes:
+      - ../signer:/app
+      - signer_node_modules:/app/node_modules
+      - signer_sigmaker_node_modules:/app/sigmaker/node_modules
     depends_on:
       - minio
 
@@ -295,3 +299,5 @@ volumes:
   uploads_data:
   storage_data:
   multisigner_node_modules:
+  signer_node_modules:
+  signer_sigmaker_node_modules:
