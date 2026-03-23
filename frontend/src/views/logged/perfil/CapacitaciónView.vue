@@ -164,6 +164,7 @@ import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import RowActionMenu from "@/components/RowActionMenu.vue";
 import { API_PREFIX } from "@/services/apiConfig";
+import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 import GeneradorLogros from "@/sections/academia/GeneradorLogros.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
@@ -209,19 +210,11 @@ const loadDossier = async () => {
     try {
         loading.value = true;
         
-        const userDataString = localStorage.getItem('user');
-        if (!userDataString) {
-            console.error('No hay usuario logueado');
-            return;
-        }
+        const data = await DossierService.getDossier();
         
-        currentUser.value = JSON.parse(userDataString);
-        
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
-        const response = await axios.get(url);
-        
-        if (response.data.success) {
-            dossier.value = response.data.data;
+        if (data.success) {
+            dossier.value = data.data;
+            currentUser.value = { cedula: DossierService.getCedula() };
         }
         
     } catch (error) {
