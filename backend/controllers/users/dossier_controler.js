@@ -1,6 +1,9 @@
 import { Dossier } from "../../models/users/dossiers.js";
 import { Usuario } from "../../models/users/usuario_model.js";
 import UserRepository from "../../services/auth/UserRepository.js";
+import { SenescytPdfProcessorService } from "../../services/senescyt/SenescytPdfProcessorService.js";
+
+const senescytProcessor = new SenescytPdfProcessorService();
 
 const userRepository = new UserRepository();
 const INVESTIGACION_TIPOS = new Set(["articulos", "libros", "ponencias", "tesis", "proyectos"]);
@@ -568,6 +571,121 @@ export const updateInvestigacionItem = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error al actualizar investigación",
+            error: error.message
+        });
+    }
+};
+
+// ─── SENESCYT: Preview de importación ────────────────────────────────────────
+// POST /dossier/:cedula/titulos/import/senescyt-preview
+// Recibe el PDF SENESCYT, lo sube a MinIO, lo parsea y valida.
+// Devuelve un preview de títulos detectados SIN persistir en el dosier.
+export const senescytPreview = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Se requiere el archivo PDF de SENESCYT (campo "pdf").'
+            });
+        }
+
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        const preview = await senescytProcessor.procesarPreview(
+            req.file.buffer,
+            req.file.originalname,
+            cedula
+        );
+
+        return res.json({
+            success: true,
+            message: 'Preview generado. Revise los títulos detectados y confirme cuáles importar.',
+            data: preview
+        });
+
+    } catch (error) {
+        console.error('Error en senescytPreview:', error);
+        const status = error.message?.includes('cédula') || error.message?.includes('No se detectaron') ? 422 : 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Error al procesar el PDF SENESCYT',
+            error: error.message
+        });
+    }
+};
+
+// ─── SENESCYT: Confirmación de importación ───────────────────────────────────
+// POST /dossier/:cedula/titulos/import/senescyt-confirm
+// Recibe la selección de títulos del preview y los persiste en dossier.titulos.
+// Body esperado: { titulos: [ <objeto título completo del preview>, ... ] }
+export const senescytConfirm = async (req, res) => {
+    try {
+        const { cedula } = req.params;
+        const { titulos: titulosSeleccionados } = req.body;
+
+        if (!Array.isArray(titulosSeleccionados) || titulosSeleccionados.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Se debe enviar al menos un título en el array "titulos".'
+            });
+        }
+
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        for (const titulo of titulosSeleccionados) {
+            dossier.titulos.push({
+                titulo:          titulo.titulo,
+                ies:             titulo.ies,
+                nivel:           titulo.nivel,
+                sreg:            titulo.sreg,
+                campo_amplio:    titulo.campo_amplio,
+                fecha_registro:  titulo.fecha_registro,
+                registro_tipo:   titulo.registro_tipo,
+                pais:            titulo.pais ?? 'Ecuador',
+                sera:            titulo.sera  ?? 'Enviado',
+                soporte_senescyt:  titulo.soporte_senescyt  ?? null,
+                soporte_adicional: titulo.soporte_adicional ?? null,
+                source:           'senescyt_import',
+                imported_at:      new Date(),
+                import_warnings:  titulo.import_warnings ?? []
+            });
+        }
+
+        await dossier.save();
+
+        return res.json({
+            success: true,
+            message: `${titulosSeleccionados.length} título(s) importado(s) correctamente desde SENESCYT.`,
+            data: dossier
+        });
+
+    } catch (error) {
+        console.error('Error en senescytConfirm:', error);
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(e => e.message).join(', ');
+            return res.status(400).json({
+                success: false,
+                message: `Error de validación al guardar títulos: ${errors}`,
+                error: error.message
+            });
+        }
+        return res.status(500).json({
+            success: false,
+            message: 'Error al confirmar la importación de títulos',
             error: error.message
         });
     }
