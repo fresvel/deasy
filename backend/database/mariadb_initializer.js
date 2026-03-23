@@ -200,26 +200,33 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
   const pool = getMariaDBPool();
 
   if (!pool) {
-    console.warn(
-      "⚠️  Saltando inicialización MariaDB: no hay conexión configurada."
-    );
+    console.warn("⚠️  Saltando inicialización MariaDB: no hay conexión configurada.");
     return;
   }
 
   const connection = await pool.getConnection();
   try {
+    // 1. Tablas legacy de autenticación (no dependen del schema principal)
     await connection.query(CREATE_USERS_TABLE_SQL);
     await connection.query(CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL);
     await connection.query(ADD_PHOTO_COLUMN_SQL);
     await connection.query(MODIFY_PHOTO_COLUMN_SQL);
     await connection.query(CREATE_PASSWORD_RESET_CODES_TABLE_SQL);
-    console.log("✅ Tabla 'password_reset_codes' verificada/creada");
     console.log("✅ Tabla 'users' verificada/creada en MariaDB");
     console.log("✅ Tabla 'email_verification_codes' verificada/creada");
+    console.log("✅ Tabla 'password_reset_codes' verificada/creada");
 
+    // 2. Schema principal — esto crea processes, persons, templates, etc.
+    const schemaSQL = await fs.readFile(SCHEMA_FILE_URL, "utf8");
+    const statements = splitSqlStatements(schemaSQL);
+    for (const statement of statements) {
+      await connection.query(statement);
+    }
+    console.log("✅ Schema principal aplicado desde mariadb_schema.sql");
+
+    // 3. Migraciones sobre tablas del schema (ahora sí existen)
     const [columns] = await connection.query(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions'`
     );
     const columnNames = columns.map((col) => col.COLUMN_NAME);
@@ -227,7 +234,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       await connection.query(
         "ALTER TABLE document_versions CHANGE COLUMN version_num version INT NOT NULL"
       );
-      console.log("✅ Columna document_versions.version_num renombrada a version");
+      console.log("✅ document_versions.version_num renombrada a version");
     }
     if (columnNames.includes("version")) {
       await connection.query(
@@ -236,155 +243,135 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     }
 
     const [processColumns] = await connection.query(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'`
     );
     const processColumnNames = processColumns.map((col) => col.COLUMN_NAME);
-    if (!processColumnNames.includes("unit_id")) {
+    if (!processColumnNames.includes("unit_id"))
       await connection.query("ALTER TABLE processes ADD COLUMN unit_id INT NULL");
-    }
-    if (!processColumnNames.includes("program_id")) {
+    if (!processColumnNames.includes("program_id"))
       await connection.query("ALTER TABLE processes ADD COLUMN program_id INT NULL");
-    }
-    if (!processColumnNames.includes("person_id")) {
+    if (!processColumnNames.includes("person_id"))
       await connection.query("ALTER TABLE processes ADD COLUMN person_id INT NULL");
-    }
-    if (!processColumnNames.includes("term_id")) {
+    if (!processColumnNames.includes("term_id"))
       await connection.query("ALTER TABLE processes ADD COLUMN term_id INT NULL");
-    }
+
     try {
       const [fkRows] = await connection.query(
-        `SELECT CONSTRAINT_NAME
-         FROM information_schema.KEY_COLUMN_USAGE
-         WHERE TABLE_SCHEMA = DATABASE()
-           AND TABLE_NAME = 'processes'
-           AND COLUMN_NAME = 'person_id'
-           AND REFERENCED_TABLE_NAME IS NOT NULL`
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'
+           AND COLUMN_NAME = 'person_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
       );
-      if (!fkRows.length) {
+      if (!fkRows.length)
         await connection.query(
           "ALTER TABLE processes ADD CONSTRAINT fk_processes_person FOREIGN KEY (person_id) REFERENCES persons(id)"
         );
-      }
     } catch (error) {
       console.warn("⚠️  No se pudo crear FK de processes.person_id:", error.message);
     }
+
     try {
       const [fkRows] = await connection.query(
-        `SELECT CONSTRAINT_NAME
-         FROM information_schema.KEY_COLUMN_USAGE
-         WHERE TABLE_SCHEMA = DATABASE()
-           AND TABLE_NAME = 'processes'
-           AND COLUMN_NAME = 'term_id'
-           AND REFERENCED_TABLE_NAME IS NOT NULL`
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'
+           AND COLUMN_NAME = 'term_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
       );
-      if (!fkRows.length) {
+      if (!fkRows.length)
         await connection.query(
           "ALTER TABLE processes ADD CONSTRAINT fk_processes_term FOREIGN KEY (term_id) REFERENCES terms(id)"
         );
-      }
     } catch (error) {
       console.warn("⚠️  No se pudo crear FK de processes.term_id:", error.message);
     }
+
     try {
       await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
     } catch (error) {
-      if (error?.code !== "ER_CONSTRAINT_NOT_FOUND") {
-        console.warn("⚠️  No se pudo eliminar el CHECK de processes:", error.message);
-      }
+      if (error?.code !== "ER_CONSTRAINT_NOT_FOUND")
+        console.warn("⚠️  No se pudo eliminar CHECK de processes:", error.message);
     }
 
-    const [templateColumns] = await connection.query(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'templates'`
+    // Migración legacy: solo si la tabla 'templates' aún existe (schema viejo)
+    const [legacyTables] = await connection.query(
+      `SELECT TABLE_NAME FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME IN ('templates', 'process_templates')`
     );
-    const templateColumnNames = templateColumns.map((col) => col.COLUMN_NAME);
-    if (!templateColumnNames.includes("version")) {
-      await connection.query("ALTER TABLE templates ADD COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
-    } else {
-      await connection.query("ALTER TABLE templates MODIFY COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+    const legacyTableNames = legacyTables.map((t) => t.TABLE_NAME);
+
+    if (legacyTableNames.includes("templates")) {
+      const [templateColumns] = await connection.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'templates'`
+      );
+      const templateColumnNames = templateColumns.map((col) => col.COLUMN_NAME);
+      if (!templateColumnNames.includes("version"))
+        await connection.query("ALTER TABLE templates ADD COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
+      else
+        await connection.query("ALTER TABLE templates MODIFY COLUMN version VARCHAR(10) NOT NULL DEFAULT '0.1'");
     }
 
-    const [processTemplateColumns] = await connection.query(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_templates'`
-    );
-    const processTemplateColumnNames = processTemplateColumns.map((col) => col.COLUMN_NAME);
-    if (processTemplateColumnNames.includes("template_version_id")) {
-      try {
-        const [fkRows] = await connection.query(
-          `SELECT CONSTRAINT_NAME
-           FROM information_schema.KEY_COLUMN_USAGE
-           WHERE TABLE_SCHEMA = DATABASE()
-             AND TABLE_NAME = 'process_templates'
-             AND COLUMN_NAME = 'template_version_id'
-             AND REFERENCED_TABLE_NAME IS NOT NULL`
-        );
-        if (fkRows.length) {
-          await connection.query(
-            `ALTER TABLE process_templates DROP FOREIGN KEY ${fkRows[0].CONSTRAINT_NAME}`
+    if (legacyTableNames.includes("process_templates")) {
+      const [processTemplateColumns] = await connection.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_templates'`
+      );
+      const processTemplateColumnNames = processTemplateColumns.map((col) => col.COLUMN_NAME);
+      if (processTemplateColumnNames.includes("template_version_id")) {
+        try {
+          const [fkRows] = await connection.query(
+            `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_templates'
+               AND COLUMN_NAME = 'template_version_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
           );
+          if (fkRows.length)
+            await connection.query(`ALTER TABLE process_templates DROP FOREIGN KEY ${fkRows[0].CONSTRAINT_NAME}`);
+        } catch (error) {
+          console.warn("⚠️  No se pudo eliminar FK antigua de process_templates:", error.message);
         }
+        try {
+          await connection.query("ALTER TABLE process_templates MODIFY COLUMN template_version_id INT NULL DEFAULT NULL");
+        } catch (error) {
+          console.warn("⚠️  No se pudo ajustar template_version_id:", error.message);
+        }
+        try {
+          await connection.query("ALTER TABLE process_templates DROP COLUMN template_version_id");
+        } catch (error) {
+          console.warn("⚠️  No se pudo eliminar template_version_id:", error.message);
+        }
+      }
+      if (!processTemplateColumnNames.includes("template_id"))
+        await connection.query("ALTER TABLE process_templates ADD COLUMN template_id INT NOT NULL");
+      try {
+        await connection.query("ALTER TABLE process_templates DROP PRIMARY KEY");
       } catch (error) {
-        console.warn("⚠️  No se pudo eliminar FK antigua de process_templates:", error.message);
+        if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY")
+          console.warn("⚠️  No se pudo eliminar PK antigua de process_templates:", error.message);
+      }
+      try {
+        await connection.query("ALTER TABLE process_templates ADD PRIMARY KEY (process_id, template_id)");
+      } catch (error) {
+        if (error?.code !== "ER_DUP_KEYNAME")
+          console.warn("⚠️  No se pudo crear PK nueva de process_templates:", error.message);
       }
       try {
         await connection.query(
-          "ALTER TABLE process_templates MODIFY COLUMN template_version_id INT NULL DEFAULT NULL"
+          "ALTER TABLE process_templates ADD CONSTRAINT fk_process_templates_template FOREIGN KEY (template_id) REFERENCES templates(id)"
         );
       } catch (error) {
-        console.warn("⚠️  No se pudo ajustar template_version_id:", error.message);
-      }
-      try {
-        await connection.query("ALTER TABLE process_templates DROP COLUMN template_version_id");
-      } catch (error) {
-        console.warn("⚠️  No se pudo eliminar template_version_id:", error.message);
+        if (error?.code !== "ER_DUP_KEYNAME")
+          console.warn("⚠️  No se pudo crear FK de process_templates:", error.message);
       }
     }
-    if (!processTemplateColumnNames.includes("template_id")) {
-      await connection.query("ALTER TABLE process_templates ADD COLUMN template_id INT NOT NULL");
-    }
-    try {
-      await connection.query("ALTER TABLE process_templates DROP PRIMARY KEY");
-    } catch (error) {
-      if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY") {
-        console.warn("⚠️  No se pudo eliminar PK antigua de process_templates:", error.message);
-      }
-    }
-    try {
-      await connection.query("ALTER TABLE process_templates ADD PRIMARY KEY (process_id, template_id)");
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear PK nueva de process_templates:", error.message);
-      }
-    }
-    try {
-      await connection.query(
-        "ALTER TABLE process_templates ADD CONSTRAINT fk_process_templates_template FOREIGN KEY (template_id) REFERENCES templates(id)"
-      );
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear FK de process_templates:", error.message);
-      }
-    }
+
+    // Este CHECK tampoco aplica al schema nuevo, solo si existe
     try {
       await connection.query(
         "ALTER TABLE processes ADD CONSTRAINT chk_process_unit_program CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL)"
       );
     } catch (error) {
-      if (error?.code !== "ER_CHECK_CONSTRAINT_EXISTS") {
-        console.warn("⚠️  No se pudo crear el CHECK de processes:", error.message);
-      }
-    }
-
-    const schemaSQL = await fs.readFile(SCHEMA_FILE_URL, "utf8");
-    const statements = splitSqlStatements(schemaSQL);
-
-    for (const statement of statements) {
-      await connection.query(statement);
+      if (error?.code !== "ER_CHECK_CONSTRAINT_EXISTS")
+        console.warn("⚠️  No se pudo crear CHECK de processes:", error.message);
     }
 
     if (reset) {
