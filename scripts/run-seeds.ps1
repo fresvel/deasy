@@ -98,9 +98,9 @@ function Run-DbSeed($ComposeEnv) {
     Write-Host "Aplicando semilla SQL desde $SeedFile..."
     $previous = @{}
     $seedEnv = @{
-        MARIADB_HOST = '127.0.0.1'
-        MARIADB_PORT = '3306'
-        MARIADB_USER = $ComposeEnv['MARIADB_USER']
+        MARIADB_HOST     = '127.0.0.1'
+        MARIADB_PORT     = '3308'
+        MARIADB_USER     = $ComposeEnv['MARIADB_USER']
         MARIADB_PASSWORD = $ComposeEnv['MARIADB_PASSWORD']
         MARIADB_DATABASE = $ComposeEnv['MARIADB_DATABASE']
     }

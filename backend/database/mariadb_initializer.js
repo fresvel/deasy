@@ -364,16 +364,6 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     }
 
-    // Este CHECK tampoco aplica al schema nuevo, solo si existe
-    try {
-      await connection.query(
-        "ALTER TABLE processes ADD CONSTRAINT chk_process_unit_program CHECK (unit_id IS NOT NULL OR program_id IS NOT NULL)"
-      );
-    } catch (error) {
-      if (error?.code !== "ER_CHECK_CONSTRAINT_EXISTS")
-        console.warn("⚠️  No se pudo crear CHECK de processes:", error.message);
-    }
-
     if (reset) {
       console.log("✅ Esquema MariaDB recreado desde mariadb_schema.sql");
     } else {
