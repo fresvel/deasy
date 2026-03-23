@@ -167,6 +167,7 @@ import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 import { API_PREFIX } from "@/services/apiConfig";
+import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
@@ -198,20 +199,11 @@ const loadDossier = async () => {
     try {
         loading.value = true;
         
-        const userDataString = localStorage.getItem('user');
-        if (!userDataString) {
-            console.error('No hay usuario logueado');
-            return;
-        }
+        const data = await DossierService.getDossier();
         
-        currentUser.value = JSON.parse(userDataString);
-        
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
-        const response = await axios.get(url);
-        
-        if (response.data.success) {
-            dossier.value = response.data.data;
-            console.log('📋 Referencias cargadas:', dossier.value.referencias);
+        if (data.success) {
+            dossier.value = data.data;
+            currentUser.value = { cedula: DossierService.getCedula() };
         }
         
     } catch (error) {

@@ -115,6 +115,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { API_PREFIX } from "@/services/apiConfig";
+import DossierService from "@/services/dossier/DossierService";
 import { Modal } from "@/utils/modalController";
 import AgregarExperiencia from "./AgregarExperiencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
@@ -162,22 +163,11 @@ const loadDossier = async () => {
     try {
         loading.value = true;
         
-        // Obtener usuario del localStorage
-        const userDataString = localStorage.getItem('user');
-        if (!userDataString) {
-            console.error('No hay usuario logueado');
-            return;
-        }
+        const data = await DossierService.getDossier();
         
-        currentUser.value = JSON.parse(userDataString);
-        console.log('👤 Usuario cargado:', currentUser.value);
-        
-        // Obtener dossier del backend
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
-        const response = await axios.get(url);
-        
-        if (response.data.success) {
-            dossier.value = response.data.data;
+        if (data.success) {
+            dossier.value = data.data;
+            currentUser.value = { cedula: DossierService.getCedula() };
             console.log('📋 Dossier cargado:', dossier.value);
         }
         
