@@ -234,14 +234,21 @@ services:
 
   signer:
     build:
-      context: ..
-      dockerfile: docker/signer/Dockerfile
+      context: ../signer
+      dockerfile: Dockerfile
     container_name: deasy-signer
     restart: unless-stopped
-    profiles:
-      - workers
-    volumes:
-      - storage_data:/data
+    env_file: .env
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      SIGNER_PORT: "4000"
+    ports:
+      - "4000:4000"
+    depends_on:
+      - minio
 
   analytics:
     build:
