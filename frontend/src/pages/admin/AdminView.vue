@@ -508,7 +508,6 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconHome,
-  IconBuildingBank
 } from '@tabler/icons-vue'
 
 import axios from "axios";
@@ -516,7 +515,6 @@ import SMenu from "@/layouts/SMenu.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import SHeader from "@/layouts/SHeader.vue";
-import SNavMenu from "@/layouts/SNavMenu.vue";
 import UserProfile from "@/components/UserProfile.vue";
 import AdminTableManager from "./AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
