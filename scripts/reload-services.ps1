@@ -58,7 +58,7 @@ function Render-Menu {
     Write-Host '              Deasy Docker Service Reload Menu'
     Write-Host '=============================================================='
     Write-Host ''
-    Write-Host 'Usa ↑/↓ para navegar y espacio para marcar servicios.'
+    Write-Host 'Usa Arriba/Abajo para navegar y espacio para marcar servicios.'
     Write-Host 'Enter: confirmar seleccion | A: seleccionar/deseleccionar todo | Q: salir'
     Write-Host ''
 
@@ -335,13 +335,15 @@ try {
                 Toggle-All -Selected $selected
             }
             'Q' {
-                Write-Host "`nOperacion cancelada."
+                Write-Host ''
+                Write-Host 'Operacion cancelada.'
                 exit 0
             }
             'Enter' {
                 $selectedServices = Get-SelectedServices -Services $services -Selected $selected
                 if (-not $selectedServices -or $selectedServices.Count -eq 0) {
-                    Write-Host "`nDebes seleccionar al menos un servicio."
+                    Write-Host ''
+                    Write-Host 'Debes seleccionar al menos un servicio.'
                     Start-Sleep -Seconds 1
                     continue
                 }

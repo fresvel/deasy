@@ -12,7 +12,7 @@ import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { API_PREFIX, PATHS, ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
-
+import sign_router from "./routes/sign_router.js"
 import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
 import area_router from "./routes/area_router.js";
@@ -1135,6 +1135,8 @@ app.use(ROUTES.tarea,tarea_router)
 app.use(ROUTES.whatsapp,whatsapp_router)
 
 app.use(ROUTES.dossier,dossier_router)
+
+app.use(ROUTES.sign, sign_router)
 
 app.use("/easym/v1/webtemplate",webtemplate)
 

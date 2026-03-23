@@ -260,6 +260,70 @@
 
 </div>
 
+<!-- ── Modal: certificado y contraseña para firmar ── -->
+<div class="modal fade" id="signCertModal" tabindex="-1" aria-hidden="true" ref="signCertModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Firmar documento</h5>
+        <button type="button" class="btn-close" data-modal-dismiss aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Necesitas tu certificado digital (.p12) y su contraseña.</p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Certificado digital (.p12)</label>
+          <input ref="certFileInput" type="file" class="form-control"
+            accept=".p12,application/x-pkcs12,application/octet-stream"
+            @change="onCertFileSelected" />
+          <div v-if="certFile" class="text-success small mt-1">✓ {{ certFile.name }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Contraseña del certificado</label>
+          <input v-model="certPassword" type="password" class="form-control"
+            placeholder="Contraseña del .p12" autocomplete="current-password" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nombre en el sello de firma</label>
+          <input v-model="stampText" type="text" class="form-control"
+            placeholder="Ej: Dr. Juan Pérez" />
+          <div class="form-text">Aparecerá en el sello visual de la firma.</div>
+        </div>
+        <p v-if="signError" class="text-danger small mb-0">{{ signError }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-modal-dismiss :disabled="isSigning">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" @click="confirmSign" :disabled="isSigning">
+          <span v-if="isSigning" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          {{ isSigning ? 'Firmando...' : 'Confirmar firma' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: resultado de la firma ── -->
+<div class="modal fade" id="signResultModal" tabindex="-1" aria-hidden="true" ref="signResultModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ signSuccess ? 'Documento firmado' : 'Error al firmar' }}</h5>
+        <button type="button" class="btn-close" data-modal-dismiss aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p v-if="signSuccess" class="text-success mb-0">
+          El documento fue firmado exitosamente.
+        </p>
+        <p v-else class="text-danger mb-0">{{ signError }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-modal-dismiss>Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -383,6 +447,20 @@
   import * as pdfjsLib from "pdfjs-dist/webpack"; // Usa esta línea para Webpack
   import { Modal } from '@/utils/modalController';
   import { API_ROUTES } from '@/services/apiConfig';
+
+  // ── Estado del firmador ───────────────────────────────────────────────────
+  const signCertModal    = ref(null);
+  const signResultModal  = ref(null);
+  let signCertModalInstance   = null;
+  let signResultModalInstance = null;
+
+  const certFileInput = ref(null);
+  const certFile      = ref(null);
+  const certPassword  = ref('');
+  const stampText     = ref('');
+  const isSigning     = ref(false);
+  const signError     = ref('');
+  const signSuccess   = ref(false);
   
   let ctx;
   const colPdf=ref(null)
@@ -591,10 +669,19 @@
     if (assignSignerModal.value) {
       assignSignerModalInstance = Modal.getOrCreateInstance(assignSignerModal.value);
     }
+    if (signCertModal.value) {
+      signCertModalInstance = Modal.getOrCreateInstance(signCertModal.value);
+    }
+    if (signResultModal.value) {
+      signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value);
+    }
     const userDataString = localStorage.getItem('user');
     if (userDataString) {
       try {
         currentUser.value = JSON.parse(userDataString);
+        // Pre-rellenar el nombre del sello con el nombre del usuario logueado
+        const u = currentUser.value;
+        stampText.value = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim();
       } catch (error) {
         console.error('Error al cargar usuario en firmador:', error);
       }
@@ -884,12 +971,83 @@
       lastSelection.value = null;
     };
 
+    // ── Abre el modal de certificado cuando el usuario pulsa "Firmar" ─────────
     const submitAction = () => {
       if (requestMode.value) {
-        console.log('Enviar solicitud de firmas');
+        console.log('Enviar solicitud de firmas — pendiente de implementar');
         return;
       }
-      console.log('Firmar documento');
+      if (!fields.value.length) {
+        alert('Agrega al menos un campo de firma antes de continuar.');
+        return;
+      }
+      signError.value   = '';
+      signSuccess.value = false;
+      signCertModalInstance = Modal.getOrCreateInstance(signCertModal.value);
+      signCertModalInstance.show();
+    };
+
+    // ── Guarda el .p12 elegido por el usuario ─────────────────────────────────
+    const onCertFileSelected = (event) => {
+      certFile.value = event.target.files?.[0] || null;
+    };
+
+    // ── Llama al backend que conecta con el signer de Andy ────────────────────
+    const confirmSign = async () => {
+      if (!certFile.value) {
+        signError.value = 'Selecciona tu certificado digital (.p12).';
+        return;
+      }
+      if (!certPassword.value) {
+        signError.value = 'Ingresa la contraseña del certificado.';
+        return;
+      }
+      if (!stampText.value.trim()) {
+        signError.value = 'Ingresa el nombre que aparecerá en el sello.';
+        return;
+      }
+
+      // Tomar el primer campo de firma definido por el usuario
+      const field = fields.value[0];
+
+      const formData = new FormData();
+      formData.append('pdf',       uploadedFiles.value[0].content);
+      formData.append('cert',      certFile.value);
+      formData.append('password',  certPassword.value);
+      formData.append('stampText', stampText.value.trim());
+      formData.append('signType',  'coordinates');
+      formData.append('page',      field.page);
+      formData.append('x',         Math.round(field.x1));
+      formData.append('y',         Math.round(field.y1));
+
+      const token = localStorage.getItem('token');
+
+      isSigning.value = true;
+      signError.value = '';
+
+      try {
+        const response = await fetch(API_ROUTES.SIGN, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Error del servidor (${response.status})`);
+        }
+
+        signSuccess.value = true;
+        signCertModalInstance.hide();
+        signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value);
+        signResultModalInstance.show();
+
+      } catch (error) {
+        signError.value = error.message || 'Ocurrió un error al firmar el documento.';
+      } finally {
+        isSigning.value = false;
+      }
     };
 
   const updateSavedHighlight = () => {
@@ -1067,6 +1225,12 @@
       userResults.value = [];
       userSearchError.value = '';
       selectedSigner.value = null;
+      // Limpiar estado del firmador
+      certFile.value     = null;
+      certPassword.value = '';
+      signError.value    = '';
+      signSuccess.value  = false;
+      isSigning.value    = false;
       resetPdfState();
     };
 
@@ -1368,4 +1532,3 @@
   opacity: 1; /* Lo hace visible cuando el hover es activado */
 }
   </style>
-  
