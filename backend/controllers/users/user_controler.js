@@ -549,10 +549,11 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
   };
 };
 
-const token = await generateUniqueToken();
 export const createUser = async (req, res) => {
   console.log("Creando usuario");
   try {
+    const token = await generateUniqueToken(); // ← aquí, dentro del try
+
     const userPayload = {
       cedula: req.body.cedula,
       email: req.body.email,
