@@ -1,0 +1,11 @@
+{
+  "name": "sigmaker",
+  "version": "1.0.0",
+  "description": "Generador de imagen de estampado de firma con QR",
+  "type": "module",
+  "dependencies": {
+    "canvas": "^3.2.0",
+    "fs-extra": "^11.3.2",
+    "qrcode": "^1.5.4"
+  }
+}
