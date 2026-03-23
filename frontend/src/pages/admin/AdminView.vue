@@ -217,9 +217,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!academyCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -259,9 +259,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <button v-if="selectedGestionCrudItem?.key === 'plantillas'" type="button" @click="openTemplateArtifactDraftFromHome" class="group bg-gradient-to-br from-sky-50 to-white border border-sky-200 rounded-2xl p-5 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex items-start gap-4">
@@ -315,9 +315,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!usersCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -357,9 +357,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!contractsCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -399,9 +399,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!securityCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -441,9 +441,9 @@
                           <span class="text-sm font-medium text-slate-400">{{ item.bucket }}</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(item).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(item).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!selectedGroupCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles en este grupo.</div>
                  </template>
@@ -970,19 +970,6 @@ const iconForTable = (tableName = "") => {
   return "info-circle";
 };
 
-const adminTagForTable = (table) => {
-  const tableName = String(table?.table || "").toLowerCase();
-  if (!tableName) {
-    return { label: "Base", className: "is-success" };
-  }
-  if (/artifact|signature_type|signature_status|request_status|resource|action/.test(tableName)) {
-    return { label: "Soporte", className: "is-danger" };
-  }
-  if (/version|assignment|template|map|relation|origin/.test(tableName)) {
-    return { label: "Relacion", className: "is-warning" };
-  }
-  return { label: "Base", className: "is-success" };
-};
 
 const tablesCountForGroup = (group) => (group?.mainTables?.length ?? 0) + (group?.supportTables?.length ?? 0);
 
