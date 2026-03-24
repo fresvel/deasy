@@ -1,19 +1,43 @@
 import mongoose from "mongoose";
 
+// Sub-schema para metadata de un documento almacenado en MinIO
+const soporteDocumentalSchema = new mongoose.Schema({
+    bucket:        { type: String },
+    object_key:    { type: String },
+    etag:          { type: String },
+    mime_type:     { type: String },
+    original_name: { type: String },
+    uploaded_at:   { type: Date, default: Date.now }
+}, { _id: false });
 
-
+// ─── CAMBIO DE COMPATIBILIDAD ────────────────────────────────────────────────
+// El campo `tipo` originalmente representaba la modalidad de cursado
+// (Presencial, Semipresencial, Virtual, Híbrido). Se mantiene como OPCIONAL
+// para no romper el frontend existente; el campo ya no es required.
+// Se agrega `registro_tipo` para el dato real de SENESCYT (Nacional/Extranjero).
+// ─────────────────────────────────────────────────────────────────────────────
 const tituloSchema = new mongoose.Schema({
-    titulo:{type: String,},
-    ies:{type: String,},
-    nivel:{type: String,required: true,enum:["Técnico","Tecnólogo","Grado", "Maestría", "Maestría Tecnológica", "Diplomado","Doctorado", "Posdoctorado"]},
-    sreg:{type: String},//Número de registro en senescyt
-    campo_amplio:{type: String},
-    tipo:{type: String, required: true,
-        enum:["Presencial","Semipresencial","Virtual", "Híbrido"]
-    },
-    pais:{type: String, default:"Ecuador"},
-    sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"], default: "Enviado"
-    }
+    titulo:         { type: String },
+    ies:            { type: String },
+    nivel:          { type: String, required: true, enum: ["Técnico","Tecnólogo","Grado","Maestría","Maestría Tecnológica","Diplomado","Doctorado","Posdoctorado"] },
+    sreg:           { type: String },           // Número de registro SENESCYT
+    campo_amplio:   { type: String },
+    fecha_registro: { type: Date },             // Fecha de registro en SENESCYT
+    // Modalidad de cursado (carga manual). Ahora opcional para permitir imports de SENESCYT.
+    tipo:           { type: String, enum: ["Presencial","Semipresencial","Virtual","Híbrido"] },
+    // Tipo de registro según SENESCYT: Nacional o Extranjero
+    registro_tipo:  { type: String, enum: ["Nacional","Extranjero"] },
+    pais:           { type: String, default: "Ecuador" },
+    sera:           { type: String, enum: ["Enviado","Revisado","Aprobado"], default: "Enviado" },
+
+    // Soporte documental por título
+    soporte_senescyt: { type: soporteDocumentalSchema, default: null },  // PDF del certificado SENESCYT
+    soporte_adicional: { type: soporteDocumentalSchema, default: null }, // PDF adicional de respaldo
+
+    // Auditoría de importación
+    source:           { type: String, enum: ["manual","senescyt_import"], default: "manual" },
+    imported_at:      { type: Date },
+    import_warnings:  [{ type: String }]
 })
 
 const experienciaSchema = new mongoose.Schema({
