@@ -207,6 +207,16 @@ class DossierService {
     );
     return response.data;
   }
+
+  // Métodos genéricos para documentos
+  async downloadDocument(tipo, documentoId) {
+    const cedula = this.getCedula();
+    const response = await axios.get(
+      `${API_PREFIX}/dossier/${cedula}/documentos/${tipo}/${documentoId}`,
+      { responseType: 'blob' }
+    );
+    return response;
+  }
 }
 
 export default new DossierService();

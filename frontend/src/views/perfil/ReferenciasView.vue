@@ -158,7 +158,6 @@
 
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
-import axios from 'axios';
 import { Modal } from "@/utils/modalController";
 import AgregarReferencia from "./components/AgregarReferencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
@@ -166,7 +165,6 @@ import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
-import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
@@ -226,8 +224,7 @@ const deleteReferencia = async (referenciaId) => {
     if (!confirm('¿Estás seguro de eliminar esta referencia?')) return;
     
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/referencias/${referenciaId}`;
-        await axios.delete(url);
+        await DossierService.deleteReferencia(referenciaId);
         
         await loadDossier();
         alert('Referencia eliminada correctamente');
@@ -239,7 +236,6 @@ const deleteReferencia = async (referenciaId) => {
 
 const clickBtnedit = (ref) => {
     console.log('Editar referencia:', ref);
-    // TODO: Implementar edición
 };
 
 const clickBtnsera = (ref) => {
@@ -261,8 +257,7 @@ const handleReferenciaAdded = () => {
 
 const openDocument = async (ref) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/referencia/${ref._id}`;
-        const response = await axios.get(url, { responseType: 'blob' });
+        const response = await DossierService.downloadDocument('referencia', ref._id);
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
         window.open(blobUrl, '_blank');
@@ -295,13 +290,8 @@ const handleFileSelect = async (event) => {
     }
     
     try {
-        const formData = new FormData();
-        formData.append('archivo', file);
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/referencia/${selectedItemId.value}`;
-        const response = await axios.post(url, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (response.data.success) {
+        const response = await DossierService.uploadReferenciaDocument(selectedItemId.value, file);
+        if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
         }

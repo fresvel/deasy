@@ -94,13 +94,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import axios from "axios";
 import { Modal } from "@/utils/modalController";
 import RowActionMenu from "@/components/RowActionMenu.vue";
 import AgregarCertificacion from "./components/AgregarCertificacion.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
-import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
@@ -165,8 +163,7 @@ const handleCertificacionAdded = () => {
 
 const eliminarCertificacion = async (certificacion) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/certificaciones/${certificacion._id}`;
-        await axios.delete(url);
+        await DossierService.deleteCertificacion(certificacion._id);
         await loadDossier();
         alert('Certificación eliminada correctamente');
     } catch (error) {
@@ -188,8 +185,7 @@ const editarCertificacion = (registro) => {
 
 const openDocument = async (certificacion) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/certificacion/${certificacion._id}`;
-        const response = await axios.get(url, { responseType: 'blob' });
+        const response = await DossierService.downloadDocument('certificacion', certificacion._id);
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
         window.open(blobUrl, '_blank');
@@ -222,13 +218,8 @@ const handleFileSelect = async (event) => {
     }
     
     try {
-        const formData = new FormData();
-        formData.append('archivo', file);
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/certificacion/${selectedItemId.value}`;
-        const response = await axios.post(url, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (response.data.success) {
+        const response = await DossierService.uploadCertificacionDocument(selectedItemId.value, file);
+        if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
         }
