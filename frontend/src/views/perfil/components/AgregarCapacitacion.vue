@@ -105,11 +105,10 @@
 import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
-import axios from "axios";
+import DossierService from "@/services/dossier/DossierService";
 import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";
-import { API_PREFIX } from "@/services/apiConfig";
 import { IconFile } from '@tabler/icons-vue';
 import { escountries } from "@/composable/countries";
 
@@ -127,7 +126,6 @@ const form = reactive({
   horas: ""
 });
 
-const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
 const fileInput = ref(null);
@@ -143,14 +141,6 @@ const instituciones = [
 ];
 
 onMounted(() => {
-  const storedUser = localStorage.getItem("user");
-  if (storedUser) {
-    try {
-      currentUser.value = JSON.parse(storedUser);
-    } catch (error) {
-      console.error("No se pudo parsear el usuario en localStorage", error);
-    }
-  }
 });
 
 const closeModal = () => {
@@ -211,16 +201,7 @@ const uploadDocument = async (registroId) => {
   if (!selectedFile.value) return;
   
   try {
-    const formData = new FormData();
-    formData.append('archivo', selectedFile.value);
-    
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/formacion/${registroId}`;
-    
-    await axios.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    await DossierService.uploadCapacitacionDocument(registroId, selectedFile.value);
   } catch (error) {
     console.error('Error al subir documento:', error);
     throw error;
@@ -269,11 +250,6 @@ const onSubmit = async () => {
     return;
   }
 
-  if (!currentUser.value?.cedula) {
-    errorMessage.value = "No se encontró la información del usuario.";
-    return;
-  }
-
   const payload = buildPayload();
   const validationError = validatePayload(payload);
   if (validationError) {
@@ -285,13 +261,12 @@ const onSubmit = async () => {
     isSubmitting.value = true;
     errorMessage.value = "";
 
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/formacion`;
-    const response = await axios.post(url, payload);
+    const response = await DossierService.createCapacitacion(payload);
 
-    const capCreada = response.data?.data?.formacion?.slice(-1)[0];
+    const capCreada = response.data?.formacion?.slice(-1)[0];
 
     if (selectedFile.value && capCreada?._id) {
-      await uploadDocument(capCreada._id);
+      await DossierService.uploadCapacitacionDocument(capCreada._id, selectedFile.value);
     }
 
     emit("capacitacion-added", payload);
