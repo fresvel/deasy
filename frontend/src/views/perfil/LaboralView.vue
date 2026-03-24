@@ -117,12 +117,12 @@ import axios from "axios";
 import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";
 import { Modal } from "@/utils/modalController";
-import AgregarExperiencia from "./AgregarExperiencia.vue";
+import AgregarExperiencia from "./components/AgregarExperiencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
-import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
+import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);

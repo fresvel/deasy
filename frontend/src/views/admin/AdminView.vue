@@ -23,15 +23,17 @@
         <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
           <UserProfile :photo="userPhoto" :username="userFullName" :editable="false" />
           
-          <button 
-            type="button" 
-            @click="goAdminHome" 
-            class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 font-bold -mb-2 z-10 relative shadow-sm"
-            :class="isHomeActive ? 'bg-white text-sky-800 border-none' : 'bg-white/10 text-white/90 hover:bg-white/20 border border-white/10'"
-          >
-            <IconHome class="w-5 h-5 shrink-0" />
-            <span>Inicio</span>
-          </button>
+          <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
+            <button 
+              type="button" 
+              @click="goAdminHome" 
+              class="flex items-center w-full px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 gap-2"
+              :class="isHomeActive ? 'bg-white text-sky-800 shadow-sm' : 'text-white/90 hover:bg-white/10 hover:text-white'"
+            >
+              <IconHome class="w-5 h-5 shrink-0" />
+              <span>Inicio</span>
+            </button>
+          </div>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
             <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
@@ -215,9 +217,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!academyCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -257,9 +259,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <button v-if="selectedGestionCrudItem?.key === 'plantillas'" type="button" @click="openTemplateArtifactDraftFromHome" class="group bg-gradient-to-br from-sky-50 to-white border border-sky-200 rounded-2xl p-5 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex items-start gap-4">
@@ -313,9 +315,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!usersCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -355,9 +357,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!contractsCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -397,9 +399,9 @@
                           <span class="text-sm font-medium text-slate-400">Gestionar</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(table).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(table).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!securityCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
@@ -439,9 +441,9 @@
                           <span class="text-sm font-medium text-slate-400">{{ item.bucket }}</span>
                         </div>
                       </div>
-                      <div :class="['mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none', adminTagForTable(item).className === 'is-success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-rose-50 text-rose-700 border border-rose-100']">
-                        {{ adminTagForTable(item).label }}
-                      </div>
+                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
+                        {{ item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
+                      </p>
                     </button>
                     <div v-if="!selectedGroupCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles en este grupo.</div>
                  </template>
@@ -506,7 +508,6 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconHome,
-  IconBuildingBank
 } from '@tabler/icons-vue'
 
 import axios from "axios";
@@ -514,9 +515,8 @@ import SMenu from "@/layouts/SMenu.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import SHeader from "@/layouts/SHeader.vue";
-import SNavMenu from "@/layouts/SNavMenu.vue";
 import UserProfile from "@/components/UserProfile.vue";
-import AdminTableManager from "./AdminTableManager.vue";
+import AdminTableManager from "./components/AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const vmenu = ref(true);
@@ -968,19 +968,6 @@ const iconForTable = (tableName = "") => {
   return "info-circle";
 };
 
-const adminTagForTable = (table) => {
-  const tableName = String(table?.table || "").toLowerCase();
-  if (!tableName) {
-    return { label: "Base", className: "is-success" };
-  }
-  if (/artifact|signature_type|signature_status|request_status|resource|action/.test(tableName)) {
-    return { label: "Soporte", className: "is-danger" };
-  }
-  if (/version|assignment|template|map|relation|origin/.test(tableName)) {
-    return { label: "Relacion", className: "is-warning" };
-  }
-  return { label: "Base", className: "is-success" };
-};
 
 const tablesCountForGroup = (group) => (group?.mainTables?.length ?? 0) + (group?.supportTables?.length ?? 0);
 
