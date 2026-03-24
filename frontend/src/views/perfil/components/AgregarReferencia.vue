@@ -87,8 +87,7 @@
 import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
-import axios from "axios";
-import { API_PREFIX } from "@/services/apiConfig";
+import DossierService from "@/services/dossier/DossierService";
 import { IconFile } from '@tabler/icons-vue';
 import SSelect from "@/components/SSelect.vue";
 
@@ -103,21 +102,12 @@ const form = reactive({
   institution: ""
 });
 
-const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
 const fileInput = ref(null);
 const selectedFile = ref(null);
 
 onMounted(() => {
-  const storedUser = localStorage.getItem("user");
-  if (storedUser) {
-    try {
-      currentUser.value = JSON.parse(storedUser);
-    } catch (error) {
-      console.error("No se pudo parsear el usuario en localStorage", error);
-    }
-  }
 });
 
 const closeModal = () => {
@@ -175,16 +165,7 @@ const uploadDocument = async (registroId) => {
   if (!selectedFile.value) return;
   
   try {
-    const formData = new FormData();
-    formData.append('archivo', selectedFile.value);
-    
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/referencia/${registroId}`;
-    
-    await axios.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    await DossierService.uploadReferenciaDocument(registroId, selectedFile.value);
   } catch (error) {
     console.error('Error al subir documento:', error);
     throw error;
@@ -228,11 +209,6 @@ const onSubmit = async () => {
     return;
   }
 
-  if (!currentUser.value?.cedula) {
-    errorMessage.value = "No se encontró la información del usuario.";
-    return;
-  }
-
   const payload = buildPayload();
   const validationError = validatePayload(payload);
   if (validationError) {
@@ -244,13 +220,12 @@ const onSubmit = async () => {
     isSubmitting.value = true;
     errorMessage.value = "";
 
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/referencias`;
-    const response = await axios.post(url, payload);
+    const response = await DossierService.createReferencia(payload);
 
-    const refCreada = response.data?.data?.referencias?.slice(-1)[0];
+    const refCreada = response.data?.referencias?.slice(-1)[0];
 
     if (selectedFile.value && refCreada?._id) {
-      await uploadDocument(refCreada._id);
+      await DossierService.uploadReferenciaDocument(refCreada._id, selectedFile.value);
     }
 
     emit("referencia-added", payload);

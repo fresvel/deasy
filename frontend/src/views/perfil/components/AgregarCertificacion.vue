@@ -88,11 +88,10 @@
 import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
-import axios from "axios";
+import DossierService from "@/services/dossier/DossierService";
 import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";
-import { API_PREFIX } from "@/services/apiConfig";
 import { IconFile } from '@tabler/icons-vue';
 
 const emit = defineEmits(["certificacion-added"]);
@@ -107,7 +106,6 @@ const form = reactive({
   descripcion: ""
 });
 
-const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
 const fileInput = ref(null);
@@ -123,14 +121,6 @@ const instituciones = [
 ];
 
 onMounted(() => {
-  const storedUser = localStorage.getItem("user");
-  if (storedUser) {
-    try {
-      currentUser.value = JSON.parse(storedUser);
-    } catch (error) {
-      console.error("No se pudo parsear el usuario en localStorage", error);
-    }
-  }
 });
 
 const closeModal = () => {
@@ -189,16 +179,7 @@ const uploadDocument = async (registroId) => {
   if (!selectedFile.value) return;
   
   try {
-    const formData = new FormData();
-    formData.append('archivo', selectedFile.value);
-    
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/certificacion/${registroId}`;
-    
-    await axios.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    await DossierService.uploadCertificacionDocument(registroId, selectedFile.value);
   } catch (error) {
     console.error('Error al subir documento:', error);
     throw error;
@@ -241,11 +222,6 @@ const onSubmit = async () => {
     return;
   }
 
-  if (!currentUser.value?.cedula) {
-    errorMessage.value = "No se encontró la información del usuario.";
-    return;
-  }
-
   const payload = buildPayload();
   const validationError = validatePayload(payload);
   if (validationError) {
@@ -257,13 +233,12 @@ const onSubmit = async () => {
     isSubmitting.value = true;
     errorMessage.value = "";
 
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/certificaciones`;
-    const response = await axios.post(url, payload);
+    const response = await DossierService.createCertificacion(payload);
 
-    const certCreada = response.data?.data?.certificaciones?.slice(-1)[0];
+    const certCreada = response.data?.certificaciones?.slice(-1)[0];
 
     if (selectedFile.value && certCreada?._id) {
-      await uploadDocument(certCreada._id);
+      await DossierService.uploadCertificacionDocument(certCreada._id, selectedFile.value);
     }
 
     emit("certificacion-added", payload);

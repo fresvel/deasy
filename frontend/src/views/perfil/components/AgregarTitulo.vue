@@ -111,11 +111,10 @@
 import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
-import axios from "axios";
+import DossierService from "@/services/dossier/DossierService";
 import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";
 import { escountries } from "@/composable/countries";
-import { API_PREFIX } from "@/services/apiConfig";
 import { IconFile } from '@tabler/icons-vue';
 
 const emit = defineEmits(["close-modal", "title-added"]);
@@ -163,17 +162,12 @@ const universidades = [
 
 const modalidades = ["Presencial", "Semipresencial", "Virtual", "Híbrido"];
 const niveles = [
-  "Técnico",
-  "Tecnólogo",
   "Grado",
-  "Maestría",
-  "Maestría Tecnológica",
-  "Diplomado",
-  "Doctorado",
-  "Posdoctorado"
+  "Posgrado (Especialización)",
+  "Posgrado (Maestría)",
+  "Posgrado (Doctorado)"
 ];
 
-const currentUser = ref(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
 const fileInput = ref(null);
@@ -235,27 +229,7 @@ const handleFileSelect = (event) => {
 const clearFile = () => {
   selectedFile.value = null;
   if (fileInput.value) {
-    fileInput.value.value = '';
-  }
-};
-
-const uploadDocument = async (registroId) => {
-  if (!selectedFile.value) return;
-  
-  try {
-    const formData = new FormData();
-    formData.append('archivo', selectedFile.value);
-    
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${registroId}`;
-    
-    await axios.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  } catch (error) {
-    console.error('Error al subir documento:', error);
-    throw error;
+    fileInput.value.value = "";
   }
 };
 
@@ -290,11 +264,6 @@ const onSubmit = async () => {
     return;
   }
 
-  if (!currentUser.value?.cedula) {
-    errorMessage.value = "No se encontró la información del usuario.";
-    return;
-  }
-
   const payload = buildPayload();
   const validationError = validatePayload(payload);
   if (validationError) {
@@ -306,13 +275,12 @@ const onSubmit = async () => {
     isSubmitting.value = true;
     errorMessage.value = "";
 
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/titulos`;
-    const response = await axios.post(url, payload);
+    const response = await DossierService.createTitulo(payload);
     
-    const tituloCreado = response.data?.data?.titulos?.slice(-1)[0];
+    const tituloCreado = response.data?.titulos?.slice(-1)[0];
     
     if (selectedFile.value && tituloCreado?._id) {
-      await uploadDocument(tituloCreado._id);
+      await DossierService.uploadTituloDocument(tituloCreado._id, selectedFile.value);
     }
 
     emit("title-added", payload);
