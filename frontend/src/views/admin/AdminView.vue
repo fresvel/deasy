@@ -516,7 +516,7 @@ import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import SHeader from "@/layouts/SHeader.vue";
 import UserProfile from "@/components/UserProfile.vue";
-import AdminTableManager from "./AdminTableManager.vue";
+import AdminTableManager from "./components/AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const vmenu = ref(true);

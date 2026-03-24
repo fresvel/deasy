@@ -137,12 +137,12 @@
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
 import { Modal } from "@/utils/modalController";
-import AgregarReferencia from "./AgregarReferencia.vue";
+import AgregarReferencia from "./components/AgregarReferencia.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
-import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
+import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);

@@ -162,19 +162,19 @@ import axios from 'axios';
       };
       return map[iconName] || IconCircleCheck;
     };
-import TitulosView from '@/sections/perfil/TitulosView.vue';
-import LaboralView from '@/sections/perfil/LaboralView.vue';
-import ReferenciasView from '@/sections/perfil/ReferenciasView.vue';
-import CertificacionView from '@/sections/perfil/CertificacionView.vue';
-import CapacitacionView from '@/views/logged/perfil/CapacitaciónView.vue';
-import ProfileHomePanel from '@/sections/perfil/ProfileHomePanel.vue';
-import InvestigacionView from '@/sections/perfil/InvestigacionView.vue';
+import TitulosView from '@/views/perfil/TitulosView.vue';
+import LaboralView from '@/views/perfil/LaboralView.vue';
+import ReferenciasView from '@/views/perfil/ReferenciasView.vue';
+import CertificacionView from '@/views/perfil/CertificacionView.vue';
+import CapacitacionView from '@/views/perfil/CapacitaciónView.vue';
+import ProfileHomePanel from '@/views/perfil/components/ProfileHomePanel.vue';
+import InvestigacionView from '@/views/perfil/InvestigacionView.vue';
 
-import IndexAcademia from '@/sections/academia/AcademiaView.vue';
-import LogrosView from '@/sections/academia/LogrosView.vue';
+import IndexAcademia from '@/views/academia/AcademiaView.vue';
+import LogrosView from '@/views/academia/LogrosView.vue';
 
 
-import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';
