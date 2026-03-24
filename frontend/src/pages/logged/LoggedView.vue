@@ -123,7 +123,6 @@
         <div v-else-if="area=='Academia'" class="w-full">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
             <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
-            <TutoriasView v-else-if="process==='Tutorías'"></TutoriasView>
         </div>
         <div v-else-if="area=='Firmar'" class="w-full">
             <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
@@ -174,7 +173,6 @@ import InvestigacionView from '@/sections/perfil/InvestigacionView.vue';
 import IndexAcademia from '@/sections/academia/AcademiaView.vue';
 import LogrosView from '@/sections/academia/LogrosView.vue';
 
-import TutoriasView from '@/sections/academia/TutoriasView.vue';
 
 import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
 

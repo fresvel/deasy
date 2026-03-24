@@ -90,9 +90,6 @@
 
     </ProfileSectionShell>
 
-    <section class="mt-5">
-      <GeneradorLogros />
-    </section>
 
     <div class="modal fade" id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -141,7 +138,6 @@ import AgregarCapacitacion from "@/sections/perfil/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import RowActionMenu from "@/components/RowActionMenu.vue";
 import { API_PREFIX } from "@/services/apiConfig";
-import GeneradorLogros from "@/sections/academia/GeneradorLogros.vue";
 import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
 
