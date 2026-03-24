@@ -144,10 +144,10 @@ import SMenu from '@/layouts/SMenu.vue';
     import SNavMenu from '@/layouts/SNavMenu.vue';
     import UserProfile from '@/components/UserProfile.vue';
 
-import IndexAcademia from '@/sections/academia/AcademiaView.vue';
-import LogrosView from '@/sections/academia/LogrosView.vue';
-import MemorandumView from '@/sections/roles/MemorandumView.vue';
-import FirmarPdf from '../logged/funciones/FirmarPdf.vue';
+import IndexAcademia from '@/views/academia/AcademiaView.vue';
+import LogrosView from '@/views/academia/LogrosView.vue';
+import MemorandumView from '@/views/roles/MemorandumView.vue';
+import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';

@@ -88,9 +88,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "@/utils/modalController";
 import RowActionMenu from "@/components/RowActionMenu.vue";
-import AgregarCertificacion from "./AgregarCertificacion.vue";
-import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
+import AgregarCertificacion from "./components/AgregarCertificacion.vue";
+import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 
 const modal = ref(null);
