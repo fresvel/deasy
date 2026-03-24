@@ -155,12 +155,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import axios from "axios";
 import { Modal } from "@/utils/modalController";
 import AgregarCapacitacion from "@/views/perfil/components/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import RowActionMenu from "@/components/RowActionMenu.vue";
-import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
@@ -239,8 +237,7 @@ const handleCapacitacionAdded = () => {
 
 const eliminarCapacitacion = async (capacitacion) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/formacion/${capacitacion._id}`;
-        await axios.delete(url);
+        await DossierService.deleteCapacitacion(capacitacion._id);
         await loadDossier();
         alert('Capacitación eliminada correctamente');
     } catch (error) {
@@ -262,8 +259,7 @@ const editarCapacitacion = (registro) => {
 
 const openDocument = async (capacitacion) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/formacion/${capacitacion._id}`;
-        const response = await axios.get(url, { responseType: 'blob' });
+        const response = await DossierService.downloadDocument('formacion', capacitacion._id);
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
         window.open(blobUrl, '_blank');
@@ -296,13 +292,8 @@ const handleFileSelect = async (event) => {
     }
     
     try {
-        const formData = new FormData();
-        formData.append('archivo', file);
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/formacion/${selectedItemId.value}`;
-        const response = await axios.post(url, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (response.data.success) {
+        const response = await DossierService.uploadCapacitacionDocument(selectedItemId.value, file);
+        if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
         }

@@ -180,7 +180,6 @@
 
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
-import axios from 'axios';
 import AgregarTitulo from "./components/AgregarTitulo.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
@@ -188,7 +187,6 @@ import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { Modal } from "@/utils/modalController";
-import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";
 import { IconUpload, IconFile, IconTrash } from '@tabler/icons-vue';
 
@@ -257,8 +255,7 @@ const deleteTitulo = async (tituloId) => {
     if (!confirm('¿Estás seguro de eliminar este título?')) return;
     
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/titulos/${tituloId}`;
-        await axios.delete(url);
+        await DossierService.deleteTitulo(tituloId);
         
         // Recargar dossier
         await loadDossier();
@@ -295,11 +292,7 @@ const handleTituloAdded = () => {
 // Función para abrir el documento 
 const openDocument = async (titulo) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${titulo._id}`;
-        
-        const response = await axios.get(url, {
-            responseType: 'blob'
-        });
+        const response = await DossierService.downloadDocument('titulo', titulo._id);
         
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
@@ -340,16 +333,7 @@ const handleFileSelect = async (event) => {
     }
     
     try {
-        const formData = new FormData();
-        formData.append('archivo', file);
-        
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${selectedTituloId.value}`;
-        
-        const response = await axios.post(url, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        const response = await DossierService.uploadTituloDocument(selectedTituloId.value, file);
         
         if (response.data.success) {
             alert('Documento subido correctamente');
