@@ -181,12 +181,12 @@
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import axios from 'axios';
-import AgregarTitulo from "./AgregarTitulo.vue";
+import AgregarTitulo from "./components/AgregarTitulo.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
-import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
+import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { Modal } from "@/utils/modalController";
 import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";

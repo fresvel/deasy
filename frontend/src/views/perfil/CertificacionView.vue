@@ -96,9 +96,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
 import { Modal } from "@/utils/modalController";
-import AgregarCertificacion from "./AgregarCertificacion.vue";
-import ProfileSectionShell from "@/sections/perfil/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/sections/perfil/ProfileTableBlock.vue";
+import RowActionMenu from "@/components/RowActionMenu.vue";
+import AgregarCertificacion from "./components/AgregarCertificacion.vue";
+import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
+import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { API_PREFIX } from "@/services/apiConfig";
 import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
