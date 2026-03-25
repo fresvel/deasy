@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
 # Instalar pyhanko y pdfplumber
 RUN pip3 install pyhanko pyhanko-cli pdfplumber --break-system-packages
 
+# Crear usuario
 RUN useradd --create-home --uid 10001 appuser
 
 WORKDIR /app
@@ -31,8 +32,10 @@ RUN cd sigmaker && npm install
 # Copiar el resto del código
 COPY . .
 
+# Cambiar a usuario no root
 USER appuser
 
 EXPOSE 4000
 
-CMD ["node", "index.js"]
+# Ejecutar index.js dentro de sigmaker
+CMD ["node", "sigmaker/index.js"]

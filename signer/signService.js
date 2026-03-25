@@ -5,11 +5,10 @@ import { randomUUID } from 'crypto';
 import { downloadFromMinio, uploadToMinio } from './minioClient.js';
 import { generateStampImage } from './sigmaker/index.js';
 
-// Directorios de trabajo fijos dentro del contenedor
-const BASE_DIR   = path.resolve('./workspace');
-const INPUT_DIR  = path.join(BASE_DIR, 'input');
+const BASE_DIR = path.resolve('./workspace');
+const INPUT_DIR = path.join(BASE_DIR, 'input');
 const OUTPUT_DIR = path.join(BASE_DIR, 'output');
-const TEMP_DIR   = path.join(BASE_DIR, 'temp');
+const TEMP_DIR = path.join(BASE_DIR, 'temp');
 
 function execCommand(command) {
   return new Promise((resolve, reject) => {
@@ -24,7 +23,15 @@ function execCommand(command) {
 }
 
 function validatePayload(data) {
-  const required = ['signType', 'minioPdfPath', 'stampText', 'finalPath', 'minioCertPath', 'certPassword'];
+  const required = [
+    'signType',
+    'minioPdfPath',
+    'stampText',
+    'finalPath',
+    'minioCertPath',
+    'certPassword',
+  ];
+
   for (const field of required) {
     if (!data[field]) return `Missing required field: ${field}`;
   }
@@ -34,9 +41,12 @@ function validatePayload(data) {
   }
 
   if (data.signType === 'coordinates') {
-    if (!data.coordinates || typeof data.coordinates.page !== 'number'
-      || typeof data.coordinates.x !== 'number'
-      || typeof data.coordinates.y !== 'number') {
+    if (
+      !data.coordinates ||
+      typeof data.coordinates.page !== 'number' ||
+      typeof data.coordinates.x !== 'number' ||
+      typeof data.coordinates.y !== 'number'
+    ) {
       return `signType 'coordinates' requires coordinates: { page, x, y }`;
     }
   }
@@ -69,18 +79,18 @@ export async function signDocument(data) {
     return { status: 'error', message: validationError };
   }
 
-  const jobId        = randomUUID();
+  const jobId = randomUUID();
   const originalName = path.basename(data.minioPdfPath, '.pdf');
-  const jobTempDir   = path.join(TEMP_DIR, jobId);
+  const jobTempDir = path.join(TEMP_DIR, jobId);
 
-  const pdfPath    = path.join(INPUT_DIR,  `${jobId}_${originalName}.pdf`);
+  const pdfPath = path.join(INPUT_DIR, `${jobId}_${originalName}.pdf`);
   const signedPath = path.join(OUTPUT_DIR, `${jobId}_${originalName}_signed.pdf`);
 
-  const cleanedPath       = path.join(jobTempDir, 'cleaned.pdf');
-  const outputPath        = path.join(jobTempDir, 'output.pdf');
-  const stampPath         = path.join(jobTempDir, 'firma.png');
-  const passPath          = path.join(jobTempDir, 'pass.txt');
-  const certPath          = path.join(jobTempDir, 'cert.p12');
+  const cleanedPath = path.join(jobTempDir, 'cleaned.pdf');
+  const outputPath = path.join(jobTempDir, 'output.pdf');
+  const stampPath = path.join(jobTempDir, 'firma.png');
+  const passPath = path.join(jobTempDir, 'pass.txt');
+  const certPath = path.join(jobTempDir, 'cert.p12');
   const pyhankoConfigPath = path.join(jobTempDir, 'pyhanko.yml');
 
   await fs.ensureDir(INPUT_DIR);
@@ -88,6 +98,8 @@ export async function signDocument(data) {
   await fs.ensureDir(jobTempDir);
 
   try {
+    console.log(`[signer] [${jobId}] Starting signing job...`);
+
     console.log(`[signer] [${jobId}] Downloading PDF: ${data.minioPdfPath}`);
     await downloadFromMinio(data.minioPdfPath, pdfPath);
 
@@ -99,9 +111,9 @@ export async function signDocument(data) {
     console.log(`[signer] [${jobId}] Generating stamp image for: ${data.stampText}`);
     await generateStampImage({
       outputPath: stampPath,
-      stampText:  data.stampText,
-      finalPath:  data.finalPath,
-      logoPath:   path.resolve('./sigmaker/puce_logo.png'),
+      stampText: data.stampText,
+      finalPath: data.finalPath,
+      logoPath: path.resolve('./sigmaker/puce_logo.png'),
     });
 
     console.log(`[signer] [${jobId}] Cleaning PDF with Ghostscript`);
@@ -110,44 +122,54 @@ export async function signDocument(data) {
     );
 
     let coordinates;
+
     if (data.signType === 'coordinates') {
       coordinates = data.coordinates;
-      console.log(`[signer] [${jobId}] Using coordinates: page=${coordinates.page} x=${coordinates.x} y=${coordinates.y}`);
+      console.log(
+        `[signer] [${jobId}] Using coordinates: page=${coordinates.page}, x=${coordinates.x}, y=${coordinates.y}`
+      );
     } else {
       console.log(`[signer] [${jobId}] Searching token: ${data.token}`);
       coordinates = await findTokenCoordinates(cleanedPath, data.token);
-      console.log(`[signer] [${jobId}] Token found: page=${coordinates.page} x=${coordinates.x} y=${coordinates.y}`);
+      console.log(
+        `[signer] [${jobId}] Token found at: page=${coordinates.page}, x=${coordinates.x}, y=${coordinates.y}`
+      );
     }
 
-    const x2    = coordinates.x + 110;
-    const y2    = coordinates.y - 80;
+    const x2 = coordinates.x + 110;
+    const y2 = coordinates.y - 80;
+
     const field = `${coordinates.page}/${coordinates.x},${coordinates.y},${x2},${y2}/ela`;
-    console.log(`[signer] [${jobId}] Adding field: ${field}`);
-    await execCommand(`pyhanko sign addfields --field ${field} "${cleanedPath}" "${outputPath}"`);
 
-    await fs.writeFile(pyhankoConfigPath, generatePyhankoConfig(stampPath));
-
-    console.log(`[signer] [${jobId}] Signing document`);
+    console.log(`[signer] [${jobId}] Adding signature field: ${field}`);
     await execCommand(
-      `pyhanko --config "${pyhankoConfigPath}" sign addsig --style-name noto-qr --field ela pkcs12 --passfile "${passPath}" "${outputPath}" "${signedPath}" "${certPath}"`
+      `pyhanko sign addfields --field "${field}" "${cleanedPath}" "${outputPath}"`
     );
 
-    console.log(`[signer] [${jobId}] Uploading to MinIO: ${data.minioPdfPath}`);
+    console.log(`[signer] [${jobId}] Generating pyHanko config`);
+    await fs.writeFile(pyhankoConfigPath, generatePyhankoConfig(stampPath));
+
+    console.log(`[signer] [${jobId}] Signing document with PKCS#12`);
+    const signCmd = `pyhanko --config "${pyhankoConfigPath}" sign addsig pkcs12 --style-name noto-qr --field ela --passfile "${passPath}" "${outputPath}" "${signedPath}" "${certPath}"`;
+
+    console.log(`[signer] [${jobId}] Running command: ${signCmd}`);
+    await execCommand(signCmd);
+
+    console.log(`[signer] [${jobId}] Uploading signed PDF to MinIO: ${data.minioPdfPath}`);
     await uploadToMinio(data.minioPdfPath, signedPath);
 
     console.log(`[signer] [${jobId}] Done.`);
     return {
-      status:     'success',
-      message:    'Document signed successfully',
+      status: 'success',
+      message: 'Document signed successfully',
       signedPath: data.minioPdfPath,
-      finalPath:  data.finalPath,
+      finalPath: data.finalPath,
       jobId,
     };
-
   } catch (error) {
     console.error(`[signer] [${jobId}] Error:`, error.message);
     return {
-      status:  'error',
+      status: 'error',
       message: error.message,
       jobId,
     };
