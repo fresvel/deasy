@@ -121,9 +121,13 @@ export default class UserRepository {
       verify_email: Number(userData.verify_email ?? userData.verify?.email ?? 0),
       verify_whatsapp: Number(userData.verify_whatsapp ?? userData.verify?.whatsapp ?? 0),
       photo_url: userData.photo_url ?? userData.photoUrl ?? null,
-      is_active: userData.is_active ?? 1
+      is_active: userData.is_active ?? 1,
+      token: userData.token
     };
 
+    if (!payload.token) {
+      throw new Error("Token no generado");
+    }
     const requiredFields = ["cedula", "password_hash", "first_name", "last_name"];
 
     const missingFields = requiredFields.filter(
