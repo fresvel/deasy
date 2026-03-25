@@ -308,17 +308,27 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">{{ signSuccess ? 'Documento firmado' : 'Error al firmar' }}</h5>
+        <h5 class="modal-title">{{ signSuccess ? '✓ Documento firmado' : '✗ Error al firmar' }}</h5>
         <button type="button" class="btn-close" data-modal-dismiss aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <p v-if="signSuccess" class="text-success mb-0">
-          El documento fue firmado exitosamente.
-        </p>
+        <div v-if="signSuccess">
+          <p class="text-success">
+            El documento fue firmado exitosamente con {{ signedFieldsCount }} campo(s) de firma.
+          </p>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-outline-primary w-50" @click="viewSignedDocument">
+              Visualizar documento
+            </button>
+            <button type="button" class="btn btn-primary w-50" @click="downloadSignedDocument">
+              Descargar documento
+            </button>
+          </div>
+        </div>
         <p v-else class="text-danger mb-0">{{ signError }}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-modal-dismiss>Aceptar</button>
+        <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>Cerrar</button>
       </div>
     </div>
   </div>
@@ -461,6 +471,8 @@
   const isSigning     = ref(false);
   const signError     = ref('');
   const signSuccess   = ref(false);
+  const signedMinioPath    = ref('');   // ruta en MinIO del PDF firmado
+  const signedFieldsCount  = ref(0);   // cantidad de firmas aplicadas
   
   let ctx;
   const colPdf=ref(null)
@@ -1007,8 +1019,12 @@
         return;
       }
 
-      // Tomar el primer campo de firma definido por el usuario
-      const field = fields.value[0];
+      // Enviar todos los campos de firma al backend
+      const allFields = fields.value.map(f => ({
+        page: f.page,
+        x: Math.round(f.x1),
+        y: Math.round(f.y1),
+      }));
 
       const formData = new FormData();
       formData.append('pdf',       uploadedFiles.value[0].content);
@@ -1016,12 +1032,9 @@
       formData.append('password',  certPassword.value);
       formData.append('stampText', stampText.value.trim());
       formData.append('signType',  'coordinates');
-      formData.append('page',      field.page);
-      formData.append('x',         Math.round(field.x1));
-      formData.append('y',         Math.round(field.y1));
+      formData.append('fields',    JSON.stringify(allFields));  // todos los campos
 
       const token = localStorage.getItem('token');
-
       isSigning.value = true;
       signError.value = '';
 
@@ -1038,7 +1051,9 @@
           throw new Error(data.error || `Error del servidor (${response.status})`);
         }
 
-        signSuccess.value = true;
+        signSuccess.value      = true;
+        signedMinioPath.value  = data.signedPath;
+        signedFieldsCount.value = allFields.length;
         signCertModalInstance.hide();
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value);
         signResultModalInstance.show();
@@ -1047,6 +1062,32 @@
         signError.value = error.message || 'Ocurrió un error al firmar el documento.';
       } finally {
         isSigning.value = false;
+      }
+    };
+
+    // ── Visualizar el documento firmado en una nueva pestaña ──────────────────
+    const viewSignedDocument = () => {
+      const url = `${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`;
+      window.open(url, '_blank');
+    };
+
+    // ── Descargar el documento firmado ────────────────────────────────────────
+    const downloadSignedDocument = async () => {
+      const token = localStorage.getItem('token');
+      const url = `${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`;
+      try {
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error('No se pudo descargar el documento.');
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'documento_firmado.pdf';
+        link.click();
+        URL.revokeObjectURL(link.href);
+      } catch (error) {
+        alert('Error al descargar: ' + error.message);
       }
     };
 
@@ -1231,6 +1272,8 @@
       signError.value    = '';
       signSuccess.value  = false;
       isSigning.value    = false;
+      signedMinioPath.value   = '';
+      signedFieldsCount.value = 0;
       resetPdfState();
     };
 
