@@ -10,7 +10,6 @@
 
 - Perfil: frontend/src/sections/perfil/
 - Academia: frontend/src/sections/academia/
-- Informes: frontend/src/views/logged/informes/WebTemplate.vue
 - Admin: frontend/src/pages/admin/
 
 ## Servicios API
@@ -18,7 +17,6 @@
 - Configuracion de endpoints: frontend/src/services/apiConfig.js
 - Cliente principal: frontend/src/services/EasymServices.js
 - Servicios adicionales:
-  - frontend/src/services/TemplateService.js
   - frontend/src/services/logged/PerfilService.js
   - frontend/src/services/layout/LayoutService.js
 
@@ -26,4 +24,3 @@
 
 - Utilidades JWT: frontend/src/utils/tokenUtils.js
 - Token guardado en localStorage (clave: token)
-

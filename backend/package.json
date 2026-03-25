@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "canvas": "^3.2.1",
     "cookie-parser": "^1.4.7",

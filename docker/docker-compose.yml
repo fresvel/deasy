@@ -131,7 +131,7 @@ services:
     env_file: .env
     environment:
       MARIADB_HOST: mariadb
-      MARIADB_PORT: 3306
+      MARIADB_PORT: "3306"
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
@@ -234,14 +234,25 @@ services:
 
   signer:
     build:
-      context: ..
-      dockerfile: docker/signer/Dockerfile
+      context: ../signer
+      dockerfile: Dockerfile
     container_name: deasy-signer
     restart: unless-stopped
-    profiles:
-      - workers
+    env_file: .env
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      SIGNER_PORT: "4000"
+    ports:
+      - "4000:4000"
     volumes:
-      - storage_data:/data
+      - ../signer:/app
+      - signer_node_modules:/app/node_modules
+      - signer_sigmaker_node_modules:/app/sigmaker/node_modules
+    depends_on:
+      - minio
 
   analytics:
     build:
@@ -253,6 +264,25 @@ services:
       - workers
     volumes:
       - storage_data:/data
+
+  multisigner:
+    build:
+      context: ../multisigner
+      dockerfile: Dockerfile
+    container_name: deasy-multisigner
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      RABBITMQ_URL: amqp://rabbitmq
+    depends_on:
+      - rabbitmq
+      - minio
+    volumes:
+      - ../multisigner:/app
+      - multisigner_node_modules:/app/node_modules
 
 volumes:
   mariadb_data:
@@ -268,3 +298,6 @@ volumes:
   docs_pnpm_store:
   uploads_data:
   storage_data:
+  multisigner_node_modules:
+  signer_node_modules:
+  signer_sigmaker_node_modules:

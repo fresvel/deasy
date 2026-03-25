@@ -91,12 +91,15 @@ function Ensure-BackendDependencies {
 }
 
 function Wait-ForMariaDb($ComposeEnv) {
+    Write-Host 'Esperando que MariaDB este lista...'
+    Start-Sleep -Seconds 15
     Push-Location $DockerDir
     try {
         for ($attempt = 0; $attempt -lt 60; $attempt++) {
             $env:MYSQL_PWD = $ComposeEnv['MARIADB_ROOT_PASSWORD']
             try {
                 docker compose exec -T mariadb mariadb-admin ping -h 127.0.0.1 -uroot --silent *> $null
+                Write-Host '✅ MariaDB lista.'
                 return
             } catch {
                 Start-Sleep -Seconds 2
@@ -140,9 +143,9 @@ function Run-DbSeed($ComposeEnv) {
     Write-Host "Aplicando semilla SQL desde $SeedFile..."
     $previous = @{}
     $seedEnv = @{
-        MARIADB_HOST = '127.0.0.1'
-        MARIADB_PORT = $mariadbPort
-        MARIADB_USER = $ComposeEnv['MARIADB_USER']
+        MARIADB_HOST     = '127.0.0.1'
+        MARIADB_PORT     = '3308'
+        MARIADB_USER     = $ComposeEnv['MARIADB_USER']
         MARIADB_PASSWORD = $ComposeEnv['MARIADB_PASSWORD']
         MARIADB_DATABASE = $ComposeEnv['MARIADB_DATABASE']
     }
@@ -163,6 +166,12 @@ function Run-DbSeed($ComposeEnv) {
 
 function Run-StorageSeeds {
     Write-Host 'Publicando seeds de plantillas en MinIO...'
+    $shFile = Join-Path $DockerDir 'minio\publish-template-seeds.sh'
+    $content = [System.IO.File]::ReadAllText($shFile)
+    if ($content.Contains("`r`n")) {
+        [System.IO.File]::WriteAllText($shFile, $content.Replace("`r`n", "`n"), [System.Text.Encoding]::UTF8)
+        Write-Host '✅ Saltos de linea corregidos en publish-template-seeds.sh'
+    }
     Push-Location $DockerDir
     try {
         docker compose --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
