@@ -17,7 +17,6 @@ with pdfplumber.open(PDF) as pdf:
                 x0 = w["x0"]
                 top = w["top"]
 
-                # Convertir a coordenadas PDF (origen abajo-izquierda)
                 page_height = page.height
                 y_pdf = page_height - top + 25
 

@@ -174,6 +174,7 @@ export default class UserRepository {
         email: Boolean(userRow.verify_email),
         whatsapp: Boolean(userRow.verify_whatsapp)
       },
+      token: userRow.token,
       createdAt: userRow.created_at ?? userRow.createdAt ?? null,
       updatedAt: userRow.updated_at ?? userRow.updatedAt ?? null
     };

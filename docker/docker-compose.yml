@@ -267,7 +267,7 @@ services:
 
   multisigner:
     build:
-      context: ../multisigner
+      context: ../signer
       dockerfile: Dockerfile
     container_name: deasy-multisigner
     restart: unless-stopped
