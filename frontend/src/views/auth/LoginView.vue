@@ -144,9 +144,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
-import { API_ROUTES } from '@/services/apiConfig';
-// Import Tabler Icons
+import AuthService from '@/services/auth/AuthService';
 import { IconUser, IconLock, IconEye, IconEyeOff, IconAlertCircle, IconX, IconArrowRight } from '@tabler/icons-vue';
 
 const identifier = ref('');
@@ -156,43 +154,9 @@ const router = useRouter();
 const showPassword = ref(false);
 
 const loginFunction = async () => {
-  const body = {
-    password: password.value,
-  };
-
   try {
     errorMessage.value = '';
-    const url = API_ROUTES.USERS_LOGIN;
-
-    const trimmedIdentifier = identifier.value.trim();
-
-    if (trimmedIdentifier.includes('@')) {
-      const normalizedEmail = trimmedIdentifier.toLowerCase();
-      body.email = normalizedEmail;
-    } else {
-      body.cedula = trimmedIdentifier.replace(/\D/g, '');
-    }
-
-    if (!body.email && !body.cedula) {
-      errorMessage.value = 'Ingresa tu cédula o correo electrónico';
-      return;
-    }
-
-    if (body.cedula && body.cedula.length !== 10) {
-      errorMessage.value = 'La cédula debe contener 10 dígitos';
-      return;
-    }
-
-    const res = await axios.post(url, body, { withCredentials: true });
-    
-    if (res.data.token) {
-      localStorage.setItem('token', res.data.token);
-    }
-
-    if (res.data.user) {
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-    }
-
+    await AuthService.login(identifier.value, password.value);
     router.push('/dashboard');
   } catch (error) {
     const statusCode = error.response?.status;
@@ -200,6 +164,8 @@ const loginFunction = async () => {
 
     if (statusCode === 500) {
       errorMessage.value = 'No se pudo iniciar sesión por un error interno del servidor. Intenta nuevamente en unos minutos.';
+    } else if (error.message) {
+      errorMessage.value = error.message;
     } else {
       errorMessage.value = backendMessage || 'Error al iniciar sesión';
     }

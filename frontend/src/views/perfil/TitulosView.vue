@@ -37,16 +37,17 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <div class="btn-group" role="group">
-                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
-                    <IconFile size="16" />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
                   </button>
-                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
-                    <IconUpload size="16" />
+                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
                   </button>
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -86,16 +87,17 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <div class="btn-group" role="group">
-                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
-                    <IconFile size="16" />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
                   </button>
-                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
-                    <IconUpload size="16" />
+                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
                   </button>
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -135,16 +137,17 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <div class="btn-group" role="group">
-                  <button v-if="titulo.url_documento" class="btn btn-sm btn-outline-success" title="Ver documento" @click="openDocument(titulo)">
-                    <IconFile size="16" />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
                   </button>
-                  <button class="btn btn-sm btn-outline-primary" title="Subir documento" @click="triggerFileUpload(titulo._id)">
-                    <IconUpload size="16" />
+                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
                   </button>
-                  <BtnDelete @onpress="() => deleteTitulo(titulo._id)"/>
-                  <BtnEdit @onpress="() => clickBtnedit(titulo)"/>
+                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -177,7 +180,6 @@
 
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
-import axios from 'axios';
 import AgregarTitulo from "./components/AgregarTitulo.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
@@ -185,8 +187,8 @@ import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import { Modal } from "@/utils/modalController";
-import { API_PREFIX } from "@/services/apiConfig";
-import { IconUpload, IconFile } from '@tabler/icons-vue';
+import DossierService from "@/services/dossier/DossierService";
+import { IconUpload, IconFile, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const fileInput = ref(null);
@@ -225,22 +227,11 @@ const loadDossier = async () => {
     try {
         loading.value = true;
         
-        // Obtener usuario del localStorage
-        const userDataString = localStorage.getItem('user');
-        if (!userDataString) {
-            console.error('No hay usuario logueado');
-            return;
-        }
+        const data = await DossierService.getDossier();
         
-        currentUser.value = JSON.parse(userDataString);
-        console.log('👤 Usuario cargado:', currentUser.value);
-        
-        // Obtener dossier del backend
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
-        const response = await axios.get(url);
-        
-        if (response.data.success) {
-            dossier.value = response.data.data;
+        if (data.success) {
+            dossier.value = data.data;
+            currentUser.value = { cedula: DossierService.getCedula() };
             console.log('📋 Dossier cargado:', dossier.value);
         }
         
@@ -264,8 +255,7 @@ const deleteTitulo = async (tituloId) => {
     if (!confirm('¿Estás seguro de eliminar este título?')) return;
     
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/titulos/${tituloId}`;
-        await axios.delete(url);
+        await DossierService.deleteTitulo(tituloId);
         
         // Recargar dossier
         await loadDossier();
@@ -302,11 +292,7 @@ const handleTituloAdded = () => {
 // Función para abrir el documento 
 const openDocument = async (titulo) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${titulo._id}`;
-        
-        const response = await axios.get(url, {
-            responseType: 'blob'
-        });
+        const response = await DossierService.downloadDocument('titulo', titulo._id);
         
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const blobUrl = window.URL.createObjectURL(blob);
@@ -347,16 +333,7 @@ const handleFileSelect = async (event) => {
     }
     
     try {
-        const formData = new FormData();
-        formData.append('archivo', file);
-        
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/documentos/titulo/${selectedTituloId.value}`;
-        
-        const response = await axios.post(url, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        const response = await DossierService.uploadTituloDocument(selectedTituloId.value, file);
         
         if (response.data.success) {
             alert('Documento subido correctamente');
