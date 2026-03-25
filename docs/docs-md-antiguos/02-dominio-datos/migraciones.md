@@ -22,6 +22,41 @@
 - Versionar cambios de schema y documentar scripts de migracion.
 - Usar `node scripts/drop_legacy_tables.mjs` solo cuando quieras eliminar tablas heredadas fuera del flujo normal de arranque/reset.
 
+## Cambios recientes de schema (2026-03-17)
+
+### Tabla `persons`: direccion de residencia ampliada
+
+Se agregaron columnas para soportar el formulario de registro del frontend:
+
+- `pais_residencia VARCHAR(80)`
+- `provincia_residencia VARCHAR(120)`
+- `ciudad_residencia VARCHAR(120)`
+- `calle_primaria VARCHAR(180)`
+- `calle_secundaria VARCHAR(180)`
+- `codigo_postal VARCHAR(30)`
+
+Implementacion:
+
+- Definicion base en `CREATE TABLE persons`.
+- Compatibilidad para bases existentes con:
+  - `ALTER TABLE persons ADD COLUMN IF NOT EXISTS ...`
+
+### Inicializador: migraciones condicionales por existencia de tablas
+
+En `backend/database/mariadb_initializer.js` se ajusto el flujo para:
+
+- verificar existencia de `templates` y `process_templates` antes de aplicar cambios,
+- omitir solo ese bloque cuando no existan,
+- continuar con el resto de la inicializacion y no cortar el arranque.
+
+### CHECK en `processes`
+
+La creacion de `chk_process_unit_program` ahora:
+
+- primero verifica si el CHECK ya existe,
+- valida si hay filas que violan la regla (`unit_id` y `program_id` nulos),
+- si hay violaciones, omite crear el CHECK y lo reporta de forma explicita.
+
 ## Scripts operativos
 
 - Migrar una base existente al nombre y estructura nuevos (procesos, definiciones, templates de proceso):

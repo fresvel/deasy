@@ -58,4 +58,7 @@ router.delete('/:cedula/investigacion/:tipo/:itemId', dossierController.deleteIn
 // Ruta para subir documento PDF al dossier
 router.post('/:cedula/documentos/:tipoDocumento/:registroId', upload.single('archivo'), dossierController.uploadDossierDocument);
 
+// Ruta para obtener URL temporal del documento
+router.get('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.getDossierDocumentUrl);
+
 export default router;

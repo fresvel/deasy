@@ -145,3 +145,28 @@ Tipos validos en `:tipo`:
 
 - Swagger describe contratos, esquemas y ejemplos.
 - SQL schema en backend/database/mariadb_schema.sql
+
+## Cambios recientes (2026-03-17)
+
+### Registro de usuario: nuevos campos de direccion de residencia
+
+Se extendio el alta de usuarios (`POST /users`) para aceptar y persistir campos de residencia adicionales enviados desde frontend:
+
+- `pais_residencia`
+- `provincia_residencia`
+- `ciudad_residencia`
+- `calle_primaria`
+- `calle_secundaria`
+- `codigo_postal`
+
+Componentes tocados:
+
+- `backend/controllers/users/user_controler.js` (mapeo del `req.body`)
+- `backend/services/auth/UserRepository.js` (persistencia y salida publica)
+- `backend/database/mariadb_schema.sql` (columnas nuevas en `persons` + `ALTER TABLE ... IF NOT EXISTS`)
+- `backend/index.js` (documentacion OpenAPI actualizada para `RegisterRequest` y `UserPublic`)
+
+### Validacion funcional ejecutada
+
+Se probo el endpoint con payload completo incluyendo los campos nuevos y respondio `200` con `result: ok`.
+Adicionalmente se verifico en MariaDB que los datos quedaron guardados en `persons`.

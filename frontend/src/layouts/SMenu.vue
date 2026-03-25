@@ -1,60 +1,30 @@
 <template>
-  <div class="col-lg-2 col-md-3" v-if="show">
-    <div class="smenu d-flex flex-column">
-      <slot></slot>
-    </div>
-  </div>
+  <aside 
+    class="flex flex-col w-[280px] shrink-0 h-[calc(100vh-4rem)] z-40 overflow-y-auto border-r border-sky-600/30 bg-gradient-to-b from-sky-900 via-sky-800 to-sky-700 p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-all duration-300 left-0
+           fixed xl:sticky xl:top-16 xl:translate-x-0"
+    :class="show ? 'translate-x-0 top-16 shadow-[20px_0_40px_rgba(0,0,0,0.5)] xl:shadow-none' : '-translate-x-[110%] xl:-translate-x-0 xl:hidden'"
+  >
+    <slot></slot>
+  </aside>
+
+  <!-- Overlay transparent for mobile when menu is open -->
+  <div 
+    v-if="show" 
+    class="fixed inset-0 top-16 z-30 bg-slate-900/50 xl:hidden backdrop-blur-sm transition-opacity duration-300"
+    @click="$emit('close-mobile')"
+    aria-hidden="true"
+  ></div>
 </template>
 
 <script setup>
-
-import {defineProps, /*defineEmits*/} from "vue"
+import { defineProps, defineEmits } from "vue"
 
 defineProps({
-show: {
+  show: {
     type: Boolean,
     default: true,
-  },
-
-menu: {
-    type: Array,
-    default: () => [],
-},
-  
+  }
 })
 
-/*
-const emit=defineEmits(["onclick"])
-
-const onClick=(item)=>{
-  emit("onclick", item)
-}
-
-*/
+defineEmits(['close-mobile'])
 </script>
-
-<style scoped>
-
-
-.smenu {
-    height: calc(100vh - 1.1rem);
-    margin-top: 0.12rem;
-    background:
-      linear-gradient(
-        168deg,
-        #0c1826 0%,
-        rgba(var(--brand-primary-rgb), 0.9) 58%,
-        rgba(26, 110, 168, 0.78) 100%
-      );
-    padding: 0.9rem 0.75rem;
-    border-radius: 0 0 18px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow:
-      0 22px 34px rgba(var(--brand-primary-rgb), 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-    position: sticky;
-    top: 0.34rem;
-    overflow: hidden;
-}
-
-</style>

@@ -2,6 +2,13 @@
 
 Este indice organiza la documentacion del repositorio y enlaza a los documentos existentes.
 
+## Actualizacion backend reciente (2026-03-17)
+
+- Registro backend con direccion de residencia ampliada: `03-backend/api.md`.
+- Auth y refresh-token (comportamiento validado): `03-backend/auth.md`.
+- Estado de inicializador MariaDB y errores conocidos: `03-backend/errores-conocidos.md`.
+- Detalle de cambios de schema/migracion: `02-dominio-datos/migraciones.md`.
+
 ## Vista rapida por rol
 
 - Dev backend: docs/03-backend, docs/02-dominio-datos, backend/README.md
@@ -72,9 +79,10 @@ Este indice organiza la documentacion del repositorio y enlaza a los documentos 
    - docs/09-requerimientos/backlog.md
 
 10) Anexos
-   - docs/10-anexos/tabularray.pdf
-   - docs/10-anexos/minted.pdf
-   - docs/10-anexos/UI.odg
+
+- docs/10-anexos/tabularray.pdf
+- docs/10-anexos/minted.pdf
+- docs/10-anexos/UI.odg
 
 ## Documentos raiz
 

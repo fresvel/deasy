@@ -31,3 +31,26 @@
 - Modelos: backend/models/users/roles.js, permisos.js
 - Validaciones adicionales en middlewares.
 
+## Cambios y validaciones recientes (2026-03-17)
+
+### Endpoint de refresh token
+
+Ruta:
+
+- `POST /users/refresh-token`
+
+Comportamiento esperado:
+
+- Lee `refreshToken` desde cookie HTTP.
+- Si no existe cookie, responde `401` con mensaje `No se encontro refresh token`.
+- Si es invalido o expiro, responde `401`.
+- Si es valido, genera nuevo access token y retorna `token` + `expiresIn`.
+
+Configuracion de secretos:
+
+- Usa `JWT_REFRESH` o `JWT_SECRET`.
+- En no-produccion, si no hay variables, usa un fallback de desarrollo.
+
+Validacion ejecutada:
+
+- Se corrio smoke test de `POST /users/refresh-token` sin cookie y devolvio `401` (resultado esperado).

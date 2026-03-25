@@ -1,16 +1,15 @@
 <template>
-  <div :class="contentClass">
-    <div class="content-panel">
+  <div class="flex flex-col flex-1 min-w-0 w-full transition-all duration-300 px-2 sm:px-4 md:px-6 lg:px-8 py-6">
+    <div class="w-full h-full pb-8">
       <slot></slot>
     </div>
   </div>
 </template>
 
 <script setup>
-import {computed, defineProps } from 'vue';
+import { computed, defineProps } from 'vue';
 
-
-const props=defineProps({
+const props = defineProps({
     showmenu: {
         type: Boolean,
         default: false
@@ -24,31 +23,4 @@ const props=defineProps({
         default: false
     }
 })
-
-const contentClass = computed(() => {
-    const visiblePanels = [props.showmenu, props.shownotify, props.shownavmenu].filter(Boolean).length;
-    
-    if (visiblePanels === 0) {
-        return "col-12";
-    }
-    if (visiblePanels === 1) {
-        return "col-lg-10 col-md-9 col-12";
-    }
-    if (visiblePanels === 2) {
-        return "col-lg-8 col-md-6 col-12";
-    }
-    // 3 paneles visibles
-    return "col-lg-6 col-md-4 col-12";
-});
-
-
 </script>
-
-<style scoped>
-  .content-panel {
-      min-height: 100vh;
-      padding: 0.75rem;
-      font-size: 0.2rem;
-  }
-
-</style>
