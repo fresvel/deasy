@@ -1,0 +1,78 @@
+name: "Bug report"
+description: "Reportar un error reproducible"
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar este problema.
+        Por favor completa todos los campos para ayudarnos a reproducirlo.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Resumen
+      description: Describe el problema en una frase.
+      placeholder: "Al guardar una tutoria, el backend responde 500"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area afectada
+      options:
+        - backend
+        - frontend
+        - docs
+        - docker
+        - scripts
+        - otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: Lista exacta de pasos.
+      placeholder: |
+        1. Ir a ...
+        2. Hacer click en ...
+        3. Ver error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+      placeholder: "La operacion deberia completarse sin errores"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado actual
+      placeholder: "Se obtiene error 500 en /easym/v1/..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Entorno
+      description: SO, navegador, version de Node/pnpm, etc.
+      placeholder: "macOS 15, Node 22.12.0, pnpm 10"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs o evidencia
+      description: Pega stack traces, errores de consola o capturas.
+      render: shell

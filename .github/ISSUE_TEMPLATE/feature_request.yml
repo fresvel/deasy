@@ -1,0 +1,64 @@
+name: "Feature request"
+description: "Proponer una nueva funcionalidad o mejora"
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por proponer mejoras para Deasy.
+        Mientras mas contexto incluyas, mas facil sera priorizarla.
+
+  - type: input
+    id: problem
+    attributes:
+      label: Problema que quieres resolver
+      placeholder: "Actualmente no es posible ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta de solucion
+      placeholder: "Propongo agregar ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impacto esperado
+      options:
+        - bajo
+        - medio
+        - alto
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area principal
+      options:
+        - backend
+        - frontend
+        - docs
+        - docker
+        - procesos/reportes/firmas
+        - otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      placeholder: "Tambien se podria ..."
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Contexto adicional
+      placeholder: "Mockups, referencias, restricciones, etc."

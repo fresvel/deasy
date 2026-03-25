@@ -1,7 +1,31 @@
 import express from 'express';
+import multer from 'multer';
+import os from 'os';
 import * as dossierController from '../controllers/users/dossier_controler.js';
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, os.tmpdir());
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+});
+
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Solo se permiten archivos PDF'));
+        }
+    }
+});
 
 // Obtener dossier completo del usuario
 router.get('/:cedula', dossierController.getDossierByUser);
@@ -30,5 +54,11 @@ router.delete('/:cedula/certificaciones/:certificacionId', dossierController.del
 router.post('/:cedula/investigacion/:tipo', dossierController.addInvestigacionItem);
 router.put('/:cedula/investigacion/:tipo/:itemId', dossierController.updateInvestigacionItem);
 router.delete('/:cedula/investigacion/:tipo/:itemId', dossierController.deleteInvestigacionItem);
+
+// Ruta para subir documento PDF al dossier
+router.post('/:cedula/documentos/:tipoDocumento/:registroId', upload.single('archivo'), dossierController.uploadDossierDocument);
+
+// Ruta para obtener URL temporal del documento
+router.get('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.getDossierDocumentUrl);
 
 export default router;

@@ -4,6 +4,9 @@ import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { hydrateTaskFromDefinition } from "../../services/admin/TaskGenerationService.js";
+import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
+import { generateUniqueToken } from "../../utils/tokenGenerator.js";
+
 
 const userRepository = new UserRepository();
 
@@ -549,6 +552,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
 export const createUser = async (req, res) => {
   console.log("Creando usuario");
   try {
+    const token = await generateUniqueToken(); // ← aquí, dentro del try
+
     const userPayload = {
       cedula: req.body.cedula,
       email: req.body.email,
@@ -558,14 +563,32 @@ export const createUser = async (req, res) => {
       whatsapp: req.body.whatsapp,
       direccion: req.body.direccion,
       pais: req.body.pais,
+      pais_residencia: req.body.pais_residencia,
+      provincia_residencia: req.body.provincia_residencia,
+      ciudad_residencia: req.body.ciudad_residencia,
+      calle_primaria: req.body.calle_primaria,
+      calle_secundaria: req.body.calle_secundaria,
+      codigo_postal: req.body.codigo_postal,
       status: req.body.status,
       verify_email: req.body.verify?.email,
       verify_whatsapp: req.body.verify?.whatsapp,
-      photo_url: req.body.photoUrl ?? req.body.photo_url ?? null
+      photo_url: req.body.photoUrl ?? req.body.photo_url ?? null,
+      token
     };
 
     const createdUser = await userRepository.create(userPayload);
     console.log(`Usuario creado en MariaDB con id ${createdUser.id}`);
+
+    try {
+      await sendEmailVerification({
+        userId: createdUser.id,
+        email: createdUser.email
+      });
+
+      console.log("Correo de verificación enviado");
+    } catch (error) {
+      console.error("No se pudo enviar el correo de verificación:", error.message);
+    }
 
     if (whatsappBot.isReady && createdUser.whatsapp) {
       try {
@@ -623,7 +646,7 @@ export const updateUserPhoto = async (req, res) => {
   try {
     const existingUser = await userRepository.findByCedulaOrEmail({ cedula });
     if (!existingUser) {
-      await fs.remove(file.path).catch(() => {});
+      await fs.remove(file.path).catch(() => { });
       return res.status(404).send({ message: "Usuario no encontrado" });
     }
 
@@ -636,13 +659,13 @@ export const updateUserPhoto = async (req, res) => {
     if (previousPath && !previousPath.startsWith("data:")) {
       const absolutePrev = path.resolve(process.cwd(), previousPath.replace(/^\/+/, ""));
       if (await fs.pathExists(absolutePrev)) {
-        await fs.remove(absolutePrev).catch(() => {});
+        await fs.remove(absolutePrev).catch(() => { });
       }
     }
 
     res.json({ result: "ok", user: updatedUser });
   } catch (error) {
-    await fs.remove(file.path).catch(() => {});
+    await fs.remove(file.path).catch(() => { });
     console.error("Error actualizando foto de usuario", error);
     res.status(500).send({ message: "Error al actualizar la foto", error: error.message });
   }
@@ -1117,5 +1140,61 @@ export const createUserProcessTask = async (req, res) => {
     res.status(400).json({ message });
   } finally {
     connection.release();
+  }
+};
+
+//update user data
+export const updateMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    const payload = {
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      whatsapp: req.body.whatsapp,
+      direccion: req.body.direccion,
+      pais: req.body.pais
+    };
+
+    const updatedUser = await userRepository.update(userId, payload);
+
+    res.json({
+      result: "ok",
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error actualizando perfil"
+    });
+  }
+};
+
+//get user by id
+export const getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    const user = await userRepository.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Usuario no encontrado"
+      });
+    }
+
+    res.json({
+      result: "ok",
+      user: userRepository.toPublicUser(user)
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error obteniendo perfil"
+    });
   }
 };

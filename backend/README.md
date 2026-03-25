@@ -17,7 +17,7 @@
 
 4. **Inicia el backend**
    ```bash
-   node index.js
+   npm run start
    ```
 
 5. **Verifica la consola**
