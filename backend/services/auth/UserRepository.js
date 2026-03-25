@@ -117,13 +117,23 @@ export default class UserRepository {
       whatsapp: userData.whatsapp ?? null,
       direccion: userData.direccion ?? null,
       pais: userData.pais ?? null,
+      pais_residencia: userData.pais_residencia ?? null,
+      provincia_residencia: userData.provincia_residencia ?? null,
+      ciudad_residencia: userData.ciudad_residencia ?? null,
+      calle_primaria: userData.calle_primaria ?? null,
+      calle_secundaria: userData.calle_secundaria ?? null,
+      codigo_postal: userData.codigo_postal ?? null,
       status: userData.status ?? DEFAULT_STATUS,
       verify_email: Number(userData.verify_email ?? userData.verify?.email ?? 0),
       verify_whatsapp: Number(userData.verify_whatsapp ?? userData.verify?.whatsapp ?? 0),
       photo_url: userData.photo_url ?? userData.photoUrl ?? null,
-      is_active: userData.is_active ?? 1
+      is_active: userData.is_active ?? 1,
+      token: userData.token
     };
 
+    if (!payload.token) {
+      throw new Error("Token no generado");
+    }
     const requiredFields = ["cedula", "password_hash", "first_name", "last_name"];
 
     const missingFields = requiredFields.filter(
@@ -164,6 +174,12 @@ export default class UserRepository {
       whatsapp: userRow.whatsapp,
       direccion: userRow.direccion,
       pais: userRow.pais,
+      pais_residencia: userRow.pais_residencia,
+      provincia_residencia: userRow.provincia_residencia,
+      ciudad_residencia: userRow.ciudad_residencia,
+      calle_primaria: userRow.calle_primaria,
+      calle_secundaria: userRow.calle_secundaria,
+      codigo_postal: userRow.codigo_postal,
       photoUrl: userRow.photo_url ?? userRow.photoUrl ?? null,
       status: userRow.status ?? DEFAULT_STATUS,
       verify: {
@@ -226,7 +242,13 @@ export default class UserRepository {
       "email",
       "whatsapp",
       "direccion",
-      "pais"
+      "pais",
+      "pais_residencia",
+      "provincia_residencia",
+      "ciudad_residencia",
+      "calle_primaria",
+      "calle_secundaria",
+      "codigo_postal"
     ];
 
     const filtered = {};

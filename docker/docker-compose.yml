@@ -1,6 +1,6 @@
 services:
   mariadb:
-    image: mariadb:11.4
+    image: mariadb:latest
     container_name: deasy-mariadb
     restart: unless-stopped
     environment:
@@ -23,7 +23,7 @@ services:
       - mongodb_data:/data/db
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     container_name: deasy-rabbitmq
     restart: unless-stopped
     ports:
@@ -131,7 +131,7 @@ services:
     env_file: .env
     environment:
       MARIADB_HOST: mariadb
-      MARIADB_PORT: 3306
+      MARIADB_PORT: "3306"
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
@@ -215,6 +215,7 @@ services:
     volumes:
       - ../frontend:/app/frontend
       - frontend_node_modules:/app/frontend/node_modules
+      - frontend_pnpm_store:/pnpm/store
     depends_on:
       - backend
 
@@ -229,17 +230,29 @@ services:
     volumes:
       - ../docs:/app/docs
       - docs_node_modules:/app/docs/node_modules
+      - docs_pnpm_store:/pnpm/store
 
   signer:
     build:
-      context: ..
-      dockerfile: docker/signer/Dockerfile
+      context: ../signer
+      dockerfile: Dockerfile
     container_name: deasy-signer
     restart: unless-stopped
-    profiles:
-      - workers
+    env_file: .env
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      SIGNER_PORT: "4000"
+    ports:
+      - "4000:4000"
     volumes:
-      - storage_data:/data
+      - ../signer:/app
+      - signer_node_modules:/app/node_modules
+      - signer_sigmaker_node_modules:/app/sigmaker/node_modules
+    depends_on:
+      - minio
 
   analytics:
     build:
@@ -252,6 +265,25 @@ services:
     volumes:
       - storage_data:/data
 
+  multisigner:
+    build:
+      context: ../multisigner
+      dockerfile: Dockerfile
+    container_name: deasy-multisigner
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      RABBITMQ_URL: amqp://rabbitmq
+    depends_on:
+      - rabbitmq
+      - minio
+    volumes:
+      - ../multisigner:/app
+      - multisigner_node_modules:/app/node_modules
+
 volumes:
   mariadb_data:
   mongodb_data:
@@ -261,6 +293,11 @@ volumes:
   minio_data:
   backend_node_modules_v2:
   frontend_node_modules:
+  frontend_pnpm_store:
   docs_node_modules:
+  docs_pnpm_store:
   uploads_data:
   storage_data:
+  multisigner_node_modules:
+  signer_node_modules:
+  signer_sigmaker_node_modules:

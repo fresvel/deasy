@@ -5,6 +5,7 @@ import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { hydrateTaskFromDefinition } from "../../services/admin/TaskGenerationService.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
+import { generateUniqueToken } from "../../utils/tokenGenerator.js";
 
 
 const userRepository = new UserRepository();
@@ -551,6 +552,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
 export const createUser = async (req, res) => {
   console.log("Creando usuario");
   try {
+    const token = await generateUniqueToken(); // ← aquí, dentro del try
+
     const userPayload = {
       cedula: req.body.cedula,
       email: req.body.email,
@@ -560,10 +563,17 @@ export const createUser = async (req, res) => {
       whatsapp: req.body.whatsapp,
       direccion: req.body.direccion,
       pais: req.body.pais,
+      pais_residencia: req.body.pais_residencia,
+      provincia_residencia: req.body.provincia_residencia,
+      ciudad_residencia: req.body.ciudad_residencia,
+      calle_primaria: req.body.calle_primaria,
+      calle_secundaria: req.body.calle_secundaria,
+      codigo_postal: req.body.codigo_postal,
       status: req.body.status,
       verify_email: req.body.verify?.email,
       verify_whatsapp: req.body.verify?.whatsapp,
-      photo_url: req.body.photoUrl ?? req.body.photo_url ?? null
+      photo_url: req.body.photoUrl ?? req.body.photo_url ?? null,
+      token
     };
 
     const createdUser = await userRepository.create(userPayload);

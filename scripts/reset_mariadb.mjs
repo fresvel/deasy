@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
-const envPath = path.join(repoRoot, "backend", ".env");
+const envPath = path.join(repoRoot, "docker",".env");
 
 const loadEnv = async () => {
   try {

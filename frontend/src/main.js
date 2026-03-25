@@ -5,11 +5,5 @@ import router from './router'
 import './styles/tailwind.css'
 import './styles/theme.css'
 
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons'
-
-
-
 const app = createApp(App)
-app.component('font-awesome-icon', FontAwesomeIcon);
 app.use(router).mount('#app')

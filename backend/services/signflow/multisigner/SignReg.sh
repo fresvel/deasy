@@ -25,7 +25,7 @@ FIELD_HEIGHT=80
 # --------------------------------------------------------------------
 # PREPROCESO (QR u otros)
 # --------------------------------------------------------------------
-cd sigmaker/ && node index.js && cd - >/dev/null
+cd sigmaker/ && npm run start && cd - >/dev/null
 
 mkdir -p "$DEST"
 

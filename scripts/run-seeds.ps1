@@ -22,6 +22,23 @@ function Show-Usage {
     Write-Host '  -SeedFile      Ruta alternativa al archivo JSON de la semilla SQL.'
 }
 
+function Test-ServiceRunning($ServiceName) {
+    Push-Location $DockerDir
+    try {
+        $services = docker compose ps --status running --services
+        return ($services -contains $ServiceName)
+    } finally {
+        Pop-Location
+    }
+}
+
+function Ensure-ServiceRunning($ServiceName) {
+    if (Test-ServiceRunning $ServiceName) {
+        return
+    }
+    throw "El servicio '$ServiceName' no esta en ejecucion. Inicialo antes de correr run-seeds."
+}
+
 function Ensure-Command($Name) {
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         throw "Falta el comando requerido: $Name"
@@ -74,12 +91,15 @@ function Ensure-BackendDependencies {
 }
 
 function Wait-ForMariaDb($ComposeEnv) {
+    Write-Host 'Esperando que MariaDB este lista...'
+    Start-Sleep -Seconds 15
     Push-Location $DockerDir
     try {
         for ($attempt = 0; $attempt -lt 60; $attempt++) {
             $env:MYSQL_PWD = $ComposeEnv['MARIADB_ROOT_PASSWORD']
             try {
                 docker compose exec -T mariadb mariadb-admin ping -h 127.0.0.1 -uroot --silent *> $null
+                Write-Host '✅ MariaDB lista.'
                 return
             } catch {
                 Start-Sleep -Seconds 2
@@ -94,13 +114,38 @@ function Wait-ForMariaDb($ComposeEnv) {
     throw 'MariaDB no estuvo lista a tiempo para aplicar la semilla.'
 }
 
+function Resolve-MariaDbHostPort($ComposeEnv) {
+    Push-Location $DockerDir
+    try {
+        $line = docker compose port mariadb 3306 2>$null | Select-Object -Last 1
+    } finally {
+        Pop-Location
+    }
+
+    if ($line) {
+        $parts = $line.Trim().Split(':')
+        if ($parts.Count -gt 0) {
+            return $parts[$parts.Count - 1]
+        }
+    }
+
+    if ($ComposeEnv.ContainsKey('MARIADB_PORT') -and $ComposeEnv['MARIADB_PORT']) {
+        return $ComposeEnv['MARIADB_PORT']
+    }
+
+    # Fallback al puerto publicado actual en docker-compose.yml.
+    return '3308'
+}
+
 function Run-DbSeed($ComposeEnv) {
+    $mariadbPort = Resolve-MariaDbHostPort $ComposeEnv
+
     Write-Host "Aplicando semilla SQL desde $SeedFile..."
     $previous = @{}
     $seedEnv = @{
-        MARIADB_HOST = '127.0.0.1'
-        MARIADB_PORT = '3306'
-        MARIADB_USER = $ComposeEnv['MARIADB_USER']
+        MARIADB_HOST     = '127.0.0.1'
+        MARIADB_PORT     = '3308'
+        MARIADB_USER     = $ComposeEnv['MARIADB_USER']
         MARIADB_PASSWORD = $ComposeEnv['MARIADB_PASSWORD']
         MARIADB_DATABASE = $ComposeEnv['MARIADB_DATABASE']
     }
@@ -121,9 +166,15 @@ function Run-DbSeed($ComposeEnv) {
 
 function Run-StorageSeeds {
     Write-Host 'Publicando seeds de plantillas en MinIO...'
+    $shFile = Join-Path $DockerDir 'minio\publish-template-seeds.sh'
+    $content = [System.IO.File]::ReadAllText($shFile)
+    if ($content.Contains("`r`n")) {
+        [System.IO.File]::WriteAllText($shFile, $content.Replace("`r`n", "`n"), [System.Text.Encoding]::UTF8)
+        Write-Host '✅ Saltos de linea corregidos en publish-template-seeds.sh'
+    }
     Push-Location $DockerDir
     try {
-        docker compose --profile storage-publish-seeds run --rm minio-publish-seeds
+        docker compose --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
     } finally {
         Pop-Location
     }
@@ -175,15 +226,15 @@ Ensure-Command 'docker'
 Ensure-ComposeEnv
 $composeEnv = Read-ComposeEnv
 
-& (Join-Path $RootDir 'scripts/start-services.ps1')
-
 if ($RunDbSeed) {
+    Ensure-ServiceRunning 'mariadb'
     Ensure-BackendDependencies
     Wait-ForMariaDb $composeEnv
     Run-DbSeed $composeEnv
 }
 
 if ($RunStorageSeeds) {
+    Ensure-ServiceRunning 'minio'
     Run-StorageSeeds
 }
 

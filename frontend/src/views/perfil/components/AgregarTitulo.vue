@@ -1,0 +1,344 @@
+<template>
+<ProfileModalLayout title="Agregar título académico" description="Completa los campos con los datos oficiales del título registrado." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
+      <div class="w-full">
+        <label class="form-label">Título</label>
+        <s-select
+          :options="carreras"
+          v-model="form.titulo"
+          class="w-full mb-2"
+        />
+        <input
+          v-if="form.titulo === 'Otro'"
+          type="text"
+          class="form-control "
+          placeholder="Especifique el título"
+          v-model="form.tituloPersonalizado"
+        />
+      </div>
+
+      <div class="w-full">
+        <label class="form-label">Institución</label>
+        <s-select
+          :options="universidades"
+          v-model="form.ies"
+          class="w-full mb-2"
+        />
+        <input
+          v-if="form.ies === 'Otra'"
+          type="text"
+          class="form-control "
+          placeholder="Especifique la institución"
+          v-model="form.iesPersonalizada"
+        />
+      </div>
+
+      <div class="w-full">
+        <label for="pais" class="form-label">País de emisión</label>
+        <s-select
+          id="pais"
+          :options="escountries"
+          v-model="form.pais"
+          class="w-full"
+        />
+      </div>
+
+      <div class="w-full">
+        <label for="registro" class="form-label">Número de registro</label>
+        <s-input
+          id="registro"
+          v-model="form.sreg"
+          placeholder="Registro SENESCYT"
+        />
+      </div>
+
+      <div class="w-full">
+        <label for="tipo" class="form-label">Modalidad</label>
+        <s-select
+          id="tipo"
+          :options="modalidades"
+          v-model="form.tipo"
+          class="w-full"
+        />
+      </div>
+
+      <div class="w-full">
+        <label for="nivel" class="form-label">Nivel</label>
+        <s-select
+          id="nivel"
+          :options="niveles"
+          v-model="form.nivel"
+          class="w-full"
+        />
+      </div>
+
+      <div class="w-full">
+        <label for="campo" class="form-label">Campo de conocimiento</label>
+        <textarea
+          id="campo"
+          v-model="form.campo_amplio"
+          class="form-control "
+          rows="2"
+          placeholder="Ej. Ingeniería, Ciencias Sociales, Educación..."
+        ></textarea>
+      </div>
+
+      <div class="w-full">
+        <label for="documento" class="form-label">Documento PDF (opcional)</label>
+        <input
+          type="file"
+          id="documento"
+          ref="fileInput"
+          class="form-control"
+          accept="application/pdf"
+          @change="handleFileSelect"
+        />
+        <small class="text-muted d-block">Máximo 10MB. Solo archivos PDF.</small>
+        <div v-if="selectedFile" class="mt-2">
+          <span class="badge bg-success d-inline-flex align-items-center gap-1">
+            <IconFile :size="14" />
+            {{ selectedFile.name }}
+          </span>
+          <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2" @click="clearFile">
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+      </ProfileModalLayout>
+</template>
+
+<script setup>
+import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
+import { reactive, ref, onMounted, defineEmits } from "vue";
+import { Modal } from "@/utils/modalController";
+import DossierService from "@/services/dossier/DossierService";
+import SInput from "@/components/SInput.vue";
+import SSelect from "@/components/SSelect.vue";
+import { escountries } from "@/composable/countries";
+import { IconFile } from '@tabler/icons-vue';
+
+const emit = defineEmits(["close-modal", "title-added"]);
+
+const form = reactive({
+  titulo: "",
+  tituloPersonalizado: "",
+  ies: "",
+  iesPersonalizada: "",
+  pais: "Ecuador",
+  sreg: "",
+  tipo: "Presencial",
+  nivel: "Grado",
+  campo_amplio: ""
+});
+
+const carreras = [
+  "Administración de Empresas",
+  "Arquitectura",
+  "Contabilidad y Auditoría",
+  "Derecho",
+  "Educación Básica",
+  "Enfermería",
+  "Ingeniería Civil",
+  "Ingeniería Industrial",
+  "Ingeniería en Sistemas",
+  "Medicina",
+  "Psicología",
+  "Turismo",
+  "Otro"
+];
+
+const universidades = [
+  "Pontificia Universidad Católica del Ecuador",
+  "Escuela Politécnica Nacional",
+  "Universidad de Guayaquil",
+  "Universidad Central del Ecuador",
+  "Escuela Superior Politécnica del Litoral",
+  "Universidad San Francisco de Quito",
+  "Universidad Técnica Particular de Loja",
+  "Universidad de las Américas",
+  "Universidad de Cuenca",
+  "Otra"
+];
+
+const modalidades = ["Presencial", "Semipresencial", "Virtual", "Híbrido"];
+const niveles = [
+  "Grado",
+  "Posgrado (Especialización)",
+  "Posgrado (Maestría)",
+  "Posgrado (Doctorado)"
+];
+
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+const fileInput = ref(null);
+const selectedFile = ref(null);
+
+onMounted(() => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    try {
+      currentUser.value = JSON.parse(storedUser);
+    } catch (error) {
+      console.error("No se pudo parsear el usuario en localStorage", error);
+    }
+  }
+});
+
+const closeModal = () => {
+  const modalElement = document.getElementById("tituloModal");
+  if (!modalElement) return;
+  const modalInstance = Modal.getInstance(modalElement);
+  modalInstance?.hide();
+};
+
+const resetForm = () => {
+  form.titulo = "";
+  form.tituloPersonalizado = "";
+  form.ies = "";
+  form.iesPersonalizada = "";
+  form.pais = "Ecuador";
+  form.sreg = "";
+  form.tipo = "Presencial";
+  form.nivel = "Grado";
+  form.campo_amplio = "";
+  errorMessage.value = "";
+  selectedFile.value = null;
+};
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (file.type !== 'application/pdf') {
+    alert('Solo se permiten archivos PDF');
+    event.target.value = '';
+    selectedFile.value = null;
+    return;
+  }
+  
+  if (file.size > 10 * 1024 * 1024) {
+    alert('El archivo no puede superar los 10MB');
+    event.target.value = '';
+    selectedFile.value = null;
+    return;
+  }
+  
+  selectedFile.value = file;
+};
+
+const clearFile = () => {
+  selectedFile.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = "";
+  }
+};
+
+const onCancel = () => {
+  resetForm();
+  closeModal();
+  emit("close-modal");
+};
+
+const buildPayload = () => ({
+  titulo: form.titulo === "Otro" ? form.tituloPersonalizado.trim() : form.titulo,
+  ies: form.ies === "Otra" ? form.iesPersonalizada.trim() : form.ies,
+  pais: form.pais,
+  sreg: form.sreg,
+  tipo: form.tipo,
+  nivel: form.nivel,
+  campo_amplio: form.campo_amplio
+});
+
+const validatePayload = (payload) => {
+  if (!payload.titulo) {
+    return "Debe indicar el título obtenido.";
+  }
+  if (!payload.ies) {
+    return "Debe indicar la institución.";
+  }
+  return "";
+};
+
+const onSubmit = async () => {
+  if (isSubmitting.value) {
+    return;
+  }
+
+  const payload = buildPayload();
+  const validationError = validatePayload(payload);
+  if (validationError) {
+    errorMessage.value = validationError;
+    return;
+  }
+
+  try {
+    isSubmitting.value = true;
+    errorMessage.value = "";
+
+    const response = await DossierService.createTitulo(payload);
+    
+    const tituloCreado = response.data?.titulos?.slice(-1)[0];
+    
+    if (selectedFile.value && tituloCreado?._id) {
+      await DossierService.uploadTituloDocument(tituloCreado._id, selectedFile.value);
+    }
+
+    emit("title-added", payload);
+    window.dispatchEvent(new Event("dossier-updated"));
+    resetForm();
+    closeModal();
+  } catch (error) {
+    console.error("Error al guardar el título:", error);
+    errorMessage.value =
+      error?.response?.data?.message || "No se pudo guardar el título.";
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+</script>
+
+<style scoped>
+.modal-title {
+  color: var(--brand-navy);
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--brand-ink);
+}
+
+.form-control,
+.form-select,
+.form-control:focus {
+  border-radius: var(--radius-md);
+  color: var(--brand-navy);
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--brand-accent-rgb), 0.25);
+  border-color: var(--brand-accent);
+  color: var(--brand-navy);
+}
+
+.form-select option {
+  color: var(--brand-navy);
+}
+
+.btn-primary {
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.8rem;
+  font-weight: 600;
+  background: var(--brand-gradient);
+  border: none;
+}
+
+.btn-primary:hover {
+  opacity: 0.92;
+}
+
+.btn-outline-secondary {
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.5rem;
+}
+</style>

@@ -93,10 +93,8 @@
 </template>
 
 <script setup>
-/* eslint-disable vue/no-setup-props-destructure */
 import { ref, nextTick, watch } from 'vue';
 
-// eslint-disable-next-line no-undef
 const props = defineProps({
   modelValue: {
     type: Array,
@@ -104,7 +102,6 @@ const props = defineProps({
   }
 });
 
-// eslint-disable-next-line no-undef
 const emit = defineEmits(['update:modelValue']);
 
 const cells = ref([]);
@@ -282,6 +279,7 @@ initializeCells();
   word-wrap: break-word;
   color: var(--brand-navy);
   line-height: 1.6;
+  font-size: 0.875rem; /* Ajustado a un tamaño más pequeño y legible (text-sm de Tailwind) */
 }
 
 .cell-placeholder {
@@ -297,7 +295,7 @@ initializeCells();
   outline: none;
   resize: vertical;
   font-family: 'Courier New', monospace;
-  font-size: 0.95rem;
+  font-size: 0.875rem; /* Ajustado el tamaño de la fuente para consistencia */
   line-height: 1.6;
   padding: 0.5rem;
   color: var(--brand-navy);
