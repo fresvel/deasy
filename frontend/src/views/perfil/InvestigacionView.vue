@@ -32,10 +32,17 @@
                 <td class="px-4 py-3 text-slate-700">{{ item.doi || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(item.fecha) || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.estado || "N/A" }}</td>
-                <td class="px-4 py-3 text-slate-700">
-                  <div class="btn-group" role="group">
-                    <BtnDelete @onpress="() => removeItem('articulos', item)" />
-                    <BtnEdit @onpress="() => editItem('articulos', item)" />
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <button v-if="item.url_documento" @click="openDocument(item, 'articulo')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                      <IconFile :size="16" />
+                    </button>
+                    <button @click="triggerFileUpload(item._id, 'articulo')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                      <IconUpload :size="16" />
+                    </button>
+                    <button @click="removeItem('articulos', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                      <IconTrash :size="16" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -71,10 +78,17 @@
                 <td class="px-4 py-3 text-slate-700">{{ item.isbn || item.isnn || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.tipo || "N/A" }}</td>
-                <td class="px-4 py-3 text-slate-700">
-                  <div class="btn-group" role="group">
-                    <BtnDelete @onpress="() => removeItem('libros', item)" />
-                    <BtnEdit @onpress="() => editItem('libros', item)" />
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <button v-if="item.url_documento" @click="openDocument(item, 'libro')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                      <IconFile :size="16" />
+                    </button>
+                    <button @click="triggerFileUpload(item._id, 'libro')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                      <IconUpload :size="16" />
+                    </button>
+                    <button @click="removeItem('libros', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                      <IconTrash :size="16" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -108,10 +122,17 @@
                 <td class="px-4 py-3 text-slate-700">{{ item.evento || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.pais || "N/A" }}</td>
-                <td class="px-4 py-3 text-slate-700">
-                  <div class="btn-group" role="group">
-                    <BtnDelete @onpress="() => removeItem('ponencias', item)" />
-                    <BtnEdit @onpress="() => editItem('ponencias', item)" />
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <button v-if="item.url_documento" @click="openDocument(item, 'ponencia')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                      <IconFile :size="16" />
+                    </button>
+                    <button @click="triggerFileUpload(item._id, 'ponencia')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                      <IconUpload :size="16" />
+                    </button>
+                    <button @click="removeItem('ponencias', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                      <IconTrash :size="16" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -147,10 +168,17 @@
                 <td class="px-4 py-3 text-slate-700">{{ item.nivel || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.rol || "N/A" }}</td>
-                <td class="px-4 py-3 text-slate-700">
-                  <div class="btn-group" role="group">
-                    <BtnDelete @onpress="() => removeItem('tesis', item)" />
-                    <BtnEdit @onpress="() => editItem('tesis', item)" />
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <button v-if="item.url_documento" @click="openDocument(item, 'tesis')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                      <IconFile :size="16" />
+                    </button>
+                    <button @click="triggerFileUpload(item._id, 'tesis')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                      <IconUpload :size="16" />
+                    </button>
+                    <button @click="removeItem('tesis', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                      <IconTrash :size="16" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -188,10 +216,17 @@
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(item.inicio) || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(item.fin) || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.avance !== undefined ? `${item.avance}%` : "N/A" }}</td>
-                <td class="px-4 py-3 text-slate-700">
-                  <div class="btn-group" role="group">
-                    <BtnDelete @onpress="() => removeItem('proyectos', item)" />
-                    <BtnEdit @onpress="() => editItem('proyectos', item)" />
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1">
+                    <button v-if="item.url_documento" @click="openDocument(item, 'proyecto')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                      <IconFile :size="16" />
+                    </button>
+                    <button @click="triggerFileUpload(item._id, 'proyecto')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                      <IconUpload :size="16" />
+                    </button>
+                    <button @click="removeItem('proyectos', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                      <IconTrash :size="16" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -208,12 +243,13 @@
         </div>
       </div>
     </div>
+
+    <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import axios from "axios";
 import { Modal } from "@/utils/modalController";
 import BtnDelete from "@/components/BtnDelete.vue";
 import BtnEdit from "@/components/BtnEdit.vue";
@@ -221,9 +257,13 @@ import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import AgregarInvestigacion from "@/views/perfil/components/AgregarInvestigacion.vue";
-import { API_PREFIX } from "@/services/apiConfig";
+import DossierService from "@/services/dossier/DossierService";
+import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
+const fileInput = ref(null);
+const selectedItemId = ref(null);
+const selectedItemType = ref(null);
 const dossier = ref(null);
 const currentUser = ref(null);
 let modalInstance = null;
@@ -255,15 +295,11 @@ const formatDate = (date) => {
 
 const loadDossier = async () => {
   try {
-    const userDataString = localStorage.getItem("user");
-    if (!userDataString) return;
-    currentUser.value = JSON.parse(userDataString);
-
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
-    const response = await axios.get(url);
-    if (response.data.success) {
-      dossier.value = response.data.data;
-    }
+    const data = await DossierService.getDossier();
+        if (data.success) {
+            dossier.value = data.data;
+            currentUser.value = { cedula: DossierService.getCedula() };
+        }
   } catch (error) {
     console.error("Error al cargar investigación del dossier:", error);
   }
@@ -280,12 +316,11 @@ const handleInvestigacionAdded = () => {
 };
 
 const removeItem = async (tipo, item) => {
-  if (!currentUser.value?.cedula || !item?._id) return;
+  if (!item?._id) return;
   if (!confirm("¿Deseas eliminar este registro de investigación?")) return;
 
   try {
-    const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/investigacion/${tipo}/${item._id}`;
-    await axios.delete(url);
+    await DossierService.deleteInvestigacion(tipo, item._id);
     window.dispatchEvent(new Event("dossier-updated"));
     await loadDossier();
   } catch (error) {
@@ -296,6 +331,55 @@ const removeItem = async (tipo, item) => {
 
 const editItem = (tipo, item) => {
   console.info("Editar investigación", tipo, item);
+};
+
+const openDocument = async (item, tipo) => {
+  try {
+    const response = await DossierService.downloadDocument(tipo, item._id);
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blobUrl = window.URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  } catch (error) {
+    console.error('Error al abrir documento:', error);
+    alert('Error al abrir el documento');
+  }
+};
+
+const triggerFileUpload = (itemId, tipo) => {
+  selectedItemId.value = itemId;
+  selectedItemType.value = tipo;
+  fileInput.value.click();
+};
+
+const handleFileSelect = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (file.type !== 'application/pdf') {
+    alert('Solo se permiten archivos PDF');
+    event.target.value = '';
+    return;
+  }
+  
+  if (file.size > 10 * 1024 * 1024) {
+    alert('El archivo no puede superar los 10MB');
+    event.target.value = '';
+    return;
+  }
+  
+  try {
+    const response = await DossierService.uploadInvestigacionDocument(selectedItemType.value, selectedItemId.value, file);
+    if (response.success) {
+      alert('Documento subido correctamente');
+      await loadDossier();
+    }
+  } catch (error) {
+    console.error('Error al subir documento:', error);
+    alert('Error al subir el documento');
+  }
+  
+  event.target.value = '';
 };
 
 onMounted(() => {

@@ -35,11 +35,18 @@
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <RowActionMenu
-                  @edit="editarCapacitacion(capacitacion)"
-                  @delete="openDelete(capacitacion)"
-                />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="capacitacion.url_documento" @click="openDocument(capacitacion)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
+                  </button>
+                  <button @click="triggerFileUpload(capacitacion._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
+                  </button>
+                  <button @click="openDelete(capacitacion)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -76,11 +83,18 @@
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">
-                <RowActionMenu
-                  @edit="editarCapacitacion(capacitacion)"
-                  @delete="openDelete(capacitacion)"
-                />
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button v-if="capacitacion.url_documento" @click="openDocument(capacitacion)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
+                    <IconFile :size="16" />
+                  </button>
+                  <button @click="triggerFileUpload(capacitacion._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
+                    <IconUpload :size="16" />
+                  </button>
+                  <button @click="openDelete(capacitacion)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                    <IconTrash :size="16" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -127,22 +141,33 @@
         </div>
       </div>
     </div>
+
+    <!-- Input file oculto para subir documentos -->
+    <input 
+      type="file" 
+      ref="fileInput" 
+      accept="application/pdf" 
+      style="display: none" 
+      @change="handleFileSelect"
+    >
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import axios from "axios";
 import { Modal } from "@/utils/modalController";
 import AgregarCapacitacion from "@/views/perfil/components/AgregarCapacitacion.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import RowActionMenu from "@/components/RowActionMenu.vue";
-import { API_PREFIX } from "@/services/apiConfig";
+import DossierService from "@/services/dossier/DossierService";
+import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 
 const modal = ref(null);
 const deleteModal = ref(null);
+const fileInput = ref(null);
+const selectedItemId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
@@ -179,19 +204,11 @@ const loadDossier = async () => {
     try {
         loading.value = true;
         
-        const userDataString = localStorage.getItem('user');
-        if (!userDataString) {
-            console.error('No hay usuario logueado');
-            return;
-        }
+        const data = await DossierService.getDossier();
         
-        currentUser.value = JSON.parse(userDataString);
-        
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}`;
-        const response = await axios.get(url);
-        
-        if (response.data.success) {
-            dossier.value = response.data.data;
+        if (data.success) {
+            dossier.value = data.data;
+            currentUser.value = { cedula: DossierService.getCedula() };
         }
         
     } catch (error) {
@@ -220,8 +237,7 @@ const handleCapacitacionAdded = () => {
 
 const eliminarCapacitacion = async (capacitacion) => {
     try {
-        const url = `${API_PREFIX}/dossier/${currentUser.value.cedula}/formacion/${capacitacion._id}`;
-        await axios.delete(url);
+        await DossierService.deleteCapacitacion(capacitacion._id);
         await loadDossier();
         alert('Capacitación eliminada correctamente');
     } catch (error) {
@@ -239,6 +255,54 @@ const confirmDelete = async () => {
 
 const editarCapacitacion = (registro) => {
     console.info("Editar capacitación", registro);
+};
+
+const openDocument = async (capacitacion) => {
+    try {
+        const response = await DossierService.downloadDocument('formacion', capacitacion._id);
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (error) {
+        console.error('Error al abrir documento:', error);
+        alert('Error al abrir el documento');
+    }
+};
+
+const triggerFileUpload = (itemId) => {
+    selectedItemId.value = itemId;
+    fileInput.value.click();
+};
+
+const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf') {
+        alert('Solo se permiten archivos PDF');
+        event.target.value = '';
+        return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+        alert('El archivo no puede superar los 10MB');
+        event.target.value = '';
+        return;
+    }
+    
+    try {
+        const response = await DossierService.uploadCapacitacionDocument(selectedItemId.value, file);
+        if (response.success) {
+            alert('Documento subido correctamente');
+            await loadDossier();
+        }
+    } catch (error) {
+        console.error('Error al subir documento:', error);
+        alert('Error al subir el documento');
+    }
+    
+    event.target.value = '';
 };
 
 onMounted(() => {
