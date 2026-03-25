@@ -108,6 +108,36 @@ const swaggerDefinition = {
             type: "string",
             description: "País de residencia",
             example: "Ecuador"
+          },
+          pais_residencia: {
+            type: "string",
+            description: "País de residencia declarado en el formulario",
+            example: "Ecuador"
+          },
+          provincia_residencia: {
+            type: "string",
+            description: "Provincia o estado de residencia",
+            example: "Esmeraldas"
+          },
+          ciudad_residencia: {
+            type: "string",
+            description: "Ciudad de residencia",
+            example: "Esmeraldas"
+          },
+          calle_primaria: {
+            type: "string",
+            description: "Calle principal de residencia",
+            example: "Av. Libertad"
+          },
+          calle_secundaria: {
+            type: "string",
+            description: "Calle secundaria o intersección",
+            example: "Calle 9 de Octubre"
+          },
+          codigo_postal: {
+            type: "string",
+            description: "Código postal de residencia",
+            example: "080150"
           }
         }
       },
@@ -157,7 +187,13 @@ const swaggerDefinition = {
           email: { type: "string", format: "email", example: "maria.garcia@pucese.edu.ec" },
           whatsapp: { type: "string", example: "+593987654321" },
           direccion: { type: "string", example: "Esmeraldas, Ecuador" },
-          pais: { type: "string", example: "Ecuador" }
+          pais: { type: "string", example: "Ecuador" },
+          pais_residencia: { type: "string", example: "Ecuador" },
+          provincia_residencia: { type: "string", example: "Esmeraldas" },
+          ciudad_residencia: { type: "string", example: "Esmeraldas" },
+          calle_primaria: { type: "string", example: "Av. Libertad" },
+          calle_secundaria: { type: "string", example: "Calle 9 de Octubre" },
+          codigo_postal: { type: "string", example: "080150" }
         }
       },
       LoginResponse: {
@@ -1091,7 +1127,7 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3]
+const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3, "http://localhost:8080"]
 
 app.use(cors({
   origin: (origin, callback) => {
