@@ -1,5 +1,5 @@
 import "dotenv/config"
-import express  from "express";
+import express from "express";
 import academia_router from "./routes/academia_router.js";
 import user_router from "./routes/user_router.js";
 import tutorias_router from "./routes/tutorias_router.js";
@@ -17,14 +17,13 @@ import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
 import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
-import webtemplate from "./routes/webtemplate_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
 
 const app = express();
 
 
-const PORT=process.env.PORT ||3030
+const PORT = process.env.PORT || 3030
 const apiBaseUrl = process.env.SWAGGER_SERVER_URL || `http://localhost:${PORT}${API_PREFIX}`;
 
 const swaggerDefinition = {
@@ -1095,17 +1094,17 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3]
 
 app.use(cors({
-    origin:(origin, callback)=> {
-      console.log(`Iniciando CORS`)
-        console.log("Origin: " + origin);
-        if (!origin || whitelist.includes(origin)){
-            return callback(null, origin);
-        }
-        return callback("Error de cors: "+origin+" not authorized");
-    },
-    credentials: true // Permite el envío de cookies y credenciales
-  }
-    
+  origin: (origin, callback) => {
+    console.log(`Iniciando CORS`)
+    console.log("Origin: " + origin);
+    if (!origin || whitelist.includes(origin)) {
+      return callback(null, origin);
+    }
+    return callback("Error de cors: " + origin + " not authorized");
+  },
+  credentials: true // Permite el envío de cookies y credenciales
+}
+
 ))
 
 
@@ -1119,24 +1118,22 @@ app.get(DOCS_JSON_PATH, (req, res) => {
   res.send(swaggerSpec);
 });
 
-app.use(ROUTES.academia,academia_router)
-app.use(ROUTES.users,user_router)
-app.use(ROUTES.tutorias,tutorias_router)
+app.use(ROUTES.academia, academia_router)
+app.use(ROUTES.users, user_router)
+app.use(ROUTES.tutorias, tutorias_router)
 
-app.use(ROUTES.admin,admin_router)
+app.use(ROUTES.admin, admin_router)
 
-app.use(ROUTES.program,program_router)
+app.use(ROUTES.program, program_router)
 app.use(ROUTES.units, unit_router)
 
-app.use(ROUTES.area,area_router)
+app.use(ROUTES.area, area_router)
 
-app.use(ROUTES.tarea,tarea_router)
+app.use(ROUTES.tarea, tarea_router)
 
-app.use(ROUTES.whatsapp,whatsapp_router)
+app.use(ROUTES.whatsapp, whatsapp_router)
 
-app.use(ROUTES.dossier,dossier_router)
-
-app.use("/easym/v1/webtemplate",webtemplate)
+app.use(ROUTES.dossier, dossier_router)
 
 app.use(express.static("public"));
 
@@ -1153,7 +1150,7 @@ const startServer = async () => {
     console.error("⚠️  No se pudo inicializar MariaDB:", error.message);
   }
 
-  app.listen(PORT, ()=>{
+  app.listen(PORT, () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
   });
 };

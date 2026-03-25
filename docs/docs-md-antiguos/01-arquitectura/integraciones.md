@@ -17,5 +17,3 @@
 ## Reportes
 
 - LaTeX: backend/services/latex/
-- Webtemplate: backend/services/webtemplate/
-
