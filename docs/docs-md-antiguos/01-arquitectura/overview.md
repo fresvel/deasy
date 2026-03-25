@@ -13,7 +13,7 @@ El motor de negocio usa procesos base, variantes controladas, definiciones versi
 - MongoDB: conversaciones y mensajes (chat/notificaciones).
 - EMQX: mensajeria en tiempo real (WebSocket/MQTT), aun no integrada al flujo operativo principal.
 - RabbitMQ: cola de trabajos asincronos; sigue disponible para firmas, storage y procesos pesados, aunque la carga de paquetes de usuario a MinIO ya se hace de forma directa.
-- Servicios de reportes/firmas: LaTeX, webtemplate y signer.
+- Servicios de reportes/firmas: LaTeX y signer.
 - MinIO: storage S3-compatible separado por buckets de negocio.
 
 ## Diagrama

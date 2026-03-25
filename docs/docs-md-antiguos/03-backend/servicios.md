@@ -14,12 +14,6 @@
 - Templates LaTeX runtime: backend/services/latex/templates/
 - Templates legacy auxiliares: backend/templates_legacy/
 
-## Reportes (WebTemplate)
-
-- Servicio: backend/services/webtemplate/
-- Router: backend/routes/webtemplate_router.js
-- Controladores: backend/controllers/informes/
-
 ## Firmas (Signer)
 
 - Servicio principal: signer/

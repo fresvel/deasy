@@ -18,7 +18,6 @@
 - /tutorias (backend/routes/tutorias_router.js)
 - /users (backend/routes/user_router.js)
 - /vacancies (backend/routes/vacancy_router.js)
-- /webtemplate (backend/routes/webtemplate_router.js)
 - /whatsapp (backend/routes/whatsapp_router.js)
 
 ## Jobs administrativos
@@ -126,7 +125,6 @@ Tipos validos en `:tipo`:
 - Usuarios/Auth: backend/controllers/users/
 - Admin: backend/controllers/admin/
 - Tutorias: backend/controllers/tutorias/
-- Informes/WebTemplate: backend/controllers/informes/
 - Academia: backend/controllers/academia/
 - Empresa/Procesos: backend/controllers/empresa/
 - WhatsApp: backend/controllers/whatsapp/
