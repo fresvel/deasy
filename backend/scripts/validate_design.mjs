@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
+import { generateUniqueToken } from "../utils/tokenGenerator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..");
@@ -238,14 +239,18 @@ const run = async () => {
     );
     const cargoId = cargoRes.insertId;
 
+    const tokenA = await generateUniqueToken(connection);
+
     const [personARes] = await connection.query(
-      "INSERT INTO persons (cedula, first_name, last_name, email, password_hash, status, is_active) VALUES (?, ?, ?, ?, ?, 'Activo', 1)",
-      [`0900${suffix}`, "Ana", "Test", `ana-${suffix}@test.local`, "hash"]
+      `INSERT INTO persons (cedula, first_name, last_name, email, password_hash, status, is_active, token) VALUES (?, ?, ?, ?, ?, 'Activo', 1, ?)`,
+      [`0900${suffix}`, "Ana", "Test", `ana-${suffix}@test.local`, "hash", tokenA]
     );
     const personAId = personARes.insertId;
+    const tokenB = await generateUniqueToken(connection);
+
     const [personBRes] = await connection.query(
-      "INSERT INTO persons (cedula, first_name, last_name, email, password_hash, status, is_active) VALUES (?, ?, ?, ?, ?, 'Activo', 1)",
-      [`0901${suffix}`, "Beto", "Test", `beto-${suffix}@test.local`, "hash"]
+      `INSERT INTO persons (cedula, first_name, last_name, email, password_hash, status, is_active, token) VALUES (?, ?, ?, ?, ?, 'Activo', 1, ?)`,
+      [`0901${suffix}`, "Beto", "Test", `beto-${suffix}@test.local`, "hash", tokenB]
     );
     const personBId = personBRes.insertId;
 
