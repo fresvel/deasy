@@ -18,7 +18,7 @@
 
 
 import { compileLatexjs } from '../utils/latex.js';
-import { Template } from '../models/informes/templates.js';
+import { Template } from '../Falta migrar a MariaDB(models)/informes/templates.js';
 import { dailc_va } from '../templates_legacy/javascript/dailc_va.js';
 
 
