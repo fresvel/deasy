@@ -12,6 +12,16 @@ services:
       - "3308:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h 127.0.0.1 -u${MARIADB_USER} -p${MARIADB_PASSWORD} --silent",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
 
   mongodb:
     image: mongo:7
@@ -167,10 +177,14 @@ services:
       - uploads_data:/app/backend/uploads
       - storage_data:/app/backend/storage
     depends_on:
-      - mariadb
-      - mongodb
-      - rabbitmq
-      - emqx
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      emqx:
+        condition: service_started
 
   storage-uploader:
     build:
@@ -199,9 +213,12 @@ services:
       - backend_node_modules_v2:/app/backend/node_modules
       - storage_data:/app/backend/storage
     depends_on:
-      - mariadb
-      - rabbitmq
-      - minio
+      mariadb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      minio:
+        condition: service_started
 
   frontend:
     build:
@@ -270,6 +287,8 @@ services:
       context: ../multisigner
       dockerfile: Dockerfile
     container_name: deasy-multisigner
+    profiles:
+      - multisigner
     restart: unless-stopped
     env_file: .env
     environment:

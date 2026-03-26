@@ -24,14 +24,14 @@ export default class AuthService {
     const user = await this.userRepository.findByCedulaOrEmail({ cedula, email });
 
     if (!user) {
-      throw new AuthenticationError("Nombre de usuario o contraseña incorrectos");
+      throw new AuthenticationError("El usuario no existe");
     }
 
     const storedHash = user.password_hash ?? user.password;
     const isPasswordValid = await this.passwordService.verifyPassword(password, storedHash);
 
     if (!isPasswordValid) {
-      throw new AuthenticationError("Nombre de usuario o contraseña incorrectos");
+      throw new AuthenticationError("La contraseña es incorrecta");
     }
 
     const userId = (user.id ?? user._id)?.toString();

@@ -1176,15 +1176,36 @@ app.use(express.static("public"));
 
 
 
-const startServer = async () => {
-  try {
-    const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
-    await ensureMariaDBDatabase();
-    await assertMariaDBConnection();
-    await ensureMariaDBSchema({ reset: shouldResetSchema });
-  } catch (error) {
-    console.error("⚠️  No se pudo inicializar MariaDB:", error.message);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const initializeMariaDBWithRetry = async () => {
+  const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
+  const maxAttempts = Number(process.env.MARIADB_INIT_MAX_ATTEMPTS || 20);
+  const retryDelayMs = Number(process.env.MARIADB_INIT_RETRY_DELAY_MS || 3000);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await ensureMariaDBDatabase();
+      await assertMariaDBConnection();
+      await ensureMariaDBSchema({ reset: shouldResetSchema });
+      console.log("✅ MariaDB inicializada correctamente");
+      return;
+    } catch (error) {
+      const isLastAttempt = attempt === maxAttempts;
+      console.error(
+        `⚠️  Falló la inicialización de MariaDB (intento ${attempt}/${maxAttempts}): ${error.message}`
+      );
+      if (isLastAttempt) {
+        console.error("⚠️  Se agotaron los reintentos de MariaDB. El backend seguirá en ejecución.");
+        return;
+      }
+      await sleep(retryDelayMs);
+    }
   }
+};
+
+const startServer = async () => {
+  await initializeMariaDBWithRetry();
 
   app.listen(PORT, () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
