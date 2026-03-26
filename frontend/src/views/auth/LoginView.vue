@@ -164,10 +164,16 @@ const loginFunction = async () => {
 
     if (statusCode === 500) {
       errorMessage.value = 'No se pudo iniciar sesión por un error interno del servidor. Intenta nuevamente en unos minutos.';
+    } else if (statusCode === 401) {
+      errorMessage.value = backendMessage || 'El usuario no existe o la contraseña es incorrecta.';
+    } else if (statusCode === 400) {
+      errorMessage.value = backendMessage || 'Revisa los datos ingresados para iniciar sesión.';
+    } else if (backendMessage) {
+      errorMessage.value = backendMessage;
     } else if (error.message) {
       errorMessage.value = error.message;
     } else {
-      errorMessage.value = backendMessage || 'Error al iniciar sesión';
+      errorMessage.value = 'Error al iniciar sesión';
     }
   }
 };
