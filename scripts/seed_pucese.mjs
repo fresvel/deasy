@@ -159,7 +159,7 @@ const getTableOrder = (tableNames) => {
 };
 
 const isNumericType = (type) =>
-  ["int","integer","bigint","smallint","mediumint","tinyint","decimal","numeric","float","double","real"].includes(type);
+  ["int", "integer", "bigint", "smallint", "mediumint", "tinyint", "decimal", "numeric", "float", "double", "real"].includes(type);
 
 const encodeValue = (value, mysqlType) => {
   if (value === null || value === undefined) return null;
@@ -307,7 +307,7 @@ const applySeed = async (connection, filePath) => {
     .map((tableName) => tableMap.get(tableName))
     .filter(Boolean);
 
-  if (!tables.length) throw new Error("La semilla no contiene tablas.");
+  if (!orderedTables.length) throw new Error("La semilla no contiene tablas.");
 
   const schemaTables = new Set(await getDatabaseTables(connection, connection.config.database));
   const missingTables = orderedTables
