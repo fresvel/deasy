@@ -44,7 +44,7 @@
       "rows": [
         {
           "id": 1,
-          "cedula": "1804326534",
+          "cedula": "1234567890",
           "first_name": "Homero Javier",
           "last_name": "Velasteguí Izurieta",
           "email": "homero.j.velastegui.i@pucese.edu.ec",
@@ -62,7 +62,7 @@
         },
         {
           "id": 2,
-          "cedula": "1803131190",
+          "cedula": "0987654321",
           "first_name": "Adrian Vargas",
           "last_name": "Vargas Machuca del Salto",
           "email": "agvargasmachuca@pucese.edu.ec",

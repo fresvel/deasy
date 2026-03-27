@@ -1,40 +1,45 @@
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
     role="dialog"
     aria-modal="true"
     aria-labelledby="sessionExpiryModalLabel"
   >
-    <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-      <div class="bg-amber-400 px-5 py-4 text-slate-900">
-        <h5 id="sessionExpiryModalLabel" class="flex items-center text-lg font-semibold">
-          <font-awesome-icon icon="exclamation-triangle" class="me-2" />
-          Sesion por expirar
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100">
+      <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
+        <div class="flex shrink-0 items-center justify-center w-10 h-10 rounded-full bg-amber-100 text-amber-600">
+          <IconAlertTriangle class="w-6 h-6" />
+        </div>
+        <h5 id="sessionExpiryModalLabel" class="text-lg font-bold text-slate-800">
+          Sesión por expirar
         </h5>
       </div>
-      <div class="px-5 py-4">
-        <p class="mb-4 text-sm text-slate-700">
-          Tu sesion esta por expirar. Deseas mantener la sesion activa o cerrar sesion?
+      
+      <div class="px-6 py-5">
+        <p class="text-sm text-slate-600 leading-relaxed mb-6">
+          Tu sesión está a punto de expirar por inactividad. ¿Deseas mantener la sesión activa o prefieres salir ahora?
         </p>
-        <div class="flex flex-wrap justify-end gap-2">
+        
+        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3">
           <button
             type="button"
-            class="btn bg-slate-600 text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+            class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             @click="handleLogout"
             :disabled="loading"
           >
-            <font-awesome-icon icon="sign-out-alt" class="me-2" />
-            Cerrar sesion
+            <IconLogout class="w-4 h-4" />
+            Cerrar sesión
           </button>
+          
           <button
             type="button"
-            class="btn btn-primary disabled:cursor-not-allowed disabled:opacity-60"
+            class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             @click="handleKeepAlive"
             :disabled="loading"
           >
-            <font-awesome-icon icon="sync" class="me-2" />
-            {{ loading ? 'Renovando...' : 'Mantener sesion activa' }}
+            <IconRefresh :class="['w-4 h-4', { 'animate-spin': loading }]" />
+            {{ loading ? 'Renovando...' : 'Mantener activa' }}
           </button>
         </div>
       </div>
@@ -48,6 +53,7 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { API_ROUTES } from '@/services/apiConfig';
 import { clearAuthData } from '@/utils/tokenUtils';
+import { IconAlertTriangle, IconLogout, IconRefresh } from '@tabler/icons-vue';
 
 const emit = defineEmits(['session-refreshed', 'session-closed']);
 
@@ -78,6 +84,8 @@ const handleKeepAlive = async () => {
       localStorage.setItem('token', response.data.token);
       hide();
       emit('session-refreshed');
+    } else {
+      throw new Error('No token provided');
     }
   } catch (error) {
     console.error('Error al refrescar token:', error);

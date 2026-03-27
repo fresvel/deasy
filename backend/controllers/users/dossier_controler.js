@@ -799,3 +799,57 @@ export const uploadDossierDocument = async (req, res) => {
         });
     }
 };
+
+export const getDossierDocumentUrl = async (req, res) => {
+    try {
+        const { cedula, tipoDocumento, registroId } = req.params;
+        
+        if (!cedula || !tipoDocumento || !registroId) {
+            return res.status(400).json({
+                success: false,
+                message: "Faltan parámetros requeridos: cedula, tipoDocumento, registroId"
+            });
+        }
+
+        if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`
+            });
+        }
+
+        const objectName = `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`;
+
+        try {
+            await new Promise((resolve, reject) => {
+                minioClient.getObject(MINIO_DOSSIER_BUCKET, objectName, (err, dataStream) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    res.setHeader('Content-Type', 'application/pdf');
+                    res.setHeader('Content-Disposition', `inline; filename="${registroId}.pdf"`);
+                    
+                    dataStream.pipe(res);
+                    dataStream.on('end', resolve);
+                    dataStream.on('error', reject);
+                });
+            });
+        } catch (error) {
+            console.error("Error al obtener archivo:", error.message);
+            return res.status(404).json({
+                success: false,
+                message: "Error al leer documento: " + error.message
+            });
+        }
+
+    } catch (error) {
+        console.error("Error al obtener URL del documento:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error al obtener URL del documento",
+            error: error.message
+        });
+    }
+};
