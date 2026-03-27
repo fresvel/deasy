@@ -179,7 +179,8 @@ const buildPayload = () => {
     email: form.email.trim(),
     telefono: form.telefono.trim(),
     cargo_parentesco: form.cargo_parentesco.trim() || "",
-    institution: form.institution.trim() || ""
+    institution: form.institution.trim() || "",
+    sera: "Enviado"
   };
 
   return payload;

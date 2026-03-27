@@ -7,6 +7,11 @@ class DossierService {
     return AuthService.getCedula();
   }
 
+  getAuthHeader() {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   async getDossier() {
     const cedula = this.getCedula();
     if (!cedula) throw new Error("No hay usuario logueado");
@@ -48,7 +53,7 @@ class DossierService {
     const response = await axios.post(
       `${API_PREFIX}/dossier/${cedula}/documentos/titulo/${tituloId}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
@@ -79,7 +84,7 @@ class DossierService {
     const response = await axios.post(
       `${API_PREFIX}/dossier/${cedula}/documentos/experiencia/${experienciaId}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
@@ -103,6 +108,16 @@ class DossierService {
     return response.data;
   }
 
+  async updateReferenciaEstado(referenciaId, sera) {
+    const cedula = this.getCedula();
+    const response = await axios.put(
+      `${API_PREFIX}/dossier/${cedula}/referencias/${referenciaId}/estado`,
+      { sera },
+      { headers: this.getAuthHeader() }
+    );
+    return response.data;
+  }
+
   async uploadReferenciaDocument(referenciaId, file) {
     const cedula = this.getCedula();
     const formData = new FormData();
@@ -110,7 +125,7 @@ class DossierService {
     const response = await axios.post(
       `${API_PREFIX}/dossier/${cedula}/documentos/referencia/${referenciaId}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
@@ -141,7 +156,7 @@ class DossierService {
     const response = await axios.post(
       `${API_PREFIX}/dossier/${cedula}/documentos/certificacion/${certificacionId}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
@@ -172,7 +187,7 @@ class DossierService {
     const response = await axios.post(
       `${API_PREFIX}/dossier/${cedula}/documentos/formacion/${capacitacionId}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
@@ -203,7 +218,7 @@ class DossierService {
     const response = await axios.post(
       `${API_PREFIX}/dossier/${cedula}/documentos/${tipo}/${investigacionId}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
@@ -216,6 +231,57 @@ class DossierService {
       { responseType: 'blob' }
     );
     return response;
+  }
+
+  // Métodos para actualizar estado SERA (admin/talento humano)
+  async updateTituloEstado(tituloId, sera) {
+    const cedula = this.getCedula();
+    const response = await axios.put(
+      `${API_PREFIX}/dossier/${cedula}/titulos/${tituloId}/estado`,
+      { sera },
+      { headers: this.getAuthHeader() }
+    );
+    return response.data;
+  }
+
+  async updateExperienciaEstado(experienciaId, sera) {
+    const cedula = this.getCedula();
+    const response = await axios.put(
+      `${API_PREFIX}/dossier/${cedula}/experiencia/${experienciaId}/estado`,
+      { sera },
+      { headers: this.getAuthHeader() }
+    );
+    return response.data;
+  }
+
+  async updateFormacionEstado(formacionId, sera) {
+    const cedula = this.getCedula();
+    const response = await axios.put(
+      `${API_PREFIX}/dossier/${cedula}/formacion/${formacionId}/estado`,
+      { sera },
+      { headers: this.getAuthHeader() }
+    );
+    return response.data;
+  }
+
+  async updateCertificacionEstado(certificacionId, sera) {
+    const cedula = this.getCedula();
+    const response = await axios.put(
+      `${API_PREFIX}/dossier/${cedula}/certificaciones/${certificacionId}/estado`,
+      { sera },
+      { headers: this.getAuthHeader() }
+    );
+    return response.data;
+  }
+
+  async updateInvestigacionEstado(tipo, itemId, sera) {
+    const cedula = this.getCedula();
+    const response = await axios.put(
+      `${API_PREFIX}/dossier/${cedula}/investigacion/${tipo}/${itemId}/estado`,
+      { sera },
+      { headers: this.getAuthHeader() }
+    );
+    return response.data;
   }
 }
 

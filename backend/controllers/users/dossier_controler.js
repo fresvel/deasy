@@ -151,7 +151,11 @@ export const addTitulo = async (req, res) => {
             });
         }
 
-        dossier.titulos.push(req.body);
+        const tituloData = { ...req.body };
+        if (!tituloData.sera) {
+            tituloData.sera = "Enviado";
+        }
+        dossier.titulos.push(tituloData);
         await dossier.save();
 
         res.json({
@@ -183,7 +187,11 @@ export const addExperiencia = async (req, res) => {
             });
         }
 
-        dossier.experiencia.push(req.body);
+        const experienciaData = { ...req.body };
+        if (!experienciaData.sera) {
+            experienciaData.sera = "Enviado";
+        }
+        dossier.experiencia.push(experienciaData);
         await dossier.save();
 
         res.json({
@@ -353,7 +361,45 @@ export const deleteReferencia = async (req, res) => {
         res.status(500).json({ 
             success: false,
             message: 'Error al eliminar referencia',
-            error: error.message 
+            error: error.message
+        });
+    }
+};
+
+// Actualizar estado SERA de referencias
+export const updateReferenciaEstado = async (req, res) => {
+    try {
+        const { cedula, referenciaId } = req.params;
+        const { sera } = req.body;
+        
+        if (!["Enviado", "Revisado", "Aprobado"].includes(sera)) {
+            return res.status(400).json({ success: false, message: "Estado inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        const referencia = dossier.referencias.id(referenciaId);
+        if (!referencia) {
+            return res.status(404).json({ success: false, message: "Referencia no encontrada" });
+        }
+
+        referencia.sera = sera;
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: 'Estado actualizado correctamente',
+            data: referencia
+        });
+    } catch (error) {
+        console.error('Error al actualizar estado de referencia:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error al actualizar estado',
+            error: error.message
         });
     }
 };
@@ -371,7 +417,11 @@ export const addFormacion = async (req, res) => {
             });
         }
 
-        dossier.formacion.push(req.body);
+        const formacionData = { ...req.body };
+        if (!formacionData.sera) {
+            formacionData.sera = "Enviado";
+        }
+        dossier.formacion.push(formacionData);
         await dossier.save();
 
         res.json({
@@ -435,7 +485,11 @@ export const addCertificacion = async (req, res) => {
             });
         }
 
-        dossier.certificaciones.push(req.body);
+        const certificacionData = { ...req.body };
+        if (!certificacionData.sera) {
+            certificacionData.sera = "Enviado";
+        }
+        dossier.certificaciones.push(certificacionData);
         await dossier.save();
 
         res.json({
@@ -506,8 +560,12 @@ export const addInvestigacionItem = async (req, res) => {
             });
         }
 
+        const investigacionData = { ...req.body };
+        if (!investigacionData.sera) {
+            investigacionData.sera = "Enviado";
+        }
         const reshaped = ensureInvestigacionShape(dossier);
-        dossier.investigacion[investigacionTipo].push(req.body);
+        dossier.investigacion[investigacionTipo].push(investigacionData);
         if (reshaped) {
             dossier.markModified("investigacion");
         }
@@ -845,11 +903,165 @@ export const getDossierDocumentUrl = async (req, res) => {
         }
 
     } catch (error) {
-        console.error("Error al obtener URL del documento:", error);
+            console.error("Error al obtener URL del documento:", error);
         res.status(500).json({
             success: false,
             message: "Error al obtener URL del documento",
             error: error.message
         });
+    }
+};
+
+// Actualizar estado SERA de títulos
+export const updateTituloEstado = async (req, res) => {
+    try {
+        const { cedula, tituloId } = req.params;
+        const { sera } = req.body;
+        
+        if (!["Enviado", "Revisado", "Aprobado"].includes(sera)) {
+            return res.status(400).json({ success: false, message: "Estado inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        const titulo = dossier.titulos.id(tituloId);
+        if (!titulo) {
+            return res.status(404).json({ success: false, message: "Título no encontrado" });
+        }
+
+        titulo.sera = sera;
+        await dossier.save();
+
+        res.json({ success: true, message: "Estado actualizado", sera });
+    } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        res.status(500).json({ success: false, message: "Error al actualizar estado" });
+    }
+};
+
+// Actualizar estado SERA de experiencia
+export const updateExperienciaEstado = async (req, res) => {
+    try {
+        const { cedula, experienciaId } = req.params;
+        const { sera } = req.body;
+        
+        if (!["Enviado", "Revisado", "Aprobado"].includes(sera)) {
+            return res.status(400).json({ success: false, message: "Estado inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        const experiencia = dossier.experiencia.id(experienciaId);
+        if (!experiencia) {
+            return res.status(404).json({ success: false, message: "Experiencia no encontrada" });
+        }
+
+        experiencia.sera = sera;
+        await dossier.save();
+
+        res.json({ success: true, message: "Estado actualizado", sera });
+    } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        res.status(500).json({ success: false, message: "Error al actualizar estado" });
+    }
+};
+
+// Actualizar estado SERA de formación/capacitación
+export const updateFormacionEstado = async (req, res) => {
+    try {
+        const { cedula, formacionId } = req.params;
+        const { sera } = req.body;
+        
+        if (!["Enviado", "Revisado", "Aprobado"].includes(sera)) {
+            return res.status(400).json({ success: false, message: "Estado inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        const formacion = dossier.formacion.id(formacionId);
+        if (!formacion) {
+            return res.status(404).json({ success: false, message: "Formación no encontrada" });
+        }
+
+        formacion.sera = sera;
+        await dossier.save();
+
+        res.json({ success: true, message: "Estado actualizado", sera });
+    } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        res.status(500).json({ success: false, message: "Error al actualizar estado" });
+    }
+};
+
+// Actualizar estado SERA de certificaciones
+export const updateCertificacionEstado = async (req, res) => {
+    try {
+        const { cedula, certificacionId } = req.params;
+        const { sera } = req.body;
+        
+        if (!["Enviado", "Revisado", "Aprobado"].includes(sera)) {
+            return res.status(400).json({ success: false, message: "Estado inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        const certificacion = dossier.certificaciones.id(certificacionId);
+        if (!certificacion) {
+            return res.status(404).json({ success: false, message: "Certificación no encontrada" });
+        }
+
+        certificacion.sera = sera;
+        await dossier.save();
+
+        res.json({ success: true, message: "Estado actualizado", sera });
+    } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        res.status(500).json({ success: false, message: "Error al actualizar estado" });
+    }
+};
+
+// Actualizar estado SERA de investigación
+export const updateInvestigacionEstado = async (req, res) => {
+    try {
+        const { cedula, tipo, itemId } = req.params;
+        const { sera } = req.body;
+        
+        if (!["Enviado", "Revisado", "Aprobado"].includes(sera)) {
+            return res.status(400).json({ success: false, message: "Estado inválido" });
+        }
+
+        if (!INVESTIGACION_TIPOS.has(tipo)) {
+            return res.status(400).json({ success: false, message: "Tipo de investigación inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        const investigacion = dossier.investigacion[tipo]?.id(itemId);
+        if (!investigacion) {
+            return res.status(404).json({ success: false, message: "Item de investigación no encontrado" });
+        }
+
+        investigacion.sera = sera;
+        await dossier.save();
+
+        res.json({ success: true, message: "Estado actualizado", sera });
+    } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        res.status(500).json({ success: false, message: "Error al actualizar estado" });
     }
 };

@@ -26,7 +26,7 @@
                 </td>
               </tr>
               <tr v-for="item in articulos" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" @onpress="() => clickBtnsera(item, 'articulo')"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ item.titulo }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.revista || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.doi || "N/A" }}</td>
@@ -72,7 +72,7 @@
                 </td>
               </tr>
               <tr v-for="item in libros" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" @onpress="() => clickBtnsera(item, 'libro')"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ item.titulo }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.editorial || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.isbn || item.isnn || "N/A" }}</td>
@@ -117,7 +117,7 @@
                 </td>
               </tr>
               <tr v-for="item in ponencias" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" @onpress="() => clickBtnsera(item, 'ponencia')"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ item.titulo }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.evento || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
@@ -162,7 +162,7 @@
                 </td>
               </tr>
               <tr v-for="item in tesis" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" @onpress="() => clickBtnsera(item, 'tesis')"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ item.ies || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.tema || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.nivel || "N/A" }}</td>
@@ -209,7 +209,7 @@
                 </td>
               </tr>
               <tr v-for="item in proyectos" :key="item._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(item.sera)" @onpress="() => clickBtnsera(item, 'proyecto')"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ item.tema || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.institucion || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.tipo || "N/A" }}</td>
@@ -280,6 +280,31 @@ const getSeraType = (sera) => {
   if (sera === "Revisado") return "reviewed";
   if (sera === "Aprobado") return "certified";
   return "denied";
+};
+
+const clickBtnsera = async (item, tipo) => {
+  const currentSera = item.sera || 'Enviado';
+  let newSera = '';
+  
+  if (currentSera === 'Enviado') {
+    if (!confirm('¿Solicitar revisión de este item?')) return;
+    newSera = 'Revisado';
+  } else if (currentSera === 'Revisado') {
+    if (!confirm('¿Solicitar aprobación de este item?')) return;
+    newSera = 'Aprobado';
+  } else {
+    alert('Este item ya ha sido procesado');
+    return;
+  }
+  
+  try {
+    await DossierService.updateInvestigacionEstado(tipo, item._id, newSera);
+    await loadDossier();
+    alert(`Estado actualizado a: ${newSera}`);
+  } catch (error) {
+    console.error('Error al actualizar estado:', error);
+    alert('Error al actualizar el estado');
+  }
 };
 
 const formatDate = (date) => {

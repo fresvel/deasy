@@ -3,7 +3,7 @@
     @click="onclick"
     :class="btnseraClass"
     >
-    <font-awesome-icon :icon="btnseraIcon" class="icon" />
+    <component :is="btnseraIcon" class="icon" />
         <span class="tooltip">{{ btnseraMessage }}</span>
     </a>
 
@@ -11,6 +11,7 @@
 
 <script setup>
 import {defineProps, computed, defineEmits} from "vue"
+import { IconAward, IconCircleCheck, IconCircleX } from '@tabler/icons-vue'
 
 const props=defineProps({
     type: {type: [String, Number], required: true},
@@ -20,11 +21,13 @@ const props=defineProps({
 const btnseraIcon= computed(()=>{
     switch (props.type) {
         case "certified":
-            return "certificate"
+            return IconAward
+        case "denied":
+            return IconCircleX
         case "reviewed":
-            return "check-double"        
+            return IconCircleCheck        
         default:
-            return "check-double"
+            return IconCircleCheck
     }
 })
 
@@ -68,17 +71,23 @@ const onclick=()=>{
 <style scoped>
 
 .btnsera{
-    position: relative; /* Necesario para posicionar el tooltip */
+    position: relative;
     margin-left: 5px;
     margin-top: 5px;
     padding: 0;
     background-color: transparent;
     border: none;
     cursor: pointer;
-    font-size: 2em;
-    font-weight: bold;
     transition: color 0.3s ease-in-out;
     --tooltip-bg: var(--brand-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    width: 1.25em;
+    height: 1.25em;
 }
 
 .sera-send{

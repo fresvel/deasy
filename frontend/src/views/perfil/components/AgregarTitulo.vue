@@ -119,6 +119,8 @@ import { IconFile } from '@tabler/icons-vue';
 
 const emit = defineEmits(["close-modal", "title-added"]);
 
+const currentUser = ref(null);
+
 const form = reactive({
   titulo: "",
   tituloPersonalizado: "",
@@ -246,7 +248,8 @@ const buildPayload = () => ({
   sreg: form.sreg,
   tipo: form.tipo,
   nivel: form.nivel,
-  campo_amplio: form.campo_amplio
+  campo_amplio: form.campo_amplio,
+  sera: "Enviado"
 });
 
 const validatePayload = (payload) => {

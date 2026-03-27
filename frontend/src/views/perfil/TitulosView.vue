@@ -272,9 +272,29 @@ const clickBtnedit = (titulo) => {
     // TODO: Implementar edición
 };
 
-const clickBtnsera = (titulo) => {
-    console.log('Ver estado SERA:', titulo);
-    // TODO: Implementar visualización de estado
+const clickBtnsera = async (titulo) => {
+    const currentSera = titulo.sera || 'Enviado';
+    let newSera = '';
+    
+    if (currentSera === 'Enviado') {
+        if (!confirm('¿Solicitar revisión de este título?')) return;
+        newSera = 'Revisado';
+    } else if (currentSera === 'Revisado') {
+        if (!confirm('¿Solicitar aprobación de este título?')) return;
+        newSera = 'Aprobado';
+    } else {
+        alert('Este título ya ha sido procesado');
+        return;
+    }
+    
+    try {
+        await DossierService.updateTituloEstado(titulo._id, newSera);
+        await loadDossier();
+        alert(`Estado actualizado a: ${newSera}`);
+    } catch (error) {
+        console.error('Error al actualizar estado:', error);
+        alert('Error al actualizar el estado');
+    }
 };
 
 const openModal = () => {
@@ -335,11 +355,11 @@ const handleFileSelect = async (event) => {
     try {
         const response = await DossierService.uploadTituloDocument(selectedTituloId.value, file);
         
-        if (response.data.success) {
+        if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
         } else {
-            alert('Error al subir documento: ' + response.data.message);
+            alert('Error al subir documento: ' + response.message);
         }
         
     } catch (error) {

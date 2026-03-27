@@ -28,7 +28,7 @@
               </td>
             </tr>
             <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" @onpress="() => clickBtnsera(capacitacion)"/></td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
@@ -76,7 +76,7 @@
               </td>
             </tr>
             <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" @onpress="() => clickBtnsera(capacitacion)"/></td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
@@ -194,9 +194,35 @@ const formatDate = (date) => {
 };
 
 const getSeraType = (sera) => {
-    if (sera === "Aprobado") return "approved";
-    if (sera === "Revisado") return "review";
-    return "pending";
+    if (!sera || sera === 'Enviado') return 'pending';
+    if (sera === 'Revisado') return 'reviewed';
+    if (sera === 'Aprobado') return 'certified';
+    return 'denied';
+};
+
+const clickBtnsera = async (capacitacion) => {
+    const currentSera = capacitacion.sera || 'Enviado';
+    let newSera = '';
+    
+    if (currentSera === 'Enviado') {
+        if (!confirm('¿Solicitar revisión de esta capacitación?')) return;
+        newSera = 'Revisado';
+    } else if (currentSera === 'Revisado') {
+        if (!confirm('¿Solicitar aprobación de esta capacitación?')) return;
+        newSera = 'Aprobado';
+    } else {
+        alert('Esta capacitación ya ha sido procesada');
+        return;
+    }
+    
+    try {
+        await DossierService.updateFormacionEstado(capacitacion._id, newSera);
+        await loadDossier();
+        alert(`Estado actualizado a: ${newSera}`);
+    } catch (error) {
+        console.error('Error al actualizar estado:', error);
+        alert('Error al actualizar el estado');
+    }
 };
 
 // Cargar datos del usuario y su dossier

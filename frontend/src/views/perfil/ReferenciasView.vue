@@ -238,9 +238,29 @@ const clickBtnedit = (ref) => {
     console.log('Editar referencia:', ref);
 };
 
-const clickBtnsera = (ref) => {
-    console.log('Ver estado SERA:', ref);
-    // TODO: Implementar visualización de estado
+const clickBtnsera = async (ref) => {
+    const currentSera = ref.sera || 'Enviado';
+    let newSera = '';
+    
+    if (currentSera === 'Enviado') {
+        if (!confirm('¿Solicitar revisión de esta referencia?')) return;
+        newSera = 'Revisado';
+    } else if (currentSera === 'Revisado') {
+        if (!confirm('¿Solicitar aprobación de esta referencia?')) return;
+        newSera = 'Aprobado';
+    } else {
+        alert('Esta referencia ya ha sido procesada');
+        return;
+    }
+    
+    try {
+        await DossierService.updateReferenciaEstado(ref._id, newSera);
+        await loadDossier();
+        alert(`Estado actualizado a: ${newSera}`);
+    } catch (error) {
+        console.error('Error al actualizar estado:', error);
+        alert('Error al actualizar el estado');
+    }
 };
 
 const openModal = () => {

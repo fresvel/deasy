@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import os from 'os';
 import * as dossierController from '../controllers/users/dossier_controler.js';
+import { authMiddleware } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -41,6 +42,7 @@ router.post('/:cedula/experiencia', dossierController.addExperiencia);
 // Rutas para referencias
 router.post('/:cedula/referencias', dossierController.addReferencia);
 router.delete('/:cedula/referencias/:referenciaId', dossierController.deleteReferencia);
+router.put('/:cedula/referencias/:referenciaId/estado', authMiddleware, dossierController.updateReferenciaEstado);
 
 // Rutas para formacion (capacitación)
 router.post('/:cedula/formacion', dossierController.addFormacion);
@@ -60,5 +62,12 @@ router.post('/:cedula/documentos/:tipoDocumento/:registroId', upload.single('arc
 
 // Ruta para obtener URL temporal del documento
 router.get('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.getDossierDocumentUrl);
+
+// Rutas para actualizar estado SERA (talentos humanos)
+router.put('/:cedula/titulos/:tituloId/estado', authMiddleware, dossierController.updateTituloEstado);
+router.put('/:cedula/experiencia/:experienciaId/estado', authMiddleware, dossierController.updateExperienciaEstado);
+router.put('/:cedula/formacion/:formacionId/estado', authMiddleware, dossierController.updateFormacionEstado);
+router.put('/:cedula/certificaciones/:certificacionId/estado', authMiddleware, dossierController.updateCertificacionEstado);
+router.put('/:cedula/investigacion/:tipo/:itemId/estado', authMiddleware, dossierController.updateInvestigacionEstado);
 
 export default router;

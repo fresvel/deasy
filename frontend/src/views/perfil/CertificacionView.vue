@@ -12,6 +12,7 @@
           <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Certificación</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Estado</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fecha</th>
@@ -26,6 +27,7 @@
               </td>
             </tr>
             <tr v-for="certificacion in certificaciones" :key="certificacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(certificacion.sera)" @onpress="() => clickBtnsera(certificacion)"/></td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.titulo }}</td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.institution }}</td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.horas || 'N/A' }}</td>
@@ -101,6 +103,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierService from "@/services/dossier/DossierService";
 import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
+import BtnSera from "@/components/BtnSera.vue";
 
 const modal = ref(null);
 const deleteModal = ref(null);
@@ -117,6 +120,39 @@ const certificaciones = computed(() => {
     if (!dossier.value || !dossier.value.certificaciones) return [];
     return dossier.value.certificaciones;
 });
+
+// Función para obtener el tipo de estado SERA
+const getSeraType = (sera) => {
+    if (!sera || sera === 'Enviado') return 'pending';
+    if (sera === 'Revisado') return 'reviewed';
+    if (sera === 'Aprobado') return 'certified';
+    return 'denied';
+};
+
+const clickBtnsera = async (certificacion) => {
+    const currentSera = certificacion.sera || 'Enviado';
+    let newSera = '';
+    
+    if (currentSera === 'Enviado') {
+        if (!confirm('¿Solicitar revisión de esta certificación?')) return;
+        newSera = 'Revisado';
+    } else if (currentSera === 'Revisado') {
+        if (!confirm('¿Solicitar aprobación de esta certificación?')) return;
+        newSera = 'Aprobado';
+    } else {
+        alert('Esta certificación ya ha sido procesada');
+        return;
+    }
+    
+    try {
+        await DossierService.updateCertificacionEstado(certificacion._id, newSera);
+        await loadDossier();
+        alert(`Estado actualizado a: ${newSera}`);
+    } catch (error) {
+        console.error('Error al actualizar estado:', error);
+        alert('Error al actualizar el estado');
+    }
+};
 
 // Formatear fecha para mostrar
 const formatDate = (date) => {

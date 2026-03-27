@@ -27,7 +27,7 @@
                 </td>
               </tr>
               <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" @onpress="() => clickBtnsera(experiencia)"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ experiencia.institucion }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
                 <td class="px-4 py-3 text-slate-700">-</td>
@@ -73,7 +73,7 @@
                 </td>
               </tr>
               <tr v-for="experiencia in experienciaDocente" :key="experiencia._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" @onpress="() => clickBtnsera(experiencia)"/></td>
                 <td class="px-4 py-3 text-slate-700">{{ experiencia.institucion }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
                 <td class="px-4 py-3 text-slate-700">-</td>
@@ -147,6 +147,31 @@ const getSeraType = (sera) => {
     if (sera === 'Revisado') return 'reviewed';
     if (sera === 'Aprobado') return 'certified';
     return 'denied';
+};
+
+const clickBtnsera = async (experiencia) => {
+    const currentSera = experiencia.sera || 'Enviado';
+    let newSera = '';
+    
+    if (currentSera === 'Enviado') {
+        if (!confirm('¿Solicitar revisión de esta experiencia?')) return;
+        newSera = 'Revisado';
+    } else if (currentSera === 'Revisado') {
+        if (!confirm('¿Solicitar aprobación de esta experiencia?')) return;
+        newSera = 'Aprobado';
+    } else {
+        alert('Esta experiencia ya ha sido procesada');
+        return;
+    }
+    
+    try {
+        await DossierService.updateExperienciaEstado(experiencia._id, newSera);
+        await loadDossier();
+        alert(`Estado actualizado a: ${newSera}`);
+    } catch (error) {
+        console.error('Error al actualizar estado:', error);
+        alert('Error al actualizar el estado');
+    }
 };
 
 // Formatear fecha para mostrar
