@@ -22,9 +22,9 @@
             <IconUsers class="w-4 h-4 sm:w-5 sm:h-5" />
           </router-link>
 
-          <router-link to="/firmar" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Firmar documentos">
+          <button @click="setFirmarActivo(true)" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Firmar documentos">
             <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
+          </button>
 
           <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
             <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -137,6 +137,7 @@
     <script setup>  
     
     
+import { useFirmar } from "@/composables/useFirmar";
 import { ref, computed, onMounted, onBeforeUnmount} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
@@ -321,6 +322,7 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     const areas =service.getEasymdata().areas
     const tareas=service.getEasymdata().tareas
     
+const { setFirmarActivo } = useFirmar();
 const isClient = typeof window !== 'undefined';
 
 const resolveAreaIcon = (name) => {

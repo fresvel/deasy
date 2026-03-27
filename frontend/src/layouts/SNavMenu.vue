@@ -29,14 +29,13 @@
           <font-awesome-icon icon="id-card" class="me-2" />
           <span>Roles</span>
         </router-link>
-        <router-link 
-          to="/firmar" 
-          class="nav-menu-item"
-          @click="$emit('close')"
+        <button 
+          class="nav-menu-item bg-transparent border-0 w-full text-left"
+          @click="openFirmar"
         >
           <font-awesome-icon icon="edit" class="me-2" />
           <span>Firmar documentos</span>
-        </router-link>
+        </button>
         <router-link 
           to="/admin" 
           v-if="isAdmin"
@@ -61,6 +60,7 @@
 
 <script setup>
 import { defineProps, defineEmits } from "vue"
+import { useFirmar } from "@/composables/useFirmar"
 
 defineProps({
   show: {
@@ -73,7 +73,13 @@ defineProps({
   }
 })
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+const { setFirmarActivo } = useFirmar()
+
+const openFirmar = () => {
+  setFirmarActivo(true)
+  emit('close')
+}
 </script>
 
 <style scoped>

@@ -3,14 +3,14 @@
     <!-- Overlay para tapar el fondo y capturar clicks -->
     <div 
       v-show="show" 
-      class="fixed inset-0 top-16 z-[20] bg-slate-900/20 backdrop-blur-sm"
+      class="fixed inset-0 top-16 z-20 bg-slate-900/20 backdrop-blur-sm"
       @click="$emit('close')"
     ></div>
 
     <!-- Panel Dropdown Notificaciones -->
     <div 
       v-show="show" 
-      class="fixed top-[4.5rem] right-4 sm:right-6 lg:right-8 z-[50] w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-100 flex flex-col overflow-hidden transition-all duration-200 transform origin-top-right"
+      class="fixed top-18 right-4 sm:right-6 lg:right-8 z-50 w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-white rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-100 flex flex-col overflow-hidden transition-all duration-200 transform origin-top-right"
       :class="show ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'"
     >
       <header class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">

@@ -574,6 +574,7 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useFirmar } from '@/composables/useFirmar';
 import SHeader from '@/layouts/SHeader.vue';
 import SMenu from '@/layouts/SMenu.vue';
 import SBody from '@/layouts/SBody.vue';
@@ -602,6 +603,7 @@ import {
 } from '@tabler/icons-vue';
 
 const router = useRouter();
+const { setFirmarActivo } = useFirmar();
 const menuService = new UserMenuService();
 const processPanelService = new ProcessDefinitionPanelService();
 
@@ -1023,7 +1025,7 @@ const navigateTo = (destination) => {
       router.push('/dashboard');
       break;
     case 'firmar':
-      router.push('/firmar');
+      setFirmarActivo(true);
       break;
     case 'perfil':
     default:

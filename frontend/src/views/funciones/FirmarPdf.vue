@@ -1,11 +1,22 @@
 <template>
   <div class="w-full h-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
-    <div class="flex flex-col gap-2">
-      <div>
-        <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
-        <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
-          Carga documentos y define las areas de estampado para la firma.
-        </p>
+    <div class="flex flex-col gap-2 relative">
+      <div class="flex justify-between items-start">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
+          <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
+            Carga documentos y define las areas de estampado para la firma.
+          </p>
+        </div>
+        <button 
+          v-if="isFirmarActivo"
+          @click="setFirmarActivo(false)" 
+          class="inline-flex items-center justify-center p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0" 
+          title="Cerrar vista de firmas"
+        >
+          <IconX class="w-5 h-5" />
+          <span class="ml-2 font-semibold text-sm">Cerrar</span>
+        </button>
       </div>
     </div>
 
@@ -378,7 +389,10 @@
   import { Modal } from '@/utils/modalController';
   import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
+  import { useFirmar } from '@/composables/useFirmar';
   
+  const { isFirmarActivo, setFirmarActivo } = useFirmar();
+
   let ctx;
   const colPdf=ref(null)
   let pdfDoc = null;
