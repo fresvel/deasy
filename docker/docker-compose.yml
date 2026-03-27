@@ -270,6 +270,8 @@ services:
       context: ../signer
       dockerfile: Dockerfile
     container_name: deasy-multisigner
+    profiles:
+      - multisigner
     restart: unless-stopped
     env_file: .env
     environment:

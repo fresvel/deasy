@@ -38,4 +38,4 @@ USER appuser
 EXPOSE 4000
 
 # Ejecutar index.js dentro de sigmaker
-CMD ["node", "sigmaker/index.js"]
+CMD ["node", "index.js"]
