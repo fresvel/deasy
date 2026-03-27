@@ -17,6 +17,7 @@ const findUserRecords = async (cedula) => {
     if (!mariaUser && !mongoUser) {
         return null;
     }
+    
 
     return { mariaUser, mongoUser };
 };
