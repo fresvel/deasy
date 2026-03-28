@@ -1,5 +1,4 @@
 **/node_modules
-**/.pnpm
 **/.pnpm-store
 **/.package-lock.json
 **/.pnpm-workspace-state-v1.json
@@ -7,4 +6,3 @@
 **/.DS_Store
 .git
 .vscode
-frontend/FronTemplate
