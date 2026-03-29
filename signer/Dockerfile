@@ -11,10 +11,14 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libgif-dev \
     librsvg2-dev \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar pyhanko y pdfplumber
-RUN pip3 install pyhanko pyhanko-cli pdfplumber --break-system-packages
+# Instalar dependencias Python del firmador.
+# `pyhanko` ya expone CLI; `pyhanko-cli` no existe como paquete separado.
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+    pyhanko \
+    pdfplumber
 
 RUN useradd --create-home --uid 10001 appuser
 
