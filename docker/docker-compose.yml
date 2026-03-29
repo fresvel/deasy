@@ -9,7 +9,7 @@ services:
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
-      - "3308:3306"
+      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
@@ -42,6 +42,12 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   emqx:
     image: emqx/emqx:latest
@@ -182,7 +188,7 @@ services:
       mongodb:
         condition: service_started
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       emqx:
         condition: service_started
 
@@ -216,7 +222,7 @@ services:
       mariadb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       minio:
         condition: service_started
 
@@ -282,27 +288,6 @@ services:
     volumes:
       - storage_data:/data
 
-  multisigner:
-    build:
-      context: ../multisigner
-      dockerfile: Dockerfile
-    container_name: deasy-multisigner
-    profiles:
-      - multisigner
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      RABBITMQ_URL: amqp://rabbitmq
-    depends_on:
-      - rabbitmq
-      - minio
-    volumes:
-      - ../multisigner:/app
-      - multisigner_node_modules:/app/node_modules
-
 volumes:
   mariadb_data:
   mongodb_data:
@@ -317,6 +302,5 @@ volumes:
   docs_pnpm_store:
   uploads_data:
   storage_data:
-  multisigner_node_modules:
   signer_node_modules:
   signer_sigmaker_node_modules:

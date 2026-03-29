@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-03-01T21:39:29.215Z",
+  "captured_at": "2026-03-28T22:40:14.120Z",
   "tables": [
     {
       "table": "persons",
@@ -44,7 +44,7 @@
       "rows": [
         {
           "id": 1,
-          "cedula": "1234567890",
+          "cedula": "1804326534",
           "first_name": "Homero Javier",
           "last_name": "Velasteguí Izurieta",
           "email": "homero.j.velastegui.i@pucese.edu.ec",
@@ -62,7 +62,7 @@
         },
         {
           "id": 2,
-          "cedula": "0987654321",
+          "cedula": "1803131190",
           "first_name": "Adrian Vargas",
           "last_name": "Vargas Machuca del Salto",
           "email": "agvargasmachuca@pucese.edu.ec",
@@ -965,6 +965,14 @@
           "parent_id": null,
           "is_active": 1,
           "created_at": "2026-02-27 15:33:23"
+        },
+        {
+          "id": 5,
+          "name": "Investigación Productiva",
+          "slug": "PIPR",
+          "parent_id": 3,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:43:32"
         }
       ]
     },
@@ -1129,11 +1137,107 @@
           "description": "Investigación Formativa de las Carreras actualizada",
           "has_document": 1,
           "execution_mode": "system",
+          "status": "retired",
+          "active_series_flag": null,
+          "effective_from": "2026-02-27",
+          "effective_to": "2026-03-01",
+          "created_at": "2026-03-01 19:20:55"
+        },
+        {
+          "id": 18,
+          "process_id": 2,
+          "series_id": 4,
+          "variation_key": "carreras",
+          "definition_version": "0.0.3",
+          "name": "Investigación Formativa Carreras",
+          "description": "Investigación Formativa de las Carreras actualizada",
+          "has_document": 1,
+          "execution_mode": "system",
+          "status": "retired",
+          "active_series_flag": null,
+          "effective_from": "2026-02-27",
+          "effective_to": "2026-03-02",
+          "created_at": "2026-03-01 22:43:19"
+        },
+        {
+          "id": 19,
+          "process_id": 5,
+          "series_id": 4,
+          "variation_key": "carreras",
+          "definition_version": "0.0.1",
+          "name": "Investigación Productiva por Carrera",
+          "description": "Investigación Productiva por Carrera",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "retired",
+          "active_series_flag": null,
+          "effective_from": "2026-03-01",
+          "effective_to": "2026-03-02",
+          "created_at": "2026-03-02 00:44:46"
+        },
+        {
+          "id": 20,
+          "process_id": 5,
+          "series_id": 4,
+          "variation_key": "carreras",
+          "definition_version": "0.0.2",
+          "name": "Investigación Productiva por Carrera",
+          "description": "Investigación Productiva por Carrera",
+          "has_document": 1,
+          "execution_mode": "manual",
+          "status": "active",
+          "active_series_flag": 1,
+          "effective_from": "2026-03-01",
+          "effective_to": null,
+          "created_at": "2026-03-02 00:50:29"
+        },
+        {
+          "id": 21,
+          "process_id": 2,
+          "series_id": 4,
+          "variation_key": "carreras",
+          "definition_version": "0.0.4",
+          "name": "Investigación Formativa Carreras",
+          "description": "Investigación Formativa de las Carreras actualizada",
+          "has_document": 1,
+          "execution_mode": "system",
           "status": "active",
           "active_series_flag": 1,
           "effective_from": "2026-02-27",
           "effective_to": null,
-          "created_at": "2026-03-01 19:20:55"
+          "created_at": "2026-03-02 00:58:33"
+        },
+        {
+          "id": 22,
+          "process_id": 2,
+          "series_id": 4,
+          "variation_key": "carreras",
+          "definition_version": "0.0.5",
+          "name": "Investigación Formativa Carreras2",
+          "description": "Investigación Formativa de las Carreras actualizada",
+          "has_document": 1,
+          "execution_mode": "system",
+          "status": "draft",
+          "active_series_flag": null,
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-03-03 21:00:51"
+        },
+        {
+          "id": 23,
+          "process_id": 2,
+          "series_id": 4,
+          "variation_key": "carreras",
+          "definition_version": "0.0.6",
+          "name": "Investigación Formativa Carreras3",
+          "description": "Investigación Formativa de las Carreras actualizada",
+          "has_document": 1,
+          "execution_mode": "system",
+          "status": "draft",
+          "active_series_flag": null,
+          "effective_from": "2026-02-27",
+          "effective_to": null,
+          "created_at": "2026-03-03 21:01:43"
         }
       ]
     },
@@ -1157,7 +1261,98 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 18,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 5,
+          "normalized_term_type_id": 5,
+          "is_active": 1,
+          "created_at": "2026-03-01 22:55:06"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 19,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 5,
+          "normalized_term_type_id": 5,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:47:10"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 20,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 5,
+          "normalized_term_type_id": 5,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:50:29"
+        },
+        {
+          "id": 4,
+          "process_definition_id": 20,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 7,
+          "normalized_term_type_id": 7,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:50:44"
+        },
+        {
+          "id": 5,
+          "process_definition_id": 21,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 5,
+          "normalized_term_type_id": 5,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:58:33"
+        },
+        {
+          "id": 6,
+          "process_definition_id": 21,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 7,
+          "normalized_term_type_id": 7,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:59:05"
+        },
+        {
+          "id": 7,
+          "process_definition_id": 22,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 5,
+          "normalized_term_type_id": 5,
+          "is_active": 1,
+          "created_at": "2026-03-03 21:00:51"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 22,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 7,
+          "normalized_term_type_id": 7,
+          "is_active": 1,
+          "created_at": "2026-03-03 21:00:51"
+        },
+        {
+          "id": 9,
+          "process_definition_id": 23,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 5,
+          "normalized_term_type_id": 5,
+          "is_active": 1,
+          "created_at": "2026-03-03 21:01:43"
+        },
+        {
+          "id": 10,
+          "process_definition_id": 23,
+          "trigger_mode": "automatic_by_term_type",
+          "term_type_id": 7,
+          "normalized_term_type_id": 7,
+          "is_active": 1,
+          "created_at": "2026-03-03 21:01:43"
+        }
+      ]
     },
     {
       "table": "process_target_rules",
@@ -1241,6 +1436,102 @@
           "effective_from": "2026-03-01",
           "effective_to": null,
           "created_at": "2026-03-01 19:59:50"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 18,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-03-01",
+          "effective_to": null,
+          "created_at": "2026-03-01 22:43:19"
+        },
+        {
+          "id": 9,
+          "process_definition_id": 19,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": null,
+          "effective_to": null,
+          "created_at": "2026-03-02 00:45:29"
+        },
+        {
+          "id": 10,
+          "process_definition_id": 20,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": null,
+          "effective_to": null,
+          "created_at": "2026-03-02 00:50:29"
+        },
+        {
+          "id": 11,
+          "process_definition_id": 21,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-03-01",
+          "effective_to": null,
+          "created_at": "2026-03-02 00:58:33"
+        },
+        {
+          "id": 12,
+          "process_definition_id": 22,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-03-01",
+          "effective_to": null,
+          "created_at": "2026-03-03 21:00:51"
+        },
+        {
+          "id": 13,
+          "process_definition_id": 23,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": 6,
+          "include_descendants": 0,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-03-01",
+          "effective_to": null,
+          "created_at": "2026-03-03 21:01:43"
         }
       ]
     },
@@ -1318,6 +1609,15 @@
           "is_active": 1,
           "created_at": "2026-02-26 14:09:02",
           "updated_at": "2026-02-26 14:10:46"
+        },
+        {
+          "id": 7,
+          "code": "PPO",
+          "name": "Primer Periodo Ordinario",
+          "description": null,
+          "is_active": 1,
+          "created_at": "2026-03-02 00:49:16",
+          "updated_at": "2026-03-02 00:49:16"
         }
       ]
     },
@@ -1341,11 +1641,59 @@
       },
       "rows": [
         {
-          "id": 1,
+          "id": 2,
+          "name": "Segundo Periodo Ordinario 2026",
+          "term_type_id": 5,
+          "start_date": "2026-03-01",
+          "end_date": "2026-04-05",
+          "is_active": 1
+        },
+        {
+          "id": 4,
+          "name": "Primer Periodo Ordinario 2025",
+          "term_type_id": 7,
+          "start_date": "2026-02-23",
+          "end_date": "2026-03-23",
+          "is_active": 1
+        },
+        {
+          "id": 5,
           "name": "Primer Periodo Ordinario 2026",
-          "term_type_id": 4,
+          "term_type_id": 7,
+          "start_date": "2026-02-23",
+          "end_date": "2026-04-05",
+          "is_active": 1
+        },
+        {
+          "id": 6,
+          "name": "Primer Periodo Ordinario 2027",
+          "term_type_id": 7,
+          "start_date": "2026-03-01",
+          "end_date": "2026-03-13",
+          "is_active": 1
+        },
+        {
+          "id": 7,
+          "name": "Primer Periodo Ordinario 2024",
+          "term_type_id": 7,
+          "start_date": "2026-03-05",
+          "end_date": "2026-03-13",
+          "is_active": 1
+        },
+        {
+          "id": 8,
+          "name": "Segundo Periodo Ordinario 2024",
+          "term_type_id": 5,
           "start_date": "2026-03-02",
-          "end_date": "2026-08-28",
+          "end_date": "2026-03-02",
+          "is_active": 1
+        },
+        {
+          "id": 9,
+          "name": "Primer Periodo Ordinario 2023",
+          "term_type_id": 7,
+          "start_date": "2026-03-04",
+          "end_date": "2026-03-29",
           "is_active": 1
         }
       ]
@@ -1690,6 +2038,106 @@
           "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:20:55"
+        },
+        {
+          "id": 5,
+          "process_definition_id": 18,
+          "template_artifact_id": 4,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-01 22:43:19"
+        },
+        {
+          "id": 6,
+          "process_definition_id": 18,
+          "template_artifact_id": 10,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-01 22:43:19"
+        },
+        {
+          "id": 7,
+          "process_definition_id": 19,
+          "template_artifact_id": 10,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-02 00:46:49"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 20,
+          "template_artifact_id": 10,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-02 00:50:29"
+        },
+        {
+          "id": 9,
+          "process_definition_id": 21,
+          "template_artifact_id": 4,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-02 00:58:33"
+        },
+        {
+          "id": 10,
+          "process_definition_id": 21,
+          "template_artifact_id": 10,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-02 00:58:33"
+        },
+        {
+          "id": 11,
+          "process_definition_id": 22,
+          "template_artifact_id": 4,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-03 21:00:51"
+        },
+        {
+          "id": 12,
+          "process_definition_id": 22,
+          "template_artifact_id": 10,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-03 21:00:51"
+        },
+        {
+          "id": 13,
+          "process_definition_id": 23,
+          "template_artifact_id": 4,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-03 21:01:43"
+        },
+        {
+          "id": 14,
+          "process_definition_id": 23,
+          "template_artifact_id": 10,
+          "usage_role": "manual_fill",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-03-03 21:01:43"
         }
       ]
     },
@@ -1697,14 +2145,16 @@
       "table": "tasks",
       "columns": [
         "id",
-        "process_definition_template_id",
         "process_definition_id",
         "term_id",
+        "launch_mode",
+        "created_by_user_id",
+        "automatic_flag",
+        "manual_user_flag",
         "parent_task_id",
         "responsible_position_id",
         "description",
         "comments_thread_ref",
-        "is_main",
         "start_date",
         "end_date",
         "status",
@@ -1712,20 +2162,193 @@
       ],
       "column_types": {
         "id": "int(11)",
-        "process_definition_template_id": "int(11)",
         "process_definition_id": "int(11)",
         "term_id": "int(11)",
+        "launch_mode": "enum('automatic','manual')",
+        "created_by_user_id": "int(11)",
+        "automatic_flag": "tinyint(1)",
+        "manual_user_flag": "int(11)",
         "parent_task_id": "int(11)",
         "responsible_position_id": "int(11)",
         "description": "text",
         "comments_thread_ref": "varchar(64)",
-        "is_main": "tinyint(1)",
         "start_date": "date",
         "end_date": "date",
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 18,
+          "term_id": 2,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-01",
+          "end_date": "2026-04-05",
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:05:12"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 20,
+          "term_id": 4,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-02-23",
+          "end_date": "2026-03-23",
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:55:56"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 20,
+          "term_id": 5,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-02-23",
+          "end_date": "2026-04-05",
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:59:50"
+        },
+        {
+          "id": 4,
+          "process_definition_id": 20,
+          "term_id": 6,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-01",
+          "end_date": "2026-03-13",
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:02:46"
+        },
+        {
+          "id": 5,
+          "process_definition_id": 21,
+          "term_id": 7,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-05",
+          "end_date": "2026-03-13",
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:05:39"
+        },
+        {
+          "id": 6,
+          "process_definition_id": 20,
+          "term_id": 7,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-05",
+          "end_date": "2026-03-13",
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:05:39"
+        },
+        {
+          "id": 7,
+          "process_definition_id": 21,
+          "term_id": 8,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-02",
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:07:31"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 20,
+          "term_id": 8,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-02",
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:07:31"
+        },
+        {
+          "id": 9,
+          "process_definition_id": 21,
+          "term_id": 9,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-04",
+          "end_date": "2026-03-29",
+          "status": "pendiente",
+          "created_at": "2026-03-04 17:14:56"
+        },
+        {
+          "id": 10,
+          "process_definition_id": 20,
+          "term_id": 9,
+          "launch_mode": "automatic",
+          "created_by_user_id": null,
+          "automatic_flag": 1,
+          "manual_user_flag": null,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": null,
+          "comments_thread_ref": null,
+          "start_date": "2026-03-04",
+          "end_date": "2026-03-29",
+          "status": "pendiente",
+          "created_at": "2026-03-04 17:14:56"
+        }
+      ]
     },
     {
       "table": "task_items",
@@ -1753,7 +2376,176 @@
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "task_id": 1,
+          "process_definition_template_id": 5,
+          "template_artifact_id": 4,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:05:12"
+        },
+        {
+          "id": 2,
+          "task_id": 1,
+          "process_definition_template_id": 6,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:05:12"
+        },
+        {
+          "id": 3,
+          "task_id": 2,
+          "process_definition_template_id": 8,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:55:56"
+        },
+        {
+          "id": 4,
+          "task_id": 3,
+          "process_definition_template_id": 8,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 00:59:50"
+        },
+        {
+          "id": 5,
+          "task_id": 4,
+          "process_definition_template_id": 8,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:02:46"
+        },
+        {
+          "id": 6,
+          "task_id": 5,
+          "process_definition_template_id": 9,
+          "template_artifact_id": 4,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:05:39"
+        },
+        {
+          "id": 7,
+          "task_id": 5,
+          "process_definition_template_id": 10,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:05:39"
+        },
+        {
+          "id": 8,
+          "task_id": 6,
+          "process_definition_template_id": 8,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:05:39"
+        },
+        {
+          "id": 9,
+          "task_id": 7,
+          "process_definition_template_id": 9,
+          "template_artifact_id": 4,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:07:31"
+        },
+        {
+          "id": 10,
+          "task_id": 7,
+          "process_definition_template_id": 10,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:07:31"
+        },
+        {
+          "id": 11,
+          "task_id": 8,
+          "process_definition_template_id": 8,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-02 01:07:31"
+        },
+        {
+          "id": 12,
+          "task_id": 9,
+          "process_definition_template_id": 9,
+          "template_artifact_id": 4,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-04 17:14:56"
+        },
+        {
+          "id": 13,
+          "task_id": 9,
+          "process_definition_template_id": 10,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-04 17:14:56"
+        },
+        {
+          "id": 14,
+          "task_id": 10,
+          "process_definition_template_id": 8,
+          "template_artifact_id": 10,
+          "template_usage_role": "manual_fill",
+          "sort_order": 1,
+          "responsible_position_id": null,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "created_at": "2026-03-04 17:14:56"
+        }
+      ]
     },
     {
       "table": "task_assignments",
@@ -1775,7 +2567,368 @@
         "assigned_at": "datetime",
         "unassigned_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "task_id": 1,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:05:12",
+          "unassigned_at": null
+        },
+        {
+          "id": 2,
+          "task_id": 1,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:05:12",
+          "unassigned_at": null
+        },
+        {
+          "id": 3,
+          "task_id": 1,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:05:12",
+          "unassigned_at": null
+        },
+        {
+          "id": 4,
+          "task_id": 1,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:05:12",
+          "unassigned_at": null
+        },
+        {
+          "id": 5,
+          "task_id": 2,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:55:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 6,
+          "task_id": 2,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:55:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 7,
+          "task_id": 2,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:55:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 8,
+          "task_id": 2,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:55:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 9,
+          "task_id": 3,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:59:50",
+          "unassigned_at": null
+        },
+        {
+          "id": 10,
+          "task_id": 3,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:59:50",
+          "unassigned_at": null
+        },
+        {
+          "id": 11,
+          "task_id": 3,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:59:50",
+          "unassigned_at": null
+        },
+        {
+          "id": 12,
+          "task_id": 3,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 00:59:50",
+          "unassigned_at": null
+        },
+        {
+          "id": 13,
+          "task_id": 4,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:02:46",
+          "unassigned_at": null
+        },
+        {
+          "id": 14,
+          "task_id": 4,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:02:46",
+          "unassigned_at": null
+        },
+        {
+          "id": 15,
+          "task_id": 4,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:02:46",
+          "unassigned_at": null
+        },
+        {
+          "id": 16,
+          "task_id": 4,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:02:46",
+          "unassigned_at": null
+        },
+        {
+          "id": 17,
+          "task_id": 5,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 18,
+          "task_id": 5,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 19,
+          "task_id": 5,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 20,
+          "task_id": 5,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 21,
+          "task_id": 6,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 22,
+          "task_id": 6,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 23,
+          "task_id": 6,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 24,
+          "task_id": 6,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:05:39",
+          "unassigned_at": null
+        },
+        {
+          "id": 25,
+          "task_id": 7,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 26,
+          "task_id": 7,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 27,
+          "task_id": 7,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 28,
+          "task_id": 7,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 29,
+          "task_id": 8,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 30,
+          "task_id": 8,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 31,
+          "task_id": 8,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 32,
+          "task_id": 8,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-02 01:07:31",
+          "unassigned_at": null
+        },
+        {
+          "id": 33,
+          "task_id": 9,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 34,
+          "task_id": 9,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 35,
+          "task_id": 9,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 36,
+          "task_id": 9,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 37,
+          "task_id": 10,
+          "position_id": 3,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 38,
+          "task_id": 10,
+          "position_id": 4,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 39,
+          "task_id": 10,
+          "position_id": 2,
+          "assigned_person_id": 1,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        },
+        {
+          "id": 40,
+          "task_id": 10,
+          "position_id": 6,
+          "assigned_person_id": null,
+          "status": "pendiente",
+          "assigned_at": "2026-03-04 17:14:56",
+          "unassigned_at": null
+        }
+      ]
     },
     {
       "table": "documents",
@@ -1863,7 +3016,56 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "Revisado",
+          "name": "Revisado",
+          "description": "Firma de un documento sujeto a revisión por ERA",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:49:47"
+        },
+        {
+          "id": 2,
+          "code": "Aprobado",
+          "name": "Aprobado",
+          "description": "Firma de un documento sujeto a aprobación por ERA",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:50:28"
+        },
+        {
+          "id": 3,
+          "code": "Elaborado",
+          "name": "Elaborado",
+          "description": "Firma de un documento elaborado sujeto a ERA",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:50:59"
+        },
+        {
+          "id": 4,
+          "code": "Enviado",
+          "name": "Enviado",
+          "description": "Firma de un documento que es enviado a otra instancia, puede ser solicitud, memorandum, oficio. ",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:52:25"
+        },
+        {
+          "id": 5,
+          "code": "Recibido",
+          "name": "Recibido",
+          "description": "Firma de un documento que es enviado a otra instancia, puede ser solicitud, memorandum, oficio. ",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:52:53"
+        },
+        {
+          "id": 6,
+          "code": "Asistencia",
+          "name": "Asistencia",
+          "description": "Firma de un documento que deja constancia de cuorum de un evento, reunión, consejo. ",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:53:43"
+        }
+      ]
     },
     {
       "table": "signature_request_statuses",
@@ -1883,7 +3085,24 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "Pendiente",
+          "name": "Firma Pendiente",
+          "description": "Solicitud de firma enviada y no ejecutada",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:56:15"
+        },
+        {
+          "id": 2,
+          "code": "Firmado",
+          "name": "Firmado",
+          "description": "Firma ejecutada sobre un documento",
+          "is_active": 1,
+          "created_at": "2026-03-02 15:56:42"
+        }
+      ]
     },
     {
       "table": "signature_flow_templates",
