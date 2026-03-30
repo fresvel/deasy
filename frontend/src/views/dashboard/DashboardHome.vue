@@ -226,20 +226,6 @@
                   Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
                   documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
                 </p>
-                <div class="flex flex-wrap gap-2 mt-2">
-                  <span v-if="selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
-                    {{ selectedProcessPanel?.definition?.series_code || selectedProcessPanel?.definition?.variation_key }}
-                  </span>
-                  <span v-if="selectedProcessPanel?.definition?.definition_version" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
-                    Versión {{ selectedProcessPanel.definition.definition_version }}
-                  </span>
-                  <span v-if="selectedProcessPanel?.definition?.execution_mode" class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold bg-white/20 text-white backdrop-blur-sm shadow-sm">
-                    {{ selectedProcessPanel.definition.execution_mode || 'manual' }}
-                  </span>
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] md:text-xs font-bold backdrop-blur-sm shadow-sm" :class="selectedProcessPanel?.permissions?.has_document ? 'bg-sky-400 text-sky-950' : 'bg-white/20 text-white'">
-                    {{ selectedProcessPanel?.permissions?.has_document ? 'Con documento' : 'Sin documento' }}
-                  </span>
-                </div>
               </div>
               <div class="flex flex-col sm:flex-row md:flex-col gap-3 items-start md:items-end justify-start relative z-10 shrink-0">
                 <button class="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none" type="button" @click="clearSelectedProcess">
