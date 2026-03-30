@@ -14,7 +14,8 @@ export const PATHS = {
   whatsapp: "/whatsapp",
   dossier: "/dossier",
   email: "/email",
-  resetPassword: "/reset-password"
+  resetPassword: "/reset-password",
+  sign: "/sign"
 };
 
 export const ROUTES = Object.fromEntries(

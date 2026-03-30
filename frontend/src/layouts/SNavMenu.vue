@@ -1,8 +1,8 @@
 <template>
-  <div class="col-lg-2 col-md-3" v-if="show">
+  <div v-if="show" class="profile-admin-skin w-full md:w-1/3 xl:w-1/5">
     <div class="nav-menu">
       <div class="nav-menu-header">
-        <h5 class="mb-3">Navegación rápida</h5>
+        <h5 class="mb-3 text-lg font-semibold">Navegación rápida</h5>
       </div>
       <div class="nav-menu-body">
         <router-link 
@@ -10,7 +10,7 @@
           class="nav-menu-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="home" class="me-2" />
+          <font-awesome-icon icon="home" />
           <span>Dashboard</span>
         </router-link>
         <router-link 
@@ -18,7 +18,7 @@
           class="nav-menu-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="user" class="me-2" />
+          <font-awesome-icon icon="user" />
           <span>Perfil</span>
         </router-link>
         <router-link 
@@ -26,7 +26,7 @@
           class="nav-menu-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="id-card" class="me-2" />
+          <font-awesome-icon icon="id-card" />
           <span>Roles</span>
         </router-link>
         <router-link
@@ -34,7 +34,7 @@
           class="nav-menu-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="edit" class="me-2" />
+          <font-awesome-icon icon="edit" />
           <span>Firmar documentos</span>
         </router-link>
         <router-link 
@@ -43,7 +43,7 @@
           class="nav-menu-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="cog" class="me-2" />
+          <font-awesome-icon icon="cog" />
           <span>Administración</span>
         </router-link>
         <router-link 
@@ -51,7 +51,7 @@
           class="nav-menu-item nav-menu-item-logout"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="sign-in-alt" class="me-2" />
+          <font-awesome-icon icon="sign-in-alt" />
           <span>Cerrar sesión</span>
         </router-link>
       </div>

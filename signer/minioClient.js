@@ -15,13 +15,15 @@ const SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || 'deasy-spool';
 
 /**
  * Descarga un objeto del bucket de spool a una ruta local.
+ * @param {string} bucket bucket de MinIO
  * @param {string} objectName ruta del objeto en MinIO
  * @param {string} localPath ruta local de destino
  */
-export async function downloadFromMinio(objectName, localPath) {
-  await minioClient.statObject(SPOOL_BUCKET, objectName);
+export async function downloadFromMinio(bucket, objectName, localPath) {
+  const resolvedBucket = bucket || SPOOL_BUCKET;
+  await minioClient.statObject(resolvedBucket, objectName);
 
-  const obj = await minioClient.getObject(SPOOL_BUCKET, objectName);
+  const obj = await minioClient.getObject(resolvedBucket, objectName);
 
   if (obj && typeof obj.pipe === 'function') {
     return new Promise((resolve, reject) => {
@@ -43,12 +45,14 @@ export async function downloadFromMinio(objectName, localPath) {
 
 /**
  * Sube un archivo local al bucket de spool de MinIO.
+ * @param {string} bucket bucket de MinIO
  * @param {string} objectName ruta del objeto en MinIO
  * @param {string} localPath ruta local del archivo a subir
  */
-export async function uploadToMinio(objectName, localPath) {
+export async function uploadToMinio(bucket, objectName, localPath) {
+  const resolvedBucket = bucket || SPOOL_BUCKET;
   return new Promise((resolve, reject) => {
-    minioClient.fPutObject(SPOOL_BUCKET, objectName, localPath, {}, (err, etag) => {
+    minioClient.fPutObject(resolvedBucket, objectName, localPath, {}, (err, etag) => {
       if (err) reject(new Error(`MinIO upload error (${objectName}): ${err.message}`));
       else resolve(etag);
     });

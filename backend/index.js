@@ -12,6 +12,7 @@ import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { API_PREFIX, PATHS, ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
+import sign_router from "./routes/sign_router.js";
 
 import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
@@ -1127,7 +1128,13 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3, "http://localhost:8080"]
+const whitelist = [
+  process.env.ORIGIN1,
+  process.env.ORIGIN2,
+  process.env.ORIGIN3,
+  "http://localhost:8080",
+  "http://127.0.0.1:8080"
+].filter(Boolean)
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -1170,6 +1177,8 @@ app.use(ROUTES.tarea, tarea_router)
 app.use(ROUTES.whatsapp, whatsapp_router)
 
 app.use(ROUTES.dossier, dossier_router)
+
+app.use(ROUTES.sign, sign_router)
 
 app.use(express.static("public"));
 

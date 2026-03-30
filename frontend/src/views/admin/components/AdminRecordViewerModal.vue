@@ -7,16 +7,16 @@
     close-action
     @close="$emit('close')"
   >
-    <div v-if="loading" class="text-muted">Cargando información del registro...</div>
-    <div v-else-if="error" class="alert alert-danger mb-0">{{ error }}</div>
+    <div v-if="loading" class="text-sm text-slate-500">Cargando información del registro...</div>
+    <div v-else-if="error" class="mb-0 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
     <div v-else-if="recordViewerTable && recordViewerRow">
       <AdminDataTable
         :fields="summaryTableFields"
         :rows="displayRows"
         :row-key="(row) => row.id"
-        table-class="table table-striped align-middle table-institutional"
+        table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
         :show-header="false"
-        responsive-class="table-responsive"
+        responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
         scroll-class=""
       >
         <template #row="{ row }">
@@ -44,19 +44,19 @@
       </AdminDataTable>
 
       <div v-for="section in relatedSections" :key="section.key" class="mt-4">
-        <h6 class="mb-2 person-subtitle">
+        <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
           <font-awesome-icon icon="list-check" />
           <span>{{ section.label }}</span>
         </h6>
-        <div v-if="section.error" class="alert alert-danger py-2 mb-0">{{ section.error }}</div>
-        <div v-else-if="section.rows.length === 0" class="text-muted">Sin registros relacionados.</div>
+        <div v-if="section.error" class="mb-0 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ section.error }}</div>
+        <div v-else-if="section.rows.length === 0" class="text-sm text-slate-500">Sin registros relacionados.</div>
         <AdminDataTable
           v-else
           :fields="section.fields"
           :rows="section.rows"
           :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
-          table-class="table table-sm table-striped align-middle"
-          responsive-class="table-responsive"
+          table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+          responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
           scroll-class=""
         >
           <template #cell="{ row: sectionRow, field }">
@@ -65,7 +65,7 @@
         </AdminDataTable>
       </div>
     </div>
-    <div v-else class="text-muted">No hay información para visualizar.</div>
+    <div v-else class="text-sm text-slate-500">No hay información para visualizar.</div>
     <template #footer>
       <AdminButton variant="outlineDanger" @click="$emit('close')">Cerrar</AdminButton>
     </template>

@@ -4,18 +4,18 @@
     labelled-by="sqlEditorModalLabel"
     :title="editorMode === 'create' ? `Añadir ${table?.label || 'registro'}` : 'Editar registro'"
     size="xl"
-    :content-class="isProcessTable ? 'process-modal-content' : ''"
+    :content-class="isProcessTable ? 'process-dialog-content' : ''"
   >
-    <div v-if="modalError" class="alert alert-danger mb-3">
+    <div v-if="modalError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
       {{ modalError }}
     </div>
-    <form class="row g-3">
-      <div v-for="field in visibleFormFields" :key="field.name" class="col-12 col-md-6">
-        <label class="form-label">
+    <form class="grid gap-3 md:grid-cols-12">
+      <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
+        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
           {{ field.label || field.name }}
-          <span v-if="field.required" class="text-danger">*</span>
+          <span v-if="field.required" class="text-red-600">*</span>
         </label>
-        <div v-if="isInputField(field) && isForeignKeyField(field)" class="position-relative">
+        <div v-if="isInputField(field) && isForeignKeyField(field)" class="relative">
           <AdminLookupField
             :model-value="fkDisplay[field.name]"
             :placeholder="field.placeholder || ''"
@@ -29,10 +29,10 @@
           />
           <div
             v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="list-group fk-inline-suggestions shadow-sm"
+            class="fk-inline-suggestions overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
             @mousedown.prevent
           >
-            <div v-if="inlineFkLoading[field.name]" class="list-group-item text-muted small">
+            <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-slate-500">
               Buscando...
             </div>
             <template v-else-if="(inlineFkSuggestions[field.name] || []).length">
@@ -40,13 +40,13 @@
                 v-for="option in inlineFkSuggestions[field.name]"
                 :key="`${field.name}-${option.id}`"
                 variant="plain"
-                class-name="list-group-item list-group-item-action"
+                class-name="w-full justify-start rounded-none border-0 border-b border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 last:border-b-0 hover:bg-slate-50"
                 @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
               >
                 {{ formatInlineFkOption(field, option) }}
               </AdminButton>
             </template>
-            <div v-else class="list-group-item text-muted small">
+            <div v-else class="px-4 py-3 text-sm text-slate-500">
               Sin coincidencias. Usa Buscar.
             </div>
           </div>
@@ -99,8 +99,8 @@
     <div v-if="table?.table === 'process_definition_versions'" class="definition-checklist mt-4">
       <div class="definition-checklist-head">
         <strong>Checklist de activacion</strong>
-        <span v-if="processDefinitionChecklistLoading" class="text-muted">Validando...</span>
-        <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-muted">
+        <span v-if="processDefinitionChecklistLoading" class="text-sm text-slate-500">Validando...</span>
+        <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-slate-500">
           Disponible despues de guardar la definicion.
         </span>
       </div>
@@ -125,7 +125,7 @@
         variant="outlinePrimary"
         @click="$emit('open-definition-rules')"
       >
-        <font-awesome-icon icon="sitemap" class="me-2" />
+        <font-awesome-icon icon="sitemap" />
         Reglas
       </AdminButton>
       <AdminButton
@@ -133,7 +133,7 @@
         variant="outlinePrimary"
         @click="$emit('open-definition-triggers')"
       >
-        <font-awesome-icon icon="sitemap" class="me-2" />
+        <font-awesome-icon icon="sitemap" />
         Disparadores
       </AdminButton>
       <AdminButton
@@ -141,7 +141,7 @@
         variant="outlinePrimary"
         @click="$emit('open-definition-artifacts')"
       >
-        <font-awesome-icon icon="link" class="me-2" />
+        <font-awesome-icon icon="link" />
         Paquetes
       </AdminButton>
       <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>

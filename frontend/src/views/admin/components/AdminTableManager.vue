@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid py-4">
+  <div class="py-4">
     <AdminFeedbackToast
       :visible="feedbackToast.visible"
       :kind="feedbackToast.kind"
@@ -23,11 +23,11 @@
       @create="handlePrimaryCreateAction"
     />
 
-    <div v-if="!table" class="row">
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <p class="text-muted mb-0">Selecciona una tabla para administrar.</p>
+    <div v-if="!table" class="flex">
+      <div class="w-full">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="p-5">
+            <p class="mb-0 text-sm text-slate-500">Selecciona una tabla para administrar.</p>
           </div>
         </div>
       </div>
@@ -465,9 +465,9 @@
       @clear="clearProcessFilter"
       @search="applyProcessFilter"
     >
-            <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label text-dark">Proceso padre</label>
+            <div class="grid gap-3">
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Proceso padre</label>
                 <AdminLookupField
                   v-model="processFilterLabels.parent_id"
                   placeholder="Selecciona un proceso padre"
@@ -478,8 +478,8 @@
                   @search="openProcessFkSearch('parent_id')"
                 />
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Activo</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Activo</label>
                 <AdminSelectField v-model="processFilters.is_active">
                   <option value="">Todos</option>
                   <option value="1">Si</option>
@@ -496,21 +496,21 @@
       @clear="clearTemplateFilter"
       @search="applyTemplateFilter"
     >
-            <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label text-dark">Nombre</label>
+            <div class="grid gap-3">
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Nombre</label>
                 <AdminInputField v-model="templateFilters.name" />
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Slug</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Slug</label>
                 <AdminInputField v-model="templateFilters.slug" />
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Descripcion</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Descripcion</label>
                 <AdminInputField v-model="templateFilters.description" />
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Proceso</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Proceso</label>
                 <AdminLookupField
                   v-model="templateFilterLabels.process_id"
                   placeholder="Selecciona un proceso"
@@ -531,9 +531,9 @@
       @clear="clearDocumentFilter"
       @search="applyDocumentFilter"
     >
-            <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label text-dark">Tarea</label>
+            <div class="grid gap-3">
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tarea</label>
                 <AdminLookupField
                   v-model="documentFilterLabels.task_id"
                   placeholder="Selecciona una tarea"
@@ -544,8 +544,8 @@
                   @search="openDocumentFkSearch('task_id')"
                 />
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Estado</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Estado</label>
                 <AdminSelectField v-model="documentFilters.status">
                   <option value="">Todos</option>
                   <option value="Inicial">Inicial</option>
@@ -564,9 +564,9 @@
       @clear="clearUnitPositionFilter"
       @search="applyUnitPositionFilter"
     >
-            <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label text-dark">Tipo de unidad</label>
+            <div class="grid gap-3">
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de unidad</label>
                 <AdminSelectField
                   v-model="unitPositionFilters.unit_type_id"
                   :disabled="unitPositionFilterLoading"
@@ -582,8 +582,8 @@
                   </option>
                 </AdminSelectField>
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Unidad</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
                 <AdminSelectField
                   v-model="unitPositionFilters.unit_id"
                   :disabled="!unitPositionFilters.unit_type_id || unitPositionFilterLoading"
@@ -598,8 +598,8 @@
                   </option>
                 </AdminSelectField>
               </div>
-              <div class="col-12">
-                <label class="form-label text-dark">Cargo</label>
+              <div>
+                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Cargo</label>
                 <AdminSelectField
                   v-model="unitPositionFilters.cargo_id"
                   :disabled="unitPositionFilterLoading"
@@ -636,8 +636,7 @@
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
-import axios from "axios";
+import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref } from "vue";
 import { useAdminFkManager } from "@/composables/useAdminFkManager";
 import { useAdminFkCrud } from "@/composables/useAdminFkCrud";
 import { useAdminFkSearch } from "@/composables/useAdminFkSearch";
@@ -649,6 +648,11 @@ import { useAdminFormState } from "@/composables/useAdminFormState";
 import { useAdminModalRegistry } from "@/composables/useAdminModalRegistry";
 import { useAdminModalStack } from "@/composables/useAdminModalStack";
 import { useAdminOptionLoaders } from "@/composables/useAdminOptionLoaders";
+import { useAdminPresentationAdapters } from "@/composables/useAdminPresentationAdapters";
+import { useAdminShellHelpers } from "@/composables/useAdminShellHelpers";
+import { useAdminShellSearchActions } from "@/composables/useAdminShellSearchActions";
+import { useAdminSyncActions } from "@/composables/useAdminSyncActions";
+import { useAdminTableReset } from "@/composables/useAdminTableReset";
 import { usePersonAssignmentsManager } from "@/composables/usePersonAssignmentsManager";
 import { useAdminRecordViewer } from "@/composables/useAdminRecordViewer";
 import { useAdminSearchFilters } from "@/composables/useAdminSearchFilters";
@@ -657,7 +661,6 @@ import { useProcessDefinitionActivationFlow } from "@/composables/useProcessDefi
 import { useProcessDefinitionManager } from "@/composables/useProcessDefinitionManager";
 import { useAdminSubmitFlow } from "@/composables/useAdminSubmitFlow";
 import { API_ROUTES } from "@/services/apiConfig";
-import { adminFkService } from "@/services/admin/AdminFkService";
 import { adminSqlService } from "@/services/admin/AdminSqlService";
 import { adminPresentationService } from "@/services/admin/AdminPresentationService";
 import {
@@ -771,9 +774,6 @@ const fkViewerModal = ref(null);
 const fkFilterModal = ref(null);
 const fkCreateModal = ref(null);
 const searchInput = ref(null);
-let searchTimeout = null;
-let vacantSearchTimeout = null;
-let unassignedTemplateArtifactSearchTimeout = null;
 const skipFkReturnRestore = ref(false);
 const fkCreateExitTarget = ref("none");
 const fkNestedExitTarget = ref("none");
@@ -1489,77 +1489,6 @@ const inlineFkLoading = ref({});
 const inlineFkTouched = ref({});
 const inlineFkActiveField = ref("");
 
-const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
-  if (!tableMeta?.fields) {
-    return [];
-  }
-  const fields = tableMeta.fields.filter((field) => {
-    if (field.name === "password_hash") {
-      return false;
-    }
-    if (!includeVirtual && field.virtual) {
-      return false;
-    }
-    return true;
-  });
-  if (tableMeta.table === "process_target_rules") {
-    const expandedFields = [];
-    fields.forEach((field) => {
-      expandedFields.push(field);
-      if (field.name === "process_definition_id") {
-        expandedFields.push({
-          name: "__process_name",
-          label: "Proceso",
-          type: "text"
-        });
-      }
-    });
-    return expandedFields;
-  }
-  if (tableMeta.table === "template_artifacts") {
-    return fields.map((field) => formatTemplateArtifactFieldLabel(field));
-  }
-  if (tableMeta.table === "process_definition_versions") {
-    return fields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
-  }
-  if (tableMeta.table === "process_definition_templates" && includeVirtual) {
-    const expandedFields = [];
-    fields.forEach((field) => {
-      expandedFields.push(field);
-      if (field.name === "process_definition_id") {
-        expandedFields.push(
-          { name: "__definition_series", label: "Serie", type: "text" },
-          { name: "__definition_version", label: "Version", type: "text" },
-          { name: "__definition_status", label: "Estado de definicion", type: "text" }
-        );
-      }
-    });
-    return expandedFields;
-  }
-  return fields;
-};
-
-const rowKeyForTable = (tableMeta, row) => {
-  if (!tableMeta) {
-    return JSON.stringify(row);
-  }
-  const primaryKeys = tableMeta.primaryKeys?.length ? tableMeta.primaryKeys : ["id"];
-  return primaryKeys.map((key) => row?.[key]).join("-");
-};
-
-const rowKey = (row) => rowKeyForTable(props.table, row);
-
-const buildPersonAssignmentContext = (row) => {
-  const firstName = row?.first_name ? String(row.first_name).trim() : "";
-  const lastName = row?.last_name ? String(row.last_name).trim() : "";
-  const fullName = `${firstName} ${lastName}`.trim();
-  return {
-    id: row?.id ? String(row.id) : "",
-    name: fullName || `Persona #${row?.id ?? ""}`,
-    cedula: row?.cedula ? String(row.cedula) : "",
-    email: row?.email ? String(row.email) : ""
-  };
-};
 const formatDateOnly = (value) => adminPresentationService.formatDateOnly(value);
 const formatDateTimeHour = (value) => adminPresentationService.formatDateTimeHour(value);
 const formatPositionType = (value) => adminPresentationService.formatPositionType(value);
@@ -1570,171 +1499,35 @@ const normalizeAvailableFormats = (value) => adminPresentationService.normalizeA
 const getAvailableFormatSections = (value) => adminPresentationService.getAvailableFormatSections(value);
 const getAvailableFormatBadgeStyle = (mode, entry) => adminPresentationService.getAvailableFormatBadgeStyle(mode, entry);
 const formatAvailableFormatsSummary = (value) => adminPresentationService.formatAvailableFormatsSummary(value);
-
-const formatValueForTable = (tableMeta, value, field, row = null) => {
-  if (value === null || value === undefined || value === "") {
-    if (!["__plaza", "__position_type", "__process_name", "__definition_series", "__definition_version", "__definition_status"].includes(field?.name)) {
-      return "—";
-    }
-  }
-  const fieldName = field?.name || "";
-  if (["__plaza", "__position_type"].includes(fieldName)) {
-    const positionId = row?.position_id;
-    if (positionId === null || positionId === undefined || positionId === "") {
-      return "—";
-    }
-    const positionMeta = positionMetaById.value[String(positionId)];
-    if (!positionMeta) {
-      return "—";
-    }
-    if (fieldName === "__position_type") {
-      return formatPositionType(positionMeta.position_type);
-    }
-    const slotNo = positionMeta.slot_no;
-    return slotNo === null || slotNo === undefined || slotNo === "" ? "—" : slotNo;
-  }
-  if (fieldName === "__process_name") {
-    const definitionId = row?.process_definition_id;
-    if (definitionId === null || definitionId === undefined || definitionId === "") {
-      return "—";
-    }
-    const processId = processIdByDefinitionId.value[String(definitionId)];
-    if (processId === null || processId === undefined || processId === "") {
-      return "—";
-    }
-    const label = getFkCachedLabel("processes", processId);
-    return label ?? processId;
-  }
-  if (["__definition_series", "__definition_version", "__definition_status"].includes(fieldName)) {
-    const definitionId = row?.process_definition_id;
-    if (definitionId === null || definitionId === undefined || definitionId === "") {
-      return "—";
-    }
-    const definitionMeta = processDefinitionMetaById.value[String(definitionId)];
-    if (!definitionMeta) {
-      return "—";
-    }
-    if (fieldName === "__definition_series") {
-      return definitionMeta.variation_key || "—";
-    }
-    if (fieldName === "__definition_version") {
-      return definitionMeta.definition_version || "—";
-    }
-    return definitionMeta.status || "—";
-  }
-  if (["created_at", "updated_at", "created", "updated"].includes(fieldName)) {
-    return formatDateTimeHour(value);
-  }
-  if (tableMeta?.table === "process_definition_versions" && fieldName === "series_id") {
-    const seriesLabel = getFkCachedLabel("process_definition_series", value);
-    if (seriesLabel !== null && seriesLabel !== undefined && seriesLabel !== "") {
-      return seriesLabel;
-    }
-    return row?.variation_key || value || "—";
-  }
-  if (tableMeta?.table === "process_target_rules") {
-    if (["effective_from", "effective_to"].includes(fieldName)) {
-      return formatDateOnly(value);
-    }
-  }
-  if (tableMeta?.table === "position_assignments") {
-    if (["start_date", "end_date"].includes(field?.name)) {
-      return formatDateOnly(value);
-    }
-  }
-  if (fieldName === "scope") {
-    return formatSelectOptionLabel(field, value);
-  }
-  if (fieldName === "available_formats") {
-    return formatAvailableFormatsSummary(value);
-  }
-  if (field.type === "boolean") {
-    return Number(value) === 1 ? "Si" : "No";
-  }
-  if (isForeignKeyField(field)) {
-    const tableName = resolveFkTable(field.name);
-    if (!tableName) {
-      return value;
-    }
-    const cache = fkLabelCache.value[tableName];
-    const label = cache?.[value];
-    return label ?? value;
-  }
-  return value;
-};
-
-const formatCell = (value, field, row = null) =>
-  formatValueForTable(props.table, value, field, row);
-
-const formatDefinitionRuleCell = (row, fieldName) =>
-  formatValueForTable(
-    allTablesMap.value.process_target_rules || { table: "process_target_rules", fields: [] },
-    row?.[fieldName],
-    { name: fieldName },
-    row
-  );
-
-const toDateInputValue = (value) => {
-  if (!value) {
-    return "";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  return date.toISOString().slice(0, 10);
-};
-
-const toDateTimeInputValue = (value) => {
-  if (!value) {
-    return "";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  return date.toISOString().slice(0, 16);
-};
-
-const normalizeComparableFormValue = (fieldName, value, tableMeta = props.table) => {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-  const fieldMeta = tableMeta?.fields?.find((field) => field.name === fieldName) || null;
-  if (fieldMeta?.type === "date") {
-    return formatDateOnly(value);
-  }
-  if (fieldMeta?.type === "datetime") {
-    return toDateTimeInputValue(value);
-  }
-  if (fieldMeta?.type === "number" || fieldMeta?.type === "boolean") {
-    const numeric = Number(value);
-    return Number.isNaN(numeric) ? String(value) : String(numeric);
-  }
-  return String(value).trim();
-};
-
-const getChangedPayloadKeys = (baseRow, payload, tableMeta = props.table) => {
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-  return Object.keys(payload).filter((key) => (
-    normalizeComparableFormValue(key, payload[key], tableMeta)
-    !== normalizeComparableFormValue(key, baseRow?.[key], tableMeta)
-  ));
-};
-
-const getNextSemanticVersion = (value) => {
-  const source = String(value || "").trim();
-  const match = source.match(/^(\d+)\.(\d+)\.(\d+)$/);
-  if (!match) {
-    return "0.1.0";
-  }
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  const patch = Number(match[3]) + 1;
-  return `${major}.${minor}.${patch}`;
-};
+const {
+  getViewerFieldsForTable,
+  rowKeyForTable,
+  rowKey,
+  buildPersonAssignmentContext,
+  formatValueForTable,
+  formatCell,
+  formatDefinitionRuleCell,
+  toDateInputValue,
+  toDateTimeInputValue,
+  normalizeComparableFormValue,
+  getChangedPayloadKeys,
+  getNextSemanticVersion
+} = useAdminPresentationAdapters({
+  props,
+  allTablesMap,
+  positionMetaById,
+  processIdByDefinitionId,
+  processDefinitionMetaById,
+  fkLabelCache,
+  resolveFkTable: (...args) => resolveFkTable(...args),
+  isForeignKeyField: (...args) => isForeignKeyField(...args),
+  getFkCachedLabel: (...args) => getFkCachedLabel(...args),
+  formatDateOnly,
+  formatDateTimeHour,
+  formatPositionType,
+  formatSelectOptionLabel,
+  formatAvailableFormatsSummary
+});
 
 const {
   pushModalOrigin,
@@ -2053,136 +1846,41 @@ const clearFkTemplateArtifactFilters = async () => {
   };
   await fetchFkRows();
 };
-
-const refreshFormFkDisplayLabels = async () => {
-  const fkFields = formFields.value.filter((field) => isForeignKeyField(field));
-  if (!fkFields.length) {
-    return;
-  }
-  const lookups = fkFields
-    .map((field) => ({
-      fieldName: field.name,
-      tableName: resolveFkTable(field.name),
-      value: formData.value[field.name]
-    }))
-    .filter(({ tableName, value }) => tableName && value !== null && value !== undefined && value !== "");
-
-  await Promise.all(
-    lookups.map(({ tableName, value }) => fetchFkLabel(tableName, value))
-  );
-
-  const nextDisplay = { ...fkDisplay.value };
-  fkFields.forEach((field) => {
-    const value = formData.value[field.name];
-    if (value === null || value === undefined || value === "") {
-      nextDisplay[field.name] = "";
-      return;
-    }
-    const tableName = resolveFkTable(field.name);
-    const label = getFkCachedLabel(tableName, value);
-    nextDisplay[field.name] = label !== null && label !== undefined
-      ? String(label)
-      : String(value);
-  });
-  fkDisplay.value = nextDisplay;
-};
-
-const buildFkFilterParams = () => {
-  return adminFkService.buildFilterParams(fkFilters.value);
-};
-const buildFkCreatePayload = () => {
-  return adminFkService.buildCreatePayload(fkCreateFields.value, fkCreateForm.value);
-};
-
-const debouncedFkSearch = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-  searchTimeout = setTimeout(() => {
-    fetchFkRows();
-  }, 350);
-};
-
-const buildKeys = (row) => {
-  const keys = {};
-  props.table?.primaryKeys?.forEach((key) => {
-    keys[key] = row?.[key];
-  });
-  return keys;
-};
-
-
-const clearProcessDefinitionInlineFilters = async () => {
-  processDefinitionInlineFilters.value = {
-    process_id: "",
-    variation_key: "",
-    status: ""
-  };
-  await fetchRows();
-};
-
-const clearProcessTargetRuleInlineFilters = async () => {
-  processTargetRuleInlineFilters.value = {
-    definition_execution_mode: "",
-    definition_status: ""
-  };
-  await fetchRows();
-};
-
-const clearTemplateArtifactInlineFilters = async () => {
-  templateArtifactInlineFilters.value = {
-    artifact_origin: "",
-    artifact_stage: ""
-  };
-  await fetchRows();
-};
-
-const debouncedSearch = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-  searchTimeout = setTimeout(() => {
-    fetchRows();
-  }, 400);
-};
-
-const debouncedVacantSearch = () => {
-  if (vacantSearchTimeout) {
-    clearTimeout(vacantSearchTimeout);
-  }
-  vacantSearchTimeout = setTimeout(() => {
-    loadVacantPositions();
-  }, 400);
-};
-
-const debouncedUnassignedTemplateArtifactSearch = () => {
-  if (unassignedTemplateArtifactSearchTimeout) {
-    clearTimeout(unassignedTemplateArtifactSearchTimeout);
-  }
-  unassignedTemplateArtifactSearchTimeout = setTimeout(() => {
-    loadUnassignedTemplateArtifacts();
-  }, 400);
-};
-
-const focusSearch = () => {
-  searchInput.value?.focus();
-};
-
-const handleSearchAction = () => {
-  if (props.table?.table === "processes") {
-    openProcessSearch();
-    return;
-  }
-  if (props.table?.table === "documents") {
-    openDocumentSearch();
-    return;
-  }
-  if (isPositionFilterTable.value) {
-    openUnitPositionSearch();
-    return;
-  }
-  focusSearch();
-};
+const {
+  refreshFormFkDisplayLabels,
+  buildFkFilterParams,
+  buildFkCreatePayload,
+  buildKeys,
+  handleGoBack,
+  formatFkViewerValue,
+  formatRecordViewerValue,
+  openDelete,
+  openProcessDefinitionVersioningModal,
+  closeProcessDefinitionVersioningModal
+} = useAdminShellHelpers({
+  props,
+  emit,
+  formFields,
+  formData,
+  fkDisplay,
+  fkFilters,
+  fkCreateFields,
+  fkCreateForm,
+  resolveFkTable,
+  isForeignKeyField,
+  fetchFkLabel,
+  getFkCachedLabel,
+  fetchRows: (...args) => fetchRows(...args),
+  selectedRow,
+  ensureDeleteInstance,
+  getDeleteInstance,
+  processDefinitionVersioningSource,
+  ensureProcessDefinitionVersioningInstance,
+  getProcessDefinitionVersioningInstance,
+  fkTable,
+  recordViewerTable,
+  formatValueForTable
+});
 
 const {
   hideFeedbackToast,
@@ -2191,33 +1889,30 @@ const {
   feedbackToast
 });
 
-const syncTemplateArtifactsFromDist = async () => {
-  if (!isTemplateArtifactsTable.value) {
-    return;
-  }
-  loading.value = true;
-  error.value = "";
-  try {
-    const response = await adminSqlService.syncTemplateArtifacts();
-    const { discovered = 0, outputs = 0, inserted = 0, updated = 0 } = response.data || {};
-    await fetchRows();
-    showFeedbackToast({
-      kind: "success",
-      title: "Sincronizacion completada",
-      message: `Paquetes: ${discovered}. Salidas detectadas: ${outputs}. Insertados: ${inserted}. Actualizados: ${updated}.`
-    });
-  } catch (err) {
-    error.value = err?.response?.data?.message || "No se pudo sincronizar template_artifacts.";
-    showFeedbackToast({
-      kind: "error",
-      title: "No se pudo sincronizar",
-      message: error.value,
-      duration: 7000
-    });
-  } finally {
-    loading.value = false;
-  }
-};
+const {
+  clearProcessDefinitionInlineFilters,
+  clearProcessTargetRuleInlineFilters,
+  clearTemplateArtifactInlineFilters,
+  debouncedFkSearch,
+  debouncedSearch,
+  debouncedVacantSearch,
+  debouncedUnassignedTemplateArtifactSearch,
+  handleSearchAction
+} = useAdminShellSearchActions({
+  props,
+  searchInput,
+  processDefinitionInlineFilters,
+  processTargetRuleInlineFilters,
+  templateArtifactInlineFilters,
+  fetchRows: (...args) => fetchRows(...args),
+  loadVacantPositions: (...args) => loadVacantPositions(...args),
+  loadUnassignedTemplateArtifacts: (...args) => loadUnassignedTemplateArtifacts(...args),
+  fetchFkRows: (...args) => fetchFkRows(...args),
+  openProcessSearch: (...args) => openProcessSearch(...args),
+  openDocumentSearch: (...args) => openDocumentSearch(...args),
+  openUnitPositionSearch: (...args) => openUnitPositionSearch(...args),
+  isPositionFilterTable
+});
 
 const {
   loadDraftArtifactSeedOptions,
@@ -2245,38 +1940,25 @@ const {
   resolveModalElement
 });
 
-const syncTemplateSeedsFromSource = async () => {
-  loading.value = true;
-  error.value = "";
-  try {
-    const response = await adminSqlService.syncTemplateSeeds();
-    const { discovered = 0, inserted = 0, updated = 0 } = response.data || {};
-    if (isTemplateSeedsTable.value) {
-      await fetchRows();
-    }
-    await loadDraftArtifactSeedOptions();
-    showFeedbackToast({
-      kind: "success",
-      title: "Seeds sincronizados",
-      message: `Detectados: ${discovered}. Insertados: ${inserted}. Actualizados: ${updated}.`
-    });
-  } catch (err) {
-    error.value = err?.response?.data?.message || "No se pudieron sincronizar los seeds.";
-    showFeedbackToast({
-      kind: "error",
-      title: "No se pudieron sincronizar",
-      message: error.value,
-      duration: 7000
-    });
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleGoBack = () => {
-  emit("go-back");
-};
-
+const {
+  syncTemplateArtifactsFromDist,
+  syncTemplateSeedsFromSource,
+  applyUnitRelationDefaults
+} = useAdminSyncActions({
+  props,
+  loading,
+  error,
+  formData,
+  fkDisplay,
+  allTablesMap,
+  isTemplateArtifactsTable,
+  isTemplateSeedsTable,
+  fetchRows: (...args) => fetchRows(...args),
+  loadDraftArtifactSeedOptions: (...args) => loadDraftArtifactSeedOptions(...args),
+  showFeedbackToast,
+  resolveDisplayField,
+  setFkLabel
+});
 
 const {
   fetchFkRows,
@@ -2324,13 +2006,6 @@ const {
   allTablesMap
 });
 
-const formatFkViewerValue = (field, row) => {
-  if (!row || !field) {
-    return "—";
-  }
-  return formatValueForTable(fkTable.value, row[field.name], field, row);
-};
-
 const {
   openFkViewer,
   closeFkViewer,
@@ -2366,13 +2041,6 @@ const {
   ensureFkCreateInstance,
   getFkCreateInstance
 });
-
-const formatRecordViewerValue = (field, row) => {
-  if (!row || !field) {
-    return "—";
-  }
-  return formatValueForTable(recordViewerTable.value, row[field.name], field, row);
-};
 
 const {
   openRecordViewer,
@@ -2661,37 +2329,6 @@ const {
   submitForm: async () => submitForm()
 });
 
-const applyUnitRelationDefaults = async () => {
-  if (props.table?.table !== "unit_relations") {
-    return;
-  }
-  try {
-    const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("relation_unit_types"), {
-      params: {
-        filter_code: "org",
-        limit: 1
-      }
-    });
-    const row = response.data?.[0];
-    if (!row?.id) {
-      return;
-    }
-    formData.value = {
-      ...formData.value,
-      relation_type_id: String(row.id)
-    };
-    const displayField = resolveDisplayField(allTablesMap.value?.relation_unit_types);
-    const labelValue = row[displayField] ?? row.id;
-    setFkLabel("relation_unit_types", row.id, String(labelValue));
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      relation_type_id: String(labelValue)
-    };
-  } catch (error) {
-    // Default remains empty if org type cannot be resolved.
-  }
-};
-
 const {
   openCreate,
   handlePrimaryCreateAction,
@@ -2801,23 +2438,6 @@ const {
   ensureUnitPositionSearchInstance
 });
 
-const openDelete = (row) => {
-  selectedRow.value = row;
-  ensureDeleteInstance();
-  deleteInstance?.show();
-};
-
-const openProcessDefinitionVersioningModal = () => {
-  processDefinitionVersioningSource.value = selectedRow.value ? { ...selectedRow.value } : null;
-  ensureProcessDefinitionVersioningInstance();
-  processDefinitionVersioningInstance?.show();
-};
-
-const closeProcessDefinitionVersioningModal = () => {
-  processDefinitionVersioningInstance?.hide();
-  processDefinitionVersioningSource.value = null;
-};
-
 const {
   submitForm,
   confirmDelete
@@ -2850,115 +2470,58 @@ const {
 });
 
 
-watch(
-  () => props.table?.table,
-  async () => {
-    resetInlineFkState();
-    if (personAssignmentsInstance && isModalShown(personAssignmentsModal.value)) {
-      personAssignmentsInstance.hide();
-    }
-    if (unitPositionSearchInstance && isModalShown(unitPositionSearchModal.value)) {
-      unitPositionSearchInstance.hide();
-    }
-    resetForm();
-    resetPersonAssignments();
-    positionMetaById.value = {};
-    vacantSearchTerm.value = "";
-    vacantPositionRows.value = [];
-    vacantPositionError.value = "";
-    vacantPositionLoading.value = false;
-    processFilters.value = {
-      parent_id: "",
-      is_active: ""
-    };
-    processFilterLabels.value = {
-      parent_id: ""
-    };
-    templateFilters.value = {
-      name: "",
-      slug: "",
-      description: "",
-      process_id: ""
-    };
-    templateFilterLabels.value = {
-      process_id: ""
-    };
-    documentFilters.value = {
-      task_id: "",
-      status: ""
-    };
-    documentFilterLabels.value = {
-      task_id: ""
-    };
-    unitPositionFilters.value = {
-      unit_type_id: "",
-      unit_id: "",
-      cargo_id: ""
-    };
-    vacantPositionFilters.value = {
-      unit_type_id: "",
-      unit_id: "",
-      cargo_id: "",
-      position_type: ""
-    };
-    unitPositionUnitTypeOptions.value = [];
-    unitPositionUnitOptions.value = [];
-    unitPositionCargoOptions.value = [];
-    vacantPositionUnitTypeOptions.value = [];
-    vacantPositionUnitOptions.value = [];
-    vacantPositionCargoOptions.value = [];
-    unassignedTemplateArtifactSearch.value = "";
-    unassignedTemplateArtifactFilters.value = {
-      is_active: ""
-    };
-    unassignedTemplateArtifactRows.value = [];
-    unassignedTemplateArtifactError.value = "";
-    unassignedTemplateArtifactLoading.value = false;
-    processDefinitionInlineFilters.value = {
-      process_id: "",
-      variation_key: "",
-      status: ""
-    };
-    processTargetRuleInlineFilters.value = {
-      definition_execution_mode: "",
-      definition_status: ""
-    };
-    templateArtifactInlineFilters.value = {
-      artifact_origin: "",
-      artifact_stage: ""
-    };
-    processDefinitionProcessOptions.value = [];
-    processDefinitionSeriesOptions.value = [];
-    if (isPositionFilterTable.value) {
-      await loadUnitPositionUnitTypeOptions();
-      await loadUnitPositionCargoOptions();
-    }
-    if (isPositionAssignmentsTable.value) {
-      await loadVacantPositionUnitTypeOptions();
-      await loadVacantPositionCargoOptions();
-    }
-    if (isProcessDefinitionFilterTable.value) {
-      await loadProcessDefinitionProcessOptions();
-      await loadProcessDefinitionSeriesOptions();
-    }
-    await fetchRows();
-  },
-  { immediate: true }
-);
+useAdminTableReset({
+  props,
+  isModalShown,
+  personAssignmentsModal,
+  unitPositionSearchModal,
+  getPersonAssignmentsInstance,
+  getUnitPositionSearchInstance,
+  resetInlineFkState,
+  resetForm,
+  resetPersonAssignments,
+  positionMetaById,
+  vacantSearchTerm,
+  vacantPositionRows,
+  vacantPositionError,
+  vacantPositionLoading,
+  processFilters,
+  processFilterLabels,
+  templateFilters,
+  templateFilterLabels,
+  documentFilters,
+  documentFilterLabels,
+  unitPositionFilters,
+  vacantPositionFilters,
+  unitPositionUnitTypeOptions,
+  unitPositionUnitOptions,
+  unitPositionCargoOptions,
+  vacantPositionUnitTypeOptions,
+  vacantPositionUnitOptions,
+  vacantPositionCargoOptions,
+  unassignedTemplateArtifactSearch,
+  unassignedTemplateArtifactFilters,
+  unassignedTemplateArtifactRows,
+  unassignedTemplateArtifactError,
+  unassignedTemplateArtifactLoading,
+  processDefinitionInlineFilters,
+  processTargetRuleInlineFilters,
+  templateArtifactInlineFilters,
+  processDefinitionProcessOptions,
+  processDefinitionSeriesOptions,
+  isPositionFilterTable,
+  isPositionAssignmentsTable,
+  isProcessDefinitionFilterTable,
+  loadUnitPositionUnitTypeOptions,
+  loadUnitPositionCargoOptions,
+  loadVacantPositionUnitTypeOptions,
+  loadVacantPositionCargoOptions,
+  loadProcessDefinitionProcessOptions,
+  loadProcessDefinitionSeriesOptions,
+  fetchRows
+});
 
 onBeforeUnmount(() => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-  if (vacantSearchTimeout) {
-    clearTimeout(vacantSearchTimeout);
-  }
-  if (unassignedTemplateArtifactSearchTimeout) {
-    clearTimeout(unassignedTemplateArtifactSearchTimeout);
-  }
-  if (feedbackToastTimeout) {
-    clearTimeout(feedbackToastTimeout);
-  }
   resetInlineFkState();
 });
 

@@ -1,27 +1,39 @@
-import pdfplumber
 import sys
 
-if len(sys.argv) < 3:
-    print("Usage: python3 find_marker.py <pdf_path> <token>")
-    sys.exit(1)
+import pdfplumber
 
-PDF = sys.argv[1]
-PATTERN = sys.argv[2]
 
-with pdfplumber.open(PDF) as pdf:
-    for page_number, page in enumerate(pdf.pages, start=1):
-        words = page.extract_words(use_text_flow=True)
+def find_marker_coordinates(pdf_path: str, pattern: str):
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_number, page in enumerate(pdf.pages, start=1):
+            words = page.extract_words(use_text_flow=True)
 
-        for w in words:
-            if PATTERN in w["text"]:
-                x0 = w["x0"]
-                top = w["top"]
+            for word in words:
+                if pattern in word["text"]:
+                    x0 = word["x0"]
+                    top = word["top"]
+                    page_height = page.height
+                    y_pdf = page_height - top + 25
+                    return {
+                        "page": page_number,
+                        "x": int(x0),
+                        "y": int(y_pdf),
+                    }
+    return None
 
-                # Convertir a coordenadas PDF (origen abajo-izquierda)
-                page_height = page.height
-                y_pdf = page_height - top + 25
 
-                print(f"{page_number},{int(x0)},{int(y_pdf)}")
-                sys.exit(0)
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: python3 find_marker.py <pdf_path> <token>")
+        sys.exit(1)
 
-print("NOT_FOUND")
+    result = find_marker_coordinates(sys.argv[1], sys.argv[2])
+    if result is None:
+        print("NOT_FOUND")
+        return
+
+    print(f"{result['page']},{result['x']},{result['y']}")
+
+
+if __name__ == "__main__":
+    main()

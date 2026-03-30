@@ -19,6 +19,10 @@ export const API_ROUTES = {
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
+  USERS_ME: `${API_PREFIX}/users/me`,
+  USERS_MY_CERTIFICATES: `${API_PREFIX}/users/me/certificates`,
+  USERS_MY_CERTIFICATE_DOWNLOAD: (certificateId) => `${API_PREFIX}/users/me/certificates/${certificateId}/download`,
+  USERS_MY_CERTIFICATE_DEFAULT: (certificateId) => `${API_PREFIX}/users/me/certificates/${certificateId}/default`,
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
   USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
   USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
@@ -31,5 +35,6 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/draft/${artifactId}`,
   ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
-  ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`
+  ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
+  SIGN: `${API_PREFIX}/sign`
 };

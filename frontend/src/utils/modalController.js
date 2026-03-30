@@ -3,7 +3,6 @@ const modalRegistry = new WeakMap();
 class ModalController {
     constructor(element) {
         this.element = element;
-        this.backdrop = null;
         this.boundOnDismiss = this.onDismissClick.bind(this);
         this.boundOnKeydown = this.onKeydown.bind(this);
         this.element.addEventListener('click', this.boundOnDismiss);
@@ -43,16 +42,6 @@ class ModalController {
             this.dispatchLifecycleEvent('shown.bs.modal');
         });
 
-        if (!this.backdrop) {
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modal-backdrop fade show';
-            backdrop.dataset.modalBackdrop = 'true';
-            backdrop.addEventListener('click', () => this.hide());
-            document.body.appendChild(backdrop);
-            this.backdrop = backdrop;
-        }
-
-        document.body.classList.add('modal-open');
         document.addEventListener('keydown', this.boundOnKeydown);
     }
 
@@ -68,16 +57,7 @@ class ModalController {
         this.element.removeAttribute('role');
         this.element.style.display = 'none';
 
-        if (this.backdrop) {
-            this.backdrop.remove();
-            this.backdrop = null;
-        }
-
         document.removeEventListener('keydown', this.boundOnKeydown);
-
-        if (!document.querySelector('.modal.show')) {
-            document.body.classList.remove('modal-open');
-        }
 
         this.dispatchLifecycleEvent('hidden.bs.modal');
     }

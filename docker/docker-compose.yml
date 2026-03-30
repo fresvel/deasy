@@ -174,6 +174,9 @@ services:
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
       RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      SIGN_REQUEST_QUEUE: deasy.sign.request
+      SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
     ports:
       - "${BACKEND_PORT}:3030"
     volumes:
@@ -268,14 +271,19 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      SIGN_REQUEST_QUEUE: deasy.sign.request
+      PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}
+      SIGNER_EMBED_VALIDATION_INFO: ${SIGNER_EMBED_VALIDATION_INFO:-1}
+      SIGNER_USE_PADES_LTA: ${SIGNER_USE_PADES_LTA:-0}
+      SIGNER_USE_GHOSTSCRIPT: ${SIGNER_USE_GHOSTSCRIPT:-1}
     ports:
       - "4000:4000"
     volumes:
       - ../signer:/app
-      - signer_node_modules:/app/node_modules
-      - signer_sigmaker_node_modules:/app/sigmaker/node_modules
     depends_on:
       - minio
+      - rabbitmq
 
   analytics:
     build:
@@ -302,5 +310,3 @@ volumes:
   docs_pnpm_store:
   uploads_data:
   storage_data:
-  signer_node_modules:
-  signer_sigmaker_node_modules:

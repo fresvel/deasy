@@ -16,11 +16,12 @@
     :title="modalTitle"
     labelled-by="btn-sera-status-label"
     size="md"
-    dialog-class="modal-dialog-centered"
+    dialog-class="items-center"
+    content-class="profile-admin-skin"
     body-class="pb-2"
     @close="closeModal"
   >
-    <div class="status-modal-body">
+    <div class="status-dialog-body">
       <div class="status-modal-icon" :class="statusToneClass">
         <component :is="statusIcon" class="status-modal-icon-svg" />
       </div>
@@ -188,7 +189,7 @@ const handleClick = () => {
   opacity: 1;
 }
 
-.status-modal-body {
+.status-dialog-body {
   display: flex;
   align-items: center;
   gap: 1rem;

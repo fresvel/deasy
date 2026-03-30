@@ -1,42 +1,34 @@
-FROM node:22-slim
+FROM python:3.12-slim
 
-# Instalar dependencias del sistema: Python, Ghostscript, poppler, librerías para canvas
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     ghostscript \
     poppler-utils \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libjpeg-dev \
-    libgif-dev \
-    librsvg2-dev \
     ca-certificates \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
-
-# Instalar dependencias Python del firmador.
-# `pyhanko` ya expone CLI; `pyhanko-cli` no existe como paquete separado.
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
-    pyhanko \
-    pdfplumber
 
 RUN useradd --create-home --uid 10001 appuser
 
 WORKDIR /app
 
-# Instalar dependencias Node del servicio principal
-COPY package*.json ./
+COPY requirements.txt ./
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+WORKDIR /opt/sigmaker
+COPY sigmaker/package.json ./package.json
+COPY sigmaker/index.js ./index.js
+COPY sigmaker/cli.mjs ./cli.mjs
+COPY sigmaker/puce_logo.png ./puce_logo.png
 RUN npm install
 
-# Instalar dependencias del sigmaker
-COPY sigmaker/package*.json ./sigmaker/
-RUN cd sigmaker && npm install
-
-# Copiar el resto del código
+WORKDIR /app
 COPY . .
+
+RUN mkdir -p /tmp/deasy-signer-workspace && chown -R appuser:appuser /app /tmp/deasy-signer-workspace
 
 USER appuser
 
 EXPOSE 4000
 
-CMD ["node", "index.js"]
+CMD ["python3", "app.py"]

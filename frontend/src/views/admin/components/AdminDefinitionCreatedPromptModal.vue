@@ -1,6 +1,6 @@
 <template>
   <AdminModalShell ref="modalRef" labelled-by="definitionArtifactsPromptModalLabel" title="Definicion creada">
-    <p class="mb-0">
+    <p class="mb-0 text-sm text-slate-700">
       La definicion se creo correctamente.
       <span v-if="context?.name">
         <strong>{{ context.name }}</strong>.

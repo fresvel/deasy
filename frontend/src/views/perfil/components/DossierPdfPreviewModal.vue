@@ -4,7 +4,8 @@
     title="Vista previa del PDF"
     labelled-by="dossier-pdf-preview-modal-title"
     size="xl"
-    dialog-class="modal-dialog-centered modal-dialog-scrollable"
+    dialog-class="items-center"
+    content-class="profile-admin-skin"
     body-class="p-0"
   >
     <div class="pdf-preview-shell">

@@ -1,6 +1,6 @@
 <template>
 
-<div class="row g-3 justify-content-end align-items-end">
+<div class="deasy-row justify-end gap-3 items-end">
     <s-select
         label="Ciclo Académico"
         :options="periodos"

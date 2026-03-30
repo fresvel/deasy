@@ -3,11 +3,11 @@
     ref="modalRef"
     labelled-by="processDefinitionActivationModalLabel"
     title="Activar definicion"
-    dialog-class="definition-activation-modal-dialog"
+    dialog-class="definition-activation-shell"
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="checking" class="text-muted">Validando configuracion de la definicion...</div>
+    <div v-if="checking" class="text-sm text-slate-500">Validando configuracion de la definicion...</div>
     <template v-else>
       <p class="mb-2">Vas a activar una definicion en borrador.</p>
       <div class="definition-activation-warning mt-3">
@@ -33,7 +33,7 @@
       </div>
 
       <div class="definition-activation-panel mt-3">
-        <div class="btn-group btn-group-sm definition-activation-menu" role="group" aria-label="Resumen de activacion">
+        <div class="definition-activation-menu flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
           <AdminButton variant="secondary" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Definicion</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Reglas</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Disparadores</AdminButton>
@@ -41,13 +41,13 @@
         </div>
 
         <div v-if="view === 'definition'" class="mt-3">
-          <div class="row g-2 small">
-            <div class="col-12 col-md-6"><strong>Proceso:</strong> {{ formatCell(selectedRow?.process_id, { name: 'process_id' }, selectedRow || {}) }}</div>
-            <div class="col-12 col-md-6"><strong>Serie:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
-            <div class="col-12 col-md-6"><strong>Version:</strong> {{ selectedRow?.definition_version || "—" }}</div>
-            <div class="col-12 col-md-6"><strong>Modo:</strong> {{ selectedRow?.execution_mode || "—" }}</div>
-            <div class="col-12"><strong>Nombre:</strong> {{ selectedRow?.name || "—" }}</div>
-            <div class="col-12"><strong>Descripcion:</strong> {{ selectedRow?.description || "—" }}</div>
+          <div class="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+            <div><strong>Proceso:</strong> {{ formatCell(selectedRow?.process_id, { name: 'process_id' }, selectedRow || {}) }}</div>
+            <div><strong>Serie:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
+            <div><strong>Version:</strong> {{ selectedRow?.definition_version || "—" }}</div>
+            <div><strong>Modo:</strong> {{ selectedRow?.execution_mode || "—" }}</div>
+            <div class="md:col-span-2"><strong>Nombre:</strong> {{ selectedRow?.name || "—" }}</div>
+            <div class="md:col-span-2"><strong>Descripcion:</strong> {{ selectedRow?.description || "—" }}</div>
           </div>
         </div>
 
@@ -57,8 +57,8 @@
             :fields="ruleTableFields"
             :rows="rules"
             :row-key="(row) => `activation-rule-${row.id}`"
-            table-class="table table-sm table-striped align-middle"
-            responsive-class="table-responsive"
+            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -73,7 +73,7 @@
               </template>
             </template>
           </AdminDataTable>
-          <div v-else class="text-muted small">Sin reglas registradas.</div>
+          <div v-else class="text-sm text-slate-500">Sin reglas registradas.</div>
         </div>
 
         <div v-else-if="view === 'triggers'" class="mt-3">
@@ -82,8 +82,8 @@
             :fields="triggerTableFields"
             :rows="triggers"
             :row-key="(row) => `activation-trigger-${row.id}`"
-            table-class="table table-sm table-striped align-middle"
-            responsive-class="table-responsive"
+            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -98,7 +98,7 @@
               </template>
             </template>
           </AdminDataTable>
-          <div v-else class="text-muted small">Sin disparadores registrados.</div>
+          <div v-else class="text-sm text-slate-500">Sin disparadores registrados.</div>
         </div>
 
         <div v-else class="mt-3">
@@ -107,8 +107,8 @@
             :fields="artifactTableFields"
             :rows="artifacts"
             :row-key="(row) => `activation-artifact-${row.id}`"
-            table-class="table table-sm table-striped align-middle"
-            responsive-class="table-responsive"
+            table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+            responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
             scroll-class=""
           >
             <template #cell="{ row, field }">
@@ -123,7 +123,7 @@
               </template>
             </template>
           </AdminDataTable>
-          <div v-else class="text-muted small">Sin paquetes vinculados.</div>
+          <div v-else class="text-sm text-slate-500">Sin paquetes vinculados.</div>
         </div>
       </div>
     </template>

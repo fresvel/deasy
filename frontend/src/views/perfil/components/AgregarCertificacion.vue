@@ -1,18 +1,18 @@
 <template>
 <ProfileModalLayout title="Agregar certificación" description="Detalla tus certificaciones o avales obtenidos." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
-      <div class="w-full">
-        <label for="cert-tema" class="form-label">Nombre de la certificación</label>
+      <div class="w-full space-y-2">
+        <label for="cert-tema" class="profile-field-label">Nombre de la certificación</label>
         <textarea
           id="cert-tema"
-          class="form-control "
+          class="profile-textarea"
           rows="2"
           v-model="form.titulo"
           placeholder="Ej. Certificación en Gestión de Proyectos"
         ></textarea>
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Institución emisora</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Institución emisora</label>
         <s-select
           :options="instituciones"
           v-model="form.institucion"
@@ -21,14 +21,14 @@
         <input
           v-if="form.institucion === 'Otra'"
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Especifica la institución"
           v-model="form.institucionPersonalizada"
         />
       </div>
 
       <div class="w-full">
-        <label class="form-label">Ámbito</label>
+        <label class="profile-field-label">Ámbito</label>
         <s-select
           :options="['Nacional', 'Internacional']"
           v-model="form.tipo"
@@ -48,11 +48,11 @@
         />
       </div>
 
-      <div class="w-full">
-        <label for="cert-descripcion" class="form-label">Descripción (opcional)</label>
+      <div class="w-full space-y-2">
+        <label for="cert-descripcion" class="profile-field-label">Descripción (opcional)</label>
         <textarea
           id="cert-descripcion"
-          class="form-control "
+          class="profile-textarea"
           rows="2"
           v-model="form.descripcion"
           placeholder="Información adicional relevante"
@@ -239,21 +239,3 @@ const onSubmit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.modal-title {
-  color: var(--brand-navy);
-}
-
-.btn-primary {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.8rem;
-  font-weight: 600;
-  background: var(--brand-gradient);
-  border: none;
-}
-
-.btn-primary:hover {
-  opacity: 0.92;
-}
-</style>

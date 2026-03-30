@@ -1,5 +1,5 @@
 <template>
-<div class="w-full animate-fade-in">
+<div class="profile-admin-skin w-full animate-fade-in">
   <ProfileSectionShell
     title="Formación Profesional"
     subtitle="Registra tu formación académica y títulos obtenidos."
@@ -148,9 +148,9 @@
 
 
 <!-- Modal -->
-<div class="modal fade" id="tituloModal" tabindex="-1" aria-labelledby="tituloModalLabel" aria-hidden="true" ref="modal">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-2xl overflow-hidden p-0">
+<div class="profile-admin-skin profile-dialog-root" data-dialog-root id="tituloModal" tabindex="-1" aria-labelledby="tituloModalLabel" aria-hidden="true" ref="modal">
+  <div class="profile-dialog-shell">
+    <div class="profile-dialog-panel">
       <AgregarTitulo @title-added="handleTituloAdded" />
     </div>
   </div>

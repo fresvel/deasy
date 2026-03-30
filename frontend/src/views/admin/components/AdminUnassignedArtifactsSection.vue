@@ -1,7 +1,6 @@
 <template>
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="profile-section-header mb-3">
+  <section class="mt-4 space-y-4">
+      <div class="profile-section-header">
         <div>
           <h2 class="text-start profile-section-title table-title-with-icon">
             <span class="table-title-icon" aria-hidden="true">
@@ -12,24 +11,23 @@
           <p class="profile-section-subtitle mb-0">Muestra artifacts que aun no tienen ningun vinculo en plantillas de definicion.</p>
         </div>
         <div class="profile-section-actions">
-          <span class="badge text-bg-light">{{ rows.length }}</span>
+          <span class="inline-flex min-w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-600">{{ rows.length }}</span>
         </div>
       </div>
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="row g-3 align-items-center mb-3">
-            <div class="col-12 col-md-4 col-lg-3">
+      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
+            <div class="md:col-span-4 lg:col-span-3">
               <AdminInputField :model-value="searchTerm" placeholder="Buscar artifacts sin definicion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
             </div>
-            <div class="col-12 col-md-4 col-lg-2">
+            <div class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.is_active" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
                 <option value="">Activo</option>
                 <option value="1">Si</option>
                 <option value="0">No</option>
               </AdminSelectField>
             </div>
-            <div class="col-12 col-md-4 col-lg-2 text-lg-end ms-lg-auto">
-              <div class="d-inline-flex align-items-center gap-2">
+            <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
+              <div class="inline-flex items-center gap-2">
                 <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
                   <font-awesome-icon icon="times" />
                 </AdminButton>
@@ -40,7 +38,7 @@
             </div>
           </div>
 
-          <div v-if="loading" class="text-muted">Cargando artifacts sin definicion...</div>
+          <div v-if="loading" class="text-sm text-slate-500">Cargando artifacts sin definicion...</div>
           <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
           <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `artifact-free-${row.id}`" empty-text="No hay artifacts sin definicion.">
             <template #cell="{ row, field }">
@@ -67,7 +65,7 @@
               </template>
             </template>
             <template #actions="{ row }">
-              <div class="d-inline-flex align-items-center gap-1">
+              <div class="inline-flex items-center gap-1">
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-view" title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>
@@ -77,10 +75,8 @@
               </div>
             </template>
           </AdminDataTable>
-        </div>
       </div>
-    </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
