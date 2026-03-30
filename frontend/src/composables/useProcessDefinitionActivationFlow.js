@@ -10,7 +10,7 @@ export function useProcessDefinitionActivationFlow({
   selectedRow,
   modalError,
   editorModal,
-  editorInstance,
+  getEditorInstance,
   processDefinitionVersioningSource,
   processDefinitionCloneSourceId,
   processDefinitionChecklistLoading,
@@ -43,6 +43,10 @@ export function useProcessDefinitionActivationFlow({
   openDefinitionArtifactsFromActivation,
   submitForm
 }) {
+  const resolveEditorInstance = () => (
+    typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
+  );
+
   const loadProcessDefinitionActivationDetail = async (definitionId) => {
     processDefinitionActivationRules.value = [];
     processDefinitionActivationTriggers.value = [];
@@ -91,7 +95,7 @@ export function useProcessDefinitionActivationFlow({
     processDefinitionActivationHasRequiredArtifacts.value = true;
     processDefinitionActivationView.value = "definition";
     processDefinitionActivationRequiresArtifacts.value = Boolean(
-      editorInstance
+      resolveEditorInstance()
       && isModalShown(editorModal.value)
       && props.table?.table === "process_definition_versions"
         ? Number(formData.value?.has_document) === 1
@@ -199,7 +203,7 @@ export function useProcessDefinitionActivationFlow({
   const cancelProcessDefinitionEdit = (closeProcessDefinitionVersioningModal) => {
     processDefinitionCloneSourceId.value = "";
     closeProcessDefinitionVersioningModal();
-    editorInstance?.hide();
+    resolveEditorInstance()?.hide();
   };
 
   const promoteProcessDefinitionToNewVersion = async (closeProcessDefinitionVersioningModal) => {

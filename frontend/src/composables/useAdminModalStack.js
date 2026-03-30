@@ -20,7 +20,27 @@ export function useAdminModalStack() {
     modalOriginStack.length ? modalOriginStack.pop() : null
   );
 
-  const resolveModalElement = (target) => target?.el || target;
+  const resolveModalElement = (target) => {
+    let current = target;
+    for (let index = 0; index < 6; index += 1) {
+      if (!current) {
+        return null;
+      }
+      if (current instanceof HTMLElement) {
+        return current;
+      }
+      if ("value" in current) {
+        current = current.value;
+        continue;
+      }
+      if ("el" in current) {
+        current = current.el;
+        continue;
+      }
+      break;
+    }
+    return current instanceof HTMLElement ? current : null;
+  };
   const isModalShown = (target) => resolveModalElement(target)?.classList?.contains("show");
 
   const hideAndRemember = (origin, instance, target) => {

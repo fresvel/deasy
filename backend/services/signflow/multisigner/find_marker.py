@@ -2,7 +2,7 @@ import pdfplumber
 import sys
 
 PDF = sys.argv[1]
-PATTERN = "!-1804326534-!"
+PATTERN = "!-9b6D6WnuUE-!"
 
 with pdfplumber.open(PDF) as pdf:
     for page_number, page in enumerate(pdf.pages, start=1):

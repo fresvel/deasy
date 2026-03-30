@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS persons (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE persons
+  ADD COLUMN IF NOT EXISTS token VARCHAR(10) NULL AFTER is_active,
   ADD COLUMN IF NOT EXISTS pais_residencia VARCHAR(80) NULL AFTER pais,
   ADD COLUMN IF NOT EXISTS provincia_residencia VARCHAR(120) NULL AFTER pais_residencia,
   ADD COLUMN IF NOT EXISTS ciudad_residencia VARCHAR(120) NULL AFTER provincia_residencia,

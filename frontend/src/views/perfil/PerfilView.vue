@@ -17,7 +17,7 @@
     </app-workspace-header>
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
-      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
+      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :signature-marker="signatureMarker" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
         <div class="flex flex-col">
             <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white px-2">
                 Secciones
@@ -167,6 +167,14 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
         }
         return 'Usuario';
     });
+    const signatureMarker = computed(() => {
+        const directMarker = currentUser.value?.signatureMarker;
+        if (directMarker) {
+            return directMarker;
+        }
+        const rawToken = currentUser.value?.signatureToken ?? currentUser.value?.token ?? '';
+        return rawToken ? `!-${rawToken}-!` : '';
+    });
 
     const resolvePhotoUrl = (value) => {
         if (!value) {
@@ -177,6 +185,33 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
         }
         const sanitized = value.replace(/^\/+/, '');
         return `${API_BASE_URL.replace(/\/$/, '')}/${sanitized}`;
+    };
+
+    const refreshCurrentUser = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            return;
+        }
+
+        try {
+            const { data } = await axios.get(API_ROUTES.USERS_ME, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (data?.user) {
+                const mergedUser = {
+                    ...(currentUser.value ?? {}),
+                    ...data.user
+                };
+                currentUser.value = mergedUser;
+                userPhoto.value = resolvePhotoUrl(mergedUser.photoUrl);
+                localStorage.setItem('user', JSON.stringify(mergedUser));
+            }
+        } catch (error) {
+            console.error('Error al refrescar perfil del usuario:', error);
+        }
     };
 
     const dossierCounts = ref({
@@ -276,6 +311,7 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
                 console.log('👤 Usuario cargado:', currentUser.value);
 
                 userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
+                refreshCurrentUser();
                 
                 // Cargar tareas con la cédula del usuario
                 if (currentUser.value.cedula) {

@@ -33,6 +33,15 @@
           Cuenta institucional
         </p>
       </div>
+
+      <div v-if="signatureMarker" class="w-full mt-3 bg-white/10 rounded-xl px-3 py-2.5 border border-white/20 flex flex-col items-center justify-center">
+        <p class="text-sky-100/80 text-[11px] font-semibold tracking-wide text-center uppercase">
+          Token firma
+        </p>
+        <p class="text-white text-xs font-mono text-center break-all mt-1 w-full">
+          {{ signatureMarker }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -48,6 +57,10 @@ const props = defineProps({
     username: {
         type: String,
         default: 'Usuario'
+    },
+    signatureMarker: {
+        type: String,
+        default: ''
     },
     editable: {
         type: Boolean,

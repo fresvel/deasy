@@ -6,7 +6,7 @@ export function useProcessDefinitionManager({
   props,
   editorMode,
   selectedRow,
-  editorInstance,
+  getEditorInstance,
   definitionRulesContext,
   definitionRulesRows,
   definitionRulesLoading,
@@ -40,7 +40,6 @@ export function useProcessDefinitionManager({
   clearModalOrigins,
   pushModalOrigin,
   closeProcessDefinitionActivationModal,
-  closeDefinitionArtifactsPrompt,
   openFkSearch,
   resolveFkTable,
   formatFkOptionLabel,
@@ -63,6 +62,10 @@ export function useProcessDefinitionManager({
     definitionArtifactsForm.value = processDefinitionAdminService.createArtifactForm();
     definitionArtifactsLabels.value = processDefinitionAdminService.createArtifactLabels();
   };
+
+  const resolveEditorInstance = () => (
+    typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
+  );
 
   const resetDefinitionRulesForm = () => {
     definitionRulesEditId.value = "";
@@ -186,7 +189,7 @@ export function useProcessDefinitionManager({
     }
     clearModalOrigins();
     pushModalOrigin("editor");
-    editorInstance?.hide();
+    resolveEditorInstance()?.hide();
     await openDefinitionRulesManager(selectedRow.value);
   };
 
@@ -410,7 +413,7 @@ export function useProcessDefinitionManager({
     }
     clearModalOrigins();
     pushModalOrigin("editor");
-    editorInstance?.hide();
+    resolveEditorInstance()?.hide();
     await openDefinitionTriggersManager(selectedRow.value);
   };
 
@@ -607,7 +610,7 @@ export function useProcessDefinitionManager({
     }
     clearModalOrigins();
     pushModalOrigin("editor");
-    editorInstance?.hide();
+    resolveEditorInstance()?.hide();
     await openDefinitionArtifactsManager(selectedRow.value);
   };
 
