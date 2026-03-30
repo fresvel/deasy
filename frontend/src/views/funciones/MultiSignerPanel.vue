@@ -355,8 +355,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
-import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
+import { pdfjsLib } from "@/utils/pdfjsSetup";
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -384,37 +383,6 @@ const props = defineProps({
 const emit = defineEmits(["back", "start-batch", "download-batch"]);
 
 let inputSequence = 0;
-const installPdfJsCollectionPolyfills = () => {
-  if (typeof Map !== "undefined" && !Map.prototype.getOrInsertComputed) {
-    Object.defineProperty(Map.prototype, "getOrInsertComputed", {
-      value(key, compute) {
-        if (this.has(key)) return this.get(key);
-        const value = compute(key);
-        this.set(key, value);
-        return value;
-      },
-      configurable: true,
-      writable: true
-    });
-  }
-
-  if (typeof WeakMap !== "undefined" && !WeakMap.prototype.getOrInsertComputed) {
-    Object.defineProperty(WeakMap.prototype, "getOrInsertComputed", {
-      value(key, compute) {
-        if (this.has(key)) return this.get(key);
-        const value = compute(key);
-        this.set(key, value);
-        return value;
-      },
-      configurable: true,
-      writable: true
-    });
-  }
-};
-
-installPdfJsCollectionPolyfills();
-pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
-
 const documents = ref([]);
 const currentDocumentIndex = ref(0);
 const currentPage = ref(1);
@@ -434,6 +402,10 @@ let pdfScale = 1;
 let pageHeightPdf = 0;
 const FIELD_WIDTH = 124;
 const FIELD_HEIGHT = 48;
+const PDF_LOAD_OPTIONS = {
+  enableXfa: true,
+  stopAtErrors: false
+};
 const sharedFields = ref([]);
 const perDocumentFields = ref({});
 const activeSelectionBox = ref(null);
@@ -529,7 +501,10 @@ const loadCurrentDocument = async () => {
   }
 
   const fileBuffer = await selected.file.arrayBuffer();
-  pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(fileBuffer) }).promise;
+  pdfDoc = await pdfjsLib.getDocument({
+    data: new Uint8Array(fileBuffer),
+    ...PDF_LOAD_OPTIONS
+  }).promise;
   totalPages.value = pdfDoc.numPages;
   currentPage.value = 1;
   pageInput.value = 1;

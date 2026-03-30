@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -544,35 +545,49 @@ def publish_response(channel, response_queue: str, payload: dict[str, Any]):
 
 
 def start_rabbit_worker():
-    parameters = pika.URLParameters(RABBITMQ_URL)
-    connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
-    channel.queue_declare(queue=SIGN_REQUEST_QUEUE, durable=True)
-    channel.basic_qos(prefetch_count=1)
-    logger.info("RabbitMQ conectado en %s", RABBITMQ_URL)
-    logger.info("Escuchando solicitudes en %s", SIGN_REQUEST_QUEUE)
-
-    def on_message(ch, method, properties, body):
+    while True:
+        connection = None
         try:
-            payload = json.loads(body.decode("utf-8"))
+            parameters = pika.URLParameters(RABBITMQ_URL)
+            parameters.heartbeat = 30
+            parameters.blocked_connection_timeout = 300
+            connection = pika.BlockingConnection(parameters)
+            channel = connection.channel()
+            channel.queue_declare(queue=SIGN_REQUEST_QUEUE, durable=True)
+            channel.basic_qos(prefetch_count=1)
+            logger.info("RabbitMQ conectado en %s", RABBITMQ_URL)
+            logger.info("Escuchando solicitudes en %s", SIGN_REQUEST_QUEUE)
+
+            def on_message(ch, method, properties, body):
+                try:
+                    payload = json.loads(body.decode("utf-8"))
+                except Exception as exc:
+                    logger.error("Payload RabbitMQ inválido: %s", exc)
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    return
+
+                response_queue = payload.get("responseQueue")
+                if not response_queue:
+                    logger.error("Solicitud RabbitMQ sin responseQueue")
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    return
+
+                result = process_job(payload)
+                result["correlationId"] = payload.get("correlationId")
+                publish_response(ch, response_queue, result)
+                ch.basic_ack(delivery_tag=method.delivery_tag)
+
+            channel.basic_consume(queue=SIGN_REQUEST_QUEUE, on_message_callback=on_message)
+            channel.start_consuming()
         except Exception as exc:
-            logger.error("Payload RabbitMQ inválido: %s", exc)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-            return
-
-        response_queue = payload.get("responseQueue")
-        if not response_queue:
-            logger.error("Solicitud RabbitMQ sin responseQueue")
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-            return
-
-        result = process_job(payload)
-        result["correlationId"] = payload.get("correlationId")
-        publish_response(ch, response_queue, result)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-
-    channel.basic_consume(queue=SIGN_REQUEST_QUEUE, on_message_callback=on_message)
-    channel.start_consuming()
+            logger.exception("Worker RabbitMQ detenido. Reintentando conexión en 5 segundos: %s", exc)
+            time.sleep(5)
+        finally:
+            try:
+                if connection and connection.is_open:
+                    connection.close()
+            except Exception:
+                pass
 
 
 def start_http_server():
