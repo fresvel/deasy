@@ -1,0 +1,18 @@
+<template>
+  <AdminModalShell ref="modalRef" labelled-by="sqlDeleteModalLabel" title="Eliminar registro">
+    <p>Confirma la eliminacion del registro seleccionado.</p>
+    <template #footer>
+      <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
+      <AdminButton variant="outlineDanger" @click="$emit('confirm')">Eliminar</AdminButton>
+    </template>
+  </AdminModalShell>
+</template>
+
+<script setup>
+import { ref } from "vue";
+import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+defineEmits(["confirm"]);
+const modalRef = ref(null);
+defineExpose({ el: modalRef });
+</script>

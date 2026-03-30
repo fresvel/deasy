@@ -267,6 +267,42 @@ a:hover {
   border-color: rgba(192, 50, 33, 0.4);
 }
 
+.hope-action-view {
+  color: var(--brand-accent) !important;
+  background: rgba(var(--brand-accent-rgb), 0.11);
+  border-color: rgba(var(--brand-accent-rgb), 0.3);
+}
+
+.hope-action-view:hover {
+  color: #1d6da0 !important;
+  background: rgba(var(--brand-accent-rgb), 0.16);
+  border-color: rgba(var(--brand-accent-rgb), 0.42);
+}
+
+.hope-action-download {
+  color: var(--brand-navy) !important;
+  background: rgba(var(--brand-primary-rgb), 0.11);
+  border-color: rgba(var(--brand-primary-rgb), 0.28);
+}
+
+.hope-action-download:hover {
+  color: #0f3153 !important;
+  background: rgba(var(--brand-primary-rgb), 0.16);
+  border-color: rgba(var(--brand-primary-rgb), 0.4);
+}
+
+.hope-action-upload {
+  color: var(--color-puce-light) !important;
+  background: rgba(var(--color-puce-light-rgb), 0.14);
+  border-color: rgba(var(--color-puce-light-rgb), 0.34);
+}
+
+.hope-action-upload:hover {
+  color: #2f73f1 !important;
+  background: rgba(var(--color-puce-light-rgb), 0.2);
+  border-color: rgba(var(--color-puce-light-rgb), 0.46);
+}
+
 .btn-group .hope-action-btn {
   flex: 0 0 auto;
 }

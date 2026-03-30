@@ -34,17 +34,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(experiencia.fecha_inicio) }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="experiencia.url_documento" @click="openDocument(experiencia)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(experiencia._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="eliminarExperiencia(experiencia)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(experiencia.url_documento)"
+                    @preview="previewDocument(experiencia)"
+                    @download="openDocument(experiencia)"
+                    @upload="triggerFileUpload(experiencia._id)"
+                    @delete="eliminarExperiencia(experiencia)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -80,17 +76,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(experiencia.fecha_inicio) }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="experiencia.url_documento" @click="openDocument(experiencia)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(experiencia._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="eliminarExperiencia(experiencia)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(experiencia.url_documento)"
+                    @preview="previewDocument(experiencia)"
+                    @download="openDocument(experiencia)"
+                    @upload="triggerFileUpload(experiencia._id)"
+                    @delete="eliminarExperiencia(experiencia)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -108,6 +100,7 @@
     </div>
 
     <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
+    <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
 
@@ -121,10 +114,13 @@ import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
-import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
+import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
+import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);
 const fileInput = ref(null);
+const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
@@ -142,12 +138,7 @@ const experienciaProfesional = computed(() => {
     return dossier.value.experiencia.filter(e => e.tipo === 'Profesional');
 });
 
-const getSeraType = (sera) => {
-    if (!sera || sera === 'Enviado') return 'pending';
-    if (sera === 'Revisado') return 'reviewed';
-    if (sera === 'Aprobado') return 'certified';
-    return 'denied';
-};
+const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 // Formatear fecha para mostrar
 const formatDate = (date) => {
@@ -206,12 +197,31 @@ const editarExperiencia = (experiencia) => {
     console.log('Editar experiencia:', experiencia);
 };
 
+const getDocumentBlob = async (tipoDocumento, registroId) => {
+    const response = await DossierService.downloadDocument(tipoDocumento, registroId);
+    return new Blob([response.data], { type: "application/pdf" });
+};
+
+const previewDocument = async (experiencia) => {
+    try {
+        const blob = await getDocumentBlob("experiencia", experiencia._id);
+        pdfPreviewModal.value?.openFromBlob(blob);
+    } catch (error) {
+        console.error("Error al previsualizar documento:", error);
+        alert("Error al visualizar el documento");
+    }
+};
+
 const openDocument = async (experiencia) => {
     try {
-        const response = await DossierService.downloadDocument('experiencia', experiencia._id);
-        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blob = await getDocumentBlob("experiencia", experiencia._id);
         const blobUrl = window.URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${experiencia.institucion || 'experiencia'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
         console.error('Error al abrir documento:', error);

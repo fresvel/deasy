@@ -1,8 +1,6 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <s-header :menu-open="showMenu" @onclick="handleHeaderToggle">
-      <div class="flex items-center gap-3 overflow-hidden flex-1">
-
+    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="navigateTo('firmar')">
         <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <div
             class="inline-flex items-center justify-center lg:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
@@ -43,31 +41,11 @@
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
-      </div>
-
-      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" type="button" @click="navigateTo('firmar')" title="Firmar documentos">
-          <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-
-        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="toggleNotify" title="Notificaciones">
-          <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-
-        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Ir al perfil">
-          <img class="w-7 h-7 sm:w-9 sm:h-9 rounded-md sm:rounded-lg object-cover" :src="userPhoto" alt="Perfil" />
-        </button>
-
-        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
-          <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
-        </router-link>
-      </div>
-    </s-header>
+    </app-workspace-header>
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
-      <s-menu :show="showMenu" @close-mobile="showMenu = false">
+      <app-workspace-sidebar :show="showMenu" :photo="userPhoto" :username="userFullName" @close-mobile="showMenu = false">
         <div class="flex flex-col">
-          <UserProfile :photo="userPhoto" :username="userFullName" />
           <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white">
             {{ menuContextLabel }}
           </div>
@@ -115,10 +93,15 @@
             </div>
           </div>
         </div>
-      </s-menu>
+      </app-workspace-sidebar>
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">
-        <template v-if="!selectedProcessKey && !processPanelLoading">
+        <template v-if="isSigningView">
+        <section class="p-6">
+          <FirmarPdf />
+        </section>
+        </template>
+        <template v-else-if="!selectedProcessKey && !processPanelLoading">
         <section class="bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 text-white rounded-[1.5rem] p-6 md:p-8 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 md:gap-8 shadow-2xl shadow-slate-300/50 relative overflow-hidden">
           <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
             <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
@@ -573,13 +556,13 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import SHeader from '@/layouts/SHeader.vue';
-import SMenu from '@/layouts/SMenu.vue';
+import { useRouter, useRoute } from 'vue-router';
+import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
+import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
 import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
 import SNavMenu from '@/layouts/SNavMenu.vue';
-import UserProfile from '@/components/UserProfile.vue';
+import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
 import { API_ROUTES } from '@/services/apiConfig';
@@ -591,10 +574,7 @@ import {
   IconIdBadge,
   IconMapPins,
   IconCircleCheck,
-  IconUser,
   IconSquareCheck,
-  IconBell,
-  IconLogout,
   IconSignature,
   IconX,
   IconArrowRight,
@@ -602,6 +582,7 @@ import {
 } from '@tabler/icons-vue';
 
 const router = useRouter();
+const route = useRoute();
 const menuService = new UserMenuService();
 const processPanelService = new ProcessDefinitionPanelService();
 
@@ -663,6 +644,8 @@ const menuContextLabel = computed(() => {
   }
   return 'Cargos consolidados';
 });
+
+const isSigningView = computed(() => route.query?.view === 'firmar');
 
 const quickStats = ref([
   { label: 'Formación', count: 0, route: 'perfil' },
@@ -1023,7 +1006,7 @@ const navigateTo = (destination) => {
       router.push('/dashboard');
       break;
     case 'firmar':
-      router.push('/firmar');
+      router.push({ path: '/dashboard', query: { view: 'firmar' } });
       break;
     case 'perfil':
     default:
@@ -1032,17 +1015,8 @@ const navigateTo = (destination) => {
   }
 };
 
-const handleHeaderToggle = (target) => {
-  if (target === 'User') {
-    navigateTo('dashboard');
-    selectConsolidated();
-    showMenu.value = !showMenu.value;
-  }
-};
-
-const handleUserIconClick = () => {
+const handleHeaderToggle = () => {
   showMenu.value = !showMenu.value;
-  navigateTo('perfil');
 };
 
 const toggleNotify = () => {

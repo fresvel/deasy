@@ -109,6 +109,165 @@ const getInvestigacionTipo = (tipoRaw) => {
     return tipo;
 };
 
+const getInvestigacionDocumentType = (tipo) => {
+    const mapping = {
+        articulos: "articulo",
+        libros: "libro",
+        ponencias: "ponencia",
+        tesis: "tesis",
+        proyectos: "proyecto"
+    };
+    return mapping[tipo] || null;
+};
+
+const removeMinioObject = (bucket, objectName) => {
+    return new Promise((resolve, reject) => {
+        minioClient.removeObject(bucket, objectName, (error) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(true);
+            }
+        });
+    });
+};
+
+const statMinioObject = (bucket, objectName) => {
+    return new Promise((resolve, reject) => {
+        minioClient.statObject(bucket, objectName, (error, stat) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(stat);
+            }
+        });
+    });
+};
+
+const buildDossierObjectName = (cedula, tipoDocumento, registroId) => (
+    `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`
+);
+
+function resolveDossierObjectNameFromUrl(fileUrl) {
+    if (!fileUrl) return null;
+
+    const fromPath = (rawPath) => {
+        const normalized = String(rawPath || "").replace(/^\/+/, "");
+        const bucketPrefix = `${MINIO_DOSSIER_BUCKET}/`;
+        if (normalized.startsWith(bucketPrefix)) {
+            return normalized.slice(bucketPrefix.length);
+        }
+        return normalized || null;
+    };
+
+    try {
+        const parsed = new URL(fileUrl);
+        return fromPath(parsed.pathname);
+    } catch {
+        return fromPath(fileUrl);
+    }
+}
+
+async function removeDossierDocumentFromUrl(fileUrl) {
+    const objectName = resolveDossierObjectNameFromUrl(fileUrl);
+    if (!objectName) return false;
+
+    try {
+        await removeMinioObject(MINIO_DOSSIER_BUCKET, objectName);
+        return true;
+    } catch (error) {
+        if (["NoSuchKey", "NotFound", "NoSuchObject"].includes(error?.code)) {
+            return false;
+        }
+        throw error;
+    }
+}
+
+async function removeDossierDocument({ cedula, tipoDocumento, registroId, fileUrl }) {
+    const objectName = cedula && tipoDocumento && registroId
+        ? buildDossierObjectName(cedula, tipoDocumento, registroId)
+        : resolveDossierObjectNameFromUrl(fileUrl);
+
+    if (!objectName) {
+        return false;
+    }
+
+    try {
+        await removeMinioObject(MINIO_DOSSIER_BUCKET, objectName);
+        return true;
+    } catch (error) {
+        if (["NoSuchKey", "NotFound", "NoSuchObject"].includes(error?.code)) {
+            const fallbackObjectName = resolveDossierObjectNameFromUrl(fileUrl);
+            if (!fallbackObjectName || fallbackObjectName === objectName) {
+                return false;
+            }
+            await removeDossierDocumentFromUrl(fileUrl);
+            return true;
+        }
+        throw error;
+    }
+}
+
+const buildDossierFileUrl = (objectName) => `${MINIO_PUBLIC_ENDPOINT}/${MINIO_DOSSIER_BUCKET}/${objectName}`;
+
+async function objectExists(bucket, objectName) {
+    try {
+        await statMinioObject(bucket, objectName);
+        return true;
+    } catch (error) {
+        if (["NotFound", "NoSuchKey", "NoSuchObject"].includes(error?.code)) {
+            return false;
+        }
+        throw error;
+    }
+}
+
+async function hydrateDocumentReference(item, { cedula, tipoDocumento }) {
+    if (!item?._id || item.url_documento) {
+        return false;
+    }
+
+    const objectName = buildDossierObjectName(cedula, tipoDocumento, item._id);
+    const exists = await objectExists(MINIO_DOSSIER_BUCKET, objectName);
+    if (!exists) {
+        return false;
+    }
+
+    item.url_documento = buildDossierFileUrl(objectName);
+    return true;
+}
+
+async function hydrateDossierDocumentUrls(dossier, cedula) {
+    let modified = false;
+
+    const hydrateCollection = async (collection = [], tipoDocumento) => {
+        for (const item of collection) {
+            modified = (await hydrateDocumentReference(item, { cedula, tipoDocumento })) || modified;
+        }
+    };
+
+    await hydrateCollection(dossier.titulos, "titulo");
+    await hydrateCollection(dossier.experiencia, "experiencia");
+    await hydrateCollection(dossier.referencias, "referencia");
+    await hydrateCollection(dossier.formacion, "formacion");
+    await hydrateCollection(dossier.certificaciones, "certificacion");
+    await hydrateCollection(dossier.investigacion?.articulos, "articulo");
+    await hydrateCollection(dossier.investigacion?.libros, "libro");
+    await hydrateCollection(dossier.investigacion?.ponencias, "ponencia");
+    await hydrateCollection(dossier.investigacion?.tesis, "tesis");
+    await hydrateCollection(dossier.investigacion?.proyectos, "proyecto");
+
+    if (modified) {
+        dossier.markModified("titulos");
+        dossier.markModified("experiencia");
+        dossier.markModified("referencias");
+        dossier.markModified("formacion");
+        dossier.markModified("certificaciones");
+        dossier.markModified("investigacion");
+        await dossier.save();
+    }
+}
+
 // Obtener o crear dossier del usuario
 export const getDossierByUser = async (req, res) => {
     try {
@@ -122,6 +281,8 @@ export const getDossierByUser = async (req, res) => {
                 message: "Usuario no encontrado" 
             });
         }
+
+        await hydrateDossierDocumentUrls(dossier, cedula);
 
         res.json({
             success: true,
@@ -269,9 +430,9 @@ export const updateTitulo = async (req, res) => {
 
         const titulo = dossier.titulos.id(tituloId);
         if (!titulo) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                message: "Título no encontrado" 
+                message: "Título no encontrado"
             });
         }
 
@@ -298,15 +459,24 @@ export const updateTitulo = async (req, res) => {
 export const deleteTitulo = async (req, res) => {
     try {
         const { cedula, tituloId } = req.params;
-        
+
         const dossier = await getOrCreateDossier(cedula);
         if (!dossier) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                message: "Usuario no encontrado" 
+                message: "Usuario no encontrado"
             });
         }
 
+        const titulo = dossier.titulos.id(tituloId);
+        if (!titulo) {
+            return res.status(404).json({
+                success: false,
+                message: "Título no encontrado"
+            });
+        }
+
+        await removeDossierDocument({ cedula, tipoDocumento: "titulo", registroId: tituloId, fileUrl: titulo.url_documento });
         dossier.titulos.pull(tituloId);
         await dossier.save();
 
@@ -318,10 +488,50 @@ export const deleteTitulo = async (req, res) => {
 
     } catch (error) {
         console.error('Error al eliminar título:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: 'Error al eliminar título',
-            error: error.message 
+            error: error.message
+        });
+    }
+};
+
+export const deleteExperiencia = async (req, res) => {
+    try {
+        const { cedula, experienciaId } = req.params;
+
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: "Usuario no encontrado"
+            });
+        }
+
+        const experiencia = dossier.experiencia.id(experienciaId);
+        if (!experiencia) {
+            return res.status(404).json({
+                success: false,
+                message: "Experiencia no encontrada"
+            });
+        }
+
+        await removeDossierDocument({ cedula, tipoDocumento: "experiencia", registroId: experienciaId, fileUrl: experiencia.url_documento });
+        dossier.experiencia.pull(experienciaId);
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: 'Experiencia eliminada correctamente',
+            data: dossier
+        });
+
+    } catch (error) {
+        console.error('Error al eliminar experiencia:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al eliminar experiencia',
+            error: error.message
         });
     }
 };
@@ -339,6 +549,15 @@ export const deleteReferencia = async (req, res) => {
             });
         }
 
+        const referencia = dossier.referencias.id(referenciaId);
+        if (!referencia) {
+            return res.status(404).json({
+                success: false,
+                message: "Referencia no encontrada"
+            });
+        }
+
+        await removeDossierDocument({ cedula, tipoDocumento: "referencia", registroId: referenciaId, fileUrl: referencia.url_documento });
         dossier.referencias.pull(referenciaId);
         await dossier.save();
 
@@ -403,6 +622,15 @@ export const deleteFormacion = async (req, res) => {
             });
         }
 
+        const formacion = dossier.formacion.id(formacionId);
+        if (!formacion) {
+            return res.status(404).json({
+                success: false,
+                message: "Capacitación no encontrada"
+            });
+        }
+
+        await removeDossierDocument({ cedula, tipoDocumento: "formacion", registroId: formacionId, fileUrl: formacion.url_documento });
         dossier.formacion.pull(formacionId);
         await dossier.save();
 
@@ -467,6 +695,15 @@ export const deleteCertificacion = async (req, res) => {
             });
         }
 
+        const certificacion = dossier.certificaciones.id(certificacionId);
+        if (!certificacion) {
+            return res.status(404).json({
+                success: false,
+                message: "Certificación no encontrada"
+            });
+        }
+
+        await removeDossierDocument({ cedula, tipoDocumento: "certificacion", registroId: certificacionId, fileUrl: certificacion.url_documento });
         dossier.certificaciones.pull(certificacionId);
         await dossier.save();
 
@@ -599,6 +836,20 @@ export const deleteInvestigacionItem = async (req, res) => {
         }
 
         const reshaped = ensureInvestigacionShape(dossier);
+        const item = dossier.investigacion[investigacionTipo].id(itemId);
+        if (!item) {
+            return res.status(404).json({
+                success: false,
+                message: "Registro de investigación no encontrado"
+            });
+        }
+
+        await removeDossierDocument({
+            cedula,
+            tipoDocumento: getInvestigacionDocumentType(investigacionTipo),
+            registroId: itemId,
+            fileUrl: item.url_documento
+        });
         dossier.investigacion[investigacionTipo].pull(itemId);
         if (reshaped) {
             dossier.markModified("investigacion");
@@ -721,7 +972,7 @@ export const uploadDossierDocument = async (req, res) => {
         }
 
         const tempFilePath = req.file.path;
-        const objectName = `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`;
+        const objectName = buildDossierObjectName(cedula, tipoDocumento, registroId);
 
         await ensureBucketExists(MINIO_DOSSIER_BUCKET);
 
@@ -818,7 +1069,7 @@ export const getDossierDocumentUrl = async (req, res) => {
             });
         }
 
-        const objectName = `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`;
+        const objectName = buildDossierObjectName(cedula, tipoDocumento, registroId);
 
         try {
             await new Promise((resolve, reject) => {

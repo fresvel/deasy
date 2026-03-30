@@ -11,6 +11,7 @@
         <table class="w-full text-sm text-left border-collapse min-w-max">
           <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Certificación</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
@@ -21,28 +22,25 @@
           </thead>
           <tbody>
             <tr v-if="!certificaciones.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">
+              <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado certificaciones aún.
               </td>
             </tr>
             <tr v-for="certificacion in certificaciones" :key="certificacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(certificacion.sera)" /></td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.titulo }}</td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.institution }}</td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.horas || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(certificacion.fecha) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.tipo || 'N/A' }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="certificacion.url_documento" @click="openDocument(certificacion)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(certificacion._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="openDelete(certificacion)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(certificacion.url_documento)"
+                  @preview="previewDocument(certificacion)"
+                  @download="openDocument(certificacion)"
+                  @upload="triggerFileUpload(certificacion._id)"
+                  @delete="openDelete(certificacion)"
+                />
               </td>
             </tr>
           </tbody>
@@ -89,6 +87,7 @@
     </div>
 
     <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
+    <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
 
@@ -96,15 +95,19 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Modal } from "@/utils/modalController";
 import RowActionMenu from "@/components/RowActionMenu.vue";
+import BtnSera from "@/components/BtnSera.vue";
 import AgregarCertificacion from "./components/AgregarCertificacion.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
+import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
+import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
-import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const deleteModal = ref(null);
 const fileInput = ref(null);
+const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
@@ -117,6 +120,8 @@ const certificaciones = computed(() => {
     if (!dossier.value || !dossier.value.certificaciones) return [];
     return dossier.value.certificaciones;
 });
+
+const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 // Formatear fecha para mostrar
 const formatDate = (date) => {
@@ -183,12 +188,31 @@ const editarCertificacion = (registro) => {
     console.info("Editar certificación", registro);
 };
 
+const getDocumentBlob = async (tipoDocumento, registroId) => {
+    const response = await DossierService.downloadDocument(tipoDocumento, registroId);
+    return new Blob([response.data], { type: "application/pdf" });
+};
+
+const previewDocument = async (certificacion) => {
+    try {
+        const blob = await getDocumentBlob("certificacion", certificacion._id);
+        pdfPreviewModal.value?.openFromBlob(blob);
+    } catch (error) {
+        console.error("Error al previsualizar documento:", error);
+        alert("Error al visualizar el documento");
+    }
+};
+
 const openDocument = async (certificacion) => {
     try {
-        const response = await DossierService.downloadDocument('certificacion', certificacion._id);
-        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blob = await getDocumentBlob("certificacion", certificacion._id);
         const blobUrl = window.URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${certificacion.titulo || 'certificacion'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
         console.error('Error al abrir documento:', error);

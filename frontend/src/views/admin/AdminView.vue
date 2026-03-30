@@ -1,27 +1,9 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <s-header :menu-open="vmenu" @onclick="onClick" class="sticky top-0 z-50">
-      <div class="flex items-center gap-3 overflow-hidden flex-1"></div>
-      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Dashboard">
-          <IconHome class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </router-link>
-        <router-link to="/perfil" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Perfil">
-          <IconUser class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </router-link>
-        <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
-          <IconBell class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </button>
-        <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white hover:bg-white/20 transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
-          <IconLogout class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </router-link>
-      </div>
-    </s-header>
+    <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace" />
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
-      <s-menu :show="vmenu" @close-mobile="vmenu = false">
-        <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
-          <UserProfile :photo="userPhoto" :username="userFullName" :editable="false" />
+      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false">
           
           <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
             <button 
@@ -145,8 +127,7 @@
               </div>
             </div>
           </div>
-        </div>
-      </s-menu>
+      </app-workspace-sidebar>
 
       <s-body class="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8" :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
         
@@ -504,18 +485,17 @@ import {
   IconInfoCircle,
   IconPlus,
   IconBell,
-  IconLogout,
   IconChevronDown,
   IconChevronRight,
   IconHome,
 } from '@tabler/icons-vue'
 
 import axios from "axios";
-import SMenu from "@/layouts/SMenu.vue";
+import { useRouter } from "vue-router";
+import AppWorkspaceSidebar from "@/layouts/AppWorkspaceSidebar.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
-import SHeader from "@/layouts/SHeader.vue";
-import UserProfile from "@/components/UserProfile.vue";
+import AppWorkspaceHeader from "@/layouts/AppWorkspaceHeader.vue";
 import AdminTableManager from "./components/AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
@@ -536,6 +516,7 @@ const openCategories = ref({});
 const adminManager = ref(null);
 
 const currentUser = ref(null);
+const router = useRouter();
 const defaultPhoto = "/images/avatar.png";
 const userPhoto = ref(defaultPhoto);
 const userFullName = computed(() => {
@@ -546,6 +527,14 @@ const userFullName = computed(() => {
   }
   return "Administrador";
 });
+
+const openSigningWorkspace = () => {
+  router.push({ path: "/perfil", query: { view: "firmar" } });
+};
+
+const handleHeaderToggle = () => {
+  vmenu.value = !vmenu.value;
+};
 
 const GROUP_DEFS = [
   {
@@ -1305,15 +1294,11 @@ const goAdminHome = () => {
   });
 };
 
-const onClick = (item) => {
-  if (item === "Message") {
-    if (showNavMenu.value) {
-      showNavMenu.value = false;
-    }
-    vnotify.value = !vnotify.value;
-    return;
+const toggleNotify = () => {
+  if (showNavMenu.value) {
+    showNavMenu.value = false;
   }
-  vmenu.value = !vmenu.value;
+  vnotify.value = !vnotify.value;
 };
 
 const toggleNavMenu = () => {

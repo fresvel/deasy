@@ -33,17 +33,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(item.fecha) || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.estado || "N/A" }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="item.url_documento" @click="openDocument(item, 'articulo')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(item._id, 'articulo')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="removeItem('articulos', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(item.url_documento)"
+                    @preview="previewDocument(item, 'articulo')"
+                    @download="openDocument(item, 'articulo')"
+                    @upload="triggerFileUpload(item._id, 'articulo')"
+                    @delete="removeItem('articulos', item)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -79,17 +75,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.tipo || "N/A" }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="item.url_documento" @click="openDocument(item, 'libro')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(item._id, 'libro')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="removeItem('libros', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(item.url_documento)"
+                    @preview="previewDocument(item, 'libro')"
+                    @download="openDocument(item, 'libro')"
+                    @upload="triggerFileUpload(item._id, 'libro')"
+                    @delete="removeItem('libros', item)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -123,17 +115,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.pais || "N/A" }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="item.url_documento" @click="openDocument(item, 'ponencia')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(item._id, 'ponencia')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="removeItem('ponencias', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(item.url_documento)"
+                    @preview="previewDocument(item, 'ponencia')"
+                    @download="openDocument(item, 'ponencia')"
+                    @upload="triggerFileUpload(item._id, 'ponencia')"
+                    @delete="removeItem('ponencias', item)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -169,17 +157,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ item['año'] || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.rol || "N/A" }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="item.url_documento" @click="openDocument(item, 'tesis')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(item._id, 'tesis')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="removeItem('tesis', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(item.url_documento)"
+                    @preview="previewDocument(item, 'tesis')"
+                    @download="openDocument(item, 'tesis')"
+                    @upload="triggerFileUpload(item._id, 'tesis')"
+                    @delete="removeItem('tesis', item)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -217,17 +201,13 @@
                 <td class="px-4 py-3 text-slate-700">{{ formatDate(item.fin) || "N/A" }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ item.avance !== undefined ? `${item.avance}%` : "N/A" }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button v-if="item.url_documento" @click="openDocument(item, 'proyecto')" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                      <IconFile :size="16" />
-                    </button>
-                    <button @click="triggerFileUpload(item._id, 'proyecto')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                      <IconUpload :size="16" />
-                    </button>
-                    <button @click="removeItem('proyectos', item)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                      <IconTrash :size="16" />
-                    </button>
-                  </div>
+                  <DossierDocumentActions
+                    :has-document="Boolean(item.url_documento)"
+                    @preview="previewDocument(item, 'proyecto')"
+                    @download="openDocument(item, 'proyecto')"
+                    @upload="triggerFileUpload(item._id, 'proyecto')"
+                    @delete="removeItem('proyectos', item)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -245,6 +225,7 @@
     </div>
 
     <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
+    <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
 
@@ -257,11 +238,14 @@ import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import AgregarInvestigacion from "@/views/perfil/components/AgregarInvestigacion.vue";
+import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
+import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
-import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const fileInput = ref(null);
+const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
 const selectedItemType = ref(null);
 const dossier = ref(null);
@@ -275,12 +259,7 @@ const ponencias = computed(() => investigacion.value?.ponencias || []);
 const tesis = computed(() => investigacion.value?.tesis || []);
 const proyectos = computed(() => investigacion.value?.proyectos || []);
 
-const getSeraType = (sera) => {
-  if (!sera || sera === "Enviado") return "pending";
-  if (sera === "Revisado") return "reviewed";
-  if (sera === "Aprobado") return "certified";
-  return "denied";
-};
+const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 const formatDate = (date) => {
   if (!date) return "";
@@ -333,12 +312,31 @@ const editItem = (tipo, item) => {
   console.info("Editar investigación", tipo, item);
 };
 
+const getDocumentBlob = async (tipoDocumento, registroId) => {
+  const response = await DossierService.downloadDocument(tipoDocumento, registroId);
+  return new Blob([response.data], { type: "application/pdf" });
+};
+
+const previewDocument = async (item, tipo) => {
+  try {
+    const blob = await getDocumentBlob(tipo, item._id);
+    pdfPreviewModal.value?.openFromBlob(blob);
+  } catch (error) {
+    console.error("Error al previsualizar documento:", error);
+    alert("Error al visualizar el documento");
+  }
+};
+
 const openDocument = async (item, tipo) => {
   try {
-    const response = await DossierService.downloadDocument(tipo, item._id);
-    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blob = await getDocumentBlob(tipo, item._id);
     const blobUrl = window.URL.createObjectURL(blob);
-    window.open(blobUrl, '_blank');
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `${item.titulo || item.tema || tipo || 'investigacion'}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
   } catch (error) {
     console.error('Error al abrir documento:', error);

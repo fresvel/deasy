@@ -38,17 +38,13 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(titulo.url_documento)"
+                  @preview="previewDocument(titulo)"
+                  @download="openDocument(titulo)"
+                  @upload="triggerFileUpload(titulo._id)"
+                  @delete="deleteTitulo(titulo._id)"
+                />
               </td>
             </tr>
           </tbody>
@@ -88,17 +84,13 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(titulo.url_documento)"
+                  @preview="previewDocument(titulo)"
+                  @download="openDocument(titulo)"
+                  @upload="triggerFileUpload(titulo._id)"
+                  @delete="deleteTitulo(titulo._id)"
+                />
               </td>
             </tr>
           </tbody>
@@ -138,17 +130,13 @@
               <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
               <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="titulo.url_documento" @click="openDocument(titulo)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(titulo._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="deleteTitulo(titulo._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(titulo.url_documento)"
+                  @preview="previewDocument(titulo)"
+                  @download="openDocument(titulo)"
+                  @upload="triggerFileUpload(titulo._id)"
+                  @delete="deleteTitulo(titulo._id)"
+                />
               </td>
             </tr>
           </tbody>
@@ -176,6 +164,7 @@
   style="display: none" 
   @change="handleFileSelect"
 >
+<DossierPdfPreviewModal ref="pdfPreviewModal" />
 </template>
 
 <script setup>
@@ -186,12 +175,15 @@ import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
+import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
+import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import { Modal } from "@/utils/modalController";
 import DossierService from "@/services/dossier/DossierService";
-import { IconUpload, IconFile, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const fileInput = ref(null);
+const pdfPreviewModal = ref(null);
 const selectedTituloId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
@@ -243,12 +235,7 @@ const loadDossier = async () => {
 };
 
 // Función para obtener el tipo de estado SERA
-const getSeraType = (sera) => {
-    if (!sera || sera === 'Enviado') return 'pending';
-    if (sera === 'Revisado') return 'reviewed';
-    if (sera === 'Aprobado') return 'certified';
-    return 'denied';
-};
+const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 // Función para eliminar título
 const deleteTitulo = async (tituloId) => {
@@ -289,20 +276,35 @@ const handleTituloAdded = () => {
     loadDossier();
 };
 
+const getDocumentBlob = async (tipoDocumento, registroId) => {
+    const response = await DossierService.downloadDocument(tipoDocumento, registroId);
+    return new Blob([response.data], { type: "application/pdf" });
+};
+
+const previewDocument = async (titulo) => {
+    try {
+        const blob = await getDocumentBlob("titulo", titulo._id);
+        pdfPreviewModal.value?.openFromBlob(blob);
+    } catch (error) {
+        console.error("Error al previsualizar documento:", error);
+        alert("Error al visualizar el documento");
+    }
+};
+
 // Función para abrir el documento 
 const openDocument = async (titulo) => {
     try {
-        const response = await DossierService.downloadDocument('titulo', titulo._id);
-        
-        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blob = await getDocumentBlob("titulo", titulo._id);
         const blobUrl = window.URL.createObjectURL(blob);
-        
-        window.open(blobUrl, '_blank');
-        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${titulo.titulo || 'titulo'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         setTimeout(() => {
             window.URL.revokeObjectURL(blobUrl);
         }, 1000);
-        
     } catch (error) {
         console.error('Error al abrir documento:', error);
         alert('Error al abrir el documento');
@@ -335,11 +337,11 @@ const handleFileSelect = async (event) => {
     try {
         const response = await DossierService.uploadTituloDocument(selectedTituloId.value, file);
         
-        if (response.data.success) {
+        if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
         } else {
-            alert('Error al subir documento: ' + response.data.message);
+            alert('Error al subir documento: ' + response.message);
         }
         
     } catch (error) {

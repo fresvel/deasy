@@ -37,6 +37,7 @@ router.delete('/:cedula/titulos/:tituloId', dossierController.deleteTitulo);
 
 // Rutas para experiencia
 router.post('/:cedula/experiencia', dossierController.addExperiencia);
+router.delete('/:cedula/experiencia/:experienciaId', dossierController.deleteExperiencia);
 
 // Rutas para referencias
 router.post('/:cedula/referencias', dossierController.addReferencia);
