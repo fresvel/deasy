@@ -44,11 +44,11 @@
       "rows": [
         {
           "id": 1,
-          "cedula": "1804326534",
+          "cedula": "1234567890",
           "first_name": "Homero Javier",
           "last_name": "Velasteguí Izurieta",
           "email": "homero.j.velastegui.i@pucese.edu.ec",
-          "whatsapp": "+5930983069990",
+          "whatsapp": "+5931234567890",
           "direccion": "0.972240, -79.657466",
           "pais": "Ecuador",
           "password_hash": "$2b$10$SdriiYtnau6zGwVvhM3TQ./pjkTOZAe0Vi/XXrJ6.yVnNiPkbdazq",
@@ -62,11 +62,11 @@
         },
         {
           "id": 2,
-          "cedula": "1803131190",
+          "cedula": "0987654321",
           "first_name": "Adrian Vargas",
           "last_name": "Vargas Machuca del Salto",
           "email": "agvargasmachuca@pucese.edu.ec",
-          "whatsapp": "+593998627624",
+          "whatsapp": "+5931234567890",
           "direccion": "Esmeraldas",
           "pais": "Ecuador",
           "password_hash": "$2b$10$SXiKu8HzkTeiQhH8svcj.eB0zdLSBPwExhjCwmtXQWHKZf0jn4OuW",
