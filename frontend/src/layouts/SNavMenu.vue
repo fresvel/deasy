@@ -29,8 +29,8 @@
           <font-awesome-icon icon="id-card" class="me-2" />
           <span>Roles</span>
         </router-link>
-        <router-link 
-          to="/firmar" 
+        <router-link
+          :to="{ path: '/dashboard', query: { view: 'firmar' } }"
           class="nav-menu-item"
           @click="$emit('close')"
         >

@@ -50,25 +50,16 @@
       </div>
 
       <div class="w-full">
-        <label for="documento" class="form-label">Documento PDF (opcional)</label>
-        <input
-          type="file"
-          id="documento"
-          ref="fileInput"
-          class="form-control"
-          accept="application/pdf"
-          @change="handleFileSelect"
+        <PdfDropField
+          variant="compact"
+          title="Documento PDF (opcional)"
+          action-text="Seleccionar PDF"
+          help-text="Máximo 10MB. Solo archivos PDF."
+          input-id="experiencia-documento"
+          :selected-file="selectedFile"
+          @files-selected="handleFileSelect"
+          @clear="clearFile"
         />
-        <small class="text-muted d-block">Máximo 10MB. Solo archivos PDF.</small>
-        <div v-if="selectedFile" class="mt-2">
-          <span class="badge bg-success d-inline-flex align-items-center gap-1">
-            <IconFile :size="14" />
-            {{ selectedFile.name }}
-          </span>
-          <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2" @click="clearFile">
-            Eliminar
-          </button>
-        </div>
       </div>
 
       </ProfileModalLayout>
@@ -81,7 +72,7 @@ import { Modal } from "@/utils/modalController";
 import DossierService from "@/services/dossier/DossierService";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";
-import { IconFile } from '@tabler/icons-vue';
+import PdfDropField from "@/components/PdfDropField.vue";
 
 const emit = defineEmits(["experiencia-added"]);
 
@@ -96,7 +87,6 @@ const form = reactive({
 
 const isSubmitting = ref(false);
 const errorMessage = ref("");
-const fileInput = ref(null);
 const selectedFile = ref(null);
 
 const instituciones = [
@@ -134,20 +124,18 @@ const onCancel = () => {
   closeModal();
 };
 
-const handleFileSelect = (event) => {
-  const file = event.target.files[0];
+const handleFileSelect = (files) => {
+  const file = files?.[0];
   if (!file) return;
   
   if (file.type !== 'application/pdf') {
     alert('Solo se permiten archivos PDF');
-    event.target.value = '';
     selectedFile.value = null;
     return;
   }
   
   if (file.size > 10 * 1024 * 1024) {
     alert('El archivo no puede superar los 10MB');
-    event.target.value = '';
     selectedFile.value = null;
     return;
   }
@@ -157,9 +145,6 @@ const handleFileSelect = (event) => {
 
 const clearFile = () => {
   selectedFile.value = null;
-  if (fileInput.value) {
-    fileInput.value.value = '';
-  }
 };
 
 const uploadDocument = async (registroId) => {

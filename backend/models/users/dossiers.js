@@ -12,6 +12,7 @@ const tituloSchema = new mongoose.Schema({
         enum:["Presencial","Semipresencial","Virtual", "Híbrido"]
     },
     pais:{type: String, default:"Ecuador"},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"], default: "Enviado"
     }
 })
@@ -23,6 +24,7 @@ const experienciaSchema = new mongoose.Schema({
     fecha_fin:{type: Date,}, // Calcular años
     funcion_catedra:{type: [String]},
     tipo:{type: String,enum:["Docencia", "Profesional"]},
+    url_documento:{type: String, default:""},
     sera:{type: String,enum: ["Enviado", "Revisado", "Aprobado"]},
 });
 
@@ -40,6 +42,7 @@ const referenciaSchema = new mongoose.Schema({
     },
     telefono:{type: String},
     institution:{type: String, required:function(){return this.tipo === "laboral"}, default:""},
+    url_documento:{type: String, default:""},
     tipo: {type: String, enum: ["laboral", "personal", "familiar"]}
 });
 
@@ -52,6 +55,7 @@ const formacionSchema = new mongoose.Schema({
     tipo:{type: String, enum: ["Docente","Profesional"]},
     rol: {type: String, enum: ["Asistencia","Instructor", "Aprobación"]},
     pais:{type: String, default:"Ecuador"},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 });
 
@@ -61,6 +65,7 @@ const certificacionSchema = new mongoose.Schema({
     horas:{type: Number},
     fecha:{type: Date},
     tipo: {type: String, enum: ["Nacional","Internacional"]},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 });
 
@@ -75,6 +80,7 @@ const articuloSchema= new mongoose.Schema({
     pais:{type: String, default:"Ecuador"},
     estado:{type: String, enum: ["Aceptado", "Publicado"]},
     rol:{type: String, enum: ["Autor", "Coautor", "Revisor"]},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 })
 
@@ -86,6 +92,7 @@ const libroSchema = new mongoose.Schema({
     año:{type: Number},
     pais:{type: String, default:"Ecuador"},
     tipo: {type: String, enum: ["Libro", "Capítulo"]},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 })
 
@@ -94,6 +101,7 @@ const ponenciaSchema = new mongoose.Schema({
     evento:{type: String},
     año:{type: Number},
     pais:{type: String, default:"Ecuador"},
+    url_documento:{type: String, default:""},
     sera:{type: String,enum: ["Enviado", "Revisado", "Aprobado"]}
 });
 
@@ -105,6 +113,7 @@ const tesisSchema = new mongoose.Schema({
     año:{type: Number},
     rol:{ type: String, enum:["Revisor","Asesor"]},
     pais:{type: String, default:"Ecuador"},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]
     }
 })
@@ -119,6 +128,7 @@ const proyectoSchema = new mongoose.Schema({
     pais:{type: String, default:"Ecuador"},
     tipo:{type: String, enum:["Investigación", "Vinculación"]},
     programa_grupo:{type: String},
+    url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 })
 

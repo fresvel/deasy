@@ -1,7 +1,6 @@
 <template>  
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <s-header :menu-open="vmenu" @onclick="handleHeaderToggle">
-       <div class="flex items-center gap-3 overflow-hidden flex-1">
+    <app-workspace-header :menu-open="vmenu" current-section="perfil" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace">
         <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <button
             v-for="(item, index) in areas"
@@ -15,41 +14,11 @@
             <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
           </button>
         </div>
-       </div>
-
-       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-          <router-link to="/roles" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" title="Roles">
-            <IconUsers class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-
-          <router-link to="/firmar" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Firmar documentos">
-            <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-
-          <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
-            <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-
-          <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="handleUserIconClick" title="Regresar al Dashboard">
-            <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-
-          <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
-            <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-       </div>
-    </s-header>
+    </app-workspace-header>
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
-      <s-menu :show="vmenu" @close-mobile="vmenu = false">
+      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
         <div class="flex flex-col">
-            <UserProfile
-                :photo="userPhoto"
-                :username="userFullName"
-                :editable="true"
-                @photo-selected="handlePhotoSelected"
-            />
-            
             <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white px-2">
                 Secciones
             </div>
@@ -102,7 +71,7 @@
               </div>
             </div>
         </div>
-      </s-menu>
+      </app-workspace-sidebar>
 
       <s-body :showmenu="vmenu" :shownotify="vnotify">
         <div v-if="area=='Perfil'" id="validar" class="w-full">
@@ -137,17 +106,16 @@
     <script setup>  
     
     
-import { ref, computed, onMounted, onBeforeUnmount} from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-    import SMenu from '@/layouts/SMenu.vue';
+    import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
-    import SHeader from '@/layouts/SHeader.vue';
-    import UserProfile from '@/components/UserProfile.vue';
+    import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
-      IconInfoCircle, IconSignature, IconBell, IconUsers, IconLogout, IconMenu2, IconHome
+      IconInfoCircle, IconMenu2, IconHome
     , IconBook, IconMicroscope, IconLink, IconWorld, IconAppWindow } from '@tabler/icons-vue';
 
     const getMenuIcon = (iconName) => {
@@ -409,24 +377,34 @@ const resolveAreaIcon = (name) => {
         }
     });
 
-    const onClick=(item)=>{
-        if(item==="Message"){
-            toggleNotify();
-        }
-        else{
-            toggleVmenu();
-        } 
-            
-    }
+    const handleHeaderToggle = () => {
+        toggleVmenu();
+    };
 
-    const handleHeaderToggle = (target) => {
-        if (target === 'User') {
-            toggleVmenu();
+    const syncAreaState = (areaName) => {
+        area.value = areaName;
+        for (const el of areas.value) {
+            el.active = el.name === areaName;
         }
     };
 
-    const handleUserIconClick = () => {
-        router.push('/dashboard');
+    const openSigningWorkspace = () => {
+        syncAreaState('Firmar');
+        process.value = 'Firmar';
+        router.replace({ path: '/perfil', query: { view: 'firmar' } });
+    };
+
+    const syncViewFromRoute = () => {
+        if (route.query?.view === 'firmar') {
+            syncAreaState('Firmar');
+            process.value = 'Firmar';
+            return;
+        }
+        if (area.value === 'Firmar') {
+            syncAreaState('Perfil');
+            mainmenu.value = buildPerfilMenu();
+            process.value = 'Inicio';
+        }
     };
     
 
@@ -444,21 +422,12 @@ const resolveAreaIcon = (name) => {
     
 
     const onheadClick=(item)=>{
-        area.value=item.name;
-        for (let el of areas.value){
-            if(el.code === item.code){
-                el.active = true;
-            } else{
-                el.active = false;
-            }
-        }
-
-
-
+        syncAreaState(item.name);
         switch(item.name){
             case 'Perfil':
                 mainmenu.value = buildPerfilMenu();
                 process.value="Inicio";
+                router.replace({ path: '/perfil' });
                 break;
             case 'Academia':
                 console.log("Academia detected")
@@ -495,21 +464,25 @@ const resolveAreaIcon = (name) => {
                     }
                 ]
                 process.value="index";
+                router.replace({ path: '/perfil' });
                 break;
             case 'Investigación':
                 mainmenu.value=[]
                 process.value="Investigación";
+                router.replace({ path: '/perfil' });
                 break;
             case 'Vinculación':
                 mainmenu.value=[]
                 process.value="Vinculación";
+                router.replace({ path: '/perfil' });
                 break;
             case 'Internacionalización':
                 mainmenu.value=[]
                 process.value="Internacionalización";
+                router.replace({ path: '/perfil' });
                 break;
             case 'Firmar':
-                process.value="Firmar";
+                openSigningWorkspace();
                 break;
             case 'Message':
                 break;
@@ -517,6 +490,14 @@ const resolveAreaIcon = (name) => {
                 break;
         }
     }
+
+    watch(() => route.query.view, () => {
+        syncViewFromRoute();
+    });
+
+    onMounted(() => {
+        syncViewFromRoute();
+    });
 
 
       

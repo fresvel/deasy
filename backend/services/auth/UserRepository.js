@@ -62,7 +62,7 @@ export default class UserRepository {
     return rows;
   }
 
-  async search(term = "", limit = 20, status = null) {
+  async search(term = "", limit = 20, status = null, filters = {}) {
     this.ensurePool();
 
     const normalized = term?.trim();
@@ -71,6 +71,9 @@ export default class UserRepository {
       : 20;
 
     const statusFilter = status?.trim();
+    const unitTypeId = filters?.unitTypeId ? Number(filters.unitTypeId) : null;
+    const unitId = filters?.unitId ? Number(filters.unitId) : null;
+    const cargoId = filters?.cargoId ? Number(filters.cargoId) : null;
 
     const conditions = [];
     const params = [];
@@ -90,14 +93,52 @@ export default class UserRepository {
       params.push(statusFilter);
     }
 
+    if (unitTypeId) {
+      conditions.push("ut.id = ?");
+      params.push(unitTypeId);
+    }
+
+    if (unitId) {
+      conditions.push("u.id = ?");
+      params.push(unitId);
+    }
+
+    if (cargoId) {
+      conditions.push("c.id = ?");
+      params.push(cargoId);
+    }
+
     const whereClause = conditions.length
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
 
     const [rows] = await this.pool.query(
-      `SELECT * FROM persons
+      `SELECT
+         p.*,
+         GROUP_CONCAT(DISTINCT ut.id ORDER BY ut.name SEPARATOR ',') AS unit_type_ids,
+         GROUP_CONCAT(DISTINCT ut.name ORDER BY ut.name SEPARATOR ' | ') AS unit_type_names,
+         GROUP_CONCAT(DISTINCT u.id ORDER BY COALESCE(u.label, u.name) SEPARATOR ',') AS unit_ids,
+         GROUP_CONCAT(DISTINCT COALESCE(u.label, u.name) ORDER BY COALESCE(u.label, u.name) SEPARATOR ' | ') AS unit_names,
+         GROUP_CONCAT(DISTINCT c.id ORDER BY c.name SEPARATOR ',') AS cargo_ids,
+         GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ' | ') AS cargo_names
+       FROM persons p
+       LEFT JOIN position_assignments pa
+         ON pa.person_id = p.id
+        AND pa.is_current = 1
+       LEFT JOIN unit_positions up
+         ON up.id = pa.position_id
+        AND up.is_active = 1
+       LEFT JOIN units u
+         ON u.id = up.unit_id
+        AND u.is_active = 1
+       LEFT JOIN unit_types ut
+         ON ut.id = u.unit_type_id
+       LEFT JOIN cargos c
+         ON c.id = up.cargo_id
+        AND c.is_active = 1
         ${whereClause}
-        ORDER BY created_at DESC
+       GROUP BY p.id
+        ORDER BY p.created_at DESC
         LIMIT ?`,
       [...params, safeLimit]
     );
@@ -164,6 +205,26 @@ export default class UserRepository {
   toPublicUser(userRow) {
     if (!userRow) return null;
 
+    const toNumericArray = (value) => {
+      if (!value) return [];
+      return String(value)
+        .split(",")
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item));
+    };
+
+    const toStringArray = (value) => {
+      if (!value) return [];
+      return String(value)
+        .split(" | ")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    };
+
+    const unitTypeNames = toStringArray(userRow.unit_type_names);
+    const unitNames = toStringArray(userRow.unit_names);
+    const cargoNames = toStringArray(userRow.cargo_names);
+
     return {
       id: userRow.id ?? userRow._id,
       _id: (userRow.id ?? userRow._id)?.toString(),
@@ -182,6 +243,17 @@ export default class UserRepository {
       codigo_postal: userRow.codigo_postal,
       photoUrl: userRow.photo_url ?? userRow.photoUrl ?? null,
       status: userRow.status ?? DEFAULT_STATUS,
+      current_assignment: {
+        unit_type_ids: toNumericArray(userRow.unit_type_ids),
+        unit_type_names: unitTypeNames,
+        unit_ids: toNumericArray(userRow.unit_ids),
+        unit_names: unitNames,
+        cargo_ids: toNumericArray(userRow.cargo_ids),
+        cargo_names: cargoNames
+      },
+      unit_type_name: unitTypeNames[0] ?? "",
+      unit_name: unitNames[0] ?? "",
+      cargo_name: cargoNames[0] ?? "",
       verify: {
         email: Boolean(userRow.verify_email),
         whatsapp: Boolean(userRow.verify_whatsapp)

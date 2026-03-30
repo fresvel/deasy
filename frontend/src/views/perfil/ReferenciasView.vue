@@ -36,17 +36,13 @@
               <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
               <td class="px-4 py-3 text-slate-700">{{ ref.institution }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="ref.url_documento" @click="openDocument(ref)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(ref._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="deleteReferencia(ref._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(ref.url_documento)"
+                  @preview="previewDocument(ref)"
+                  @download="openDocument(ref)"
+                  @upload="triggerFileUpload(ref._id)"
+                  @delete="deleteReferencia(ref._id)"
+                />
               </td>
             </tr>
           </tbody>
@@ -81,17 +77,13 @@
               <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
               <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="ref.url_documento" @click="openDocument(ref)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(ref._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="deleteReferencia(ref._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(ref.url_documento)"
+                  @preview="previewDocument(ref)"
+                  @download="openDocument(ref)"
+                  @upload="triggerFileUpload(ref._id)"
+                  @delete="deleteReferencia(ref._id)"
+                />
               </td>
             </tr>
           </tbody>
@@ -124,17 +116,13 @@
               <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
               <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="ref.url_documento" @click="openDocument(ref)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(ref._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="deleteReferencia(ref._id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(ref.url_documento)"
+                  @preview="previewDocument(ref)"
+                  @download="openDocument(ref)"
+                  @upload="triggerFileUpload(ref._id)"
+                  @delete="deleteReferencia(ref._id)"
+                />
               </td>
             </tr>
           </tbody>
@@ -154,6 +142,7 @@
 </div>
 
 <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
+<DossierPdfPreviewModal ref="pdfPreviewModal" />
 </template>
 
 <script setup>
@@ -165,11 +154,14 @@ import BtnEdit from "@/components/BtnEdit.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
+import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
+import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
-import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 
 const modal = ref(null);
 const fileInput = ref(null);
+const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
@@ -212,12 +204,7 @@ const loadDossier = async () => {
 };
 
 // Función para obtener el tipo de estado SERA
-const getSeraType = (sera) => {
-    if (!sera || sera === 'Enviado') return 'pending';
-    if (sera === 'Revisado') return 'reviewed';
-    if (sera === 'Aprobado') return 'certified';
-    return 'denied';
-};
+const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 // Función para eliminar referencia
 const deleteReferencia = async (referenciaId) => {
@@ -255,12 +242,31 @@ const handleReferenciaAdded = () => {
     loadDossier();
 };
 
+const getDocumentBlob = async (tipoDocumento, registroId) => {
+    const response = await DossierService.downloadDocument(tipoDocumento, registroId);
+    return new Blob([response.data], { type: "application/pdf" });
+};
+
+const previewDocument = async (ref) => {
+    try {
+        const blob = await getDocumentBlob("referencia", ref._id);
+        pdfPreviewModal.value?.openFromBlob(blob);
+    } catch (error) {
+        console.error("Error al previsualizar documento:", error);
+        alert("Error al visualizar el documento");
+    }
+};
+
 const openDocument = async (ref) => {
     try {
-        const response = await DossierService.downloadDocument('referencia', ref._id);
-        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blob = await getDocumentBlob("referencia", ref._id);
         const blobUrl = window.URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${ref.nombre || 'referencia'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
         console.error('Error al abrir documento:', error);

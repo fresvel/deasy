@@ -36,17 +36,13 @@
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="capacitacion.url_documento" @click="openDocument(capacitacion)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(capacitacion._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="openDelete(capacitacion)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(capacitacion.url_documento)"
+                  @preview="previewDocument(capacitacion)"
+                  @download="openDocument(capacitacion)"
+                  @upload="triggerFileUpload(capacitacion._id)"
+                  @delete="openDelete(capacitacion)"
+                />
               </td>
             </tr>
           </tbody>
@@ -84,17 +80,13 @@
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-1">
-                  <button v-if="capacitacion.url_documento" @click="openDocument(capacitacion)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Ver documento">
-                    <IconFile :size="16" />
-                  </button>
-                  <button @click="triggerFileUpload(capacitacion._id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Subir documento">
-                    <IconUpload :size="16" />
-                  </button>
-                  <button @click="openDelete(capacitacion)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
-                    <IconTrash :size="16" />
-                  </button>
-                </div>
+                <DossierDocumentActions
+                  :has-document="Boolean(capacitacion.url_documento)"
+                  @preview="previewDocument(capacitacion)"
+                  @download="openDocument(capacitacion)"
+                  @upload="triggerFileUpload(capacitacion._id)"
+                  @delete="openDelete(capacitacion)"
+                />
               </td>
             </tr>
           </tbody>
@@ -150,6 +142,7 @@
       style="display: none" 
       @change="handleFileSelect"
     >
+    <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
 
@@ -160,13 +153,16 @@ import AgregarCapacitacion from "@/views/perfil/components/AgregarCapacitacion.v
 import BtnSera from "@/components/BtnSera.vue";
 import RowActionMenu from "@/components/RowActionMenu.vue";
 import DossierService from "@/services/dossier/DossierService";
-import { IconFile, IconUpload, IconTrash } from '@tabler/icons-vue';
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
+import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
+import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);
 const deleteModal = ref(null);
 const fileInput = ref(null);
+const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
 const dossier = ref(null);
 const loading = ref(true);
@@ -193,11 +189,7 @@ const formatDate = (date) => {
     return d.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
 };
 
-const getSeraType = (sera) => {
-    if (sera === "Aprobado") return "approved";
-    if (sera === "Revisado") return "review";
-    return "pending";
-};
+const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 // Cargar datos del usuario y su dossier
 const loadDossier = async () => {
@@ -257,12 +249,31 @@ const editarCapacitacion = (registro) => {
     console.info("Editar capacitación", registro);
 };
 
+const getDocumentBlob = async (tipoDocumento, registroId) => {
+    const response = await DossierService.downloadDocument(tipoDocumento, registroId);
+    return new Blob([response.data], { type: "application/pdf" });
+};
+
+const previewDocument = async (capacitacion) => {
+    try {
+        const blob = await getDocumentBlob("formacion", capacitacion._id);
+        pdfPreviewModal.value?.openFromBlob(blob);
+    } catch (error) {
+        console.error("Error al previsualizar documento:", error);
+        alert("Error al visualizar el documento");
+    }
+};
+
 const openDocument = async (capacitacion) => {
     try {
-        const response = await DossierService.downloadDocument('formacion', capacitacion._id);
-        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const blob = await getDocumentBlob("formacion", capacitacion._id);
         const blobUrl = window.URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${capacitacion.tema || 'capacitacion'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
         console.error('Error al abrir documento:', error);

@@ -1,7 +1,6 @@
 <template>  
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <s-header :menu-open="vmenu" @onclick="handleHeaderToggle">
-       <div class="flex items-center gap-3 overflow-hidden flex-1">
+    <app-workspace-header :menu-open="vmenu" current-section="roles" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace">
         <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <button
             v-for="(item, index) in areas"
@@ -15,37 +14,11 @@
              <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
           </button>
         </div>
-       </div>
-
-       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-          <router-link to="/firmar" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30 sm:ms-3" title="Firmar documentos">
-            <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-
-          <button class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" type="button" @click="onClick('Message')" title="Notificaciones">
-             <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-
-          <router-link to="/dashboard" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Regresar al Dashboard">
-             <IconHome class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-
-          <router-link to="/logout" class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-white/10 !text-white/90 hover:bg-white/20 hover:!text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30" title="Cerrar sesión">
-             <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
-          </router-link>
-       </div>
-    </s-header>
+    </app-workspace-header>
     
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
-        <s-menu :show="vmenu" @close-mobile="vmenu = false">
-            <div class="flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]">
-                <UserProfile
-                    :photo="userPhoto"
-                    :username="userFullName"
-                    :editable="false"
-                    @photo-selected="handlePhotoSelected"
-                />
-                
+        <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
+            <div class="flex flex-col gap-1">
                 <div class="flex flex-col gap-1">
                   <button
                     class="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-white/90 hover:text-white transition-colors"
@@ -70,7 +43,7 @@
                   </div>
                 </div>
             </div>
-        </s-menu>
+        </app-workspace-sidebar>
     
         <s-body
             class="flex-1 min-w-0"
@@ -120,10 +93,10 @@
     <script setup>  
     
     
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
-import { IconUsers, IconBell, IconHome, IconLogout, IconChevronDown, IconSignature, IconBook, IconMicroscope, IconLink, IconWorld, IconAppWindow, IconUser } from '@tabler/icons-vue';
+import { IconUsers, IconHome, IconChevronDown, IconBook, IconMicroscope, IconLink, IconWorld, IconAppWindow, IconUser } from '@tabler/icons-vue';
 
 const isClient = typeof window !== 'undefined';
 const resolveAreaIcon = (name) => {
@@ -137,12 +110,11 @@ const resolveAreaIcon = (name) => {
     }
 };
 
-import SMenu from '@/layouts/SMenu.vue';
+import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
-    import SHeader from '@/layouts/SHeader.vue';
+    import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
     import SNavMenu from '@/layouts/SNavMenu.vue';
-    import UserProfile from '@/components/UserProfile.vue';
 
 import IndexAcademia from '@/views/academia/AcademiaView.vue';
 import LogrosView from '@/views/academia/LogrosView.vue';
@@ -154,6 +126,7 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     import { API_PREFIX, API_ROUTES } from '@/services/apiConfig';
 
     const router = useRouter();
+    const route = useRoute();
     const service = new EasymServices();
     const API_BASE_URL = API_ROUTES.BASE;
 
@@ -224,12 +197,8 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     
     // Inicializar el área como Roles al montar
     
-    const handleHeaderToggle = (item) => {
-        if(item === "Message"){
-            toggleNotify();
-        } else {
-            toggleVmenu();
-        }
+    const handleHeaderToggle = () => {
+        toggleVmenu();
     };
     
     let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true;
@@ -268,9 +237,10 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
         }
         
         // Asegurar que el área inicial sea Roles
-        area.value = "Roles";
+        syncAreaState("Roles");
         mainmenu.value = buildRolesMenu();
         process.value = "Proceso de contratación";
+        syncViewFromRoute();
     });
     
     const toggleVmenu = () => {
@@ -293,6 +263,32 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     
     const navigateToPerfil = () => {
         router.push('/perfil');
+    };
+
+    const syncAreaState = (areaName) => {
+        area.value = areaName;
+        for (const el of areas.value) {
+            el.active = el.name === areaName;
+        }
+    };
+
+    const openSigningWorkspace = () => {
+        syncAreaState('Firmar');
+        process.value = 'Firmar';
+        router.replace({ path: '/roles', query: { view: 'firmar' } });
+    };
+
+    const syncViewFromRoute = () => {
+        if (route.query?.view === 'firmar') {
+            syncAreaState('Firmar');
+            process.value = 'Firmar';
+            return;
+        }
+        if (area.value === 'Firmar') {
+            syncAreaState('Roles');
+            mainmenu.value = buildRolesMenu();
+            process.value = 'Proceso de contratación';
+        }
     };
     
     const handlePhotoSelected = async (file) => {
@@ -356,19 +352,12 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     
 
     const onheadClick=(item)=>{
-        area.value=item.name;
-        for (let el of areas.value){
-            if(el.code === item.code){
-                el.active = true;
-            } else{
-                el.active = false;
-            }
-        }
-
+        syncAreaState(item.name);
         switch(item.name){
             case 'Roles':
                 mainmenu.value = buildRolesMenu();
                 process.value="Proceso de contratación";
+                router.replace({ path: '/roles' });
                 break;
             case 'Academia':
                 console.log("Academia detected")
@@ -400,21 +389,25 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
                     }
                 ]
                 process.value="index";
+                router.replace({ path: '/roles' });
                 break;
             case 'Investigación':
                 mainmenu.value=[]
                 process.value="Investigación";
+                router.replace({ path: '/roles' });
                 break;
             case 'Vinculación':
                 mainmenu.value=[]
                 process.value="Vinculación";
+                router.replace({ path: '/roles' });
                 break;
             case 'Internacionalización':
                 mainmenu.value=[]
                 process.value="Internacionalización";
+                router.replace({ path: '/roles' });
                 break;
             case 'Firmar':
-                process.value="Firmar";
+                openSigningWorkspace();
                 break;
             case 'Message':
                 break;
@@ -422,6 +415,10 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
                 break;
         }
     }
+
+    watch(() => route.query.view, () => {
+        syncViewFromRoute();
+    });
 
       
       

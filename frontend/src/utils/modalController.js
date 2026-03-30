@@ -9,6 +9,10 @@ class ModalController {
         this.element.addEventListener('click', this.boundOnDismiss);
     }
 
+    dispatchLifecycleEvent(name) {
+        this.element.dispatchEvent(new CustomEvent(name, { bubbles: true }));
+    }
+
     onDismissClick(event) {
         const dismissTarget = event.target.closest('[data-modal-dismiss]');
         if (dismissTarget) {
@@ -24,6 +28,11 @@ class ModalController {
     }
 
     show() {
+        if (this.element.classList.contains('show')) {
+            return;
+        }
+
+        this.dispatchLifecycleEvent('show.bs.modal');
         this.element.style.display = 'block';
         this.element.removeAttribute('aria-hidden');
         this.element.setAttribute('aria-modal', 'true');
@@ -31,6 +40,7 @@ class ModalController {
 
         requestAnimationFrame(() => {
             this.element.classList.add('show');
+            this.dispatchLifecycleEvent('shown.bs.modal');
         });
 
         if (!this.backdrop) {
@@ -47,6 +57,11 @@ class ModalController {
     }
 
     hide() {
+        if (!this.element.classList.contains('show') && this.element.style.display === 'none') {
+            return;
+        }
+
+        this.dispatchLifecycleEvent('hide.bs.modal');
         this.element.classList.remove('show');
         this.element.setAttribute('aria-hidden', 'true');
         this.element.removeAttribute('aria-modal');
@@ -63,6 +78,8 @@ class ModalController {
         if (!document.querySelector('.modal.show')) {
             document.body.classList.remove('modal-open');
         }
+
+        this.dispatchLifecycleEvent('hidden.bs.modal');
     }
 
     dispose() {
@@ -73,6 +90,10 @@ class ModalController {
 }
 
 export class Modal {
+    constructor(element) {
+        return Modal.getOrCreateInstance(element);
+    }
+
     static getOrCreateInstance(element) {
         if (!element) return null;
 

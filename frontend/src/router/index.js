@@ -6,7 +6,6 @@ import TermsView from "@/views/auth/TermsView.vue";
 import VerifyEmail from "@/views/auth/VerifyEmail.vue";
 import DashboardHome from "@/views/dashboard/DashboardHome.vue";
 import IndexPage from "@/views/perfil/PerfilView.vue";
-import FirmarPdf from "@/views/funciones/FirmarView.vue";
 import AdminView from "@/views/admin/AdminView.vue";
 import RolesView from "@/views/roles/RolesView.vue";
 import { isTokenValid, clearAuthData } from "@/utils/tokenUtils.js";
@@ -20,7 +19,6 @@ const routes = [
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },
   { path: "/terminos", name: "terminos", component: TermsView },
-  { path: "/firmar", name: "firmar", component: FirmarPdf },
   { path: "/admin", name: "admin", component: AdminView },
   { path: "/roles", name: "roles", component: RolesView },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
