@@ -12,3 +12,6 @@ tools/templates/dist/Plantillas/
 tools/templates/dist/DOCUMENTOS/
 backend/templates_legacy/_runtime/
 .vscode
+__pycache__/
+*.pyc
+codex_refac.md

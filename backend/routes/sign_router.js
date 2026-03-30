@@ -2,7 +2,14 @@ import express from "express";
 import multer from "multer";
 import os from "os";
 import { authMiddleware } from "../middlewares/auth.js";
-import { downloadSigned, requestSign } from "../controllers/sign/sign_controller.js";
+import {
+  downloadSignBatch,
+  downloadSigned,
+  getSignBatchStatus,
+  requestSign,
+  requestSignBatch,
+  requestSignBatchStart
+} from "../controllers/sign/sign_controller.js";
 
 const router = express.Router();
 
@@ -23,6 +30,23 @@ router.post(
   upload.fields([{ name: "pdf", maxCount: 1 }]),
   requestSign
 );
+
+router.post(
+  "/batch",
+  authMiddleware,
+  upload.fields([{ name: "pdf", maxCount: 30 }]),
+  requestSignBatch
+);
+
+router.post(
+  "/batch/start",
+  authMiddleware,
+  upload.fields([{ name: "pdf", maxCount: 30 }]),
+  requestSignBatchStart
+);
+
+router.get("/batch/:jobId", authMiddleware, getSignBatchStatus);
+router.get("/batch/:jobId/download", authMiddleware, downloadSignBatch);
 
 router.get("/download", authMiddleware, downloadSigned);
 

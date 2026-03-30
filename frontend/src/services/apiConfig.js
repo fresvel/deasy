@@ -36,5 +36,9 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
-  SIGN: `${API_PREFIX}/sign`
+  SIGN: `${API_PREFIX}/sign`,
+  SIGN_BATCH: `${API_PREFIX}/sign/batch`,
+  SIGN_BATCH_START: `${API_PREFIX}/sign/batch/start`,
+  SIGN_BATCH_STATUS: (jobId) => `${API_PREFIX}/sign/batch/${jobId}`,
+  SIGN_BATCH_DOWNLOAD: (jobId) => `${API_PREFIX}/sign/batch/${jobId}/download`
 };

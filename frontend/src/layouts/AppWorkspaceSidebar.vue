@@ -4,6 +4,7 @@
       <UserProfile
         :photo="photo"
         :username="username"
+        :signature-marker="signatureMarker"
         :editable="editable"
         @photo-selected="$emit('photo-selected', $event)"
       />
@@ -28,6 +29,10 @@ defineProps({
   username: {
     type: String,
     default: "Usuario"
+  },
+  signatureMarker: {
+    type: String,
+    default: ""
   },
   editable: {
     type: Boolean,

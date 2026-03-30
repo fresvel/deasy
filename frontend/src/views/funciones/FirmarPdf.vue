@@ -71,8 +71,21 @@
         </div>
 
         <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
-          <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-red-600 text-red-600 hover:bg-red-50 transition font-semibold text-sm" @click="openDeleteModal">
+          <button
+            v-if="signMode !== 'token'"
+            type="button"
+            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-red-600 text-red-600 hover:bg-red-50 transition font-semibold text-sm"
+            @click="openDeleteModal"
+          >
             Eliminar
+          </button>
+          <button
+            v-if="!requestMode"
+            type="button"
+            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-sky-300 text-sky-700 hover:bg-sky-50 transition font-semibold text-sm"
+            @click="submitTokenAction"
+          >
+            Firmar por token
           </button>
           <button
             type="button"
@@ -86,9 +99,20 @@
 
     </div>
 
-    <div v-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+    <div v-if="workspaceMode === 'multi'" class="mt-4">
+      <MultiSignerPanel
+        :batch-job="activeMultiBatchJob"
+        :is-batch-submitting="isStartingMultiBatch"
+        :is-downloading-batch="isDownloadingMultiBatch"
+        @back="closeMultiSigner"
+        @download-batch="downloadMultiBatch"
+        @start-batch="prepareMultiBatchStart"
+      />
+    </div>
+
+    <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
       <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
         
         <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
@@ -133,6 +157,25 @@
           />
         </div>
 
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Multifirmador</h3>
+          <div class="flex flex-col items-center justify-center flex-grow">
+            <div class="inline-flex items-center justify-center rounded-2xl bg-sky-50 p-4 text-sky-700 border border-sky-100 mb-4">
+              <IconFiles class="w-8 h-8" />
+            </div>
+            <button
+              type="button"
+              class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm"
+              @click="openMultiSigner"
+            >
+              Abrir multifirmador
+            </button>
+            <p class="text-slate-500 text-xs mt-3 text-left">
+              Aquí se integrará la firma masiva por token o coordenadas sin afectar el flujo actual.
+            </p>
+          </div>
+        </div>
+
       </div>
       <p v-if="uploadError" class="text-red-500 font-medium mt-4 text-sm">{{ uploadError }}</p>
     </div>
@@ -155,8 +198,17 @@
               <div v-if="field.signer" class="saved-box-signer">
                 {{ field.signer.first_name }} {{ field.signer.last_name }}
               </div>
-              <div class="saved-box-delete-wrapper" @mousedown.stop @click.stop>
+              <div v-if="signMode !== 'token'" class="saved-box-actions" @mousedown.stop @click.stop>
                 <BtnDelete message="Eliminar" @onpress="requestDeleteField(field.id)" />
+                <button
+                  type="button"
+                  class="saved-box-action-btn saved-box-sign-btn"
+                  title="Firmar documento"
+                  aria-label="Firmar documento"
+                  @click.stop="submitAction"
+                >
+                  <IconSignature class="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -165,17 +217,21 @@
     </div>
 
     <div v-if="pdfReady" class="text-center font-medium text-slate-500 mt-2 text-sm" ref="coordinatesDisplay">
-      {{ selectionMode === 'preset'
+      {{ signMode === 'token'
+        ? 'Se muestran las coincidencias detectadas del token en el PDF.'
+        : selectionMode === 'preset'
         ? 'Haz clic en el PDF para crear el campo de firma.'
         : 'Haz clic y arrastra en el PDF para crear el campo de firma.' }}
     </div>
 
-    <div v-if="pdfReady && fields.length" class="mt-6">
+    <div v-if="pdfReady && visibleFields.length" class="mt-6">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-        <h4 class="text-lg font-semibold text-slate-800 mb-4 text-left">Campos agregados</h4>
+        <h4 class="text-lg font-semibold text-slate-800 mb-4 text-left">
+          {{ signMode === 'token' ? 'Coincidencias detectadas del token' : 'Campos agregados' }}
+        </h4>
         <div class="flex flex-col gap-3">
           <div
-            v-for="field in fields"
+            v-for="field in visibleFields"
             :key="field.id"
             class="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer gap-4"
             :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
@@ -193,7 +249,12 @@
                 </span>
               </template>
             </span>
-            <button type="button" class="inline-flex px-3 py-1.5 text-sm rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium" @click.stop="requestDeleteField(field.id)">
+            <button
+              v-if="signMode !== 'token'"
+              type="button"
+              class="inline-flex px-3 py-1.5 text-sm rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium"
+              @click.stop="requestDeleteField(field.id)"
+            >
               Eliminar
             </button>
           </div>
@@ -201,7 +262,7 @@
       </div>
     </div>
     
-    <div v-if="pdfReady && fields.length" class="mt-6 mb-8">
+    <div v-if="pdfReady && visibleFields.length" class="mt-6 mb-8">
       <div class="bg-slate-800 text-slate-300 rounded-2xl shadow-sm border border-slate-700 p-4">
         <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">JSON Output</div>
         <pre class="text-xs whitespace-pre-wrap overflow-auto font-mono custom-scrollbar">{{ fieldsJson }}</pre>
@@ -401,7 +462,7 @@
   <AdminModalShell
     ref="signCertModal"
     labelled-by="sign-cert-modal-title"
-    title="Firmar documento"
+    :title="multiBatchRequest ? 'Iniciar firma masiva' : signMode === 'token' ? 'Firmar documento por token' : 'Firmar documento'"
     size="lg"
     content-class="rounded-4 shadow border-0"
     body-class="pt-4"
@@ -410,6 +471,38 @@
       <p class="mb-0 text-sm text-slate-600">
         Selecciona uno de tus certificados guardados e ingresa la contraseña del `.p12`.
       </p>
+
+      <div
+        v-if="multiBatchRequest"
+        class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+      >
+        <div class="font-semibold">Lote preparado</div>
+        <div class="mt-1 text-sky-800">
+          Se iniciará una firma masiva para {{ multiBatchRequest.documents.length }} documento(s) en modo
+          <span class="font-semibold">
+            {{
+              multiBatchRequest.mode === 'token'
+                ? 'token'
+                : multiBatchRequest.mode === 'per-document'
+                  ? 'coordenadas por documento'
+                  : 'coordenadas compartidas'
+            }}
+          </span>.
+        </div>
+      </div>
+
+      <div
+        v-if="!multiBatchRequest && signMode === 'token'"
+        class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+      >
+        <div class="font-semibold">Firma por token</div>
+        <div v-if="currentSignatureMarker" class="mt-1 text-sky-800">
+          Se buscarán todas las coincidencias del marcador <span class="font-mono font-semibold">{{ currentSignatureMarker }}</span> y se estampará la firma en cada una.
+        </div>
+        <div v-else class="mt-1 text-red-600">
+          Tu usuario no tiene un token de firma configurado.
+        </div>
+      </div>
 
       <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
@@ -470,6 +563,20 @@
         </div>
       </div>
 
+      <label class="inline-flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <input
+          v-model="allowUntrustedSigner"
+          type="checkbox"
+          class="mt-1 h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-300"
+        />
+        <span>
+          Permitir certificados no validados
+          <span class="block text-xs text-amber-700">
+            Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
+          </span>
+        </span>
+      </label>
+
       <p v-if="signError" class="mb-0 text-sm font-medium text-red-600">{{ signError }}</p>
     </div>
     <template #footer>
@@ -490,14 +597,14 @@
     content-class="rounded-4 shadow border-0"
     body-class="pt-4"
   >
-    <div v-if="signSuccess" class="flex flex-col gap-4">
-      <p class="mb-0 text-sm text-emerald-700 font-medium">
-        El documento fue firmado correctamente con {{ signedFieldsCount }} campo(s).
-      </p>
-      <div class="flex flex-wrap gap-3">
-        <AdminButton variant="outlinePrimary" @click="viewSignedDocument">Visualizar documento</AdminButton>
-        <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
-      </div>
+      <div v-if="signSuccess" class="flex flex-col gap-4">
+        <p class="mb-0 text-sm text-emerald-700 font-medium">
+          El documento fue firmado correctamente con {{ signedFieldsCount }} campo(s).
+        </p>
+        <div v-if="signedMinioPath" class="flex flex-wrap gap-3">
+          <AdminButton variant="outlinePrimary" @click="viewSignedDocument">Visualizar documento</AdminButton>
+          <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
+        </div>
     </div>
     <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signError }}</p>
     <template #footer>
@@ -531,13 +638,14 @@
   import * as pdfjsLib from 'pdfjs-dist/build/pdf.mjs';
   import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import PdfDropField from '@/components/PdfDropField.vue';
   import UserCertificatesPanel from '@/components/UserCertificatesPanel.vue';
   import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
   import AdminButton from '@/views/admin/components/AdminButton.vue';
+  import MultiSignerPanel from '@/views/funciones/MultiSignerPanel.vue';
 
   const installPdfJsCollectionPolyfills = () => {
     if (typeof Map !== 'undefined' && !Map.prototype.getOrInsertComputed) {
@@ -586,6 +694,7 @@
   const uploadError = ref('');
   const pdfReady = ref(false);
   const requestMode = ref(false);
+  const workspaceMode = ref('single');
   const deleteModal = ref(null);
   const assignSignerModal = ref(null);
   const confirmDeleteModal = ref(null);
@@ -608,20 +717,22 @@
   const isLoadingSignerOptions = ref(false);
   const currentUser = ref(null);
   const fields = ref([]);
+  const tokenPreviewFields = ref([]);
   const lastSelection = ref(null);
   const lastFieldId = ref(null);
   const fieldCounter = ref(1);
-  const fieldsJson = computed(() => JSON.stringify(fields.value, null, 2));
+  const visibleFields = computed(() => (signMode.value === 'token' ? tokenPreviewFields.value : fields.value));
+  const fieldsJson = computed(() => JSON.stringify(visibleFields.value, null, 2));
   const previewCanvas = ref(null);
   const selectedField = ref(null);
   const filterPage = ref('all');
   const filteredFields = computed(() => {
-    if (filterPage.value === 'all') return fields.value;
-    return fields.value.filter((field) => field.page === Number(filterPage.value));
+    if (filterPage.value === 'all') return visibleFields.value;
+    return visibleFields.value.filter((field) => field.page === Number(filterPage.value));
   });
-  const currentPageFields = computed(() => fields.value.filter((field) => field.page === currentPage.value));
+  const currentPageFields = computed(() => visibleFields.value.filter((field) => field.page === currentPage.value));
   const pagesWithFields = computed(() => {
-    const pages = new Set(fields.value.map((field) => field.page));
+    const pages = new Set(visibleFields.value.map((field) => field.page));
     return Array.from(pages).sort((a, b) => a - b);
   });
   let viewport = null;
@@ -634,8 +745,9 @@
   let resizeTimer = null;
   let lastContainerWidth = null;
 
-  const FIELD_WIDTH = 110;
-  const FIELD_HEIGHT = 60;
+  const FIELD_WIDTH = 124;
+  const FIELD_HEIGHT = 48;
+  const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   let isDragging = false;
   let startX = 0;
@@ -646,15 +758,28 @@
   const selectedCertificateId = ref(null);
   const certPassword = ref('');
   const stampText = ref('');
+  const signMode = ref('coordinates');
+  const allowUntrustedSigner = ref(false);
   const isSigning = ref(false);
   const signError = ref('');
   const signSuccess = ref(false);
   const signedMinioPath = ref('');
   const signedFieldsCount = ref(0);
+  const multiBatchRequest = ref(null);
+  const activeMultiBatchJob = ref(null);
+  const activeMultiBatchJobId = ref('');
+  const isStartingMultiBatch = ref(false);
+  const isDownloadingMultiBatch = ref(false);
   const isLoadingCertificates = ref(false);
   let signCertModalInstance = null;
   let signResultModalInstance = null;
   let certificatesManagerModalInstance = null;
+  let multiBatchPollTimer = null;
+  const currentSignatureMarker = computed(() => {
+    if (currentUser.value?.signatureMarker) return currentUser.value.signatureMarker;
+    const rawToken = currentUser.value?.signatureToken || currentUser.value?.token || '';
+    return rawToken ? `!-${rawToken}-!` : '';
+  });
 
   const removeBox = () => {
     const signbox = document.getElementById('active-signbox');
@@ -845,6 +970,10 @@
       resizeTimer = null;
     }
     window.removeEventListener('resize', scheduleResizeRender);
+    if (multiBatchPollTimer) {
+      clearTimeout(multiBatchPollTimer);
+      multiBatchPollTimer = null;
+    }
   });
 
   const scheduleUserSearch = () => {
@@ -964,6 +1093,7 @@
     const loadPdfFromFile = async (file, mode = 'sign') => {
       resetPdfState();
       fields.value = [];
+      tokenPreviewFields.value = [];
       lastSelection.value = null;
       lastFieldId.value = null;
       fieldCounter.value = 1;
@@ -1008,6 +1138,15 @@
 
     const onPdfDropFiles = (files, mode) => {
       onAddFiles(files, mode);
+    };
+
+    const openMultiSigner = () => {
+      resetToStart();
+      workspaceMode.value = 'multi';
+    };
+
+    const closeMultiSigner = () => {
+      workspaceMode.value = 'single';
     };
 
     const loadSignerFilterOptions = async () => {
@@ -1093,36 +1232,93 @@
       userSearchError.value = '';
     };
 
-    const saveFieldWithSigner = (signer) => {
-      if (!activeBox || !lastSelection.value) return;
-      const selection = lastSelection.value;
-      if (selection.x1 === selection.x2 || selection.y1 === selection.y2) return;
-      const fieldName = `Firma ${fieldCounter.value}`;
+    const buildResolvedSigner = (signer) => {
+      if (!signer) return null;
+      return {
+        id: signer.id ?? signer._id,
+        cedula: signer.cedula,
+        first_name: signer.first_name,
+        last_name: signer.last_name,
+        email: signer.email
+      };
+    };
+
+    const addFieldFromSelection = (selection, signer, options = {}) => {
+      if (!selection) return null;
+      if (selection.x1 === selection.x2 || selection.y1 === selection.y2) return null;
+      const fieldName = options.fieldName || `Firma ${fieldCounter.value}`;
       fieldCounter.value += 1;
-      const resolvedSigner = signer
-        ? {
-            id: signer.id ?? signer._id,
-            cedula: signer.cedula,
-            first_name: signer.first_name,
-            last_name: signer.last_name,
-            email: signer.email
-          }
-        : null;
       const field = {
-        id: `field-${Date.now()}`,
+        id: options.id || `field-${Date.now()}-${fieldCounter.value}`,
         name: fieldName,
         page: selection.page,
         x1: Number(selection.x1.toFixed(2)),
         y1: Number(selection.y1.toFixed(2)),
         x2: Number(selection.x2.toFixed(2)),
         y2: Number(selection.y2.toFixed(2)),
-        signer: resolvedSigner
+        signer: buildResolvedSigner(signer)
       };
       fields.value = [...fields.value, field];
       lastFieldId.value = field.id;
+      return field;
+    };
+
+    const saveFieldWithSigner = (signer) => {
+      if (!activeBox || !lastSelection.value) return;
+      addFieldFromSelection(lastSelection.value, signer);
       removeBox();
       activeBox = null;
       lastSelection.value = null;
+    };
+
+    const buildTokenPreviewFields = async () => {
+      tokenPreviewFields.value = [];
+      if (!pdfDoc || !currentSignatureMarker.value) {
+        return [];
+      }
+
+      const markerRegex = new RegExp(escapeRegExp(currentSignatureMarker.value), 'g');
+      const previewFields = [];
+      const signer = buildResolvedSigner(currentUser.value);
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum += 1) {
+        const page = await pdfDoc.getPage(pageNum);
+        const pageViewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+
+        for (const item of textContent.items || []) {
+          const rawText = typeof item?.str === 'string' ? item.str : '';
+          if (!rawText || !rawText.includes(currentSignatureMarker.value)) continue;
+
+          markerRegex.lastIndex = 0;
+          let match;
+          while ((match = markerRegex.exec(rawText)) !== null) {
+            const charWidth = rawText.length ? Number(item.width || 0) / rawText.length : 0;
+            const x1 = Math.max(
+              0,
+              Math.min((Number(item.transform?.[4]) || 0) + charWidth * match.index, pageViewport.width - FIELD_WIDTH)
+            );
+            const y1 = Math.max(
+              FIELD_HEIGHT,
+              Math.min((Number(item.transform?.[5]) || 0) - 6 + FIELD_HEIGHT * 0.5, pageViewport.height)
+            );
+
+            previewFields.push({
+              id: `token-preview-${pageNum}-${previewFields.length}-${Date.now()}`,
+              name: `Token ${previewFields.length + 1}`,
+              page: pageNum,
+              x1: Number(x1.toFixed(2)),
+              y1: Number(y1.toFixed(2)),
+              x2: Number(Math.min(pageViewport.width, x1 + FIELD_WIDTH).toFixed(2)),
+              y2: Number(Math.max(0, y1 - FIELD_HEIGHT).toFixed(2)),
+              signer
+            });
+          }
+        }
+      }
+
+      tokenPreviewFields.value = previewFields;
+      return previewFields;
     };
 
     const submitAction = () => {
@@ -1130,14 +1326,31 @@
         console.log('Enviar solicitud de firmas');
         return;
       }
+      signMode.value = 'coordinates';
+      openSignCertModal();
+    };
+
+    const submitTokenAction = async () => {
+      if (requestMode.value) return;
+      const previewFields = await buildTokenPreviewFields();
+      if (!previewFields.length) {
+        signMode.value = 'coordinates';
+        uploadError.value = currentSignatureMarker.value
+          ? `No se encontraron coincidencias del token ${currentSignatureMarker.value} en el PDF.`
+          : 'El usuario actual no tiene token de firma configurado.';
+        return;
+      }
+      signMode.value = 'token';
+      uploadError.value = '';
+      signError.value = '';
       openSignCertModal();
     };
 
     const selectField = (fieldId, preview = false) => {
       lastFieldId.value = fieldId;
-      selectedField.value = fields.value.find((item) => item.id === fieldId) || null;
+      selectedField.value = visibleFields.value.find((item) => item.id === fieldId) || null;
       if (preview) {
-        const field = fields.value.find((item) => item.id === fieldId);
+        const field = visibleFields.value.find((item) => item.id === fieldId);
         if (field && field.page !== currentPage.value) {
           renderPage(field.page);
         }
@@ -1348,9 +1561,165 @@
       signCertModalInstance.show();
     };
 
+    const prepareMultiBatchStart = async (payload) => {
+      multiBatchRequest.value = payload;
+      signError.value = '';
+      signSuccess.value = false;
+      await openSignCertModal();
+    };
+
+    const stopMultiBatchPolling = () => {
+      if (multiBatchPollTimer) {
+        clearTimeout(multiBatchPollTimer);
+        multiBatchPollTimer = null;
+      }
+    };
+
+    const pollMultiBatchStatus = async (jobId) => {
+      stopMultiBatchPolling();
+      try {
+        const response = await fetch(API_ROUTES.SIGN_BATCH_STATUS(jobId), {
+          headers: getAuthHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || data?.message || 'No se pudo consultar el lote.');
+        }
+        activeMultiBatchJob.value = data;
+        if (!['completed', 'error'].includes(data.status)) {
+          multiBatchPollTimer = setTimeout(() => {
+            pollMultiBatchStatus(jobId);
+          }, 1500);
+        }
+      } catch (error) {
+        signError.value = error.message || 'No se pudo consultar el avance de la firma masiva.';
+      }
+    };
+
+    const downloadMultiBatch = async () => {
+      if (!activeMultiBatchJobId.value) {
+        signError.value = 'No hay un lote disponible para descargar.';
+        return;
+      }
+      try {
+        isDownloadingMultiBatch.value = true;
+        const response = await fetch(API_ROUTES.SIGN_BATCH_DOWNLOAD(activeMultiBatchJobId.value), {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error || data?.message || 'No se pudo descargar el lote firmado.');
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `firmas-lote-${activeMultiBatchJobId.value}.zip`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        signError.value = error.message || 'No se pudo descargar el lote firmado.';
+      } finally {
+        isDownloadingMultiBatch.value = false;
+      }
+    };
+
     const confirmSign = async () => {
-      if (!fields.value.length) {
+      if (multiBatchRequest.value) {
+        if (!selectedCertificateId.value) {
+          signError.value = 'Debes seleccionar un certificado.';
+          return;
+        }
+        if (!certPassword.value) {
+          signError.value = 'Debes ingresar la contraseña del certificado.';
+          return;
+        }
+        if (!stampText.value.trim()) {
+          signError.value = 'Debes indicar el texto del sello.';
+          return;
+        }
+
+        isSigning.value = true;
+        isStartingMultiBatch.value = true;
+        signError.value = '';
+        try {
+          const formData = new FormData();
+          multiBatchRequest.value.documents.forEach((doc) => {
+            formData.append('pdf', doc.file);
+          });
+          formData.append('certificate_id', String(selectedCertificateId.value));
+          formData.append('password', certPassword.value);
+          formData.append('stampText', stampText.value.trim());
+          formData.append('sign_mode', multiBatchRequest.value.mode === 'token' ? 'token' : 'coordinates');
+          if (multiBatchRequest.value.mode === 'shared-coordinates' && multiBatchRequest.value.sharedFields?.length) {
+            formData.append('fields', JSON.stringify(
+              multiBatchRequest.value.sharedFields.map((field) => ({
+                page: field.page,
+                pageReference: field.pageReference || 'start',
+                pageValue: field.pageValue || field.page,
+                pageOffset: Number(field.pageOffset || 0),
+                x: Math.round(field.x1),
+                y: Math.round(field.y1)
+              }))
+            ));
+          }
+          if (multiBatchRequest.value.mode === 'per-document' && multiBatchRequest.value.documentFields?.length) {
+            formData.append('document_fields', JSON.stringify(
+              multiBatchRequest.value.documentFields.map((doc) => ({
+                id: doc.id,
+                name: doc.name,
+                fields: Array.isArray(doc.fields)
+                  ? doc.fields.map((field) => ({
+                      page: field.page,
+                      x: Math.round(field.x1),
+                      y: Math.round(field.y1)
+                    }))
+                  : []
+              }))
+            ));
+          }
+          formData.append('allow_untrusted_signer', allowUntrustedSigner.value ? 'true' : 'false');
+
+          const response = await fetch(API_ROUTES.SIGN_BATCH_START, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: formData
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data?.error || data?.message || `Error del servidor (${response.status})`);
+          }
+          activeMultiBatchJobId.value = data.jobId || '';
+          activeMultiBatchJob.value = {
+            jobId: data.jobId,
+            status: 'processing',
+            total: Number(data.total || multiBatchRequest.value.documents.length),
+            processed: 0,
+            successCount: 0,
+            failedCount: 0,
+            results: multiBatchRequest.value.documents.map((doc) => ({
+              fileName: doc.name,
+              status: 'pending'
+            }))
+          };
+          signCertModalInstance?.hide();
+          await pollMultiBatchStatus(activeMultiBatchJobId.value);
+          multiBatchRequest.value = null;
+        } catch (error) {
+          signError.value = error.message || 'No se pudo iniciar la firma masiva.';
+        } finally {
+          isSigning.value = false;
+          isStartingMultiBatch.value = false;
+        }
+        return;
+      }
+
+      if (signMode.value === 'coordinates' && !fields.value.length) {
         signError.value = 'Agrega al menos un campo de firma antes de continuar.';
+        return;
+      }
+      if (signMode.value === 'token' && !currentSignatureMarker.value) {
+        signError.value = 'El usuario actual no tiene token de firma configurado.';
         return;
       }
       if (!selectedCertificateId.value) {
@@ -1383,7 +1752,13 @@
         formData.append('certificate_id', String(selectedCertificateId.value));
         formData.append('password', certPassword.value);
         formData.append('stampText', stampText.value.trim());
-        formData.append('fields', JSON.stringify(allFields));
+        formData.append('sign_mode', signMode.value);
+        if (signMode.value === 'coordinates') {
+          formData.append('fields', JSON.stringify(allFields));
+        } else {
+          formData.append('token', currentSignatureMarker.value);
+        }
+        formData.append('allow_untrusted_signer', allowUntrustedSigner.value ? 'true' : 'false');
 
         const response = await fetch(API_ROUTES.SIGN, {
           method: 'POST',
@@ -1396,7 +1771,7 @@
         }
         signSuccess.value = true;
         signedMinioPath.value = data.signedPath;
-        signedFieldsCount.value = Number(data.fieldsCount || allFields.length);
+        signedFieldsCount.value = Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0));
         signCertModalInstance?.hide();
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
         signResultModalInstance.show();
@@ -1450,6 +1825,7 @@
       uploadedFiles.value = [];
       uploadError.value = '';
       fields.value = [];
+      tokenPreviewFields.value = [];
       lastSelection.value = null;
       lastFieldId.value = null;
       fieldCounter.value = 1;
@@ -1471,11 +1847,19 @@
       selectedCertificateId.value = null;
       availableCertificates.value = [];
       certPassword.value = '';
+      signMode.value = 'coordinates';
       signError.value = '';
       signSuccess.value = false;
       signedMinioPath.value = '';
       signedFieldsCount.value = 0;
+      activeMultiBatchJob.value = null;
+      activeMultiBatchJobId.value = '';
+      isStartingMultiBatch.value = false;
+      isDownloadingMultiBatch.value = false;
+      multiBatchRequest.value = null;
+      stopMultiBatchPolling();
       pendingDeleteFieldId.value = null;
+      workspaceMode.value = 'single';
       resetPdfState();
     };
 
@@ -1504,13 +1888,41 @@
   z-index: 30;
 }
 
-.saved-box-delete-wrapper {
+.saved-box-actions {
   position: absolute;
   top: 0;
   right: 0;
   transform: translate(105%, -8%);
   z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
   pointer-events: auto;
+}
+
+.saved-box-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.saved-box-action-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.saved-box-action-btn:focus-visible {
+  outline: 2px solid rgba(14, 165, 233, 0.35);
+  outline-offset: 2px;
 }
 
 .saved-box-signer {

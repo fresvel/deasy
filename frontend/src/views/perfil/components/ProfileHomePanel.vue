@@ -3,7 +3,13 @@
     
     <!-- User Context Card -->
     <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left transition-shadow hover:shadow-md">
-      <img class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-slate-100" :src="photo" alt="Foto de perfil" />
+      <div class="flex flex-col items-center gap-3 shrink-0">
+        <img class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-slate-100" :src="photo" alt="Foto de perfil" />
+        <div v-if="signatureMarker" class="max-w-[14rem] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Token firma</p>
+          <p class="mt-1 break-all font-mono text-xs text-slate-700">{{ signatureMarker }}</p>
+        </div>
+      </div>
       <div class="flex-1 flex flex-col justify-center mt-2 sm:mt-0">
         <h4 class="text-2xl font-bold text-slate-800 mb-1 tracking-tight">{{ displayName }}</h4>
         <p class="text-sm font-medium text-slate-500 mb-3">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
@@ -96,6 +102,15 @@ const displayName = computed(() => {
   const firstName = props.currentUser?.first_name ?? "";
   const lastName = props.currentUser?.last_name ?? "";
   return `${firstName} ${lastName}`.trim() || "Usuario";
+});
+
+const signatureMarker = computed(() => {
+  if (props.currentUser?.signatureMarker) {
+    return props.currentUser.signatureMarker;
+  }
+
+  const rawToken = props.currentUser?.signatureToken ?? props.currentUser?.token ?? "";
+  return rawToken ? `!-${rawToken}-!` : "";
 });
 </script>
 

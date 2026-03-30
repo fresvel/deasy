@@ -241,6 +241,8 @@ export default class UserRepository {
       calle_primaria: userRow.calle_primaria,
       calle_secundaria: userRow.calle_secundaria,
       codigo_postal: userRow.codigo_postal,
+      signatureToken: userRow.token ?? null,
+      signatureMarker: userRow.token ? `!-${userRow.token}-!` : null,
       photoUrl: userRow.photo_url ?? userRow.photoUrl ?? null,
       status: userRow.status ?? DEFAULT_STATUS,
       current_assignment: {

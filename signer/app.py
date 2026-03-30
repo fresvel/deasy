@@ -13,11 +13,14 @@ from typing import Any
 from uuid import uuid4
 
 import pika
+from asn1crypto import x509 as asn1_x509
 from cryptography.hazmat.primitives.serialization import pkcs12
 from minio import Minio
 from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
 from pyhanko.pdf_utils.images import PdfImage
+from pyhanko.pdf_utils.layout import AxisAlignment, InnerScaling, Margins, SimpleBoxLayoutRule
 from pyhanko.pdf_utils.reader import PdfFileReader
+from pyhanko.sign.general import load_cert_from_pemder
 from pyhanko.sign import fields, signers
 from pyhanko.sign.fields import SigSeedSubFilter
 from pyhanko.sign.signers import PdfSignatureMetadata, PdfSigner
@@ -26,7 +29,7 @@ from pyhanko.sign.validation import validate_pdf_signature
 from pyhanko.stamp import TextStampStyle
 from pyhanko_certvalidator import ValidationContext
 
-from find_marker import find_marker_coordinates
+from find_marker import find_all_marker_coordinates, find_marker_coordinates
 
 
 PORT = int(os.getenv("SIGNER_PORT", "4000"))
@@ -45,6 +48,7 @@ SIGNER_USE_GHOSTSCRIPT = os.getenv("SIGNER_USE_GHOSTSCRIPT", "1").strip() == "1"
 SIGNER_REASON = os.getenv("SIGNER_REASON", "Firma electrónica DEASY")
 SIGNER_LOCATION = os.getenv("SIGNER_LOCATION", "Ecuador")
 SIGMAKER_DIR = Path(os.getenv("SIGMAKER_DIR", "/opt/sigmaker"))
+SIGNER_TRUST_DIR = Path(os.getenv("SIGNER_TRUST_DIR", "/app/trust"))
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -118,6 +122,10 @@ def resolve_tsa_url(data: dict[str, Any]) -> str:
     return ""
 
 
+def is_validation_warning_allowed(data: dict[str, Any]) -> bool:
+    return as_bool(data.get("allow_untrusted_signer")) or as_bool(data.get("allowValidationWarning"))
+
+
 def ensure_parent(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -175,6 +183,16 @@ def resolve_coordinates(data: dict[str, Any], pdf_path: Path) -> dict[str, int]:
     return result
 
 
+def resolve_coordinate_list(data: dict[str, Any], pdf_path: Path) -> list[dict[str, int]]:
+    if data["signType"] == "coordinates":
+        return [resolve_coordinates(data, pdf_path)]
+
+    results = find_all_marker_coordinates(str(pdf_path), data["token"])
+    if not results:
+        raise ValueError(f"Token marker '{data['token']}' not found in PDF")
+    return results
+
+
 def load_certificate_info(cert_path: Path, cert_password: str) -> dict[str, Any]:
     key, cert, additional = pkcs12.load_key_and_certificates(
         cert_path.read_bytes(),
@@ -210,7 +228,60 @@ def load_certificate_info(cert_path: Path, cert_password: str) -> dict[str, Any]
 def build_validation_context() -> ValidationContext | None:
     if not SIGNER_EMBED_VALIDATION_INFO and not PYHANKO_TSA_URL and not PYHANKO_DEFAULT_TSA_URL:
         return None
-    return ValidationContext(allow_fetching=True)
+    trust_roots, extra_trust_roots = load_trust_material()
+    return ValidationContext(
+        allow_fetching=True,
+        trust_roots=trust_roots or None,
+        extra_trust_roots=extra_trust_roots or None,
+        other_certs=(trust_roots + extra_trust_roots) or None,
+        revocation_mode="soft-fail",
+    )
+
+
+def load_certificate_file(cert_path: Path):
+    try:
+        return load_cert_from_pemder(str(cert_path))
+    except Exception:
+        return asn1_x509.Certificate.load(cert_path.read_bytes())
+
+
+def load_certificates_from_dir(directory: Path):
+    if not directory.exists() or not directory.is_dir():
+        return []
+
+    certificates = []
+    for cert_path in sorted(directory.iterdir()):
+        if not cert_path.is_file():
+            continue
+        if cert_path.suffix.lower() not in {".pem", ".crt", ".cer", ".der"}:
+            continue
+        try:
+            certificates.append(load_certificate_file(cert_path))
+        except Exception as error:
+            logger.warning("No se pudo cargar certificado de confianza %s: %s", cert_path, error)
+    return certificates
+
+
+def load_trust_material():
+    root_dir = SIGNER_TRUST_DIR / "roots"
+    extra_dir = SIGNER_TRUST_DIR / "extra"
+
+    trust_roots = load_certificates_from_dir(root_dir)
+    extra_trust_roots = load_certificates_from_dir(extra_dir)
+
+    # Compatibilidad: si no existen subdirectorios, trata cualquier PEM/CRT/CER/DER
+    # directo en trust/ como trust root.
+    if not trust_roots and not extra_trust_roots and SIGNER_TRUST_DIR.exists():
+        trust_roots = load_certificates_from_dir(SIGNER_TRUST_DIR)
+
+    if trust_roots or extra_trust_roots:
+        logger.info(
+            "Material de confianza cargado: %s roots, %s extra",
+            len(trust_roots),
+            len(extra_trust_roots),
+        )
+
+    return trust_roots, extra_trust_roots
 
 
 def generate_stamp_image(data: dict[str, Any], output_path: Path):
@@ -230,19 +301,20 @@ def build_stamp_style(stamp_image_path: Path) -> TextStampStyle:
         background=PdfImage(str(stamp_image_path)),
         background_opacity=1,
         border_width=0,
+        background_layout=SimpleBoxLayoutRule(
+            x_align=AxisAlignment.ALIGN_MID,
+            y_align=AxisAlignment.ALIGN_MID,
+            margins=Margins(0, 0, 0, 0),
+            inner_content_scaling=InnerScaling.STRETCH_FILL,
+        ),
         stamp_text="",
     )
 
 
 def sign_pdf_document(data: dict[str, Any], paths: JobPaths, certificate_info: dict[str, Any]) -> dict[str, Any]:
-    coordinates = resolve_coordinates(data, paths.cleaned_pdf)
-    field_name = f"sig_{uuid4().hex}"
-    left = int(coordinates["x"])
-    top = int(coordinates["y"])
-    width = int(data.get("boxWidth", 110))
-    height = int(data.get("boxHeight", 60))
-    box = (left, top - height, left + width, top)
-
+    coordinates_list = resolve_coordinate_list(data, paths.cleaned_pdf)
+    width = int(data.get("boxWidth", 124))
+    height = int(data.get("boxHeight", 48))
     signer = signers.SimpleSigner.load_pkcs12(
         str(paths.cert_file),
         passphrase=data["certPassword"].encode("utf-8"),
@@ -251,51 +323,77 @@ def sign_pdf_document(data: dict[str, Any], paths: JobPaths, certificate_info: d
     generate_stamp_image(data, stamp_image_path)
 
     tsa_url = resolve_tsa_url(data)
-    validation_context = build_validation_context()
+    allow_validation_warning = is_validation_warning_allowed(data)
+    validation_context = None if allow_validation_warning else build_validation_context()
     timestamper = HTTPTimeStamper(tsa_url) if tsa_url else None
-    meta = PdfSignatureMetadata(
-        field_name=field_name,
-        md_algorithm="sha256",
-        reason=data.get("reason") or SIGNER_REASON,
-        location=data.get("location") or SIGNER_LOCATION,
-        name=certificate_info["common_name"],
-        subfilter=SigSeedSubFilter.PADES,
-        validation_context=validation_context,
-        embed_validation_info=bool(validation_context and SIGNER_EMBED_VALIDATION_INFO),
-        use_pades_lta=bool(validation_context and timestamper and SIGNER_USE_PADES_LTA),
-    )
-    field_spec = fields.SigFieldSpec(
-        field_name,
-        on_page=max(int(coordinates["page"]) - 1, 0),
-        box=box,
-    )
+    working_input = paths.cleaned_pdf
+    signed_coordinates = []
+    signed_field_names = []
 
-    pdf_signer = PdfSigner(
-        meta,
-        signer=signer,
-        timestamper=timestamper,
-        stamp_style=build_stamp_style(stamp_image_path),
-        new_field_spec=field_spec,
-    )
+    for index, coordinates in enumerate(coordinates_list):
+        field_name = f"sig_{uuid4().hex}"
+        left = int(coordinates["x"])
+        top = int(coordinates["y"])
+        if data["signType"] == "token":
+            top += int(height * 0.5)
+        box = (left, top - height, left + width, top)
+        meta = PdfSignatureMetadata(
+            field_name=field_name,
+            md_algorithm="sha256",
+            reason=data.get("reason") or SIGNER_REASON,
+            location=data.get("location") or SIGNER_LOCATION,
+            name=certificate_info["common_name"],
+            subfilter=SigSeedSubFilter.PADES,
+            validation_context=validation_context,
+            embed_validation_info=bool(validation_context and SIGNER_EMBED_VALIDATION_INFO and not allow_validation_warning),
+            use_pades_lta=bool(validation_context and timestamper and SIGNER_USE_PADES_LTA and not allow_validation_warning),
+        )
+        field_spec = fields.SigFieldSpec(
+            field_name,
+            on_page=max(int(coordinates["page"]) - 1, 0),
+            box=box,
+        )
 
-    with paths.cleaned_pdf.open("rb") as input_stream:
-        writer = IncrementalPdfFileWriter(input_stream)
-        with paths.signed_pdf.open("wb") as output_stream:
-            pdf_signer.sign_pdf(
-                writer,
-                output=output_stream,
-                appearance_text_params={},
-            )
+        pdf_signer = PdfSigner(
+            meta,
+            signer=signer,
+            timestamper=timestamper,
+            stamp_style=build_stamp_style(stamp_image_path),
+            new_field_spec=field_spec,
+        )
+
+        target_output = paths.signed_pdf if index == len(coordinates_list) - 1 else paths.signed_pdf.parent / f"signed_{index}.pdf"
+        with working_input.open("rb") as input_stream:
+            writer = IncrementalPdfFileWriter(input_stream)
+            with target_output.open("wb") as output_stream:
+                pdf_signer.sign_pdf(
+                    writer,
+                    output=output_stream,
+                    appearance_text_params={},
+                )
+
+        if working_input != paths.cleaned_pdf and working_input.exists():
+            working_input.unlink(missing_ok=True)
+
+        working_input = target_output
+        signed_field_names.append(field_name)
+        signed_coordinates.append(
+            {
+                "page": int(coordinates["page"]),
+                "x": left,
+                "y": top,
+                "width": width,
+                "height": height,
+            }
+        )
 
     return {
-        "fieldName": field_name,
-        "coordinates": {
-            "page": int(coordinates["page"]),
-            "x": left,
-            "y": top,
-            "width": width,
-            "height": height,
-        },
+        "fieldName": signed_field_names[-1] if signed_field_names else None,
+        "fieldNames": signed_field_names,
+        "tsaUrl": tsa_url or None,
+        "coordinates": signed_coordinates[-1] if signed_coordinates else None,
+        "coordinateMatches": signed_coordinates,
+        "matchCount": len(signed_coordinates),
     }
 
 
@@ -305,9 +403,10 @@ def validate_signed_pdf(signed_pdf: Path) -> dict[str, Any]:
         if not reader.embedded_signatures:
             return {"performed": False, "message": "El PDF firmado no contiene firmas embebidas."}
         embedded_signature = reader.embedded_signatures[-1]
+        validation_context = build_validation_context()
         status = validate_pdf_signature(
             embedded_signature,
-            signer_validation_context=ValidationContext(allow_fetching=True),
+            signer_validation_context=validation_context,
         )
         return {
             "performed": True,
@@ -315,6 +414,33 @@ def validate_signed_pdf(signed_pdf: Path) -> dict[str, Any]:
             "bottomLine": bool(status.bottom_line),
             "details": status.pretty_print_details(),
         }
+
+
+def validate_signed_pdf_with_policy(signed_pdf: Path, data: dict[str, Any]) -> dict[str, Any]:
+    try:
+        validation_info = validate_signed_pdf(signed_pdf)
+    except Exception as error:
+        if is_validation_warning_allowed(data):
+            return {
+                "performed": True,
+                "bottomLine": False,
+                "warning": str(error),
+                "warningAccepted": True,
+                "details": str(error),
+            }
+        raise
+
+    if validation_info.get("bottomLine", True):
+        return validation_info
+
+    if is_validation_warning_allowed(data):
+        return {
+            **validation_info,
+            "warning": validation_info.get("details") or "La firma se generó, pero la cadena del certificado no pudo validarse.",
+            "warningAccepted": True,
+        }
+
+    raise ValueError(validation_info.get("details") or "The signer's certificate could not be validated")
 
 
 def process_job(data: dict[str, Any]) -> dict[str, Any]:
@@ -347,7 +473,7 @@ def process_job(data: dict[str, Any]) -> dict[str, Any]:
             clean_pdf_if_needed(paths.source_pdf, paths.cleaned_pdf)
 
             signing_info = sign_pdf_document(data, paths, certificate_info)
-            validation_info = validate_signed_pdf(paths.signed_pdf)
+            validation_info = validate_signed_pdf_with_policy(paths.signed_pdf, data)
 
             upload_to_minio(data.get("minioBucket"), data["minioPdfPath"], paths.signed_pdf)
             final_path = data.get("finalPath") or data["minioPdfPath"]
@@ -364,8 +490,8 @@ def process_job(data: dict[str, Any]) -> dict[str, Any]:
                 "certificate": certificate_info,
                 "signature": signing_info,
                 "validation": validation_info,
-                "timestamped": bool(tsa_url),
-                "tsaUrl": tsa_url or None,
+                "timestamped": bool(signing_info.get("tsaUrl")),
+                "tsaUrl": signing_info.get("tsaUrl"),
             }
         except Exception as exc:
             logger.exception("[%s] Error firmando", job_id)

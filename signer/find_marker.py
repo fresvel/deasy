@@ -3,7 +3,8 @@ import sys
 import pdfplumber
 
 
-def find_marker_coordinates(pdf_path: str, pattern: str):
+def find_all_marker_coordinates(pdf_path: str, pattern: str):
+    matches = []
     with pdfplumber.open(pdf_path) as pdf:
         for page_number, page in enumerate(pdf.pages, start=1):
             words = page.extract_words(use_text_flow=True)
@@ -11,15 +12,22 @@ def find_marker_coordinates(pdf_path: str, pattern: str):
             for word in words:
                 if pattern in word["text"]:
                     x0 = word["x0"]
-                    top = word["top"]
+                    bottom = word.get("bottom", word["top"])
                     page_height = page.height
-                    y_pdf = page_height - top + 25
-                    return {
-                        "page": page_number,
-                        "x": int(x0),
-                        "y": int(y_pdf),
-                    }
-    return None
+                    y_pdf = page_height - bottom - 6
+                    matches.append(
+                        {
+                            "page": page_number,
+                            "x": int(x0),
+                            "y": int(y_pdf),
+                        }
+                    )
+    return matches
+
+
+def find_marker_coordinates(pdf_path: str, pattern: str):
+    matches = find_all_marker_coordinates(pdf_path, pattern)
+    return matches[0] if matches else None
 
 
 def main():

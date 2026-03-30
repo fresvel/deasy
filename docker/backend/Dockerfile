@@ -36,6 +36,7 @@ ENV npm_config_fund=false
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   tini \
+  zip \
   ca-certificates \
   libcairo2 \
   libpango-1.0-0 \
