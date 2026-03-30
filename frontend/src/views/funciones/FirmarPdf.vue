@@ -635,8 +635,7 @@
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose } from 'vue';
   import axios from 'axios';
-  import * as pdfjsLib from 'pdfjs-dist/build/pdf.mjs';
-  import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
+  import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
   import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
@@ -647,44 +646,10 @@
   import AdminButton from '@/views/admin/components/AdminButton.vue';
   import MultiSignerPanel from '@/views/funciones/MultiSignerPanel.vue';
 
-  const installPdfJsCollectionPolyfills = () => {
-    if (typeof Map !== 'undefined' && !Map.prototype.getOrInsertComputed) {
-      Object.defineProperty(Map.prototype, 'getOrInsertComputed', {
-        value(key, compute) {
-          if (this.has(key)) {
-            return this.get(key);
-          }
-          const value = compute(key);
-          this.set(key, value);
-          return value;
-        },
-        configurable: true,
-        writable: true
-      });
-    }
-
-    if (typeof WeakMap !== 'undefined' && !WeakMap.prototype.getOrInsertComputed) {
-      Object.defineProperty(WeakMap.prototype, 'getOrInsertComputed', {
-        value(key, compute) {
-          if (this.has(key)) {
-            return this.get(key);
-          }
-          const value = compute(key);
-          this.set(key, value);
-          return value;
-        },
-        configurable: true,
-        writable: true
-      });
-    }
-  };
-
-  installPdfJsCollectionPolyfills();
-  pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
-  
   let ctx;
   const colPdf=ref(null)
   let pdfDoc = null;
+  let renderTask = null;
   const pdfViewer=ref(null), pdfCanvas=ref(null), coordinatesDisplay=ref(null);
   const currentPage = ref(1);
   const pageInput = ref(1);
@@ -747,6 +712,10 @@
 
   const FIELD_WIDTH = 124;
   const FIELD_HEIGHT = 48;
+  const PDF_LOAD_OPTIONS = {
+    enableXfa: true,
+    stopAtErrors: false
+  };
   const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   let isDragging = false;
@@ -1001,9 +970,10 @@
   
 
 
-  const renderPage=(pageNum)=> {
-    pdfDoc.getPage(pageNum).then(page => {
-      if (!pdfCanvas.value) return;
+  const renderPage = async (pageNum) => {
+    if (!pdfDoc || !pdfCanvas.value) return;
+    try {
+      const page = await pdfDoc.getPage(pageNum);
       ctx = pdfCanvas.value.getContext('2d');
       const baseViewport = page.getViewport({ scale: 1 });
       const containerWidth = colPdf.value?.clientWidth || baseViewport.width;
@@ -1014,21 +984,29 @@
       colPdf.value.style.width = '100%';
       pdfViewer.value.style.width = `${viewport.width}px`;
       pdfViewer.value.style.height = `${viewport.height}px`;
-      
 
+      if (renderTask) {
+        try {
+          renderTask.cancel();
+        } catch {
+          // noop
+        }
+      }
 
-
-      const renderContext = {
+      renderTask = page.render({
         canvasContext: ctx,
-        viewport: viewport,
-      };
-      page.render(renderContext);
-
+        viewport
+      });
+      await renderTask.promise;
       currentPage.value = pageNum;
       pageInput.value = pageNum;
       clearAllBoxes();
-    });
-  }
+      uploadError.value = '';
+    } catch (err) {
+      uploadError.value = 'No se pudo visualizar la página del PDF seleccionado.';
+      console.error('Error al renderizar el PDF:', err);
+    }
+  };
 
   const scheduleResizeRender = () => {
     if (!pdfReady.value || !pdfDoc) return;
@@ -1104,18 +1082,21 @@
       requestMode.value = mode === 'request';
       try {
         const fileBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(fileBuffer) });
+        const loadingTask = pdfjsLib.getDocument({
+          data: new Uint8Array(fileBuffer),
+          ...PDF_LOAD_OPTIONS
+        });
         loadingTask.promise.then(async (pdf) => {
-        pdfDoc = pdf;
-        totalPages.value = pdfDoc.numPages;
-        pdfReady.value = true;
-        await nextTick();
-        renderPage(currentPage.value);
-      }).catch(err => {
-        uploadError.value = 'No se pudo cargar el PDF seleccionado.';
-        console.error('Error al cargar el PDF:', err);
-        resetPdfState();
-      });
+          pdfDoc = pdf;
+          totalPages.value = pdfDoc.numPages;
+          pdfReady.value = true;
+          await nextTick();
+          await renderPage(currentPage.value);
+        }).catch(err => {
+          uploadError.value = 'No se pudo cargar el PDF seleccionado.';
+          console.error('Error al cargar el PDF:', err);
+          resetPdfState();
+        });
       } catch (err) {
         uploadError.value = 'No se pudo leer el archivo PDF seleccionado.';
         console.error('Error al leer el archivo PDF:', err);
