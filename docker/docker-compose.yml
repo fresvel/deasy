@@ -13,15 +13,11 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mariadb-admin ping -h 127.0.0.1 -u${MARIADB_USER} -p${MARIADB_PASSWORD} --silent",
-        ]
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 20
-      start_period: 15s
+      start_period: 10s
 
   mongodb:
     image: mongo:7
@@ -42,6 +38,12 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   emqx:
     image: emqx/emqx:latest
@@ -182,7 +184,7 @@ services:
       mongodb:
         condition: service_started
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       emqx:
         condition: service_started
 
@@ -216,7 +218,7 @@ services:
       mariadb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       minio:
         condition: service_started
 
