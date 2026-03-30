@@ -55,7 +55,7 @@ export const requestSign = async (req, res) => {
       return res.status(400).json({ error: "Se requiere el archivo PDF." });
     }
 
-    const { certificate_id: certificateIdRaw, password, stampText } = req.body;
+    const { certificate_id: certificateIdRaw, password, stampText, use_timestamp: useTimestampRaw, tsa_url: tsaUrlRaw } = req.body;
     const certificateId = Number(certificateIdRaw);
     if (!certificateId || Number.isNaN(certificateId)) {
       return res.status(400).json({ error: "Debes seleccionar un certificado guardado." });
@@ -93,6 +93,10 @@ export const requestSign = async (req, res) => {
         certPassword: password,
         stampText: stampText.trim(),
         finalPath: signedPath,
+        use_timestamp:
+          String(useTimestampRaw ?? "").trim().toLowerCase() === "true" ||
+          String(useTimestampRaw ?? "").trim() === "1",
+        tsaUrl: String(tsaUrlRaw || "").trim() || undefined,
         coordinates: {
           page: field.page,
           x: field.x,
