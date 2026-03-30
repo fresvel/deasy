@@ -140,6 +140,16 @@ Uso:
 - `node scripts/seed_pucese.mjs apply`
 - `node scripts/seed_pucese.mjs apply --file scripts/seeds/pucese.seed.json`
 
+Credenciales demo en `scripts/seeds/pucese.seed.json`:
+
+- Los usuarios existentes del seed almacenan solo `password_hash` (bcrypt), no password en texto plano.
+- Usuario admin seed:
+  - `email`: `admin.seed@pucese.edu.ec`
+  - `cedula`: `0999999999`
+  - `password`: `Demo1234!`
+  - `rol`: `admin` (tabla `roles`, asignado en `role_assignments`)
+  - `vinculos operativos`: posiciones activas en `position_assignments` (puestos `6` y `18`) para habilitar menu/panel/tareas en el flujo de usuario.
+
 ## Migraciones y ajustes SQL (scripts/*.mjs)
 
 - `backfill_unit_labels.mjs`: rellena/normaliza etiquetas de unidades.
