@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@layer components {
+
+    .deasy-row,
+    .row {
+        @apply -mx-2 flex flex-wrap;
+    }
+
+    .deasy-field-wrapper,
+    .col {
+        @apply mb-3 w-full px-2;
+    }
+
+    .deasy-col-1,
+    .col-1 {
+        @apply md:w-[8.333333%];
+    }
+
+    .deasy-col-2,
+    .col-2 {
+        @apply md:w-[16.666667%];
+    }
+
+    .deasy-col-3,
+    .col-3 {
+        @apply md:w-1/4;
+    }
+
+    .deasy-col-4,
+    .col-4 {
+        @apply md:w-1/3;
+    }
+
+    .deasy-col-5,
+    .col-5 {
+        @apply md:w-[41.666667%];
+    }
+
+    .deasy-col-6,
+    .col-6,
+    .col-md-6 {
+        @apply md:w-1/2;
+    }
+
+    .deasy-col-7,
+    .col-7 {
+        @apply md:w-[58.333333%];
+    }
+
+    .deasy-col-8,
+    .col-8 {
+        @apply md:w-2/3;
+    }
+
+    .deasy-col-9,
+    .col-9 {
+        @apply md:w-3/4;
+    }
+
+    .deasy-col-10,
+    .col-10 {
+        @apply md:w-[83.333333%];
+    }
+
+    .deasy-col-11,
+    .col-11 {
+        @apply md:w-[91.666667%];
+    }
+
+    .deasy-col-12,
+    .col-12 {
+        @apply w-full;
+    }
+
+    .deasy-field-label,
+    .form-label {
+        @apply mb-2 block text-sm font-semibold text-slate-700;
+    }
+
+    .deasy-field-input,
+    .deasy-field-select,
+    .deasy-field-textarea,
+    .form-control,
+    .form-select {
+        @apply block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition;
+    }
+
+    .deasy-field-input:focus,
+    .deasy-field-select:focus,
+    .deasy-field-textarea:focus,
+    .form-control:focus,
+    .form-select:focus {
+        @apply border-sky-500 ring-2 ring-sky-200;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition;
+    }
+
+    .btn-sm {
+        @apply px-3 py-1.5 text-sm;
+    }
+
+    .btn-primary {
+        @apply bg-sky-700 text-white hover:bg-sky-800;
+    }
+
+    .btn-outline-primary {
+        @apply border border-sky-700 text-sky-700 hover:bg-sky-50;
+    }
+
+    .btn-outline-danger {
+        @apply border border-red-600 text-red-600 hover:bg-red-50;
+    }
+
+    .w-100 {
+        @apply w-full;
+    }
+
+    .g-3 {
+        @apply gap-3;
+    }
+
+    .table {
+        @apply w-full border-collapse;
+    }
+
+    .table thead th {
+        @apply border-b border-slate-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600;
+    }
+
+    .table tbody td {
+        @apply border-b border-slate-100 px-3 py-2 text-sm text-slate-700;
+    }
+
+    .modal {
+        @apply fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/50 p-4;
+    }
+
+    .modal.show {
+        @apply block;
+    }
+
+    .modal-dialog {
+        @apply mx-auto my-12 w-full max-w-2xl;
+    }
+
+    .modal-dialog-centered {
+        @apply my-20;
+    }
+
+    .modal-content {
+        @apply rounded-2xl bg-white shadow-2xl;
+    }
+
+    .modal-header {
+        @apply flex items-center justify-between border-b border-slate-100 px-5 py-4;
+    }
+
+    .modal-body {
+        @apply px-5 py-4;
+    }
+
+    .modal-footer {
+        @apply flex justify-end gap-2 border-t border-slate-100 px-5 py-4;
+    }
+
+    .btn-close {
+        @apply inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-100;
+    }
+
+    .btn-close::before {
+        content: "\00d7";
+        @apply text-xl leading-none;
+    }
+
+    .modal-backdrop {
+        @apply hidden;
+    }
+}

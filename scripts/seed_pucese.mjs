@@ -15,26 +15,13 @@ const defaultSeedName = "pucese";
 const defaultSeedFile = path.join(__dirname, "seeds", `${defaultSeedName}.seed.json`);
 
 const formatError = (error) => {
-  if (!error) {
-    return "Error desconocido.";
-  }
-
+  if (!error) return "Error desconocido.";
   const parts = [];
-  if (typeof error.message === "string" && error.message.trim()) {
-    parts.push(error.message.trim());
-  }
-  if (error.code) {
-    parts.push(`code=${error.code}`);
-  }
-  if (error.errno !== undefined && error.errno !== null) {
-    parts.push(`errno=${error.errno}`);
-  }
-  if (error.sqlState) {
-    parts.push(`sqlState=${error.sqlState}`);
-  }
-  if (!parts.length) {
-    return String(error);
-  }
+  if (typeof error.message === "string" && error.message.trim()) parts.push(error.message.trim());
+  if (error.code) parts.push(`code=${error.code}`);
+  if (error.errno !== undefined && error.errno !== null) parts.push(`errno=${error.errno}`);
+  if (error.sqlState) parts.push(`sqlState=${error.sqlState}`);
+  if (!parts.length) return String(error);
   return parts.join(" | ");
 };
 
@@ -63,9 +50,7 @@ const parseArgs = () => {
     const arg = args[i];
     if (arg === "--file") {
       const next = args[i + 1];
-      if (!next) {
-        throw new Error("Falta el valor para --file.");
-      }
+      if (!next) throw new Error("Falta el valor para --file.");
       file = path.isAbsolute(next) ? next : path.join(repoRoot, next);
       i += 1;
       continue;
@@ -73,10 +58,7 @@ const parseArgs = () => {
     throw new Error(`Parametro no soportado: ${arg}`);
   }
 
-  if (!["capture", "apply"].includes(mode)) {
-    throw new Error(`Modo no soportado: ${mode}`);
-  }
-
+  if (!["capture", "apply"].includes(mode)) throw new Error(`Modo no soportado: ${mode}`);
   return { mode, file };
 };
 
@@ -85,33 +67,21 @@ const loadEnv = async () => {
     const raw = await readFile(envPath, "utf8");
     raw.split("\n").forEach((line) => {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) {
-        return;
-      }
+      if (!trimmed || trimmed.startsWith("#")) return;
       const [key, ...rest] = trimmed.split("=");
       const value = rest.join("=").trim();
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
+      if (!process.env[key]) process.env[key] = value;
     });
   } catch (error) {
+    if (error?.code === "ENOENT") return;
     console.warn(`No se pudo leer ${envPath}: ${formatError(error)}`);
   }
 };
 
 const ensureConfig = () => {
-  const required = [
-    "MARIADB_HOST",
-    "MARIADB_PORT",
-    "MARIADB_USER",
-    "MARIADB_PASSWORD",
-    "MARIADB_DATABASE"
-  ];
+  const required = ["MARIADB_HOST", "MARIADB_PORT", "MARIADB_USER", "MARIADB_PASSWORD", "MARIADB_DATABASE"];
   const missing = required.filter((key) => !process.env[key]);
-  if (missing.length) {
-    throw new Error(`Configuracion MariaDB incompleta. Faltan: ${missing.join(", ")}`);
-  }
-
+  if (missing.length) throw new Error(`Configuracion MariaDB incompleta. Faltan: ${missing.join(", ")}`);
   return {
     host: process.env.MARIADB_HOST,
     port: Number(process.env.MARIADB_PORT),
@@ -183,85 +153,40 @@ const getTableOrder = (tableNames) => {
     const bIdx = seedOrderMap.has(b)
       ? seedOrderMap.get(b)
       : seedOrderMap.size + (configOrderMap.has(b) ? configOrderMap.get(b) : Number.MAX_SAFE_INTEGER / 4);
-    if (aIdx !== bIdx) {
-      return aIdx - bIdx;
-    }
+    if (aIdx !== bIdx) return aIdx - bIdx;
     return a.localeCompare(b);
   });
 };
 
 const isNumericType = (type) =>
-  [
-    "int",
-    "integer",
-    "bigint",
-    "smallint",
-    "mediumint",
-    "tinyint",
-    "decimal",
-    "numeric",
-    "float",
-    "double",
-    "real"
-  ].includes(type);
+  ["int", "integer", "bigint", "smallint", "mediumint", "tinyint", "decimal", "numeric", "float", "double", "real"].includes(type);
 
 const encodeValue = (value, mysqlType) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  if (Buffer.isBuffer(value)) {
-    return {
-      __seed_type: "buffer",
-      base64: value.toString("base64")
-    };
-  }
-
-  if (typeof value === "bigint") {
-    return value.toString();
-  }
-
+  if (value === null || value === undefined) return null;
+  if (Buffer.isBuffer(value)) return { __seed_type: "buffer", base64: value.toString("base64") };
+  if (typeof value === "bigint") return value.toString();
   if (value instanceof Date) {
     const type = baseType(mysqlType);
-    if (type === "date") {
-      return value.toISOString().slice(0, 10);
-    }
+    if (type === "date") return value.toISOString().slice(0, 10);
     return value.toISOString().slice(0, 19).replace("T", " ");
   }
-
   return value;
 };
 
 const decodeValue = (value, mysqlType) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  if (
-    typeof value === "object"
-    && value.__seed_type === "buffer"
-    && typeof value.base64 === "string"
-  ) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "object" && value.__seed_type === "buffer" && typeof value.base64 === "string") {
     return Buffer.from(value.base64, "base64");
   }
-
   const type = baseType(mysqlType);
-  if (typeof value === "boolean" && type === "tinyint") {
-    return value ? 1 : 0;
-  }
-
-  if (isNumericType(type) && value === "") {
-    return null;
-  }
-
+  if (typeof value === "boolean" && type === "tinyint") return value ? 1 : 0;
+  if (isNumericType(type) && value === "") return null;
   return value;
 };
 
 const getDatabaseTables = async (connection, databaseName) => {
   const [rows] = await connection.query(
-    `SELECT table_name
-     FROM information_schema.tables
-     WHERE table_schema = ? AND table_type = 'BASE TABLE'`,
+    `SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'`,
     [databaseName]
   );
   return rows.map((row) => row.table_name);
@@ -280,34 +205,64 @@ const getTableColumns = async (connection, tableName) => {
 const dedupeUnitRelationsRows = (rows) => {
   const keepByKey = new Map();
   const dropped = [];
-
   for (const row of rows) {
     const key = `${row?.child_unit_id ?? ""}-${row?.relation_type_id ?? ""}`;
     const current = keepByKey.get(key);
-    if (!current) {
-      keepByKey.set(key, row);
+    if (!current) { keepByKey.set(key, row); continue; }
+    const currentId = Number(current.id ?? 0);
+    const nextId = Number(row.id ?? 0);
+    const keepNext = Number.isFinite(nextId) && Number.isFinite(currentId) ? nextId > currentId : false;
+    if (keepNext) { dropped.push(current); keepByKey.set(key, row); }
+    else { dropped.push(row); }
+  }
+  return { rows: Array.from(keepByKey.values()), dropped };
+};
+
+// ─── Generación de tokens para persons ───────────────────────────────────────
+
+const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+const generateRawToken = () => {
+  let result = "";
+  for (let i = 0; i < 10; i++) {
+    result += TOKEN_CHARS[Math.floor(Math.random() * TOKEN_CHARS.length)];
+  }
+  return result;
+};
+
+const injectPersonTokens = (tables) => {
+  const personsTable = tables.find((t) => t.table === "persons");
+  if (!personsTable) return;
+
+  if (!personsTable.columns.includes("token")) {
+    personsTable.columns.push("token");
+    personsTable.column_types["token"] = "varchar(14)";
+  }
+
+  const usedTokens = new Set();
+
+  for (const row of personsTable.rows) {
+    if (row.token) {
+      usedTokens.add(row.token);
       continue;
     }
 
-    const currentId = Number(current.id ?? 0);
-    const nextId = Number(row.id ?? 0);
-    const keepNext = Number.isFinite(nextId) && Number.isFinite(currentId)
-      ? nextId > currentId
-      : false;
+    let token;
+    let attempts = 0;
+    do {
+      token = generateRawToken();
+      attempts++;
+      if (attempts > 1000) throw new Error("No se pudo generar token único para persons en el seed.");
+    } while (usedTokens.has(token));
 
-    if (keepNext) {
-      dropped.push(current);
-      keepByKey.set(key, row);
-    } else {
-      dropped.push(row);
-    }
+    usedTokens.add(token);
+    row.token = token;
   }
 
-  return {
-    rows: Array.from(keepByKey.values()),
-    dropped
-  };
+  console.log(`✅ Tokens generados para ${personsTable.rows.length} persona(s) en el seed.`);
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const captureSeed = async (connection, config, filePath) => {
   const tables = getTableOrder(await getDatabaseTables(connection, config.database));
@@ -322,7 +277,6 @@ const captureSeed = async (connection, config, filePath) => {
     const columns = await getTableColumns(connection, tableName);
     const columnNames = columns.map((col) => col.name);
     const columnTypeMap = Object.fromEntries(columns.map((col) => [col.name, col.mysql_type]));
-
     const [rows] = await connection.query(`SELECT * FROM \`${tableName}\``);
     const encodedRows = rows.map((row) => {
       const encoded = {};
@@ -331,13 +285,7 @@ const captureSeed = async (connection, config, filePath) => {
       }
       return encoded;
     });
-
-    snapshot.tables.push({
-      table: tableName,
-      columns: columns.map((col) => col.name),
-      column_types: columnTypeMap,
-      rows: encodedRows
-    });
+    snapshot.tables.push({ table: tableName, columns: columns.map((col) => col.name), column_types: columnTypeMap, rows: encodedRows });
   }
 
   await mkdir(path.dirname(filePath), { recursive: true });
@@ -350,12 +298,31 @@ const applySeed = async (connection, filePath) => {
   const raw = await readFile(filePath, "utf8");
   const snapshot = JSON.parse(raw);
   const originalTables = Array.isArray(snapshot.tables) ? snapshot.tables : [];
+
+  // Generar tokens para persons antes de insertar
+  injectPersonTokens(originalTables);
+
   const tableMap = new Map(originalTables.map((table) => [table.table, table]));
-  const tables = getTableOrder(originalTables.map((table) => table.table))
+  const orderedTables = getTableOrder(originalTables.map((table) => table.table))
     .map((tableName) => tableMap.get(tableName))
     .filter(Boolean);
+
+  if (!orderedTables.length) throw new Error("La semilla no contiene tablas.");
+
+  const schemaTables = new Set(await getDatabaseTables(connection, connection.config.database));
+  const missingTables = orderedTables
+    .map((tableData) => tableData.table)
+    .filter((tableName) => !schemaTables.has(tableName));
+
+  if (missingTables.length) {
+    console.warn(
+      `[seed_pucese] Se omitiran ${missingTables.length} tabla(s) inexistentes en la base actual: ${missingTables.join(", ")}`
+    );
+  }
+
+  const tables = orderedTables.filter((tableData) => schemaTables.has(tableData.table));
   if (!tables.length) {
-    throw new Error("La semilla no contiene tablas.");
+    throw new Error("Ninguna tabla de la semilla existe en la base de datos actual.");
   }
 
   await connection.beginTransaction();
@@ -372,30 +339,22 @@ const applySeed = async (connection, filePath) => {
       const columns = Array.isArray(tableData.columns) ? tableData.columns : [];
       let rows = Array.isArray(tableData.rows) ? tableData.rows : [];
       const columnTypes = tableData.column_types || {};
-      if (!columns.length || !rows.length) {
-        continue;
-      }
+      if (!columns.length || !rows.length) continue;
 
       if (tableName === "unit_relations") {
         const deduped = dedupeUnitRelationsRows(rows);
         rows = deduped.rows;
         if (deduped.dropped.length) {
-          console.warn(
-            `[seed_pucese] unit_relations: ${deduped.dropped.length} fila(s) descartadas por duplicar (child_unit_id, relation_type_id).`
-          );
+          console.warn(`[seed_pucese] unit_relations: ${deduped.dropped.length} fila(s) descartadas por duplicar (child_unit_id, relation_type_id).`);
         }
       }
 
       const schemaColumns = await getTableColumns(connection, tableName);
       const generatedColumnSet = new Set(
-        schemaColumns
-          .filter((column) => column.is_generated)
-          .map((column) => column.name)
+        schemaColumns.filter((column) => column.is_generated).map((column) => column.name)
       );
       const insertColumns = columns.filter((column) => !generatedColumnSet.has(column));
-      if (!insertColumns.length) {
-        continue;
-      }
+      if (!insertColumns.length) continue;
 
       const escapedColumns = insertColumns.map((column) => `\`${column}\``).join(", ");
       const placeholders = insertColumns.map(() => "?").join(", ");
@@ -411,6 +370,9 @@ const applySeed = async (connection, filePath) => {
     await connection.commit();
     console.log(`Semilla aplicada: ${filePath}`);
     console.log(`Tablas procesadas: ${tables.length}`);
+    if (missingTables.length) {
+      console.log(`Tablas omitidas: ${missingTables.length}`);
+    }
   } catch (error) {
     try {
       await connection.query("SET FOREIGN_KEY_CHECKS = 1");
