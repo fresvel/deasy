@@ -1,8 +1,5 @@
-**/node_modules
-**/.pnpm-store
-**/.package-lock.json
-**/.pnpm-workspace-state-v1.json
-**/.modules.yaml
-**/.DS_Store
+node_modules
 .git
-.vscode
+.gitignore
+*.md
+.env
