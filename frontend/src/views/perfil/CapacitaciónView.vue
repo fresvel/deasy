@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full animate-fade-in">
+  <div class="profile-admin-skin w-full animate-fade-in">
     <ProfileSectionShell
       title="Formación continua y conferencias"
       subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."
@@ -7,7 +7,7 @@
     >
 
     <ProfileTableBlock title="Capacitación en el área docente">
-      <div class="table-responsive table-actions">
+      <div class="profile-table-shell">
         <table class="w-full text-sm text-left border-collapse min-w-max">
           <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
@@ -51,7 +51,7 @@
     </ProfileTableBlock>
 
     <ProfileTableBlock title="Capacitación profesional">
-      <div class="table-responsive table-actions">
+      <div class="profile-table-shell">
         <table class="w-full text-sm text-left border-collapse min-w-max">
           <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
@@ -97,38 +97,37 @@
     </ProfileSectionShell>
 
 
-    <div class="modal fade" id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-2xl overflow-hidden p-0">
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
+      <div class="profile-dialog-shell">
+        <div class="profile-dialog-panel">
           <AgregarCapacitacion @capacitacion-added="handleCapacitacionAdded" />
         </div>
       </div>
     </div>
 
     <div
-      class="modal fade"
+      class="profile-admin-skin profile-dialog-root"
+      data-dialog-root
       id="capacitacionDeleteModal"
       tabindex="-1"
       ref="deleteModal"
       aria-hidden="true"
     >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Confirmar eliminación</h5>
-            <button type="button" class="btn-close" data-modal-dismiss aria-label="Close"></button>
+      <div class="profile-dialog-shell profile-dialog-shell--compact">
+        <div class="profile-dialog-panel">
+          <div class="profile-confirm-header">
+            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
+            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
+              <span class="text-xl leading-none">&times;</span>
+            </button>
           </div>
-          <div class="modal-body">
+          <div class="profile-confirm-body">
             ¿Deseas eliminar la capacitación
             <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>
-              Cancelar
-            </button>
-            <button type="button" class="btn btn-danger" @click="confirmDelete">
-              Eliminar
-            </button>
+          <div class="profile-confirm-footer">
+            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
+            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
           </div>
         </div>
       </div>
@@ -157,6 +156,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import AdminButton from "@/views/admin/components/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);

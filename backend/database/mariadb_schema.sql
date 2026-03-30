@@ -55,6 +55,21 @@ ALTER TABLE persons
   ADD COLUMN IF NOT EXISTS calle_secundaria VARCHAR(180) NULL AFTER calle_primaria,
   ADD COLUMN IF NOT EXISTS codigo_postal VARCHAR(30) NULL AFTER calle_secundaria;
 
+CREATE TABLE IF NOT EXISTS person_certificates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  person_id INT NOT NULL,
+  label VARCHAR(180) NOT NULL,
+  original_filename VARCHAR(255) NOT NULL,
+  bucket VARCHAR(120) NOT NULL,
+  object_name VARCHAR(500) NOT NULL,
+  is_default TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_person_certificates_person (person_id),
+  INDEX idx_person_certificates_default (person_id, is_default),
+  CONSTRAINT fk_person_certificates_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS relation_unit_types (
   id INT AUTO_INCREMENT PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,

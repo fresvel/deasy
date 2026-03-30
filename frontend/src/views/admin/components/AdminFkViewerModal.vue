@@ -7,15 +7,15 @@
     close-action
     @close="$emit('close')"
   >
-    <div v-if="!fkViewerRow" class="text-muted">No hay información para visualizar.</div>
+    <div v-if="!fkViewerRow" class="text-sm text-slate-500">No hay información para visualizar.</div>
     <AdminDataTable
       v-else
       :fields="summaryTableFields"
       :rows="displayRows"
       :row-key="(row) => row.id"
-      table-class="table table-striped align-middle table-institutional"
+      table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
       :show-header="false"
-      responsive-class="table-responsive"
+      responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
       scroll-class=""
     >
       <template #row="{ row }">

@@ -210,10 +210,10 @@
 
   </div>
 
-  <div class="modal fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/40 backdrop-blur-sm" id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
+  <div class="deasy-dialog-root fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/40 backdrop-blur-sm" data-dialog-root id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
     <div class="flex items-center justify-center min-h-screen px-4 py-8">
-      <div class="modal-dialog relative w-full max-w-4xl mx-auto my-12">
-        <div class="modal-content bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-100">
+      <div class="sign-dialog-shell relative w-full max-w-4xl mx-auto my-12">
+        <div class="sign-dialog-panel bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-100">
           <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <h5 class="text-xl font-bold text-slate-800">Eliminar campos</h5>
             <button type="button" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition" data-modal-dismiss aria-label="Close">
@@ -275,7 +275,7 @@
     labelled-by="assign-signer-title"
     title="Asignar firmante"
     size="lg"
-    dialog-class="modal-dialog-centered"
+    dialog-class="items-center"
     content-class="rounded-4 shadow border-0"
     body-class="pt-4"
   >
@@ -397,6 +397,133 @@
       </AdminButton>
     </template>
   </AdminModalShell>
+
+  <AdminModalShell
+    ref="signCertModal"
+    labelled-by="sign-cert-modal-title"
+    title="Firmar documento"
+    size="lg"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+  >
+    <div class="flex flex-col gap-4">
+      <p class="mb-0 text-sm text-slate-600">
+        Selecciona uno de tus certificados guardados e ingresa la contraseña del `.p12`.
+      </p>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <div class="text-sm font-bold text-slate-800">Certificados disponibles</div>
+            <div class="text-xs text-slate-500">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
+          </div>
+          <AdminButton variant="outlinePrimary" size="sm" @click="openCertificatesManagerModal">
+            Gestionar certificados
+          </AdminButton>
+        </div>
+
+        <div v-if="isLoadingCertificates" class="text-sm text-slate-500 font-medium py-3">
+          Cargando certificados...
+        </div>
+        <div v-else-if="!availableCertificates.length" class="text-sm text-slate-500 font-medium py-3">
+          No tienes certificados cargados.
+        </div>
+        <div v-else class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+          <button
+            v-for="certificate in availableCertificates"
+            :key="certificate.id"
+            type="button"
+            class="w-full rounded-xl border px-3 py-3 text-left transition"
+            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            @click="selectedCertificateId = certificate.id"
+          >
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-bold text-slate-800">{{ certificate.label }}</span>
+              <span v-if="certificate.is_default" class="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-700">
+                Predeterminado
+              </span>
+            </div>
+            <div class="text-xs text-slate-500 mt-1">{{ certificate.original_filename }}</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-2">
+          <label class="font-semibold text-sm text-slate-700">Contraseña del certificado</label>
+          <input
+            v-model="certPassword"
+            type="password"
+            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            placeholder="Contraseña del .p12"
+            autocomplete="current-password"
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-semibold text-sm text-slate-700">Texto del sello</label>
+          <input
+            v-model="stampText"
+            type="text"
+            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            placeholder="Ej: Dr. Juan Pérez"
+          />
+        </div>
+      </div>
+
+      <p v-if="signError" class="mb-0 text-sm font-medium text-red-600">{{ signError }}</p>
+    </div>
+    <template #footer>
+      <AdminButton variant="secondary" data-modal-dismiss :disabled="isSigning">
+        Cancelar
+      </AdminButton>
+      <AdminButton variant="primary" :disabled="isSigning" @click="confirmSign">
+        {{ isSigning ? "Firmando..." : "Confirmar firma" }}
+      </AdminButton>
+    </template>
+  </AdminModalShell>
+
+  <AdminModalShell
+    ref="signResultModal"
+    labelled-by="sign-result-modal-title"
+    :title="signSuccess ? 'Documento firmado' : 'Error al firmar'"
+    size="md"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+  >
+    <div v-if="signSuccess" class="flex flex-col gap-4">
+      <p class="mb-0 text-sm text-emerald-700 font-medium">
+        El documento fue firmado correctamente con {{ signedFieldsCount }} campo(s).
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <AdminButton variant="outlinePrimary" @click="viewSignedDocument">Visualizar documento</AdminButton>
+        <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
+      </div>
+    </div>
+    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signError }}</p>
+    <template #footer>
+      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+    </template>
+  </AdminModalShell>
+
+  <AdminModalShell
+    ref="certificatesManagerModal"
+    labelled-by="certificates-manager-modal-title"
+    title="Gestionar certificados"
+    size="xl"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+  >
+    <UserCertificatesPanel
+      ref="certificatesPanelRef"
+      selectable
+      :selected-id="selectedCertificateId"
+      @select="handleCertificateSelected"
+      @loaded="handleCertificatesLoaded"
+    />
+    <template #footer>
+      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+    </template>
+  </AdminModalShell>
 </template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose } from 'vue';
@@ -408,6 +535,7 @@
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import PdfDropField from '@/components/PdfDropField.vue';
+  import UserCertificatesPanel from '@/components/UserCertificatesPanel.vue';
   import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
   import AdminButton from '@/views/admin/components/AdminButton.vue';
 
@@ -461,6 +589,10 @@
   const deleteModal = ref(null);
   const assignSignerModal = ref(null);
   const confirmDeleteModal = ref(null);
+  const signCertModal = ref(null);
+  const signResultModal = ref(null);
+  const certificatesManagerModal = ref(null);
+  const certificatesPanelRef = ref(null);
   const signerInput = ref('');
   const userResults = ref([]);
   const userSearchError = ref('');
@@ -510,6 +642,19 @@
   let startY = 0;
   let activeBox = null;
   const pendingDeleteFieldId = ref(null);
+  const availableCertificates = ref([]);
+  const selectedCertificateId = ref(null);
+  const certPassword = ref('');
+  const stampText = ref('');
+  const isSigning = ref(false);
+  const signError = ref('');
+  const signSuccess = ref(false);
+  const signedMinioPath = ref('');
+  const signedFieldsCount = ref(0);
+  const isLoadingCertificates = ref(false);
+  let signCertModalInstance = null;
+  let signResultModalInstance = null;
+  let certificatesManagerModalInstance = null;
 
   const removeBox = () => {
     const signbox = document.getElementById('active-signbox');
@@ -659,10 +804,22 @@
     if (confirmDeleteModal.value?.el) {
       confirmDeleteModalInstance = Modal.getOrCreateInstance(confirmDeleteModal.value.el);
     }
+    if (signCertModal.value?.el) {
+      signCertModalInstance = Modal.getOrCreateInstance(signCertModal.value.el);
+    }
+    if (signResultModal.value?.el) {
+      signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
+    }
+    if (certificatesManagerModal.value?.el) {
+      certificatesManagerModalInstance = Modal.getOrCreateInstance(certificatesManagerModal.value.el);
+    }
     const userDataString = localStorage.getItem('user');
     if (userDataString) {
       try {
         currentUser.value = JSON.parse(userDataString);
+        if (!stampText.value && currentUser.value) {
+          stampText.value = `${currentUser.value.first_name ?? ''} ${currentUser.value.last_name ?? ''}`.trim();
+        }
       } catch (error) {
         console.error('Error al cargar usuario en firmador:', error);
       }
@@ -973,7 +1130,7 @@
         console.log('Enviar solicitud de firmas');
         return;
       }
-      console.log('Firmar documento');
+      openSignCertModal();
     };
 
     const selectField = (fieldId, preview = false) => {
@@ -1113,7 +1270,7 @@
       fetchUsers('');
     };
 
-    const confirmSigner = () => {
+  const confirmSigner = () => {
       if (!activeBox || !lastSelection.value) {
         userSearchError.value = 'Selecciona un area de firma antes de asignar.';
         return;
@@ -1124,6 +1281,169 @@
       }
       saveFieldWithSigner(selectedSigner.value);
       assignSignerModalInstance?.hide();
+    };
+
+    const getAuthHeaders = () => {
+      const token = localStorage.getItem('token');
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    };
+
+    const loadCertificates = async () => {
+      isLoadingCertificates.value = true;
+      try {
+        const response = await fetch(API_ROUTES.USERS_MY_CERTIFICATES, {
+          headers: getAuthHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.message || 'No se pudieron cargar los certificados.');
+        }
+        availableCertificates.value = Array.isArray(data?.certificates) ? data.certificates : [];
+        const defaultCertificate =
+          availableCertificates.value.find((item) => item.is_default) ||
+          availableCertificates.value[0] ||
+          null;
+        if (!selectedCertificateId.value && defaultCertificate) {
+          selectedCertificateId.value = defaultCertificate.id;
+        }
+      } catch (error) {
+        signError.value = error.message || 'No se pudieron cargar los certificados.';
+        availableCertificates.value = [];
+      } finally {
+        isLoadingCertificates.value = false;
+      }
+    };
+
+    const handleCertificatesLoaded = (certificates) => {
+      availableCertificates.value = Array.isArray(certificates) ? certificates : [];
+      const selected = availableCertificates.value.find((item) => item.id === selectedCertificateId.value);
+      if (!selected) {
+        const defaultCertificate =
+          availableCertificates.value.find((item) => item.is_default) ||
+          availableCertificates.value[0] ||
+          null;
+        selectedCertificateId.value = defaultCertificate?.id || null;
+      }
+    };
+
+    const handleCertificateSelected = (certificate) => {
+      selectedCertificateId.value = certificate?.id || null;
+    };
+
+    const openCertificatesManagerModal = () => {
+      if (!certificatesManagerModal.value?.el) return;
+      certificatesManagerModalInstance = Modal.getOrCreateInstance(certificatesManagerModal.value.el);
+      certificatesManagerModalInstance.show();
+      nextTick(() => {
+        certificatesPanelRef.value?.loadCertificates?.();
+      });
+    };
+
+    const openSignCertModal = async () => {
+      signError.value = '';
+      signSuccess.value = false;
+      await loadCertificates();
+      if (!signCertModal.value?.el) return;
+      signCertModalInstance = Modal.getOrCreateInstance(signCertModal.value.el);
+      signCertModalInstance.show();
+    };
+
+    const confirmSign = async () => {
+      if (!fields.value.length) {
+        signError.value = 'Agrega al menos un campo de firma antes de continuar.';
+        return;
+      }
+      if (!selectedCertificateId.value) {
+        signError.value = 'Debes seleccionar un certificado.';
+        return;
+      }
+      if (!certPassword.value) {
+        signError.value = 'Debes ingresar la contraseña del certificado.';
+        return;
+      }
+      if (!stampText.value.trim()) {
+        signError.value = 'Debes indicar el texto del sello.';
+        return;
+      }
+      if (!uploadedFiles.value?.[0]?.content) {
+        signError.value = 'Debes cargar un PDF antes de firmar.';
+        return;
+      }
+
+      isSigning.value = true;
+      signError.value = '';
+      try {
+        const allFields = fields.value.map((field) => ({
+          page: field.page,
+          x: Math.round(field.x1),
+          y: Math.round(field.y1)
+        }));
+        const formData = new FormData();
+        formData.append('pdf', uploadedFiles.value[0].content);
+        formData.append('certificate_id', String(selectedCertificateId.value));
+        formData.append('password', certPassword.value);
+        formData.append('stampText', stampText.value.trim());
+        formData.append('fields', JSON.stringify(allFields));
+
+        const response = await fetch(API_ROUTES.SIGN, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: formData
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || data?.message || `Error del servidor (${response.status})`);
+        }
+        signSuccess.value = true;
+        signedMinioPath.value = data.signedPath;
+        signedFieldsCount.value = Number(data.fieldsCount || allFields.length);
+        signCertModalInstance?.hide();
+        signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
+        signResultModalInstance.show();
+      } catch (error) {
+        signError.value = error.message || 'No se pudo firmar el documento.';
+      } finally {
+        isSigning.value = false;
+      }
+    };
+
+    const viewSignedDocument = async () => {
+      if (!signedMinioPath.value) return;
+      try {
+        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`, {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          throw new Error('No se pudo visualizar el documento firmado.');
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } catch (error) {
+        signError.value = error.message || 'No se pudo visualizar el documento firmado.';
+      }
+    };
+
+    const downloadSignedDocument = async () => {
+      if (!signedMinioPath.value) return;
+      try {
+        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`, {
+          headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          throw new Error('No se pudo descargar el documento firmado.');
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'documento_firmado.pdf';
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        signError.value = error.message || 'No se pudo descargar el documento firmado.';
+      }
     };
 
     const resetToStart = () => {
@@ -1148,6 +1468,13 @@
       userResults.value = [];
       userSearchError.value = '';
       selectedSigner.value = null;
+      selectedCertificateId.value = null;
+      availableCertificates.value = [];
+      certPassword.value = '';
+      signError.value = '';
+      signSuccess.value = false;
+      signedMinioPath.value = '';
+      signedFieldsCount.value = 0;
       pendingDeleteFieldId.value = null;
       resetPdfState();
     };

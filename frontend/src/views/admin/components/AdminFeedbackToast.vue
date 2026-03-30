@@ -1,30 +1,26 @@
 <template>
   <div
     v-if="visible"
-    class="admin-feedback-toast"
+    class="admin-feedback-toast fixed right-6 top-6 z-[1080] w-full max-w-md rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur"
     :class="`is-${kind}`"
     role="status"
     aria-live="polite"
   >
-    <div class="admin-feedback-toast-body">
-      <div class="admin-feedback-toast-copy">
-        <strong class="admin-feedback-toast-title">{{ title }}</strong>
-        <div class="admin-feedback-toast-message">{{ message }}</div>
+    <div class="admin-feedback-toast-body flex items-start gap-3">
+      <div class="admin-feedback-toast-copy min-w-0 flex-1">
+        <strong class="admin-feedback-toast-title block text-sm font-bold text-slate-900">{{ title }}</strong>
+        <div class="admin-feedback-toast-message mt-1 text-sm text-slate-600">{{ message }}</div>
       </div>
-      <button
-        type="button"
-        class="btn btn-sm btn-icon admin-feedback-toast-close"
-        title="Cerrar"
-        aria-label="Cerrar"
-        @click="$emit('close')"
-      >
+      <AdminButton variant="close" size="sm" icon-only title="Cerrar" aria-label="Cerrar" @click="$emit('close')">
         <font-awesome-icon icon="times" />
-      </button>
+      </AdminButton>
     </div>
   </div>
 </template>
 
 <script setup>
+import AdminButton from "@/views/admin/components/AdminButton.vue";
+
 defineProps({
   visible: {
     type: Boolean,

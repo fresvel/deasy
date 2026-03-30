@@ -1,15 +1,15 @@
 <template>
 <ProfileModalLayout title="Agregar experiencia" description="Describe la experiencia profesional o docente que deseas registrar." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
       <div class="w-full">
-        <label class="form-label">Tipo</label>
+        <label class="profile-field-label">Tipo</label>
         <SSelect
           :options="['Docencia', 'Profesional']"
           v-model="form.tipo"
         />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Institución</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Institución</label>
         <SSelect
           :options="instituciones"
           v-model="form.institucion"
@@ -18,7 +18,7 @@
         <input
           v-if="form.institucion === 'Otra'"
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Especifica la institución"
           v-model="form.institucionPersonalizada"
         />
@@ -32,21 +32,15 @@
         <SDate label="Fecha de fin" placeholder="Selecciona la fecha" v-model="form.fecha_fin" />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Funciones, cátedras o actividades</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Funciones, cátedras o actividades</label>
         <textarea
-          class="form-control "
+          class="profile-textarea"
           rows="3"
           v-model="form.actividades"
           placeholder="Describe las funciones o cátedras separadas por comas"
         ></textarea>
-        <small class="text-muted">Separa múltiples funciones o cátedras con comas</small>
-      </div>
-
-      <div v-if="errorMessage" class="w-full">
-        <div class="alert alert-danger" role="alert">
-          {{ errorMessage }}
-        </div>
+        <small class="profile-inline-note">Separa múltiples funciones o cátedras con comas</small>
       </div>
 
       <div class="w-full">
@@ -228,21 +222,3 @@ const onSubmit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.modal-title {
-  color: var(--brand-navy);
-}
-
-.btn-primary {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.8rem;
-  font-weight: 600;
-  background: var(--brand-gradient);
-  border: none;
-}
-
-.btn-primary:hover {
-  opacity: 0.92;
-}
-</style>

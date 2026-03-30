@@ -7,19 +7,19 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="fkCreateError" class="alert alert-danger mb-3">
+    <div v-if="fkCreateError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
       {{ fkCreateError }}
     </div>
-    <div v-if="!fkCreateFields.length" class="text-muted">
+    <div v-if="!fkCreateFields.length" class="text-sm text-slate-500">
       No hay campos editables disponibles para crear esta referencia.
     </div>
-    <form v-else class="row g-3">
+    <form v-else class="grid gap-3 md:grid-cols-12">
       <AdminFieldGroup
         v-for="field in fkCreateFields"
         :key="field.name"
         :label="field.label || field.name"
         :required="Boolean(field.required)"
-        group-class="col-12 col-md-6"
+        group-class="md:col-span-6"
       >
         <AdminInputField
           v-if="isInputField(field)"

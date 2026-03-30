@@ -5,9 +5,9 @@
     :title="`Buscar referencia ${fkTable?.label || ''}`"
     :dialog-class="isFkTemplateArtifacts || isFkProcessDefinitions ? 'modal-xl' : 'modal-lg'"
   >
-    <div class="row g-3 align-items-end mb-3">
+    <div class="grid gap-3 md:grid-cols-12 md:items-end mb-3">
       <template v-if="isFkUnits">
-        <AdminFieldGroup label="Busqueda" label-class="text-dark" group-class="col-12 col-md-7">
+        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-7">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -15,7 +15,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Tipo de unidad" label-class="text-dark" group-class="col-12 col-md-4">
+        <AdminFieldGroup label="Tipo de unidad" label-class="text-slate-700" group-class="md:col-span-4">
           <AdminSelectField
             :model-value="fkPositionFilters.unit_type_id"
             :disabled="fkPositionFilterLoading"
@@ -28,7 +28,7 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="col-12 col-md-auto d-flex align-items-end justify-content-md-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
           <AdminButton
             variant="secondary"
             class-name="fk-inline-clear-btn"
@@ -42,7 +42,7 @@
         </div>
       </template>
       <template v-else-if="isFkProcessDefinitions">
-        <AdminFieldGroup label="Busqueda" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -50,7 +50,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Proceso" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Proceso" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminSelectField
             :model-value="fkFilters.process_id"
             @update:model-value="updateFilter('process_id', $event)"
@@ -62,7 +62,7 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Serie" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Serie" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkFilters.variation_key"
             placeholder="Filtrar por serie"
@@ -70,7 +70,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Modo" label-class="text-dark" group-class="col-12 col-md-2">
+        <AdminFieldGroup label="Modo" label-class="text-slate-700" group-class="md:col-span-2">
           <AdminSelectField
             :model-value="fkFilters.execution_mode"
             @update:model-value="updateFilter('execution_mode', $event)"
@@ -86,7 +86,7 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="col-12 col-md-auto d-flex align-items-end justify-content-md-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
           <AdminButton
             variant="secondary"
             class-name="fk-inline-clear-btn"
@@ -100,7 +100,7 @@
         </div>
       </template>
       <template v-else-if="isFkTemplateArtifacts">
-        <AdminFieldGroup label="Busqueda" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -108,7 +108,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Codigo" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Codigo" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkFilters.template_code"
             placeholder="Filtrar por codigo"
@@ -116,7 +116,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Version storage" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Version storage" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkFilters.storage_version"
             placeholder="Filtrar por version"
@@ -124,7 +124,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Activo" label-class="text-dark" group-class="col-12 col-md-2">
+        <AdminFieldGroup label="Activo" label-class="text-slate-700" group-class="md:col-span-2">
           <AdminSelectField
             :model-value="fkFilters.is_active"
             @update:model-value="updateFilter('is_active', $event)"
@@ -135,7 +135,7 @@
             <option value="0">No</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="col-12 col-md-auto d-flex align-items-end justify-content-md-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
           <AdminButton
             variant="secondary"
             class-name="fk-inline-clear-btn"
@@ -148,7 +148,7 @@
           </AdminButton>
         </div>
       </template>
-      <AdminFieldGroup v-else label="Busqueda" label-class="text-dark" group-class="col-12">
+      <AdminFieldGroup v-else label="Busqueda" label-class="text-slate-700" group-class="md:col-span-12">
         <AdminInputField
           :model-value="fkSearch"
           placeholder="Buscar referencia"
@@ -158,8 +158,8 @@
       </AdminFieldGroup>
     </div>
 
-    <div v-if="isFkUnitPositions" class="row g-3 align-items-end mb-3">
-      <AdminFieldGroup label="Tipo de unidad" label-class="text-dark" group-class="col-12 col-md-4">
+    <div v-if="isFkUnitPositions" class="mb-3 grid gap-3 md:grid-cols-12 md:items-end">
+      <AdminFieldGroup label="Tipo de unidad" label-class="text-slate-700" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.unit_type_id"
           :disabled="fkPositionFilterLoading"
@@ -172,7 +172,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Unidad" label-class="text-dark" group-class="col-12 col-md-4">
+      <AdminFieldGroup label="Unidad" label-class="text-slate-700" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.unit_id"
           :disabled="!fkPositionFilters.unit_type_id || fkPositionFilterLoading"
@@ -185,7 +185,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Cargo" label-class="text-dark" group-class="col-12 col-md-4">
+      <AdminFieldGroup label="Cargo" label-class="text-slate-700" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.cargo_id"
           :disabled="fkPositionFilterLoading"
@@ -198,7 +198,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <div class="col-12 d-flex justify-content-end fk-inline-clear-col">
+      <div class="md:col-span-12 md:flex md:justify-end fk-inline-clear-col">
         <AdminButton
           variant="secondary"
           class-name="fk-inline-clear-btn"
@@ -212,7 +212,7 @@
       </div>
     </div>
 
-    <div v-if="fkLoading" class="text-muted">Cargando...</div>
+    <div v-if="fkLoading" class="text-sm text-slate-500">Cargando...</div>
     <div v-else-if="fkError" class="admin-inline-error" role="alert">{{ fkError }}</div>
     <AdminDataTable
       v-else
@@ -254,7 +254,7 @@
         </template>
       </template>
       <template #actions="{ row }">
-        <div class="d-inline-flex align-items-center gap-1 fk-row-actions">
+        <div class="inline-flex items-center gap-1 fk-row-actions">
           <AdminButton
             variant="secondary"
             size="sm"
@@ -295,7 +295,7 @@
         :disabled="!canCreateFkReference"
         @click="$emit('open-fk-create')"
       >
-        <font-awesome-icon icon="plus" class="me-2" />
+        <font-awesome-icon icon="plus" class="mr-2" />
         Crear nuevo
       </AdminButton>
       <AdminButton variant="outlineDanger" data-modal-dismiss>

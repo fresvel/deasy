@@ -1,18 +1,18 @@
 <template>
 <ProfileModalLayout title="Agregar capacitación" description="Registra eventos o cursos de formación continua." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
-      <div class="w-full">
-        <label for="cap-tema" class="form-label">Tema</label>
+      <div class="w-full space-y-2">
+        <label for="cap-tema" class="profile-field-label">Tema</label>
         <textarea
           id="cap-tema"
-          class="form-control "
+          class="profile-textarea"
           rows="2"
           v-model="form.tema"
           placeholder="Nombre del evento o curso"
         ></textarea>
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Institución</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Institución</label>
         <s-select
           :options="instituciones"
           v-model="form.institucion"
@@ -21,14 +21,14 @@
         <input
           v-if="form.institucion === 'Otra'"
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Especifica la institución"
           v-model="form.institucionPersonalizada"
         />
       </div>
 
       <div class="w-full">
-        <label class="form-label">Tipo</label>
+        <label class="profile-field-label">Tipo</label>
         <s-select
           :options="['Docente', 'Profesional']"
           v-model="form.tipo"
@@ -36,7 +36,7 @@
       </div>
 
       <div class="w-full">
-        <label class="form-label">Rol</label>
+        <label class="profile-field-label">Rol</label>
         <s-select
           :options="['Asistencia', 'Instructor', 'Aprobación']"
           v-model="form.rol"
@@ -44,14 +44,14 @@
       </div>
 
       <div class="w-full">
-        <label class="form-label">País</label>
+        <label class="profile-field-label">País</label>
         <s-select
           :options="escountries"
           v-model="form.pais"
         />
       </div>
 
-      <div class="col-md-3">
+      <div class="w-full">
         <s-date
           label="Inicio"
           placeholder="Selecciona la fecha"
@@ -59,7 +59,7 @@
         />
       </div>
 
-      <div class="col-md-3">
+      <div class="w-full">
         <s-date
           label="Fin"
           placeholder="Selecciona la fecha"
@@ -267,21 +267,3 @@ const onSubmit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.modal-title {
-  color: var(--brand-navy);
-}
-
-.btn-primary {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.8rem;
-  font-weight: 600;
-  background: var(--brand-gradient);
-  border: none;
-}
-
-.btn-primary:hover {
-  opacity: 0.92;
-}
-</style>

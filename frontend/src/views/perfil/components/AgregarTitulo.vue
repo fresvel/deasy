@@ -1,7 +1,7 @@
 <template>
 <ProfileModalLayout title="Agregar título académico" description="Completa los campos con los datos oficiales del título registrado." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
-      <div class="w-full">
-        <label class="form-label">Título</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Título</label>
         <s-select
           :options="carreras"
           v-model="form.titulo"
@@ -10,14 +10,14 @@
         <input
           v-if="form.titulo === 'Otro'"
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Especifique el título"
           v-model="form.tituloPersonalizado"
         />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Institución</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Institución</label>
         <s-select
           :options="universidades"
           v-model="form.ies"
@@ -26,14 +26,14 @@
         <input
           v-if="form.ies === 'Otra'"
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Especifique la institución"
           v-model="form.iesPersonalizada"
         />
       </div>
 
-      <div class="w-full">
-        <label for="pais" class="form-label">País de emisión</label>
+      <div class="w-full space-y-2">
+        <label for="pais" class="profile-field-label">País de emisión</label>
         <s-select
           id="pais"
           :options="escountries"
@@ -43,16 +43,11 @@
       </div>
 
       <div class="w-full">
-        <label for="registro" class="form-label">Número de registro</label>
-        <s-input
-          id="registro"
-          v-model="form.sreg"
-          placeholder="Registro SENESCYT"
-        />
+        <s-input label="Número de registro" v-model="form.sreg" placeholder="Registro SENESCYT" />
       </div>
 
       <div class="w-full">
-        <label for="tipo" class="form-label">Modalidad</label>
+        <label for="tipo" class="profile-field-label">Modalidad</label>
         <s-select
           id="tipo"
           :options="modalidades"
@@ -62,7 +57,7 @@
       </div>
 
       <div class="w-full">
-        <label for="nivel" class="form-label">Nivel</label>
+        <label for="nivel" class="profile-field-label">Nivel</label>
         <s-select
           id="nivel"
           :options="niveles"
@@ -71,12 +66,12 @@
         />
       </div>
 
-      <div class="w-full">
-        <label for="campo" class="form-label">Campo de conocimiento</label>
+      <div class="w-full space-y-2">
+        <label for="campo" class="profile-field-label">Campo de conocimiento</label>
         <textarea
           id="campo"
           v-model="form.campo_amplio"
-          class="form-control "
+          class="profile-textarea"
           rows="2"
           placeholder="Ej. Ingeniería, Ciencias Sociales, Educación..."
         ></textarea>
@@ -281,49 +276,3 @@ const onSubmit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.modal-title {
-  color: var(--brand-navy);
-}
-
-.form-label {
-  font-weight: 600;
-  color: var(--brand-ink);
-}
-
-.form-control,
-.form-select,
-.form-control:focus {
-  border-radius: var(--radius-md);
-  color: var(--brand-navy);
-}
-
-.form-control:focus,
-.form-select:focus {
-  box-shadow: 0 0 0 0.2rem rgba(var(--brand-accent-rgb), 0.25);
-  border-color: var(--brand-accent);
-  color: var(--brand-navy);
-}
-
-.form-select option {
-  color: var(--brand-navy);
-}
-
-.btn-primary {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.8rem;
-  font-weight: 600;
-  background: var(--brand-gradient);
-  border: none;
-}
-
-.btn-primary:hover {
-  opacity: 0.92;
-}
-
-.btn-outline-secondary {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.5rem;
-}
-</style>

@@ -35,7 +35,6 @@
 }
 
 .fk-inline-clear-col {
-  padding-right: calc(var(--bs-gutter-x) * 0.5 + 0.2rem);
   min-width: 4rem;
 }
 
@@ -50,32 +49,32 @@
   border-radius: 10px;
 }
 
-.modal .btn:not(.btn-sm):not(.btn-icon) {
+.admin-modal .admin-btn:not(.admin-btn--icon) {
   border-radius: 10px;
   padding: 0.65rem 1.75rem;
   font-size: 1.25rem;
   font-weight: 400;
 }
 
-.modal .btn.btn-primary,
-.modal .btn.btn-outline-primary {
+.admin-modal .admin-btn--primary,
+.admin-modal .admin-btn--outline-primary {
   color: var(--color-puce-light);
   border: 1px solid rgba(var(--color-puce-light-rgb), 0.5);
   background: transparent;
   box-shadow: none;
 }
 
-.modal .btn.btn-primary:hover,
-.modal .btn.btn-primary:focus,
-.modal .btn.btn-outline-primary:hover,
-.modal .btn.btn-outline-primary:focus {
+.admin-modal .admin-btn--primary:hover,
+.admin-modal .admin-btn--primary:focus,
+.admin-modal .admin-btn--outline-primary:hover,
+.admin-modal .admin-btn--outline-primary:focus {
   color: #ffffff;
   border: 1px solid var(--color-puce-light);
   background: var(--color-puce-light);
 }
 
-.modal .btn.btn-primary:disabled,
-.modal .btn.btn-outline-primary:disabled {
+.admin-modal .admin-btn--primary:disabled,
+.admin-modal .admin-btn--outline-primary:disabled {
   color: rgba(var(--color-puce-light-rgb), 0.56);
   border: 1px solid rgba(var(--color-puce-light-rgb), 0.28);
   background: transparent;
@@ -118,10 +117,6 @@
   padding: 0.65rem 0.85rem;
 }
 
-.person-assignment-context .text-muted {
-  color: rgba(33, 136, 56, 0.86) !important;
-}
-
 .person-assignment-menu {
   display: flex;
   flex-wrap: wrap;
@@ -135,10 +130,6 @@
   padding: 0.9rem;
 }
 
-.person-assignment-form .form-label {
-  font-weight: 600;
-}
-
 .person-assignment-form-actions {
   margin-top: 0.85rem;
   padding-top: 0.8rem;
@@ -148,7 +139,7 @@
   gap: 0.6rem;
 }
 
-.person-assignment-form-actions .btn {
+.person-assignment-form-actions .admin-btn {
   font-size: 1rem !important;
   padding: 0.52rem 1.25rem !important;
 }
@@ -234,7 +225,7 @@
   letter-spacing: 0.01em;
 }
 
-.definition-checklist-head .text-muted {
+.definition-checklist-head .text-sm {
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -289,7 +280,7 @@
   padding: 0.95rem;
 }
 
-.definition-activation-modal-dialog {
+.definition-activation-shell {
   width: min(70rem, calc(100vw - 2rem));
   max-width: min(70rem, calc(100vw - 2rem));
 }
@@ -311,7 +302,7 @@
   width: 100%;
 }
 
-.definition-activation-panel .btn-group .btn {
+.definition-activation-panel .definition-activation-menu .admin-btn {
   min-width: 0;
   flex: 1 1 0;
   white-space: nowrap;

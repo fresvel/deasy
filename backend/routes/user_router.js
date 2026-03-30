@@ -16,8 +16,31 @@ import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validatio
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
 import { authMiddleware } from "../middlewares/auth.js";
+import multer from "multer";
+import os from "os";
+import {
+  deleteMyCertificate,
+  downloadMyCertificate,
+  listMyCertificates,
+  setMyDefaultCertificate,
+  uploadMyCertificate
+} from "../controllers/users/user_certificate_controller.js";
 
 const router=new Router();
+const uploadCertificate = multer({
+  dest: os.tmpdir(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const isP12 =
+      file.mimetype === "application/x-pkcs12" ||
+      file.mimetype === "application/octet-stream" ||
+      file.originalname.toLowerCase().endsWith(".p12");
+    if (file.fieldname === "certificate" && isP12) {
+      return cb(null, true);
+    }
+    cb(new Error("Solo se permiten certificados .p12"));
+  }
+});
 
 router.post('/', validatePassword, createUser)
 router.get('/', getUsers)
@@ -33,6 +56,11 @@ router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTas
 //perfil 
 router.get('/me', authMiddleware, getMyProfile);
 router.patch('/me', authMiddleware, updateMyProfile);
+router.get('/me/certificates', authMiddleware, listMyCertificates);
+router.post('/me/certificates', authMiddleware, uploadCertificate.single('certificate'), uploadMyCertificate);
+router.put('/me/certificates/:certificateId/default', authMiddleware, setMyDefaultCertificate);
+router.get('/me/certificates/:certificateId/download', authMiddleware, downloadMyCertificate);
+router.delete('/me/certificates/:certificateId', authMiddleware, deleteMyCertificate);
 
 router.put(
   '/:cedula/photo',

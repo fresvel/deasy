@@ -1,5 +1,5 @@
 <template>
-<div class="w-full animate-fade-in">
+<div class="profile-admin-skin w-full animate-fade-in">
   <ProfileSectionShell
     title="Referencias"
     subtitle="Agrega referencias laborales, familiares y personales."
@@ -133,9 +133,9 @@
 </div>
 
 <!-- Modal -->
-<div class="modal fade" id="referenciaModal" tabindex="-1" aria-labelledby="referenciaModalLabel" aria-hidden="true" ref="modal">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-2xl overflow-hidden p-0">
+<div class="profile-admin-skin profile-dialog-root" data-dialog-root id="referenciaModal" tabindex="-1" aria-labelledby="referenciaModalLabel" aria-hidden="true" ref="modal">
+  <div class="profile-dialog-shell">
+    <div class="profile-dialog-panel">
       <AgregarReferencia @referencia-added="handleReferenciaAdded" />
     </div>
   </div>

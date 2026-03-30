@@ -6,7 +6,7 @@ import { downloadFromMinio, uploadToMinio } from './minioClient.js';
 import { generateStampImage } from './sigmaker/index.js';
 
 // Directorios de trabajo fijos dentro del contenedor
-const BASE_DIR   = path.resolve('./workspace');
+const BASE_DIR   = process.env.SIGNER_WORKSPACE_DIR || '/tmp/deasy-signer-workspace';
 const INPUT_DIR  = path.join(BASE_DIR, 'input');
 const OUTPUT_DIR = path.join(BASE_DIR, 'output');
 const TEMP_DIR   = path.join(BASE_DIR, 'temp');
@@ -89,10 +89,10 @@ export async function signDocument(data) {
 
   try {
     console.log(`[signer] [${jobId}] Downloading PDF: ${data.minioPdfPath}`);
-    await downloadFromMinio(data.minioPdfPath, pdfPath);
+    await downloadFromMinio(data.minioBucket, data.minioPdfPath, pdfPath);
 
     console.log(`[signer] [${jobId}] Downloading cert: ${data.minioCertPath}`);
-    await downloadFromMinio(data.minioCertPath, certPath);
+    await downloadFromMinio(data.minioCertBucket, data.minioCertPath, certPath);
 
     await fs.writeFile(passPath, data.certPassword, { mode: 0o600 });
 
@@ -133,7 +133,7 @@ export async function signDocument(data) {
     );
 
     console.log(`[signer] [${jobId}] Uploading to MinIO: ${data.minioPdfPath}`);
-    await uploadToMinio(data.minioPdfPath, signedPath);
+    await uploadToMinio(data.minioBucket, data.minioPdfPath, signedPath);
 
     console.log(`[signer] [${jobId}] Done.`);
     return {
@@ -152,6 +152,8 @@ export async function signDocument(data) {
       jobId,
     };
   } finally {
+    await fs.remove(pdfPath).catch(() => {});
+    await fs.remove(signedPath).catch(() => {});
     await fs.remove(jobTempDir).catch(() => {});
   }
 }

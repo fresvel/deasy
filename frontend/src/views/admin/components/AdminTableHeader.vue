@@ -16,60 +16,63 @@
       </p>
     </div>
     <div class="profile-section-actions">
-      <div class="d-flex gap-2">
-        <button
-          class="btn btn-outline-secondary btn-lg"
-          type="button"
+      <div class="flex flex-wrap items-center gap-2">
+        <AdminButton
+          variant="secondary"
+          size="lg"
           :disabled="!table"
           title="Regresar"
           aria-label="Regresar"
           @click="$emit('go-back')"
         >
           <font-awesome-icon icon="backward" />
-        </button>
-        <button
-          class="btn btn-outline-secondary btn-lg"
-          type="button"
+        </AdminButton>
+        <AdminButton
+          variant="secondary"
+          size="lg"
           :disabled="!table"
           @click="$emit('search')"
         >
           Buscar
-        </button>
-        <button
+        </AdminButton>
+        <AdminButton
           v-if="isTemplateSeedsTable"
-          class="btn btn-outline-secondary btn-lg"
-          type="button"
+          variant="secondary"
+          size="lg"
           :disabled="!table || loading"
           @click="$emit('sync-template-seeds')"
         >
-          <font-awesome-icon icon="rotate-right" class="me-2" />
+          <font-awesome-icon icon="rotate-right" class="mr-2" />
           Sincronizar seeds
-        </button>
-        <button
+        </AdminButton>
+        <AdminButton
           v-if="isTemplateArtifactsTable"
-          class="btn btn-outline-secondary btn-lg"
-          type="button"
+          variant="secondary"
+          size="lg"
           :disabled="!table || loading"
           @click="$emit('sync-template-artifacts')"
         >
-          <font-awesome-icon icon="rotate-right" class="me-2" />
+          <font-awesome-icon icon="rotate-right" class="mr-2" />
           Sincronizar dist
-        </button>
-        <button
-          class="btn btn-primary btn-lg profile-add-btn"
-          type="button"
+        </AdminButton>
+        <AdminButton
+          variant="primary"
+          size="lg"
+          class-name="profile-add-btn"
           :disabled="!table"
           @click="$emit('create')"
         >
-          <font-awesome-icon icon="plus" class="me-2" />
+          <font-awesome-icon icon="plus" class="mr-2" />
           Agregar
-        </button>
+        </AdminButton>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import AdminButton from "@/views/admin/components/AdminButton.vue";
+
 defineProps({
   tableHeaderIcon: {
     type: [Array, String],

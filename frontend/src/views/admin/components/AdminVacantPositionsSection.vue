@@ -1,7 +1,6 @@
 <template>
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="profile-section-header mb-3">
+  <section class="mt-4 space-y-4">
+      <div class="profile-section-header">
         <div>
           <h2 class="text-start profile-section-title table-title-with-icon">
             <span class="table-title-icon" aria-hidden="true">
@@ -12,43 +11,42 @@
           <p class="profile-section-subtitle mb-0">Gestiona puestos activos sin ocupacion actual.</p>
         </div>
         <div class="profile-section-actions">
-          <span class="badge text-bg-light">{{ rows.length }}</span>
+          <span class="inline-flex min-w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-600">{{ rows.length }}</span>
         </div>
       </div>
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="row g-3 align-items-center mb-3">
-            <div class="col-12 col-md-4 col-lg-2">
+      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
+            <div class="md:col-span-4 lg:col-span-2">
               <AdminInputField :model-value="searchTerm" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
             </div>
-            <div class="col-12 col-md-4 col-lg-2">
+            <div class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.unit_type_id" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
                 <option value="">Tipo de unidad</option>
                 <option v-for="row in unitTypeOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("unit_types", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="col-12 col-md-4 col-lg-2">
+            <div class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.unit_id" :disabled="!filters.unit_type_id || filterLoading" @update:model-value="updateFilter('unit_id', $event)" @change="$emit('handle-unit-change')">
                 <option value="">Unidad</option>
                 <option v-for="row in unitOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("units", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="col-12 col-md-4 col-lg-2">
+            <div class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.cargo_id" :disabled="filterLoading" @update:model-value="updateFilter('cargo_id', $event)" @change="$emit('handle-cargo-change')">
                 <option value="">Cargo</option>
                 <option v-for="row in cargoOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("cargos", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="col-12 col-md-4 col-lg-2">
+            <div class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.position_type" :disabled="filterLoading" @update:model-value="updateFilter('position_type', $event)" @change="$emit('handle-position-type-filter-change')">
                 <option value="">Tipo de puesto</option>
                 <option value="real">Real</option>
                 <option value="promocion">Promocion</option>
                 <option value="simbolico">Simbolico</option>
-              </AdminSelectField>
-            </div>
-            <div class="col-12 col-md-4 col-lg-2 text-lg-end">
-              <div class="d-inline-flex align-items-center gap-2">
+                </AdminSelectField>
+              </div>
+            <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
+              <div class="inline-flex items-center gap-2">
                 <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
                   <font-awesome-icon icon="times" />
                 </AdminButton>
@@ -59,7 +57,7 @@
             </div>
           </div>
 
-          <div v-if="loading" class="text-muted">Cargando puestos sin ocupaciones...</div>
+          <div v-if="loading" class="text-sm text-slate-500">Cargando puestos sin ocupaciones...</div>
           <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
           <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `vacant-${row.id}`" empty-text="No hay puestos disponibles sin ocupaciones.">
             <template #cell="{ row, field }">
@@ -80,7 +78,7 @@
               </template>
             </template>
             <template #actions="{ row }">
-              <div class="d-inline-flex align-items-center gap-1">
+              <div class="inline-flex items-center gap-1">
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-delete" title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
                 </AdminButton>
@@ -90,10 +88,8 @@
               </div>
             </template>
           </AdminDataTable>
-        </div>
       </div>
-    </div>
-  </div>
+  </section>
 </template>
 
 <script setup>

@@ -1,8 +1,12 @@
 <template>
   <div :class="groupClass">
-    <label v-if="label" class="form-label" :class="labelClass">
+    <label
+      v-if="label"
+      class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700"
+      :class="labelClass"
+    >
       {{ label }}
-      <span v-if="required" class="text-danger">*</span>
+      <span v-if="required" class="text-red-600">*</span>
     </label>
     <slot />
   </div>

@@ -9,23 +9,23 @@
   >
     <div v-if="context" class="person-assignment-context mb-3">
       <strong>{{ context.name || `Definicion #${context.id}` }}</strong>
-      <span class="text-muted ms-2">
+      <span class="ml-2 text-emerald-700/80">
         Serie {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
       </span>
     </div>
 
-    <div v-if="error" class="alert alert-danger">{{ error }}</div>
-    <div v-if="context && !canManage" class="alert alert-info">
+    <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
+    <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
       Esta definicion no esta en draft. Solo puedes gestionar artifacts cuando la definicion este en draft.
     </div>
-    <div v-else-if="canManage && !form.template_artifact_id" class="alert alert-secondary">
+    <div v-else-if="canManage && !form.template_artifact_id" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
       Selecciona un artifact para habilitar el boton de agregar.
     </div>
 
     <div class="person-assignment-form">
-      <div class="row g-3">
-        <div class="col-12 col-md-6">
-          <label class="form-label text-dark">Artifact</label>
+      <div class="grid gap-3 md:grid-cols-12">
+        <div class="md:col-span-6">
+          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Artifact</label>
           <AdminLookupField
             :model-value="labels.template_artifact_id"
             placeholder="Selecciona un artifact"
@@ -38,7 +38,7 @@
             @search="$emit('open-fk-search')"
           />
         </div>
-        <AdminFieldGroup label="Uso" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Uso" group-class="md:col-span-3">
           <AdminSelectField :model-value="form.usage_role" :disabled="!canManage" @update:model-value="updateField('usage_role', $event)">
             <option value="manual_fill">manual_fill</option>
             <option value="system_render">system_render</option>
@@ -46,16 +46,16 @@
             <option value="support">support</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Orden" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Orden" group-class="md:col-span-3">
           <AdminInputField :model-value="form.sort_order" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('sort_order', $event)" />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Genera tarea" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Genera tarea" group-class="md:col-span-3">
           <AdminSelectField :model-value="form.creates_task" :disabled="!canManage" @update:model-value="updateField('creates_task', $event)">
             <option value="1">Si</option>
             <option value="0">No</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Requerido" label-class="text-dark" group-class="col-12 col-md-3">
+        <AdminFieldGroup label="Requerido" group-class="md:col-span-3">
           <AdminSelectField :model-value="form.is_required" :disabled="!canManage" @update:model-value="updateField('is_required', $event)">
             <option value="1">Si</option>
             <option value="0">No</option>
@@ -72,7 +72,7 @@
       />
     </div>
 
-    <div v-if="loading" class="text-muted mt-3">Cargando artifacts vinculados...</div>
+    <div v-if="loading" class="mt-3 text-sm text-slate-500">Cargando artifacts vinculados...</div>
     <AdminDataTable
       v-else
       class="mt-3 person-assignment-table"
@@ -80,8 +80,8 @@
       :rows="rows"
       :row-key="(row) => row.id"
       empty-text="Sin artifacts vinculados."
-      table-class="table table-sm table-striped align-middle"
-      responsive-class="table-responsive mt-3 person-assignment-table"
+      table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+      responsive-class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">

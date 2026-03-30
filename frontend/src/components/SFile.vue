@@ -1,11 +1,11 @@
 <template>
     <div 
-        class="row g-3 file-dropzone" 
+        class="profile-admin-skin file-dropzone" 
         @dragover.prevent 
         @drop="onFileDrop"
     >
 
-        <div class="col-12">
+        <div class="w-full">
             <input 
                 type="file" 
                 id="csv_input"
@@ -15,14 +15,14 @@
                 ref="csv_input"
                 multiple
             />
-            <label for="csv_input" class="btn btn-primary w-100">
+            <label for="csv_input" class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-sky-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700">
                 {{ props.files.length > 0 ? props.files.map(file => file.name).join('\n') : 'Arrastra y suelta archivos o selecciona' }}
             </label>
         </div>
     
-        <div class="col-12">
-            <div v-if="props.files.length > 0" class="files card">
-                <div class="card-body">
+        <div class="w-full">
+            <div v-if="props.files.length > 0" class="files rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div>
                     <div v-for="(file, index) in props.files" :key="index" class="item">
                         <span v-if="!file.isRenaming">{{ file.name }}</span>
                         <input 
@@ -31,7 +31,7 @@
                             v-model="file.name" 
                             @blur="stopRenaming(index)" 
                             @keyup.enter="stopRenaming(index)"
-                            class="form-control file-rename-input"
+                            class="profile-text-input file-rename-input"
                         />
                         <BtnDelete
                         @click="removeFile(index)"
@@ -93,6 +93,9 @@ const stopRenaming = (index) => {
 
 <style scoped>
 .file-dropzone {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     border: 2px dashed var(--brand-accent);
     padding: 20px;
     cursor: pointer;
@@ -107,7 +110,6 @@ const stopRenaming = (index) => {
 
 .file-rename-input {
     max-width: 300px;
-    margin-right: 10px;
 }
 
 /* Estilos opcionales para la lista de archivos cargados */
@@ -125,8 +127,6 @@ const stopRenaming = (index) => {
     margin-left: 10px;
 }
 .files .item input {
-    border-radius: 10px;
-    padding: 7px;
     width: 70%;
 }
 </style>

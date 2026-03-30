@@ -1,9 +1,7 @@
 <template>
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="row g-3 align-items-center mb-3">
+  <section class="space-y-4">
+    <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
             <div :class="searchColumnClass">
               <AdminInputField
                 ref="searchInputRef"
@@ -15,7 +13,7 @@
             </div>
 
             <template v-if="isPositionFilterTable">
-              <div class="col-12 col-md-4 col-lg-2">
+              <div class="md:col-span-4 lg:col-span-2">
                 <AdminSelectField :model-value="unitPositionFilters.unit_type_id" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_type_id', $event)" @change="$emit('handle-unit-position-type-change')">
                   <option value="">Tipo de unidad</option>
                   <option v-for="row in unitPositionUnitTypeOptions" :key="row.id" :value="String(row.id)">
@@ -23,7 +21,7 @@
                   </option>
                 </AdminSelectField>
               </div>
-              <div class="col-12 col-md-4 col-lg-2">
+              <div class="md:col-span-4 lg:col-span-2">
                 <AdminSelectField :model-value="unitPositionFilters.unit_id" :disabled="!unitPositionFilters.unit_type_id || unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_id', $event)" @change="$emit('handle-unit-position-unit-change')">
                   <option value="">Unidad</option>
                   <option v-for="row in unitPositionUnitOptions" :key="row.id" :value="String(row.id)">
@@ -31,7 +29,7 @@
                   </option>
                 </AdminSelectField>
               </div>
-              <div class="col-12 col-md-4 col-lg-2">
+              <div class="md:col-span-4 lg:col-span-2">
                 <AdminSelectField :model-value="unitPositionFilters.cargo_id" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('cargo_id', $event)" @change="$emit('handle-unit-position-cargo-change')">
                   <option value="">Cargo</option>
                   <option v-for="row in unitPositionCargoOptions" :key="row.id" :value="String(row.id)">
@@ -42,7 +40,7 @@
             </template>
 
             <template v-else-if="isProcessDefinitionFilterTable">
-              <div class="col-12 col-md-6 col-lg-2">
+              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processDefinitionInlineFilters.process_id" @update:model-value="updateProcessDefinitionFilter('process_id', $event)" @change="$emit('fetch-rows')">
                   <option value="">Proceso</option>
                   <option v-for="row in processDefinitionProcessOptions" :key="row.id" :value="String(row.id)">
@@ -50,7 +48,7 @@
                   </option>
                 </AdminSelectField>
               </div>
-              <div class="col-12 col-md-6 col-lg-2">
+              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processDefinitionInlineFilters.status" @update:model-value="updateProcessDefinitionFilter('status', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
                   <option value="draft">draft</option>
@@ -58,7 +56,7 @@
                   <option value="retired">retired</option>
                 </AdminSelectField>
               </div>
-              <div class="col-12 col-md-12 col-lg-3">
+              <div class="md:col-span-12 lg:col-span-3">
                 <AdminSelectField :model-value="processDefinitionInlineFilters.variation_key" @update:model-value="updateProcessDefinitionFilter('variation_key', $event)" @change="$emit('fetch-rows')">
                   <option value="">Serie</option>
                   <option v-for="row in processDefinitionSeriesOptions" :key="row.id" :value="String(row.code || '')">
@@ -69,7 +67,7 @@
             </template>
 
             <template v-else-if="isProcessTargetRuleFilterTable">
-              <div class="col-12 col-md-6 col-lg-2">
+              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_execution_mode" @update:model-value="updateProcessTargetRuleFilter('definition_execution_mode', $event)" @change="$emit('fetch-rows')">
                   <option value="">Modo</option>
                   <option value="manual">manual</option>
@@ -77,7 +75,7 @@
                   <option value="hybrid">hybrid</option>
                 </AdminSelectField>
               </div>
-              <div class="col-12 col-md-6 col-lg-2">
+              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_status" @update:model-value="updateProcessTargetRuleFilter('definition_status', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
                   <option value="draft">draft</option>
@@ -88,14 +86,14 @@
             </template>
 
             <template v-else-if="isTemplateArtifactsTable">
-              <div class="col-12 col-md-6 col-lg-2">
+              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_origin" @update:model-value="updateTemplateArtifactFilter('artifact_origin', $event)" @change="$emit('fetch-rows')">
                   <option value="">Origen</option>
                   <option value="system">system</option>
                   <option value="user">user</option>
                 </AdminSelectField>
               </div>
-              <div class="col-12 col-md-6 col-lg-2">
+              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_stage" @update:model-value="updateTemplateArtifactFilter('artifact_stage', $event)" @change="$emit('fetch-rows')">
                   <option value="">Etapa</option>
                   <option value="draft">draft</option>
@@ -105,7 +103,7 @@
             </template>
 
             <div :class="actionColumnClass">
-              <div class="d-inline-flex align-items-center gap-2">
+              <div class="inline-flex items-center gap-2">
                 <AdminButton
                   v-if="isPositionFilterTable"
                   variant="secondary"
@@ -157,7 +155,7 @@
             </div>
           </div>
 
-          <div v-if="loading" class="text-muted">Cargando datos...</div>
+          <div v-if="loading" class="text-sm text-slate-500">Cargando datos...</div>
           <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
           <AdminDataTable v-else :fields="tableListFields" :rows="rows" :row-key="rowKey">
             <template #cell="{ row, field }">
@@ -241,10 +239,8 @@
               </AdminTableActions>
             </template>
           </AdminDataTable>
-        </div>
-      </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
@@ -314,19 +310,19 @@ const emit = defineEmits([
 const searchInputRef = ref(null);
 
 const searchColumnClass = computed(() => (
-  props.isPositionFilterTable ? "col-12 col-lg-3" :
-    props.isProcessDefinitionFilterTable ? "col-12 col-md-6 col-lg-2" :
-      props.isProcessTargetRuleFilterTable ? "col-12 col-md-6 col-lg-3" :
-        props.isTemplateArtifactsTable ? "col-12 col-md-6 col-lg-3" :
-          "col-12 col-md-6"
+  props.isPositionFilterTable ? "lg:col-span-3" :
+    props.isProcessDefinitionFilterTable ? "md:col-span-6 lg:col-span-2" :
+      props.isProcessTargetRuleFilterTable ? "md:col-span-6 lg:col-span-3" :
+        props.isTemplateArtifactsTable ? "md:col-span-6 lg:col-span-3" :
+          "md:col-span-6"
 ));
 
 const actionColumnClass = computed(() => (
-  props.isPositionFilterTable ? "col-12 col-lg-2 text-lg-end" :
-    props.isProcessDefinitionFilterTable ? "col-12 col-lg-3 text-lg-end" :
-      props.isProcessTargetRuleFilterTable ? "col-12 col-lg-3 text-lg-end" :
-        props.isTemplateArtifactsTable ? "col-12 col-lg-3 text-lg-end" :
-          "col-12 col-md-6 text-md-end"
+  props.isPositionFilterTable ? "lg:col-span-2 lg:justify-self-end" :
+    props.isProcessDefinitionFilterTable ? "lg:col-span-3 lg:justify-self-end" :
+      props.isProcessTargetRuleFilterTable ? "lg:col-span-3 lg:justify-self-end" :
+        props.isTemplateArtifactsTable ? "lg:col-span-3 lg:justify-self-end" :
+          "md:col-span-6 md:justify-self-end"
 ));
 
 const updateUnitPositionFilter = (field, value) => emit("update:unit-position-filters", { ...props.unitPositionFilters, [field]: value });

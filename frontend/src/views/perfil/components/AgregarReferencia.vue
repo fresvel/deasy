@@ -1,58 +1,58 @@
 <template>
 <ProfileModalLayout title="Agregar referencia" description="Danos información de una referencia que pueda certificar tu desempeño." :errorMessage="errorMessage" :isSubmitting="isSubmitting" submitText="Guardar" @submit="onSubmit" @cancel="onCancel">
       <div class="w-full">
-        <label class="form-label">Tipo de referencia</label>
+        <label class="profile-field-label">Tipo de referencia</label>
         <SSelect
           :options="['laboral', 'personal', 'familiar']"
           v-model="form.tipo"
         />
       </div>
 
-      <div class="w-full" v-if="form.tipo === 'laboral'">
-        <label class="form-label">Institución</label>
+      <div class="w-full space-y-2" v-if="form.tipo === 'laboral'">
+        <label class="profile-field-label">Institución</label>
         <input
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Nombre de la institución o empresa"
           v-model="form.institution"
         />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Nombres</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Nombres</label>
         <input
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="Nombres completos"
           v-model="form.nombre"
         />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
         <input
           type="text"
-          class="form-control "
+          class="profile-text-input"
           :placeholder="form.tipo === 'laboral' ? 'Cargo en la institución' : form.tipo === 'familiar' ? 'Ej: Padre, Madre, Hermano' : 'Cargo o parentesco'"
           v-model="form.cargo_parentesco"
         />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Correo electrónico</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Correo electrónico</label>
         <input
           type="email"
-          class="form-control "
+          class="profile-text-input"
           placeholder="usuario@dominio.com"
           v-model="form.email"
         />
       </div>
 
-      <div class="w-full">
-        <label class="form-label">Teléfono</label>
+      <div class="w-full space-y-2">
+        <label class="profile-field-label">Teléfono</label>
         <input
           type="text"
-          class="form-control "
+          class="profile-text-input"
           placeholder="+593987654321"
           v-model="form.telefono"
         />
@@ -226,26 +226,3 @@ const onSubmit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.modal-title {
-  color: var(--brand-navy);
-}
-
-.form-label {
-  font-weight: 600;
-  color: var(--brand-ink);
-}
-
-.btn-primary {
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.8rem;
-  font-weight: 600;
-  background: var(--brand-gradient);
-  border: none;
-}
-
-.btn-primary:hover {
-  opacity: 0.92;
-}
-</style>

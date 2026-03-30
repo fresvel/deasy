@@ -88,6 +88,7 @@
             <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
             <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
             <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
+            <CertificadosFirmaView v-else-if="process==='Certificados de firma'"></CertificadosFirmaView>
         </div>
         <div v-else-if="area=='Academia'" class="w-full">
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
@@ -137,6 +138,7 @@ import CertificacionView from '@/views/perfil/CertificacionView.vue';
 import CapacitacionView from '@/views/perfil/CapacitaciónView.vue';
 import ProfileHomePanel from '@/views/perfil/components/ProfileHomePanel.vue';
 import InvestigacionView from '@/views/perfil/InvestigacionView.vue';
+import CertificadosFirmaView from '@/views/perfil/CertificadosFirmaView.vue';
 
 import IndexAcademia from '@/views/academia/AcademiaView.vue';
 import LogrosView from '@/views/academia/LogrosView.vue';
@@ -227,6 +229,12 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
             label: 'Investigación',
             key: 'investigacion',
             icon: 'certificate',
+            active: false,
+        },
+        {
+            label: 'Certificados de firma',
+            key: null,
+            icon: 'id-card',
             active: false,
         }
     ]);
@@ -409,6 +417,10 @@ const resolveAreaIcon = (name) => {
     
 
     const onmenuClick=(item)=>{
+        if (area.value === 'Firmar') {
+            syncAreaState('Perfil');
+            router.replace({ path: '/perfil' });
+        }
         for (const el of mainmenu.value){
             if(el.label === item){
                 el.active =true;

@@ -7,15 +7,15 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="!fkFilterFields.length" class="text-muted">
+    <div v-if="!fkFilterFields.length" class="text-sm text-slate-500">
       No hay campos disponibles para aplicar filtros.
     </div>
-    <form v-else class="row g-3">
+    <form v-else class="grid gap-3 md:grid-cols-12">
       <AdminFieldGroup
         v-for="field in fkFilterFields"
         :key="field.name"
         :label="field.label || field.name"
-        group-class="col-12 col-md-6"
+        group-class="md:col-span-6"
       >
         <AdminInputField
           v-if="isInputField(field)"

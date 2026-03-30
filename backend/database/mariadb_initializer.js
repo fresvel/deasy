@@ -180,6 +180,7 @@ const DROP_TABLES = [
   "vacancies",
   "position_assignments",
   "unit_positions",
+  "person_certificates",
   "cargo_role_map",
   "role_assignment_relation_types",
   "role_assignments",

@@ -34,7 +34,6 @@
         </span>
       </button>
     </div>
-
   </div>
 </template>
 
@@ -79,7 +78,8 @@ const sections = [
   { label: "Referencias", key: "referencias", icon: "id-card" },
   { label: "Capacitación", key: "capacitacion", icon: "square-check" },
   { label: "Certificación", key: "certificacion", icon: "check-circle" },
-  { label: "Investigación", key: "investigacion", icon: "globe" }
+  { label: "Investigación", key: "investigacion", icon: "globe" },
+  { label: "Certificados de firma", key: null, icon: "id-card" }
 ];
 
 const sectionCards = computed(() =>
@@ -87,7 +87,7 @@ const sectionCards = computed(() =>
     const count = Number(props.dossierCounts?.[section.key] ?? 0);
     return {
       ...section,
-      meta: `${count} ${count === 1 ? "registro" : "registros"}`
+      meta: section.key ? `${count} ${count === 1 ? "registro" : "registros"}` : "Gestiona tus certificados digitales"
     };
   })
 );

@@ -1,5 +1,5 @@
 <template>
-  <div class="colab-editor">
+  <div class="profile-admin-skin colab-editor">
     <div
       v-for="(cell, index) in cells"
       :key="cell.id"
@@ -9,7 +9,7 @@
       <div class="colab-cell-toolbar" v-show="cell.isEditing || hoveredCell === cell.id">
         <button
           type="button"
-          class="btn btn-sm btn-link text-muted p-1"
+          class="profile-icon-button profile-icon-button--muted"
           @click="moveCellUp(index)"
           :disabled="index === 0"
           title="Mover arriba"
@@ -18,7 +18,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-sm btn-link text-muted p-1"
+          class="profile-icon-button profile-icon-button--muted"
           @click="moveCellDown(index)"
           :disabled="index === cells.length - 1"
           title="Mover abajo"
@@ -27,7 +27,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-sm btn-link text-primary p-1"
+          class="profile-icon-button profile-icon-button--primary"
           @click="toggleEdit(cell)"
           :title="cell.isEditing ? 'Guardar' : 'Editar'"
         >
@@ -35,7 +35,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-sm btn-link text-danger p-1"
+          class="profile-icon-button profile-icon-button--danger"
           @click="deleteCell(index)"
           title="Eliminar"
         >
@@ -43,7 +43,7 @@
         </button>
         <button
           type="button"
-          class="btn btn-sm btn-link text-muted p-1"
+          class="profile-icon-button profile-icon-button--muted"
           @click="showCellMenu(cell)"
           title="Más opciones"
         >
@@ -82,10 +82,10 @@
     <div class="colab-add-cell">
       <button
         type="button"
-        class="btn btn-outline-primary btn-sm"
+        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
         @click="addCell"
       >
-        <font-awesome-icon icon="plus" class="me-2" />
+        <font-awesome-icon icon="plus" />
         Agregar celda
       </button>
     </div>
