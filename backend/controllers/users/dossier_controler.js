@@ -1,6 +1,11 @@
 import { Dossier } from "../../models/users/dossiers.js";
 import { Usuario } from "../../models/users/usuario_model.js";
 import UserRepository from "../../services/auth/UserRepository.js";
+import * as Minio from "minio";
+import path from "path";
+import os from "os";
+import fs from "fs";
+import { promisify } from "util";
 
 const userRepository = new UserRepository();
 const INVESTIGACION_TIPOS = new Set(["articulos", "libros", "ponencias", "tesis", "proyectos"]);
@@ -610,6 +615,240 @@ export const deleteInvestigacionItem = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error al eliminar investigación",
+            error: error.message
+        });
+    }
+};
+
+const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
+const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
+const minioClient = new Minio.Client({
+    endPoint: minioUrl.hostname,
+    port: Number(minioUrl.port || (minioUseSSL ? 443 : 80)),
+    useSSL: minioUseSSL,
+    accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER,
+    secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD
+});
+
+const MINIO_DOSSIER_BUCKET = process.env.MINIO_DOSSIER_BUCKET || "deasy-dossier";
+const MINIO_DOSSIER_PREFIX = process.env.MINIO_DOSSIER_PREFIX || "Dosier";
+const MINIO_PUBLIC_ENDPOINT = process.env.MINIO_PUBLIC_ENDPOINT || "http://localhost:9000";
+
+const VALID_DOCUMENT_TYPES = [
+    "titulo", "experiencia", "referencia", "formacion", 
+    "certificacion", "articulo", "libro", "ponencia", 
+    "tesis", "proyecto"
+];
+
+const getCollectionAndField = (tipoDocumento) => {
+    const mapping = {
+        titulo: { collection: "titulos", field: "titulos" },
+        experiencia: { collection: "experiencia", field: "experiencia" },
+        referencia: { collection: "referencias", field: "referencias" },
+        formacion: { collection: "formacion", field: "formacion" },
+        certificacion: { collection: "certificaciones", field: "certificaciones" },
+        articulo: { collection: "articulos", field: "investigacion.articulos" },
+        libro: { collection: "libros", field: "investigacion.libros" },
+        ponencia: { collection: "ponencias", field: "investigacion.ponencias" },
+        tesis: { collection: "tesis", field: "investigacion.tesis" },
+        proyecto: { collection: "proyectos", field: "investigacion.proyectos" }
+    };
+    return mapping[tipoDocumento] || null;
+};
+
+const uploadFileToMinIO = (bucket, objectName, filePath, metadata = {}) => {
+    return new Promise((resolve, reject) => {
+        minioClient.fPutObject(bucket, objectName, filePath, metadata, (error, etag) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(etag);
+            }
+        });
+    });
+};
+
+const ensureBucketExists = (bucket) => {
+    return new Promise((resolve, reject) => {
+        minioClient.bucketExists(bucket, (error, exists) => {
+            if (error) {
+                reject(error);
+            } else if (exists) {
+                resolve(true);
+            } else {
+                minioClient.makeBucket(bucket, "", (makeError) => {
+                    if (makeError) {
+                        reject(makeError);
+                    } else {
+                        resolve(true);
+                    }
+                });
+            }
+        });
+    });
+};
+
+export const uploadDossierDocument = async (req, res) => {
+    try {
+        const { cedula, tipoDocumento, registroId } = req.params;
+        
+        if (!cedula || !tipoDocumento || !registroId) {
+            return res.status(400).json({
+                success: false,
+                message: "Faltan parámetros requeridos: cedula, tipoDocumento, registroId"
+            });
+        }
+
+        if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "No se ha proporcionado ningún archivo"
+            });
+        }
+
+        if (req.file.mimetype !== "application/pdf") {
+            return res.status(400).json({
+                success: false,
+                message: "Solo se permiten archivos PDF"
+            });
+        }
+
+        const tempFilePath = req.file.path;
+        const objectName = `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`;
+
+        await ensureBucketExists(MINIO_DOSSIER_BUCKET);
+
+        await uploadFileToMinIO(MINIO_DOSSIER_BUCKET, objectName, tempFilePath);
+
+        const fileUrl = `${MINIO_PUBLIC_ENDPOINT}/${MINIO_DOSSIER_BUCKET}/${objectName}`;
+
+        fs.unlink(tempFilePath, (unlinkError) => {
+            if (unlinkError) {
+                console.error("Error al eliminar archivo temporal:", unlinkError);
+            }
+        });
+
+        const mapping = getCollectionAndField(tipoDocumento);
+        if (!mapping) {
+            return res.status(400).json({
+                success: false,
+                message: "Tipo de documento inválido"
+            });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: "Dossier no encontrado para esta cédula"
+            });
+        }
+
+        let itemFound = false;
+
+        if (mapping.field.startsWith("investigacion.")) {
+            const investigacionField = mapping.field.replace("investigacion.", "");
+            const item = dossier.investigacion?.[investigacionField]?.id(registroId);
+            if (item) {
+                item.url_documento = fileUrl;
+                dossier.markModified(mapping.field);
+                itemFound = true;
+            }
+        } else {
+            const item = dossier[mapping.field]?.id(registroId);
+            if (item) {
+                item.url_documento = fileUrl;
+                dossier.markModified(mapping.field);
+                itemFound = true;
+            }
+        }
+
+        if (!itemFound) {
+            return res.status(404).json({
+                success: false,
+                message: `Registro con ID ${registroId} no encontrado en ${tipoDocumento}`
+            });
+        }
+
+        await dossier.save();
+
+        res.json({
+            success: true,
+            message: "Documento subido correctamente",
+            url: fileUrl
+        });
+
+    } catch (error) {
+        console.error("Error al subir documento:", error);
+        
+        if (req.file?.path) {
+            fs.unlink(req.file.path, () => {});
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Error al subir documento",
+            error: error.message
+        });
+    }
+};
+
+export const getDossierDocumentUrl = async (req, res) => {
+    try {
+        const { cedula, tipoDocumento, registroId } = req.params;
+        
+        if (!cedula || !tipoDocumento || !registroId) {
+            return res.status(400).json({
+                success: false,
+                message: "Faltan parámetros requeridos: cedula, tipoDocumento, registroId"
+            });
+        }
+
+        if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`
+            });
+        }
+
+        const objectName = `${MINIO_DOSSIER_PREFIX}/users/${cedula}/${tipoDocumento}/${registroId}.pdf`;
+
+        try {
+            await new Promise((resolve, reject) => {
+                minioClient.getObject(MINIO_DOSSIER_BUCKET, objectName, (err, dataStream) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    res.setHeader('Content-Type', 'application/pdf');
+                    res.setHeader('Content-Disposition', `inline; filename="${registroId}.pdf"`);
+                    
+                    dataStream.pipe(res);
+                    dataStream.on('end', resolve);
+                    dataStream.on('error', reject);
+                });
+            });
+        } catch (error) {
+            console.error("Error al obtener archivo:", error.message);
+            return res.status(404).json({
+                success: false,
+                message: "Error al leer documento: " + error.message
+            });
+        }
+
+    } catch (error) {
+        console.error("Error al obtener URL del documento:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error al obtener URL del documento",
             error: error.message
         });
     }

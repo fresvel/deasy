@@ -1,13 +1,13 @@
 <template>
-    <div class="col-12 col-md-6">
-      <div class="mb-3">
-        <label :for="dateId" class="form-label">{{ label }}</label>
+    <div class="deasy-field-wrapper deasy-col-6">
+      <div>
+        <label :for="dateId" class="deasy-field-label">{{ label }}</label>
         <input
           :id="dateId"
           type="date"
           :value="formattedValue"
           @input="updateValue"
-          class="form-control form-control-lg"
+          class="deasy-field-input"
           :placeholder="placeholder"
         />
       </div>

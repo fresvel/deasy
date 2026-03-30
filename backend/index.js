@@ -1,5 +1,5 @@
 import "dotenv/config"
-import express  from "express";
+import express from "express";
 import academia_router from "./routes/academia_router.js";
 import user_router from "./routes/user_router.js";
 import tutorias_router from "./routes/tutorias_router.js";
@@ -17,15 +17,13 @@ import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
 import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
-import webtemplate from "./routes/webtemplate_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
-import vacancy_router from "./routes/vacancy_router.js"
 
 const app = express();
 
 
-const PORT=process.env.PORT ||3030
+const PORT = process.env.PORT || 3030
 const apiBaseUrl = process.env.SWAGGER_SERVER_URL || `http://localhost:${PORT}${API_PREFIX}`;
 
 const swaggerDefinition = {
@@ -110,6 +108,36 @@ const swaggerDefinition = {
             type: "string",
             description: "País de residencia",
             example: "Ecuador"
+          },
+          pais_residencia: {
+            type: "string",
+            description: "País de residencia declarado en el formulario",
+            example: "Ecuador"
+          },
+          provincia_residencia: {
+            type: "string",
+            description: "Provincia o estado de residencia",
+            example: "Esmeraldas"
+          },
+          ciudad_residencia: {
+            type: "string",
+            description: "Ciudad de residencia",
+            example: "Esmeraldas"
+          },
+          calle_primaria: {
+            type: "string",
+            description: "Calle principal de residencia",
+            example: "Av. Libertad"
+          },
+          calle_secundaria: {
+            type: "string",
+            description: "Calle secundaria o intersección",
+            example: "Calle 9 de Octubre"
+          },
+          codigo_postal: {
+            type: "string",
+            description: "Código postal de residencia",
+            example: "080150"
           }
         }
       },
@@ -159,7 +187,13 @@ const swaggerDefinition = {
           email: { type: "string", format: "email", example: "maria.garcia@pucese.edu.ec" },
           whatsapp: { type: "string", example: "+593987654321" },
           direccion: { type: "string", example: "Esmeraldas, Ecuador" },
-          pais: { type: "string", example: "Ecuador" }
+          pais: { type: "string", example: "Ecuador" },
+          pais_residencia: { type: "string", example: "Ecuador" },
+          provincia_residencia: { type: "string", example: "Esmeraldas" },
+          ciudad_residencia: { type: "string", example: "Esmeraldas" },
+          calle_primaria: { type: "string", example: "Av. Libertad" },
+          calle_secundaria: { type: "string", example: "Calle 9 de Octubre" },
+          codigo_postal: { type: "string", example: "080150" }
         }
       },
       LoginResponse: {
@@ -183,7 +217,7 @@ const swaggerDefinition = {
       ErrorResponse: {
         type: "object",
         properties: {
-          message: { type: "string", example: "Error al crear el usuario" },
+          message: { type: "string", example: "Descripción del error" },
           code: { type: "integer", example: 400 }
         }
       },
@@ -323,6 +357,13 @@ const swaggerDefinition = {
           message: { type: "string", example: "Operación realizada exitosamente" },
           data: { type: "object" }
         }
+      },
+      MyProfileResponse: {
+        type: "object",
+        properties: {
+          result: { type: "string", example: "ok" },
+          user: { $ref: "#/components/schemas/UserPublic" }
+        }
       }
     }
   },
@@ -405,6 +446,150 @@ const swaggerDefinition = {
         }
       }
     },
+    [`${PATHS.users}/me`]: {
+      get: {
+        tags: ["Auth"],
+        summary: "Obtener mi perfil",
+        description: "Recupera los datos del perfil del usuario autenticado usando el token presente en la cabecera de autorización.",
+        security: [
+          {
+            bearerAuth: []
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Perfil obtenido exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MyProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            description: "No autorizado o token inválido",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  unauthorized: {
+                    summary: "Credenciales faltantes o token inválido",
+                    value: { message: "Token inválido", code: 401 }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Usuario no encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  notfound: {
+                    summary: "No existe el usuario asociado al token",
+                    value: { message: "Usuario no encontrado", code: 404 }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Error interno obteniendo perfil",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  serverError: {
+                    summary: "Error en el servidor al recuperar perfil",
+                    value: { message: "Error interno obteniendo perfil", code: 500 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      patch: {
+        tags: ["Auth"],
+        summary: "Actualizar mi perfil",
+        description: "Modifica los campos del perfil del usuario autenticado. Solo se permiten cambios en los datos personales y de contacto.",
+        security: [
+          {
+            bearerAuth: []
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  first_name: { type: "string" },
+                  last_name: { type: "string" },
+                  whatsapp: { type: "string" },
+                  direccion: { type: "string" },
+                  pais: { type: "string" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Perfil actualizado exitosamente",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/MyProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            description: "No autorizado o token inválido",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  unauthorized: {
+                    summary: "Token ausente o inválido",
+                    value: { message: "Token inválido", code: 401 }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Error interno actualizando perfil",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse"
+                },
+                examples: {
+                  serverError: {
+                    summary: "Excepción en el servidor al aplicar cambios",
+                    value: { message: "Error interno actualizando perfil", code: 500 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     [`${PATHS.dossier}/{cedula}`]: {
       get: {
         tags: ["Dossier"],
@@ -942,20 +1127,20 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3]
+const whitelist = [process.env.ORIGIN1, process.env.ORIGIN2, process.env.ORIGIN3, "http://localhost:8080"]
 
 app.use(cors({
-    origin:(origin, callback)=> {
-      console.log(`Iniciando CORS`)
-        console.log("Origin: " + origin);
-        if (!origin || whitelist.includes(origin)){
-            return callback(null, origin);
-        }
-        return callback("Error de cors: "+origin+" not authorized");
-    },
-    credentials: true // Permite el envío de cookies y credenciales
-  }
-    
+  origin: (origin, callback) => {
+    console.log(`Iniciando CORS`)
+    console.log("Origin: " + origin);
+    if (!origin || whitelist.includes(origin)) {
+      return callback(null, origin);
+    }
+    return callback("Error de cors: " + origin + " not authorized");
+  },
+  credentials: true // Permite el envío de cookies y credenciales
+}
+
 ))
 
 
@@ -969,41 +1154,60 @@ app.get(DOCS_JSON_PATH, (req, res) => {
   res.send(swaggerSpec);
 });
 
-app.use(ROUTES.academia,academia_router)
-app.use(ROUTES.users,user_router)
-app.use(ROUTES.tutorias,tutorias_router)
+app.use(ROUTES.academia, academia_router)
+app.use(ROUTES.users, user_router)
+app.use(ROUTES.tutorias, tutorias_router)
 
-app.use(ROUTES.admin,admin_router)
+app.use(ROUTES.admin, admin_router)
 
-app.use(ROUTES.program,program_router)
+app.use(ROUTES.program, program_router)
 app.use(ROUTES.units, unit_router)
 
-app.use(ROUTES.area,area_router)
+app.use(ROUTES.area, area_router)
 
-app.use(ROUTES.tarea,tarea_router)
+app.use(ROUTES.tarea, tarea_router)
 
-app.use(ROUTES.whatsapp,whatsapp_router)
+app.use(ROUTES.whatsapp, whatsapp_router)
 
-app.use(ROUTES.dossier,dossier_router)
-
-app.use(ROUTES.vacancies, vacancy_router)
-
-app.use("/easym/v1/webtemplate",webtemplate)
+app.use(ROUTES.dossier, dossier_router)
 
 app.use(express.static("public"));
 
 
-const startServer = async () => {
-  try {
-    const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
-    await ensureMariaDBDatabase();
-    await assertMariaDBConnection();
-    await ensureMariaDBSchema({ reset: shouldResetSchema });
-  } catch (error) {
-    console.error("⚠️  No se pudo inicializar MariaDB:", error.message);
-  }
 
-  app.listen(PORT, ()=>{
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const initializeMariaDBWithRetry = async () => {
+  const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
+  const maxAttempts = Number(process.env.MARIADB_INIT_MAX_ATTEMPTS || 20);
+  const retryDelayMs = Number(process.env.MARIADB_INIT_RETRY_DELAY_MS || 3000);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await ensureMariaDBDatabase();
+      await assertMariaDBConnection();
+      await ensureMariaDBSchema({ reset: shouldResetSchema });
+      console.log("✅ MariaDB inicializada correctamente");
+      return;
+    } catch (error) {
+      const isLastAttempt = attempt === maxAttempts;
+      console.error(
+        `⚠️  Falló la inicialización de MariaDB (intento ${attempt}/${maxAttempts}): ${error.message}`
+      );
+      if (isLastAttempt) {
+        console.error("⚠️  Se agotaron los reintentos de MariaDB. El backend seguirá en ejecución.");
+        return;
+      }
+      await sleep(retryDelayMs);
+    }
+  }
+};
+
+const startServer = async () => {
+  await initializeMariaDBWithRetry();
+
+  app.listen(PORT, () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
   });
 };
