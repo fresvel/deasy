@@ -38,6 +38,7 @@ MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "deasy_minio_secret")
 MINIO_SPOOL_BUCKET = os.getenv("MINIO_SPOOL_BUCKET", "deasy-spool")
 SIGNER_WORKSPACE_DIR = os.getenv("SIGNER_WORKSPACE_DIR", "/tmp/deasy-signer-workspace")
 PYHANKO_TSA_URL = os.getenv("PYHANKO_TSA_URL", "").strip()
+PYHANKO_DEFAULT_TSA_URL = os.getenv("PYHANKO_DEFAULT_TSA_URL", "https://freetsa.org/tsr").strip()
 SIGNER_EMBED_VALIDATION_INFO = os.getenv("SIGNER_EMBED_VALIDATION_INFO", "1").strip() == "1"
 SIGNER_USE_PADES_LTA = os.getenv("SIGNER_USE_PADES_LTA", "0").strip() == "1"
 SIGNER_USE_GHOSTSCRIPT = os.getenv("SIGNER_USE_GHOSTSCRIPT", "1").strip() == "1"
@@ -91,6 +92,30 @@ def validate_payload(data: dict[str, Any]) -> str | None:
         return "signType 'token' requires a token string"
 
     return None
+
+
+def as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return False
+
+
+def resolve_tsa_url(data: dict[str, Any]) -> str:
+    explicit_tsa_url = str(data.get("tsaUrl") or "").strip()
+    if explicit_tsa_url:
+        return explicit_tsa_url
+
+    if PYHANKO_TSA_URL:
+        return PYHANKO_TSA_URL
+
+    if as_bool(data.get("use_timestamp")) or as_bool(data.get("useDefaultTsa")):
+        return PYHANKO_DEFAULT_TSA_URL
+
+    return ""
 
 
 def ensure_parent(path: Path):
@@ -183,7 +208,7 @@ def load_certificate_info(cert_path: Path, cert_password: str) -> dict[str, Any]
 
 
 def build_validation_context() -> ValidationContext | None:
-    if not SIGNER_EMBED_VALIDATION_INFO and not PYHANKO_TSA_URL:
+    if not SIGNER_EMBED_VALIDATION_INFO and not PYHANKO_TSA_URL and not PYHANKO_DEFAULT_TSA_URL:
         return None
     return ValidationContext(allow_fetching=True)
 
@@ -225,8 +250,9 @@ def sign_pdf_document(data: dict[str, Any], paths: JobPaths, certificate_info: d
     stamp_image_path = paths.signed_pdf.parent / "stamp.png"
     generate_stamp_image(data, stamp_image_path)
 
+    tsa_url = resolve_tsa_url(data)
     validation_context = build_validation_context()
-    timestamper = HTTPTimeStamper(PYHANKO_TSA_URL) if PYHANKO_TSA_URL else None
+    timestamper = HTTPTimeStamper(tsa_url) if tsa_url else None
     meta = PdfSignatureMetadata(
         field_name=field_name,
         md_algorithm="sha256",
@@ -338,7 +364,8 @@ def process_job(data: dict[str, Any]) -> dict[str, Any]:
                 "certificate": certificate_info,
                 "signature": signing_info,
                 "validation": validation_info,
-                "timestamped": bool(PYHANKO_TSA_URL),
+                "timestamped": bool(tsa_url),
+                "tsaUrl": tsa_url or None,
             }
         except Exception as exc:
             logger.exception("[%s] Error firmando", job_id)
