@@ -1,6 +1,6 @@
 services:
   mariadb:
-    image: mariadb:latest
+    image: mariadb:11.4
     container_name: deasy-mariadb
     restart: unless-stopped
     environment:
@@ -9,19 +9,15 @@ services:
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
-      - "3308:3306"
+      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mariadb-admin ping -h 127.0.0.1 -u${MARIADB_USER} -p${MARIADB_PASSWORD} --silent",
-        ]
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 20
-      start_period: 15s
+      start_period: 10s
 
   mongodb:
     image: mongo:7
@@ -33,7 +29,7 @@ services:
       - mongodb_data:/data/db
 
   rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:3-management
     container_name: deasy-rabbitmq
     restart: unless-stopped
     ports:
@@ -42,6 +38,12 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   emqx:
     image: emqx/emqx:latest
@@ -141,7 +143,7 @@ services:
     env_file: .env
     environment:
       MARIADB_HOST: mariadb
-      MARIADB_PORT: "3306"
+      MARIADB_PORT: 3306
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
@@ -182,7 +184,7 @@ services:
       mongodb:
         condition: service_started
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       emqx:
         condition: service_started
 
@@ -216,7 +218,7 @@ services:
       mariadb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       minio:
         condition: service_started
 
@@ -232,44 +234,19 @@ services:
     volumes:
       - ../frontend:/app/frontend
       - frontend_node_modules:/app/frontend/node_modules
-      - frontend_pnpm_store:/pnpm/store
     depends_on:
       - backend
 
-  docs:
-    build:
-      context: ..
-      dockerfile: docker/docs/Dockerfile
-    container_name: deasy-docs
-    restart: unless-stopped
-    ports:
-      - "${DOCS_PORT:-4321}:4321"
-    volumes:
-      - ../docs:/app/docs
-      - docs_node_modules:/app/docs/node_modules
-      - docs_pnpm_store:/pnpm/store
-
   signer:
     build:
-      context: ../signer
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/signer/Dockerfile
     container_name: deasy-signer
     restart: unless-stopped
-    env_file: .env
-    environment:
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
-      SIGNER_PORT: "4000"
-    ports:
-      - "4000:4000"
+    profiles:
+      - workers
     volumes:
-      - ../signer:/app
-      - signer_node_modules:/app/node_modules
-      - signer_sigmaker_node_modules:/app/sigmaker/node_modules
-    depends_on:
-      - minio
+      - storage_data:/data
 
   analytics:
     build:
@@ -282,27 +259,6 @@ services:
     volumes:
       - storage_data:/data
 
-  multisigner:
-    build:
-      context: ../multisigner
-      dockerfile: Dockerfile
-    container_name: deasy-multisigner
-    profiles:
-      - multisigner
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      RABBITMQ_URL: amqp://rabbitmq
-    depends_on:
-      - rabbitmq
-      - minio
-    volumes:
-      - ../multisigner:/app
-      - multisigner_node_modules:/app/node_modules
-
 volumes:
   mariadb_data:
   mongodb_data:
@@ -312,11 +268,5 @@ volumes:
   minio_data:
   backend_node_modules_v2:
   frontend_node_modules:
-  frontend_pnpm_store:
-  docs_node_modules:
-  docs_pnpm_store:
   uploads_data:
   storage_data:
-  multisigner_node_modules:
-  signer_node_modules:
-  signer_sigmaker_node_modules:
