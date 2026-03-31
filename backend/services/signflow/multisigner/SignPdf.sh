@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd sigmaker/ && node index.js && cd -
+cd sigmaker/ && npm run start && cd -
 
 
 # Carpetas
@@ -65,13 +65,18 @@ for input in "${pdf_list[@]}"; do
     mkdir -p "$dest_dir"
 
     # Archivos temporales
+    cleaned="$dest_dir/$(basename "$input" .pdf)-clean.pdf"
     output="$dest_dir/$(basename "$input" .pdf)-tmp.pdf"
     signed="$dest_dir/$(basename "$input" .pdf)-signed.pdf"
 
     # --------------------------------------------------------------
     # 4.1) Obtener número de páginas
     # --------------------------------------------------------------
-    last_page=$(pdfinfo "$input" | awk '/Pages/ {print $2}')
+    gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress \
+        -o "$cleaned" "$input" \
+        > /dev/null 2>&1
+
+    last_page=$(pdfinfo "$cleaned" | awk '/Pages/ {print $2}')
 
     # --------------------------------------------------------------
     # 4.2) Insertar campos de firma
@@ -80,7 +85,7 @@ for input in "${pdf_list[@]}"; do
         --field "${last_page}/97,586,187,636/ela" \
         --field "${last_page}/200,586,290,636/rev" \
         --field "${last_page}/325,125,415,190/apr" \
-        "$input" "$output" \
+        "$cleaned" "$output" \
         > /dev/null 
 
     # --------------------------------------------------------------
@@ -94,7 +99,7 @@ for input in "${pdf_list[@]}"; do
         > /dev/null 
 
     # Limpieza
-    rm -f "$output"
+    rm -f "$output" "$cleaned"
 done
 
 echo "+++++++++++++" > "$PASS"
@@ -105,4 +110,3 @@ echo "+++++++++++++" > "$PASS"
 echo
 echo "--------------------------------------"
 echo "Proceso completado: archivos firmados en '$DEST'."
-
