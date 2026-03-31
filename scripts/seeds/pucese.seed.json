@@ -44,7 +44,7 @@
       "rows": [
         {
           "id": 1,
-          "cedula": "1234567891",
+          "cedula": "1234567890",
           "first_name": "Homero Javier",
           "last_name": "Velasteguí Izurieta",
           "email": "autor.demo@pucese.edu.ec",
@@ -66,7 +66,7 @@
           "first_name": "Adrian Vargas",
           "last_name": "Vargas Machuca del Salto",
           "email": "autor.demo@pucese.edu.ec",
-          "whatsapp": "+5931234567891",
+          "whatsapp": "+5931234567890",
           "direccion": "Esmeraldas",
           "pais": "Ecuador",
           "password_hash": "$2b$10$SXiKu8HzkTeiQhH8svcj.eB0zdLSBPwExhjCwmtXQWHKZf0jn4OuW",
@@ -77,6 +77,24 @@
           "is_active": 1,
           "created_at": "2026-02-26 19:21:43",
           "updated_at": "2026-02-26 19:27:29"
+        },
+        {
+          "id": 3,
+          "cedula": "0999999999",
+          "first_name": "Admin",
+          "last_name": "Seed",
+          "email": "admin.seed@pucese.edu.ec",
+          "whatsapp": "+5930999999999",
+          "direccion": "Esmeraldas",
+          "pais": "Ecuador",
+          "password_hash": "$2b$10$osd2Fv1xqg3vyFXi5V9d7.jQpnBn4sSKmCbyBUZ/JW3yebC6QWmnK",
+          "status": "Activo",
+          "verify_email": 1,
+          "verify_whatsapp": 1,
+          "photo_url": null,
+          "is_active": 1,
+          "created_at": "2026-03-29 09:00:00",
+          "updated_at": "2026-03-29 09:00:00"
         }
       ]
     },
@@ -448,7 +466,14 @@
         "description": "varchar(255)",
         "is_active": "tinyint(1)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "admin",
+          "description": "Rol administrativo seed",
+          "is_active": 1
+        }
+      ]
     },
     {
       "table": "resources",
@@ -566,7 +591,24 @@
         "revoked_at": "datetime",
         "revoked_reason": "varchar(255)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "role_id": 1,
+          "unit_id": 11,
+          "derived_from_assignment_id": null,
+          "source": "manual",
+          "person_id": 3,
+          "max_depth": 0,
+          "start_date": "2026-03-29",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-03-29 09:00:00",
+          "revoked_at": null,
+          "revoked_reason": null
+        }
+      ]
     },
     {
       "table": "role_assignment_relation_types",
@@ -819,6 +861,19 @@
           "created_at": "2026-02-26 13:34:18",
           "updated_at": "2026-02-26 13:34:18",
           "cargo_id": 3
+        },
+        {
+          "id": 18,
+          "unit_id": 1,
+          "slot_no": 8,
+          "title": "Coordinador de Carrera (Admin Seed)",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-03-29 09:12:00",
+          "updated_at": "2026-03-29 09:12:00",
+          "cargo_id": 1
         }
       ]
     },
@@ -912,6 +967,28 @@
           "current_flag": 1,
           "created_at": "2026-02-26 19:29:59",
           "updated_at": "2026-02-26 19:29:59"
+        },
+        {
+          "id": 9,
+          "position_id": 6,
+          "person_id": 3,
+          "start_date": "2026-03-29",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-03-29 09:10:00",
+          "updated_at": "2026-03-29 09:10:00"
+        },
+        {
+          "id": 10,
+          "position_id": 18,
+          "person_id": 3,
+          "start_date": "2026-03-29",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-03-29 09:13:00",
+          "updated_at": "2026-03-29 09:13:00"
         }
       ]
     },
