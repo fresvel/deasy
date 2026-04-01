@@ -103,7 +103,15 @@
       <AgregarExperiencia @experiencia-added="handleExperienciaAdded" />
     </AppModalShell>
 
-    <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
+    <DossierDocumentUploadModal
+      :open="isUploadModalOpen"
+      :selected-file="selectedUploadFile"
+      :is-submitting="isUploadingDocument"
+      @close="closeUploadModal"
+      @files-selected="handleUploadFilesSelected"
+      @clear="clearUploadSelection"
+      @submit="submitSelectedUpload"
+    />
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
@@ -121,12 +129,15 @@ import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
 import AppModalShell from "@/components/AppModalShell.vue";
+import DossierDocumentUploadModal from "@/components/DossierDocumentUploadModal.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);
-const fileInput = ref(null);
 const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
+const selectedUploadFile = ref(null);
+const isUploadModalOpen = ref(false);
+const isUploadingDocument = ref(false);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
@@ -236,37 +247,54 @@ const openDocument = async (experiencia) => {
 
 const triggerFileUpload = (itemId) => {
     selectedItemId.value = itemId;
-    fileInput.value.click();
+    selectedUploadFile.value = null;
+    isUploadModalOpen.value = true;
 };
 
-const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
+const handleUploadFilesSelected = (files) => {
+    const [file] = files || [];
     if (!file) return;
-    
+
     if (file.type !== 'application/pdf') {
         alert('Solo se permiten archivos PDF');
-        event.target.value = '';
         return;
     }
-    
+
     if (file.size > 10 * 1024 * 1024) {
         alert('El archivo no puede superar los 10MB');
-        event.target.value = '';
         return;
     }
-    
+
+    selectedUploadFile.value = file;
+};
+
+const clearUploadSelection = () => {
+    selectedUploadFile.value = null;
+};
+
+const closeUploadModal = () => {
+    if (isUploadingDocument.value) return;
+    selectedUploadFile.value = null;
+    isUploadModalOpen.value = false;
+};
+
+const submitSelectedUpload = async () => {
+    if (!selectedUploadFile.value || !selectedItemId.value) return;
+
     try {
-        const response = await DossierService.uploadExperienciaDocument(selectedItemId.value, file);
+        isUploadingDocument.value = true;
+        const response = await DossierService.uploadExperienciaDocument(selectedItemId.value, selectedUploadFile.value);
         if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
+            closeUploadModal();
         }
     } catch (error) {
         console.error('Error al subir documento:', error);
         alert('Error al subir el documento');
+    } finally {
+        isUploadingDocument.value = false;
     }
-    
-    event.target.value = '';
 };
 
 // Cargar datos al montar el componente

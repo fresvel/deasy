@@ -1,6 +1,6 @@
 # Listado de actividades 
 
-0. Revisa el archivo actividad compilador para tener el contexto completo de la implementación.
+0. Revisa el archivo Requisitos02.md para tener el contexto completo de la implementación.
 1. Definir contrato HTTP del microservicio.
 2. Definir contrato de entrada basado en document_version.
 3. Integrar lectura de artifact desde storage.

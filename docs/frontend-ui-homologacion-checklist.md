@@ -1,6 +1,6 @@
 # Homologacion UI Frontend
 
-Estado general: `12/13` hecho
+Estado general: `13/13` hecho
 
 ## Checklist
 
@@ -13,7 +13,7 @@ Estado general: `12/13` hecho
 - [x] 7. Modales globales
 - [x] 8. Drag & drop de archivos
 - [x] 9. Contenedores y encabezados globales
-- [ ] 10. Migracion y validacion por vistas
+- [x] 10. Migracion y validacion por vistas
 - [x] 11. Segunda pasada de revision del punto 6
 - [x] 12. Revision y homologacion final de tags
 - [x] 13. Generalizar menus de los layouts
@@ -215,6 +215,28 @@ Archivos principales:
 
 - [x] 4.1 Revisar que todos los botones visibles en `perfil`, `dashboard` y `admin` usen los componentes globales creados, sin estilos hardcodeados equivalentes.
 - [x] 4.2 Eliminar la dependencia wrapper de `frontend/src/views/admin/components/AdminButton.vue` y migrar consumos directos a `frontend/src/components/AppButton.vue`.
+
+## Punto 10. Migracion y validacion por vistas
+
+### Implementado
+
+- Se completo la adopcion de componentes globales en las vistas objetivo activas: `perfil`, `dashboard`, `admin`, `firmas` y `auth`.
+- Se creo `frontend/src/components/DossierDocumentUploadModal.vue` para unificar la carga de documentos de respaldo del dossier.
+- Se eliminaron los `input type="file"` ocultos que quedaban en las vistas de `perfil` y se migraron a modal global + `PdfDropField`.
+
+### Vistas cerradas en esta pasada
+
+- `frontend/src/views/perfil/TitulosView.vue`
+- `frontend/src/views/perfil/LaboralView.vue`
+- `frontend/src/views/perfil/ReferenciasView.vue`
+- `frontend/src/views/perfil/InvestigacionView.vue`
+- `frontend/src/views/perfil/CertificacionView.vue`
+- `frontend/src/views/perfil/CapacitaciónView.vue`
+
+### Validacion
+
+- `pnpm exec eslint` paso sobre `src/views/perfil`, `src/views/dashboard`, `src/views/admin`, `src/views/funciones`, `src/views/auth`, `src/components` y `src/layouts`.
+- Se hizo un barrido final de `type="file"` en `perfil`; ya no quedan entradas ocultas residuales fuera de `PdfDropField`.
 
 ## Punto 5. Tablas globales
 
