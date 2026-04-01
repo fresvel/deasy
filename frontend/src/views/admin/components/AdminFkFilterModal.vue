@@ -74,7 +74,7 @@
 
 <script setup>
 import { ref } from "vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminButton from "@/components/AppButton.vue";
 import AdminFieldGroup from "@/views/admin/components/AdminFieldGroup.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
 import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";

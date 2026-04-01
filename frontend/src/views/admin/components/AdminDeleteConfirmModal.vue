@@ -10,7 +10,7 @@
 
 <script setup>
 import { ref } from "vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminButton from "@/components/AppButton.vue";
 import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
 defineEmits(["confirm"]);
 const modalRef = ref(null);

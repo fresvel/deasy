@@ -5,22 +5,24 @@
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false">
           
-          <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
-            <button 
+          <div class="deasy-nav-shell shrink-0">
+            <AppButton
+              variant="plain"
               type="button" 
               @click="goAdminHome" 
-              class="flex items-center w-full px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 gap-2"
-              :class="isHomeActive ? 'bg-white text-sky-800 shadow-sm' : 'text-white/90 hover:bg-white/10 hover:text-white'"
+              class-name="deasy-nav-item"
+              :class="isHomeActive ? 'deasy-nav-item--active' : ''"
             >
               <IconHome class="w-5 h-5 shrink-0" />
               <span>Inicio</span>
-            </button>
+            </AppButton>
           </div>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
-            <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
-              <button
-                class="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-white/90 hover:text-white transition-colors"
+            <div v-for="group in groupedTables" :key="group.key" class="deasy-nav-shell">
+              <AppButton
+                variant="plain"
+                class-name="deasy-nav-group-title"
                 type="button"
                 @click="onGroupTitleClick(group)"
               >
@@ -29,100 +31,107 @@
                   <span>{{ group.label }}</span>
                 </div>
                 <IconChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openCategories[group.label] }" />
-              </button>
+              </AppButton>
 
-              <div v-show="openCategories[group.label]" class="flex flex-col gap-1 mt-2 pl-2">
+              <div v-show="openCategories[group.label]" class="deasy-nav-tree">
                 <template v-if="isAcademiaGroup(group)">
-                  <button
+                  <AppButton
                     v-for="item in academyMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isAcademyItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[isAcademyItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openAcademyItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </button>
+                  </AppButton>
                 </template>
                 <template v-else-if="isGestionGroup(group)">
-                  <button
+                  <AppButton
                     v-for="item in gestionMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isGestionItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[isGestionItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openGestionItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </button>
+                  </AppButton>
                 </template>
                 <template v-else-if="isUsuariosGroup(group)">
-                  <button
+                  <AppButton
                     v-for="item in usersMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isUsersItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[isUsersItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openUsersItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </button>
+                  </AppButton>
                 </template>
                 <template v-else-if="isContratosGroup(group)">
-                  <button
+                  <AppButton
                     v-for="item in contractsMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isContractsItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[isContractsItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openContractsItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </button>
+                  </AppButton>
                 </template>
                 <template v-else-if="isSeguridadGroup(group)">
-                  <button
+                  <AppButton
                     v-for="item in securityMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isSecurityItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[isSecurityItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openSecurityItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </button>
+                  </AppButton>
                 </template>
                 <template v-else>
-                  <button
+                  <AppButton
                     v-for="table in group.mainTables"
                     :key="table.table"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[selectedTable?.table === table.table ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="selectTable(table)"
                   >
                     <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
                     <span>{{ table.label }}</span>
-                  </button>
+                  </AppButton>
                   <div v-if="group.supportTables.length" class="text-[0.65rem] font-bold text-white/40 uppercase tracking-widest pl-3 mt-3 mb-1">
                     Relaciones y soporte
                   </div>
-                  <button
+                  <AppButton
                     v-for="table in group.supportTables"
                     :key="table.table"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    variant="plain"
+                    class-name="deasy-nav-item"
+                    :class="[selectedTable?.table === table.table ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="selectTable(table)"
                   >
                     <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
                     <span>{{ table.label }}</span>
-                  </button>
+                  </AppButton>
                 </template>
               </div>
             </div>
@@ -183,7 +192,7 @@
                
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
                  <template v-if="showAcademyCrudIndex">
-                    <button v-for="table in academyCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    <AppButton v-for="table in academyCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -201,12 +210,12 @@
                       <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
                         {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
                       </p>
-                    </button>
+                    </AppButton>
                     <div v-if="!academyCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showAcademiaIndex">
-                    <button v-for="item in academyMenuItems" :key="item.key" type="button" @click="openAcademyItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                    <AppButton v-for="item in academyMenuItems" :key="item.key" variant="plain" type="button" @click="openAcademyItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -221,11 +230,11 @@
                           <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
-                    </button>
+                    </AppButton>
                  </template>
 
                  <template v-else-if="showGestionCrudIndex">
-                    <button v-for="table in gestionCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    <AppButton v-for="table in gestionCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -243,8 +252,8 @@
                       <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
                         {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
                       </p>
-                    </button>
-                    <button v-if="selectedGestionCrudItem?.key === 'plantillas'" type="button" @click="openTemplateArtifactDraftFromHome" class="group bg-gradient-to-br from-sky-50 to-white border border-sky-200 rounded-2xl p-5 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    </AppButton>
+                    <AppButton v-if="selectedGestionCrudItem?.key === 'plantillas'" variant="plain" type="button" @click="openTemplateArtifactDraftFromHome" class-name="group bg-gradient-to-br from-sky-50 to-white border border-sky-200 rounded-2xl p-5 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex items-start gap-4">
                         <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                           <component :is="resolveIcon('plus')" class="w-6 h-6" />
@@ -257,12 +266,12 @@
                       <div class="mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none bg-sky-100 text-sky-700 border border-sky-200">
                         Acción especial
                       </div>
-                    </button>
+                    </AppButton>
                     <div v-if="!gestionCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showGestionesIndex">
-                    <button v-for="item in gestionMenuItems" :key="item.key" type="button" @click="openGestionItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                    <AppButton v-for="item in gestionMenuItems" :key="item.key" variant="plain" type="button" @click="openGestionItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -277,11 +286,11 @@
                           <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
-                    </button>
+                    </AppButton>
                  </template>
 
                  <template v-else-if="showUsersCrudIndex">
-                    <button v-for="table in usersCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    <AppButton v-for="table in usersCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -299,12 +308,12 @@
                       <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
                         {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
                       </p>
-                    </button>
+                    </AppButton>
                     <div v-if="!usersCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showUsersIndex">
-                    <button v-for="item in usersMenuItems" :key="item.key" type="button" @click="openUsersItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                    <AppButton v-for="item in usersMenuItems" :key="item.key" variant="plain" type="button" @click="openUsersItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -319,11 +328,11 @@
                           <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
-                    </button>
+                    </AppButton>
                  </template>
 
                  <template v-else-if="showContractsCrudIndex">
-                    <button v-for="table in contractsCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    <AppButton v-for="table in contractsCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -341,12 +350,12 @@
                       <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
                         {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
                       </p>
-                    </button>
+                    </AppButton>
                     <div v-if="!contractsCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showContractsIndex">
-                    <button v-for="item in contractsMenuItems" :key="item.key" type="button" @click="openContractsItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                    <AppButton v-for="item in contractsMenuItems" :key="item.key" variant="plain" type="button" @click="openContractsItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -361,11 +370,11 @@
                           <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
-                    </button>
+                    </AppButton>
                  </template>
 
                  <template v-else-if="showSecurityCrudIndex">
-                    <button v-for="table in securityCrudTables" :key="table.table" type="button" @click="selectTable(table)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    <AppButton v-for="table in securityCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -383,12 +392,12 @@
                       <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
                         {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
                       </p>
-                    </button>
+                    </AppButton>
                     <div v-if="!securityCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showSecurityIndex">
-                    <button v-for="item in securityMenuItems" :key="item.key" type="button" @click="openSecurityItem(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                    <AppButton v-for="item in securityMenuItems" :key="item.key" variant="plain" type="button" @click="openSecurityItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -403,11 +412,11 @@
                           <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
                         </div>
                       </div>
-                    </button>
+                    </AppButton>
                  </template>
 
                  <template v-else-if="showGroupCrudIndex">
-                    <button v-for="item in selectedGroupCrudTables" :key="item.table" type="button" @click="selectTable(item)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
+                    <AppButton v-for="item in selectedGroupCrudTables" :key="item.table" variant="plain" type="button" @click="selectTable(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -425,12 +434,12 @@
                       <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
                         {{ item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
                       </p>
-                    </button>
+                    </AppButton>
                     <div v-if="!selectedGroupCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles en este grupo.</div>
                  </template>
                  
                  <template v-else>
-                    <button v-for="group in homeGroups" :key="group.key" type="button" @click="openGroupFromHome(group)" class="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
+                    <AppButton v-for="group in homeGroups" :key="group.key" variant="plain" type="button" @click="openGroupFromHome(group)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
                       <div class="flex flex-col h-full w-full">
                         <div class="flex items-start justify-between mb-4">
                           <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
@@ -445,7 +454,7 @@
                           <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ descriptionForGroup(group) }}</span>
                         </div>
                       </div>
-                    </button>
+                    </AppButton>
                  </template>
                </div>
             </template>
@@ -492,6 +501,7 @@ import {
 
 import axios from "axios";
 import { useRouter } from "vue-router";
+import AppButton from "@/components/AppButton.vue";
 import AppWorkspaceSidebar from "@/layouts/AppWorkspaceSidebar.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";

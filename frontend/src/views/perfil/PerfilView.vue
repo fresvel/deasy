@@ -2,32 +2,40 @@
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <app-workspace-header :menu-open="vmenu" current-section="perfil" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace">
         <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-          <button
+          <AppButton
             v-for="(item, index) in areas"
             :key="index"
-            class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]" :title="item.name"
-            :class="item.active ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
+            variant="plain"
+            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] group"
+            :title="item.name"
+            :class="item.active ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
             type="button"
             @click="onheadClick(item)"
           >
-             <component :is="resolveAreaIcon(item.name)" class="w-5 h-5 shrink-0" />
+            <span
+              class="deasy-nav-chip__icon"
+              :class="item.active ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'"
+            >
+              <component :is="resolveAreaIcon(item.name)" class="w-5 h-5 shrink-0" />
+            </span>
             <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
-          </button>
+          </AppButton>
         </div>
     </app-workspace-header>
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :signature-marker="signatureMarker" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
-        <div class="flex flex-col">
-            <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white px-2">
+        <div class="deasy-nav-group">
+            <div class="deasy-nav-meta mt-3 mb-2">
                 Secciones
             </div>
 
-            <div class="flex flex-col gap-1 mt-2">
-              <div class="flex flex-col mb-1">
-                <button
-                  class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
-                  :class="{ 'bg-white/10 font-bold': showCoordinacion }"
+            <div class="deasy-nav-group mt-2">
+              <div class="deasy-nav-shell">
+                <AppButton
+                  variant="plain"
+                  class-name="deasy-nav-group-title"
+                  :class="{ 'deasy-nav-item--subtle-active': showCoordinacion }"
                   type="button"
                   @click="showCoordinacion = !showCoordinacion"
                 >
@@ -35,12 +43,13 @@
                       <IconId class="w-5 h-5 shrink-0 opacity-90" />
                       <span class="truncate">Coordinación</span>
                     </span>
-                </button>
+                </AppButton>
 
-                <div v-show="showCoordinacion" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
-                    <button v-for="(item, index) of mainmenu" :key="index"
-                      class="w-full text-left bg-transparent border-none py-2 px-3 rounded-lg text-sm transition-all focus:outline-none flex flex-row items-center justify-between hover:bg-white/10 hover:text-white"
-                      :class="item.active ? 'bg-white text-sky-700 font-bold shadow-sm shadow-sky-900/20' : 'text-white/80'"
+                <div v-show="showCoordinacion" class="deasy-nav-tree">
+                    <AppButton v-for="(item, index) of mainmenu" :key="index"
+                      variant="plain"
+                      class-name="deasy-nav-item justify-between"
+                      :class="item.active ? 'deasy-nav-item--active' : ''"
                       type="button"
                       @click="onmenuClick(item.label)">
                       <span class="flex items-center gap-2 truncate">
@@ -50,14 +59,15 @@
                       <span v-if="item.key" class="bg-sky-500/20 text-white text-xs py-0.5 px-2 rounded-full font-bold ml-2 shrink-0">
                         {{ dossierCounts[item.key] ?? 0 }}
                       </span>
-                    </button>
+                    </AppButton>
                 </div>
               </div>
 
-              <div class="flex flex-col mb-1">
-                <button
-                  class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
-                  :class="{ 'bg-white/10 font-bold': showDocencia }"
+              <div class="deasy-nav-shell">
+                <AppButton
+                  variant="plain"
+                  class-name="deasy-nav-group-title"
+                  :class="{ 'deasy-nav-item--subtle-active': showDocencia }"
                   type="button"
                   @click="showDocencia = !showDocencia"
                 >
@@ -65,8 +75,8 @@
                     <IconCertificate class="w-5 h-5 shrink-0 opacity-90" />
                     <span class="truncate">Docencia</span>
                   </span>
-                </button>
-                <div v-show="showDocencia" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
+                </AppButton>
+                <div v-show="showDocencia" class="deasy-nav-tree">
                 </div>
               </div>
             </div>
@@ -114,6 +124,7 @@ import axios from 'axios';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
     import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
+    import AppButton from '@/components/AppButton.vue';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
       IconInfoCircle, IconMenu2, IconHome

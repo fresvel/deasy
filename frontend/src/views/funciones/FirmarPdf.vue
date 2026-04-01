@@ -667,7 +667,7 @@
   import PdfDropField from '@/components/PdfDropField.vue';
   import UserCertificatesPanel from '@/components/UserCertificatesPanel.vue';
   import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
-  import AdminButton from '@/views/admin/components/AdminButton.vue';
+  import AdminButton from '@/components/AppButton.vue';
   import MultiSignerPanel from '@/views/funciones/MultiSignerPanel.vue';
 
   const props = defineProps({

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminButton from "@/components/AppButton.vue";
 
 defineProps({
   primaryLabel: {

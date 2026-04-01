@@ -35,7 +35,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminButton from "@/components/AppButton.vue";
 
 const props = defineProps({
   title: {

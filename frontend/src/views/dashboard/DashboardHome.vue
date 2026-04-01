@@ -2,33 +2,31 @@
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="navigateTo('firmar')">
         <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-          <div
-            class="inline-flex items-center justify-center lg:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
-            :class="selectedGroupId === null ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
-            role="button"
-            tabindex="0"
+          <AppButton
+            variant="plain"
+            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] group"
+            :class="selectedGroupId === null ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
+            type="button"
             @click="selectConsolidated"
-            @keydown.enter="selectConsolidated"
           >
-            <span class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-lg shrink-0 border-none" :class="selectedGroupId === null ? 'bg-sky-600/10' : 'bg-white/20'">
+            <span class="deasy-nav-chip__icon" :class="selectedGroupId === null ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
               <IconGlobe class="w-5 h-5" />
             </span>
             <div class="min-w-0 hidden lg:block flex-1">
               <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Consolidado</div>
             </div>
-          </div>
+          </AppButton>
 
-          <div
+          <AppButton
             v-for="group in unitGroups"
             :key="group.id"
-            class="inline-flex items-center justify-center lg:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]"
-             :class="group.id === selectedGroupId ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
-            role="button"
-            tabindex="0"
+            variant="plain"
+            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] group"
+            :class="group.id === selectedGroupId ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
+            type="button"
             @click="selectGroup(group)"
-            @keydown.enter="selectGroup(group)"
           >
-            <span class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-lg shrink-0 border-none" :class="group.id === selectedGroupId ? 'bg-sky-600/10' : 'bg-white/20'">
+            <span class="deasy-nav-chip__icon" :class="group.id === selectedGroupId ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
               <component :is="iconForUnitGroup(group)" class="w-5 h-5" />
             </span>
             <div class="min-w-0 hidden lg:block flex-1">
@@ -36,7 +34,7 @@
                 {{ group.label || group.name }}
               </div>
             </div>
-          </div>
+          </AppButton>
         </div>
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
@@ -45,26 +43,27 @@
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <app-workspace-sidebar :show="showMenu" :photo="userPhoto" :username="userFullName" @close-mobile="showMenu = false">
-        <div class="flex flex-col">
-          <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white">
+        <div class="deasy-nav-group">
+          <div class="deasy-nav-meta mt-3 mb-2">
             {{ menuContextLabel }}
           </div>
 
-          <div v-if="menuLoading" class="text-sm my-2 text-white">
+          <div v-if="menuLoading" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
             Cargando menú...
           </div>
-          <div v-else-if="menuError" class="text-sm my-2 text-white">
+          <div v-else-if="menuError" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
             {{ menuError }}
           </div>
-          <div v-else-if="!menuCargos.length" class="bg-white/20 rounded-xl text-white text-sm my-2 py-2 px-3">
+          <div v-else-if="!menuCargos.length" class="deasy-nav-feedback deasy-nav-feedback--muted my-2">
             No hay cargos asignados para mostrar.
           </div>
 
-          <div v-else class="flex flex-col gap-1 mt-2">
-            <div v-for="cargo in menuCargos" :key="cargo.id" class="flex flex-col mb-1">
-              <button
-                class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
-                :class="{ 'bg-white/10 font-bold': cargo.open }"
+          <div v-else class="deasy-nav-group mt-2">
+            <div v-for="cargo in menuCargos" :key="cargo.id" class="deasy-nav-shell">
+              <AppButton
+                variant="plain"
+                class-name="deasy-nav-group-title"
+                :class="{ 'deasy-nav-item--subtle-active': cargo.open }"
                 type="button"
                 @click="toggleCargo(cargo)"
               >
@@ -72,14 +71,15 @@
                   <component :is="iconForCargo(cargo.name)" class="w-5 h-5 shrink-0 opacity-90" />
                   <span class="truncate">{{ cargo.name }}</span>
                 </span>
-              </button>
+              </AppButton>
 
-              <div v-show="cargo.open" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
-                <button
+              <div v-show="cargo.open" class="deasy-nav-tree">
+                <AppButton
                   v-for="process in cargo.processes"
                   :key="process.id"
-                  class="w-full text-left bg-transparent border-none py-2 px-3 rounded-lg text-sm transition-all focus:outline-none flex flex-row items-center gap-2 hover:bg-white/10 hover:text-white"
-                  :class="selectedProcessKey === String(process.process_definition_id) ? 'bg-white text-sky-700 font-bold shadow-sm shadow-sky-900/20' : 'text-white/80'"
+                  variant="plain"
+                  class-name="deasy-nav-item"
+                  :class="selectedProcessKey === String(process.process_definition_id) ? 'deasy-nav-item--active' : ''"
                   type="button"
                   @click="handleProcessSelect(process, cargo)"
                 >
@@ -87,11 +87,11 @@
                   <span class="truncate block w-full">{{ process.name }}</span>
                   <span
                     v-if="process.access_source === 'flow'"
-                    class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-white/20 text-white/90 shrink-0"
+                    class="ml-auto inline-flex items-center rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white/90 shrink-0"
                   >
                     Derivado
                   </span>
-                </button>
+                </AppButton>
                 <div v-if="!cargo.processes.length" class="text-sm text-white/50 italic px-3 py-1">
                   Sin procesos asignados.
                 </div>
@@ -120,9 +120,9 @@
               Este es tu panel general. Revisa el estado de tus módulos, firmas pendientes y completa tu perfil académico.
             </p>
           </div>
-          <button class="relative z-10 bg-white text-sky-700 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-500/30 whitespace-nowrap px-5 py-2.5 text-sm rounded-full font-bold shadow-lg shadow-sky-900/20 transition-all active:scale-[0.98]" @click="navigateTo('perfil')">
+          <AppButton variant="secondary" size="md" class-name="relative z-10 whitespace-nowrap" @click="navigateTo('perfil')">
             Ir a mi perfil
-          </button>
+          </AppButton>
         </section>
 
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
@@ -134,9 +134,9 @@
             <p class="text-slate-500 text-xs md:text-sm font-medium flex-1 m-0">{{ card.description }}</p>
             <footer class="flex justify-between items-center mt-1">
               <span class="font-extrabold text-slate-800 leading-none">{{ card.count }}</span>
-              <button class="text-sky-600 hover:text-sky-700 text-sm font-bold bg-transparent border-none p-0 inline-flex items-center gap-1.5 transition-colors group" @click="navigateTo(card.route)">
+              <AppButton variant="softPrimary" size="sm" class-name="group border-0 bg-transparent p-0 shadow-none hover:bg-transparent" @click="navigateTo(card.route)">
                 {{ card.action }} <IconArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </AppButton>
             </footer>
           </article>
         </section>
@@ -144,9 +144,9 @@
         <section class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
           <header class="flex items-center justify-between gap-4 mb-5">
             <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Resumen rápido</h2>
-            <button class="hidden sm:inline-flex bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-sky-700 px-4 py-2 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-4 focus:ring-slate-100 active:scale-[0.98]" @click="navigateTo('perfil')">
+            <AppButton variant="secondary" size="md" class-name="hidden sm:inline-flex" @click="navigateTo('perfil')">
               Gestionar perfil
-            </button>
+            </AppButton>
           </header>
 
           <!-- Vista móvil: Tarjetas -->
@@ -159,42 +159,43 @@
                 </div>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm shrink-0" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
               </div>
-              <button class="w-full mt-1 bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white py-2 rounded-lg text-xs font-bold transition-all" @click="navigateTo(row.route)">
+              <AppButton variant="softPrimary" size="sm" class-name="mt-1 w-full" @click="navigateTo(row.route)">
                 Gestionar sección
-              </button>
+              </AppButton>
             </div>
-            <button class="w-full mt-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none" @click="navigateTo('perfil')">
+            <AppButton variant="secondary" size="md" class-name="mt-2 w-full" @click="navigateTo('perfil')">
               Gestionar perfil completo
-            </button>
+            </AppButton>
           </div>
 
           <!-- Vista desktop: Tabla -->
-          <div class="hidden sm:block overflow-x-auto w-full rounded-[1rem] border border-slate-100">
-            <table class="w-full text-left border-collapse min-w-[600px] text-sm">
-              <thead>
-                <tr class="bg-slate-50/80 border-b border-slate-100">
-                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider">Sección</th>
-                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider">Registros</th>
-                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider">Estado</th>
-                  <th class="py-3.5 px-5 font-bold text-slate-600 text-[13px] uppercase tracking-wider text-right">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in summaryRows" :key="'desk-' + row.section" class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                  <td class="py-3.5 px-5 font-semibold text-slate-800">{{ row.section }}</td>
-                  <td class="py-3.5 px-5 font-medium text-slate-600">{{ row.count }}</td>
-                  <td class="py-3.5 px-5">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
-                  </td>
-                  <td class="py-3.5 px-5 text-right">
-                    <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all" @click="navigateTo(row.route)">
-                      Gestionar
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <AppDataTable
+            class="hidden sm:block"
+            responsive-class="deasy-table-responsive hidden sm:block"
+            :fields="summaryTableFields"
+            :rows="summaryRows"
+            :row-key="(row) => `desk-${row.section}`"
+            empty-text="No hay secciones disponibles."
+            actions-label="ACCIÓN"
+          >
+            <template #cell="{ row, field }">
+              <template v-if="field.name === 'status'">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm" :class="getStatusTailwindClass(row.statusClass)">
+                  {{ row.status }}
+                </span>
+              </template>
+              <template v-else>
+                {{ row[field.name] }}
+              </template>
+            </template>
+            <template #actions="{ row }">
+              <div class="text-right">
+                <AppButton variant="softPrimary" size="sm" @click="navigateTo(row.route)">
+                  Gestionar
+                </AppButton>
+              </div>
+            </template>
+          </AppDataTable>
         </section>
         </template>
 
@@ -217,17 +218,19 @@
                 </p>
               </div>
               <div class="flex flex-col sm:flex-row md:flex-col gap-3 items-start md:items-end justify-start relative z-10 shrink-0">
-                <button class="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none" type="button" @click="clearSelectedProcess">
+                <AppButton variant="secondary" size="md" class-name="w-full sm:w-auto" type="button" @click="clearSelectedProcess">
                   Volver al panel general
-                </button>
-                <button
-                  class="w-full sm:w-auto bg-white text-sky-700 hover:bg-sky-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                </AppButton>
+                <AppButton
+                  variant="primary"
+                  size="md"
+                  class-name="w-full sm:w-auto"
                   type="button"
                   :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
                   @click="openTaskLaunchModal"
                 >
                   Crear tarea
-                </button>
+                </AppButton>
               </div>
             </section>
 
@@ -275,14 +278,16 @@
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
                       <p class="text-slate-500 text-sm mt-1 mb-0 font-medium">Solo se muestran las tareas donde participas o que creaste manualmente.</p>
                     </div>
-                    <button
-                      class="shrink-0 bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    <AppButton
+                      variant="primary"
+                      size="md"
+                      class-name="shrink-0"
                       type="button"
                       :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
                       @click="openTaskLaunchModal"
                     >
                       Crear tarea
-                    </button>
+                    </AppButton>
                   </header>
 
                   <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
@@ -365,96 +370,105 @@
                             </div>
                           </div>
                           <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-                            <button
+                            <AppButton
                               v-if="shouldShowStartDeliverable(item)"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white"
+                              variant="softPrimary"
+                              size="sm"
                               type="button"
                               :disabled="processingFillItemId === item.id"
                               @click="startDeliverableFlow(item)"
                             >
                               {{ processingFillItemId === item.id ? 'Iniciando...' : 'Iniciar' }}
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="shouldShowUploadDeliverable(item)"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                              :class="item.actions?.can_upload_deliverable && !isUploadingDeliverable ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              variant="softNeutral"
+                              size="sm"
+                              :class="item.actions?.can_upload_deliverable && !isUploadingDeliverable ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!item.actions?.can_upload_deliverable || isUploadingDeliverable"
                               @click="handleDeliverableFutureAction('upload_deliverable', item)"
                             >
                               {{ isUploadingDeliverable ? 'Subiendo archivo...' : getUploadActionLabel(item) }}
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="getDeliverableSubject(item).preloadFilePath"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                              variant="softNeutral"
+                              size="sm"
                               type="button"
                               @click="previewDeliverableFile(item)"
                             >
                               Ver archivo
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="getDeliverableSubject(item).preloadFilePath"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                              variant="softNeutral"
+                              size="sm"
                               type="button"
                               @click="downloadDeliverableFile(item)"
                             >
                               Descargar archivo
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="shouldShowTemplateDownload(item)"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                              :class="item.actions?.can_download_template ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              variant="softNeutral"
+                              size="sm"
+                              :class="item.actions?.can_download_template ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!item.actions?.can_download_template"
                               @click="handleDeliverableFutureAction('download_template', item)"
                             >
                               Descargar plantilla
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="shouldShowManageFill(item)"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                              :class="item.actions?.can_manage_fill && processingFillItemId !== item.id ? 'bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              variant="softPrimary"
+                              size="sm"
+                              :class="item.actions?.can_manage_fill && processingFillItemId !== item.id ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!item.actions?.can_manage_fill || processingFillItemId === item.id"
                               @click="handleDeliverableFutureAction('manage_fill', item)"
                             >
                               {{ processingFillItemId === item.id ? 'Procesando llenado...' : 'Gestionar llenado' }}
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="shouldShowSignatureFlow(item)"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                              :class="item.actions?.can_review_signature_flow ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              variant="softNeutral"
+                              size="sm"
+                              :class="item.actions?.can_review_signature_flow ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!item.actions?.can_review_signature_flow"
                               @click="handleDeliverableFutureAction('review_signature_flow', item)"
                             >
                               Flujo de firmas
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               v-if="shouldShowSign(item)"
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                              :class="item.actions?.can_sign && item.actions?.implemented?.sign && getDeliverableSubject(item).preloadPdfPath ? 'bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              variant="softWarning"
+                              size="sm"
+                              :class="item.actions?.can_sign && item.actions?.implemented?.sign && getDeliverableSubject(item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!(item.actions?.can_sign && item.actions?.implemented?.sign && getDeliverableSubject(item).preloadPdfPath)"
                               @click="openDocumentSignFlow(item)"
                             >
                               Firmar
-                            </button>
+                            </AppButton>
                             <span
                               v-if="shouldShowPdfRequiredHint(item)"
                               class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-500"
                             >
                               La firma requiere PDF
                             </span>
-                            <button
-                              class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                              :class="item.actions?.can_open_process_chat ? 'bg-white border border-dashed border-slate-300 text-slate-600 hover:bg-slate-50' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                            <AppButton
+                              variant="softNeutral"
+                              size="sm"
+                              :class="item.actions?.can_open_process_chat ? 'border-dashed' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!item.actions?.can_open_process_chat"
                               @click="handleDeliverableFutureAction('process_chat', item)"
                             >
                               Chat del proceso
-                            </button>
+                            </AppButton>
                           </div>
                         </div>
                       </div>
@@ -510,9 +524,9 @@
                         <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Flujo de firmas</h2>
                         <p class="text-slate-500 text-sm mt-1 mb-0 font-medium leading-snug">Solicitudes de firma que te corresponden.</p>
                       </div>
-                      <button class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm self-start" type="button" @click="navigateTo('firmar')">
+                      <AppButton variant="secondary" size="md" class-name="self-start" type="button" @click="navigateTo('firmar')">
                         Ir a firmas
-                      </button>
+                      </AppButton>
                     </header>
                     <div v-if="!selectedProcessPanel.signatures.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
                       No tienes solicitudes de firma activas.
@@ -537,13 +551,15 @@
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
                       <p class="text-slate-500 text-sm m-0 font-medium">Centro documental general de esta definición. Aquí luego podrás filtrar y consultar todos tus documentos.</p>
                     </div>
-                    <button
-                      class="bg-sky-50 text-sky-700 hover:bg-sky-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm self-start"
+                    <AppButton
+                      variant="secondary"
+                      size="md"
+                      class-name="self-start"
                       type="button"
                       @click="openDocumentCenter"
                     >
                       Abrir gestor documental
-                    </button>
+                    </AppButton>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
@@ -628,9 +644,9 @@
             <h2 class="text-2xl font-bold text-slate-800 m-0 tracking-tight">Crear tarea manual</h2>
             <p class="text-slate-500 text-sm font-medium mt-1 mb-0">{{ selectedProcessPanel?.definition?.name || 'Definición seleccionada' }}</p>
           </div>
-          <button class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-200/50 hover:bg-slate-200 text-slate-600 transition-colors focus:outline-none" type="button" @click="closeTaskLaunchModal">
+          <AppButton variant="close" class-name="bg-slate-200/50 hover:bg-slate-200" type="button" @click="closeTaskLaunchModal">
             <IconX class="w-5 h-5" />
-          </button>
+          </AppButton>
         </header>
 
         <div class="p-6 lg:p-8 overflow-y-auto flex flex-col gap-6 custom-scrollbar">
@@ -687,12 +703,12 @@
         </div>
 
         <footer class="px-6 lg:px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4 shrink-0">
-          <button class="bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-800 text-slate-600 px-6 py-3 rounded-full text-sm font-bold transition-all focus:outline-none" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+          <AppButton variant="secondary" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
             Cancelar
-          </button>
-          <button class="bg-gradient-to-br from-sky-700 to-sky-600 hover:from-sky-800 hover:to-sky-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
+          </AppButton>
+          <AppButton variant="primary" size="lg" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
             {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
-          </button>
+          </AppButton>
         </footer>
       </div>
     </div>
@@ -707,9 +723,9 @@
     >
       <FirmarPdf ref="embeddedSignerRef" embedded />
       <template #footer>
-        <AdminButton variant="secondary" data-modal-dismiss>
+        <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
-        </AdminButton>
+        </AppButton>
       </template>
     </AdminModalShell>
 
@@ -749,9 +765,9 @@
         </div>
       </div>
       <template #footer>
-        <AdminButton variant="secondary" data-modal-dismiss>
+        <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
-        </AdminButton>
+        </AppButton>
       </template>
     </AdminModalShell>
 
@@ -864,56 +880,61 @@
               Este paso corresponde a otro responsable. Desde aquí solo puedes revisar el estado del flujo.
             </p>
             <div class="flex flex-wrap gap-2">
-              <button
+              <AppButton
                 v-if="canReplaceFillFile"
-                class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                :class="isUploadingDeliverable ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
+                variant="softNeutral"
+                size="sm"
+                :class="isUploadingDeliverable ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
                 type="button"
                 :disabled="isUploadingDeliverable"
                 @click="triggerFillWorkflowFileReplace"
               >
                 {{ isUploadingDeliverable ? 'Subiendo archivo...' : getUploadActionLabel(fillWorkflowState.subject) }}
-              </button>
-              <button
+              </AppButton>
+              <AppButton
                 v-if="canApproveFillRequest"
-                class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                :class="fillWorkflowSubmitting ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white'"
+                variant="softSuccess"
+                size="sm"
+                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('approve')"
               >
                 {{ fillApproveActionLabel }}
-              </button>
-              <button
+              </AppButton>
+              <AppButton
                 v-if="canReturnFillRequest"
-                class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                :class="fillWorkflowSubmitting ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white'"
+                variant="softWarning"
+                size="sm"
+                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('return')"
               >
                 Devolver
-              </button>
-              <button
+              </AppButton>
+              <AppButton
                 v-if="canRejectFillRequest"
-                class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                :class="fillWorkflowSubmitting ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white'"
+                variant="softDanger"
+                size="sm"
+                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('reject')"
               >
                 Rechazar
-              </button>
-              <button
+              </AppButton>
+              <AppButton
                 v-if="canCancelFillRequest"
-                class="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                :class="fillWorkflowSubmitting ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-100 text-slate-700 hover:bg-slate-700 hover:text-white'"
+                variant="softNeutral"
+                size="sm"
+                :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
                 type="button"
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('cancel')"
               >
                 Cancelar solicitud
-              </button>
+              </AppButton>
             </div>
           </div>
 
@@ -933,9 +954,9 @@
         </div>
       </div>
       <template #footer>
-        <AdminButton variant="secondary" data-modal-dismiss>
+        <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
-        </AdminButton>
+        </AppButton>
       </template>
     </AdminModalShell>
 
@@ -963,9 +984,9 @@
         </p>
       </div>
       <template #footer>
-        <AdminButton variant="secondary" data-modal-dismiss>
+        <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
-        </AdminButton>
+        </AppButton>
       </template>
     </AdminModalShell>
 
@@ -989,12 +1010,12 @@
         </div>
       </div>
       <template #footer>
-        <AdminButton variant="secondary" data-modal-dismiss>
+        <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
-        </AdminButton>
-        <AdminButton variant="primary" @click="downloadPreviewedFile">
+        </AppButton>
+        <AppButton variant="primary" @click="downloadPreviewedFile">
           Descargar archivo
-        </AdminButton>
+        </AppButton>
       </template>
     </AdminModalShell>
 
@@ -1016,13 +1037,14 @@ import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
 import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
 import SNavMenu from '@/layouts/SNavMenu.vue';
+import AppDataTable from '@/components/AppDataTable.vue';
 import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
 import { API_ROUTES } from '@/services/apiConfig';
 import { Modal } from '@/utils/modalController';
 import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
-import AdminButton from '@/views/admin/components/AdminButton.vue';
+import AppButton from '@/components/AppButton.vue';
 
 import {
   IconGlobe,
@@ -1138,6 +1160,12 @@ const menuContextLabel = computed(() => {
 });
 
 const isSigningView = computed(() => route.query?.view === 'firmar');
+
+const summaryTableFields = [
+  { name: 'section', label: 'Sección' },
+  { name: 'count', label: 'Registros' },
+  { name: 'status', label: 'Estado' }
+];
 
 const quickStats = ref([
   { label: 'Formación', count: 0, route: 'perfil' },

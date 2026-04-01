@@ -245,8 +245,8 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
-import AdminDataTable from "@/views/admin/components/AdminDataTable.vue";
+import AdminButton from "@/components/AppButton.vue";
+import AdminDataTable from "@/components/AppDataTable.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";
 import AdminTableActions from "@/views/admin/components/AdminTableActions.vue";

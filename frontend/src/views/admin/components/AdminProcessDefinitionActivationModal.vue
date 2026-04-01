@@ -137,8 +137,8 @@
 
 <script setup>
 import { ref } from "vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
-import AdminDataTable from "@/views/admin/components/AdminDataTable.vue";
+import AdminButton from "@/components/AppButton.vue";
+import AdminDataTable from "@/components/AppDataTable.vue";
 import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
 
 defineProps({

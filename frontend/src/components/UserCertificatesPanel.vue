@@ -134,7 +134,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import PdfDropField from "@/components/PdfDropField.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminButton from "@/components/AppButton.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const props = defineProps({

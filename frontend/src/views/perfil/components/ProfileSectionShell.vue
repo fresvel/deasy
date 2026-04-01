@@ -11,15 +11,17 @@
           <p class="mt-1 text-sm text-slate-500 font-medium">{{ subtitle }}</p>
         </div>
         
-        <button 
-          v-if="showAdd" 
-          class="w-full sm:w-auto flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 hover:-translate-y-0.5 shrink-0" 
-          type="button" 
+        <AppButton
+          v-if="showAdd"
+          variant="primary"
+          size="md"
+          class-name="w-full sm:w-auto shrink-0"
+          type="button"
           @click="$emit('add')"
         >
           <IconPlus class="w-4 h-4 stroke-[2.5]" />
           {{ addLabel }}
-        </button>
+        </AppButton>
       </header>
 
       <!-- Contenido Principal -->
@@ -34,6 +36,7 @@
 <script setup>
 import { defineProps, defineEmits } from 'vue';
 import { IconPlus } from '@tabler/icons-vue';
+import AppButton from '@/components/AppButton.vue';
 
 defineProps({
   title: {

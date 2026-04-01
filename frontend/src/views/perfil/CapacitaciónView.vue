@@ -117,17 +117,17 @@
         <div class="profile-dialog-panel">
           <div class="profile-confirm-header">
             <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
+            <AppButton type="button" variant="close" class-name="absolute right-4 top-4 z-10" data-modal-dismiss aria-label="Close">
               <span class="text-xl leading-none">&times;</span>
-            </button>
+            </AppButton>
           </div>
           <div class="profile-confirm-body">
             ¿Deseas eliminar la capacitación
             <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
           </div>
           <div class="profile-confirm-footer">
-            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
+            <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
+            <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AppButton from "@/components/AppButton.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);

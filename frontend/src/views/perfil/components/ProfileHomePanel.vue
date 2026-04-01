@@ -21,10 +21,11 @@
 
     <!-- Sections Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <button
+      <AppButton
         v-for="section in sectionCards"
         :key="section.label"
-        class="group bg-white rounded-xl border border-slate-200 p-5 text-left flex items-start gap-4 transition-all hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 hover:-translate-y-1"
+        variant="plain"
+        class-name="group bg-white rounded-xl border border-slate-200 p-5 text-left flex items-start gap-4 transition-all hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 hover:-translate-y-1"
         type="button"
         @click="$emit('navigate-section', section.label)"
       >
@@ -38,13 +39,14 @@
             {{ section.meta }}
           </span>
         </span>
-      </button>
+      </AppButton>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, defineProps, defineEmits } from "vue";
+import AppButton from "@/components/AppButton.vue";
 import { 
   IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe 
 } from '@tabler/icons-vue';
