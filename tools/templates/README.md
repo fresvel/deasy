@@ -6,18 +6,25 @@ Este modulo reemplaza al repo externo `pucese-templates` como fuente integrada d
 
 - Fuente: `tools/templates/templates/`
 - Semillas: `tools/templates/seeds/latex/`
+- Patrones reusables: `tools/templates/patterns/`
 - Dist generado: `tools/templates/dist/Plantillas/`
 - CLI: `node tools/templates/cli.mjs`
+- TUI: `node tools/templates/tui.mjs` o `node tools/templates/cli.mjs tui`
 
 ## Comandos base
 
 - `node tools/templates/cli.mjs new --key investigacion/formativa/informe-docente`
 - `node tools/templates/cli.mjs version --key investigacion/formativa/informe-docente --from 1.0.0 --to 1.0.1`
 - `node tools/templates/cli.mjs render --key investigacion/formativa/informe-docente --version 1.0.0`
+- `node tools/templates/cli.mjs prepare-runtime --key investigacion/formativa/informe-docente --version 1.0.0 --runtime /tmp/runtime.json`
 - `node tools/templates/cli.mjs package`
 - `node tools/templates/cli.mjs publish`
+- `node tools/templates/tui.mjs`
 
 ## Publicacion
+
+La CLI sigue siendo útil para automatización y scripts. La TUI se agrega como una capa interactiva
+para navegar templates, versiones, seeds y operaciones comunes sin recordar todas las banderas.
 
 `publish` empaqueta (salvo que uses `--skip-package`) y sube directo a MinIO usando el servicio Docker `minio-publish`, sin pasar por `docker/minio/import/`. La publicacion de templates va al bucket `deasy-templates`, bajo `System/`.
 
@@ -55,6 +62,52 @@ definicion de proceso:
    - Aqui vinculas una definicion de proceso con uno o varios artifacts publicados.
    - Si el registro tiene `creates_task = 1`, esa plantilla podra generar tareas al instanciar
      un periodo.
+
+## Metadata de flujos y dependencias
+
+Los artifacts ya no deben describir solo el render. A partir de esta migración, `meta.yaml` debe
+ser la fuente de verdad técnica también para el flujo de llenado, el flujo de firmas y las
+dependencias mínimas del template. La base de datos puede sincronizar esa información, pero no debe
+inventarla primero.
+
+Esto significa que cada template versionado debe declarar en `meta.yaml` una estructura mínima de
+`workflows` y `dependencies`. En términos prácticos:
+
+- `workflows.fill` describe la intención técnica del llenado del entregable
+- `workflows.signatures` describe la intención técnica del firmado del entregable
+- `dependencies` declara dependencias técnicas que el artifact necesita para operar o sincronizar
+
+Aquí `dependencies` no significa relaciones relacionales entre tablas de negocio. Ese plano sigue
+perteneciendo al modelo de MariaDB. En `meta.yaml`, `dependencies` debe leerse como dependencia
+técnica del artifact: plantillas base, archivos auxiliares, datos requeridos o cualquier insumo que
+el template necesite para poder renderizarse, llenarse o sincronizarse correctamente.
+
+La CLI ya genera esa estructura por defecto para templates nuevos y el empaquetado valida que
+exista antes de producir `dist/`. Con esto, el `dist` deja de ser solamente un empaquetado visual y
+pasa a ser también un contrato técnico sincronizable hacia MariaDB.
+
+En el caso de templates del sistema basados en Jinja/LaTeX, esa estructura debe existir desde el
+origen para que el artifact se pueda empaquetar. En el caso de templates creados por usuarios con
+formatos como DOCX, XLSX o PDF, también debe ser obligatoria, porque el sistema necesita conocer
+desde el artifact cómo se espera llenar y firmar ese documento, incluso si luego la política de
+negocio se termina de resolver en la definición del proceso.
+
+Cuando varios documentos comparten el mismo esquema de firmas, no conviene duplicarlo a mano en cada
+template. Para eso se deja la carpeta `tools/templates/patterns/`, donde pueden mantenerse patrones
+reusables de campos, anchors y pasos de firma. Esos patrones no reemplazan el `meta.yaml`, pero sí
+sirven como fuente común para materializar estructuras repetidas y para que el compilador futuro
+entienda cómo inyectar tokens y datos reales de firmantes.
+
+En la etapa actual, el uso esperado es mixto. El template puede declarar `pattern_ref` dentro de
+`workflows.signatures` para dejar explícito qué patrón reutilizable adopta, pero sigue manteniendo
+`anchors` y `steps` materializados en su propio `meta.yaml`, porque esa es la forma que hoy
+sincroniza el backend hacia MariaDB. De este modo se gana trazabilidad y validación sin romper el
+flujo operativo vigente.
+
+La conexión práctica de ese patrón con el compilador ya puede empezar por la preparación de payload
+runtime. Para eso existe el comando `prepare-runtime`, que toma `data + meta + schema + runtime` y
+genera un JSON listo para el render Jinja. El detalle del contrato quedó documentado en
+`tools/templates/docs/compiler-runtime-contract.md`.
 
 ## Artifacts de usuario desde el admin
 

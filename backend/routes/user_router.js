@@ -6,7 +6,10 @@ import {
   getUserProcessDefinitionPanel,
   createUserProcessTask,
   getMyProfile,
-  updateMyProfile
+  updateMyProfile,
+  uploadDeliverablePdf,
+  downloadDeliverableTemplate,
+  downloadDeliverableFile
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -42,6 +45,29 @@ const uploadCertificate = multer({
   }
 });
 
+const uploadDeliverable = multer({
+  dest: os.tmpdir(),
+  limits: { fileSize: 30 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const lowerName = file.originalname.toLowerCase();
+    const allowedMimeTypes = new Set([
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/msword",
+      "application/vnd.ms-excel"
+    ]);
+    const allowedExtensions = [".pdf", ".docx", ".xlsx", ".doc", ".xls"];
+    const isAllowed =
+      allowedMimeTypes.has(file.mimetype) ||
+      allowedExtensions.some((extension) => lowerName.endsWith(extension));
+    if (file.fieldname === "file" && isAllowed) {
+      return cb(null, true);
+    }
+    cb(new Error("Solo se permiten archivos PDF, Word o Excel"));
+  }
+});
+
 router.post('/', validatePassword, createUser)
 router.get('/', getUsers)
 
@@ -52,6 +78,22 @@ router.post('/refresh-token', refreshToken)
 router.get('/:id/menu', getUserMenu);
 router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
 router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',
+  authMiddleware,
+  uploadDeliverable.single('file'),
+  uploadDeliverablePdf
+);
+router.get(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/template-download',
+  authMiddleware,
+  downloadDeliverableTemplate
+);
+router.get(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/file',
+  authMiddleware,
+  downloadDeliverableFile
+);
 
 //perfil 
 router.get('/me', authMiddleware, getMyProfile);

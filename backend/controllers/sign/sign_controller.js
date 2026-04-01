@@ -5,10 +5,19 @@ import os from "os";
 import path from "path";
 import { spawn } from "child_process";
 import { pipeline } from "stream/promises";
+import { getMariaDBPool } from "../../config/mariadb.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import UserCertificateRepository from "../../services/auth/UserCertificateRepository.js";
 import { requestSignerJob } from "../../services/infrastructure/rabbit_signer.js";
 import { formatTokenForSigner } from "../../utils/tokenGenerator.js";
+import {
+  getDefaultSignatureTypeId,
+  getSignatureRequestStatusIdByCode,
+  getSignatureStatusIdByCode,
+  SIGNATURE_REQUEST_STATUS,
+  SIGNATURE_STATUS,
+} from "../../services/documents/DocumentWorkflowCatalog.js";
+import { syncDocumentProgressFromDocumentSignature } from "../../services/documents/DocumentProgressService.js";
 import {
   ensureBucketExists,
   getMinioObjectStream,
@@ -19,6 +28,7 @@ import {
 
 const userRepository = new UserRepository();
 const certificateRepository = new UserCertificateRepository();
+const pool = getMariaDBPool();
 const batchJobs = new Map();
 
 const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
@@ -51,7 +61,9 @@ const buildSignContext = async (req) => {
     token: tokenRaw,
     use_timestamp: useTimestampRaw,
     tsa_url: tsaUrlRaw,
-    allow_untrusted_signer: allowUntrustedSignerRaw
+    allow_untrusted_signer: allowUntrustedSignerRaw,
+    signature_request_id: signatureRequestIdRaw,
+    document_version_id: documentVersionIdRaw,
   } = req.body;
   const certificateId = Number(certificateIdRaw);
   if (!certificateId || Number.isNaN(certificateId)) {
@@ -108,7 +120,9 @@ const buildSignContext = async (req) => {
     stampText: stampText.trim(),
     useTimestamp: asBoolean(useTimestampRaw),
     allowUntrustedSigner: asBoolean(allowUntrustedSignerRaw),
-    tsaUrl: String(tsaUrlRaw || "").trim() || undefined
+    tsaUrl: String(tsaUrlRaw || "").trim() || undefined,
+    signatureRequestId: signatureRequestIdRaw ? Number(signatureRequestIdRaw) : null,
+    documentVersionId: documentVersionIdRaw ? Number(documentVersionIdRaw) : null,
   };
 };
 
@@ -299,6 +313,162 @@ const createZipArchive = async (zipPath, sourcePaths) =>
     });
   });
 
+const truncateNote = (value, max = 255) => {
+  const normalized = String(value || "").trim();
+  return normalized ? normalized.slice(0, max) : null;
+};
+
+const deriveSignatureStatusCode = (result) => {
+  const validation = result?.validation || {};
+  if (validation?.performed && validation?.bottomLine === true) {
+    return SIGNATURE_STATUS.SIGNED;
+  }
+  if (validation?.performed && validation?.bottomLine === false) {
+    return SIGNATURE_STATUS.INVALID;
+  }
+  return SIGNATURE_STATUS.FAILED;
+};
+
+const deriveSignatureRequestStatusCode = (signatureStatusCode) =>
+  signatureStatusCode === SIGNATURE_STATUS.SIGNED
+    ? SIGNATURE_REQUEST_STATUS.COMPLETED
+    : SIGNATURE_REQUEST_STATUS.REJECTED;
+
+const getSignatureRequestContext = async (connection, signatureRequestId) => {
+  const [rows] = await connection.query(
+    `SELECT
+       sr.id,
+       sr.assigned_person_id,
+       sr.instance_id,
+       sr.step_id,
+       sfi.document_version_id,
+       sfs.step_type_id
+     FROM signature_requests sr
+     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+     INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+     WHERE sr.id = ?
+     LIMIT 1`,
+    [signatureRequestId]
+  );
+  return rows?.[0] || null;
+};
+
+const persistSignatureWorkflowResult = async ({ context, result }) => {
+  if (!pool || (!context.signatureRequestId && !context.documentVersionId)) {
+    return null;
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    let signatureRequest = null;
+    if (context.signatureRequestId) {
+      signatureRequest = await getSignatureRequestContext(connection, Number(context.signatureRequestId));
+      if (!signatureRequest) {
+        throw new Error("La solicitud de firma indicada no existe.");
+      }
+      if (Number(signatureRequest.assigned_person_id || 0) !== Number(context.user.id)) {
+        throw new Error("No puedes registrar una firma para una solicitud asignada a otro usuario.");
+      }
+      if (
+        context.documentVersionId
+        && Number(signatureRequest.document_version_id) !== Number(context.documentVersionId)
+      ) {
+        throw new Error("La solicitud de firma no pertenece a la versión documental indicada.");
+      }
+    }
+
+    const documentVersionId = Number(
+      context.documentVersionId || signatureRequest?.document_version_id || 0
+    );
+    if (!documentVersionId) {
+      throw new Error("No se pudo determinar la versión documental firmada.");
+    }
+
+    const signatureStatusCode = deriveSignatureStatusCode(result);
+    const signatureStatusId = await getSignatureStatusIdByCode(connection, signatureStatusCode);
+    if (!signatureStatusId) {
+      throw new Error(`No existe el estado técnico de firma '${signatureStatusCode}'.`);
+    }
+
+    const signatureTypeId = signatureRequest?.step_type_id
+      ? Number(signatureRequest.step_type_id)
+      : await getDefaultSignatureTypeId(connection);
+    if (!signatureTypeId) {
+      throw new Error("No existe un tipo de firma disponible para registrar la evidencia.");
+    }
+
+    if (result?.finalPath) {
+      await connection.query(
+        `UPDATE document_versions
+         SET final_file_path = ?
+         WHERE id = ?`,
+        [String(result.finalPath), documentVersionId]
+      );
+    }
+
+    if (signatureRequest?.id) {
+      const requestStatusCode = deriveSignatureRequestStatusCode(signatureStatusCode);
+      const requestStatusId = await getSignatureRequestStatusIdByCode(connection, requestStatusCode);
+      if (!requestStatusId) {
+        throw new Error(`No existe el estado de solicitud de firma '${requestStatusCode}'.`);
+      }
+      await connection.query(
+        `UPDATE signature_requests
+         SET status_id = ?,
+             responded_at = ?
+         WHERE id = ?`,
+        [requestStatusId, new Date(), Number(signatureRequest.id)]
+      );
+    }
+
+    const noteShort = truncateNote(
+      result?.validation?.warning
+      || result?.validation?.details
+      || result?.message
+    );
+
+    const [insertResult] = await connection.query(
+      `INSERT INTO document_signatures (
+         signature_request_id,
+         document_version_id,
+         signer_user_id,
+         signature_type_id,
+         signature_status_id,
+         note_short,
+         signed_file_path,
+         signed_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        signatureRequest?.id ? Number(signatureRequest.id) : null,
+        documentVersionId,
+        Number(context.user.id),
+        Number(signatureTypeId),
+        Number(signatureStatusId),
+        noteShort,
+        result?.finalPath ? String(result.finalPath) : null,
+        new Date(),
+      ]
+    );
+
+    await syncDocumentProgressFromDocumentSignature(connection, Number(insertResult.insertId));
+    await connection.commit();
+
+    return {
+      documentSignatureId: Number(insertResult.insertId),
+      documentVersionId,
+      signatureRequestId: signatureRequest?.id ? Number(signatureRequest.id) : null,
+      signatureStatusCode,
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
 export const requestSign = async (req, res) => {
   try {
     if (!req.files?.pdf?.[0]) {
@@ -309,7 +479,11 @@ export const requestSign = async (req, res) => {
       file: req.files.pdf[0],
       context
     });
-    return res.json(result);
+    const workflow = await persistSignatureWorkflowResult({ context, result });
+    return res.json({
+      ...result,
+      workflow: workflow || undefined,
+    });
   } catch (error) {
     console.error("[sign_controller] Error:", error);
     return res.status(500).json({ error: error.message || "No se pudo firmar el documento." });

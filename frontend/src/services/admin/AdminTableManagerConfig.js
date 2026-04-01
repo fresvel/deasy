@@ -123,7 +123,11 @@ export const FK_TABLE_MAP = {
   process_id: "processes",
   series_id: "process_definition_series",
   process_definition_id: "process_definition_versions",
+  process_run_id: "process_runs",
+  source_run_id: "process_runs",
   process_definition_template_id: "process_definition_templates",
+  fill_flow_template_id: "fill_flow_templates",
+  fill_flow_step_id: "fill_flow_steps",
   template_seed_id: "template_seeds",
   term_type_id: "term_types",
   term_id: "terms",
@@ -138,6 +142,9 @@ export const FK_TABLE_MAP = {
   task_item_id: "task_items",
   document_id: "documents",
   document_version_id: "document_versions",
+  document_fill_flow_id: "document_fill_flows",
+  owner_person_id: "persons",
+  created_by_user_id: "persons",
   person_id: "persons",
   responsible_position_id: "unit_positions",
   role_id: "roles",
@@ -173,10 +180,18 @@ export const RELATED_RECORD_CONFIG = {
     { table: "process_definition_triggers", label: "Disparadores", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
     { table: "process_definition_templates", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
+    { table: "process_runs", label: "Corridas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }
   ],
+  process_runs: [
+    { table: "tasks", label: "Tareas", foreignKey: "process_run_id", orderBy: "created_at", order: "desc" }
+  ],
   process_definition_templates: [
+    { table: "fill_flow_templates", label: "Flujos de llenado", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" },
     { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" }
+  ],
+  fill_flow_templates: [
+    { table: "fill_flow_steps", label: "Pasos de llenado", foreignKey: "fill_flow_template_id", orderBy: "step_order", order: "asc" }
   ],
   tasks: [
     { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" },
@@ -187,6 +202,13 @@ export const RELATED_RECORD_CONFIG = {
   ],
   documents: [
     { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }
+  ],
+  document_versions: [
+    { table: "document_fill_flows", label: "Flujos de llenado", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" },
+    { table: "signature_flow_instances", label: "Flujos de firma", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" }
+  ],
+  document_fill_flows: [
+    { table: "fill_requests", label: "Solicitudes de llenado", foreignKey: "document_fill_flow_id", orderBy: "requested_at", order: "desc" }
   ],
   units: [
     { table: "unit_positions", label: "Puestos", foreignKey: "unit_id", orderBy: "created_at", order: "desc" },

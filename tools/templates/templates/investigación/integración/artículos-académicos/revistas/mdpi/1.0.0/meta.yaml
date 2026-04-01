@@ -2,6 +2,7 @@ key: "investigación/integración/artículos-académicos/revistas/mdpi"
 export_id: "tpl_investigación_integración_artículos_académicos_revistas_mdpi"
 name: "MDPI Template"
 domain: investigacion
+repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
@@ -10,3 +11,18 @@ modes:
       path: "modes/user/latex/src"
 origins:
   - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2026/PPO2026/Investigación/Productiva/Resultados/Docente Demo Principal/A0X/mdpi"
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps: []
+  signatures:
+    required: false
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    anchors: []
+    steps: []
+dependencies:
+  templates: []
+  data: []

@@ -10,6 +10,13 @@ import {
   requestSignBatch,
   requestSignBatchStart
 } from "../controllers/sign/sign_controller.js";
+import {
+  approveFillRequest,
+  cancelFillRequest,
+  rejectFillRequest,
+  returnFillRequest,
+  startFillRequest,
+} from "../controllers/sign/sign_workflow_controller.js";
 
 const router = express.Router();
 
@@ -47,6 +54,12 @@ router.post(
 
 router.get("/batch/:jobId", authMiddleware, getSignBatchStatus);
 router.get("/batch/:jobId/download", authMiddleware, downloadSignBatch);
+
+router.post("/fill-requests/:requestId/start", authMiddleware, startFillRequest);
+router.post("/fill-requests/:requestId/approve", authMiddleware, express.json(), approveFillRequest);
+router.post("/fill-requests/:requestId/return", authMiddleware, express.json(), returnFillRequest);
+router.post("/fill-requests/:requestId/reject", authMiddleware, express.json(), rejectFillRequest);
+router.post("/fill-requests/:requestId/cancel", authMiddleware, express.json(), cancelFillRequest);
 
 router.get("/download", authMiddleware, downloadSigned);
 

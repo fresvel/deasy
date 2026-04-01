@@ -26,6 +26,12 @@ export const API_ROUTES = {
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
   USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
   USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_UPLOAD_FILE: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/upload-file`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_TEMPLATE_DOWNLOAD: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/template-download`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_FILE: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/file`,
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
@@ -40,5 +46,10 @@ export const API_ROUTES = {
   SIGN_BATCH: `${API_PREFIX}/sign/batch`,
   SIGN_BATCH_START: `${API_PREFIX}/sign/batch/start`,
   SIGN_BATCH_STATUS: (jobId) => `${API_PREFIX}/sign/batch/${jobId}`,
-  SIGN_BATCH_DOWNLOAD: (jobId) => `${API_PREFIX}/sign/batch/${jobId}/download`
+  SIGN_BATCH_DOWNLOAD: (jobId) => `${API_PREFIX}/sign/batch/${jobId}/download`,
+  SIGN_FILL_REQUEST_START: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/start`,
+  SIGN_FILL_REQUEST_APPROVE: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/approve`,
+  SIGN_FILL_REQUEST_RETURN: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/return`,
+  SIGN_FILL_REQUEST_REJECT: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/reject`,
+  SIGN_FILL_REQUEST_CANCEL: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/cancel`
 };

@@ -152,6 +152,10 @@ const DROP_TABLES = [
   "signature_flow_instances",
   "signature_flow_steps",
   "signature_flow_templates",
+  "fill_requests",
+  "document_fill_flows",
+  "fill_flow_steps",
+  "fill_flow_templates",
   "signature_types",
   "signature_statuses",
   "signature_request_statuses",
@@ -163,6 +167,7 @@ const DROP_TABLES = [
   "template_seeds",
   "task_assignments",
   "tasks",
+  "process_runs",
   "terms",
   "term_types",
   "process_definition_triggers",
@@ -241,6 +246,479 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       await connection.query(
         "ALTER TABLE document_versions MODIFY COLUMN version DECIMAL(4,1) NOT NULL DEFAULT 0.1"
       );
+    }
+    if (columnNames.includes("payload_mongo_id")) {
+      await connection.query("ALTER TABLE document_versions MODIFY COLUMN payload_mongo_id VARCHAR(180) NULL");
+    }
+    if (columnNames.includes("payload_hash")) {
+      await connection.query("ALTER TABLE document_versions MODIFY COLUMN payload_hash VARCHAR(64) NULL");
+    }
+    if (!columnNames.includes("template_artifact_id")) {
+      await connection.query("ALTER TABLE document_versions ADD COLUMN template_artifact_id INT NULL AFTER version");
+    }
+    if (!columnNames.includes("payload_object_path")) {
+      await connection.query("ALTER TABLE document_versions ADD COLUMN payload_object_path VARCHAR(255) NULL AFTER payload_hash");
+    }
+    if (!columnNames.includes("working_file_path")) {
+      const anchorColumn = columnNames.includes("signed_pdf_path") ? "signed_pdf_path" : "payload_object_path";
+      await connection.query(`ALTER TABLE document_versions ADD COLUMN working_file_path VARCHAR(255) NULL AFTER ${anchorColumn}`);
+    }
+    if (!columnNames.includes("final_file_path")) {
+      await connection.query("ALTER TABLE document_versions ADD COLUMN final_file_path VARCHAR(255) NULL AFTER working_file_path");
+    }
+    if (!columnNames.includes("format")) {
+      await connection.query("ALTER TABLE document_versions ADD COLUMN format VARCHAR(40) NULL AFTER final_file_path");
+    }
+    if (!columnNames.includes("render_engine")) {
+      await connection.query("ALTER TABLE document_versions ADD COLUMN render_engine VARCHAR(80) NULL AFTER format");
+    }
+    await connection.query(
+      `UPDATE document_versions
+       SET
+         working_file_path = CASE
+           WHEN working_file_path LIKE 'documents/%' OR working_file_path LIKE 'users/%' THEN NULL
+           ELSE working_file_path
+         END,
+         final_file_path = CASE
+           WHEN final_file_path LIKE 'documents/%' OR final_file_path LIKE 'users/%' THEN NULL
+           ELSE final_file_path
+         END,
+         payload_object_path = CASE
+           WHEN payload_object_path LIKE 'documents/%' OR payload_object_path LIKE 'users/%' THEN NULL
+           ELSE payload_object_path
+         END`
+    );
+
+    try {
+      await connection.query(
+        "ALTER TABLE document_versions ADD INDEX idx_document_versions_artifact (template_artifact_id)"
+      );
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de document_versions.template_artifact_id:", error.message);
+      }
+    }
+
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions'
+           AND COLUMN_NAME = 'template_artifact_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE document_versions ADD CONSTRAINT fk_document_versions_artifact FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de document_versions.template_artifact_id:", error.message);
+    }
+
+    const [documentColumns] = await connection.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents'`
+    );
+    const documentColumnNames = documentColumns.map((col) => col.COLUMN_NAME);
+    if (!documentColumnNames.includes("owner_person_id")) {
+      await connection.query("ALTER TABLE documents ADD COLUMN owner_person_id INT NULL AFTER task_item_id");
+    }
+    if (!documentColumnNames.includes("origin_type")) {
+      await connection.query(
+        "ALTER TABLE documents ADD COLUMN origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item' AFTER owner_person_id"
+      );
+    }
+    if (!documentColumnNames.includes("title")) {
+      await connection.query("ALTER TABLE documents ADD COLUMN title VARCHAR(180) NULL AFTER origin_type");
+    }
+    try {
+      await connection.query("ALTER TABLE documents MODIFY COLUMN task_item_id INT NULL");
+    } catch (error) {
+      console.warn("⚠️  No se pudo ajustar documents.task_item_id a nullable:", error.message);
+    }
+    try {
+      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_owner_person (owner_person_id)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de documents.owner_person_id:", error.message);
+      }
+    }
+    try {
+      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_origin_type (origin_type)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de documents.origin_type:", error.message);
+      }
+    }
+
+    const [cargoColumns] = await connection.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cargos'`
+    );
+    const cargoColumnNames = cargoColumns.map((col) => col.COLUMN_NAME);
+    if (!cargoColumnNames.includes("code")) {
+      await connection.query("ALTER TABLE cargos ADD COLUMN code VARCHAR(120) NULL AFTER id");
+    }
+    const [cargoRows] = await connection.query(
+      `SELECT id, name, code
+       FROM cargos
+       ORDER BY id ASC`
+    );
+    for (const cargo of cargoRows) {
+      const currentCode = String(cargo.code || "").trim();
+      if (currentCode) {
+        continue;
+      }
+      const normalizedCode = String(cargo.name || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .replace(/-{2,}/g, "-");
+      await connection.query(
+        "UPDATE cargos SET code = ? WHERE id = ?",
+        [normalizedCode || `cargo-${cargo.id}`, cargo.id]
+      );
+    }
+    try {
+      await connection.query("ALTER TABLE cargos MODIFY COLUMN code VARCHAR(120) NOT NULL");
+    } catch (error) {
+      console.warn("⚠️  No se pudo ajustar cargos.code a NOT NULL:", error.message);
+    }
+    try {
+      await connection.query("ALTER TABLE cargos ADD UNIQUE KEY uq_cargos_code (code)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice único de cargos.code:", error.message);
+      }
+    }
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents'
+           AND COLUMN_NAME = 'owner_person_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE documents ADD CONSTRAINT fk_documents_owner_person FOREIGN KEY (owner_person_id) REFERENCES persons(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de documents.owner_person_id:", error.message);
+    }
+
+    try {
+      await connection.query(
+        `UPDATE signature_request_statuses
+         SET code = 'pendiente',
+             name = 'Pendiente',
+             is_active = 1
+         WHERE LOWER(code) = 'pendiente'`
+      );
+      await connection.query(
+        `UPDATE signature_request_statuses
+         SET is_active = 0,
+             description = 'Estado legacy fuera del estándar actual.'
+         WHERE LOWER(code) = 'firmado'`
+      );
+      await connection.query(
+        `UPDATE signature_statuses
+         SET is_active = 0,
+             description = 'Estado legacy fuera del estándar técnico actual.'
+         WHERE LOWER(code) IN ('revisado', 'aprobado', 'elaborado', 'enviado', 'recibido', 'asistencia')`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudieron normalizar catálogos de firma legacy:", error.message);
+    }
+
+    const [taskColumns] = await connection.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'`
+    );
+    const taskColumnNames = taskColumns.map((col) => col.COLUMN_NAME);
+    if (!taskColumnNames.includes("process_run_id")) {
+      await connection.query("ALTER TABLE tasks ADD COLUMN process_run_id INT NULL AFTER process_definition_id");
+    }
+    try {
+      await connection.query("ALTER TABLE tasks ADD INDEX idx_tasks_process_run (process_run_id)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de tasks.process_run_id:", error.message);
+      }
+    }
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'
+           AND COLUMN_NAME = 'process_run_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE tasks ADD CONSTRAINT fk_tasks_process_run FOREIGN KEY (process_run_id) REFERENCES process_runs(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de tasks.process_run_id:", error.message);
+    }
+
+    try {
+      await connection.query(
+        `INSERT INTO process_runs (
+           process_definition_id,
+           term_id,
+           run_mode,
+           created_by_user_id,
+           status
+         )
+         SELECT DISTINCT
+           t.process_definition_id,
+           t.term_id,
+           CASE
+             WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
+             ELSE 'manual'
+           END,
+           CASE
+             WHEN t.launch_mode = 'manual' THEN t.created_by_user_id
+             ELSE NULL
+           END,
+           'active'
+         FROM tasks t
+         LEFT JOIN process_runs pr
+           ON pr.process_definition_id = t.process_definition_id
+          AND pr.term_id <=> t.term_id
+          AND pr.run_mode = CASE
+            WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
+            ELSE 'manual'
+          END
+          AND (
+            t.launch_mode <> 'manual'
+            OR pr.created_by_user_id <=> t.created_by_user_id
+          )
+         WHERE t.process_run_id IS NULL
+           AND pr.id IS NULL`
+      );
+
+      await connection.query(
+        `UPDATE tasks t
+         INNER JOIN process_runs pr
+           ON pr.process_definition_id = t.process_definition_id
+          AND pr.term_id <=> t.term_id
+          AND pr.run_mode = CASE
+            WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
+            ELSE 'manual'
+          END
+          AND (
+            t.launch_mode <> 'manual'
+            OR pr.created_by_user_id <=> t.created_by_user_id
+          )
+         SET t.process_run_id = pr.id
+         WHERE t.process_run_id IS NULL`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo backfillear tasks.process_run_id:", error.message);
+    }
+
+    try {
+      await connection.query(
+        `INSERT INTO documents (
+           task_item_id,
+           owner_person_id,
+           origin_type,
+           title,
+           status
+         )
+         SELECT
+           ti.id,
+           ti.assigned_person_id,
+           'task_item',
+           COALESCE(tar.display_name, CONCAT('Documento ', ti.id)),
+           'Inicial'
+         FROM task_items ti
+         LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+         LEFT JOIN documents d ON d.task_item_id = ti.id
+         WHERE d.id IS NULL`
+      );
+
+      await connection.query(
+        `INSERT INTO document_versions (
+           document_id,
+           version,
+           template_artifact_id,
+           status
+         )
+         SELECT
+           d.id,
+           0.1,
+           ti.template_artifact_id,
+           'Borrador'
+         FROM documents d
+         INNER JOIN task_items ti ON ti.id = d.task_item_id
+         LEFT JOIN document_versions dv ON dv.document_id = d.id
+         WHERE dv.id IS NULL`
+      );
+
+      await connection.query(
+        `INSERT INTO document_fill_flows (
+           fill_flow_template_id,
+           document_version_id,
+           status,
+           current_step_order
+         )
+         SELECT
+           fft.id,
+           dv.id,
+           'pending',
+           MIN(ffs.step_order)
+         FROM document_versions dv
+         INNER JOIN documents d ON d.id = dv.document_id
+         INNER JOIN task_items ti ON ti.id = d.task_item_id
+         INNER JOIN fill_flow_templates fft
+           ON fft.process_definition_template_id = ti.process_definition_template_id
+          AND fft.is_active = 1
+         LEFT JOIN fill_flow_steps ffs
+           ON ffs.fill_flow_template_id = fft.id
+         LEFT JOIN document_fill_flows dff
+           ON dff.document_version_id = dv.id
+         WHERE dff.id IS NULL
+         GROUP BY fft.id, dv.id`
+      );
+
+      await connection.query(
+        `INSERT INTO fill_requests (
+           document_fill_flow_id,
+           fill_flow_step_id,
+           assigned_person_id,
+           status,
+           is_manual
+         )
+         SELECT
+           dff.id,
+           ffs.id,
+           CASE
+             WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+             WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+             WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+             ELSE NULL
+           END AS resolved_person_id,
+           'pending',
+           CASE
+             WHEN ffs.resolver_type = 'manual_pick' THEN 1
+             WHEN (
+               CASE
+                 WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+                 WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+                 WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+                 ELSE NULL
+               END
+             ) IS NULL THEN 1
+             ELSE 0
+           END AS is_manual
+         FROM document_fill_flows dff
+         INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+         INNER JOIN documents d ON d.id = dv.document_id
+         LEFT JOIN task_items ti ON ti.id = d.task_item_id
+         LEFT JOIN tasks t ON t.id = ti.task_id
+         INNER JOIN fill_flow_steps ffs
+           ON ffs.fill_flow_template_id = dff.fill_flow_template_id
+         LEFT JOIN fill_requests fr_same_step
+           ON fr_same_step.document_fill_flow_id = dff.id
+          AND fr_same_step.fill_flow_step_id = ffs.id
+         LEFT JOIN fill_requests fr_same_assignee
+           ON fr_same_assignee.document_fill_flow_id = dff.id
+          AND fr_same_assignee.fill_flow_step_id = ffs.id
+          AND fr_same_assignee.assigned_person_id <=> (
+            CASE
+              WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+              WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+              WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+              ELSE NULL
+            END
+          )
+         WHERE (
+             (
+               CASE
+                 WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+                 WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+                 WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+                 ELSE NULL
+               END
+             ) IS NULL
+             AND fr_same_step.id IS NULL
+           )
+            OR (
+             (
+               CASE
+                 WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+                 WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+                 WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+                 ELSE NULL
+               END
+             ) IS NOT NULL
+             AND fr_same_assignee.id IS NULL
+           )`
+      );
+
+      await connection.query(
+        `DELETE fr_manual
+         FROM fill_requests fr_manual
+         INNER JOIN fill_requests fr_resolved
+           ON fr_resolved.document_fill_flow_id = fr_manual.document_fill_flow_id
+          AND fr_resolved.fill_flow_step_id = fr_manual.fill_flow_step_id
+          AND fr_resolved.assigned_person_id IS NOT NULL
+         WHERE fr_manual.assigned_person_id IS NULL
+           AND fr_manual.is_manual = 1`
+      );
+
+      await connection.query(
+        `UPDATE document_versions dv
+         INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+         SET dv.status = 'Pendiente de llenado'
+         WHERE dv.status = 'Borrador'`
+      );
+
+      await connection.query(
+        `UPDATE documents d
+         INNER JOIN document_versions dv ON dv.document_id = d.id
+         INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+         SET d.status = 'Pendiente de llenado'
+         WHERE d.status IN ('Inicial', 'Borrador')`
+      );
+
+      await connection.query(
+        `UPDATE documents
+         SET status = 'Observado'
+         WHERE status = 'Rechazado'`
+      );
+      await connection.query(
+        `UPDATE document_versions
+         SET status = 'Observado'
+         WHERE status = 'Rechazado'`
+      );
+      await connection.query(
+        `UPDATE documents
+         SET status = 'Final'
+         WHERE status = 'Aprobado'`
+      );
+      await connection.query(
+        `UPDATE document_versions
+         SET status = 'Final'
+         WHERE status = 'Aprobado'`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo backfillear documents/document_versions/fill_flows desde task_items:", error.message);
+    }
+
+    try {
+      const [legacyVersionColumns] = await connection.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions'
+           AND COLUMN_NAME IN ('latex_path', 'pdf_path', 'signed_pdf_path')`
+      );
+      for (const column of legacyVersionColumns.map((row) => row.COLUMN_NAME)) {
+        await connection.query(`ALTER TABLE document_versions DROP COLUMN ${column}`);
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudieron eliminar columnas legacy de document_versions:", error.message);
     }
 
     const [processColumns] = await connection.query(

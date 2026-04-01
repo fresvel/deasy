@@ -1,0 +1,101 @@
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps:
+      - order: 1
+        code: "docente_fill"
+        name: "Llenado de la guia"
+        resolver:
+          type: "document_owner"
+          selection_mode: "auto_one"
+        field_refs:
+          - "general.periodo"
+          - "general.carrera"
+          - "general.asignatura"
+          - "general.nivel"
+          - "general.numero_practica"
+          - "general.tema_practica"
+          - "signatures.elaborado.nombre"
+          - "signatures.elaborado.cargo"
+          - "signatures.elaborado.fecha"
+        required: true
+        can_reject: true
+      - order: 2
+        code: "calidad_review"
+        name: "Revision de calidad"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "responsable_aseguramiento_calidad"
+          unit_scope_type: "unit_exact"
+          selection_mode: "auto_one"
+        field_refs:
+          - "signatures.revisado.nombre"
+          - "signatures.revisado.cargo"
+          - "signatures.revisado.fecha"
+        required: true
+        can_reject: true
+      - order: 3
+        code: "coordinacion_review"
+        name: "Revision de coordinacion"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "coordinador_carrera"
+          unit_scope_type: "unit_exact"
+          selection_mode: "auto_one"
+        field_refs:
+          - "signatures.aprobado.nombre"
+          - "signatures.aprobado.cargo"
+          - "signatures.aprobado.fecha"
+        required: true
+        can_reject: true
+  signatures:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    pattern_ref: "signatures/three-stage-era"
+    anchors:
+      - code: "firma_elaborado"
+        placement: { strategy: "token", token_field_ref: "signatures.elaborado.token" }
+        size: { width: 124, height: 48 }
+      - code: "firma_revisado"
+        placement: { strategy: "token", token_field_ref: "signatures.revisado.token" }
+        size: { width: 124, height: 48 }
+      - code: "firma_aprobado"
+        placement: { strategy: "token", token_field_ref: "signatures.aprobado.token" }
+        size: { width: 124, height: 48 }
+    steps:
+      - order: 1
+        code: "firma_docente"
+        name: "Firma del docente"
+        step_type_code: "electronic"
+        required_cargo_code: "docente"
+        selection_mode: "auto_all"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs: ["firma_elaborado"]
+      - order: 2
+        code: "firma_calidad"
+        name: "Firma de calidad"
+        step_type_code: "electronic"
+        required_cargo_code: "responsable_aseguramiento_calidad"
+        selection_mode: "auto_all"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs: ["firma_revisado"]
+      - order: 3
+        code: "firma_coordinacion"
+        name: "Firma de coordinacion"
+        step_type_code: "electronic"
+        required_cargo_code: "coordinador_carrera"
+        selection_mode: "auto_all"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs: ["firma_aprobado"]
+dependencies:
+  templates: []
+  data: []

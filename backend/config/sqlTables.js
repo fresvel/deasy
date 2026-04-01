@@ -1,3 +1,8 @@
+import {
+  DOCUMENT_STATUSES,
+  DOCUMENT_VERSION_STATUSES,
+} from "../services/documents/DocumentStateService.js";
+
 export const SQL_TABLES = [
   {
     table: "unit_types",
@@ -222,6 +227,37 @@ export const SQL_TABLES = [
     searchFields: ["trigger_mode"]
   },
   {
+    table: "process_runs",
+    label: "Corridas de proceso",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_definition_id", label: "Definicion de proceso", type: "number", required: true },
+      { name: "term_id", label: "Periodo", type: "number" },
+      {
+        name: "run_mode",
+        label: "Modo de corrida",
+        type: "select",
+        options: ["automatic_term", "manual", "reinstanced", "repair"],
+        defaultValue: "manual"
+      },
+      { name: "source_run_id", label: "Corrida origen", type: "number" },
+      { name: "created_by_user_id", label: "Creada por", type: "number" },
+      { name: "reason", label: "Motivo", type: "textarea" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pending", "active", "completed", "cancelled"],
+        defaultValue: "active"
+      },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["run_mode", "status", "reason"]
+  },
+  {
     table: "tasks",
     label: "Tareas",
     category: "Procesos",
@@ -234,6 +270,7 @@ export const SQL_TABLES = [
         type: "number",
         required: true
       },
+      { name: "process_run_id", label: "Corrida de proceso", type: "number" },
       { name: "term_id", label: "Periodo", type: "number", required: true },
       {
         name: "launch_mode",
@@ -528,11 +565,12 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 }
     ],
-    searchFields: ["name"]
+    searchFields: ["code", "name"]
   },
   {
     table: "unit_positions",
@@ -585,19 +623,28 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "task_item_id", label: "Item de tarea", type: "number", required: true },
+      { name: "task_item_id", label: "Item de tarea", type: "number" },
+      { name: "owner_person_id", label: "Propietario", type: "number" },
+      {
+        name: "origin_type",
+        label: "Origen",
+        type: "select",
+        options: ["task_item", "standalone", "imported", "generated"],
+        defaultValue: "task_item"
+      },
+      { name: "title", label: "Titulo", type: "text" },
       {
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["Inicial", "En proceso", "Aprobado", "Rechazado"],
+        options: [...DOCUMENT_STATUSES],
         defaultValue: "Inicial"
       },
       { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["status"]
+    searchFields: ["origin_type", "title", "status"]
   },
   {
     table: "document_versions",
@@ -608,21 +655,24 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "document_id", label: "Documento", type: "number", required: true },
       { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
-      { name: "payload_mongo_id", label: "Payload mongo", type: "text", required: true },
-      { name: "payload_hash", label: "Hash", type: "text", required: true },
-      { name: "latex_path", label: "Ruta LaTeX", type: "text" },
-      { name: "pdf_path", label: "Ruta PDF", type: "text" },
-      { name: "signed_pdf_path", label: "Ruta firmado", type: "text" },
+      { name: "template_artifact_id", label: "Artifact", type: "number" },
+      { name: "payload_mongo_id", label: "Payload legacy", type: "text" },
+      { name: "payload_hash", label: "Hash payload", type: "text" },
+      { name: "payload_object_path", label: "Ruta payload", type: "text" },
+      { name: "working_file_path", label: "Ruta working", type: "text" },
+      { name: "final_file_path", label: "Ruta final", type: "text" },
+      { name: "format", label: "Formato", type: "text" },
+      { name: "render_engine", label: "Motor de render", type: "text" },
       {
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["Borrador", "Final", "Archivado"],
+        options: [...DOCUMENT_VERSION_STATUSES],
         defaultValue: "Borrador"
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["payload_mongo_id", "payload_hash", "status"]
+    searchFields: ["payload_mongo_id", "payload_hash", "payload_object_path", "format", "render_engine", "status"]
   },
   {
     table: "document_signatures",
@@ -642,6 +692,113 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["signature_type_id", "signature_status_id"]
+  },
+  {
+    table: "fill_flow_templates",
+    label: "Plantillas de llenado",
+    category: "Llenado",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      {
+        name: "process_definition_template_id",
+        label: "Plantilla de proceso definido",
+        type: "number",
+        required: true
+      },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name"]
+  },
+  {
+    table: "fill_flow_steps",
+    label: "Pasos de llenado",
+    category: "Llenado",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "fill_flow_template_id", label: "Plantilla de llenado", type: "number", required: true },
+      { name: "step_order", label: "Orden", type: "number", required: true },
+      {
+        name: "resolver_type",
+        label: "Resolver",
+        type: "select",
+        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
+        defaultValue: "task_assignee"
+      },
+      { name: "assigned_person_id", label: "Persona fija", type: "number" },
+      {
+        name: "unit_scope_type",
+        label: "Alcance de unidad",
+        type: "select",
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
+        defaultValue: "unit_exact"
+      },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "cargo_id", label: "Cargo", type: "number" },
+      { name: "position_id", label: "Puesto", type: "number" },
+      {
+        name: "selection_mode",
+        label: "Seleccion",
+        type: "select",
+        options: ["auto_one", "auto_all", "manual"],
+        defaultValue: "auto_one"
+      },
+      { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
+      { name: "can_reject", label: "Puede rechazar", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["resolver_type", "selection_mode"]
+  },
+  {
+    table: "document_fill_flows",
+    label: "Instancias de llenado",
+    category: "Llenado",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "fill_flow_template_id", label: "Plantilla de llenado", type: "number", required: true },
+      { name: "document_version_id", label: "Version documento", type: "number", required: true },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pending", "in_progress", "approved", "rejected", "cancelled"],
+        defaultValue: "pending"
+      },
+      { name: "current_step_order", label: "Paso actual", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["status"]
+  },
+  {
+    table: "fill_requests",
+    label: "Solicitudes de llenado",
+    category: "Llenado",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "document_fill_flow_id", label: "Instancia", type: "number", required: true },
+      { name: "fill_flow_step_id", label: "Paso", type: "number", required: true },
+      { name: "assigned_person_id", label: "Persona", type: "number" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pending", "in_progress", "approved", "rejected", "returned", "cancelled"],
+        defaultValue: "pending"
+      },
+      { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
+      { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
+      { name: "responded_at", label: "Respondido", type: "datetime" },
+      { name: "response_note", label: "Respuesta", type: "textarea" }
+    ],
+    searchFields: ["status"]
   },
   {
     table: "signature_types",

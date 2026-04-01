@@ -549,9 +549,16 @@
                 <AdminSelectField v-model="documentFilters.status">
                   <option value="">Todos</option>
                   <option value="Inicial">Inicial</option>
+                  <option value="Pendiente de llenado">Pendiente de llenado</option>
                   <option value="En proceso">En proceso</option>
-                  <option value="Aprobado">Aprobado</option>
-                  <option value="Rechazado">Rechazado</option>
+                  <option value="Observado">Observado</option>
+                  <option value="Listo para firma">Listo para firma</option>
+                  <option value="Pendiente de firma">Pendiente de firma</option>
+                  <option value="Firmado parcial">Firmado parcial</option>
+                  <option value="Firmado completo">Firmado completo</option>
+                  <option value="Final">Final</option>
+                  <option value="Archivado">Archivado</option>
+                  <option value="Cancelado">Cancelado</option>
                 </AdminSelectField>
               </div>
             </div>

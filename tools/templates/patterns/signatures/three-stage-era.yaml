@@ -1,0 +1,147 @@
+pattern:
+  code: "three-stage-era"
+  name: "Firma ERA en tres etapas"
+  description: "Patron reusable para documentos con firmas de elaborado, revisado y aprobado."
+  version: "1.0.0"
+  compiler_contract:
+    inject_runtime_values: true
+    token_source: "persons.token"
+    runtime_fields:
+      - slot: "elaborado"
+        token_field_ref: "signatures.elaborado.token"
+        name_field_ref: "signatures.elaborado.nombre"
+        role_field_ref: "signatures.elaborado.cargo"
+        date_field_ref: "signatures.elaborado.fecha"
+      - slot: "revisado"
+        token_field_ref: "signatures.revisado.token"
+        name_field_ref: "signatures.revisado.nombre"
+        role_field_ref: "signatures.revisado.cargo"
+        date_field_ref: "signatures.revisado.fecha"
+      - slot: "aprobado"
+        token_field_ref: "signatures.aprobado.token"
+        name_field_ref: "signatures.aprobado.nombre"
+        role_field_ref: "signatures.aprobado.cargo"
+        date_field_ref: "signatures.aprobado.fecha"
+  fields:
+    - code: "signatures.elaborado.token"
+      data_key: "firmaElaboradoToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.elaborado.nombre"
+      data_key: "nombreElaborado"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_elaborado"
+    - code: "signatures.elaborado.cargo"
+      data_key: "cargoElaborado"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_elaborado"
+    - code: "signatures.elaborado.fecha"
+      data_key: "fechaElaborado"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_elaborado"
+    - code: "signatures.revisado.token"
+      data_key: "firmaRevisadoToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.revisado.nombre"
+      data_key: "nombreRevisado"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_revisado"
+    - code: "signatures.revisado.cargo"
+      data_key: "cargoRevisado"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_revisado"
+    - code: "signatures.revisado.fecha"
+      data_key: "fechaRevisado"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_revisado"
+    - code: "signatures.aprobado.token"
+      data_key: "firmaAprobadoToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.aprobado.nombre"
+      data_key: "nombreAprobado"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_aprobado"
+    - code: "signatures.aprobado.cargo"
+      data_key: "cargoAprobado"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_aprobado"
+    - code: "signatures.aprobado.fecha"
+      data_key: "fechaAprobado"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_aprobado"
+  anchors:
+    - code: "firma_elaborado"
+      slot: "elaborado"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.elaborado.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_revisado"
+      slot: "revisado"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.revisado.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_aprobado"
+      slot: "aprobado"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.aprobado.token"
+      size:
+        width: 124
+        height: 48
+  steps:
+    - order: 1
+      slot: "elaborado"
+      code: "firma_elaborado"
+      name: "Firma de elaborado"
+      step_type_code: "electronic"
+      required_cargo_code: "coordinador_carrera"
+      selection_mode: "auto_all"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_elaborado"
+    - order: 2
+      slot: "revisado"
+      code: "firma_revisado"
+      name: "Firma de revisado"
+      step_type_code: "electronic"
+      required_cargo_code: "responsable_aseguramiento_calidad"
+      selection_mode: "auto_all"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_revisado"
+    - order: 3
+      slot: "aprobado"
+      code: "firma_aprobado"
+      name: "Firma de aprobado"
+      step_type_code: "electronic"
+      required_cargo_code: "director_escuela"
+      selection_mode: "auto_all"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_aprobado"

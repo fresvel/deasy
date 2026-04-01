@@ -1,6 +1,11 @@
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   hydrateTaskFromDefinition,
+  ensureProcessRun,
+  ensureDocumentsForTask,
+  ensureDocumentForTaskItem,
+  ensureFillFlowForDocumentVersion,
+  ensureSignatureFlowForDocumentVersion,
   updateParentTaskStatusForTask
 } from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
@@ -10,6 +15,16 @@ import path from "path";
 import crypto from "crypto";
 import * as Minio from "minio";
 import { fileURLToPath } from "url";
+import yaml from "js-yaml";
+import {
+  assertDocumentStatusValue,
+  assertDocumentVersionStatusValue,
+} from "../documents/DocumentStateService.js";
+import {
+  syncDocumentProgressFromDocumentSignature,
+  syncDocumentProgressFromFillRequest,
+  syncDocumentProgressFromSignatureRequest,
+} from "../documents/DocumentProgressService.js";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
@@ -27,6 +42,45 @@ const TEMPLATE_USERS_PREFIX = (
   || process.env.MINIO_TEMPLATES_DRAFT_PREFIX
   || "Users"
 ).replace(/^\/+|\/+$/g, "");
+const ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX = "artifact_sync_fill:";
+const ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX = "artifact_sync_signature:";
+const ARTIFACT_WORKFLOW_CONTRACT = [
+  "workflows:",
+  "  fill:",
+  "    required: true",
+  "    source: \"artifact\"",
+  "    sync_mode: \"artifact_to_db\"",
+  "    steps: []",
+  "  signatures:",
+  "    required: false",
+  "    source: \"artifact\"",
+  "    sync_mode: \"artifact_to_db\"",
+  "    steps: []",
+  "dependencies:",
+  "  templates: []",
+  "  data: []"
+].join("\n");
+const FILL_RESOLVER_TYPES = new Set([
+  "task_assignee",
+  "document_owner",
+  "specific_person",
+  "position",
+  "cargo_in_scope",
+  "manual_pick"
+]);
+const FILL_UNIT_SCOPE_TYPES = new Set(["unit_exact", "unit_subtree", "unit_type", "all_units"]);
+const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
+const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
+const SIGNATURE_TYPE_CODE_ALIASES = new Map([
+  ["electronic", "electronic"],
+  ["firma_electronica", "electronic"],
+  ["electronic_signature", "electronic"]
+]);
+const CARGO_CODE_ALIASES = new Map([
+  ["coordinador_carrera", "coordinador"],
+  ["director_escuela", "director"],
+  ["responsable_aseguramiento_calidad", "responsable-de-calidad"]
+]);
 const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
 const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
 let minioClientInstance = null;
@@ -60,6 +114,15 @@ const getYamlScalar = (content, key) => {
     value = value.slice(1, -1);
   }
   return value;
+};
+
+const parseYamlDocument = (content, { filePath = "meta.yaml" } = {}) => {
+  try {
+    const parsed = yaml.load(content);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    throw new Error(`No se pudo interpretar ${filePath}: ${error.message}`);
+  }
 };
 
 const hasVisibleFiles = (dirPath) => {
@@ -247,6 +310,71 @@ const normalizeNumericId = (value) => {
   return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
 };
 
+const normalizeBooleanFlag = (value, defaultValue = false) => {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "si", "sí"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no"].includes(normalized)) {
+    return false;
+  }
+  return defaultValue;
+};
+
+const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) => {
+  const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
+  return rawSteps
+    .filter((step) => step && typeof step === "object")
+    .map((step, index) => {
+      const resolverType = String(step?.resolver?.type || "task_assignee");
+      const unitScopeType = String(step?.resolver?.unit_scope_type || "unit_exact");
+      const selectionMode = String(step?.resolver?.selection_mode || "auto_one");
+      const rawCargoCode = String(step?.resolver?.cargo_code || "").trim().toLowerCase();
+      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+      return {
+        stepOrder: Number(step.order) || index + 1,
+        resolverType: FILL_RESOLVER_TYPES.has(resolverType) ? resolverType : "manual_pick",
+        assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
+        unitScopeType: FILL_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "unit_exact",
+        unitId: normalizeNumericId(step?.resolver?.unit_id),
+        unitTypeId: normalizeNumericId(step?.resolver?.unit_type_id),
+        cargoId: normalizeNumericId(step?.resolver?.cargo_id) || cargoCodeMap.get(normalizedCargoCode) || null,
+        positionId: normalizeNumericId(step?.resolver?.position_id),
+        selectionMode: FILL_SELECTION_MODES.has(selectionMode) ? selectionMode : "manual",
+        isRequired: normalizeBooleanFlag(step?.required, true) ? 1 : 0,
+        canReject: normalizeBooleanFlag(step?.can_reject, true) ? 1 : 0
+      };
+    })
+    .sort((left, right) => left.stepOrder - right.stepOrder);
+};
+
+const buildArtifactSyncedFillDescription = ({ artifactId, templateCode, storageVersion }) =>
+  `${ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
+
+const buildArtifactSyncedSignatureDescription = ({ artifactId, templateCode, storageVersion }) =>
+  `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
+
+const isArtifactFillWorkflowSyncEnabled = (workflow = {}) =>
+  String(workflow?.sync_mode || "").trim() === "artifact_to_db"
+  && normalizeBooleanFlag(workflow?.required, false)
+  && Array.isArray(workflow?.steps)
+  && workflow.steps.length > 0;
+
+const isArtifactSignatureWorkflowSyncEnabled = (workflow = {}) =>
+  String(workflow?.sync_mode || "").trim() === "artifact_to_db"
+  && normalizeBooleanFlag(workflow?.required, false)
+  && Array.isArray(workflow?.steps)
+  && workflow.steps.length > 0;
+
 const findPreferredPdfObject = (objectNames = []) => {
   const pdfCandidates = (objectNames || []).filter((name) => /\.pdf$/i.test(String(name || "")));
   if (!pdfCandidates.length) {
@@ -285,6 +413,16 @@ const validatePackagedArtifactDraft = (draftDir, availableFormats) => {
   const templateDir = path.join(draftDir, "template");
   if (!fs.existsSync(schemaPath) || !fs.existsSync(metaPath) || !fs.existsSync(templateDir)) {
     throw new Error("El artifact no cumple la estructura base requerida (meta.yaml, schema.json y template/).");
+  }
+  const metaContent = fs.readFileSync(metaPath, "utf8");
+  const requiredMetaSections = [
+    /^workflows:\s*$/m,
+    /^\s{2}fill:\s*$/m,
+    /^\s{2}signatures:\s*$/m,
+    /^dependencies:\s*$/m
+  ];
+  if (requiredMetaSections.some((pattern) => !pattern.test(metaContent))) {
+    throw new Error("El artifact no cumple el contrato minimo de meta.yaml para workflows y dependencies.");
   }
   for (const [mode, formats] of Object.entries(availableFormats || {})) {
     for (const format of Object.keys(formats || {})) {
@@ -524,8 +662,40 @@ const validateTableRules = (tableName, candidate) => {
       }
       break;
     case "documents":
-      if (!candidate.task_item_id) {
-        throw new Error("Selecciona el item de tarea que genera el documento.");
+      if (!candidate.task_item_id && !candidate.owner_person_id) {
+        throw new Error("Selecciona el item de tarea o define un propietario para el documento.");
+      }
+      if (Object.prototype.hasOwnProperty.call(candidate, "status")) {
+        candidate.status = assertDocumentStatusValue(candidate.status);
+      }
+      break;
+    case "fill_flow_templates":
+      if (!candidate.process_definition_template_id) {
+        throw new Error("Selecciona la plantilla de proceso definido.");
+      }
+      break;
+    case "fill_flow_steps":
+      if (!candidate.fill_flow_template_id) {
+        throw new Error("Selecciona la plantilla de llenado.");
+      }
+      if (!candidate.step_order) {
+        throw new Error("Define el orden del paso.");
+      }
+      break;
+    case "document_fill_flows":
+      if (!candidate.fill_flow_template_id) {
+        throw new Error("Selecciona la plantilla de llenado.");
+      }
+      if (!candidate.document_version_id) {
+        throw new Error("Selecciona la version de documento.");
+      }
+      break;
+    case "fill_requests":
+      if (!candidate.document_fill_flow_id) {
+        throw new Error("Selecciona la instancia de llenado.");
+      }
+      if (!candidate.fill_flow_step_id) {
+        throw new Error("Selecciona el paso de llenado.");
       }
       break;
     case "signature_flow_templates":
@@ -554,6 +724,9 @@ const validateTableRules = (tableName, candidate) => {
         if (Number.isNaN(versionValue) || versionValue < 0.1) {
           throw new Error("La version debe ser mayor o igual a 0.1.");
         }
+      }
+      if (Object.prototype.hasOwnProperty.call(candidate, "status")) {
+        candidate.status = assertDocumentVersionStatusValue(candidate.status);
       }
       break;
     case "template_seeds":
@@ -908,6 +1081,30 @@ export default class SqlAdminService {
        WHERE id = ?
        LIMIT 1`,
       [taskItemId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async getProcessRun(processRunId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT id, process_definition_id, term_id, run_mode, created_by_user_id
+       FROM process_runs
+       WHERE id = ?
+       LIMIT 1`,
+      [processRunId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async getFillFlowTemplate(fillFlowTemplateId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT id, process_definition_template_id
+       FROM fill_flow_templates
+       WHERE id = ?
+       LIMIT 1`,
+      [fillFlowTemplateId]
     );
     return rows?.[0] ?? null;
   }
@@ -1329,6 +1526,19 @@ export default class SqlAdminService {
         payload.term_id,
         payload.launch_mode
       );
+
+      if (payload.process_run_id) {
+        const processRun = await this.getProcessRun(payload.process_run_id);
+        if (!processRun) {
+          throw new Error("La corrida de proceso seleccionada no existe.");
+        }
+        if (Number(processRun.process_definition_id) !== Number(payload.process_definition_id)) {
+          throw new Error("La corrida de proceso no pertenece a la definicion seleccionada.");
+        }
+        if (Number(processRun.term_id || 0) !== Number(payload.term_id || 0)) {
+          throw new Error("La corrida de proceso no pertenece al periodo seleccionado.");
+        }
+      }
     }
 
     if (tableName === "task_items" && payload.process_definition_template_id) {
@@ -1357,6 +1567,55 @@ export default class SqlAdminService {
       const taskItem = await this.getTaskItem(payload.task_item_id);
       if (!taskItem) {
         throw new Error("El item de tarea seleccionado no existe.");
+      }
+      payload.origin_type = payload.origin_type || "task_item";
+    }
+
+    if (tableName === "documents" && !payload.task_item_id) {
+      if (!payload.owner_person_id) {
+        throw new Error("Los documentos standalone requieren un propietario.");
+      }
+      payload.origin_type = payload.origin_type || "standalone";
+    }
+
+    if (tableName === "fill_flow_templates" && payload.process_definition_template_id) {
+      const template = await this.getTaskTemplate(payload.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso definido seleccionada no existe.");
+      }
+      payload.process_definition_id = template.process_definition_id;
+      await this.ensureDraftDefinitionContext(
+        template.process_definition_id,
+        { entityLabel: "los flujos de llenado" }
+      );
+      delete payload.process_definition_id;
+    }
+
+    if (tableName === "fill_flow_steps" && payload.fill_flow_template_id) {
+      const fillFlowTemplate = await this.getFillFlowTemplate(payload.fill_flow_template_id);
+      if (!fillFlowTemplate) {
+        throw new Error("La plantilla de llenado seleccionada no existe.");
+      }
+      const template = await this.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
+      if (!template) {
+        throw new Error("La plantilla de proceso definida asociada no existe.");
+      }
+      await this.ensureDraftDefinitionContext(
+        template.process_definition_id,
+        { entityLabel: "los pasos de llenado" }
+      );
+    }
+
+    if (tableName === "document_versions" && payload.document_id) {
+      const document = await this.getByKeys("documents", { id: payload.document_id });
+      if (!document) {
+        throw new Error("El documento seleccionado no existe.");
+      }
+      if (!payload.template_artifact_id && document.task_item_id) {
+        const taskItem = await this.getTaskItem(document.task_item_id);
+        if (taskItem?.template_artifact_id) {
+          payload.template_artifact_id = taskItem.template_artifact_id;
+        }
       }
     }
 
@@ -1445,9 +1704,22 @@ export default class SqlAdminService {
         const connection = await this.pool.getConnection();
         try {
           await connection.beginTransaction();
+          if (!payload.process_run_id) {
+            payload.process_run_id = await ensureProcessRun({
+              connection,
+              processDefinitionId: Number(payload.process_definition_id),
+              termId: Number(payload.term_id),
+              runMode: payload.launch_mode === "automatic" ? "automatic_term" : "manual",
+              createdByUserId: payload.launch_mode === "manual" ? payload.created_by_user_id : null,
+              status: "active"
+            });
+          }
+          const taskColumns = Object.keys(payload);
+          const taskPlaceholders = taskColumns.map(() => "?").join(", ");
+          const taskValues = taskColumns.map((key) => payload[key]);
           const [insertResult] = await connection.query(
-            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
-            values
+            `INSERT INTO ${tableName} (${taskColumns.join(", ")}) VALUES (${taskPlaceholders})`,
+            taskValues
           );
           result = insertResult;
           await hydrateTaskFromDefinition({
@@ -1456,6 +1728,96 @@ export default class SqlAdminService {
             processDefinitionId: Number(payload.process_definition_id),
             termId: Number(payload.term_id)
           });
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "task_items") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          const taskItem = await this.getTaskItem(insertResult.insertId, connection);
+          if (taskItem) {
+            await ensureDocumentForTaskItem(connection, taskItem);
+          } else {
+            await ensureDocumentsForTask(connection, Number(payload.task_id));
+          }
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "document_versions") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          await ensureFillFlowForDocumentVersion(connection, Number(insertResult.insertId));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "fill_requests") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          await syncDocumentProgressFromFillRequest(connection, Number(insertResult.insertId));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "signature_requests") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          await syncDocumentProgressFromSignatureRequest(connection, Number(insertResult.insertId));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "document_signatures") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          await syncDocumentProgressFromDocumentSignature(connection, Number(insertResult.insertId));
           await connection.commit();
         } catch (error) {
           await connection.rollback();
@@ -1546,6 +1908,12 @@ export default class SqlAdminService {
         }
         delete updates.created_by_user_id;
       }
+      if (Object.prototype.hasOwnProperty.call(updates, "process_run_id")) {
+        if (Number(updates.process_run_id || 0) !== Number(existing.process_run_id || 0)) {
+          throw new Error("No se puede cambiar la corrida de proceso de una tarea existente.");
+        }
+        delete updates.process_run_id;
+      }
     }
     if (tableName === "task_items") {
       if (Object.prototype.hasOwnProperty.call(updates, "task_id")) {
@@ -1590,6 +1958,39 @@ export default class SqlAdminService {
         template.process_definition_id,
         { entityLabel: "los flujos de firma" }
       );
+    }
+    if (tableName === "fill_flow_templates") {
+      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
+        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
+          throw new Error("No se puede cambiar la plantilla asociada de un flujo de llenado.");
+        }
+        delete updates.process_definition_template_id;
+      }
+      const template = await this.getTaskTemplate(existing.process_definition_template_id);
+      if (template) {
+        await this.ensureDraftDefinitionContext(
+          template.process_definition_id,
+          { entityLabel: "los flujos de llenado" }
+        );
+      }
+    }
+    if (tableName === "fill_flow_steps") {
+      if (Object.prototype.hasOwnProperty.call(updates, "fill_flow_template_id")) {
+        if (Number(updates.fill_flow_template_id) !== Number(existing.fill_flow_template_id)) {
+          throw new Error("No se puede cambiar la plantilla asociada de un paso de llenado.");
+        }
+        delete updates.fill_flow_template_id;
+      }
+      const fillFlowTemplate = await this.getFillFlowTemplate(existing.fill_flow_template_id);
+      if (fillFlowTemplate) {
+        const template = await this.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
+        if (template) {
+          await this.ensureDraftDefinitionContext(
+            template.process_definition_id,
+            { entityLabel: "los pasos de llenado" }
+          );
+        }
+      }
     }
     if (tableName === "process_definition_triggers") {
       if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
@@ -1841,6 +2242,75 @@ export default class SqlAdminService {
         } finally {
           connection.release();
         }
+      } else if (tableName === "document_versions") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          if (Object.prototype.hasOwnProperty.call(updates, "status")) {
+            const nextStatus = String(updates.status || "").trim().toLowerCase();
+            if (nextStatus === "listo para firma" || nextStatus === "pendiente de firma") {
+              await ensureSignatureFlowForDocumentVersion(connection, Number(existing.id ?? keyPayload.id));
+            }
+          }
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "fill_requests") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          await syncDocumentProgressFromFillRequest(connection, Number(existing.id ?? keyPayload.id));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "signature_requests") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          await syncDocumentProgressFromSignatureRequest(connection, Number(existing.id ?? keyPayload.id));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "document_signatures") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          await syncDocumentProgressFromDocumentSignature(connection, Number(existing.id ?? keyPayload.id));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
       } else {
         await this.pool.query(
           `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
@@ -1879,6 +2349,416 @@ export default class SqlAdminService {
     return updatedRow;
   }
 
+  async getProcessDefinitionTemplatesByArtifact(artifactId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT
+         pdt.id,
+         pdt.process_definition_id,
+         pdt.template_artifact_id,
+         pdv.name AS process_definition_name
+       FROM process_definition_templates pdt
+       INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
+       WHERE pdt.template_artifact_id = ?
+       ORDER BY pdt.id ASC`,
+      [artifactId]
+    );
+    return rows;
+  }
+
+  async getSyncedFillFlowTemplate(processDefinitionTemplateId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT id
+       FROM fill_flow_templates
+       WHERE process_definition_template_id = ?
+         AND description LIKE ?
+       ORDER BY id DESC
+       LIMIT 1`,
+      [processDefinitionTemplateId, `${ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX}%`]
+    );
+    return rows?.[0] || null;
+  }
+
+  async getSyncedSignatureFlowTemplate(processDefinitionTemplateId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT id
+       FROM signature_flow_templates
+       WHERE process_definition_template_id = ?
+         AND description LIKE ?
+       ORDER BY id DESC
+       LIMIT 1`,
+      [processDefinitionTemplateId, `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}%`]
+    );
+    return rows?.[0] || null;
+  }
+
+  async getCargoCodeMap(connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT id, code, name
+       FROM cargos
+       WHERE is_active = 1
+       ORDER BY id ASC`
+    );
+    const map = new Map();
+    for (const row of rows) {
+      const normalizedCode = slugify(row.code || "");
+      const normalizedName = slugify(row.name || "");
+      if (normalizedCode && !map.has(normalizedCode)) {
+        map.set(normalizedCode, Number(row.id));
+      }
+      if (normalizedName && !map.has(normalizedName)) {
+        map.set(normalizedName, Number(row.id));
+      }
+    }
+    return map;
+  }
+
+  async getSignatureTypeCodeMap(connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT id, code
+       FROM signature_types
+       WHERE is_active = 1
+       ORDER BY id ASC`
+    );
+    const map = new Map();
+    for (const row of rows) {
+      const normalizedCode = slugify(row.code);
+      if (normalizedCode && !map.has(normalizedCode)) {
+        map.set(normalizedCode, Number(row.id));
+      }
+    }
+    return map;
+  }
+
+  async ensureSignatureTypeCatalog(connection = this.pool) {
+    await connection.query(
+      `INSERT INTO signature_types (code, name, description, is_active)
+       VALUES
+         ('electronic', 'Firma electronica', 'Firma electronica general sincronizada desde artifacts', 1),
+         ('digital', 'Firma digital', 'Firma digital general sincronizada desde artifacts', 1)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         description = VALUES(description),
+         is_active = VALUES(is_active)`
+    );
+  }
+
+  async replaceSyncedFillFlowSteps(fillFlowTemplateId, steps, connection = this.pool) {
+    await connection.query(
+      `DELETE fr
+       FROM fill_requests fr
+       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+       WHERE dff.fill_flow_template_id = ?`,
+      [fillFlowTemplateId]
+    );
+    await connection.query(
+      "DELETE FROM document_fill_flows WHERE fill_flow_template_id = ?",
+      [fillFlowTemplateId]
+    );
+    await connection.query(
+      "DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?",
+      [fillFlowTemplateId]
+    );
+
+    for (const step of steps) {
+      await connection.query(
+        `INSERT INTO fill_flow_steps (
+           fill_flow_template_id,
+           step_order,
+           resolver_type,
+           assigned_person_id,
+           unit_scope_type,
+           unit_id,
+           unit_type_id,
+           cargo_id,
+           position_id,
+           selection_mode,
+           is_required,
+           can_reject
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          fillFlowTemplateId,
+          step.stepOrder,
+          step.resolverType,
+          step.assignedPersonId,
+          step.unitScopeType,
+          step.unitId,
+          step.unitTypeId,
+          step.cargoId,
+          step.positionId,
+          step.selectionMode,
+          step.isRequired,
+          step.canReject
+        ]
+      );
+    }
+  }
+
+  async replaceSyncedSignatureFlowSteps(signatureFlowTemplateId, steps, connection = this.pool) {
+    await connection.query(
+      `DELETE sr
+       FROM signature_requests sr
+       INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+       WHERE sfi.template_id = ?`,
+      [signatureFlowTemplateId]
+    );
+    await connection.query(
+      "DELETE FROM signature_flow_instances WHERE template_id = ?",
+      [signatureFlowTemplateId]
+    );
+    await connection.query(
+      "DELETE FROM signature_flow_steps WHERE template_id = ?",
+      [signatureFlowTemplateId]
+    );
+
+    for (const step of steps) {
+      await connection.query(
+        `INSERT INTO signature_flow_steps (
+           template_id,
+           step_order,
+           step_type_id,
+           required_cargo_id,
+           selection_mode,
+           required_signers_min,
+           required_signers_max,
+           is_required
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          signatureFlowTemplateId,
+          step.stepOrder,
+          step.stepTypeId,
+          step.requiredCargoId,
+          step.selectionMode,
+          step.requiredSignersMin,
+          step.requiredSignersMax,
+          step.isRequired
+        ]
+      );
+    }
+  }
+
+  async syncArtifactFillWorkflowForArtifact({
+    connection,
+    artifactId,
+    templateCode,
+    storageVersion,
+    displayName,
+    metaDocument
+  }) {
+    const workflow = metaDocument?.workflows?.fill || {};
+    const processTemplates = await this.getProcessDefinitionTemplatesByArtifact(artifactId, connection);
+
+    if (!processTemplates.length) {
+      return {
+        linkedTemplates: 0,
+        syncedTemplates: 0,
+        syncedSteps: 0,
+        deactivatedTemplates: 0
+      };
+    }
+
+    const syncEnabled = isArtifactFillWorkflowSyncEnabled(workflow);
+    const cargoCodeMap = syncEnabled ? await this.getCargoCodeMap(connection) : new Map();
+    const normalizedSteps = syncEnabled
+      ? normalizeFillSteps(workflow, { cargoCodeMap })
+      : [];
+    const templateName = String(workflow?.name || "").trim() || `Flujo de llenado - ${displayName}`;
+    const templateDescription = buildArtifactSyncedFillDescription({
+      artifactId,
+      templateCode,
+      storageVersion
+    });
+
+    let syncedTemplates = 0;
+    let syncedSteps = 0;
+    let deactivatedTemplates = 0;
+
+    for (const processTemplate of processTemplates) {
+      const existingTemplate = await this.getSyncedFillFlowTemplate(processTemplate.id, connection);
+
+      if (!syncEnabled || !normalizedSteps.length) {
+        if (existingTemplate?.id) {
+          await connection.query(
+            `UPDATE fill_flow_templates
+             SET is_active = 0,
+                 name = ?,
+                 description = ?
+             WHERE id = ?`,
+            [templateName, templateDescription, existingTemplate.id]
+          );
+          deactivatedTemplates += 1;
+        }
+        continue;
+      }
+
+      let fillFlowTemplateId = existingTemplate?.id ? Number(existingTemplate.id) : null;
+
+      if (!fillFlowTemplateId) {
+        const [insertResult] = await connection.query(
+          `INSERT INTO fill_flow_templates (
+             process_definition_template_id,
+             name,
+             description,
+             is_active
+           ) VALUES (?, ?, ?, 1)`,
+          [processTemplate.id, templateName, templateDescription]
+        );
+        fillFlowTemplateId = Number(insertResult.insertId);
+      } else {
+        await connection.query(
+          `UPDATE fill_flow_templates
+           SET name = ?,
+               description = ?,
+               is_active = 1
+           WHERE id = ?`,
+          [templateName, templateDescription, fillFlowTemplateId]
+        );
+      }
+
+      await connection.query(
+        `UPDATE fill_flow_templates
+         SET is_active = 0
+         WHERE process_definition_template_id = ?
+           AND description LIKE ?
+           AND id <> ?`,
+        [processTemplate.id, `${ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX}%`, fillFlowTemplateId]
+      );
+
+      await this.replaceSyncedFillFlowSteps(fillFlowTemplateId, normalizedSteps, connection);
+      syncedTemplates += 1;
+      syncedSteps += normalizedSteps.length;
+    }
+
+    return {
+      linkedTemplates: processTemplates.length,
+      syncedTemplates,
+      syncedSteps,
+      deactivatedTemplates
+    };
+  }
+
+  async syncArtifactSignatureWorkflowForArtifact({
+    connection,
+    artifactId,
+    templateCode,
+    storageVersion,
+    displayName,
+    metaDocument
+  }) {
+    const workflow = metaDocument?.workflows?.signatures || {};
+    const processTemplates = await this.getProcessDefinitionTemplatesByArtifact(artifactId, connection);
+
+    if (!processTemplates.length) {
+      return {
+        linkedTemplates: 0,
+        syncedTemplates: 0,
+        syncedSteps: 0,
+        deactivatedTemplates: 0
+      };
+    }
+
+    await this.ensureSignatureTypeCatalog(connection);
+    const syncEnabled = isArtifactSignatureWorkflowSyncEnabled(workflow);
+    const templateName = String(workflow?.name || "").trim() || `Flujo de firma - ${displayName}`;
+    const templateDescription = buildArtifactSyncedSignatureDescription({
+      artifactId,
+      templateCode,
+      storageVersion
+    });
+
+    const cargoCodeMap = await this.getCargoCodeMap(connection);
+    const signatureTypeCodeMap = await this.getSignatureTypeCodeMap(connection);
+    const normalizedSteps = syncEnabled
+      ? (Array.isArray(workflow?.steps) ? workflow.steps : [])
+        .filter((step) => step && typeof step === "object")
+        .map((step, index) => {
+          const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
+          const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
+          const rawCargoCode = String(step.required_cargo_code || "").trim().toLowerCase();
+          const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+          return {
+            stepOrder: Number(step.order) || index + 1,
+            stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
+            requiredCargoId: cargoCodeMap.get(normalizedCargoCode) || null,
+            selectionMode: SIGNATURE_SELECTION_MODES.has(String(step.selection_mode || "auto_all"))
+              ? String(step.selection_mode || "auto_all")
+              : "auto_all",
+            requiredSignersMin: normalizeNumericId(step.required_signers_min),
+            requiredSignersMax: normalizeNumericId(step.required_signers_max),
+            isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0
+          };
+        })
+        .filter((step) => step.stepTypeId && step.requiredCargoId)
+        .sort((left, right) => left.stepOrder - right.stepOrder)
+      : [];
+
+    let syncedTemplates = 0;
+    let syncedSteps = 0;
+    let deactivatedTemplates = 0;
+
+    for (const processTemplate of processTemplates) {
+      const existingTemplate = await this.getSyncedSignatureFlowTemplate(processTemplate.id, connection);
+
+      if (!syncEnabled || !normalizedSteps.length) {
+        if (existingTemplate?.id) {
+          await connection.query(
+            `UPDATE signature_flow_templates
+             SET is_active = 0,
+                 name = ?,
+                 description = ?
+             WHERE id = ?`,
+            [templateName, templateDescription, existingTemplate.id]
+          );
+          deactivatedTemplates += 1;
+        }
+        continue;
+      }
+
+      let signatureFlowTemplateId = existingTemplate?.id ? Number(existingTemplate.id) : null;
+
+      if (!signatureFlowTemplateId) {
+        const [insertResult] = await connection.query(
+          `INSERT INTO signature_flow_templates (
+             process_definition_template_id,
+             name,
+             description,
+             is_active
+           ) VALUES (?, ?, ?, 1)`,
+          [processTemplate.id, templateName, templateDescription]
+        );
+        signatureFlowTemplateId = Number(insertResult.insertId);
+      } else {
+        await connection.query(
+          `UPDATE signature_flow_templates
+           SET name = ?,
+               description = ?,
+               is_active = 1
+           WHERE id = ?`,
+          [templateName, templateDescription, signatureFlowTemplateId]
+        );
+      }
+
+      await connection.query(
+        `UPDATE signature_flow_templates
+         SET is_active = 0
+         WHERE process_definition_template_id = ?
+           AND description LIKE ?
+           AND id <> ?`,
+        [processTemplate.id, `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}%`, signatureFlowTemplateId]
+      );
+
+      await this.replaceSyncedSignatureFlowSteps(signatureFlowTemplateId, normalizedSteps, connection);
+      syncedTemplates += 1;
+      syncedSteps += normalizedSteps.length;
+    }
+
+    return {
+      linkedTemplates: processTemplates.length,
+      syncedTemplates,
+      syncedSteps,
+      deactivatedTemplates
+    };
+  }
+
   async syncTemplateArtifactsFromDist() {
     this.ensurePool();
 
@@ -1900,6 +2780,12 @@ export default class SqlAdminService {
     let updated = 0;
     let discovered = 0;
     let outputs = 0;
+    let fillTemplatesSynced = 0;
+    let fillStepsSynced = 0;
+    let fillTemplatesDeactivated = 0;
+    let signatureTemplatesSynced = 0;
+    let signatureStepsSynced = 0;
+    let signatureTemplatesDeactivated = 0;
 
     for (const templateEntry of templateRootEntries) {
       const templateCode = templateEntry.name;
@@ -1919,6 +2805,7 @@ export default class SqlAdminService {
         }
 
         const metaContent = fs.readFileSync(metaPath, "utf8");
+        const metaDocument = parseYamlDocument(metaContent, { filePath: metaPath });
         const displayName = getYamlScalar(metaContent, "name") || templateCode;
         const sourceVersion = getYamlScalar(metaContent, "version") || "1.0.0";
         const repositoryStage = (getYamlScalar(metaContent, "repository_stage") || "published").trim() || "published";
@@ -2015,81 +2902,122 @@ export default class SqlAdminService {
           [templateCode, storageVersion]
         );
 
-        if (existingRows?.length) {
-          await this.pool.query(
-            `UPDATE template_artifacts
-             SET display_name = ?,
-                 description = COALESCE(description, NULL),
-                 owner_ref = NULL,
-                 owner_person_id = NULL,
-                 artifact_origin = 'system',
-                 source_version = ?,
-                 artifact_stage = ?,
-                 template_seed_id = ?,
-                 bucket = ?,
-                 base_object_prefix = ?,
-                 available_formats = ?,
-                 schema_object_key = ?,
-                 meta_object_key = ?,
-                 content_hash = ?,
-                 is_active = 1
-             WHERE id = ?`,
-            [
-              displayName,
-              sourceVersion,
-              repositoryStage,
-              templateSeedId,
-              bucket,
-              baseObjectPrefix,
-              availableFormatsJson,
-              schemaObjectKey,
-              metaObjectKey,
-              versionHash,
-              existingRows[0].id
-            ]
-          );
-          updated += 1;
-        } else {
-          await this.pool.query(
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+
+          let artifactId = null;
+
+          if (existingRows?.length) {
+            artifactId = Number(existingRows[0].id);
+            await connection.query(
+              `UPDATE template_artifacts
+               SET display_name = ?,
+                   description = COALESCE(description, NULL),
+                   owner_ref = NULL,
+                   owner_person_id = NULL,
+                   artifact_origin = 'system',
+                   source_version = ?,
+                   artifact_stage = ?,
+                   template_seed_id = ?,
+                   bucket = ?,
+                   base_object_prefix = ?,
+                   available_formats = ?,
+                   schema_object_key = ?,
+                   meta_object_key = ?,
+                   content_hash = ?,
+                   is_active = 1
+               WHERE id = ?`,
+              [
+                displayName,
+                sourceVersion,
+                repositoryStage,
+                templateSeedId,
+                bucket,
+                baseObjectPrefix,
+                availableFormatsJson,
+                schemaObjectKey,
+                metaObjectKey,
+                versionHash,
+                artifactId
+              ]
+            );
+            updated += 1;
+          } else {
+            const [insertResult] = await connection.query(
               `INSERT INTO template_artifacts (
-              template_seed_id,
-              owner_person_id,
-              template_code,
-              display_name,
-              description,
-              owner_ref,
-              artifact_origin,
-              source_version,
-              storage_version,
-              artifact_stage,
-              bucket,
-              base_object_prefix,
-              available_formats,
-              schema_object_key,
-              meta_object_key,
-              content_hash,
-              is_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [
-              templateSeedId,
-              null,
-              templateCode,
-              displayName,
-              null,
-              null,
-              "system",
-              sourceVersion,
-              storageVersion,
-              repositoryStage,
-              bucket,
-              baseObjectPrefix,
-              availableFormatsJson,
-              schemaObjectKey,
-              metaObjectKey,
-              versionHash
-            ]
-          );
-          inserted += 1;
+                template_seed_id,
+                owner_person_id,
+                template_code,
+                display_name,
+                description,
+                owner_ref,
+                artifact_origin,
+                source_version,
+                storage_version,
+                artifact_stage,
+                bucket,
+                base_object_prefix,
+                available_formats,
+                schema_object_key,
+                meta_object_key,
+                content_hash,
+                is_active
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+              [
+                templateSeedId,
+                null,
+                templateCode,
+                displayName,
+                null,
+                null,
+                "system",
+                sourceVersion,
+                storageVersion,
+                repositoryStage,
+                bucket,
+                baseObjectPrefix,
+                availableFormatsJson,
+                schemaObjectKey,
+                metaObjectKey,
+                versionHash
+              ]
+            );
+            artifactId = Number(insertResult.insertId);
+            inserted += 1;
+          }
+
+          const fillSyncSummary = await this.syncArtifactFillWorkflowForArtifact({
+            connection,
+            artifactId,
+            templateCode,
+            storageVersion,
+            displayName,
+            metaDocument
+          });
+
+          const signatureSyncSummary = await this.syncArtifactSignatureWorkflowForArtifact({
+            connection,
+            artifactId,
+            templateCode,
+            storageVersion,
+            displayName,
+            metaDocument
+          });
+
+          fillTemplatesSynced += Number(fillSyncSummary.syncedTemplates || 0);
+          fillStepsSynced += Number(fillSyncSummary.syncedSteps || 0);
+          fillTemplatesDeactivated += Number(fillSyncSummary.deactivatedTemplates || 0);
+          signatureTemplatesSynced += Number(signatureSyncSummary.syncedTemplates || 0);
+          signatureStepsSynced += Number(signatureSyncSummary.syncedSteps || 0);
+          signatureTemplatesDeactivated += Number(signatureSyncSummary.deactivatedTemplates || 0);
+
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
         }
       }
     }
@@ -2099,6 +3027,12 @@ export default class SqlAdminService {
       outputs,
       inserted,
       updated,
+      fillTemplatesSynced,
+      fillStepsSynced,
+      fillTemplatesDeactivated,
+      signatureTemplatesSynced,
+      signatureStepsSynced,
+      signatureTemplatesDeactivated,
       bucket,
       prefix: basePrefixRoot
     };
@@ -2490,7 +3424,11 @@ export default class SqlAdminService {
     if (seedRow?.seed_code) {
       metaLines.push(`seed_code: "${String(seedRow.seed_code).replace(/"/g, '\\"')}"`);
     }
-    fs.writeFileSync(path.join(draftDir, "meta.yaml"), `${metaLines.join("\n")}\n`, "utf8");
+    fs.writeFileSync(
+      path.join(draftDir, "meta.yaml"),
+      `${metaLines.join("\n")}\n${ARTIFACT_WORKFLOW_CONTRACT}\n`,
+      "utf8"
+    );
     validatePackagedArtifactDraft(draftDir, availableFormats);
 
     const contentHash = hashDirectory(draftDir);

@@ -2,6 +2,7 @@ key: "investigación/integración/artículos-académicos/planes/trabajo-uic"
 export_id: "tpl_investigación_integración_artículos_académicos_planes_trabajo_uic"
 name: "Trabajo UIC PUCE"
 seed: "informe-general"
+repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
@@ -12,3 +13,18 @@ modes:
     latex:
       path: "modes/user/latex/src"
 origins: []
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps: []
+  signatures:
+    required: false
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    anchors: []
+    steps: []
+dependencies:
+  templates: []
+  data: []

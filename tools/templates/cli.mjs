@@ -5,15 +5,17 @@ import { fileURLToPath } from "url";
 import { spawnSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
-const ROOT_DIR = path.dirname(__filename);
-const REPO_ROOT = path.resolve(ROOT_DIR, "..", "..");
-const SOURCE_DIR = path.join(ROOT_DIR, "templates");
-const SEEDS_DIR = path.join(ROOT_DIR, "seeds", "latex");
-const DIST_ROOT = path.join(ROOT_DIR, "dist", "Plantillas");
-const CATALOG_PATH = path.join(ROOT_DIR, "CATALOG.yaml");
-const PYTHON_DIR = path.join(ROOT_DIR, "python");
-const DOCKER_DIR = path.join(REPO_ROOT, "docker");
-const DEFAULT_SEED = "informe-docente";
+const IS_DIRECT_EXECUTION = Boolean(process.argv[1] && path.resolve(process.argv[1]) === __filename);
+export const ROOT_DIR = path.dirname(__filename);
+export const REPO_ROOT = path.resolve(ROOT_DIR, "..", "..");
+export const SOURCE_DIR = path.join(ROOT_DIR, "templates");
+export const SEEDS_DIR = path.join(ROOT_DIR, "seeds", "latex");
+export const PATTERNS_DIR = path.join(ROOT_DIR, "patterns");
+export const DIST_ROOT = path.join(ROOT_DIR, "dist", "Plantillas");
+export const CATALOG_PATH = path.join(ROOT_DIR, "CATALOG.yaml");
+export const PYTHON_DIR = path.join(ROOT_DIR, "python");
+export const DOCKER_DIR = path.join(REPO_ROOT, "docker");
+export const DEFAULT_SEED = "informe-docente";
 const GENERATED_FILES = new Set([
   "main.aux",
   "main.bbl",
@@ -30,7 +32,31 @@ const GENERATED_FILES = new Set([
   "main.fdb_latexmk",
 ]);
 
-function usage() {
+const WORKFLOW_CONTRACT_BLOCK = `workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps: []
+  signatures:
+    required: false
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps: []
+dependencies:
+  templates: []
+  data: []
+`;
+
+function normalizeWorkflowBlock(content) {
+  const normalized = String(content || "").trim();
+  if (!normalized) {
+    return WORKFLOW_CONTRACT_BLOCK;
+  }
+  return normalized.endsWith("\n") ? normalized : `${normalized}\n`;
+}
+
+export function usage() {
   console.log(`Uso:
   node tools/templates/cli.mjs new --key <path> [--version 1.0.0] [--name "Nombre"] [--seed <name|path>]
     Crea un template fuente nuevo dentro de tools/templates/templates. Si usas --seed, inicializa la base desde una semilla LaTeX.
@@ -44,6 +70,8 @@ function usage() {
     Trabaja con una semilla LaTeX: prepara la estructura base y, con --compile, genera su preview PDF.
   node tools/templates/cli.mjs json --key <path> --version <version>
     Genera o refresca archivos JSON derivados del template (metadatos/listados de apoyo).
+  node tools/templates/cli.mjs prepare-runtime --key <path> --version <version> --runtime <archivo> [--out <archivo>]
+    Materializa un payload JSON listo para render a partir de data + schema + meta + pattern_ref.
   node tools/templates/cli.mjs catalog
     Recalcula y sincroniza el CATALOG.yaml a partir de los templates fuente existentes.
   node tools/templates/cli.mjs package
@@ -52,6 +80,8 @@ function usage() {
     Publica los templates oficiales a MinIO bajo deasy-templates/System. Con --skip-package reutiliza el dist actual.
   node tools/templates/cli.mjs publish-seeds
     Publica las semillas LaTeX a MinIO bajo deasy-templates/Seeds.
+  node tools/templates/cli.mjs tui
+    Abre una interfaz interactiva en terminal para navegar las operaciones principales.
 
 Notas:
   - La fuente vive en tools/templates/templates
@@ -60,7 +90,7 @@ Notas:
 `);
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const args = { _: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -81,8 +111,11 @@ function parseArgs(argv) {
 }
 
 function fail(message) {
-  console.error(message);
-  process.exit(1);
+  if (IS_DIRECT_EXECUTION) {
+    console.error(message);
+    process.exit(1);
+  }
+  throw new Error(message);
 }
 
 function resolvePath(inputPath) {
@@ -165,6 +198,220 @@ function upsertYamlScalar(content, key, value, quote = true) {
     return content.replace(pattern, line);
   }
   return `${line}\n${content}`;
+}
+
+function ensureWorkflowContract(content) {
+  let next = String(content || "");
+  if (!/\n$/.test(next)) {
+    next += "\n";
+  }
+  if (!/^workflows:\s*$/m.test(next)) {
+    next += `\n${WORKFLOW_CONTRACT_BLOCK}`;
+    return next;
+  }
+  if (!/^dependencies:\s*$/m.test(next)) {
+    next += "\ndependencies:\n  templates: []\n  data: []\n";
+  }
+  return next;
+}
+
+function validateTemplateContract(baseDir, metaContent) {
+  const checks = [
+    { pattern: /^key:\s*["'][^"']+["']\s*$/m, label: "key" },
+    { pattern: /^export_id:\s*["'][^"']*["']\s*$/m, label: "export_id" },
+    { pattern: /^name:\s*["'][^"']+["']\s*$/m, label: "name" },
+    { pattern: /^repository_stage:\s*(draft|review|approved|published|archived)\s*$/m, label: "repository_stage" },
+    { pattern: /^version:\s*\d+\.\d+\.\d+\s*$/m, label: "version" },
+    { pattern: /^storage_version:\s*v\d+\s*$/m, label: "storage_version" },
+    { pattern: /^modes:\s*$/m, label: "modes" },
+    { pattern: /^origins:\s*(\[\])?\s*$/m, label: "origins" },
+    { pattern: /^workflows:\s*$/m, label: "workflows" },
+    { pattern: /^\s{2}fill:\s*$/m, label: "workflows.fill" },
+    { pattern: /^\s{2}fill:\s*\n\s{4}required:\s*(true|false)\s*$/m, label: "workflows.fill.required" },
+    { pattern: /^\s{2}fill:\s*\n(?:.*\n)*?\s{4}source:\s*["'][^"']+["']\s*$/m, label: "workflows.fill.source" },
+    { pattern: /^\s{2}fill:\s*\n(?:.*\n)*?\s{4}sync_mode:\s*["'][^"']+["']\s*$/m, label: "workflows.fill.sync_mode" },
+    { pattern: /^\s{2}fill:\s*\n(?:.*\n)*?\s{4}steps:\s*(\[\]|)\s*$/m, label: "workflows.fill.steps" },
+    { pattern: /^\s{2}signatures:\s*$/m, label: "workflows.signatures" },
+    { pattern: /^\s{2}signatures:\s*\n\s{4}required:\s*(true|false)\s*$/m, label: "workflows.signatures.required" },
+    { pattern: /^\s{2}signatures:\s*\n(?:.*\n)*?\s{4}source:\s*["'][^"']+["']\s*$/m, label: "workflows.signatures.source" },
+    { pattern: /^\s{2}signatures:\s*\n(?:.*\n)*?\s{4}sync_mode:\s*["'][^"']+["']\s*$/m, label: "workflows.signatures.sync_mode" },
+    { pattern: /^\s{2}signatures:\s*\n(?:.*\n)*?\s{4}steps:\s*(\[\]|)\s*$/m, label: "workflows.signatures.steps" },
+    { pattern: /^dependencies:\s*$/m, label: "dependencies" },
+    { pattern: /^\s{2}templates:\s*(\[\]|)\s*$/m, label: "dependencies.templates" },
+    { pattern: /^\s{2}data:\s*(\[\]|)\s*$/m, label: "dependencies.data" }
+  ];
+
+  for (const check of checks) {
+    if (!check.pattern.test(metaContent)) {
+      fail(`El template ${baseDir} no cumple el contrato minimo de meta.yaml. Falta: ${check.label}`);
+    }
+  }
+}
+
+function collectSchemaFieldCodes(node, collected = new Set()) {
+  if (!node || typeof node !== "object") {
+    return collected;
+  }
+
+  if (typeof node["x-deasy-field-code"] === "string" && node["x-deasy-field-code"].trim()) {
+    collected.add(node["x-deasy-field-code"].trim());
+  }
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      collectSchemaFieldCodes(item, collected);
+    }
+    return collected;
+  }
+
+  for (const value of Object.values(node)) {
+    collectSchemaFieldCodes(value, collected);
+  }
+
+  return collected;
+}
+
+function extractYamlListValues(metaContent, keyName) {
+  const values = [];
+  const lines = String(metaContent || "").split("\n");
+  let collecting = false;
+  let parentIndent = 0;
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\t/g, "  ");
+    const trimmed = line.trim();
+    const indent = line.length - line.trimStart().length;
+
+    if (!collecting) {
+      if (trimmed === `${keyName}:`) {
+        collecting = true;
+        parentIndent = indent;
+      }
+      continue;
+    }
+
+    if (!trimmed) {
+      continue;
+    }
+
+    if (indent <= parentIndent) {
+      collecting = false;
+      if (trimmed === `${keyName}:`) {
+        collecting = true;
+        parentIndent = indent;
+      }
+      continue;
+    }
+
+    const itemMatch = trimmed.match(/^-\s+["']?(.+?)["']?\s*$/);
+    if (itemMatch) {
+      values.push(itemMatch[1].trim());
+    }
+  }
+
+  return values;
+}
+
+function extractYamlScalarValues(metaContent, keyName) {
+  const values = [];
+  const pattern = new RegExp(`^\\s*${keyName}:\\s*["']?(.+?)["']?\\s*$`, "gm");
+  let match = pattern.exec(metaContent);
+  while (match) {
+    values.push(String(match[1] || "").trim());
+    match = pattern.exec(metaContent);
+  }
+  return values;
+}
+
+function resolvePatternPath(patternRef) {
+  const normalized = String(patternRef || "").trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  if (!normalized) return "";
+  const candidates = normalized.endsWith(".yaml")
+    ? [normalized]
+    : [`${normalized}.yaml`, path.posix.join(normalized, "pattern.yaml")];
+
+  for (const candidate of candidates) {
+    const absolutePath = path.join(PATTERNS_DIR, candidate);
+    if (fs.existsSync(absolutePath)) {
+      return absolutePath;
+    }
+  }
+  return "";
+}
+
+function validateTemplateSignaturePattern(baseDir, metaContent, schemaPath) {
+  const patternRefs = extractYamlScalarValues(metaContent, "pattern_ref");
+  if (!patternRefs.length) {
+    return;
+  }
+
+  let schema;
+  try {
+    schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
+  } catch (error) {
+    fail(`El schema.json de ${baseDir} no es un JSON valido: ${error.message}`);
+  }
+
+  const fieldCodes = collectSchemaFieldCodes(schema);
+
+  for (const patternRef of patternRefs) {
+    const patternPath = resolvePatternPath(patternRef);
+    if (!patternPath) {
+      fail(`El template ${baseDir} referencia un signature pattern inexistente: ${patternRef}`);
+    }
+
+    const patternContent = fs.readFileSync(patternPath, "utf8");
+    const patternFieldCodes = extractYamlScalarValues(patternContent, "code")
+      .filter((value) => value.startsWith("signatures."));
+    const patternTokenFieldRefs = extractYamlScalarValues(patternContent, "token_field_ref");
+
+    const missingPatternFields = patternFieldCodes.filter((ref) => !fieldCodes.has(ref));
+    if (missingPatternFields.length) {
+      fail(
+        `El template ${baseDir} usa el pattern ${patternRef}, pero schema.json no declara estos campos: ${missingPatternFields.join(", ")}`
+      );
+    }
+
+    const missingPatternTokenRefs = patternTokenFieldRefs.filter((ref) => !fieldCodes.has(ref));
+    if (missingPatternTokenRefs.length) {
+      fail(
+        `El template ${baseDir} usa el pattern ${patternRef}, pero schema.json no declara estos token_field_ref: ${missingPatternTokenRefs.join(", ")}`
+      );
+    }
+  }
+}
+
+function validateTemplateSchemaBindings(baseDir, metaContent, schemaPath) {
+  if (!fs.existsSync(schemaPath)) {
+    fail(`No se encontro schema.json en ${baseDir}`);
+  }
+
+  let schema;
+  try {
+    schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
+  } catch (error) {
+    fail(`El schema.json de ${baseDir} no es un JSON valido: ${error.message}`);
+  }
+
+  const fieldCodes = collectSchemaFieldCodes(schema);
+  const fieldRefs = extractYamlListValues(metaContent, "field_refs");
+  const tokenFieldRefs = extractYamlScalarValues(metaContent, "token_field_ref");
+
+  const missingFieldRefs = fieldRefs.filter((ref) => !fieldCodes.has(ref));
+  if (missingFieldRefs.length) {
+    fail(
+      `El template ${baseDir} referencia field_refs inexistentes en schema.json: ${missingFieldRefs.join(", ")}`
+    );
+  }
+
+  const missingTokenFieldRefs = tokenFieldRefs.filter((ref) => !fieldCodes.has(ref));
+  if (missingTokenFieldRefs.length) {
+    fail(
+      `El template ${baseDir} referencia token_field_ref inexistentes en schema.json: ${missingTokenFieldRefs.join(", ")}`
+    );
+  }
+
+  validateTemplateSignaturePattern(baseDir, metaContent, schemaPath);
 }
 
 function makeExportId(templateKey) {
@@ -296,7 +543,7 @@ function resolveNewKey(args) {
   fail("Debes indicar --key o --here <nombre>.");
 }
 
-function renderDataJson(baseDir) {
+export function renderDataJson(baseDir) {
   const dataYaml = path.join(baseDir, "data.yaml");
   const dataJson = path.join(baseDir, "data.json");
   if (!fs.existsSync(dataYaml)) {
@@ -307,7 +554,40 @@ function renderDataJson(baseDir) {
   console.log(`JSON regenerado: ${dataJson}`);
 }
 
-function renderTemplate(baseDir) {
+export function prepareRuntimePayload(baseDir, runtimePathArg, outPathArg) {
+  if (!runtimePathArg) {
+    fail("prepare-runtime requiere --runtime <archivo>.");
+  }
+
+  const runtimePath = resolvePath(runtimePathArg);
+  if (!fs.existsSync(runtimePath)) {
+    fail(`No se encontro el archivo runtime: ${runtimePath}`);
+  }
+
+  const dataYaml = path.join(baseDir, "data.yaml");
+  const dataJson = path.join(baseDir, "data.json");
+  const dataPath = fs.existsSync(dataYaml) ? dataYaml : dataJson;
+  const metaPath = path.join(baseDir, "meta.yaml");
+  const schemaPath = path.join(baseDir, "schema.json");
+  const outPath = outPathArg
+    ? resolvePath(outPathArg)
+    : path.join(baseDir, "runtime.data.json");
+
+  if (!fs.existsSync(dataPath)) fail(`No se encontro data.yaml/data.json en ${baseDir}`);
+  if (!fs.existsSync(metaPath)) fail(`No se encontro meta.yaml en ${baseDir}`);
+  if (!fs.existsSync(schemaPath)) fail(`No se encontro schema.json en ${baseDir}`);
+
+  runPython("prepare_runtime_payload.py", [
+    "--data", dataPath,
+    "--meta", metaPath,
+    "--schema", schemaPath,
+    "--runtime", runtimePath,
+    "--out", outPath,
+  ]);
+  console.log(`Payload runtime generado: ${outPath}`);
+}
+
+export function renderTemplate(baseDir) {
   const systemDir = path.join(baseDir, "modes", "system", "jinja2", "src");
   const userDir = path.join(baseDir, "modes", "user", "latex", "src");
   const dataYaml = path.join(baseDir, "data.yaml");
@@ -320,7 +600,7 @@ function renderTemplate(baseDir) {
   console.log(`Render completado: ${userDir}`);
 }
 
-function renderSeedPreview(seedRoot, compile = false) {
+export function renderSeedPreview(seedRoot, compile = false) {
   const seedSrc = path.join(seedRoot, "src");
   const seedDefaults = path.join(seedRoot, "defaults.yaml");
   const seedRender = path.join(seedRoot, "render");
@@ -370,7 +650,18 @@ function writeMinimalLatexFiles(targetDir) {
   }
 }
 
-function buildMetaContent({ key, name, version, mode, engine, includeSystem = false, seedCode = "", seedName = "" }) {
+function buildMetaContent({
+  key,
+  name,
+  version,
+  mode,
+  engine,
+  includeSystem = false,
+  seedCode = "",
+  seedName = "",
+  workflowBlock = WORKFLOW_CONTRACT_BLOCK
+}) {
+  const normalizedWorkflowBlock = normalizeWorkflowBlock(workflowBlock);
   if (includeSystem || mode === "user") {
     return `key: "${escapeYamlString(key)}"
 export_id: ""
@@ -393,7 +684,7 @@ ${includeSystem ? `  system:
     xlsx:
       path: "modes/user/xlsx/src"
 origins: []
-`;
+${normalizedWorkflowBlock}`;
   }
   return `key: "${escapeYamlString(key)}"
 export_id: ""
@@ -407,7 +698,7 @@ modes:
     ${engine}:
       path: "modes/${mode}/${engine}/src"
 origins: []
-`;
+${normalizedWorkflowBlock}`;
 }
 
 function removeGeneratedArtifacts(dirPath) {
@@ -429,7 +720,7 @@ function replaceLegacyTemplateDirs(baseDir) {
   }
 }
 
-function createTemplate(args) {
+export function createTemplate(args) {
   const key = resolveNewKey(args);
   const version = args.version || "1.0.0";
   let name = args.name || key;
@@ -460,6 +751,7 @@ function createTemplate(args) {
     metaContent = upsertYamlScalar(metaContent, "name", name, true);
     metaContent = upsertYamlScalar(metaContent, "version", version, false);
     metaContent = upsertYamlScalar(metaContent, "storage_version", "v0001", false);
+    metaContent = ensureWorkflowContract(metaContent);
     fs.writeFileSync(metaPath, metaContent, "utf8");
   } else if (mode === "user" && engine === "latex") {
     const seedRoot = resolveSeedRoot(args.seed, false);
@@ -467,6 +759,8 @@ function createTemplate(args) {
     const seedName = seedCode ? seedCode.split("/").pop() : "";
     const seedSrc = path.join(seedRoot, "src");
     const seedDefaults = path.join(seedRoot, "defaults.yaml");
+    const seedSchema = path.join(seedRoot, "schema.json");
+    const seedWorkflow = path.join(seedRoot, "workflow.yaml");
     if (!fs.existsSync(seedSrc) || !fs.existsSync(seedDefaults)) {
       fail(`La semilla no es valida: ${seedRoot}`);
     }
@@ -491,8 +785,12 @@ function createTemplate(args) {
       engine,
       includeSystem: true,
       seedCode,
-      seedName
+      seedName,
+      workflowBlock: fs.existsSync(seedWorkflow) ? fs.readFileSync(seedWorkflow, "utf8") : WORKFLOW_CONTRACT_BLOCK
     }), "utf8");
+    if (fs.existsSync(seedSchema)) {
+      fs.copyFileSync(seedSchema, path.join(dest, "schema.json"));
+    }
   } else {
     if (mode === "user") {
       createDefaultUserModeDirs(dest);
@@ -525,7 +823,7 @@ function createTemplate(args) {
   console.log(`Template creado: ${dest}`);
 }
 
-function createVersion(args) {
+export function createVersion(args) {
   const key = args.key || (typeof args.here === "string" ? resolveNewKey(args) : "");
   const fromVersion = args.from;
   const toVersion = args.to;
@@ -544,7 +842,7 @@ function createVersion(args) {
   });
 }
 
-function syncCatalog({ quiet = false } = {}) {
+export function syncCatalog({ quiet = false } = {}) {
   const metaFiles = walkFiles(SOURCE_DIR, (file) => path.basename(file) === "meta.yaml").sort();
   const catalogLines = ["# Template catalog (auto-generated)", "", "templates:"];
 
@@ -559,6 +857,7 @@ function syncCatalog({ quiet = false } = {}) {
     let metaContent = fs.readFileSync(metaPath, "utf8");
     metaContent = upsertYamlScalar(metaContent, "key", key, true);
     metaContent = upsertYamlScalar(metaContent, "export_id", exportId, true);
+    metaContent = ensureWorkflowContract(metaContent);
     fs.writeFileSync(metaPath, metaContent, "utf8");
 
     const name = getYamlScalar(metaContent, "name") || "Template";
@@ -606,7 +905,7 @@ function syncCatalog({ quiet = false } = {}) {
   if (!quiet) console.log(`Catalogo actualizado: ${CATALOG_PATH}`);
 }
 
-function packageTemplates() {
+export function packageTemplates() {
   syncCatalog({ quiet: true });
   removeIfExists(DIST_ROOT);
   ensureDir(DIST_ROOT);
@@ -615,6 +914,8 @@ function packageTemplates() {
   for (const metaPath of metaFiles) {
     const baseDir = path.dirname(metaPath);
     const metaContent = fs.readFileSync(metaPath, "utf8");
+    validateTemplateContract(baseDir, metaContent);
+    validateTemplateSchemaBindings(baseDir, metaContent, path.join(baseDir, "schema.json"));
     const exportId = getYamlScalar(metaContent, "export_id");
     const templateId = getYamlScalar(metaContent, "template_id");
     const storageVersion = getYamlScalar(metaContent, "storage_version") || "v0001";
@@ -641,23 +942,34 @@ function packageTemplates() {
   console.log(`Templates empaquetados en ${DIST_ROOT}`);
 }
 
-function publishTemplates(skipPackage) {
+export function validateDistTemplates() {
+  const metaFiles = walkFiles(DIST_ROOT, (file) => path.basename(file) === "meta.yaml").sort();
+  for (const metaPath of metaFiles) {
+    const baseDir = path.dirname(metaPath);
+    const metaContent = fs.readFileSync(metaPath, "utf8");
+    validateTemplateContract(baseDir, metaContent);
+    validateTemplateSchemaBindings(baseDir, metaContent, path.join(baseDir, "schema.json"));
+  }
+}
+
+export function publishTemplates(skipPackage) {
   if (!skipPackage) {
     packageTemplates();
   }
+  validateDistTemplates();
   runCommand("docker", ["compose", "--profile", "storage-publish", "run", "--rm", "minio-publish"], {
     cwd: DOCKER_DIR,
   });
 }
 
-function publishSeeds() {
+export function publishSeeds() {
   runCommand("docker", ["compose", "--profile", "storage-publish-seeds", "run", "--rm", "minio-publish-seeds"], {
     cwd: DOCKER_DIR,
   });
 }
 
-function main() {
-  const [command, ...rest] = process.argv.slice(2);
+export async function main(argv = process.argv.slice(2)) {
+  const [command, ...rest] = argv;
   if (!command || command === "help" || command === "--help" || command === "-h") {
     usage();
     return;
@@ -681,6 +993,9 @@ function main() {
     case "json":
       renderDataJson(resolveTemplateVersionDir(args));
       return;
+    case "prepare-runtime":
+      prepareRuntimePayload(resolveTemplateVersionDir(args), args.runtime, args.out);
+      return;
     case "catalog":
       syncCatalog();
       return;
@@ -693,9 +1008,16 @@ function main() {
     case "publish-seeds":
       publishSeeds();
       return;
+    case "tui": {
+      const { runTui } = await import("./tui.mjs");
+      await runTui();
+      return;
+    }
     default:
       fail(`Comando desconocido: ${command}`);
   }
 }
 
-main();
+if (IS_DIRECT_EXECUTION) {
+  await main();
+}

@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "periodo": { "type": "string", "title": "Periodo", "x-deasy-field-code": "general.periodo", "x-deasy-data-key": "periodo", "x-deasy-ui": { "component": "text", "group": "general" } },
+    "carrera": { "type": "string", "title": "Carrera", "x-deasy-field-code": "general.carrera", "x-deasy-data-key": "carrera", "x-deasy-ui": { "component": "text", "group": "general" } },
+    "asignatura": { "type": "string", "title": "Asignatura", "x-deasy-field-code": "general.asignatura", "x-deasy-data-key": "asignatura", "x-deasy-ui": { "component": "text", "group": "general" } },
+    "nivel": { "type": "string", "title": "Nivel", "x-deasy-field-code": "general.nivel", "x-deasy-data-key": "nivel", "x-deasy-ui": { "component": "text", "group": "general" } },
+    "numero_practica": { "type": "string", "title": "Numero de practica", "x-deasy-field-code": "general.numero_practica", "x-deasy-data-key": "numero_practica", "x-deasy-ui": { "component": "text", "group": "general" } },
+    "tema_practica": { "type": "string", "title": "Tema de la practica", "x-deasy-field-code": "general.tema_practica", "x-deasy-data-key": "tema_practica", "x-deasy-ui": { "component": "text", "group": "general" } },
+    "firmaElaboradoToken": { "type": "string", "title": "Token elaborado", "x-deasy-field-code": "signatures.elaborado.token", "x-deasy-data-key": "firmaElaboradoToken", "x-deasy-ui": { "component": "hidden", "group": "signatures" } },
+    "nombreElaborado": { "type": "string", "title": "Nombre elaborado", "x-deasy-field-code": "signatures.elaborado.nombre", "x-deasy-data-key": "nombreElaborado", "x-deasy-ui": { "component": "text", "group": "signatures_elaborado" } },
+    "cargoElaborado": { "type": "string", "title": "Cargo elaborado", "x-deasy-field-code": "signatures.elaborado.cargo", "x-deasy-data-key": "cargoElaborado", "x-deasy-ui": { "component": "text", "group": "signatures_elaborado" } },
+    "fechaElaborado": { "type": "string", "title": "Fecha elaborado", "x-deasy-field-code": "signatures.elaborado.fecha", "x-deasy-data-key": "fechaElaborado", "x-deasy-ui": { "component": "date_expression", "group": "signatures_elaborado" } },
+    "firmaRevisadoToken": { "type": "string", "title": "Token revisado", "x-deasy-field-code": "signatures.revisado.token", "x-deasy-data-key": "firmaRevisadoToken", "x-deasy-ui": { "component": "hidden", "group": "signatures" } },
+    "nombreRevisado": { "type": "string", "title": "Nombre revisado", "x-deasy-field-code": "signatures.revisado.nombre", "x-deasy-data-key": "nombreRevisado", "x-deasy-ui": { "component": "text", "group": "signatures_revisado" } },
+    "cargoRevisado": { "type": "string", "title": "Cargo revisado", "x-deasy-field-code": "signatures.revisado.cargo", "x-deasy-data-key": "cargoRevisado", "x-deasy-ui": { "component": "text", "group": "signatures_revisado" } },
+    "fechaRevisado": { "type": "string", "title": "Fecha revisado", "x-deasy-field-code": "signatures.revisado.fecha", "x-deasy-data-key": "fechaRevisado", "x-deasy-ui": { "component": "date_expression", "group": "signatures_revisado" } },
+    "firmaAprobadoToken": { "type": "string", "title": "Token aprobado", "x-deasy-field-code": "signatures.aprobado.token", "x-deasy-data-key": "firmaAprobadoToken", "x-deasy-ui": { "component": "hidden", "group": "signatures" } },
+    "nombreAprobado": { "type": "string", "title": "Nombre aprobado", "x-deasy-field-code": "signatures.aprobado.nombre", "x-deasy-data-key": "nombreAprobado", "x-deasy-ui": { "component": "text", "group": "signatures_aprobado" } },
+    "cargoAprobado": { "type": "string", "title": "Cargo aprobado", "x-deasy-field-code": "signatures.aprobado.cargo", "x-deasy-data-key": "cargoAprobado", "x-deasy-ui": { "component": "text", "group": "signatures_aprobado" } },
+    "fechaAprobado": { "type": "string", "title": "Fecha aprobado", "x-deasy-field-code": "signatures.aprobado.fecha", "x-deasy-data-key": "fechaAprobado", "x-deasy-ui": { "component": "date_expression", "group": "signatures_aprobado" } }
+  },
+  "required": ["periodo", "carrera", "asignatura", "nivel", "numero_practica", "tema_practica"],
+  "additionalProperties": true
+}

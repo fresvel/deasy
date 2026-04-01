@@ -3,6 +3,7 @@ export_id: "tpl_investigación_formativa_informe_estudiantes"
 name: "Informes de Estudiantes"
 seed: "informe-estudiantes"
 domain: investigacion
+repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
@@ -14,3 +15,18 @@ modes:
       path: "modes/user/latex/src"
 origins:
   - "Sharepoint/EQUIPO EIS - Documentos/DCC/GLOBAL/0000/Devs/pucese-libs/docs/Latex/Formato/Latex/Informes Estudiantes"
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps: []
+  signatures:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    anchors: []
+    steps: []
+dependencies:
+  templates: []
+  data: []

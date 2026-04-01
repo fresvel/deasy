@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "titulo": { "type": "string", "title": "Titulo", "x-deasy-field-code": "presentation.titulo", "x-deasy-data-key": "titulo", "x-deasy-ui": { "component": "text", "group": "presentation" } },
+    "subtitulo": { "type": "string", "title": "Subtitulo", "x-deasy-field-code": "presentation.subtitulo", "x-deasy-data-key": "subtitulo", "x-deasy-ui": { "component": "text", "group": "presentation" } },
+    "autor": { "type": "string", "title": "Autor", "x-deasy-field-code": "presentation.autor", "x-deasy-data-key": "autor", "x-deasy-ui": { "component": "text", "group": "presentation" } },
+    "institucion": { "type": "string", "title": "Institucion", "x-deasy-field-code": "presentation.institucion", "x-deasy-data-key": "institucion", "x-deasy-ui": { "component": "text", "group": "presentation" } },
+    "fecha": { "type": "string", "title": "Fecha", "x-deasy-field-code": "presentation.fecha", "x-deasy-data-key": "fecha", "x-deasy-ui": { "component": "date_expression", "group": "presentation" } },
+    "show_title": { "type": "boolean", "title": "Mostrar titulo", "x-deasy-field-code": "presentation.show_title", "x-deasy-data-key": "show_title", "x-deasy-ui": { "component": "switch", "group": "presentation" } }
+  },
+  "required": ["titulo", "autor"],
+  "additionalProperties": true
+}

@@ -551,6 +551,7 @@ const GROUP_DEFS = [
       "process_definition_triggers",
       "process_definition_versions",
       "process_target_rules",
+      "process_runs",
       "tasks",
       "task_items",
       "task_assignments",
@@ -561,6 +562,7 @@ const GROUP_DEFS = [
       "document_versions"
     ],
     support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_types", "signature_statuses", "signature_request_statuses"]
+      .concat(["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"])
   },
   {
     key: "usuarios",
@@ -637,8 +639,8 @@ const GESTION_INDEX_ITEMS = [
     key: "tareas",
     label: "Tareas",
     icon: "square-check",
-    description: "Administra tareas y asignaciones de tareas.",
-    tables: ["tasks", "task_items", "task_assignments"]
+    description: "Administra corridas, tareas, entregables y asignaciones.",
+    tables: ["process_runs", "tasks", "task_items", "task_assignments"]
   },
   {
     key: "documentos",
@@ -646,6 +648,18 @@ const GESTION_INDEX_ITEMS = [
     icon: "info-circle",
     description: "Administra documentos y versiones de documentos.",
     tables: ["documents", "document_versions"]
+  },
+  {
+    key: "llenado",
+    label: "Llenado",
+    icon: "check-double",
+    description: "Gestiona flujos, pasos e instancias de llenado documental.",
+    tables: [
+      "fill_flow_templates",
+      "fill_flow_steps",
+      "document_fill_flows",
+      "fill_requests"
+    ]
   },
   {
     key: "firmas",

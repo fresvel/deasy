@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS unit_relations (
 
 CREATE TABLE IF NOT EXISTS cargos (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(120) NOT NULL UNIQUE,
   name VARCHAR(120) NOT NULL UNIQUE,
   description VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -550,9 +551,34 @@ CREATE TABLE IF NOT EXISTS terms (
   CONSTRAINT fk_terms_term_type FOREIGN KEY (term_type_id) REFERENCES term_types(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS process_runs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  term_id INT NULL,
+  run_mode ENUM('automatic_term', 'manual', 'reinstanced', 'repair') NOT NULL DEFAULT 'manual',
+  source_run_id INT NULL,
+  created_by_user_id INT NULL,
+  reason VARCHAR(255) NULL,
+  status ENUM('pending', 'active', 'completed', 'cancelled') NOT NULL DEFAULT 'active',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_process_runs_automatic_term (process_definition_id, term_id, run_mode),
+  INDEX idx_process_runs_definition (process_definition_id, status),
+  INDEX idx_process_runs_term (term_id),
+  CONSTRAINT fk_process_runs_definition
+    FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
+  CONSTRAINT fk_process_runs_term
+    FOREIGN KEY (term_id) REFERENCES terms(id),
+  CONSTRAINT fk_process_runs_source
+    FOREIGN KEY (source_run_id) REFERENCES process_runs(id),
+  CONSTRAINT fk_process_runs_creator
+    FOREIGN KEY (created_by_user_id) REFERENCES persons(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS tasks (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_id INT NOT NULL,
+  process_run_id INT NULL,
   term_id INT NOT NULL,
   launch_mode ENUM('automatic', 'manual') NOT NULL DEFAULT 'manual',
   created_by_user_id INT NULL,
@@ -569,9 +595,12 @@ CREATE TABLE IF NOT EXISTS tasks (
   UNIQUE KEY uq_tasks_automatic_term (process_definition_id, term_id, automatic_flag),
   UNIQUE KEY uq_tasks_manual_term_user (process_definition_id, term_id, manual_user_flag),
   INDEX idx_tasks_definition_term (process_definition_id, term_id),
+  INDEX idx_tasks_process_run (process_run_id),
   INDEX idx_tasks_launch (launch_mode, created_by_user_id),
   CONSTRAINT fk_tasks_process_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
+  CONSTRAINT fk_tasks_process_run
+    FOREIGN KEY (process_run_id) REFERENCES process_runs(id),
   CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
   CONSTRAINT fk_tasks_created_by_user FOREIGN KEY (created_by_user_id) REFERENCES persons(id),
   CONSTRAINT fk_tasks_parent FOREIGN KEY (parent_task_id) REFERENCES tasks(id),
@@ -621,28 +650,39 @@ CREATE TABLE IF NOT EXISTS task_assignments (
 
 CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  task_item_id INT NOT NULL,
+  task_item_id INT NULL,
+  owner_person_id INT NULL,
+  origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item',
+  title VARCHAR(180) NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
   comments_thread_ref VARCHAR(64) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
   UNIQUE KEY uq_documents_task_item (task_item_id),
-  CONSTRAINT fk_documents_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id)
+  INDEX idx_documents_owner_person (owner_person_id),
+  INDEX idx_documents_origin_type (origin_type),
+  CONSTRAINT fk_documents_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
+  CONSTRAINT fk_documents_owner_person FOREIGN KEY (owner_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS document_versions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   document_id INT NOT NULL,
   version DECIMAL(4,1) NOT NULL DEFAULT 0.1,
-  payload_mongo_id VARCHAR(180) NOT NULL,
-  payload_hash VARCHAR(64) NOT NULL,
-  latex_path VARCHAR(255) NULL,
-  pdf_path VARCHAR(255) NULL,
-  signed_pdf_path VARCHAR(255) NULL,
+  template_artifact_id INT NULL,
+  payload_mongo_id VARCHAR(180) NULL,
+  payload_hash VARCHAR(64) NULL,
+  payload_object_path VARCHAR(255) NULL,
+  working_file_path VARCHAR(255) NULL,
+  final_file_path VARCHAR(255) NULL,
+  format VARCHAR(40) NULL,
+  render_engine VARCHAR(80) NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Borrador',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_document_versions (document_id, version),
-  CONSTRAINT fk_document_versions_document FOREIGN KEY (document_id) REFERENCES documents(id)
+  INDEX idx_document_versions_artifact (template_artifact_id),
+  CONSTRAINT fk_document_versions_document FOREIGN KEY (document_id) REFERENCES documents(id),
+  CONSTRAINT fk_document_versions_artifact FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS signature_types (
@@ -670,6 +710,106 @@ CREATE TABLE IF NOT EXISTS signature_request_statuses (
   description VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO signature_statuses (code, name, description, is_active)
+VALUES
+  ('firmado', 'Firmado', 'La firma se generó y validó correctamente.', 1),
+  ('fallido', 'Fallido', 'La firma no se pudo generar por error operativo.', 1),
+  ('invalido', 'Inválido', 'La firma se generó pero no validó correctamente.', 1),
+  ('cancelado', 'Cancelado', 'La firma fue cancelada o descartada.', 1)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  description = VALUES(description),
+  is_active = VALUES(is_active);
+
+INSERT INTO signature_request_statuses (code, name, description, is_active)
+VALUES
+  ('pendiente', 'Pendiente', 'Solicitud de firma pendiente de atención.', 1),
+  ('en_progreso', 'En progreso', 'Solicitud de firma en ejecución.', 1),
+  ('completado', 'Completado', 'Solicitud de firma completada con evidencia válida.', 1),
+  ('rechazado', 'Rechazado', 'Solicitud de firma rechazada o con resultado no válido.', 1),
+  ('cancelado', 'Cancelado', 'Solicitud de firma cancelada.', 1)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  description = VALUES(description),
+  is_active = VALUES(is_active);
+
+CREATE TABLE IF NOT EXISTS fill_flow_templates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  process_definition_template_id INT NOT NULL,
+  name VARCHAR(180) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_fill_flow_templates_definition_template
+    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS fill_flow_steps (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fill_flow_template_id INT NOT NULL,
+  step_order INT NOT NULL,
+  resolver_type ENUM('task_assignee', 'document_owner', 'specific_person', 'position', 'cargo_in_scope', 'manual_pick')
+    NOT NULL DEFAULT 'task_assignee',
+  assigned_person_id INT NULL,
+  unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units') NOT NULL DEFAULT 'unit_exact',
+  unit_id INT NULL,
+  unit_type_id INT NULL,
+  cargo_id INT NULL,
+  position_id INT NULL,
+  selection_mode ENUM('auto_one', 'auto_all', 'manual') NOT NULL DEFAULT 'auto_one',
+  is_required TINYINT(1) NOT NULL DEFAULT 1,
+  can_reject TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_fill_flow_steps (fill_flow_template_id, step_order),
+  CONSTRAINT fk_fill_flow_steps_template
+    FOREIGN KEY (fill_flow_template_id) REFERENCES fill_flow_templates(id),
+  CONSTRAINT fk_fill_flow_steps_person
+    FOREIGN KEY (assigned_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_fill_flow_steps_unit
+    FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_fill_flow_steps_unit_type
+    FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
+  CONSTRAINT fk_fill_flow_steps_cargo
+    FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+  CONSTRAINT fk_fill_flow_steps_position
+    FOREIGN KEY (position_id) REFERENCES unit_positions(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS document_fill_flows (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fill_flow_template_id INT NOT NULL,
+  document_version_id INT NOT NULL,
+  status ENUM('pending', 'in_progress', 'approved', 'rejected', 'cancelled') NOT NULL DEFAULT 'pending',
+  current_step_order INT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_document_fill_flows_document (document_version_id),
+  CONSTRAINT fk_document_fill_flows_template
+    FOREIGN KEY (fill_flow_template_id) REFERENCES fill_flow_templates(id),
+  CONSTRAINT fk_document_fill_flows_document
+    FOREIGN KEY (document_version_id) REFERENCES document_versions(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS fill_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  document_fill_flow_id INT NOT NULL,
+  fill_flow_step_id INT NOT NULL,
+  assigned_person_id INT NULL,
+  status ENUM('pending', 'in_progress', 'approved', 'rejected', 'returned', 'cancelled') NOT NULL DEFAULT 'pending',
+  is_manual TINYINT(1) NOT NULL DEFAULT 0,
+  requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  responded_at DATETIME NULL,
+  response_note VARCHAR(255) NULL,
+  UNIQUE KEY uq_fill_requests (document_fill_flow_id, fill_flow_step_id, assigned_person_id),
+  INDEX idx_fill_requests_step (document_fill_flow_id, fill_flow_step_id),
+  CONSTRAINT fk_fill_requests_instance
+    FOREIGN KEY (document_fill_flow_id) REFERENCES document_fill_flows(id),
+  CONSTRAINT fk_fill_requests_step
+    FOREIGN KEY (fill_flow_step_id) REFERENCES fill_flow_steps(id),
+  CONSTRAINT fk_fill_requests_person
+    FOREIGN KEY (assigned_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DELIMITER //

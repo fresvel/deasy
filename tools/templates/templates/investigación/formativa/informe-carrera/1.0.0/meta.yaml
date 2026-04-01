@@ -2,6 +2,7 @@ key: "investigación/formativa/informe-carrera"
 export_id: "tpl_investigación_formativa_informe_carrera"
 name: "Informe de Investigación Formativa por Carrera"
 seed: "informe-docente"
+repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
@@ -12,3 +13,119 @@ modes:
     latex:
       path: "modes/user/latex/src"
 origins: []
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps:
+      - order: 1
+        code: "carrera_fill"
+        name: "Llenado de carrera"
+        resolver:
+          type: "document_owner"
+          selection_mode: "auto_one"
+        field_refs:
+          - "general.semestre"
+          - "general.titulo"
+          - "general.carrera"
+          - "general.coordinador"
+          - "display.show_firmas"
+          - "display.show_bibliography"
+          - "signatures.elaborado.nombre"
+          - "signatures.elaborado.cargo"
+          - "signatures.elaborado.fecha"
+        required: true
+        can_reject: true
+      - order: 2
+        code: "calidad_review"
+        name: "Revision de calidad"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "responsable_aseguramiento_calidad"
+          unit_scope_type: "unit_exact"
+          selection_mode: "auto_one"
+        field_refs:
+          - "signatures.revisado.nombre"
+          - "signatures.revisado.cargo"
+          - "signatures.revisado.fecha"
+        required: true
+        can_reject: true
+      - order: 3
+        code: "direccion_review"
+        name: "Revision de direccion"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "director_escuela"
+          unit_scope_type: "unit_exact"
+          selection_mode: "auto_one"
+        field_refs:
+          - "signatures.aprobado.nombre"
+          - "signatures.aprobado.cargo"
+          - "signatures.aprobado.fecha"
+        required: true
+        can_reject: true
+  signatures:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    pattern_ref: "signatures/three-stage-era"
+    anchors:
+      - code: "firma_elaborado"
+        placement:
+          strategy: "token"
+          token_field_ref: "signatures.elaborado.token"
+        size:
+          width: 124
+          height: 48
+      - code: "firma_revisado"
+        placement:
+          strategy: "token"
+          token_field_ref: "signatures.revisado.token"
+        size:
+          width: 124
+          height: 48
+      - code: "firma_aprobado"
+        placement:
+          strategy: "token"
+          token_field_ref: "signatures.aprobado.token"
+        size:
+          width: 124
+          height: 48
+    steps:
+      - order: 1
+        code: "firma_elaborado"
+        name: "Firma de elaborado"
+        step_type_code: "electronic"
+        required_cargo_code: "coordinador_carrera"
+        selection_mode: "auto_all"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs:
+          - "firma_elaborado"
+      - order: 2
+        code: "firma_revisado"
+        name: "Firma de revisado"
+        step_type_code: "electronic"
+        required_cargo_code: "responsable_aseguramiento_calidad"
+        selection_mode: "auto_all"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs:
+          - "firma_revisado"
+      - order: 3
+        code: "firma_aprobado"
+        name: "Firma de aprobado"
+        step_type_code: "electronic"
+        required_cargo_code: "director_escuela"
+        selection_mode: "auto_all"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs:
+          - "firma_aprobado"
+dependencies:
+  templates: []
+  data: []

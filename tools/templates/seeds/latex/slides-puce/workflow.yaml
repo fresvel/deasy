@@ -1,0 +1,29 @@
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps:
+      - order: 1
+        code: "slides_fill"
+        name: "Edicion de diapositivas"
+        resolver:
+          type: "document_owner"
+          selection_mode: "auto_one"
+        field_refs:
+          - "presentation.titulo"
+          - "presentation.subtitulo"
+          - "presentation.autor"
+          - "presentation.institucion"
+          - "presentation.fecha"
+        required: true
+        can_reject: false
+  signatures:
+    required: false
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    anchors: []
+    steps: []
+dependencies:
+  templates: []
+  data: []
