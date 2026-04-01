@@ -1,13 +1,13 @@
 <template>
   <div v-if="show" class="profile-admin-skin w-full md:w-1/3 xl:w-1/5">
-    <div class="nav-menu">
+    <div class="nav-menu deasy-nav-shell">
       <div class="nav-menu-header">
-        <h5 class="mb-3 text-lg font-semibold">Navegación rápida</h5>
+        <h5 class="deasy-nav-meta mb-3 text-lg font-semibold">Navegación rápida</h5>
       </div>
-      <div class="nav-menu-body">
+      <div class="nav-menu-body deasy-nav-group">
         <router-link 
           to="/dashboard" 
-          class="nav-menu-item"
+          class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="home" />
@@ -15,7 +15,7 @@
         </router-link>
         <router-link 
           to="/perfil" 
-          class="nav-menu-item"
+          class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="user" />
@@ -23,7 +23,7 @@
         </router-link>
         <router-link 
           to="/roles" 
-          class="nav-menu-item"
+          class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="id-card" />
@@ -31,7 +31,7 @@
         </router-link>
         <router-link
           :to="{ path: '/dashboard', query: { view: 'firmar' } }"
-          class="nav-menu-item"
+          class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="edit" />
@@ -40,7 +40,7 @@
         <router-link 
           to="/admin" 
           v-if="isAdmin"
-          class="nav-menu-item"
+          class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="cog" />
@@ -48,7 +48,7 @@
         </router-link>
         <router-link 
           to="/logout" 
-          class="nav-menu-item nav-menu-item-logout"
+          class="nav-menu-item nav-menu-item-logout deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="sign-in-alt" />

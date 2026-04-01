@@ -185,269 +185,197 @@
                
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
                  <template v-if="showAcademyCrudIndex">
-                    <AppButton v-for="table in academyCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
-                        </div>
-                      </div>
-                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
-                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
-                      </p>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="table in academyCrudTables"
+                      :key="table.table"
+                      layout="stacked"
+                      :title="table.label"
+                      meta="Gestionar"
+                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
+                      :icon="resolveIcon(iconForTable(table.table))"
+                      show-arrow
+                      class-name="min-h-[170px]"
+                      @click="selectTable(table)"
+                    />
                     <div v-if="!academyCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showAcademiaIndex">
-                    <AppButton v-for="item in academyMenuItems" :key="item.key" variant="plain" type="button" @click="openAcademyItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
-                        </div>
-                      </div>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="item in academyMenuItems"
+                      :key="item.key"
+                      layout="stacked"
+                      :title="item.label"
+                      :description="item.description || 'Administra y configura los datos de esta sección.'"
+                      :icon="resolveIcon(item.icon)"
+                      show-arrow
+                      class-name="min-h-[140px]"
+                      @click="openAcademyItem(item)"
+                    />
                  </template>
 
                  <template v-else-if="showGestionCrudIndex">
-                    <AppButton v-for="table in gestionCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
-                        </div>
-                      </div>
-                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
-                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
-                      </p>
-                    </AppButton>
-                    <AppButton v-if="selectedGestionCrudItem?.key === 'plantillas'" variant="plain" type="button" @click="openTemplateArtifactDraftFromHome" class-name="group bg-gradient-to-br from-sky-50 to-white border border-sky-200 rounded-2xl p-5 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:bg-sky-500 group-hover:text-white transition-colors">
-                          <component :is="resolveIcon('plus')" class="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 class="font-bold text-sky-900 text-lg leading-tight group-hover:text-sky-700 transition-colors">Nuevo paquete de usuario</h3>
-                          <span class="text-sm font-medium text-slate-500">Crear desde seed o archivos</span>
-                        </div>
-                      </div>
-                      <AppTag variant="info" class-name="mt-4 self-start">
-                        Acción especial
-                      </AppTag>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="table in gestionCrudTables"
+                      :key="table.table"
+                      layout="stacked"
+                      :title="table.label"
+                      meta="Gestionar"
+                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
+                      :icon="resolveIcon(iconForTable(table.table))"
+                      show-arrow
+                      class-name="min-h-[170px]"
+                      @click="selectTable(table)"
+                    />
+                    <AppNavCard
+                      v-if="selectedGestionCrudItem?.key === 'plantillas'"
+                      layout="stacked"
+                      title="Nuevo paquete de usuario"
+                      meta=""
+                      description="Crear desde seed o archivos"
+                      :icon="resolveIcon('plus')"
+                      badge="Acción especial"
+                      badge-variant="info"
+                      class-name="min-h-[170px] bg-gradient-to-br from-sky-50 to-white border-sky-200 hover:border-sky-400"
+                      icon-wrapper-class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:bg-sky-500 group-hover:text-white transition-colors"
+                      title-class="text-sky-900 group-hover:text-sky-700"
+                      @click="openTemplateArtifactDraftFromHome"
+                    />
                     <div v-if="!gestionCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showGestionesIndex">
-                    <AppButton v-for="item in gestionMenuItems" :key="item.key" variant="plain" type="button" @click="openGestionItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
-                        </div>
-                      </div>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="item in gestionMenuItems"
+                      :key="item.key"
+                      layout="stacked"
+                      :title="item.label"
+                      :description="item.description || 'Administra y configura los datos de esta sección.'"
+                      :icon="resolveIcon(item.icon)"
+                      show-arrow
+                      class-name="min-h-[140px]"
+                      @click="openGestionItem(item)"
+                    />
                  </template>
 
                  <template v-else-if="showUsersCrudIndex">
-                    <AppButton v-for="table in usersCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
-                        </div>
-                      </div>
-                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
-                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
-                      </p>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="table in usersCrudTables"
+                      :key="table.table"
+                      layout="stacked"
+                      :title="table.label"
+                      meta="Gestionar"
+                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
+                      :icon="resolveIcon(iconForTable(table.table))"
+                      show-arrow
+                      class-name="min-h-[170px]"
+                      @click="selectTable(table)"
+                    />
                     <div v-if="!usersCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showUsersIndex">
-                    <AppButton v-for="item in usersMenuItems" :key="item.key" variant="plain" type="button" @click="openUsersItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
-                        </div>
-                      </div>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="item in usersMenuItems"
+                      :key="item.key"
+                      layout="stacked"
+                      :title="item.label"
+                      :description="item.description || 'Administra y configura los datos de esta sección.'"
+                      :icon="resolveIcon(item.icon)"
+                      show-arrow
+                      class-name="min-h-[140px]"
+                      @click="openUsersItem(item)"
+                    />
                  </template>
 
                  <template v-else-if="showContractsCrudIndex">
-                    <AppButton v-for="table in contractsCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
-                        </div>
-                      </div>
-                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
-                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
-                      </p>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="table in contractsCrudTables"
+                      :key="table.table"
+                      layout="stacked"
+                      :title="table.label"
+                      meta="Gestionar"
+                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
+                      :icon="resolveIcon(iconForTable(table.table))"
+                      show-arrow
+                      class-name="min-h-[170px]"
+                      @click="selectTable(table)"
+                    />
                     <div v-if="!contractsCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showContractsIndex">
-                    <AppButton v-for="item in contractsMenuItems" :key="item.key" variant="plain" type="button" @click="openContractsItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
-                        </div>
-                      </div>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="item in contractsMenuItems"
+                      :key="item.key"
+                      layout="stacked"
+                      :title="item.label"
+                      :description="item.description || 'Administra y configura los datos de esta sección.'"
+                      :icon="resolveIcon(item.icon)"
+                      show-arrow
+                      class-name="min-h-[140px]"
+                      @click="openContractsItem(item)"
+                    />
                  </template>
 
                  <template v-else-if="showSecurityCrudIndex">
-                    <AppButton v-for="table in securityCrudTables" :key="table.table" variant="plain" type="button" @click="selectTable(table)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForTable(table.table))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ table.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">Gestionar</span>
-                        </div>
-                      </div>
-                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
-                        {{ table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
-                      </p>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="table in securityCrudTables"
+                      :key="table.table"
+                      layout="stacked"
+                      :title="table.label"
+                      meta="Gestionar"
+                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
+                      :icon="resolveIcon(iconForTable(table.table))"
+                      show-arrow
+                      class-name="min-h-[170px]"
+                      @click="selectTable(table)"
+                    />
                     <div v-if="!securityCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showSecurityIndex">
-                    <AppButton v-for="item in securityMenuItems" :key="item.key" variant="plain" type="button" @click="openSecurityItem(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(item.icon)" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ item.description || 'Administra y configura los datos de esta sección.' }}</span>
-                        </div>
-                      </div>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="item in securityMenuItems"
+                      :key="item.key"
+                      layout="stacked"
+                      :title="item.label"
+                      :description="item.description || 'Administra y configura los datos de esta sección.'"
+                      :icon="resolveIcon(item.icon)"
+                      show-arrow
+                      class-name="min-h-[140px]"
+                      @click="openSecurityItem(item)"
+                    />
                  </template>
 
                  <template v-else-if="showGroupCrudIndex">
-                    <AppButton v-for="item in selectedGroupCrudTables" :key="item.table" variant="plain" type="button" @click="selectTable(item)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[170px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForTable(item.table))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ item.label }}</h3>
-                          <span class="text-sm font-medium text-slate-400">{{ item.bucket }}</span>
-                        </div>
-                      </div>
-                      <p class="mt-3 text-sm font-medium text-slate-500 leading-snug line-clamp-2">
-                        {{ item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.' }}
-                      </p>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="item in selectedGroupCrudTables"
+                      :key="item.table"
+                      layout="stacked"
+                      :title="item.label"
+                      :meta="item.bucket"
+                      :description="item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
+                      :icon="resolveIcon(iconForTable(item.table))"
+                      show-arrow
+                      class-name="min-h-[170px]"
+                      @click="selectTable(item)"
+                    />
                     <div v-if="!selectedGroupCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles en este grupo.</div>
                  </template>
                  
                  <template v-else>
-                    <AppButton v-for="group in homeGroups" :key="group.key" variant="plain" type="button" @click="openGroupFromHome(group)" class-name="group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between min-h-[140px]">
-                      <div class="flex flex-col h-full w-full">
-                        <div class="flex items-start justify-between mb-4">
-                          <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm">
-                            <component :is="resolveIcon(iconForGroup(group))" class="w-6 h-6" />
-                          </div>
-                          <div class="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                            <IconChevronRight class="w-6 h-6" />
-                          </div>
-                        </div>
-                        <div class="flex flex-col flex-1">
-                          <h3 class="font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors">{{ group.label }}</h3>
-                          <span class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ descriptionForGroup(group) }}</span>
-                        </div>
-                      </div>
-                    </AppButton>
+                    <AppNavCard
+                      v-for="group in homeGroups"
+                      :key="group.key"
+                      layout="stacked"
+                      :title="group.label"
+                      :description="descriptionForGroup(group)"
+                      :icon="resolveIcon(iconForGroup(group))"
+                      show-arrow
+                      class-name="min-h-[140px]"
+                      @click="openGroupFromHome(group)"
+                    />
                  </template>
                </div>
             </template>
@@ -488,13 +416,13 @@ import {
   IconPlus,
   IconBell,
   IconChevronDown,
-  IconChevronRight,
   IconHome,
 } from '@tabler/icons-vue'
 
 import axios from "axios";
 import { useRouter } from "vue-router";
 import AppButton from "@/components/AppButton.vue";
+import AppNavCard from "@/components/AppNavCard.vue";
 import AppWorkspaceSidebar from "@/layouts/AppWorkspaceSidebar.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";

@@ -1,6 +1,6 @@
 # Homologacion UI Frontend
 
-Estado general: `8/12` hecho
+Estado general: `12/13` hecho
 
 ## Checklist
 
@@ -12,10 +12,11 @@ Estado general: `8/12` hecho
 - [x] 6. Menus y layout navigation
 - [x] 7. Modales globales
 - [x] 8. Drag & drop de archivos
-- [ ] 9. Contenedores y encabezados globales
+- [x] 9. Contenedores y encabezados globales
 - [ ] 10. Migracion y validacion por vistas
-- [ ] 11. Segunda pasada de revision del punto 6
-- [ ] 12. Revision y homologacion final de tags
+- [x] 11. Segunda pasada de revision del punto 6
+- [x] 12. Revision y homologacion final de tags
+- [x] 13. Generalizar menus de los layouts
 
 ## Punto 1. Inventario y mapeo visual
 

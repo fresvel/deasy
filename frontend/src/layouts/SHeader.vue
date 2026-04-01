@@ -4,7 +4,7 @@
   >
     <div class="flex items-center gap-2 sm:gap-4 w-full max-w-[2560px] mx-auto">
       <button 
-        class="flex shrink-0 items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-all border border-white/10 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+        class="deasy-nav-action h-9 w-9 rounded-xl !text-white/90 sm:h-11 sm:w-11 hover:!text-white"
         type="button" 
         @click="onClick('User')" 
         aria-label="Abrir menú"

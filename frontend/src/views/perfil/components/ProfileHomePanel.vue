@@ -23,32 +23,25 @@
 
     <!-- Sections Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <AppButton
+      <AppNavCard
         v-for="section in sectionCards"
         :key="section.label"
-        variant="plain"
-        class-name="group bg-white rounded-xl border border-slate-200 p-5 text-left flex items-start gap-4 transition-all hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 hover:-translate-y-1"
-        type="button"
+        layout="stacked"
+        :title="section.label"
+        :description="section.meta"
+        :icon="getIcon(section.icon)"
+        icon-class="w-6 h-6 stroke-[1.5]"
+        show-arrow
+        class-name="min-h-[140px]"
         @click="$emit('navigate-section', section.label)"
-      >
-        <span class="w-12 h-12 flex-shrink-0 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-          <component :is="getIcon(section.icon)" class="w-6 h-6 stroke-[1.5]" />
-        </span>
-        <span class="flex flex-col flex-1 min-w-0 pt-0.5">
-          <strong class="text-slate-800 font-bold text-base block truncate group-hover:text-sky-700 transition-colors">{{ section.label }}</strong>
-          <span class="text-slate-500 text-sm font-medium mt-1 inline-flex items-center gap-1.5 opacity-80">
-            <span class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-sky-400 transition-colors"></span>
-            {{ section.meta }}
-          </span>
-        </span>
-      </AppButton>
+      />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, defineProps, defineEmits } from "vue";
-import AppButton from "@/components/AppButton.vue";
+import AppNavCard from "@/components/AppNavCard.vue";
 import { 
   IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe 
 } from '@tabler/icons-vue';
