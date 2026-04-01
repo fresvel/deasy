@@ -49,41 +49,35 @@
     </ProfileTableBlock>
     </ProfileSectionShell>
 
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="certificacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarCertificacion @certificacion-added="handleCertificacionAdded" />
-        </div>
-      </div>
-    </div>
-
-    <div
-      class="profile-admin-skin profile-dialog-root"
-      data-dialog-root
-      id="certificacionDeleteModal"
-      tabindex="-1"
-      ref="deleteModal"
-      aria-hidden="true"
+    <AppModalShell
+      ref="modal"
+      id="certificacionModal"
+      labelled-by="certificacionModalLabel"
+      size="md"
+      :show-header="false"
+      body-class="p-0"
+      content-class="profile-admin-skin"
     >
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <AppButton type="button" variant="close" class-name="absolute right-4 top-4 z-10" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </AppButton>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar la certificación
-            <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
-            <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
-          </div>
-        </div>
+      <AgregarCertificacion @certificacion-added="handleCertificacionAdded" />
+    </AppModalShell>
+
+    <AppModalShell
+      ref="deleteModal"
+      id="certificacionDeleteModal"
+      labelled-by="certificacionDeleteModalLabel"
+      title="Confirmar eliminación"
+      size="md"
+      content-class="profile-admin-skin"
+    >
+      <div class="profile-confirm-body">
+        ¿Deseas eliminar la certificación
+        <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
       </div>
-    </div>
+      <template #footer>
+        <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -100,6 +94,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import AppModalShell from "@/components/AppModalShell.vue";
 import AppButton from "@/components/AppButton.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
@@ -150,15 +145,15 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const openDelete = (certificacion) => {
     pendingDelete.value = certificacion;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
+    if (!deleteModal.value?.el) return;
+    deleteInstance = Modal.getOrCreateInstance(deleteModal.value.el);
     deleteInstance.show();
 };
 

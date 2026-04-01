@@ -97,41 +97,35 @@
     </ProfileSectionShell>
 
 
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarCapacitacion @capacitacion-added="handleCapacitacionAdded" />
-        </div>
-      </div>
-    </div>
-
-    <div
-      class="profile-admin-skin profile-dialog-root"
-      data-dialog-root
-      id="capacitacionDeleteModal"
-      tabindex="-1"
-      ref="deleteModal"
-      aria-hidden="true"
+    <AppModalShell
+      ref="modal"
+      id="capacitacionModal"
+      labelled-by="capacitacionModalLabel"
+      size="md"
+      :show-header="false"
+      body-class="p-0"
+      content-class="profile-admin-skin"
     >
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <AppButton type="button" variant="close" class-name="absolute right-4 top-4 z-10" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </AppButton>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar la capacitación
-            <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
-            <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
-          </div>
-        </div>
+      <AgregarCapacitacion @capacitacion-added="handleCapacitacionAdded" />
+    </AppModalShell>
+
+    <AppModalShell
+      ref="deleteModal"
+      id="capacitacionDeleteModal"
+      labelled-by="capacitacionDeleteModalLabel"
+      title="Confirmar eliminación"
+      size="md"
+      content-class="profile-admin-skin"
+    >
+      <div class="profile-confirm-body">
+        ¿Deseas eliminar la capacitación
+        <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
       </div>
-    </div>
+      <template #footer>
+        <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <!-- Input file oculto para subir documentos -->
     <input 
@@ -156,6 +150,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import AppModalShell from "@/components/AppModalShell.vue";
 import AppButton from "@/components/AppButton.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
@@ -211,15 +206,15 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const openDelete = (capacitacion) => {
     pendingDelete.value = capacitacion;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
+    if (!deleteModal.value?.el) return;
+    deleteInstance = Modal.getOrCreateInstance(deleteModal.value.el);
     deleteInstance.show();
 };
 

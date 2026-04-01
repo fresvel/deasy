@@ -108,28 +108,25 @@
         </section>
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
-        <section class="bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 text-white rounded-[1.5rem] p-6 md:p-8 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 md:gap-8 shadow-2xl shadow-slate-300/50 relative overflow-hidden">
-          <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-            <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
-            <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
-            <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
-          </div>
-          <div class="relative z-10 flex-1">
-            <h1 class="text-2xl md:text-3xl font-bold mb-3 tracking-tight">Bienvenido(a), {{ userFullName }}</h1>
-            <p class="max-w-2xl text-sky-100/90 text-sm md:text-base font-medium">
-              Este es tu panel general. Revisa el estado de tus módulos, firmas pendientes y completa tu perfil académico.
-            </p>
-          </div>
-          <AppButton variant="secondary" size="md" class-name="relative z-10 whitespace-nowrap" @click="navigateTo('perfil')">
-            Ir a mi perfil
-          </AppButton>
-        </section>
+        <AppPageIntro
+          variant="dashboard"
+          :title="userFullName"
+          :meta="currentUser?.email || currentUser?.cedula || 'Sin identificador'"
+          description="Selecciona una sección para continuar con la gestión de tu dossier académico, revisar el estado de tus módulos y completar tu información profesional."
+          class="mb-6"
+        >
+          <template #actions>
+            <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateTo('perfil')">
+              Ir a mi perfil
+            </AppButton>
+          </template>
+        </AppPageIntro>
 
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
           <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-[160px]" v-for="card in summaryCards" :key="card.title">
             <header class="flex justify-between items-start gap-4">
               <h3 class="text-base font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm whitespace-nowrap shrink-0" :class="getStatusTailwindClass(card.statusClass)">{{ card.status }}</span>
+              <AppTag :variant="getStatusTagVariant(card.statusClass)" class-name="whitespace-nowrap shrink-0">{{ card.status }}</AppTag>
             </header>
             <p class="text-slate-500 text-xs md:text-sm font-medium flex-1 m-0">{{ card.description }}</p>
             <footer class="flex justify-between items-center mt-1">
@@ -157,7 +154,7 @@
                   <span class="font-bold text-slate-800 text-sm leading-tight">{{ row.section }}</span>
                   <span class="text-slate-500 font-medium text-xs">{{ row.count }} registros</span>
                 </div>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm shrink-0" :class="getStatusTailwindClass(row.statusClass)">{{ row.status }}</span>
+                <AppTag :variant="getStatusTagVariant(row.statusClass)" class-name="shrink-0">{{ row.status }}</AppTag>
               </div>
               <AppButton variant="softPrimary" size="sm" class-name="mt-1 w-full" @click="navigateTo(row.route)">
                 Gestionar sección
@@ -180,9 +177,7 @@
           >
             <template #cell="{ row, field }">
               <template v-if="field.name === 'status'">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white shadow-sm" :class="getStatusTailwindClass(row.statusClass)">
-                  {{ row.status }}
-                </span>
+                <AppTag :variant="getStatusTagVariant(row.statusClass)">{{ row.status }}</AppTag>
               </template>
               <template v-else>
                 {{ row[field.name] }}
@@ -315,11 +310,11 @@
 
                       <p v-if="task.description" class="text-slate-600 text-sm mt-3 mb-0 font-medium leading-relaxed">{{ task.description }}</p>
 
-                      <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-sm font-semibold text-slate-500">
-                        <span>• {{ task.task_item_count }} entregables</span>
-                        <span>• {{ task.pending_task_items }} pendientes</span>
-                        <span v-if="task.responsible_position_title">• Responsable general: {{ task.responsible_position_title }}</span>
-                        <span v-if="task.is_current_user_creator" class="text-sky-600">• Creada por ti</span>
+                      <div class="flex flex-wrap gap-2 mt-4">
+                        <AppTag variant="muted">{{ task.task_item_count }} entregables</AppTag>
+                        <AppTag variant="neutral">{{ task.pending_task_items }} pendientes</AppTag>
+                        <AppTag v-if="task.responsible_position_title" variant="muted">Responsable general: {{ task.responsible_position_title }}</AppTag>
+                        <AppTag v-if="task.is_current_user_creator" variant="info">Creada por ti</AppTag>
                       </div>
 
                       <div v-if="task.items.length" class="flex flex-col gap-2.5 mt-5">
@@ -336,24 +331,19 @@
                                   <span>Responsable: {{ item.responsible_position_title }}</span>
                                 </template>
                               </div>
-                              <div class="flex flex-wrap gap-2 mt-2 text-[11px] font-bold">
-                                <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+                              <div class="flex flex-wrap gap-2 mt-2">
+                                <AppTag variant="neutral">
                                   {{ item.document_id ? (item.document_status || 'Documento creado') : 'Sin documento generado' }}
-                                </span>
-                                <span
-                                  class="px-2 py-1 rounded-md"
-                                  :class="getDeliverableAccessSource(item) === 'Derivado'
-                                    ? 'bg-amber-50 text-amber-700'
-                                    : 'bg-emerald-50 text-emerald-700'"
-                                >
+                                </AppTag>
+                                <AppTag :variant="getDeliverableAccessSource(item) === 'Derivado' ? 'warning' : 'success'">
                                   {{ getDeliverableAccessSource(item) }}
-                                </span>
-                                <span v-if="item.pending_fill_count" class="bg-sky-50 text-sky-700 px-2 py-1 rounded-md">
+                                </AppTag>
+                                <AppTag v-if="item.pending_fill_count" variant="info">
                                   Llenado pendiente: {{ item.pending_fill_count }}
-                                </span>
-                                <span v-if="item.pending_signature_count" class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md">
+                                </AppTag>
+                                <AppTag v-if="item.pending_signature_count" variant="warning">
                                   Firmas pendientes: {{ item.pending_signature_count }}
-                                </span>
+                                </AppTag>
                               </div>
                             </div>
                             <div class="flex flex-col gap-1.5 sm:items-end text-sm font-semibold text-slate-500 shrink-0">
@@ -361,12 +351,12 @@
                                 <IconSignature v-if="item.document_id" class="w-4 h-4" />
                                 {{ item.document_id ? (item.document_version ? `Doc v${item.document_version}` : 'Doc creado') : 'Sin doc' }}
                               </span>
-                              <span v-if="item.workflow?.current_fill_step_order" class="text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md text-xs">
+                              <AppTag v-if="item.workflow?.current_fill_step_order" variant="info">
                                 Paso de llenado: {{ item.workflow.current_fill_step_order }}
-                              </span>
-                              <span v-if="item.workflow?.current_signature_step_order" class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-xs">
+                              </AppTag>
+                              <AppTag v-if="item.workflow?.current_signature_step_order" variant="warning">
                                 Paso de firma: {{ item.workflow.current_signature_step_order }}
-                              </span>
+                              </AppTag>
                             </div>
                           </div>
                           <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
@@ -637,19 +627,23 @@
       <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
     </div>
 
-    <div v-if="showTaskLaunchModal" class="fixed inset-0 z-[1200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" @click.self="closeTaskLaunchModal">
-      <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <header class="px-6 lg:px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
-          <div>
-            <h2 class="text-2xl font-bold text-slate-800 m-0 tracking-tight">Crear tarea manual</h2>
-            <p class="text-slate-500 text-sm font-medium mt-1 mb-0">{{ selectedProcessPanel?.definition?.name || 'Definición seleccionada' }}</p>
-          </div>
-          <AppButton variant="close" class-name="bg-slate-200/50 hover:bg-slate-200" type="button" @click="closeTaskLaunchModal">
-            <IconX class="w-5 h-5" />
-          </AppButton>
-        </header>
+    <AdminModalShell
+      controlled
+      :open="showTaskLaunchModal"
+      labelled-by="task-launch-modal-title"
+      title="Crear tarea manual"
+      size="lg"
+      body-class="p-6 lg:p-8 overflow-y-auto flex flex-col gap-6 custom-scrollbar"
+      footer-class="px-6 lg:px-8 gap-4"
+      @close="closeTaskLaunchModal"
+    >
+      <template #title>
+        <div>
+          <div class="text-2xl font-bold tracking-tight text-slate-800">Crear tarea manual</div>
+          <p class="mt-1 mb-0 text-sm font-medium text-slate-500">{{ selectedProcessPanel?.definition?.name || 'Definición seleccionada' }}</p>
+        </div>
+      </template>
 
-        <div class="p-6 lg:p-8 overflow-y-auto flex flex-col gap-6 custom-scrollbar">
           <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
             {{ taskLaunchError }}
           </div>
@@ -700,18 +694,15 @@
               </label>
             </template>
           </div>
-        </div>
-
-        <footer class="px-6 lg:px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4 shrink-0">
+      <template #footer>
           <AppButton variant="secondary" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
             Cancelar
           </AppButton>
           <AppButton variant="primary" size="lg" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
             {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
           </AppButton>
-        </footer>
-      </div>
-    </div>
+      </template>
+    </AdminModalShell>
 
     <AdminModalShell
       ref="documentSignModal"
@@ -752,14 +743,14 @@
           >
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <strong class="text-sm font-bold text-slate-800">{{ doc.template_artifact_name || `Documento #${doc.document_id}` }}</strong>
-              <span class="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200 self-start sm:self-auto">
+              <AppTag variant="muted" class-name="self-start sm:self-auto">
                 {{ doc.document_version ? `v${doc.document_version}` : `#${doc.document_version_id}` }}
-              </span>
+              </AppTag>
             </div>
-            <div class="flex flex-wrap gap-2 text-[11px] font-bold">
-              <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md">{{ doc.document_status || 'Inicial' }}</span>
-              <span v-if="doc.pending_fill_count" class="bg-sky-50 text-sky-700 px-2 py-1 rounded-md">Llenado pendiente: {{ doc.pending_fill_count }}</span>
-              <span v-if="doc.pending_signature_count" class="bg-amber-50 text-amber-700 px-2 py-1 rounded-md">Firmas pendientes: {{ doc.pending_signature_count }}</span>
+            <div class="flex flex-wrap gap-2">
+              <AppTag variant="neutral">{{ doc.document_status || 'Inicial' }}</AppTag>
+              <AppTag v-if="doc.pending_fill_count" variant="info">Llenado pendiente: {{ doc.pending_fill_count }}</AppTag>
+              <AppTag v-if="doc.pending_signature_count" variant="warning">Firmas pendientes: {{ doc.pending_signature_count }}</AppTag>
             </div>
           </div>
         </div>
@@ -784,19 +775,16 @@
           <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
             <div class="flex flex-col gap-2">
               <strong class="text-base font-bold text-slate-800">{{ fillWorkflowState.subject.title }}</strong>
-              <div class="flex flex-wrap gap-2 text-[11px] font-bold">
-                <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
+              <div class="flex flex-wrap gap-2">
+                <AppTag variant="neutral">
                   Paso {{ fillWorkflowState.request?.step_order || 1 }}
-                </span>
-                <span class="bg-sky-50 text-sky-700 px-2 py-1 rounded-md">
+                </AppTag>
+                <AppTag variant="info">
                   Estado: {{ fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending' }}
-                </span>
-                <span
-                  class="px-2 py-1 rounded-md"
-                  :class="fillWorkflowState.subject.preloadFilePath ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
-                >
+                </AppTag>
+                <AppTag :variant="fillWorkflowState.subject.preloadFilePath ? 'success' : 'warning'">
                   {{ fillWorkflowState.subject.preloadFilePath ? `Archivo: ${getFileNameFromPath(fillWorkflowState.subject.preloadFilePath)}` : 'Sin archivo de trabajo' }}
-                </span>
+                </AppTag>
               </div>
             </div>
           </div>
@@ -821,16 +809,16 @@
                       {{ getFillStepResolverLabel(step) }}
                     </span>
                   </div>
-                  <div class="flex flex-wrap gap-2 text-[11px] font-bold">
-                    <span class="px-2 py-1 rounded-md" :class="getFillStepStatusBadgeClass(step.request_status)">
+                  <div class="flex flex-wrap gap-2">
+                    <AppTag :variant="getFillStepStatusTagVariant(step.request_status)">
                       {{ getFillStepStatusLabel(step.request_status) }}
-                    </span>
-                    <span
+                    </AppTag>
+                    <AppTag
                       v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
-                      class="px-2 py-1 rounded-md bg-sky-100 text-sky-800"
+                      variant="accent"
                     >
                       Actual
-                    </span>
+                    </AppTag>
                   </div>
                 </div>
                 <p v-if="step.response_note" class="mt-3 mb-0 text-xs font-medium text-slate-600">
@@ -961,6 +949,43 @@
     </AdminModalShell>
 
     <AdminModalShell
+      ref="deliverableUploadModal"
+      labelled-by="deliverable-upload-modal-title"
+      :title="deliverableUploadModalTitle"
+      size="md"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div class="flex flex-col gap-4">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {{ deliverableUploadModalHelp }}
+        </div>
+
+        <PdfDropField
+          variant="card"
+          title="Archivo de trabajo"
+          action-text="Seleccionar o arrastrar archivo"
+          help-text="Formatos permitidos: PDF, Word y Excel."
+          :icon="IconUpload"
+          accept="application/pdf,.pdf,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          :disabled="isUploadingDeliverable"
+          :selected-file="selectedDeliverableUploadFile"
+          input-id="dashboard-deliverable-upload"
+          @files-selected="handleDeliverableFilesSelected"
+          @clear="clearDeliverableUploadSelection"
+        />
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" :disabled="isUploadingDeliverable" @click="closeDeliverableUploadModal">
+          Cancelar
+        </AppButton>
+        <AppButton variant="primary" :disabled="!selectedDeliverableUploadFile || isUploadingDeliverable" @click="submitDeliverableUpload">
+          {{ isUploadingDeliverable ? 'Subiendo archivo...' : 'Subir archivo' }}
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
       ref="deliverableOperationModal"
       labelled-by="deliverable-operation-modal-title"
       :title="deliverableOperationState.title"
@@ -1019,18 +1044,11 @@
       </template>
     </AdminModalShell>
 
-    <input
-      ref="deliverableUploadInput"
-      type="file"
-      accept="application/pdf,.pdf,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      class="hidden"
-      @change="handleDeliverableUploadSelected"
-    />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref, nextTick } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
 import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
@@ -1038,13 +1056,16 @@ import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
 import SNavMenu from '@/layouts/SNavMenu.vue';
 import AppDataTable from '@/components/AppDataTable.vue';
+import AppPageIntro from '@/components/AppPageIntro.vue';
+import AppTag from '@/components/AppTag.vue';
 import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
 import { API_ROUTES } from '@/services/apiConfig';
 import { Modal } from '@/utils/modalController';
-import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
+import AdminModalShell from '@/components/AppModalShell.vue';
 import AppButton from '@/components/AppButton.vue';
+import PdfDropField from '@/components/PdfDropField.vue';
 
 import {
   IconGlobe,
@@ -1056,7 +1077,7 @@ import {
   IconCircleCheck,
   IconSquareCheck,
   IconSignature,
-  IconX,
+  IconUpload,
   IconArrowRight,
   IconBuildingMonument
 } from '@tabler/icons-vue';
@@ -1105,11 +1126,12 @@ const taskLaunchUseCustomTerm = ref(false);
 const documentSignModal = ref(null);
 const documentCenterModal = ref(null);
 const fillWorkflowModal = ref(null);
+const deliverableUploadModal = ref(null);
 const deliverableOperationModal = ref(null);
 const deliverablePreviewModal = ref(null);
 const embeddedSignerRef = ref(null);
-const deliverableUploadInput = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
+const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
@@ -1134,6 +1156,7 @@ const fillWorkflowState = ref({
 let documentSignModalInstance = null;
 let documentCenterModalInstance = null;
 let fillWorkflowModalInstance = null;
+let deliverableUploadModalInstance = null;
 let deliverableOperationModalInstance = null;
 let deliverablePreviewModalInstance = null;
 const taskLaunchForm = ref({
@@ -1157,6 +1180,19 @@ const menuContextLabel = computed(() => {
     return group ? `Área: ${group.label || group.name}` : 'Área seleccionada';
   }
   return 'Cargos consolidados';
+});
+
+const deliverableUploadSubject = computed(() => getDeliverableSubject(pendingDeliverableUploadTarget.value));
+const deliverableUploadModalTitle = computed(() => {
+  const subject = deliverableUploadSubject.value;
+  return subject?.title ? `Cargar archivo · ${subject.title}` : 'Cargar archivo del entregable';
+});
+const deliverableUploadModalHelp = computed(() => {
+  const subject = deliverableUploadSubject.value;
+  if (!subject) {
+    return 'Selecciona el archivo de trabajo que quieres cargar para el entregable.';
+  }
+  return `Carga el archivo de trabajo para ${subject.title || subject.template_artifact_name || `#${subject.itemId || subject.id}`}.`;
 });
 
 const isSigningView = computed(() => route.query?.view === 'firmar');
@@ -1211,11 +1247,11 @@ const summaryRows = ref([
   { section: 'Firmas electrónicas', count: 0, status: 'Acción requerida', statusClass: 'status--warning', route: 'firmar' }
 ]);
 
-const getStatusTailwindClass = (statusClass) => {
-  if (statusClass === 'status--warning') return 'bg-amber-500';
-  if (statusClass === 'status--danger') return 'bg-rose-500';
-  if (statusClass === 'status--success') return 'bg-emerald-500';
-  return 'bg-slate-500';
+const getStatusTagVariant = (statusClass) => {
+  if (statusClass === 'status--warning') return 'warning';
+  if (statusClass === 'status--danger') return 'danger';
+  if (statusClass === 'status--success') return 'success';
+  return 'neutral';
 };
 
 const resolvePhotoUrl = (value) => {
@@ -1538,6 +1574,13 @@ onMounted(async () => {
       };
     });
   }
+  if (deliverableUploadModal.value?.el) {
+    deliverableUploadModalInstance = Modal.getOrCreateInstance(deliverableUploadModal.value.el);
+    deliverableUploadModal.value.el.addEventListener('hidden.bs.modal', () => {
+      selectedDeliverableUploadFile.value = null;
+      pendingDeliverableUploadTarget.value = null;
+    });
+  }
   if (deliverablePreviewModal.value?.el) {
     deliverablePreviewModalInstance = Modal.getOrCreateInstance(deliverablePreviewModal.value.el);
     deliverablePreviewModal.value.el.addEventListener('hidden.bs.modal', () => {
@@ -1554,6 +1597,14 @@ onMounted(async () => {
   
   await loadUserMenu();
 });
+
+watch(
+  () => route.fullPath,
+  async () => {
+    if (route.path !== '/dashboard') return;
+    await loadUserMenu();
+  }
+);
 
 onBeforeUnmount(() => {
   if (isClient) {
@@ -1593,6 +1644,17 @@ const openDeliverableOperationModal = (payload = {}) => {
   };
   deliverableOperationModalInstance = Modal.getOrCreateInstance(deliverableOperationModal.value?.el);
   deliverableOperationModalInstance?.show();
+};
+
+const openDeliverableUploadModal = (payload) => {
+  pendingDeliverableUploadTarget.value = payload;
+  selectedDeliverableUploadFile.value = null;
+  deliverableUploadModalInstance = Modal.getOrCreateInstance(deliverableUploadModal.value?.el);
+  deliverableUploadModalInstance?.show();
+};
+
+const closeDeliverableUploadModal = () => {
+  deliverableUploadModalInstance?.hide();
 };
 
 const openFillWorkflowModal = (payload = {}) => {
@@ -1812,14 +1874,14 @@ const getFillStepStatusLabel = (status) => {
   if (code === 'cancelled') return 'Cancelado';
   return 'Pendiente';
 };
-const getFillStepStatusBadgeClass = (status) => {
+const getFillStepStatusTagVariant = (status) => {
   const code = String(status || '').trim().toLowerCase();
-  if (code === 'approved') return 'bg-emerald-100 text-emerald-800';
-  if (code === 'in_progress') return 'bg-sky-100 text-sky-800';
-  if (code === 'returned') return 'bg-amber-100 text-amber-800';
-  if (code === 'rejected') return 'bg-rose-100 text-rose-800';
-  if (code === 'cancelled') return 'bg-slate-200 text-slate-700';
-  return 'bg-slate-100 text-slate-700';
+  if (code === 'approved') return 'success';
+  if (code === 'in_progress') return 'info';
+  if (code === 'returned') return 'warning';
+  if (code === 'rejected') return 'danger';
+  if (code === 'cancelled') return 'neutral';
+  return 'neutral';
 };
 const formatWorkflowDateTime = (value) => {
   if (!value) return '';
@@ -1997,8 +2059,7 @@ const handleDeliverableFutureAction = (action, payload) => {
     if (isUploadingDeliverable.value) {
       return;
     }
-    pendingDeliverableUploadTarget.value = payload;
-    deliverableUploadInput.value?.click();
+    openDeliverableUploadModal(payload);
     return;
   }
   if (action === 'manage_fill') {
@@ -2024,8 +2085,7 @@ const handleDeliverableFutureAction = (action, payload) => {
 
 const triggerFillWorkflowFileReplace = () => {
   if (!fillWorkflowState.value.subject || isUploadingDeliverable.value) return;
-  pendingDeliverableUploadTarget.value = fillWorkflowState.value.subject;
-  deliverableUploadInput.value?.click();
+  openDeliverableUploadModal(fillWorkflowState.value.subject);
 };
 
 const startDeliverableFlow = async (payload) => {
@@ -2217,14 +2277,19 @@ const downloadDeliverableTemplate = async (payload) => {
   }
 };
 
-const handleDeliverableUploadSelected = async (event) => {
-  const file = event?.target?.files?.[0];
+const clearDeliverableUploadSelection = () => {
+  selectedDeliverableUploadFile.value = null;
+};
+
+const handleDeliverableFilesSelected = (files) => {
+  selectedDeliverableUploadFile.value = files?.[0] || null;
+};
+
+const uploadSelectedDeliverableFile = async (file) => {
   const target = pendingDeliverableUploadTarget.value;
   if (!file || !target) {
     pendingDeliverableUploadTarget.value = null;
-    if (event?.target) {
-      event.target.value = '';
-    }
+    selectedDeliverableUploadFile.value = null;
     return;
   }
 
@@ -2234,14 +2299,13 @@ const handleDeliverableUploadSelected = async (event) => {
   if (!isAllowed) {
     setProcessActionInfo('Solo puedes cargar archivos PDF, Word o Excel para el entregable.', 'error');
     pendingDeliverableUploadTarget.value = null;
-    if (event?.target) {
-      event.target.value = '';
-    }
+    selectedDeliverableUploadFile.value = null;
     return;
   }
 
   try {
     isUploadingDeliverable.value = true;
+    closeDeliverableUploadModal();
     openDeliverableOperationModal({
       title: 'Cargando archivo del entregable',
       type: 'info',
@@ -2276,10 +2340,13 @@ const handleDeliverableUploadSelected = async (event) => {
   } finally {
     isUploadingDeliverable.value = false;
     pendingDeliverableUploadTarget.value = null;
-    if (event?.target) {
-      event.target.value = '';
-    }
+    selectedDeliverableUploadFile.value = null;
   }
+};
+
+const submitDeliverableUpload = async () => {
+  if (!selectedDeliverableUploadFile.value || isUploadingDeliverable.value) return;
+  await uploadSelectedDeliverableFile(selectedDeliverableUploadFile.value);
 };
 
 const openDocumentCenter = () => {

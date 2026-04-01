@@ -55,55 +55,51 @@
       </AdminFieldGroup>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PDF</label>
-        <label
-          class="draft-upload-dropzone"
-          for="draft-upload-pdf"
-          @dragover.prevent
-          @drop.prevent="$emit('drop', 'pdf', $event)"
-        >
-          <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
-          <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("pdf") }}</span>
-        </label>
-        <input id="draft-upload-pdf" class="hidden" type="file" accept=".pdf" @change="$emit('file-change', 'pdf', $event)" />
+        <PdfDropField
+          variant="compact"
+          title=""
+          action-text="Arrastra o haz clic"
+          :help-text="getDraftArtifactFileLabel('pdf')"
+          accept=".pdf"
+          input-id="draft-upload-pdf"
+          @files-selected="emitDraftFiles('pdf', $event)"
+        />
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Word</label>
-        <label
-          class="draft-upload-dropzone"
-          for="draft-upload-docx"
-          @dragover.prevent
-          @drop.prevent="$emit('drop', 'docx', $event)"
-        >
-          <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
-          <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("docx") }}</span>
-        </label>
-        <input id="draft-upload-docx" class="hidden" type="file" accept=".doc,.docx" @change="$emit('file-change', 'docx', $event)" />
+        <PdfDropField
+          variant="compact"
+          title=""
+          action-text="Arrastra o haz clic"
+          :help-text="getDraftArtifactFileLabel('docx')"
+          accept=".doc,.docx"
+          input-id="draft-upload-docx"
+          @files-selected="emitDraftFiles('docx', $event)"
+        />
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Excel</label>
-        <label
-          class="draft-upload-dropzone"
-          for="draft-upload-xlsx"
-          @dragover.prevent
-          @drop.prevent="$emit('drop', 'xlsx', $event)"
-        >
-          <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
-          <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("xlsx") }}</span>
-        </label>
-        <input id="draft-upload-xlsx" class="hidden" type="file" accept=".xls,.xlsx" @change="$emit('file-change', 'xlsx', $event)" />
+        <PdfDropField
+          variant="compact"
+          title=""
+          action-text="Arrastra o haz clic"
+          :help-text="getDraftArtifactFileLabel('xlsx')"
+          accept=".xls,.xlsx"
+          input-id="draft-upload-xlsx"
+          @files-selected="emitDraftFiles('xlsx', $event)"
+        />
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PowerPoint</label>
-        <label
-          class="draft-upload-dropzone"
-          for="draft-upload-pptx"
-          @dragover.prevent
-          @drop.prevent="$emit('drop', 'pptx', $event)"
-        >
-          <span class="draft-upload-dropzone-title">Arrastra o haz clic</span>
-          <span class="draft-upload-dropzone-meta">{{ getDraftArtifactFileLabel("pptx") }}</span>
-        </label>
-        <input id="draft-upload-pptx" class="hidden" type="file" accept=".ppt,.pptx" @change="$emit('file-change', 'pptx', $event)" />
+        <PdfDropField
+          variant="compact"
+          title=""
+          action-text="Arrastra o haz clic"
+          :help-text="getDraftArtifactFileLabel('pptx')"
+          accept=".ppt,.pptx"
+          input-id="draft-upload-pptx"
+          @files-selected="emitDraftFiles('pptx', $event)"
+        />
       </div>
       <div v-if="draftArtifactPreviewUrl" class="md:col-span-12">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</label>
@@ -134,8 +130,9 @@ import { ref } from "vue";
 import AdminButton from "@/components/AppButton.vue";
 import AdminFieldGroup from "@/views/admin/components/AdminFieldGroup.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";
+import PdfDropField from "@/components/PdfDropField.vue";
 
 const props = defineProps({
   draftArtifactEditId: {
@@ -176,6 +173,10 @@ const updateField = (fieldName, value) => {
     ...props.draftArtifactForm,
     [fieldName]: value
   });
+};
+
+const emitDraftFiles = (type, files) => {
+  emit("file-change", type, { target: { files } });
 };
 
 defineExpose({

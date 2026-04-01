@@ -91,13 +91,17 @@
     </ProfileTableBlock>
     </ProfileSectionShell>
 
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="experienciaModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarExperiencia @experiencia-added="handleExperienciaAdded" />
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      ref="modal"
+      id="experienciaModal"
+      labelled-by="experienciaModalLabel"
+      size="md"
+      :show-header="false"
+      body-class="p-0"
+      content-class="profile-admin-skin"
+    >
+      <AgregarExperiencia @experiencia-added="handleExperienciaAdded" />
+    </AppModalShell>
 
     <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -116,6 +120,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import AppModalShell from "@/components/AppModalShell.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);
@@ -168,10 +173,10 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
-    if (!modal.value) {
+    if (!modal.value?.el) {
         return;
     }
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 

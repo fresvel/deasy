@@ -139,7 +139,7 @@
 import { ref } from "vue";
 import AdminButton from "@/components/AppButton.vue";
 import AdminDataTable from "@/components/AppDataTable.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 
 defineProps({
   checking: { type: Boolean, default: false },
@@ -155,7 +155,7 @@ defineProps({
   ruleTableFields: { type: Array, default: () => [] },
   triggerTableFields: { type: Array, default: () => [] },
   artifactTableFields: { type: Array, default: () => [] },
-  primaryAction: { type: String, default: "" },
+  primaryAction: { type: [String, Object], default: "" },
   primaryActionLabel: { type: String, default: "" },
   allRequirementsMet: { type: Boolean, default: false },
   formatCell: { type: Function, required: true },
@@ -163,5 +163,9 @@ defineProps({
 });
 defineEmits(["update:view", "cancel", "primary-action", "confirm"]);
 const modalRef = ref(null);
-defineExpose({ el: modalRef });
+defineExpose({
+  get el() {
+    return modalRef.value?.el ?? null;
+  }
+});
 </script>

@@ -2,7 +2,8 @@
   <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 w-full flex flex-col font-sans">
     
     <!-- User Context Card -->
-    <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left transition-shadow hover:shadow-md">
+    <div class="deasy-page-intro mb-8 transition-shadow hover:shadow-md">
+      <div class="deasy-page-intro__layout items-center text-center sm:text-left">
       <div class="flex flex-col items-center gap-3 shrink-0">
         <img class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-slate-100" :src="photo" alt="Foto de perfil" />
         <div v-if="signatureMarker" class="max-w-[14rem] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
@@ -10,12 +11,13 @@
           <p class="mt-1 break-all font-mono text-xs text-slate-700">{{ signatureMarker }}</p>
         </div>
       </div>
-      <div class="flex-1 flex flex-col justify-center mt-2 sm:mt-0">
-        <h4 class="text-2xl font-bold text-slate-800 mb-1 tracking-tight">{{ displayName }}</h4>
-        <p class="text-sm font-medium text-slate-500 mb-3">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
-        <p class="text-slate-600 leading-relaxed text-sm max-w-2xl bg-sky-50/50 p-4 rounded-xl border border-sky-100">
+      <div class="deasy-page-intro__body mt-2 flex flex-col justify-center sm:mt-0">
+        <h4 class="deasy-page-intro__title">{{ displayName }}</h4>
+        <p class="deasy-page-intro__meta">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
+        <p class="deasy-page-intro__description">
           Selecciona una sección para continuar con la gestión de tu dossier académico y actualizar tu información profesional.
         </p>
+      </div>
       </div>
     </div>
 

@@ -11,7 +11,7 @@
           <p class="profile-section-subtitle mb-0">Gestiona puestos activos sin ocupacion actual.</p>
         </div>
         <div class="profile-section-actions">
-          <span class="inline-flex min-w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-600">{{ rows.length }}</span>
+          <AppTag variant="neutral">{{ rows.length }}</AppTag>
         </div>
       </div>
       <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -94,6 +94,7 @@
 
 <script setup>
 import AdminButton from "@/components/AppButton.vue";
+import AppTag from "@/components/AppTag.vue";
 import AdminDataTable from "@/components/AppDataTable.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";

@@ -1,14 +1,14 @@
 <template>
-  <section class="app-page-intro">
-    <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+  <section :class="introClass">
+    <div class="deasy-page-intro__layout">
       <div v-if="$slots.media" class="shrink-0">
         <slot name="media" />
       </div>
 
-      <div class="app-page-intro__body">
-        <h1 class="app-page-intro__title">{{ title }}</h1>
-        <p v-if="meta" class="app-page-intro__meta">{{ meta }}</p>
-        <p class="app-page-intro__description">
+      <div class="deasy-page-intro__body">
+        <h1 class="deasy-page-intro__title">{{ title }}</h1>
+        <p v-if="meta" class="deasy-page-intro__meta">{{ meta }}</p>
+        <p class="deasy-page-intro__description">
           {{ description }}
         </p>
       </div>
@@ -21,7 +21,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   title: {
     type: String,
     required: true
@@ -33,6 +35,15 @@ defineProps({
   description: {
     type: String,
     required: true
+  },
+  variant: {
+    type: String,
+    default: "default"
   }
 });
+
+const introClass = computed(() => [
+  "deasy-page-intro",
+  props.variant === "dashboard" ? "deasy-page-intro--dashboard" : ""
+]);
 </script>

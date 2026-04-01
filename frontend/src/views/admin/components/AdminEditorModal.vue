@@ -155,7 +155,7 @@ import { ref } from "vue";
 import AdminButton from "@/components/AppButton.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
 import AdminLookupField from "@/views/admin/components/AdminLookupField.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";
 
 const props = defineProps({
@@ -205,5 +205,9 @@ const updateFormField = (fieldName, value) => {
   });
 };
 
-defineExpose({ el: modalRef });
+defineExpose({
+  get el() {
+    return modalRef.value?.el ?? null;
+  }
+});
 </script>

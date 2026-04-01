@@ -1,6 +1,6 @@
 <template>
   <div :class="responsiveClass">
-    <div v-if="scrollClass" :class="scrollClass">
+    <div :class="scrollClass || undefined">
       <table :class="resolvedTableClass">
         <thead v-if="showHeader">
           <tr>

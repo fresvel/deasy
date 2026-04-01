@@ -5,24 +5,22 @@
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false">
           
-          <div class="deasy-nav-shell shrink-0">
-            <AppButton
-              variant="plain"
+          <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
+            <button 
               type="button" 
               @click="goAdminHome" 
-              class-name="deasy-nav-item"
-              :class="isHomeActive ? 'deasy-nav-item--active' : ''"
+              class="flex items-center w-full px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 gap-2"
+              :class="isHomeActive ? 'bg-white text-sky-800 shadow-sm' : 'text-white/90 hover:bg-white/10 hover:text-white'"
             >
               <IconHome class="w-5 h-5 shrink-0" />
               <span>Inicio</span>
-            </AppButton>
+            </button>
           </div>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
-            <div v-for="group in groupedTables" :key="group.key" class="deasy-nav-shell">
-              <AppButton
-                variant="plain"
-                class-name="deasy-nav-group-title"
+            <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
+              <button
+                class="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-white/90 hover:text-white transition-colors"
                 type="button"
                 @click="onGroupTitleClick(group)"
               >
@@ -31,107 +29,100 @@
                   <span>{{ group.label }}</span>
                 </div>
                 <IconChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openCategories[group.label] }" />
-              </AppButton>
+              </button>
 
-              <div v-show="openCategories[group.label]" class="deasy-nav-tree">
+              <div v-show="openCategories[group.label]" class="flex flex-col gap-1 mt-2 pl-2">
                 <template v-if="isAcademiaGroup(group)">
-                  <AppButton
+                  <button
                     v-for="item in academyMenuItems"
                     :key="item.key"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[isAcademyItemActive(item) ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isAcademyItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openAcademyItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </AppButton>
+                  </button>
                 </template>
                 <template v-else-if="isGestionGroup(group)">
-                  <AppButton
+                  <button
                     v-for="item in gestionMenuItems"
                     :key="item.key"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[isGestionItemActive(item) ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isGestionItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openGestionItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </AppButton>
+                  </button>
                 </template>
                 <template v-else-if="isUsuariosGroup(group)">
-                  <AppButton
+                  <button
                     v-for="item in usersMenuItems"
                     :key="item.key"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[isUsersItemActive(item) ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isUsersItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openUsersItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </AppButton>
+                  </button>
                 </template>
                 <template v-else-if="isContratosGroup(group)">
-                  <AppButton
+                  <button
                     v-for="item in contractsMenuItems"
                     :key="item.key"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[isContractsItemActive(item) ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isContractsItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openContractsItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </AppButton>
+                  </button>
                 </template>
                 <template v-else-if="isSeguridadGroup(group)">
-                  <AppButton
+                  <button
                     v-for="item in securityMenuItems"
                     :key="item.key"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[isSecurityItemActive(item) ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[isSecurityItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="openSecurityItem(item)"
                   >
                     <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
                     <span>{{ item.label }}</span>
-                  </AppButton>
+                  </button>
                 </template>
                 <template v-else>
-                  <AppButton
+                  <button
                     v-for="table in group.mainTables"
                     :key="table.table"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[selectedTable?.table === table.table ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="selectTable(table)"
                   >
                     <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
                     <span>{{ table.label }}</span>
-                  </AppButton>
+                  </button>
                   <div v-if="group.supportTables.length" class="text-[0.65rem] font-bold text-white/40 uppercase tracking-widest pl-3 mt-3 mb-1">
                     Relaciones y soporte
                   </div>
-                  <AppButton
+                  <button
                     v-for="table in group.supportTables"
                     :key="table.table"
-                    variant="plain"
-                    class-name="deasy-nav-item"
-                    :class="[selectedTable?.table === table.table ? 'deasy-nav-item--active' : '']"
+                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
+                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
                     type="button"
                     @click="selectTable(table)"
                   >
                     <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
                     <span>{{ table.label }}</span>
-                  </AppButton>
+                  </button>
                 </template>
               </div>
             </div>
@@ -141,7 +132,7 @@
       <s-body class="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8" :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
         
         <div v-if="!selectedTable" class="w-full max-w-6xl mx-auto space-y-6">
-          <div class="bg-white rounded-[2rem] p-6 sm:p-8 lg:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col min-h-[400px]">
+          <div class="deasy-section-card flex flex-col min-h-[400px]">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">
                  <div class="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
@@ -150,12 +141,13 @@
             </div>
             <div v-else-if="metaError" class="text-red-500 font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100">{{ metaError }}</div>
             <template v-else>
-               <div class="flex items-center gap-5 mb-8">
+               <div class="deasy-page-intro mb-8">
+                 <div class="deasy-page-intro__layout">
                   <div class="w-16 h-16 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100/50 shadow-inner">
                     <component :is="resolveIcon(showAcademyCrudIndex ? (selectedAcademyCrudItem?.icon || 'map-marked-alt') : showAcademiaIndex ? 'map-marked-alt' : showGestionCrudIndex ? (selectedGestionCrudItem?.icon || 'check-double') : showGestionesIndex ? 'check-double' : showUsersCrudIndex ? (selectedUsersCrudItem?.icon || 'user') : showUsersIndex ? 'user' : showContractsCrudIndex ? (selectedContractsCrudItem?.icon || 'certificate') : showContractsIndex ? 'certificate' : showSecurityCrudIndex ? (selectedSecurityCrudItem?.icon || 'lock') : showSecurityIndex ? 'lock' : showGroupCrudIndex ? iconForGroup(selectedGroup) : 'lock')" class="w-8 h-8" />
                   </div>
-                  <div>
-                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
+                  <div class="deasy-page-intro__body">
+                    <h2 class="deasy-page-intro__title">
                       {{ 
                         showAcademyCrudIndex ? (selectedAcademyCrudItem?.label || 'Academia') :
                         showAcademiaIndex ? 'Academia' :
@@ -171,7 +163,7 @@
                         'Panel de administración'
                       }}
                     </h2>
-                    <p class="text-slate-500 mt-1.5 font-medium text-sm sm:text-base">
+                    <p class="deasy-page-intro__description mt-3">
                       {{ 
                         showAcademyCrudIndex ? (selectedAcademyCrudItem?.description || 'Gestiona el CRUD de catálogos y relaciones.') :
                         showAcademiaIndex ? 'Accesos principales para administrar Unidades, Periodos y Cargos.' :
@@ -188,6 +180,7 @@
                       }}
                     </p>
                   </div>
+                 </div>
                </div>
                
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
@@ -263,9 +256,9 @@
                           <span class="text-sm font-medium text-slate-500">Crear desde seed o archivos</span>
                         </div>
                       </div>
-                      <div class="mt-4 self-start px-3 py-1 rounded-lg text-xs font-bold leading-none bg-sky-100 text-sky-700 border border-sky-200">
+                      <AppTag variant="info" class-name="mt-4 self-start">
                         Acción especial
-                      </div>
+                      </AppTag>
                     </AppButton>
                     <div v-if="!gestionCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>

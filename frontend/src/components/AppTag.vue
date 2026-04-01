@@ -19,8 +19,8 @@ const props = defineProps({
 });
 
 const classes = computed(() => [
-  "app-tag",
-  `app-tag--${props.variant}`,
+  "deasy-tag",
+  `deasy-tag--${props.variant}`,
   props.className
 ]);
 </script>

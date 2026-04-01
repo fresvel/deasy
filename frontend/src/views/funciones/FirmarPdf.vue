@@ -295,17 +295,14 @@
 
   </div>
 
-  <div class="deasy-dialog-root fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/40 backdrop-blur-sm" data-dialog-root id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
-    <div class="flex items-center justify-center min-h-screen px-4 py-8">
-      <div class="sign-dialog-shell relative w-full max-w-4xl mx-auto my-12">
-        <div class="sign-dialog-panel bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-100">
-          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h5 class="text-xl font-bold text-slate-800">Eliminar campos</h5>
-            <button type="button" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition" data-modal-dismiss aria-label="Close">
-              <IconX class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="p-6 overflow-y-auto max-h-[80vh]">
+  <AdminModalShell
+    ref="deleteModal"
+    id="deleteFieldsModal"
+    labelled-by="delete-fields-modal-title"
+    title="Eliminar campos"
+    size="xl"
+    body-class="p-6 overflow-y-auto max-h-[80vh]"
+  >
             <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
             <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <div class="flex flex-col gap-4">
@@ -349,11 +346,7 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  </AdminModalShell>
 
   <AdminModalShell
     ref="assignSignerModal"
@@ -556,9 +549,7 @@
           >
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-sm font-bold text-slate-800">{{ certificate.label }}</span>
-              <span v-if="certificate.is_default" class="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-700">
-                Predeterminado
-              </span>
+              <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
             </div>
             <div class="text-xs text-slate-500 mt-1">{{ certificate.original_filename }}</div>
           </button>
@@ -664,9 +655,10 @@
   import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
+  import AppTag from '@/components/AppTag.vue';
   import PdfDropField from '@/components/PdfDropField.vue';
   import UserCertificatesPanel from '@/components/UserCertificatesPanel.vue';
-  import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
+  import AdminModalShell from '@/components/AppModalShell.vue';
   import AdminButton from '@/components/AppButton.vue';
   import MultiSignerPanel from '@/views/funciones/MultiSignerPanel.vue';
 
@@ -927,8 +919,8 @@
 
   onMounted(() => {
     registerEvents();
-    if (deleteModal.value) {
-      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value);
+    if (deleteModal.value?.el) {
+      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value.el);
     }
     if (assignSignerModal.value?.el) {
       assignSignerModalInstance = Modal.getOrCreateInstance(assignSignerModal.value.el);
@@ -1517,8 +1509,8 @@
     };
 
     const openDeleteModal = () => {
-      if (!deleteModal.value) return;
-      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value);
+      if (!deleteModal.value?.el) return;
+      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value.el);
       deleteModalInstance.show();
     };
 

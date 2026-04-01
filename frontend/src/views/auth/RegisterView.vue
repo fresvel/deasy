@@ -143,12 +143,18 @@
                   {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
                 </button>
                 
-                <div v-if="newuser.direccion" class="flex items-center gap-1.5 px-3 py-2.5 bg-green-50 text-green-700 text-xs font-semibold rounded-xl border border-green-200 w-fit">
-                  <IconCheck class="w-4 h-4" /> Coordenadas: {{ newuser.direccion }}
-                </div>
-                <div v-else class="flex items-center gap-1.5 px-3 py-2.5 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-200 w-fit">
-                  <IconAlertCircle class="w-4 h-4" /> Requerido (*Haz click en el mapa*)
-                </div>
+                <AppTag v-if="newuser.direccion" variant="success">
+                  <template #icon>
+                    <IconCheck class="deasy-tag__icon" />
+                  </template>
+                  Coordenadas: {{ newuser.direccion }}
+                </AppTag>
+                <AppTag v-else variant="danger">
+                  <template #icon>
+                    <IconAlertCircle class="deasy-tag__icon" />
+                  </template>
+                  Requerido (*Haz click en el mapa*)
+                </AppTag>
               </div>
               
               <div v-show="showMap" class="mt-4 relative">
@@ -254,27 +260,29 @@
   </div>
 
   <!-- Success Modal nativo -->
-  <Transition
-    enter-active-class="transition-opacity duration-300"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="transition-opacity duration-200"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
+  <AppModalShell
+    controlled
+    :open="showSuccessModal"
+    labelled-by="register-success-modal-title"
+    title="¡Registro Exitoso!"
+    size="md"
+    content-class="text-center"
+    body-class="pt-8"
+    footer-class="justify-center"
+    @close="goToLogin"
   >
-    <div v-if="showSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center transform transition-all" @click.stop>
-        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <IconCheck class="w-10 h-10 text-green-500" />
-        </div>
-        <h3 class="text-2xl font-bold text-slate-800 mb-2">¡Registro Exitoso!</h3>
-        <p class="text-slate-500 text-sm mb-8">Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.</p>
-        <button @click="goToLogin" class="w-full flex justify-center py-3 px-4 rounded-xl text-white text-sm font-semibold bg-sky-600 hover:bg-sky-700 transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98]">
-          Ir al Login
-        </button>
-      </div>
+    <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+      <IconCheck class="h-10 w-10 text-green-500" />
     </div>
-  </Transition>
+    <p class="mb-0 text-sm text-slate-500">
+      Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
+    </p>
+    <template #footer>
+      <AppButton class-name="w-full" @click="goToLogin">
+        Ir al Login
+      </AppButton>
+    </template>
+  </AppModalShell>
 
 </template>
 
@@ -282,6 +290,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import AuthService from '@/services/auth/AuthService';
+import AppButton from '@/components/AppButton.vue';
+import AppModalShell from '@/components/AppModalShell.vue';
+import AppTag from '@/components/AppTag.vue';
 import { countries, getPhoneCodeByCountry } from '@/composable/countries';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';

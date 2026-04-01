@@ -717,7 +717,7 @@ import AdminVacantPositionsSection from "@/views/admin/components/AdminVacantPos
 import AdminButton from "@/components/AppButton.vue";
 import AdminDataTable from "@/components/AppDataTable.vue";
 import AdminLookupField from "@/views/admin/components/AdminLookupField.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminSearchModal from "@/views/admin/components/AdminSearchModal.vue";
 import AdminTableActions from "@/views/admin/components/AdminTableActions.vue";
 

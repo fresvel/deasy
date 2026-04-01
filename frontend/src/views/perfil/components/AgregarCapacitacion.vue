@@ -93,7 +93,7 @@
 </template>
 
 <script setup>
-import ProfileModalLayout from "@/components/ProfileModalLayout.vue";
+import ProfileModalLayout from "@/components/AppFormModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
 import DossierService from "@/services/dossier/DossierService";

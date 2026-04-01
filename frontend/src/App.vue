@@ -1,5 +1,5 @@
 <template>   
-  <router-view v-if="1==1"></router-view> <!-- Logged-->
+  <router-view v-if="1==1" :key="route.fullPath"></router-view> <!-- Logged-->
   <SessionExpiryModal ref="sessionModalRef" @session-refreshed="handleSessionRefreshed" @session-closed="handleSessionClosed" />
 </template>
     

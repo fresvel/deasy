@@ -22,7 +22,7 @@
 <script setup>
 import { onBeforeUnmount, ref } from "vue";
 import { Modal } from "@/utils/modalController";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 
 const modalRef = ref(null);
 const pdfUrl = ref("");

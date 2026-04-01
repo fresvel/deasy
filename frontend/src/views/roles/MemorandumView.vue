@@ -170,11 +170,19 @@
     </div>
 
     <!-- Modal para ver/editar memorándum -->
-    <div v-if="selectedMemorandum" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" role="dialog" aria-modal="true">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <AppModalShell
+      controlled
+      :open="Boolean(selectedMemorandum)"
+      labelled-by="memorandum-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+      @close="closeModal"
+    >
+      <div class="bg-white rounded-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <h3 id="memorandum-modal-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
              <IconFileDescription class="w-5 h-5 text-sky-600" />
             {{ isEditing ? 'Editar Memorándum' : 'Detalles del Memorándum' }}
           </h3>
@@ -334,12 +342,13 @@
           </button>
         </div>
       </div>
-    </div>
+    </AppModalShell>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import AppModalShell from '@/components/AppModalShell.vue';
 import ColabEditor from '@/components/ColabEditor.vue';
 import {
   IconPlus, IconSearch, IconX, IconDeviceFloppy, IconDownload,

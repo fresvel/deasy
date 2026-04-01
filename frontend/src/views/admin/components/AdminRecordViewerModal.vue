@@ -76,7 +76,7 @@
 import { ref } from "vue";
 import AdminButton from "@/components/AppButton.vue";
 import AdminDataTable from "@/components/AppDataTable.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 
 defineProps({
   loading: { type: Boolean, default: false },
@@ -94,5 +94,9 @@ defineProps({
 });
 defineEmits(["close"]);
 const modalRef = ref(null);
-defineExpose({ el: modalRef });
+defineExpose({
+  get el() {
+    return modalRef.value?.el ?? null;
+  }
+});
 </script>

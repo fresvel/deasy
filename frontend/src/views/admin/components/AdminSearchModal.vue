@@ -33,7 +33,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import AdminButton from "@/components/AppButton.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 
 defineProps({
   title: {

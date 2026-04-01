@@ -311,7 +311,7 @@ import AdminButton from "@/components/AppButton.vue";
 import AdminDataTable from "@/components/AppDataTable.vue";
 import AdminFieldGroup from "@/views/admin/components/AdminFieldGroup.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";
 
 const props = defineProps({

@@ -19,11 +19,15 @@
 <script setup>
 import { ref } from "vue";
 import AdminButton from "@/components/AppButton.vue";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 defineProps({
   context: { type: Object, default: null }
 });
 defineEmits(["close", "open-rules", "open-triggers", "open-artifacts"]);
 const modalRef = ref(null);
-defineExpose({ el: modalRef });
+defineExpose({
+  get el() {
+    return modalRef.value?.el ?? null;
+  }
+});
 </script>

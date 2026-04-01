@@ -216,13 +216,17 @@
       </ProfileTableBlock>
     </ProfileSectionShell>
 
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="investigacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarInvestigacion @investigacion-added="handleInvestigacionAdded" />
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      ref="modal"
+      id="investigacionModal"
+      labelled-by="investigacionModalLabel"
+      size="md"
+      :show-header="false"
+      body-class="p-0"
+      content-class="profile-admin-skin"
+    >
+      <AgregarInvestigacion @investigacion-added="handleInvestigacionAdded" />
+    </AppModalShell>
 
     <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -240,6 +244,7 @@ import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import AgregarInvestigacion from "@/views/perfil/components/AgregarInvestigacion.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import AppModalShell from "@/components/AppModalShell.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
 
@@ -285,8 +290,8 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
-  if (!modal.value) return;
-  modalInstance = Modal.getOrCreateInstance(modal.value);
+  if (!modal.value?.el) return;
+  modalInstance = Modal.getOrCreateInstance(modal.value.el);
   modalInstance.show();
 };
 

@@ -1,6 +1,6 @@
 # Homologacion UI Frontend
 
-Estado general: `6/10` hecho
+Estado general: `8/12` hecho
 
 ## Checklist
 
@@ -10,10 +10,12 @@ Estado general: `6/10` hecho
 - [x] 4. Inputs, tags y adopcion real de componentes globales
 - [x] 5. Tablas globales
 - [x] 6. Menus y layout navigation
-- [ ] 7. Modales globales
-- [ ] 8. Drag & drop de archivos
+- [x] 7. Modales globales
+- [x] 8. Drag & drop de archivos
 - [ ] 9. Contenedores y encabezados globales
 - [ ] 10. Migracion y validacion por vistas
+- [ ] 11. Segunda pasada de revision del punto 6
+- [ ] 12. Revision y homologacion final de tags
 
 ## Punto 1. Inventario y mapeo visual
 
@@ -251,4 +253,46 @@ Archivos principales:
 ### Validacion
 
 - Se ejecuto `pnpm exec eslint` sobre `SNavMenu.vue`, `AppWorkspaceHeader.vue`, `PerfilView.vue`, `DashboardHome.vue` y `AdminView.vue`.
+- La validacion paso sin errores.
+
+## Punto 7. Modales globales
+
+### Implementado
+
+- Se creo `frontend/src/components/AppModalShell.vue` como shell global reutilizable para modales controlados por `Modal` y modales reactivos por estado.
+- Se creo `frontend/src/components/AppFormModalLayout.vue` para formularios modales de `perfil`, reemplazando la antigua base local.
+- Los consumos previos de `AdminModalShell` migraron a import directo del componente global y la implementacion antigua fue eliminada.
+- Los formularios modales de `perfil` (`titulos`, `laboral`, `referencias`, `investigacion`, `certificacion`, `capacitacion`) ahora abren dentro de `AppModalShell`.
+- Se migraron tambien modales inline visibles de `dashboard`, `register`, `session`, `FirmarPdf`, `MemorandumView` y confirmaciones de borrado en `perfil`.
+
+### Alcance actual
+
+- La shell visual de modal ya comparte overlay, panel, header, footer, boton de cierre y jerarquia tipografica entre `admin`, `perfil`, `dashboard`, `firmas`, `register` y `session`.
+- La mayor parte de modales del sistema ya usa componente global directo en lugar de declaracion HTML repetida.
+- Quedan algunos modales de pagina con contenido muy especifico que ya consumen la shell global pero mantienen cuerpo propio por necesidad funcional.
+
+### Validacion
+
+- Se ejecuto `pnpm exec eslint` sobre `AppModalShell.vue`, `AppFormModalLayout.vue`, `SessionExpiryModal.vue`, `RegisterView.vue`, `DashboardHome.vue`, `MemorandumView.vue`, `FirmarPdf.vue`, las vistas de `perfil` con modales y los formularios `Agregar*`.
+- La validacion paso sin errores.
+
+## Punto 8. Drag & drop de archivos
+
+### Implementado
+
+- Se consolido el patron de carga de archivos en `frontend/src/components/PdfDropField.vue`.
+- La piel visual del dropzone se movio a clases globales de `frontend/src/styles/tailwind.css` bajo la familia `deasy-dropzone*`.
+- `FirmarPdf.vue`, `MultiSignerPanel.vue`, `UserCertificatesPanel.vue` y los formularios modales de `perfil` ya consumen la misma declaracion global.
+- `frontend/src/views/admin/components/AdminDraftArtifactModal.vue` dejo de tener dropzones propios y ahora usa `PdfDropField` en sus cuatro cargas de archivos.
+- Se elimino `frontend/src/components/SFile.vue`, ya que no tenia consumos y duplicaba el mismo patron con otra implementacion.
+
+### Alcance actual
+
+- El drag & drop comparte radios, borde dashed, estados `hover/active/disabled`, tipografia, bloque de archivo seleccionado y espaciado entre `firmas`, `perfil`, `admin` y certificados.
+- El comportamiento de click y drop queda centralizado en un solo componente.
+- `admin` conserva su logica de tipos de archivo por canal (`pdf`, `docx`, `xlsx`, `pptx`), pero ahora sobre la misma base visual global.
+
+### Validacion
+
+- Se ejecuto `pnpm exec eslint` sobre `PdfDropField.vue`, `AdminDraftArtifactModal.vue`, `UserCertificatesPanel.vue`, `FirmarPdf.vue`, `MultiSignerPanel.vue` y los formularios `Agregar*` de `perfil`.
 - La validacion paso sin errores.

@@ -133,13 +133,17 @@
 </div>
 
 <!-- Modal -->
-<div class="profile-admin-skin profile-dialog-root" data-dialog-root id="referenciaModal" tabindex="-1" aria-labelledby="referenciaModalLabel" aria-hidden="true" ref="modal">
-  <div class="profile-dialog-shell">
-    <div class="profile-dialog-panel">
-      <AgregarReferencia @referencia-added="handleReferenciaAdded" />
-    </div>
-  </div>
-</div>
+<AppModalShell
+  ref="modal"
+  id="referenciaModal"
+  labelled-by="referenciaModalLabel"
+  size="md"
+  :show-header="false"
+  body-class="p-0"
+  content-class="profile-admin-skin"
+>
+  <AgregarReferencia @referencia-added="handleReferenciaAdded" />
+</AppModalShell>
 
 <input type="file" ref="fileInput" accept="application/pdf" class="hidden" @change="handleFileSelect" />
 <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -156,6 +160,7 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
+import AppModalShell from "@/components/AppModalShell.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
 
@@ -231,10 +236,10 @@ const clickBtnsera = (ref) => {
 };
 
 const openModal = () => {
-    if (!modal.value) {
+    if (!modal.value?.el) {
         return;
     }
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 

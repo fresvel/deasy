@@ -42,7 +42,7 @@
 import { computed, nextTick, ref } from "vue";
 import { IconAlertTriangle, IconChecks, IconClock, IconRosetteDiscountCheck } from "@tabler/icons-vue";
 import { Modal } from "@/utils/modalController";
-import AdminModalShell from "@/views/admin/components/AdminModalShell.vue";
+import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminButton from "@/components/AppButton.vue";
 
 const props = defineProps({

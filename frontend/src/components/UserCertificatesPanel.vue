@@ -46,12 +46,7 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-sm font-bold text-slate-800 truncate">{{ certificate.label }}</span>
-                  <span
-                    v-if="certificate.is_default"
-                    class="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-700"
-                  >
-                    Predeterminado
-                  </span>
+                  <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
                 </div>
                 <div class="mt-1 text-xs text-slate-500 break-all">{{ certificate.original_filename }}</div>
                 <div class="mt-1 text-xs text-slate-400">
@@ -132,6 +127,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
 import { IconCertificate } from "@tabler/icons-vue";
+import AppTag from "@/components/AppTag.vue";
 import PdfDropField from "@/components/PdfDropField.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import AdminButton from "@/components/AppButton.vue";
