@@ -512,6 +512,12 @@ class SignHttpHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_GET(self):
+        if self.path == "/health":
+            self._send_json(200, {"status": "ok", "service": "signer"})
+            return
+        self._send_json(404, {"status": "error", "message": "Not found"})
+
     def do_POST(self):
         if self.path != "/sign":
             self._send_json(404, {"status": "error", "message": "Not found. Use POST /sign"})

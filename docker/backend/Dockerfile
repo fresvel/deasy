@@ -1,4 +1,4 @@
-FROM node:25.8.1 AS build
+FROM node:25.8.1 AS deps
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_DOWNLOAD=true
@@ -29,7 +29,7 @@ FROM node:25.8.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV npm_config_fund=false
 
@@ -47,7 +47,7 @@ RUN apt-get update \
 
 WORKDIR /app/backend
 
-COPY --from=build /app/backend/node_modules ./node_modules
+COPY --from=deps /app/backend/node_modules ./node_modules
 COPY backend/package*.json ./
 COPY backend ./
 
@@ -58,4 +58,4 @@ USER node
 EXPOSE 3030
 
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "--watch", "index.js"]
+CMD ["npm", "run", "start"]

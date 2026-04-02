@@ -1153,6 +1153,24 @@ app.use(express.json());
 app.use(cookieParser())
 app.use("/uploads", express.static("uploads"));
 
+app.get("/health", async (req, res) => {
+  try {
+    await assertMariaDBConnection();
+    res.status(200).json({
+      status: "ok",
+      service: "backend",
+      mariadb: "ok",
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "error",
+      service: "backend",
+      mariadb: "error",
+      message: error.message,
+    });
+  }
+});
+
 app.use(DOCS_PATH, swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.get(DOCS_JSON_PATH, (req, res) => {
   res.setHeader("Content-Type", "application/json");

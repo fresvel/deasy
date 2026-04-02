@@ -1,0 +1,99 @@
+name: deasy-qa
+
+services:
+  mariadb:
+    env_file:
+      - .env.qa
+    ports:
+      - "13306:3306"
+
+  mongodb:
+    env_file:
+      - .env.qa
+    ports:
+      - "12717:27017"
+
+  rabbitmq:
+    env_file:
+      - .env.qa
+    ports:
+      - "15672:5672"
+      - "15673:15672"
+
+  emqx:
+    env_file:
+      - .env.qa
+    ports:
+      - "11883:1883"
+      - "18084:18083"
+
+  minio:
+    env_file:
+      - .env.qa
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+
+  minio-bootstrap:
+    env_file:
+      - .env.qa
+
+  minio-publish-seeds:
+    env_file:
+      - .env.qa
+
+  minio-publish:
+    env_file:
+      - .env.qa
+
+  backend:
+    env_file:
+      - .env.qa
+    ports:
+      - "${BACKEND_PORT}:3030"
+
+  storage-uploader:
+    env_file:
+      - .env.qa
+
+  frontend:
+    env_file:
+      - .env.qa
+    ports:
+      - "${FRONTEND_PORT}:8080"
+
+  signer:
+    env_file:
+      - .env.qa
+    ports:
+      - "14000:4000"
+
+  analytics:
+    env_file:
+      - .env.qa
+
+volumes:
+  mariadb_data:
+    name: deasy_qa_mariadb_data
+  mongodb_data:
+    name: deasy_qa_mongodb_data
+  rabbitmq_data:
+    name: deasy_qa_rabbitmq_data
+  emqx_data:
+    name: deasy_qa_emqx_data
+  emqx_log:
+    name: deasy_qa_emqx_log
+  minio_data:
+    name: deasy_qa_minio_data
+  backend_node_modules_v2:
+    name: deasy_qa_backend_node_modules
+  frontend_node_modules:
+    name: deasy_qa_frontend_node_modules
+  uploads_data:
+    name: deasy_qa_uploads_data
+  storage_data:
+    name: deasy_qa_storage_data
+
+networks:
+  default:
+    name: deasy_qa_network

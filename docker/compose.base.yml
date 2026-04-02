@@ -1,0 +1,245 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  emqx:
+    image: emqx/emqx:latest
+    restart: unless-stopped
+    environment:
+      EMQX_ALLOW_ANONYMOUS: "true"
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+      - ./emqx/emqx.conf:/opt/emqx/etc/emqx.conf:ro
+
+  minio:
+    image: minio/minio:RELEASE.2025-02-18T16-25-55Z
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-bootstrap:
+    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
+    profiles:
+      - storage-init
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
+      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
+      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
+      MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
+      MINIO_CHAT_PREFIX: ${MINIO_CHAT_PREFIX}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
+      MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
+      MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    volumes:
+      - ./minio/bootstrap.sh:/bootstrap.sh:ro
+      - ./minio/import:/import:ro
+    depends_on:
+      - minio
+
+  minio-publish-seeds:
+    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
+    profiles:
+      - storage-publish-seeds
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
+    entrypoint: ["/bin/sh", "/publish-seeds.sh"]
+    volumes:
+      - ./minio/publish-template-seeds.sh:/publish-seeds.sh:ro
+      - ../tools/templates/seeds:/publish:ro
+    depends_on:
+      - minio
+
+  minio-publish:
+    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
+    profiles:
+      - storage-publish
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+    entrypoint: ["/bin/sh", "/publish.sh"]
+    volumes:
+      - ./minio/publish-templates.sh:/publish.sh:ro
+      - ../tools/templates/dist/Plantillas:/publish:ro
+    depends_on:
+      - minio
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      URI_MONGO: ${URI_MONGO}
+      PORT: ${BACKEND_PORT}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:${MINIO_API_PORT}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: 0
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
+      MINIO_TEMPLATES_USERS_PREFIX: ${MINIO_TEMPLATES_USERS_PREFIX}
+      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
+      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
+      MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
+      MINIO_CHAT_PREFIX: ${MINIO_CHAT_PREFIX}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
+      MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
+      MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+      RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
+      RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
+      RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
+      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      SIGN_REQUEST_QUEUE: deasy.sign.request
+      SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      emqx:
+        condition: service_started
+
+  storage-uploader:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: 0
+      RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
+      RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
+      RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
+      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
+    command: ["node", "workers/storage_uploader.js"]
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        VITE_API_PORT: ${VITE_API_PORT}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  signer:
+    build:
+      context: ..
+      dockerfile: docker/signer/Dockerfile
+    restart: unless-stopped
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      SIGNER_PORT: "4000"
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      SIGN_REQUEST_QUEUE: deasy.sign.request
+      PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}
+      SIGNER_EMBED_VALIDATION_INFO: ${SIGNER_EMBED_VALIDATION_INFO:-1}
+      SIGNER_USE_PADES_LTA: ${SIGNER_USE_PADES_LTA:-0}
+      SIGNER_USE_GHOSTSCRIPT: ${SIGNER_USE_GHOSTSCRIPT:-1}
+    depends_on:
+      - minio
+      - rabbitmq
+
+  analytics:
+    build:
+      context: ..
+      dockerfile: docker/analytics/Dockerfile
+    restart: unless-stopped
+    profiles:
+      - workers
+    volumes:
+      - storage_data:/data
+
+volumes:
+  mariadb_data:
+  mongodb_data:
+  rabbitmq_data:
+  emqx_data:
+  emqx_log:
+  minio_data:
+  backend_node_modules_v2:
+  frontend_node_modules:
+  uploads_data:
+  storage_data:

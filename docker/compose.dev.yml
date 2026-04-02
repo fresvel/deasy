@@ -1,0 +1,92 @@
+name: deasy-dev
+
+services:
+  mariadb:
+    ports:
+      - "3306:3306"
+
+  mongodb:
+    ports:
+      - "27017:27017"
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  emqx:
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+
+  minio:
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+
+  backend:
+    build:
+      dockerfile: docker/backend/Dockerfile.dev
+    env_file:
+      - .env.dev
+    ports:
+      - "${BACKEND_PORT}:3030"
+    volumes:
+      - ../backend:/app/backend
+      - ../tools/templates:/app/tools/templates:ro
+      - backend_node_modules_v2:/app/backend/node_modules
+      - uploads_data:/app/backend/uploads
+      - storage_data:/app/backend/storage
+
+  storage-uploader:
+    env_file:
+      - .env.dev
+    volumes:
+      - ../backend:/app/backend
+      - backend_node_modules_v2:/app/backend/node_modules
+      - storage_data:/app/backend/storage
+
+  frontend:
+    build:
+      dockerfile: docker/frontend/Dockerfile.dev
+    env_file:
+      - .env.dev
+    ports:
+      - "${FRONTEND_PORT}:8080"
+    volumes:
+      - ../frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+
+  signer:
+    env_file:
+      - .env.dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../signer:/app
+
+volumes:
+  mariadb_data:
+    name: deasy_dev_mariadb_data
+  mongodb_data:
+    name: deasy_dev_mongodb_data
+  rabbitmq_data:
+    name: deasy_dev_rabbitmq_data
+  emqx_data:
+    name: deasy_dev_emqx_data
+  emqx_log:
+    name: deasy_dev_emqx_log
+  minio_data:
+    name: deasy_dev_minio_data
+  backend_node_modules_v2:
+    name: deasy_dev_backend_node_modules
+  frontend_node_modules:
+    name: deasy_dev_frontend_node_modules
+  uploads_data:
+    name: deasy_dev_uploads_data
+  storage_data:
+    name: deasy_dev_storage_data
+
+networks:
+  default:
+    name: deasy_dev_network

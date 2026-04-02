@@ -1,0 +1,55 @@
+name: Docker Multi-Env
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - qa
+      - main
+  push:
+    branches:
+      - develop
+      - qa
+      - main
+
+jobs:
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Lint frontend
+        working-directory: frontend
+        run: pnpm run lint
+
+  compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dev compose
+        run: bash scripts/docker-env.sh dev config
+      - name: Validate qa compose
+        run: bash scripts/docker-env.sh qa config
+      - name: Validate prod compose
+        run: bash scripts/docker-env.sh prod config
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build stable backend image
+        run: docker build -f docker/backend/Dockerfile -t deasy/backend:ci .
+      - name: Build stable frontend image
+        run: docker build -f docker/frontend/Dockerfile --build-arg VITE_API_PORT=3030 -t deasy/frontend:ci .
+      - name: Build signer image
+        run: docker build -f docker/signer/Dockerfile -t deasy/signer:ci .
