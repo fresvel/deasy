@@ -11,6 +11,7 @@ export class SenescytPdfParserService {
 
     // ─── Helpers de regex ───────────────────────────────────────────────────
 
+    
     /**
      * Extrae el valor que sigue a una etiqueta dada.
      * Acepta variaciones de espaciado, dos puntos, etc.
