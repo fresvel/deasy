@@ -8,7 +8,7 @@ Soportar firma de documentos y flujos asociados a procesos academicos, con sopor
 
 1) Seleccion y generacion de documento.
 2) Definicion de posiciones de firma por usuario.
-3) Envio a servicio de firma (signer).
+3) Envio a servicio de firma (`signer`).
 4) Persistencia y versionado en MinIO (`deasy-documents` y `deasy-spool` segun etapa).
 
 ## Componentes
@@ -20,9 +20,7 @@ Soportar firma de documentos y flujos asociados a procesos academicos, con sopor
 ## Integraciones
 
 - Documentos/plantillas enlazados a procesos.
-- Ver datos relacionados en docs/02-dominio-datos/.
 
 ## Referencias
 
 - docs/01-arquitectura/firmas.drawio
-- 

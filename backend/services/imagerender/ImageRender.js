@@ -79,9 +79,3 @@ class QRCodeGenerator {
     return lines;
   }
 }
-
-
-
-// Ejemplo de uso
-const qrGenerator = new QRCodeGenerator('/home/fresvel/Documentos/Pucese/deasy/signer/testing/firma.png', 'Docente Demo Principal');
-qrGenerator.generate();

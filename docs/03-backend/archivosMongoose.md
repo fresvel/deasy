@@ -429,27 +429,6 @@ Los servicios contienen lógica reutilizable para diferentes controladores
 
 ---
 
-### `signer/src/certmanager/CertificateManager.js`
-
-**Propósito:** Gestión segura de certificados digitales (.p12) cifrados
-
-**Métodos principales:**
-1. **`deriveKey(password, salt)`** - Deriva una clave de cifrado usando PBKDF2
-2. **`encryptAndStoreCertificate(filePath, password, userId)`** - Cifra y almacena certificado en MongoDB
-   - Lee archivo .p12
-   - Cifra con AES-256-CBC
-   - Almacena en colección Certificate con usuario asociado
-   - Guarda salt e IV para descifrado posterior
-
-3. **`decryptAndRetrieveCertificate(certificateId, password, outputPath)`** - Descifra y recupera certificado
-   - Retrieves certificado de MongoDB
-   - Descifra usando contraseña
-   - Escribe archivo descifrado a ubicación especificada
-
-**Función:** Seguridad criptográfica para certificados digitales de firma
-
----
-
 ## Middlewares
 
 Los middlewares procesan requests antes de que lleguen a los controladores

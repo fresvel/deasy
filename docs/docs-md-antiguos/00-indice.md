@@ -34,7 +34,6 @@ Este indice organiza la documentacion del repositorio y enlaza a los documentos 
    - docs/02-dominio-datos/migraciones.md
    - docs/02-dominio-datos/mariadb.dbml
    - docs/02-dominio-datos/mariadb.drawio
-   - docs/02-dominio-datos/
 
 3) Backend
    - docs/03-backend/setup.md
@@ -58,7 +57,6 @@ Este indice organiza la documentacion del repositorio y enlaza a los documentos 
 
 6) Reportes y firmas
    - docs/06-reportes-firmas/latex.md
-   - 
    - docs/06-reportes-firmas/templates.md
 
 7) Despliegue

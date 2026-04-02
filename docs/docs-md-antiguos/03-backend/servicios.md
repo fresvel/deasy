@@ -14,11 +14,11 @@
 - Templates LaTeX runtime: backend/services/latex/templates/
 - Templates legacy auxiliares: backend/templates_legacy/
 
-## Firmas (Signer)
+## Firmas
 
 - Servicio principal: signer/
-- Multisigner: signer/
-- Certificados: signer/src/certmanager/CertificateManager.js
+- Contenedor: docker/signer/
+- Flujo de certificados y firmado: signer/app.py y signer/signService.js
 
 ## Integraciones externas
 

@@ -112,8 +112,8 @@ const llamar=async () => {
     }
         
     const informe = {
-        "name": "salida2",// el filename debe ser único -- cuidado con inyección en signer al crear los campos de firmas-- consultar BD
-        "path": "/home/fresvel/Documentos/Pucese/deasy/signer/informes/ITI/2024/SPO2024/Academia/inicial",
+        "name": "salida2",// el filename debe ser único -- cuidado con inyección al crear los campos de firmas-- consultar BD
+        "path": "/tmp/deasy-latex-demo/inicial",
         "modules": modules,
         "template":"informe"
     };
@@ -141,7 +141,7 @@ llamar()
  * Ejemplo del JSON:
  * {
  *      "name": "nombre del proyecto o informe", //manejar en gestión de informes nuevos
-        "path": "/home/fresvel/Documentos/Pucese/deasy/signer/informes/ITI/2024/SPO2024/Academia/elaborados",
+        "path": "/tmp/deasy-latex-demo/elaborados",
         "modules": modules, //Array de objetos que se deben pasar al editor
         "template":"informe"
  * }

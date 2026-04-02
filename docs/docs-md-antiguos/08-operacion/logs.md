@@ -29,4 +29,3 @@ Servicios comunes:
 ## Rotacion
 
 - Definir politica de rotacion segun entorno (logrotate o logs centralizados).
-

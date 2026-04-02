@@ -21,7 +21,6 @@ El motor de negocio usa procesos base, variantes controladas, definiciones versi
 - docs/01-arquitectura/arquitectura.drawio
 - docs/01-arquitectura/firmas.drawio
 - docs/02-dominio-datos/mariadb.drawio
-- docs/02-dominio-datos/
 
 ## Flujo general
 
@@ -30,7 +29,7 @@ El motor de negocio usa procesos base, variantes controladas, definiciones versi
 3) Chat/Notificaciones: mensajes guardados en Mongo y publicados por EMQX.
 4) Templates del sistema se empaquetan desde `tools/templates`, se publican a MinIO y se sincronizan en `template_artifacts`.
 5) El dashboard del usuario abre una consola operativa por `process_definition_id`, donde el usuario ve solo sus tareas, sus entregables, sus documentos y sus firmas.
-6) Reportes/firma: backend orquesta plantillas, genera documentos y ejecuta firma.
+6) Reportes/firma: backend orquesta plantillas, genera documentos y delega la firma al servicio `signer`.
 
 ## Storage actual
 
