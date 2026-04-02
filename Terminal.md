@@ -6242,7 +6242,7 @@ https://chatgpt.com/codex/settings/usage to purchase more credits or try again a
 › quiero ajustar algunas cosas. La primera es que el tamaño de la imagen estampada es creo que un
   50% mas pequeño que el bounding box y debería ser del tamaño exacto. Lo segundo es que cuando no
   activé el flag me dio este error: Signer info ----------- Certificate subject: "Common Name:
-  HOMERO JAVIER DEMO PRINCIPAL, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE
+  HOMERO JAVIER DEMO UNO, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE
   CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC" Certificate SHA1
   fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495 Certificate SHA256 fingerprint:
   640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b Trust anchor: "No path to trust
@@ -6477,7 +6477,7 @@ https://chatgpt.com/codex/settings/usage to purchase more credits or try again a
 
 › pero no está usando el mismo estilo del de eliminar, este tiene fondo blanco y es circular.
   Podría quedar el fondo pero no la forma. Por otro lado ¿Es posible que en el frontend se detecte
-  un patrón como este !-1234567891-! y que en cada lugar que se dectecte ese patrón se coloque un
+  un patrón como este !-TOKEN_DEMO-! y que en cada lugar que se dectecte ese patrón se coloque un
   bounding box del tamaño predeterminado?
 
 
@@ -6494,7 +6494,7 @@ https://chatgpt.com/codex/settings/usage to purchase more credits or try again a
 • Ajusté el botón lateral en frontend/src/views/funciones/FirmarPdf.vue: mantiene fondo blanco, pero
   ya no es circular; ahora usa una forma redondeada rectangular, más alineada con BtnDelete.
 
-  Sí, es totalmente posible detectar patrones como !-1234567891-! en frontend y crear
+  Sí, es totalmente posible detectar patrones como !-TOKEN_DEMO-! en frontend y crear
   automáticamente un bounding box predeterminado en cada coincidencia.
 
   La forma correcta de hacerlo aquí sería:
@@ -7017,8 +7017,8 @@ o":
 
   En la base real, los usuarios actuales tienen token:
 
-  - 1234567891 → 9b6D6WnuUE
-  - 0987654321 → xdm9kQQNnq
+  - CEDULA_DEMO_1 → TOKEN_DEMO_1
+  - CEDULA_DEMO_2 → TOKEN_DEMO_2
 
   Y el backend sí lo expone en la respuesta pública del usuario desde backend/services/auth/
   UserRepository.js:243:
@@ -7026,7 +7026,7 @@ o":
   - signatureToken: userRow.token
   - signatureMarker: !-${token}-!
 
-  Para tu usuario 1234567891, el marcador que debería llegar al frontend es:
+  Para tu usuario de prueba, el marcador que debería llegar al frontend es:
 
   - !-9b6D6WnuUE-!
 
@@ -9986,7 +9986,6 @@ rkspace_selected"}}, url: https://chatgpt.com/backend-api/codex/responses/compac
 3a54a9d4-UIO, request id: 06c05413-a4a3-4b24-ac4d-cda3a4548a92, auth error: 403, auth error code: i
 nvalid_workspace_selected
 [fresvel@localhost deasy]$ codex resume 019d3b5a-9122-7ca0-aec3-231588a7fe33
-
 
 
 

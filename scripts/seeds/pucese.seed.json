@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-03-28T22:40:14.120Z",
+  "captured_at": "2026-04-01T22:40:37.603Z",
   "tables": [
     {
       "table": "persons",
@@ -14,12 +14,19 @@
         "whatsapp",
         "direccion",
         "pais",
+        "pais_residencia",
+        "provincia_residencia",
+        "ciudad_residencia",
+        "calle_primaria",
+        "calle_secundaria",
+        "codigo_postal",
         "password_hash",
         "status",
         "verify_email",
         "verify_whatsapp",
         "photo_url",
         "is_active",
+        "token",
         "created_at",
         "updated_at"
       ],
@@ -32,69 +39,97 @@
         "whatsapp": "varchar(30)",
         "direccion": "varchar(255)",
         "pais": "varchar(80)",
+        "pais_residencia": "varchar(80)",
+        "provincia_residencia": "varchar(120)",
+        "ciudad_residencia": "varchar(120)",
+        "calle_primaria": "varchar(180)",
+        "calle_secundaria": "varchar(180)",
+        "codigo_postal": "varchar(30)",
         "password_hash": "varchar(255)",
         "status": "enum('Inactivo','Activo','Verificado','Reportado')",
         "verify_email": "tinyint(1)",
         "verify_whatsapp": "tinyint(1)",
         "photo_url": "longtext",
         "is_active": "tinyint(1)",
+        "token": "varchar(10)",
         "created_at": "datetime",
         "updated_at": "datetime"
       },
       "rows": [
         {
           "id": 1,
-          "cedula": "1234567890",
-          "first_name": "Homero Javier",
-          "last_name": "Velasteguí Izurieta",
-          "email": "autor.demo@pucese.edu.ec",
-          "whatsapp": "+5931234567890",
-          "direccion": "0.972240, -79.657466",
+          "cedula": "1234567891",
+          "first_name": "Persona",
+          "last_name": "Demo Uno",
+          "email": "persona.demo1@pucese.edu.ec",
+          "whatsapp": "+5931234567891",
+          "direccion": "Direccion demo 1",
           "pais": "Ecuador",
+          "pais_residencia": null,
+          "provincia_residencia": null,
+          "ciudad_residencia": null,
+          "calle_primaria": null,
+          "calle_secundaria": null,
+          "codigo_postal": null,
           "password_hash": "$2b$10$SdriiYtnau6zGwVvhM3TQ./pjkTOZAe0Vi/XXrJ6.yVnNiPkbdazq",
           "status": "Inactivo",
           "verify_email": 0,
           "verify_whatsapp": 0,
           "photo_url": null,
           "is_active": 1,
+          "token": "9b6D6WnuUE",
           "created_at": "2026-02-26 12:30:21",
-          "updated_at": "2026-02-26 12:30:21"
+          "updated_at": "2026-04-01 22:40:31"
         },
         {
           "id": 2,
           "cedula": "0987654321",
-          "first_name": "Adrian Vargas",
-          "last_name": "Vargas Machuca del Salto",
-          "email": "autor.demo@pucese.edu.ec",
-          "whatsapp": "+5931234567890",
-          "direccion": "Esmeraldas",
+          "first_name": "Persona",
+          "last_name": "Demo Dos",
+          "email": "persona.demo2@pucese.edu.ec",
+          "whatsapp": "+5931234567892",
+          "direccion": "Direccion demo 2",
           "pais": "Ecuador",
-          "password_hash": "$2b$10$SXiKu8HzkTeiQhH8svcj.eB0zdLSBPwExhjCwmtXQWHKZf0jn4OuW",
+          "pais_residencia": null,
+          "provincia_residencia": null,
+          "ciudad_residencia": null,
+          "calle_primaria": null,
+          "calle_secundaria": null,
+          "codigo_postal": null,
+          "password_hash": "$2b$10$WvbO26o39POorLKAkecP4evKf8M5d3xrz2Ft2Jdc62xsvgfRSLYt2",
           "status": "Inactivo",
           "verify_email": 0,
           "verify_whatsapp": 0,
           "photo_url": null,
           "is_active": 1,
+          "token": "xdm9kQQNnq",
           "created_at": "2026-02-26 19:21:43",
-          "updated_at": "2026-02-26 19:27:29"
+          "updated_at": "2026-04-01 22:40:31"
         },
         {
           "id": 3,
-          "cedula": "0999999999",
-          "first_name": "Admin",
-          "last_name": "Seed",
-          "email": "admin.seed@pucese.edu.ec",
-          "whatsapp": "+5930999999999",
-          "direccion": "Esmeraldas",
-          "pais": "Ecuador",
-          "password_hash": "$2b$10$osd2Fv1xqg3vyFXi5V9d7.jQpnBn4sSKmCbyBUZ/JW3yebC6QWmnK",
+          "cedula": "1234567890",
+          "first_name": "Carlos",
+          "last_name": "Demo Tres",
+          "email": "director.demo@pucese.edu.ec",
+          "whatsapp": null,
+          "direccion": null,
+          "pais": null,
+          "pais_residencia": null,
+          "provincia_residencia": null,
+          "ciudad_residencia": null,
+          "calle_primaria": null,
+          "calle_secundaria": null,
+          "codigo_postal": null,
+          "password_hash": "$2b$10$iEYbJk6Vc9eT41I.4vGk0Ocf3zztonW5YF0iTapuEBWDvgoM33dcq",
           "status": "Activo",
           "verify_email": 1,
-          "verify_whatsapp": 1,
+          "verify_whatsapp": 0,
           "photo_url": null,
           "is_active": 1,
-          "created_at": "2026-03-29 09:00:00",
-          "updated_at": "2026-03-29 09:00:00"
+          "token": "48ba18cb71",
+          "created_at": "2026-04-01 02:07:56",
+          "updated_at": "2026-04-01 02:07:56"
         }
       ]
     },
@@ -395,6 +430,7 @@
       "table": "cargos",
       "columns": [
         "id",
+        "code",
         "name",
         "description",
         "is_active",
@@ -403,6 +439,7 @@
       ],
       "column_types": {
         "id": "int(11)",
+        "code": "varchar(120)",
         "name": "varchar(120)",
         "description": "varchar(255)",
         "is_active": "tinyint(1)",
@@ -412,43 +449,48 @@
       "rows": [
         {
           "id": 1,
+          "code": "coordinador",
           "name": "Coordinador",
           "description": null,
           "is_active": 1,
           "created_at": "2026-02-26 13:19:04",
-          "updated_at": "2026-02-26 13:19:04"
+          "updated_at": "2026-03-31 18:39:11"
         },
         {
           "id": 2,
+          "code": "docente",
           "name": "Docente",
           "description": null,
           "is_active": 1,
           "created_at": "2026-02-26 13:19:11",
-          "updated_at": "2026-02-26 13:19:11"
+          "updated_at": "2026-03-31 18:39:11"
         },
         {
           "id": 3,
+          "code": "responsable-de-calidad",
           "name": "Responsable de Calidad",
           "description": null,
           "is_active": 1,
           "created_at": "2026-02-26 13:20:33",
-          "updated_at": "2026-02-26 13:20:33"
+          "updated_at": "2026-03-31 18:39:11"
         },
         {
           "id": 4,
+          "code": "director",
           "name": "Director",
           "description": null,
           "is_active": 1,
           "created_at": "2026-02-26 13:20:45",
-          "updated_at": "2026-02-26 13:20:45"
+          "updated_at": "2026-03-31 18:39:11"
         },
         {
           "id": 5,
+          "code": "prorrector",
           "name": "Prorrector",
           "description": null,
           "is_active": 1,
           "created_at": "2026-02-26 20:09:13",
-          "updated_at": "2026-02-26 20:09:13"
+          "updated_at": "2026-03-31 18:39:11"
         }
       ]
     },
@@ -466,14 +508,7 @@
         "description": "varchar(255)",
         "is_active": "tinyint(1)"
       },
-      "rows": [
-        {
-          "id": 1,
-          "name": "admin",
-          "description": "Rol administrativo seed",
-          "is_active": 1
-        }
-      ]
+      "rows": []
     },
     {
       "table": "resources",
@@ -591,24 +626,7 @@
         "revoked_at": "datetime",
         "revoked_reason": "varchar(255)"
       },
-      "rows": [
-        {
-          "id": 1,
-          "role_id": 1,
-          "unit_id": 11,
-          "derived_from_assignment_id": null,
-          "source": "manual",
-          "person_id": 3,
-          "max_depth": 0,
-          "start_date": "2026-03-29",
-          "end_date": null,
-          "is_current": 1,
-          "current_flag": 1,
-          "assigned_at": "2026-03-29 09:00:00",
-          "revoked_at": null,
-          "revoked_reason": null
-        }
-      ]
+      "rows": []
     },
     {
       "table": "role_assignment_relation_types",
@@ -865,15 +883,15 @@
         {
           "id": 18,
           "unit_id": 1,
-          "slot_no": 8,
-          "title": "Coordinador de Carrera (Admin Seed)",
+          "slot_no": 1,
+          "title": "Director de Carrera",
           "profile_ref": null,
           "position_type": "promocion",
           "is_active": 1,
           "deactivated_at": null,
-          "created_at": "2026-03-29 09:12:00",
-          "updated_at": "2026-03-29 09:12:00",
-          "cargo_id": 1
+          "created_at": "2026-04-01 02:07:56",
+          "updated_at": "2026-04-01 02:07:56",
+          "cargo_id": 4
         }
       ]
     },
@@ -970,25 +988,25 @@
         },
         {
           "id": 9,
-          "position_id": 6,
+          "position_id": 8,
           "person_id": 3,
-          "start_date": "2026-03-29",
+          "start_date": "2026-04-01",
           "end_date": null,
           "is_current": 1,
           "current_flag": 1,
-          "created_at": "2026-03-29 09:10:00",
-          "updated_at": "2026-03-29 09:10:00"
+          "created_at": "2026-04-01 02:07:56",
+          "updated_at": "2026-04-01 02:07:56"
         },
         {
           "id": 10,
           "position_id": 18,
           "person_id": 3,
-          "start_date": "2026-03-29",
+          "start_date": "2026-04-01",
           "end_date": null,
           "is_current": 1,
           "current_flag": 1,
-          "created_at": "2026-03-29 09:13:00",
-          "updated_at": "2026-03-29 09:13:00"
+          "created_at": "2026-04-01 02:07:56",
+          "updated_at": "2026-04-01 02:07:56"
         }
       ]
     },
@@ -1000,7 +1018,11 @@
         "slug",
         "parent_id",
         "is_active",
-        "created_at"
+        "created_at",
+        "unit_id",
+        "program_id",
+        "person_id",
+        "term_id"
       ],
       "column_types": {
         "id": "int(11)",
@@ -1008,7 +1030,11 @@
         "slug": "varchar(180)",
         "parent_id": "int(11)",
         "is_active": "tinyint(1)",
-        "created_at": "datetime"
+        "created_at": "datetime",
+        "unit_id": "int(11)",
+        "program_id": "int(11)",
+        "person_id": "int(11)",
+        "term_id": "int(11)"
       },
       "rows": [
         {
@@ -1017,7 +1043,11 @@
           "slug": "PMEM",
           "parent_id": 4,
           "is_active": 1,
-          "created_at": "2026-02-26 20:21:40"
+          "created_at": "2026-02-26 20:21:40",
+          "unit_id": null,
+          "program_id": null,
+          "person_id": null,
+          "term_id": null
         },
         {
           "id": 2,
@@ -1025,7 +1055,11 @@
           "slug": "PIFO",
           "parent_id": 3,
           "is_active": 1,
-          "created_at": "2026-02-27 15:04:23"
+          "created_at": "2026-02-27 15:04:23",
+          "unit_id": null,
+          "program_id": null,
+          "person_id": null,
+          "term_id": null
         },
         {
           "id": 3,
@@ -1033,7 +1067,11 @@
           "slug": "PINV",
           "parent_id": 4,
           "is_active": 1,
-          "created_at": "2026-02-27 15:32:13"
+          "created_at": "2026-02-27 15:32:13",
+          "unit_id": null,
+          "program_id": null,
+          "person_id": null,
+          "term_id": null
         },
         {
           "id": 4,
@@ -1041,7 +1079,11 @@
           "slug": "ROOT",
           "parent_id": null,
           "is_active": 1,
-          "created_at": "2026-02-27 15:33:23"
+          "created_at": "2026-02-27 15:33:23",
+          "unit_id": null,
+          "program_id": null,
+          "person_id": null,
+          "term_id": null
         },
         {
           "id": 5,
@@ -1049,7 +1091,11 @@
           "slug": "PIPR",
           "parent_id": 3,
           "is_active": 1,
-          "created_at": "2026-03-02 00:43:32"
+          "created_at": "2026-03-02 00:43:32",
+          "unit_id": null,
+          "program_id": null,
+          "person_id": null,
+          "term_id": null
         }
       ]
     },
@@ -1837,7 +1883,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_carrera/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"docx\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_carrera/v0001/template/modes/user/docx/src/\"},\"latex\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_carrera/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_formativa_informe_carrera/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_formativa_informe_carrera/v0001/meta.yaml",
-          "content_hash": "bddf0183e8d92f6d4a1be3c52f4939c1f8c40f15440e8e9c46a2b1ddb3f77ef7",
+          "content_hash": "786744bcf22682674d664de8c1d8d5d88aaa9bcfd6ec90494e78cfd4c8c0258c",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1858,7 +1904,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_docente/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_docente/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_formativa_informe_docente/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_formativa_informe_docente/v0001/meta.yaml",
-          "content_hash": "b980fe8ed7242d6e10fa87cc07c125c14e1cb0bee431f147299e659f9bbf030f",
+          "content_hash": "6c13c06ae64de8cd3a2d587b1dcbecaa9a0bedfe27f10d12981a413e77cdbe38",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1879,7 +1925,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_estudiantes/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_formativa_informe_estudiantes/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_formativa_informe_estudiantes/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_formativa_informe_estudiantes/v0001/meta.yaml",
-          "content_hash": "fcf0851c8e65ba54e8f8589c71588229937c992e8239672314a04e3fec1847f2",
+          "content_hash": "b60ba98b173845935dabd0885edb9464a81af53a0029348561738cb32349e2a5",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1900,7 +1946,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_formativa_plan_carrera/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_formativa_plan_carrera/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_formativa_plan_carrera/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_formativa_plan_carrera/v0001/meta.yaml",
-          "content_hash": "44ebe5922d0178d4856dd81f617d5dbb0e3a696823bee4e8bdc1b9ccc1d8a526",
+          "content_hash": "863dd9c9e3850ef90bc7e0ff30b373e6e0a01378533bbd6a843d00a103b6f3ed",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1921,7 +1967,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_formativa_plan_docente/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_formativa_plan_docente/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_formativa_plan_docente/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_formativa_plan_docente/v0001/meta.yaml",
-          "content_hash": "9b1b5e9fc254a8a992ea209147a2d437cb12310ad8c28efaf0ad42ab5d4245e9",
+          "content_hash": "e94d9daf103ab3051fb0afa96cfc581784c1251151fa7c96ee153ea21227b3f9",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1942,7 +1988,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/meta.yaml",
-          "content_hash": "359c22dafcf6ee1d70115ccf65540c08b63fbf01b37d1524c15bdc93fbf587a2",
+          "content_hash": "92ee6d767971f4f5e12b991526db301c1b98dd5f00b79733ecfeb9aca5897e14",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1963,7 +2009,7 @@
           "available_formats": "{\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/meta.yaml",
-          "content_hash": "09416ef49071de3038ba689fa987e125f21a6c5d58c22232731b4e3908829a88",
+          "content_hash": "ae0adac39a90e6d0f18b2c24f3fe2c0ebdc711b7111512c2b1fb141822c822ff",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -1984,7 +2030,7 @@
           "available_formats": "{\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/meta.yaml",
-          "content_hash": "0d6bf931f9f20b6259289bb4cabf23720c7475ec800124e705b92197c5991734",
+          "content_hash": "17ba894a156a4cd471589cddf00ecfee5c8ec50cedee9fbbd790c140f9e6f6a9",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -2005,7 +2051,7 @@
           "available_formats": "{\"user\":{\"latex\":{\"entry_object_key\":\"System/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/meta.yaml",
-          "content_hash": "e05910374cdb7226d25435b01ae744ea7cc2cc0d11cfd91f8824a4e14b6bf905",
+          "content_hash": "5cecab76e784de07a34b97c43badbc6e0c29c308a65950e58ecbd520ebae9bbf",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -2026,7 +2072,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_productiva_informe_carrera/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"docx\":{\"entry_object_key\":\"System/tpl_investigación_productiva_informe_carrera/v0001/template/modes/user/docx/src/\"},\"latex\":{\"entry_object_key\":\"System/tpl_investigación_productiva_informe_carrera/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_productiva_informe_carrera/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_productiva_informe_carrera/v0001/meta.yaml",
-          "content_hash": "904dc1c38bfd6099cb48077031e5310a5e6db1adcb57684df117f017396689a1",
+          "content_hash": "c38f309a0ac88a52bc5efd45682c4197f1c2326ef059a8b7145b703a425deb69",
           "is_active": 1,
           "created_at": "2026-03-01 13:06:25"
         },
@@ -2047,7 +2093,7 @@
           "available_formats": "{\"system\":{\"jinja2\":{\"entry_object_key\":\"System/tpl_investigación_productiva_informe_docente/v0001/template/modes/system/jinja2/src/\"}},\"user\":{\"docx\":{\"entry_object_key\":\"System/tpl_investigación_productiva_informe_docente/v0001/template/modes/user/docx/src/\"},\"latex\":{\"entry_object_key\":\"System/tpl_investigación_productiva_informe_docente/v0001/template/modes/user/latex/src/\"}}}",
           "schema_object_key": "System/tpl_investigación_productiva_informe_docente/v0001/schema.json",
           "meta_object_key": "System/tpl_investigación_productiva_informe_docente/v0001/meta.yaml",
-          "content_hash": "7b153cb4d392edc33f4697b22aa4604d941dc210947e61209b66d1addbe2750c",
+          "content_hash": "a1f0ef9b66cbef79d611175ed883c8818c61ee533460845a8c15008cfc256f45",
           "is_active": 1,
           "created_at": "2026-03-01 19:07:59"
         }
@@ -2223,6 +2269,7 @@
       "columns": [
         "id",
         "process_definition_id",
+        "process_run_id",
         "term_id",
         "launch_mode",
         "created_by_user_id",
@@ -2240,6 +2287,7 @@
       "column_types": {
         "id": "int(11)",
         "process_definition_id": "int(11)",
+        "process_run_id": "int(11)",
         "term_id": "int(11)",
         "launch_mode": "enum('automatic','manual')",
         "created_by_user_id": "int(11)",
@@ -2258,6 +2306,7 @@
         {
           "id": 1,
           "process_definition_id": 18,
+          "process_run_id": 1,
           "term_id": 2,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2275,6 +2324,7 @@
         {
           "id": 2,
           "process_definition_id": 20,
+          "process_run_id": 2,
           "term_id": 4,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2292,6 +2342,7 @@
         {
           "id": 3,
           "process_definition_id": 20,
+          "process_run_id": 3,
           "term_id": 5,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2309,6 +2360,7 @@
         {
           "id": 4,
           "process_definition_id": 20,
+          "process_run_id": 4,
           "term_id": 6,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2326,6 +2378,7 @@
         {
           "id": 5,
           "process_definition_id": 21,
+          "process_run_id": 5,
           "term_id": 7,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2343,6 +2396,7 @@
         {
           "id": 6,
           "process_definition_id": 20,
+          "process_run_id": 6,
           "term_id": 7,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2360,6 +2414,7 @@
         {
           "id": 7,
           "process_definition_id": 21,
+          "process_run_id": 7,
           "term_id": 8,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2377,6 +2432,7 @@
         {
           "id": 8,
           "process_definition_id": 20,
+          "process_run_id": 8,
           "term_id": 8,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2394,6 +2450,7 @@
         {
           "id": 9,
           "process_definition_id": 21,
+          "process_run_id": 9,
           "term_id": 9,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -2411,6 +2468,7 @@
         {
           "id": 10,
           "process_definition_id": 20,
+          "process_run_id": 10,
           "term_id": 9,
           "launch_mode": "automatic",
           "created_by_user_id": null,
@@ -3012,6 +3070,9 @@
       "columns": [
         "id",
         "task_item_id",
+        "owner_person_id",
+        "origin_type",
+        "title",
         "status",
         "comments_thread_ref",
         "created_at",
@@ -3020,12 +3081,170 @@
       "column_types": {
         "id": "int(11)",
         "task_item_id": "int(11)",
+        "owner_person_id": "int(11)",
+        "origin_type": "enum('task_item','standalone','imported','generated')",
+        "title": "varchar(180)",
         "status": "varchar(30)",
         "comments_thread_ref": "varchar(64)",
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "task_item_id": 1,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Plan de Investigación Formativa por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 2,
+          "task_item_id": 2,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 3,
+          "task_item_id": 3,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 4,
+          "task_item_id": 4,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 5,
+          "task_item_id": 5,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 6,
+          "task_item_id": 6,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Plan de Investigación Formativa por Carrera",
+          "status": "Pendiente de firma",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 7,
+          "task_item_id": 7,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 8,
+          "task_item_id": 8,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Observado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 9,
+          "task_item_id": 9,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Plan de Investigación Formativa por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 10,
+          "task_item_id": 10,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 11,
+          "task_item_id": 11,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "En proceso",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 12,
+          "task_item_id": 12,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Plan de Investigación Formativa por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 13,
+          "task_item_id": 13,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de llenado",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        },
+        {
+          "id": 14,
+          "task_item_id": 14,
+          "owner_person_id": 1,
+          "origin_type": "task_item",
+          "title": "Informe de Investigación Productiva por Carrera",
+          "status": "Pendiente de firma",
+          "comments_thread_ref": null,
+          "created_at": "2026-03-30 23:15:12",
+          "updated_at": null
+        }
+      ]
     },
     {
       "table": "document_versions",
@@ -3033,11 +3252,14 @@
         "id",
         "document_id",
         "version",
+        "template_artifact_id",
         "payload_mongo_id",
         "payload_hash",
-        "latex_path",
-        "pdf_path",
-        "signed_pdf_path",
+        "payload_object_path",
+        "working_file_path",
+        "final_file_path",
+        "format",
+        "render_engine",
         "status",
         "created_at"
       ],
@@ -3045,15 +3267,229 @@
         "id": "int(11)",
         "document_id": "int(11)",
         "version": "decimal(4,1)",
+        "template_artifact_id": "int(11)",
         "payload_mongo_id": "varchar(180)",
         "payload_hash": "varchar(64)",
-        "latex_path": "varchar(255)",
-        "pdf_path": "varchar(255)",
-        "signed_pdf_path": "varchar(255)",
+        "payload_object_path": "varchar(255)",
+        "working_file_path": "varchar(255)",
+        "final_file_path": "varchar(255)",
+        "format": "varchar(40)",
+        "render_engine": "varchar(80)",
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "document_id": 1,
+          "version": "0.1",
+          "template_artifact_id": 4,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 2,
+          "document_id": 6,
+          "version": "0.1",
+          "template_artifact_id": 4,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": "1/PROCESOS/2/ANIOS/2026/TIPOS_PERIODO/7/PERIODOS/7/TAREAS/5/Documentos/6/v0001/working/pdf/1775001759870-69e3fafc-fa8b-4ef8-8e66-5cd212218f1b-report.pdf",
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de firma",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 3,
+          "document_id": 9,
+          "version": "0.1",
+          "template_artifact_id": 4,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 4,
+          "document_id": 12,
+          "version": "0.1",
+          "template_artifact_id": 4,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 5,
+          "document_id": 2,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 6,
+          "document_id": 3,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": "1/PROCESOS/5/ANIOS/2026/TIPOS_PERIODO/7/PERIODOS/4/TAREAS/2/Documentos/3/v0001/working/docx/1775004527168-583c2416-e284-4c7d-b8ed-1ff3bc66a86c-ACTA_EHIC003_2025.docx",
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 7,
+          "document_id": 4,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 8,
+          "document_id": 5,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 9,
+          "document_id": 7,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": "1/PROCESOS/2/ANIOS/2026/TIPOS_PERIODO/7/PERIODOS/7/TAREAS/5/Documentos/7/v0001/working/docx/1775002925457-85c8047d-c6a2-4cb8-8603-30934041b6fd-ACTA_EHIC003_2025.docx",
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 10,
+          "document_id": 8,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": "1/PROCESOS/5/ANIOS/2026/TIPOS_PERIODO/7/PERIODOS/7/TAREAS/6/Documentos/8/v0001/working/docx/1775010280999-610c3ca0-8925-4de6-ad45-9045412d9c10-ACTA_EHIC005_2025.docx",
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Observado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 11,
+          "document_id": 10,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 12,
+          "document_id": 11,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "En llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 13,
+          "document_id": 13,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de llenado",
+          "created_at": "2026-03-30 23:15:12"
+        },
+        {
+          "id": 14,
+          "document_id": 14,
+          "version": "0.1",
+          "template_artifact_id": 10,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": "1/PROCESOS/5/ANIOS/2026/TIPOS_PERIODO/7/PERIODOS/9/TAREAS/10/Documentos/14/v0001/working/pdf/1775013546409-9060fe5d-4544-4e4a-b0ce-ce597a173b61-1775001759870-69e3fafc-fa8b-4ef8-8e66-5cd212218f1b-report.pdf",
+          "final_file_path": null,
+          "format": null,
+          "render_engine": null,
+          "status": "Pendiente de firma",
+          "created_at": "2026-03-30 23:15:12"
+        }
+      ]
     },
     {
       "table": "signature_types",
@@ -3073,7 +3509,24 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "electronic",
+          "name": "Firma electronica",
+          "description": "Firma electronica general sincronizada desde artifacts",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 2,
+          "code": "digital",
+          "name": "Firma digital",
+          "description": "Firma digital general sincronizada desde artifacts",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        }
+      ]
     },
     {
       "table": "signature_statuses",
@@ -3098,49 +3551,81 @@
           "id": 1,
           "code": "Revisado",
           "name": "Revisado",
-          "description": "Firma de un documento sujeto a revisión por ERA",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar técnico actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:49:47"
         },
         {
           "id": 2,
           "code": "Aprobado",
           "name": "Aprobado",
-          "description": "Firma de un documento sujeto a aprobación por ERA",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar técnico actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:50:28"
         },
         {
           "id": 3,
           "code": "Elaborado",
           "name": "Elaborado",
-          "description": "Firma de un documento elaborado sujeto a ERA",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar técnico actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:50:59"
         },
         {
           "id": 4,
           "code": "Enviado",
           "name": "Enviado",
-          "description": "Firma de un documento que es enviado a otra instancia, puede ser solicitud, memorandum, oficio. ",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar técnico actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:52:25"
         },
         {
           "id": 5,
           "code": "Recibido",
           "name": "Recibido",
-          "description": "Firma de un documento que es enviado a otra instancia, puede ser solicitud, memorandum, oficio. ",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar técnico actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:52:53"
         },
         {
           "id": 6,
           "code": "Asistencia",
           "name": "Asistencia",
-          "description": "Firma de un documento que deja constancia de cuorum de un evento, reunión, consejo. ",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar técnico actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:53:43"
+        },
+        {
+          "id": 7,
+          "code": "firmado",
+          "name": "Firmado",
+          "description": "La firma se generó y validó correctamente.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
+        },
+        {
+          "id": 8,
+          "code": "fallido",
+          "name": "Fallido",
+          "description": "La firma no se pudo generar por error operativo.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
+        },
+        {
+          "id": 9,
+          "code": "invalido",
+          "name": "Inválido",
+          "description": "La firma se generó pero no validó correctamente.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
+        },
+        {
+          "id": 10,
+          "code": "cancelado",
+          "name": "Cancelado",
+          "description": "La firma fue cancelada o descartada.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
         }
       ]
     },
@@ -3165,9 +3650,9 @@
       "rows": [
         {
           "id": 1,
-          "code": "Pendiente",
-          "name": "Firma Pendiente",
-          "description": "Solicitud de firma enviada y no ejecutada",
+          "code": "pendiente",
+          "name": "Pendiente",
+          "description": "Solicitud de firma pendiente de atención.",
           "is_active": 1,
           "created_at": "2026-03-02 15:56:15"
         },
@@ -3175,9 +3660,41 @@
           "id": 2,
           "code": "Firmado",
           "name": "Firmado",
-          "description": "Firma ejecutada sobre un documento",
-          "is_active": 1,
+          "description": "Estado legacy fuera del estándar actual.",
+          "is_active": 0,
           "created_at": "2026-03-02 15:56:42"
+        },
+        {
+          "id": 3,
+          "code": "en_progreso",
+          "name": "En progreso",
+          "description": "Solicitud de firma en ejecución.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
+        },
+        {
+          "id": 4,
+          "code": "completado",
+          "name": "Completado",
+          "description": "Solicitud de firma completada con evidencia válida.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
+        },
+        {
+          "id": 5,
+          "code": "rechazado",
+          "name": "Rechazado",
+          "description": "Solicitud de firma rechazada o con resultado no válido.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
+        },
+        {
+          "id": 6,
+          "code": "cancelado",
+          "name": "Cancelado",
+          "description": "Solicitud de firma cancelada.",
+          "is_active": 1,
+          "created_at": "2026-03-31 20:53:20"
         }
       ]
     },
@@ -3199,7 +3716,120 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_template_id": 1,
+          "name": "Flujo de firma - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_signature:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 2,
+          "process_definition_template_id": 3,
+          "name": "Flujo de firma - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_signature:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 3,
+          "process_definition_template_id": 5,
+          "name": "Flujo de firma - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_signature:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 4,
+          "process_definition_template_id": 9,
+          "name": "Flujo de firma - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_signature:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 5,
+          "process_definition_template_id": 11,
+          "name": "Flujo de firma - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_signature:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 6,
+          "process_definition_template_id": 13,
+          "name": "Flujo de firma - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_signature:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 7,
+          "process_definition_template_id": 2,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 8,
+          "process_definition_template_id": 4,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 9,
+          "process_definition_template_id": 6,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 10,
+          "process_definition_template_id": 7,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 11,
+          "process_definition_template_id": 8,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 12,
+          "process_definition_template_id": 10,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 13,
+          "process_definition_template_id": 12,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        },
+        {
+          "id": 14,
+          "process_definition_template_id": 14,
+          "name": "Flujo de firma - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_signature:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:34:18"
+        }
+      ]
     },
     {
       "table": "signature_flow_steps",
@@ -3227,7 +3857,512 @@
         "is_required": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 169,
+          "template_id": 1,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 170,
+          "template_id": 1,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 171,
+          "template_id": 1,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 172,
+          "template_id": 2,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 173,
+          "template_id": 2,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 174,
+          "template_id": 2,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 175,
+          "template_id": 3,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 176,
+          "template_id": 3,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 177,
+          "template_id": 3,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 178,
+          "template_id": 4,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 179,
+          "template_id": 4,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 180,
+          "template_id": 4,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 181,
+          "template_id": 5,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 182,
+          "template_id": 5,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 183,
+          "template_id": 5,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 184,
+          "template_id": 6,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 185,
+          "template_id": 6,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 186,
+          "template_id": 6,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 187,
+          "template_id": 7,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 188,
+          "template_id": 7,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 189,
+          "template_id": 7,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 190,
+          "template_id": 8,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 191,
+          "template_id": 8,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 192,
+          "template_id": 8,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 193,
+          "template_id": 9,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 194,
+          "template_id": 9,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 195,
+          "template_id": 9,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 196,
+          "template_id": 10,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 197,
+          "template_id": 10,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 198,
+          "template_id": 10,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 199,
+          "template_id": 11,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 200,
+          "template_id": 11,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 201,
+          "template_id": 11,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 202,
+          "template_id": 12,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 203,
+          "template_id": 12,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 204,
+          "template_id": 12,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 205,
+          "template_id": 13,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 206,
+          "template_id": 13,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 207,
+          "template_id": 13,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 208,
+          "template_id": 14,
+          "step_order": 1,
+          "step_type_id": 1,
+          "required_cargo_id": 1,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 209,
+          "template_id": 14,
+          "step_order": 2,
+          "step_type_id": 1,
+          "required_cargo_id": 3,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 210,
+          "template_id": 14,
+          "step_order": 3,
+          "step_type_id": 1,
+          "required_cargo_id": 4,
+          "selection_mode": "auto_all",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "created_at": "2026-04-01 01:28:44"
+        }
+      ]
     },
     {
       "table": "signature_flow_instances",
@@ -3245,7 +4380,22 @@
         "status_id": "int(11)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 57,
+          "template_id": 4,
+          "document_version_id": 2,
+          "status_id": 5,
+          "created_at": "2026-04-01 03:23:50"
+        },
+        {
+          "id": 58,
+          "template_id": 11,
+          "document_version_id": 14,
+          "status_id": 1,
+          "created_at": "2026-04-01 20:07:36"
+        }
+      ]
     },
     {
       "table": "signature_requests",
@@ -3271,7 +4421,74 @@
         "notified_at": "datetime",
         "responded_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 169,
+          "instance_id": 57,
+          "step_id": 178,
+          "assigned_person_id": 1,
+          "status_id": 5,
+          "is_manual": 0,
+          "requested_at": "2026-04-01 03:23:50",
+          "notified_at": null,
+          "responded_at": "2026-04-01 03:26:04"
+        },
+        {
+          "id": 170,
+          "instance_id": 57,
+          "step_id": 179,
+          "assigned_person_id": 2,
+          "status_id": 1,
+          "is_manual": 0,
+          "requested_at": "2026-04-01 03:23:50",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 171,
+          "instance_id": 57,
+          "step_id": 180,
+          "assigned_person_id": 3,
+          "status_id": 1,
+          "is_manual": 0,
+          "requested_at": "2026-04-01 03:23:50",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 172,
+          "instance_id": 58,
+          "step_id": 199,
+          "assigned_person_id": 1,
+          "status_id": 1,
+          "is_manual": 0,
+          "requested_at": "2026-04-01 20:07:36",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 173,
+          "instance_id": 58,
+          "step_id": 200,
+          "assigned_person_id": 2,
+          "status_id": 1,
+          "is_manual": 0,
+          "requested_at": "2026-04-01 20:07:36",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 174,
+          "instance_id": 58,
+          "step_id": 201,
+          "assigned_person_id": 3,
+          "status_id": 1,
+          "is_manual": 0,
+          "requested_at": "2026-04-01 20:07:36",
+          "notified_at": null,
+          "responded_at": null
+        }
+      ]
     },
     {
       "table": "document_signatures",
@@ -3299,7 +4516,20 @@
         "signed_at": "datetime",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "signature_request_id": 169,
+          "document_version_id": 2,
+          "signer_user_id": 1,
+          "signature_type_id": 1,
+          "signature_status_id": 8,
+          "note_short": "Documento firmado correctamente.",
+          "signed_file_path": "users/persona-demo-1/a518f74f-6ae8-4260-9f58-25cfb603666b/signed.pdf",
+          "signed_at": "2026-04-01 03:26:04",
+          "created_at": "2026-04-01 03:26:04"
+        }
+      ]
     },
     {
       "table": "vacancies",
@@ -3476,6 +4706,155 @@
       "rows": []
     },
     {
+      "table": "process_runs",
+      "columns": [
+        "id",
+        "process_definition_id",
+        "term_id",
+        "run_mode",
+        "source_run_id",
+        "created_by_user_id",
+        "reason",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_id": "int(11)",
+        "term_id": "int(11)",
+        "run_mode": "enum('automatic_term','manual','reinstanced','repair')",
+        "source_run_id": "int(11)",
+        "created_by_user_id": "int(11)",
+        "reason": "varchar(255)",
+        "status": "enum('pending','active','completed','cancelled')",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 18,
+          "term_id": 2,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 20,
+          "term_id": 4,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 20,
+          "term_id": 5,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 4,
+          "process_definition_id": 20,
+          "term_id": 6,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 5,
+          "process_definition_id": 21,
+          "term_id": 7,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 6,
+          "process_definition_id": 20,
+          "term_id": 7,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 7,
+          "process_definition_id": 21,
+          "term_id": 8,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 20,
+          "term_id": 8,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 9,
+          "process_definition_id": 21,
+          "term_id": 9,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        },
+        {
+          "id": 10,
+          "process_definition_id": 20,
+          "term_id": 9,
+          "run_mode": "automatic_term",
+          "source_run_id": null,
+          "created_by_user_id": null,
+          "reason": null,
+          "status": "active",
+          "created_at": "2026-03-30 23:06:34",
+          "updated_at": "2026-03-30 23:06:34"
+        }
+      ]
+    },
+    {
       "table": "template_seeds",
       "columns": [
         "id",
@@ -3578,6 +4957,1613 @@
           "created_at": "2026-03-01 17:56:37"
         }
       ]
+    },
+    {
+      "table": "fill_flow_templates",
+      "columns": [
+        "id",
+        "process_definition_template_id",
+        "name",
+        "description",
+        "is_active",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "process_definition_template_id": "int(11)",
+        "name": "varchar(180)",
+        "description": "varchar(255)",
+        "is_active": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_template_id": 1,
+          "name": "Flujo de llenado - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_fill:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:55"
+        },
+        {
+          "id": 2,
+          "process_definition_template_id": 3,
+          "name": "Flujo de llenado - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_fill:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:55"
+        },
+        {
+          "id": 3,
+          "process_definition_template_id": 5,
+          "name": "Flujo de llenado - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_fill:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:55"
+        },
+        {
+          "id": 4,
+          "process_definition_template_id": 9,
+          "name": "Flujo de llenado - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_fill:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:55"
+        },
+        {
+          "id": 5,
+          "process_definition_template_id": 11,
+          "name": "Flujo de llenado - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_fill:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:55"
+        },
+        {
+          "id": 6,
+          "process_definition_template_id": 13,
+          "name": "Flujo de llenado - Plan de Investigación Formativa por Carrera",
+          "description": "artifact_sync_fill:4:tpl_investigación_formativa_plan_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:55"
+        },
+        {
+          "id": 7,
+          "process_definition_template_id": 2,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 8,
+          "process_definition_template_id": 4,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 9,
+          "process_definition_template_id": 6,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 10,
+          "process_definition_template_id": 7,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 11,
+          "process_definition_template_id": 8,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 12,
+          "process_definition_template_id": 10,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 13,
+          "process_definition_template_id": 12,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        },
+        {
+          "id": 14,
+          "process_definition_template_id": 14,
+          "name": "Flujo de llenado - Informe de Investigación Productiva por Carrera",
+          "description": "artifact_sync_fill:10:tpl_investigación_productiva_informe_carrera:v0001",
+          "is_active": 1,
+          "created_at": "2026-03-31 15:17:56"
+        }
+      ]
+    },
+    {
+      "table": "fill_flow_steps",
+      "columns": [
+        "id",
+        "fill_flow_template_id",
+        "step_order",
+        "resolver_type",
+        "assigned_person_id",
+        "unit_scope_type",
+        "unit_id",
+        "unit_type_id",
+        "cargo_id",
+        "position_id",
+        "selection_mode",
+        "is_required",
+        "can_reject",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "fill_flow_template_id": "int(11)",
+        "step_order": "int(11)",
+        "resolver_type": "enum('task_assignee','document_owner','specific_person','position','cargo_in_scope','manual_pick')",
+        "assigned_person_id": "int(11)",
+        "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units')",
+        "unit_id": "int(11)",
+        "unit_type_id": "int(11)",
+        "cargo_id": "int(11)",
+        "position_id": "int(11)",
+        "selection_mode": "enum('auto_one','auto_all','manual')",
+        "is_required": "tinyint(1)",
+        "can_reject": "tinyint(1)",
+        "created_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 217,
+          "fill_flow_template_id": 1,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 218,
+          "fill_flow_template_id": 1,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 219,
+          "fill_flow_template_id": 1,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 220,
+          "fill_flow_template_id": 2,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 221,
+          "fill_flow_template_id": 2,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 222,
+          "fill_flow_template_id": 2,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 223,
+          "fill_flow_template_id": 3,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 224,
+          "fill_flow_template_id": 3,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 225,
+          "fill_flow_template_id": 3,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 226,
+          "fill_flow_template_id": 4,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 227,
+          "fill_flow_template_id": 4,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 228,
+          "fill_flow_template_id": 4,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 229,
+          "fill_flow_template_id": 5,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 230,
+          "fill_flow_template_id": 5,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 231,
+          "fill_flow_template_id": 5,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 232,
+          "fill_flow_template_id": 6,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 233,
+          "fill_flow_template_id": 6,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 234,
+          "fill_flow_template_id": 6,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:43"
+        },
+        {
+          "id": 235,
+          "fill_flow_template_id": 7,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 236,
+          "fill_flow_template_id": 7,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 237,
+          "fill_flow_template_id": 7,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 238,
+          "fill_flow_template_id": 8,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 239,
+          "fill_flow_template_id": 8,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 240,
+          "fill_flow_template_id": 8,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 241,
+          "fill_flow_template_id": 9,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 242,
+          "fill_flow_template_id": 9,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 243,
+          "fill_flow_template_id": 9,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 244,
+          "fill_flow_template_id": 10,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 245,
+          "fill_flow_template_id": 10,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 246,
+          "fill_flow_template_id": 10,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 247,
+          "fill_flow_template_id": 11,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 248,
+          "fill_flow_template_id": 11,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 249,
+          "fill_flow_template_id": 11,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 250,
+          "fill_flow_template_id": 12,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 251,
+          "fill_flow_template_id": 12,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 252,
+          "fill_flow_template_id": 12,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 253,
+          "fill_flow_template_id": 13,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 254,
+          "fill_flow_template_id": 13,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 255,
+          "fill_flow_template_id": 13,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 256,
+          "fill_flow_template_id": 14,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 257,
+          "fill_flow_template_id": 14,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 3,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        },
+        {
+          "id": 258,
+          "fill_flow_template_id": 14,
+          "step_order": 3,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": 4,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-04-01 01:28:44"
+        }
+      ]
+    },
+    {
+      "table": "document_fill_flows",
+      "columns": [
+        "id",
+        "fill_flow_template_id",
+        "document_version_id",
+        "status",
+        "current_step_order",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "fill_flow_template_id": "int(11)",
+        "document_version_id": "int(11)",
+        "status": "enum('pending','in_progress','approved','rejected','cancelled')",
+        "current_step_order": "int(11)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 57,
+          "fill_flow_template_id": 3,
+          "document_version_id": 1,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 58,
+          "fill_flow_template_id": 4,
+          "document_version_id": 2,
+          "status": "approved",
+          "current_step_order": null,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 03:23:50"
+        },
+        {
+          "id": 59,
+          "fill_flow_template_id": 4,
+          "document_version_id": 3,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 60,
+          "fill_flow_template_id": 4,
+          "document_version_id": 4,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 61,
+          "fill_flow_template_id": 9,
+          "document_version_id": 5,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 62,
+          "fill_flow_template_id": 11,
+          "document_version_id": 6,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 63,
+          "fill_flow_template_id": 11,
+          "document_version_id": 7,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 64,
+          "fill_flow_template_id": 11,
+          "document_version_id": 8,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 65,
+          "fill_flow_template_id": 11,
+          "document_version_id": 10,
+          "status": "rejected",
+          "current_step_order": 2,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 03:13:17"
+        },
+        {
+          "id": 66,
+          "fill_flow_template_id": 11,
+          "document_version_id": 12,
+          "status": "in_progress",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 20:03:01"
+        },
+        {
+          "id": 67,
+          "fill_flow_template_id": 11,
+          "document_version_id": 14,
+          "status": "approved",
+          "current_step_order": null,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 20:07:36"
+        },
+        {
+          "id": 68,
+          "fill_flow_template_id": 12,
+          "document_version_id": 9,
+          "status": "pending",
+          "current_step_order": 2,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 20:06:00"
+        },
+        {
+          "id": 69,
+          "fill_flow_template_id": 12,
+          "document_version_id": 11,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        },
+        {
+          "id": 70,
+          "fill_flow_template_id": 12,
+          "document_version_id": 13,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-04-01 01:29:48",
+          "updated_at": "2026-04-01 01:29:48"
+        }
+      ]
+    },
+    {
+      "table": "fill_requests",
+      "columns": [
+        "id",
+        "document_fill_flow_id",
+        "fill_flow_step_id",
+        "assigned_person_id",
+        "status",
+        "is_manual",
+        "requested_at",
+        "responded_at",
+        "response_note"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "document_fill_flow_id": "int(11)",
+        "fill_flow_step_id": "int(11)",
+        "assigned_person_id": "int(11)",
+        "status": "enum('pending','in_progress','approved','rejected','returned','cancelled')",
+        "is_manual": "tinyint(1)",
+        "requested_at": "datetime",
+        "responded_at": "datetime",
+        "response_note": "varchar(255)"
+      },
+      "rows": [
+        {
+          "id": 183,
+          "document_fill_flow_id": 57,
+          "fill_flow_step_id": 223,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 184,
+          "document_fill_flow_id": 57,
+          "fill_flow_step_id": 224,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 185,
+          "document_fill_flow_id": 57,
+          "fill_flow_step_id": 225,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 186,
+          "document_fill_flow_id": 58,
+          "fill_flow_step_id": 226,
+          "assigned_person_id": 1,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:22:56",
+          "response_note": "Enviado corregido"
+        },
+        {
+          "id": 187,
+          "document_fill_flow_id": 58,
+          "fill_flow_step_id": 227,
+          "assigned_person_id": 2,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:23:22",
+          "response_note": null
+        },
+        {
+          "id": 188,
+          "document_fill_flow_id": 58,
+          "fill_flow_step_id": 228,
+          "assigned_person_id": 3,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:23:50",
+          "response_note": "Documento listo para firmar"
+        },
+        {
+          "id": 189,
+          "document_fill_flow_id": 59,
+          "fill_flow_step_id": 226,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 190,
+          "document_fill_flow_id": 59,
+          "fill_flow_step_id": 227,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 191,
+          "document_fill_flow_id": 59,
+          "fill_flow_step_id": 228,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 192,
+          "document_fill_flow_id": 60,
+          "fill_flow_step_id": 226,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 193,
+          "document_fill_flow_id": 60,
+          "fill_flow_step_id": 227,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 194,
+          "document_fill_flow_id": 60,
+          "fill_flow_step_id": 228,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 195,
+          "document_fill_flow_id": 61,
+          "fill_flow_step_id": 241,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 196,
+          "document_fill_flow_id": 61,
+          "fill_flow_step_id": 242,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 197,
+          "document_fill_flow_id": 61,
+          "fill_flow_step_id": 243,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 198,
+          "document_fill_flow_id": 62,
+          "fill_flow_step_id": 247,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 199,
+          "document_fill_flow_id": 62,
+          "fill_flow_step_id": 248,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 200,
+          "document_fill_flow_id": 62,
+          "fill_flow_step_id": 249,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 201,
+          "document_fill_flow_id": 63,
+          "fill_flow_step_id": 247,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 202,
+          "document_fill_flow_id": 63,
+          "fill_flow_step_id": 248,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 203,
+          "document_fill_flow_id": 63,
+          "fill_flow_step_id": 249,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 204,
+          "document_fill_flow_id": 64,
+          "fill_flow_step_id": 247,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 205,
+          "document_fill_flow_id": 64,
+          "fill_flow_step_id": 248,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 206,
+          "document_fill_flow_id": 64,
+          "fill_flow_step_id": 249,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 207,
+          "document_fill_flow_id": 65,
+          "fill_flow_step_id": 247,
+          "assigned_person_id": 1,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:09:13",
+          "response_note": null
+        },
+        {
+          "id": 208,
+          "document_fill_flow_id": 65,
+          "fill_flow_step_id": 248,
+          "assigned_person_id": 2,
+          "status": "rejected",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:13:17",
+          "response_note": null
+        },
+        {
+          "id": 210,
+          "document_fill_flow_id": 66,
+          "fill_flow_step_id": 247,
+          "assigned_person_id": 1,
+          "status": "in_progress",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": "Inicio del flujo desde el panel del entregable."
+        },
+        {
+          "id": 211,
+          "document_fill_flow_id": 66,
+          "fill_flow_step_id": 248,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 212,
+          "document_fill_flow_id": 66,
+          "fill_flow_step_id": 249,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 213,
+          "document_fill_flow_id": 67,
+          "fill_flow_step_id": 247,
+          "assigned_person_id": 1,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:17:53",
+          "response_note": null
+        },
+        {
+          "id": 214,
+          "document_fill_flow_id": 67,
+          "fill_flow_step_id": 248,
+          "assigned_person_id": 2,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 03:18:08",
+          "response_note": null
+        },
+        {
+          "id": 215,
+          "document_fill_flow_id": 67,
+          "fill_flow_step_id": 249,
+          "assigned_person_id": 3,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 20:07:36",
+          "response_note": null
+        },
+        {
+          "id": 216,
+          "document_fill_flow_id": 68,
+          "fill_flow_step_id": 250,
+          "assigned_person_id": 1,
+          "status": "approved",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": "2026-04-01 20:06:00",
+          "response_note": null
+        },
+        {
+          "id": 217,
+          "document_fill_flow_id": 68,
+          "fill_flow_step_id": 251,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 218,
+          "document_fill_flow_id": 68,
+          "fill_flow_step_id": 252,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 219,
+          "document_fill_flow_id": 69,
+          "fill_flow_step_id": 250,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 220,
+          "document_fill_flow_id": 69,
+          "fill_flow_step_id": 251,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 221,
+          "document_fill_flow_id": 69,
+          "fill_flow_step_id": 252,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 222,
+          "document_fill_flow_id": 70,
+          "fill_flow_step_id": 250,
+          "assigned_person_id": 1,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 223,
+          "document_fill_flow_id": 70,
+          "fill_flow_step_id": 251,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 224,
+          "document_fill_flow_id": 70,
+          "fill_flow_step_id": 252,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 01:29:48",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 246,
+          "document_fill_flow_id": 65,
+          "fill_flow_step_id": 249,
+          "assigned_person_id": 3,
+          "status": "returned",
+          "is_manual": 0,
+          "requested_at": "2026-04-01 02:08:16",
+          "responded_at": "2026-04-01 03:10:04",
+          "response_note": null
+        }
+      ]
+    },
+    {
+      "table": "email_verification_codes",
+      "columns": [
+        "id",
+        "user_id",
+        "code_hash",
+        "expires_at",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "bigint(20) unsigned",
+        "user_id": "bigint(20) unsigned",
+        "code_hash": "varchar(255)",
+        "expires_at": "datetime",
+        "created_at": "timestamp"
+      },
+      "rows": []
+    },
+    {
+      "table": "password_reset_codes",
+      "columns": [
+        "id",
+        "user_id",
+        "code_hash",
+        "expires_at",
+        "used",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "bigint(20) unsigned",
+        "user_id": "bigint(20) unsigned",
+        "code_hash": "varchar(255)",
+        "expires_at": "datetime",
+        "used": "tinyint(1)",
+        "created_at": "timestamp"
+      },
+      "rows": []
+    },
+    {
+      "table": "person_certificates",
+      "columns": [
+        "id",
+        "person_id",
+        "label",
+        "original_filename",
+        "bucket",
+        "object_name",
+        "is_default",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "person_id": "int(11)",
+        "label": "varchar(180)",
+        "original_filename": "varchar(255)",
+        "bucket": "varchar(120)",
+        "object_name": "varchar(500)",
+        "is_default": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": [
+        {
+          "id": 2,
+          "person_id": 1,
+          "label": "ca_pucese",
+          "original_filename": "my_cert_ec.p12",
+          "bucket": "deasy-certificates",
+          "object_name": "users/persona-demo-1/certificates/1774843788524-my_cert_ec.p12",
+          "is_default": 0,
+          "created_at": "2026-03-30 04:09:48",
+          "updated_at": "2026-03-30 06:35:32"
+        },
+        {
+          "id": 4,
+          "person_id": 1,
+          "label": "my_cert_us",
+          "original_filename": "my_cert_us.p12",
+          "bucket": "deasy-certificates",
+          "object_name": "users/persona-demo-1/certificates/1774852091368-my_cert_us.p12",
+          "is_default": 1,
+          "created_at": "2026-03-30 06:28:11",
+          "updated_at": "2026-03-30 06:35:32"
+        }
+      ]
+    },
+    {
+      "table": "users",
+      "columns": [
+        "id",
+        "mongo_id",
+        "cedula",
+        "email",
+        "password_hash",
+        "nombre",
+        "apellido",
+        "whatsapp",
+        "direccion",
+        "pais",
+        "status",
+        "verify_email",
+        "verify_whatsapp",
+        "photo_url",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "bigint(20) unsigned",
+        "mongo_id": "char(24)",
+        "cedula": "varchar(10)",
+        "email": "varchar(255)",
+        "password_hash": "varchar(255)",
+        "nombre": "varchar(120)",
+        "apellido": "varchar(120)",
+        "whatsapp": "varchar(20)",
+        "direccion": "varchar(255)",
+        "pais": "varchar(80)",
+        "status": "enum('Inactivo','Activo','Verificado','Reportado')",
+        "verify_email": "tinyint(1)",
+        "verify_whatsapp": "tinyint(1)",
+        "photo_url": "longtext",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      },
+      "rows": []
     }
   ]
 }
