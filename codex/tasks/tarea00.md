@@ -1,6 +1,6 @@
 # Listado de actividades 
 
-0. Revisa el archivo Requisitos01.md para tener el contexto completo de la implementación.
+0. Revisa el archivo Requisitos00.md para tener el contexto completo de la implementación, luego pasa al punto 1.
 1. Declarar formalmente que el stack actual equivale a `dev`.
 2. Crear `.env.dev`, `.env.qa` y `.env.prod`.
 3. Crear `compose.base.yml`.
