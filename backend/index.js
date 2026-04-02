@@ -1,8 +1,6 @@
 import "dotenv/config"
 import express from "express";
-import academia_router from "./routes/academia_router.js";
 import user_router from "./routes/user_router.js";
-import tutorias_router from "./routes/tutorias_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
 import "./database/mongoose.js"
@@ -1161,9 +1159,7 @@ app.get(DOCS_JSON_PATH, (req, res) => {
   res.send(swaggerSpec);
 });
 
-app.use(ROUTES.academia, academia_router)
 app.use(ROUTES.users, user_router)
-app.use(ROUTES.tutorias, tutorias_router)
 
 app.use(ROUTES.admin, admin_router)
 
