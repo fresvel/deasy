@@ -330,6 +330,15 @@ const normalizeBooleanFlag = (value, defaultValue = false) => {
   return defaultValue;
 };
 
+const normalizeSignatureStepAnchorRefs = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+};
+
 const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) => {
   const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
   return rawSteps
@@ -2252,8 +2261,14 @@ export default class SqlAdminService {
           );
           if (Object.prototype.hasOwnProperty.call(updates, "status")) {
             const nextStatus = String(updates.status || "").trim().toLowerCase();
-            if (nextStatus === "listo para firma" || nextStatus === "pendiente de firma") {
-              await ensureSignatureFlowForDocumentVersion(connection, Number(existing.id ?? keyPayload.id));
+            if (nextStatus === "listo para firma") {
+              const documentVersionId = Number(existing.id ?? keyPayload.id);
+              const signatureFlowResult = await ensureSignatureFlowForDocumentVersion(connection, documentVersionId);
+              if (signatureFlowResult && !signatureFlowResult.ok) {
+                console.warn(
+                  `[SqlAdminService] DocumentVersion ${documentVersionId} cannot enter signature: ${signatureFlowResult.reason}`
+                );
+              }
             }
           }
           await connection.commit();
@@ -2515,22 +2530,30 @@ export default class SqlAdminService {
         `INSERT INTO signature_flow_steps (
            template_id,
            step_order,
+           code,
+           name,
+           slot,
            step_type_id,
            required_cargo_id,
            selection_mode,
            required_signers_min,
            required_signers_max,
-           is_required
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           is_required,
+           anchor_refs
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           signatureFlowTemplateId,
           step.stepOrder,
+          step.code,
+          step.name,
+          step.slot,
           step.stepTypeId,
           step.requiredCargoId,
           step.selectionMode,
           step.requiredSignersMin,
           step.requiredSignersMax,
-          step.isRequired
+          step.isRequired,
+          step.anchorRefs
         ]
       );
     }
@@ -2675,8 +2698,15 @@ export default class SqlAdminService {
           const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
           const rawCargoCode = String(step.required_cargo_code || "").trim().toLowerCase();
           const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+          const normalizedSlot = String(step.slot || "").trim() || null;
+          const stepCode = String(step.code || "").trim() || null;
+          const stepName = String(step.name || "").trim() || null;
+          const anchorRefs = normalizeSignatureStepAnchorRefs(step.anchor_refs);
           return {
             stepOrder: Number(step.order) || index + 1,
+            code: stepCode,
+            name: stepName,
+            slot: normalizedSlot,
             stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
             requiredCargoId: cargoCodeMap.get(normalizedCargoCode) || null,
             selectionMode: SIGNATURE_SELECTION_MODES.has(String(step.selection_mode || "auto_all"))
@@ -2684,7 +2714,8 @@ export default class SqlAdminService {
               : "auto_all",
             requiredSignersMin: normalizeNumericId(step.required_signers_min),
             requiredSignersMax: normalizeNumericId(step.required_signers_max),
-            isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0
+            isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0,
+            anchorRefs
           };
         })
         .filter((step) => step.stepTypeId && step.requiredCargoId)

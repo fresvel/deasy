@@ -6,6 +6,7 @@ import {
   downloadSignBatch,
   downloadSigned,
   getSignBatchStatus,
+  getSignatureFlow,
   requestSign,
   requestSignBatch,
   requestSignBatchStart
@@ -62,5 +63,6 @@ router.post("/fill-requests/:requestId/reject", authMiddleware, express.json(), 
 router.post("/fill-requests/:requestId/cancel", authMiddleware, express.json(), cancelFillRequest);
 
 router.get("/download", authMiddleware, downloadSigned);
+router.get("/documents/:documentVersionId/signature-flow", authMiddleware, getSignatureFlow);
 
 export default router;

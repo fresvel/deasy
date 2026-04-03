@@ -47,6 +47,7 @@ export const API_ROUTES = {
   SIGN_BATCH_START: `${API_PREFIX}/sign/batch/start`,
   SIGN_BATCH_STATUS: (jobId) => `${API_PREFIX}/sign/batch/${jobId}`,
   SIGN_BATCH_DOWNLOAD: (jobId) => `${API_PREFIX}/sign/batch/${jobId}/download`,
+  SIGN_DOCUMENT_SIGNATURE_FLOW: (documentVersionId) => `${API_PREFIX}/sign/documents/${documentVersionId}/signature-flow`,
   SIGN_FILL_REQUEST_START: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/start`,
   SIGN_FILL_REQUEST_APPROVE: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/approve`,
   SIGN_FILL_REQUEST_RETURN: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/return`,

@@ -4,6 +4,7 @@ import {
   transitionDocumentVersionState,
 } from "../documents/DocumentStateService.js";
 import { SIGNATURE_REQUEST_STATUS } from "../documents/DocumentWorkflowCatalog.js";
+import { ensureSignatureFlowForDocumentVersion as ensureDocumentSignatureWorkflowForDocumentVersion } from "../documents/DocumentSignatureWorkflowService.js";
 
 const getTermById = async (connection, termId) => {
   const [rows] = await connection.query(
@@ -494,85 +495,7 @@ const resolveSignatureStepAssignees = async (connection, step, context) => {
 };
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
-  const context = await getDocumentVersionSignatureContext(connection, documentVersionId);
-  if (!shouldInferSignatureFlowForContext(context)) {
-    return null;
-  }
-
-  const [existingRows] = await connection.query(
-    `SELECT id
-     FROM signature_flow_instances
-     WHERE document_version_id = ?
-     LIMIT 1`,
-    [documentVersionId]
-  );
-  if (existingRows?.length) {
-    return Number(existingRows[0].id);
-  }
-
-  const signatureFlowTemplate = await getActiveSignatureFlowTemplateForDefinitionTemplate(
-    connection,
-    context.process_definition_template_id
-  );
-  if (!signatureFlowTemplate?.id) {
-    return null;
-  }
-
-  const pendingStatusId = await getSignaturePendingStatusId(connection);
-  if (!pendingStatusId) {
-    throw new Error("No existe el estado Pendiente en signature_request_statuses.");
-  }
-
-  const steps = await getSignatureFlowSteps(connection, signatureFlowTemplate.id);
-  if (!steps.length) {
-    return null;
-  }
-
-  const [insertInstanceResult] = await connection.query(
-    `INSERT INTO signature_flow_instances (
-       template_id,
-       document_version_id,
-       status_id
-     ) VALUES (?, ?, ?)`,
-    [signatureFlowTemplate.id, documentVersionId, pendingStatusId]
-  );
-  const signatureFlowInstanceId = Number(insertInstanceResult.insertId);
-
-  for (const step of steps) {
-    const assignees = await resolveSignatureStepAssignees(connection, step, context);
-    if (!assignees.length) {
-      await connection.query(
-        `INSERT INTO signature_requests (
-           instance_id,
-           step_id,
-           assigned_person_id,
-           status_id,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, null, pendingStatusId, 1]
-      );
-      continue;
-    }
-
-    for (const assignedPersonId of assignees) {
-      await connection.query(
-        `INSERT INTO signature_requests (
-           instance_id,
-           step_id,
-           assigned_person_id,
-           status_id,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, assignedPersonId, pendingStatusId, 0]
-      );
-    }
-  }
-
-  if (String(context.document_version_status || "").trim().toLowerCase() === "listo para firma") {
-    await transitionDocumentVersionState(connection, Number(documentVersionId), "Pendiente de firma");
-  }
-
-  return signatureFlowInstanceId;
+  return ensureDocumentSignatureWorkflowForDocumentVersion(connection, documentVersionId);
 };
 
 const repairFillRequestsForFlow = async (connection, documentFillFlowId, steps, context) => {
