@@ -178,16 +178,31 @@ Nota:
 - En este paso solo se alineo la estrategia local del repositorio.
 - No se hizo push de la rama `qa` al remoto ni se configuraron protecciones.
 
+## Ajuste temporal previo a CD
+
+Antes de activar CD real, la estrategia temporal queda asi:
+
+- `develop` sigue siendo la rama fuente actual
+- `qa` se realinea temporalmente para partir del mismo commit de `develop`
+- `main` se realinea temporalmente para partir del mismo commit de `develop`
+- los estados anteriores de ramas desfasadas se preservan en ramas
+  `deprecated/*`
+
+La intencion es evitar activar CD sobre una `main` historicamente atrasada o una
+`qa` no confiable, y pasar primero por una etapa de convergencia controlada.
+
 ## Preparacion para CI/CD
 
 Se agrega una base inicial para automatizacion:
 
-- workflow de GitHub Actions en `.github/workflows/docker-multienv.yml`
+- workflow de GitHub Actions en `.github/workflows/cd-multienv.yml`
 - validacion de compose para `dev`, `qa` y `prod`
 - lint de frontend
-- build de imagenes estables de `backend`, `frontend` y `signer`
+- build y publicacion de imagenes estables en GHCR para `backend`, `frontend`,
+  `signer` y `analytics`
 - script operativo `scripts/docker-env.sh` para estandarizar comandos por
   ambiente y reutilizar la misma interfaz en CI y operacion manual
+- script `scripts/deploy-env.sh` para despliegue remoto de `qa` y `prod`
 
 Comandos ejemplo:
 
@@ -197,9 +212,47 @@ bash scripts/docker-env.sh qa up -d
 bash scripts/docker-env.sh prod down
 ```
 
-La publicacion a registry no se activa todavia, pero el workflow ya deja el
-repositorio preparado para ese paso posterior sin depender de builds manuales
-locales para validar `qa` y `prod`.
+Con el flujo final de CD, `develop` publica imagenes `dev` en GHCR sin hacer
+deploy automatico, mientras `qa` y `main` publican y despliegan sus ambientes.
+
+## CD real por ambiente
+
+El flujo de CD queda asi:
+
+- `push` a `develop`:
+  - publica imagenes con tag `dev` en GHCR
+  - no despliega automaticamente
+- `push` a `qa`:
+  - publica imagenes con tag `qa` en GHCR
+  - despliega el ambiente `qa`
+- `push` a `main`:
+  - publica imagenes con tag `prod` en GHCR
+  - despliega el ambiente `prod`
+- `workflow_dispatch`:
+  - permite redeploy manual a `qa` o `prod`
+  - permite indicar un `image_tag` especifico
+
+`qa` y `prod` ya no dependen de `build` local en Compose. Ahora consumen
+imagenes versionadas desde GHCR mediante variables de entorno por servicio.
+
+Secrets requeridos en GitHub Environments:
+
+- `DEPLOY_HOST`
+- `DEPLOY_USER`
+- `DEPLOY_SSH_KEY`
+- `DEPLOY_PATH`
+- `GHCR_USERNAME`
+- `GHCR_TOKEN`
+- `RUNTIME_ENV_FILE`
+
+Notas operativas:
+
+- `RUNTIME_ENV_FILE` debe contener las variables reales del ambiente, fuera del
+  repositorio.
+- `DEPLOY_PATH` es el directorio remoto donde se sincronizan `docker/` y
+  `scripts/`.
+- el runner hace login en GHCR sobre el host remoto y ejecuta
+  `scripts/deploy-env.sh`.
 
 ## Endurecimiento inicial de prod
 

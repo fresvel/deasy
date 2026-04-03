@@ -6,10 +6,11 @@ DOCKER_DIR="$ROOT_DIR/docker"
 
 if [ "$#" -lt 2 ]; then
   cat <<'EOF'
-Uso: bash scripts/docker-env.sh <dev|qa|prod> <comando> [args...]
+Uso: bash scripts/docker-env.sh <dev|qa|prod> [compose args...]
 
 Ejemplos:
   bash scripts/docker-env.sh dev config
+  bash scripts/docker-env.sh qa pull
   bash scripts/docker-env.sh qa up -d
   bash scripts/docker-env.sh prod down
 EOF
@@ -28,7 +29,7 @@ case "$ENVIRONMENT" in
     ;;
 esac
 
-ENV_FILE="$DOCKER_DIR/.env.$ENVIRONMENT"
+ENV_FILE="${DEASY_ENV_FILE:-$DOCKER_DIR/.env.$ENVIRONMENT}"
 COMPOSE_BASE="$DOCKER_DIR/compose.base.yml"
 COMPOSE_ENV="$DOCKER_DIR/compose.$ENVIRONMENT.yml"
 

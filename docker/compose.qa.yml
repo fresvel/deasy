@@ -47,28 +47,38 @@ services:
       - .env.qa
 
   backend:
+    image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
+    pull_policy: always
     env_file:
       - .env.qa
     ports:
       - "${BACKEND_PORT}:3030"
 
   storage-uploader:
+    image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
+    pull_policy: always
     env_file:
       - .env.qa
 
   frontend:
+    image: ${IMAGE_REGISTRY}/${FRONTEND_IMAGE_REPOSITORY}:${FRONTEND_IMAGE_TAG}
+    pull_policy: always
     env_file:
       - .env.qa
     ports:
       - "${FRONTEND_PORT}:8080"
 
   signer:
+    image: ${IMAGE_REGISTRY}/${SIGNER_IMAGE_REPOSITORY}:${SIGNER_IMAGE_TAG}
+    pull_policy: always
     env_file:
       - .env.qa
     ports:
       - "14000:4000"
 
   analytics:
+    image: ${IMAGE_REGISTRY}/${ANALYTICS_IMAGE_REPOSITORY}:${ANALYTICS_IMAGE_TAG}
+    pull_policy: always
     env_file:
       - .env.qa
 

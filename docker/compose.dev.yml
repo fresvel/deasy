@@ -26,6 +26,7 @@ services:
 
   backend:
     build:
+      context: ..
       dockerfile: docker/backend/Dockerfile.dev
     env_file:
       - .env.dev
@@ -39,6 +40,9 @@ services:
       - storage_data:/app/backend/storage
 
   storage-uploader:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile.dev
     env_file:
       - .env.dev
     volumes:
@@ -48,6 +52,7 @@ services:
 
   frontend:
     build:
+      context: ..
       dockerfile: docker/frontend/Dockerfile.dev
     env_file:
       - .env.dev
@@ -58,12 +63,20 @@ services:
       - frontend_node_modules:/app/frontend/node_modules
 
   signer:
+    build:
+      context: ..
+      dockerfile: docker/signer/Dockerfile
     env_file:
       - .env.dev
     ports:
       - "4000:4000"
     volumes:
       - ../signer:/app
+
+  analytics:
+    build:
+      context: ..
+      dockerfile: docker/analytics/Dockerfile
 
 volumes:
   mariadb_data:

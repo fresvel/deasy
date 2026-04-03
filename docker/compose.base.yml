@@ -116,9 +116,6 @@ services:
       - minio
 
   backend:
-    build:
-      context: ..
-      dockerfile: docker/backend/Dockerfile
     restart: unless-stopped
     environment:
       MARIADB_HOST: mariadb
@@ -163,9 +160,6 @@ services:
         condition: service_started
 
   storage-uploader:
-    build:
-      context: ..
-      dockerfile: docker/backend/Dockerfile
     restart: unless-stopped
     environment:
       MARIADB_HOST: mariadb
@@ -191,20 +185,11 @@ services:
         condition: service_started
 
   frontend:
-    build:
-      context: ..
-      dockerfile: docker/frontend/Dockerfile
-      args:
-        VITE_API_PORT: ${VITE_API_PORT}
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     restart: unless-stopped
     depends_on:
       - backend
 
   signer:
-    build:
-      context: ..
-      dockerfile: docker/signer/Dockerfile
     restart: unless-stopped
     environment:
       MINIO_ENDPOINT: http://minio:9000
@@ -223,9 +208,6 @@ services:
       - rabbitmq
 
   analytics:
-    build:
-      context: ..
-      dockerfile: docker/analytics/Dockerfile
     restart: unless-stopped
     profiles:
       - workers

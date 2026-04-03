@@ -1,0 +1,233 @@
+name: CD Multi-Env
+
+on:
+  push:
+    branches:
+      - develop
+      - qa
+      - main
+  pull_request:
+    branches:
+      - develop
+      - qa
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente a desplegar manualmente
+        required: true
+        type: choice
+        options:
+          - qa
+          - prod
+      image_tag:
+        description: Tag de imagen a desplegar
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      channel_tag: ${{ steps.meta.outputs.channel_tag }}
+      deploy_env: ${{ steps.meta.outputs.deploy_env }}
+      deploy_enabled: ${{ steps.meta.outputs.deploy_enabled }}
+      frontend_api_port: ${{ steps.meta.outputs.frontend_api_port }}
+      deploy_image_tag: ${{ steps.meta.outputs.deploy_image_tag }}
+    steps:
+      - id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          INPUT_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            DEPLOY_ENV="$INPUT_ENVIRONMENT"
+            DEPLOY_ENABLED="true"
+          else
+            case "$REF_NAME" in
+              develop)
+                DEPLOY_ENV="dev"
+                DEPLOY_ENABLED="false"
+                ;;
+              qa)
+                DEPLOY_ENV="qa"
+                DEPLOY_ENABLED="true"
+                ;;
+              main)
+                DEPLOY_ENV="prod"
+                DEPLOY_ENABLED="true"
+                ;;
+              *)
+                echo "Rama no soportada: $REF_NAME"
+                exit 1
+                ;;
+            esac
+          fi
+
+          case "$DEPLOY_ENV" in
+            dev)
+              CHANNEL_TAG="dev"
+              FRONTEND_API_PORT="3030"
+              ;;
+            qa)
+              CHANNEL_TAG="qa"
+              FRONTEND_API_PORT="3130"
+              ;;
+            prod)
+              CHANNEL_TAG="prod"
+              FRONTEND_API_PORT="3230"
+              ;;
+            *)
+              echo "Ambiente no soportado: $DEPLOY_ENV"
+              exit 1
+              ;;
+          esac
+
+          DEPLOY_IMAGE_TAG="${INPUT_IMAGE_TAG:-$CHANNEL_TAG}"
+
+          echo "channel_tag=$CHANNEL_TAG" >> "$GITHUB_OUTPUT"
+          echo "deploy_env=$DEPLOY_ENV" >> "$GITHUB_OUTPUT"
+          echo "deploy_enabled=$DEPLOY_ENABLED" >> "$GITHUB_OUTPUT"
+          echo "frontend_api_port=$FRONTEND_API_PORT" >> "$GITHUB_OUTPUT"
+          echo "deploy_image_tag=$DEPLOY_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Lint frontend
+        working-directory: frontend
+        run: pnpm run lint
+
+  compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dev compose
+        run: bash scripts/docker-env.sh dev config
+      - name: Validate qa compose
+        run: bash scripts/docker-env.sh qa config
+      - name: Validate prod compose
+        run: bash scripts/docker-env.sh prod config
+
+  publish-images:
+    if: github.event_name == 'push'
+    needs:
+      - prepare
+      - frontend-lint
+      - compose-validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            dockerfile: docker/backend/Dockerfile
+            build_args: ""
+          - service: frontend
+            dockerfile: docker/frontend/Dockerfile
+            build_args: VITE_API_PORT=${{ needs.prepare.outputs.frontend_api_port }}
+          - service: signer
+            dockerfile: docker/signer/Dockerfile
+            build_args: ""
+          - service: analytics
+            dockerfile: docker/analytics/Dockerfile
+            build_args: ""
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          build-args: ${{ matrix.build_args }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/deasy-${{ matrix.service }}:${{ needs.prepare.outputs.channel_tag }}
+            ghcr.io/${{ github.repository_owner }}/deasy-${{ matrix.service }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.channel_tag }}
+
+  deploy:
+    if: github.event_name == 'push' && needs.prepare.outputs.deploy_enabled == 'true'
+    needs:
+      - prepare
+      - publish-images
+    runs-on: ubuntu-latest
+    environment: ${{ needs.prepare.outputs.deploy_env }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
+      - name: Sync deployment bundle
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts'"
+          rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+      - name: Upload runtime environment file
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV: ${{ needs.prepare.outputs.deploy_env }}
+          RUNTIME_ENV_FILE: ${{ secrets.RUNTIME_ENV_FILE }}
+        run: |
+          printf '%s' "$RUNTIME_ENV_FILE" | ssh "$DEPLOY_USER@$DEPLOY_HOST" "cat > '$DEPLOY_PATH/docker/.env.$DEPLOY_ENV.runtime'"
+      - name: Deploy environment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV: ${{ needs.prepare.outputs.deploy_env }}
+          DEPLOY_IMAGE_TAG: ${{ needs.prepare.outputs.deploy_image_tag }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            set -euo pipefail
+            cd '$DEPLOY_PATH'
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh
+            printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
+            bash scripts/deploy-env.sh '$DEPLOY_ENV' '$DEPLOY_IMAGE_TAG'
+          "

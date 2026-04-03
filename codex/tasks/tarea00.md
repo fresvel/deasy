@@ -1,6 +1,6 @@
 # Listado de actividades
 
-Avance del checklist: `18/18`
+Avance del checklist: `20/22`
 
 Buenas practicas base validadas con Context7 (`/docker/compose`):
 - Mantener un compose base con lo comun y archivos por ambiente con overrides.
@@ -25,3 +25,7 @@ Buenas practicas base validadas con Context7 (`/docker/compose`):
 15. [x] Alinear ramas `develop`, `qa` y `main` con ambientes.
 16. [x] Preparar integracion con CI/CD.
 17. [x] Endurecer progresivamente la operacion de `prod`.
+18. [x] Reajustar ramas para dejar `develop`, `qa` y `main` basadas temporalmente en `develop`, preservando estados anteriores en ramas deprecadas.
+19. [x] Implementar CD real por ambiente a partir de la nueva estrategia de ramas.
+20. [ ] Activar la estrategia en remoto: commit, push de `develop`, `qa` y `main`, y creacion/verificacion de `GitHub Environments` con sus secrets.
+21. [ ] Sincronizar el estado local con el remoto y verificar que las ramas y artefactos base de CD queden publicados sin perder trazabilidad de las ramas deprecadas.
