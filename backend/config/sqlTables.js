@@ -874,6 +874,9 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "template_id", label: "Plantilla", type: "number", required: true },
       { name: "step_order", label: "Orden", type: "number", required: true },
+      { name: "code", label: "Código", type: "text" },
+      { name: "name", label: "Nombre", type: "text" },
+      { name: "slot", label: "Slot", type: "text" },
       { name: "step_type_id", label: "Tipo", type: "number", required: true },
       { name: "required_cargo_id", label: "Cargo", type: "number", required: true },
       {
@@ -886,6 +889,12 @@ export const SQL_TABLES = [
       { name: "required_signers_min", label: "Min firmantes", type: "number" },
       { name: "required_signers_max", label: "Max firmantes", type: "number" },
       { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
+      {
+        name: "anchor_refs",
+        label: "Anchor refs",
+        type: "textarea",
+        description: "JSON array de códigos de anchor enlazados al paso"
+      },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: []

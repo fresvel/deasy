@@ -35,12 +35,12 @@ En este repositorio, CI verifica principalmente:
 
 - lint del frontend,
 - validez del `docker compose` de `dev`, `qa` y `prod`,
-- construccion de imagenes Docker.
+- construcción de imágenes Docker.
 
 ### CD
 
 `CD` significa `Continuous Delivery` o `Continuous Deployment`, segun el nivel de
-automatizacion.
+automatización.
 
 En este caso, CD significa:
 
@@ -57,15 +57,15 @@ Contiene:
 
 - sistema base,
 - dependencias,
-- codigo,
+- código,
 - comando de arranque.
 
-Piensa en una imagen como una "foto congelada" de la aplicacion lista para
+Piensa en una imagen como una "foto congelada" de la aplicación lista para
 correr.
 
 ### Contenedor
 
-Un contenedor es una instancia en ejecucion de una imagen.
+Un contenedor es una instancia en ejecución de una imagen.
 
 Ejemplo:
 
@@ -74,12 +74,12 @@ Ejemplo:
 
 ### Registry
 
-Un `registry` es un almacen de imagenes Docker.
+Un `registry` es un almacén de imágenes Docker.
 
 Es el equivalente a:
 
 - `npm registry` para paquetes Node,
-- pero aplicado a imagenes Docker.
+- pero aplicado a imágenes Docker.
 
 ### GHCR
 
@@ -87,7 +87,7 @@ Es el equivalente a:
 
 Es el registry de contenedores de GitHub.
 
-En este proyecto se usa para publicar imagenes como:
+En este proyecto se usa para publicar imágenes como:
 
 - `ghcr.io/fresvel/deasy-backend:dev`
 - `ghcr.io/fresvel/deasy-backend:qa`
@@ -98,11 +98,11 @@ Eso significa:
 - `ghcr.io`: el servidor del registry,
 - `fresvel`: el owner,
 - `deasy-backend`: el nombre de la imagen,
-- `qa` o `prod`: el tag o version.
+- `qa` o `prod`: el tag o versión.
 
 ### Tag de imagen
 
-Un `tag` es una etiqueta de version de una imagen.
+Un `tag` es una etiqueta de versión de una imagen.
 
 Ejemplos:
 
@@ -118,13 +118,13 @@ En este repo:
 
 ### GitHub Actions
 
-Es el sistema de automatizacion de GitHub.
+Es el sistema de automatización de GitHub.
 
 Ejecuta workflows definidos en `.github/workflows/*.yml`.
 
 ### GitHub Environments
 
-Son entornos lógicos de GitHub para separar configuracion sensible por ambiente.
+Son entornos lógicos de GitHub para separar configuración sensible por ambiente.
 
 En este caso necesitas al menos:
 
@@ -134,7 +134,7 @@ En este caso necesitas al menos:
 Cada environment puede tener:
 
 - secrets,
-- reglas de aprobacion,
+- reglas de aprobación,
 - restricciones,
 - variables propias.
 
@@ -154,15 +154,15 @@ Ejemplos:
 El repositorio ya tiene implementados:
 
 - workflow de CI/CD,
-- build y publicacion de imagenes,
+- build y publicación de imágenes,
 - despliegue remoto de `qa` y `prod`,
-- separacion de compose por ambiente,
-- consumo de imagenes versionadas desde GHCR,
-- wrappers de operacion local y remota,
+- separación de compose por ambiente,
+- consumo de imágenes versionadas desde GHCR,
+- wrappers de operación local y remota,
 - ramas `develop`, `qa` y `main` alineadas.
 
 Lo que aun falta para dejar el sistema completamente operativo es la
-configuracion manual en GitHub:
+configuración manual en GitHub:
 
 - crear/verificar `GitHub Environments`,
 - cargar sus `secrets`.
@@ -180,15 +180,15 @@ La estrategia actual es:
 
 Comportamiento:
 
-- push a `develop`: valida y publica imagenes `dev`, pero no despliega.
-- push a `qa`: valida, publica imagenes `qa` y despliega `qa`.
-- push a `main`: valida, publica imagenes `prod` y despliega `prod`.
+- push a `develop`: valida y publica imágenes `dev`, pero no despliega.
+- push a `qa`: valida, publica imágenes `qa` y despliega `qa`.
+- push a `main`: valida, publica imágenes `prod` y despliega `prod`.
 
 Esto permite:
 
-- usar `develop` como canal de integracion,
-- usar `qa` como canal de validacion,
-- usar `main` como canal de produccion.
+- usar `develop` como canal de integración,
+- usar `qa` como canal de validación,
+- usar `main` como canal de producción.
 
 ## 5. Archivos principales
 
@@ -198,7 +198,7 @@ Archivo:
 
 - [`.github/workflows/cd-multienv.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/.github/workflows/cd-multienv.yml)
 
-Este archivo define toda la automatizacion de CI/CD.
+Este archivo define toda la automatización de CI/CD.
 
 ### Wrapper de compose por ambiente
 
@@ -206,7 +206,7 @@ Archivo:
 
 - [`scripts/docker-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/docker-env.sh)
 
-Este script simplifica la ejecucion de Docker Compose por ambiente.
+Este script simplifica la ejecución de Docker Compose por ambiente.
 
 En lugar de escribir un comando largo, usas:
 
@@ -248,8 +248,8 @@ Archivos:
 Diferencias principales:
 
 - `dev` construye localmente y usa mounts.
-- `qa` consume imagenes desde GHCR.
-- `prod` consume imagenes desde GHCR y agrega hardening.
+- `qa` consume imágenes desde GHCR.
+- `prod` consume imágenes desde GHCR y agrega hardening.
 
 ### Variables por ambiente
 
@@ -275,7 +275,7 @@ El job `prepare` decide:
 
 - que ambiente corresponde,
 - si ese ambiente se despliega o no,
-- que tag de imagen se va a usar,
+- que tag de imágen se va a usar,
 - que `VITE_API_PORT` se necesita para build del frontend.
 
 Reglas actuales:
@@ -294,7 +294,7 @@ pnpm run lint
 
 Si esto falla, no sigue.
 
-### Paso 4. Validacion compose
+### Paso 4. Validación compose
 
 El job `compose-validate` ejecuta:
 
@@ -306,9 +306,9 @@ bash scripts/docker-env.sh prod config
 
 Eso verifica que los archivos compose resuelvan correctamente.
 
-### Paso 5. Build y publicacion
+### Paso 5. Build y publicación
 
-El job `publish-images` construye y publica imagenes a GHCR.
+El job `publish-images` construye y publica imágenes a GHCR.
 
 Servicios incluidos:
 
@@ -370,7 +370,7 @@ bash scripts/docker-env.sh <ambiente> --profile workers up -d --remove-orphans
 
 Eso significa:
 
-- baja imagenes nuevas,
+- baja imágenes nuevas,
 - recrea contenedores si hace falta,
 - elimina contenedores huérfanos.
 
@@ -495,13 +495,13 @@ Dentro de esa ruta, el workflow crea:
 
 Usuario que tiene permiso para hacer `docker login` en GHCR desde el servidor.
 
-Normalmente es tu usuario de GitHub o una cuenta tecnica.
+Normalmente es tu usuario de GitHub o una cuenta técnica.
 
 #### GHCR_TOKEN
 
 Token con permisos para leer paquetes del registry.
 
-Como minimo debe permitir descargar imagenes privadas si aplica.
+Como mínimo debe permitir descargar imagenes privadas si aplica.
 
 #### RUNTIME_ENV_FILE
 

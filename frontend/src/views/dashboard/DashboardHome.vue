@@ -949,6 +949,164 @@
     </AdminModalShell>
 
     <AdminModalShell
+      ref="signatureFlowModal"
+      labelled-by="signature-flow-modal-title"
+      title="Flujo de firmas"
+      size="xl"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+      @close="closeSignatureFlowModal"
+    >
+      <template #body>
+        <div class="flex flex-col gap-5">
+          <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
+            Consultando la secuencia de firmas...
+          </div>
+          <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
+            {{ signatureFlowState.error }}
+          </div>
+          <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Documento</p>
+                <h3 class="text-lg font-bold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
+                <div class="flex flex-wrap gap-2">
+                  <AppTag variant="neutral">
+                    {{ signatureFlowState.subject?.documentId ? `Documento #${signatureFlowState.subject.documentId}` : 'Sin documento' }}
+                  </AppTag>
+                  <AppTag variant="muted">
+                    {{ signatureFlowState.subject?.documentVersion ? `Versión v${signatureFlowState.subject.documentVersion}` : `v${signatureFlowState.subject?.documentVersionId || '—'}` }}
+                  </AppTag>
+                  <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
+                    {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
+                  </AppTag>
+                </div>
+                <p class="text-xs text-slate-500">
+                  Estado documental: {{ capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente de firma' }}
+                </p>
+                <p v-if="!signatureFlowState.snapshot.readiness?.ok" class="text-xs text-rose-600">
+                  Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
+                </p>
+              </section>
+              <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-2 shadow-sm">
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Responsable actual</p>
+                <p class="text-sm font-semibold text-slate-800 mb-0">
+                  {{ signatureFlowState.snapshot?.responsableActual
+                    ? `${signatureFlowState.snapshot.responsableActual.firstName || ''} ${signatureFlowState.snapshot.responsableActual.lastName || ''}`.trim()
+                    : 'Sin responsable resuelto' }}
+                </p>
+                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
+                  {{ signatureFlowState.snapshot?.canOperate ? 'Puedes operar este paso' : 'Solo visualización' }}
+                </AppTag>
+                <p class="text-xs text-slate-500">
+                  Paso actual: {{ signatureFlowState.snapshot?.currentSignatureStepOrder || '—' }}
+                </p>
+              </section>
+              <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Secuencia</p>
+                <p class="text-sm font-semibold text-slate-800 mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
+                <p class="text-xs text-slate-500">
+                  {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
+                </p>
+                <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-rose-600">
+                  Pasos sin firmantes: {{ signatureFlowState.snapshot.readiness.unresolvedRequiredSteps.map((step) => step.stepOrder).join(', ') }}
+                </p>
+              </section>
+            </div>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
+                <AppTag variant="muted">
+                  {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
+                </AppTag>
+              </div>
+              <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
+                La definición todavía no tiene pasos de firma visibles.
+              </div>
+              <div v-else class="flex flex-col gap-3">
+                <div
+                  v-for="step in signatureFlowState.snapshot.signatureSteps"
+                  :key="`signature-step-${step.id || step.step_order}`"
+                  class="rounded-2xl border border-slate-100 bg-slate-50/70 p-3"
+                >
+                  <div class="flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                      <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
+                      <p class="text-xs text-slate-500 m-0">Resolución: {{ step.resolverType || step.selection_mode || 'Cargo en alcance' }}</p>
+                    </div>
+                    <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
+                      {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
+                    </AppTag>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Historial y trazabilidad</h3>
+                <AppTag variant="neutral">
+                  {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
+                </AppTag>
+              </div>
+              <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="text-sm text-slate-500">
+                Aún no se ha registrado actividad sobre este flujo.
+              </div>
+              <div v-else class="flex flex-col gap-3">
+                <div
+                  v-for="request in signatureFlowState.snapshot.signatureRequests"
+                  :key="`flow-request-${request.id}`"
+                  class="rounded-2xl border border-slate-100 bg-white p-3 flex flex-col gap-1"
+                >
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ request.stepOrder }}</p>
+                    <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
+                      {{ signatureRequestStatusLabel(request.requestStatusCode) }}
+                    </AppTag>
+                  </div>
+                  <p class="text-xs text-slate-500 m-0">
+                    {{ request.assignedPerson ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim() : 'Firmante no resuelto' }}
+                    · Cargo {{ request.cargoName || '—' }}
+                  </p>
+                  <p class="text-xs text-slate-500 m-0">
+                    {{ request.respondedAt ? formatDateTime(request.respondedAt) : formatDateTime(request.requestedAt) }}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Firmar documento</h3>
+                  <p class="text-xs text-slate-500 m-0">Utiliza el visor integrado para completar tu paso actual.</p>
+                </div>
+                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
+                  {{ signatureFlowState.snapshot?.canOperate ? 'Listo para operar' : 'Acceso en modo lectura' }}
+                </AppTag>
+              </div>
+              <div v-if="signatureFlowState.snapshot?.canOperate">
+                <FirmarPdf ref="signatureFlowSignerRef" embedded />
+              </div>
+              <div v-else class="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+                No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
+              </div>
+            </section>
+          </div>
+          <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+            Selecciona una solicitud de firma para revisar su flujo.
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" data-modal-dismiss>
+          Cerrar
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
       ref="deliverableUploadModal"
       labelled-by="deliverable-upload-modal-title"
       :title="deliverableUploadModalTitle"
@@ -1061,6 +1219,7 @@ import AppTag from '@/components/AppTag.vue';
 import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
+import SignatureFlowService from '@/services/sign/SignatureFlowService.js';
 import { API_ROUTES } from '@/services/apiConfig';
 import { Modal } from '@/utils/modalController';
 import AdminModalShell from '@/components/AppModalShell.vue';
@@ -1086,6 +1245,7 @@ const router = useRouter();
 const route = useRoute();
 const menuService = new UserMenuService();
 const processPanelService = new ProcessDefinitionPanelService();
+const signatureFlowService = new SignatureFlowService();
 
 const currentUser = ref(null);
 const userPhoto = ref('/images/avatar.png');
@@ -1124,12 +1284,14 @@ const taskLaunchSubmitting = ref(false);
 const taskLaunchError = ref('');
 const taskLaunchUseCustomTerm = ref(false);
 const documentSignModal = ref(null);
+const signatureFlowModal = ref(null);
 const documentCenterModal = ref(null);
 const fillWorkflowModal = ref(null);
 const deliverableUploadModal = ref(null);
 const deliverableOperationModal = ref(null);
 const deliverablePreviewModal = ref(null);
 const embeddedSignerRef = ref(null);
+const signatureFlowSignerRef = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
 const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
@@ -1153,7 +1315,15 @@ const fillWorkflowState = ref({
   note: '',
   error: ''
 });
+const signatureFlowState = ref({
+  loading: false,
+  error: '',
+  subject: null,
+  documentVersionId: null,
+  snapshot: null
+});
 let documentSignModalInstance = null;
+let signatureFlowModalInstance = null;
 let documentCenterModalInstance = null;
 let fillWorkflowModalInstance = null;
 let deliverableUploadModalInstance = null;
@@ -1398,6 +1568,59 @@ const formatDate = (value) => {
     month: 'short',
     day: 'numeric'
   });
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+  return parsed.toLocaleString('es-EC', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const capitalize = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '';
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+};
+
+const signatureRequestStatusLabel = (statusCode) => {
+  const normalized = String(statusCode || '').trim().toLowerCase();
+  switch (normalized) {
+    case 'completado':
+      return 'Firmado';
+    case 'rechazado':
+      return 'Rechazado';
+    case 'cancelado':
+      return 'Cancelado';
+    case 'en_progreso':
+      return 'En progreso';
+    case 'pendiente':
+      return 'Pendiente';
+    default:
+      return capitalize(normalized) || 'Pendiente';
+  }
+};
+
+const signatureRequestTagVariant = (statusCode) => {
+  const normalized = String(statusCode || '').trim().toLowerCase();
+  if (['completado'].includes(normalized)) {
+    return 'success';
+  }
+  if (['rechazado', 'cancelado'].includes(normalized)) {
+    return 'danger';
+  }
+  if (['en_progreso', 'pendiente'].includes(normalized)) {
+    return 'warning';
+  }
+  return 'muted';
 };
 
 const formatTriggerLabel = (trigger) => {
@@ -2070,6 +2293,10 @@ const handleDeliverableFutureAction = (action, payload) => {
     downloadDeliverableTemplate(payload);
     return;
   }
+  if (action === 'review_signature_flow') {
+    openSignatureFlowModal(payload);
+    return;
+  }
   const actionLabels = {
     manage_fill: 'La gestión operativa del llenado',
     download_template: 'La descarga de la plantilla',
@@ -2394,6 +2621,80 @@ const openDocumentSignFlow = (payload) => {
       preloadPdfPath: doc.preloadPdfPath
     });
   });
+};
+
+const signatureRequestPendingCodes = new Set(['pendiente', 'en_progreso']);
+
+const resetSignatureFlowState = () => {
+  signatureFlowState.value = {
+    loading: false,
+    error: '',
+    subject: null,
+    documentVersionId: null,
+    snapshot: null
+  };
+  signatureFlowSignerRef.value?.resetToStart?.();
+};
+
+const closeSignatureFlowModal = () => {
+  signatureFlowModalInstance?.hide();
+  resetSignatureFlowState();
+};
+
+const prepareSignatureSession = async () => {
+  const snapshot = signatureFlowState.value.snapshot;
+  if (!snapshot?.canOperate) {
+    signatureFlowSignerRef.value?.resetToStart?.();
+    return;
+  }
+  const pendingRequest = (snapshot.signatureRequests || []).find((request) => {
+    const code = String(request.requestStatusCode || "").trim().toLowerCase();
+    return signatureRequestPendingCodes.has(code);
+  });
+  if (!pendingRequest) {
+    signatureFlowSignerRef.value?.resetToStart?.();
+    return;
+  }
+  await nextTick(() => {
+    signatureFlowSignerRef.value?.resetToStart?.();
+    signatureFlowSignerRef.value?.initializeWorkflowSignatureSession?.({
+      signatureRequestId: pendingRequest.id,
+      documentVersionId: signatureFlowState.value.documentVersionId,
+      taskItemId: signatureFlowState.value.subject?.itemId,
+      processDefinitionId: Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value || 0),
+      documentTitle: signatureFlowState.value.subject?.title,
+      documentVersionLabel: signatureFlowState.value.subject?.documentVersion ? `v${signatureFlowState.value.subject.documentVersion}` : `#${signatureFlowState.value.documentVersionId}`,
+      preloadPdfPath: signatureFlowState.value.subject?.preloadPdfPath
+    });
+  });
+};
+
+const openSignatureFlowModal = async (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const documentVersionId = subject.documentVersionId;
+  if (!documentVersionId) {
+    setProcessActionInfo(`No se encontró la versión documental asociada a ${subject.title}.`, 'error');
+    return;
+  }
+  signatureFlowState.value = {
+    loading: true,
+    error: '',
+    subject,
+    documentVersionId,
+    snapshot: null
+  };
+  signatureFlowModalInstance = Modal.getOrCreateInstance(signatureFlowModal.value?.el);
+  signatureFlowModalInstance?.show();
+  try {
+    const snapshot = await signatureFlowService.getSignatureFlow(documentVersionId);
+    signatureFlowState.value.snapshot = snapshot;
+    signatureFlowState.value.error = '';
+    await prepareSignatureSession();
+  } catch (error) {
+    signatureFlowState.value.error = error?.response?.data?.message || error?.message || 'No se pudo cargar el flujo de firmas.';
+  } finally {
+    signatureFlowState.value.loading = false;
+  }
 };
 
 const handleHeaderToggle = () => {
