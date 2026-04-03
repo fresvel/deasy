@@ -949,6 +949,82 @@
     </AdminModalShell>
 
     <AdminModalShell
+      ref="signatureWorkflowModal"
+      labelled-by="signature-workflow-modal-title"
+      title="Flujo de firmas"
+      size="lg"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div class="flex flex-col gap-5">
+        <div v-if="signatureWorkflowState.subject" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div class="flex flex-col gap-2">
+            <strong class="text-base font-bold text-slate-800">{{ signatureWorkflowState.subject.title }}</strong>
+            <div class="flex flex-wrap gap-2">
+              <AppTag variant="neutral">
+                {{ signatureWorkflowState.subject.documentVersionId ? `Versión #${signatureWorkflowState.subject.documentVersionId}` : 'Sin versión' }}
+              </AppTag>
+              <AppTag variant="info">
+                Firmas registradas: {{ signatureWorkflowTimeline.length }}
+              </AppTag>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Trazabilidad de firmas</h3>
+          <div v-if="!signatureWorkflowTimeline.length" class="text-sm text-slate-500">
+            Aún no existen registros de firma para esta versión documental.
+          </div>
+          <div v-else class="flex flex-col gap-3">
+            <div
+              v-for="trace in signatureWorkflowTimeline"
+              :key="`signature-trace-${trace.id}`"
+              class="rounded-2xl border border-slate-200 bg-slate-50/40 p-4"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div class="flex flex-col gap-1">
+                  <strong class="text-sm font-bold text-slate-800">
+                    Paso {{ trace.stepOrderLabel }} · {{ trace.signerLabel }}
+                  </strong>
+                  <span class="text-xs font-semibold text-slate-500">
+                    {{ trace.stepDetailLabel }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <AppTag :variant="getSignatureStatusTagVariant(trace.technicalStatusCode)">
+                    {{ trace.technicalStatusLabel }}
+                  </AppTag>
+                  <AppTag v-if="trace.signatureTypeLabel" variant="muted">
+                    {{ trace.signatureTypeLabel }}
+                  </AppTag>
+                </div>
+              </div>
+              <div class="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                <span>
+                  <strong>Firmado:</strong>
+                  {{ trace.signedAtLabel || 'Sin marca de tiempo' }}
+                </span>
+                <span>
+                  <strong>Evidencia:</strong>
+                  {{ trace.evidencePathLabel || 'Sin evidencia registrada' }}
+                </span>
+              </div>
+              <p v-if="trace.note" class="mt-3 mb-0 text-sm font-medium leading-relaxed text-slate-700 whitespace-pre-wrap">
+                Nota: {{ trace.note }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" data-modal-dismiss>
+          Cerrar
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
       ref="deliverableUploadModal"
       labelled-by="deliverable-upload-modal-title"
       :title="deliverableUploadModalTitle"
@@ -1126,6 +1202,7 @@ const taskLaunchUseCustomTerm = ref(false);
 const documentSignModal = ref(null);
 const documentCenterModal = ref(null);
 const fillWorkflowModal = ref(null);
+const signatureWorkflowModal = ref(null);
 const deliverableUploadModal = ref(null);
 const deliverableOperationModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -1153,9 +1230,13 @@ const fillWorkflowState = ref({
   note: '',
   error: ''
 });
+const signatureWorkflowState = ref({
+  subject: null
+});
 let documentSignModalInstance = null;
 let documentCenterModalInstance = null;
 let fillWorkflowModalInstance = null;
+let signatureWorkflowModalInstance = null;
 let deliverableUploadModalInstance = null;
 let deliverableOperationModalInstance = null;
 let deliverablePreviewModalInstance = null;
@@ -1574,6 +1655,14 @@ onMounted(async () => {
       };
     });
   }
+  if (signatureWorkflowModal.value?.el) {
+    signatureWorkflowModalInstance = Modal.getOrCreateInstance(signatureWorkflowModal.value.el);
+    signatureWorkflowModal.value.el.addEventListener('hidden.bs.modal', () => {
+      signatureWorkflowState.value = {
+        subject: null
+      };
+    });
+  }
   if (deliverableUploadModal.value?.el) {
     deliverableUploadModalInstance = Modal.getOrCreateInstance(deliverableUploadModal.value.el);
     deliverableUploadModal.value.el.addEventListener('hidden.bs.modal', () => {
@@ -1668,6 +1757,14 @@ const openFillWorkflowModal = (payload = {}) => {
   };
   fillWorkflowModalInstance = Modal.getOrCreateInstance(fillWorkflowModal.value?.el);
   fillWorkflowModalInstance?.show();
+};
+
+const openSignatureWorkflowModal = (payload = {}) => {
+  signatureWorkflowState.value = {
+    subject: getDeliverableSubject(payload)
+  };
+  signatureWorkflowModalInstance = Modal.getOrCreateInstance(signatureWorkflowModal.value?.el);
+  signatureWorkflowModalInstance?.show();
 };
 
 const getDeliverableSubject = (payload = {}) => {
@@ -1964,6 +2061,41 @@ const canRejectFillRequest = computed(() =>
 const canCancelFillRequest = computed(() =>
   canOperateCurrentFillRequest.value && ['pending', 'in_progress'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
 );
+const getSignatureStatusTagVariant = (statusCode) => {
+  const code = String(statusCode || '').trim().toLowerCase();
+  if (code.includes('ok') || code.includes('valid') || code.includes('success')) return 'success';
+  if (code.includes('pending') || code.includes('process')) return 'warning';
+  if (code.includes('reject') || code.includes('invalid') || code.includes('error') || code.includes('fail')) return 'danger';
+  return 'neutral';
+};
+const signatureWorkflowTimeline = computed(() => {
+  const traces = signatureWorkflowState.value.subject?.workflow?.signature_traceability || [];
+  return traces
+    .map((trace) => {
+      const stepOrder = Number(trace?.step?.order || 0);
+      const signedAt = trace?.signed_at || trace?.created_at || null;
+      return {
+        id: Number(trace?.id || 0),
+        stepOrder,
+        stepOrderLabel: stepOrder > 0 ? stepOrder : 's/n',
+        signerLabel: trace?.signer_name || 'Firmante no identificado',
+        stepDetailLabel: [trace?.step?.resolver_type, trace?.step?.selection_mode].filter(Boolean).join(' · ') || 'Paso sin metadata',
+        signedAt,
+        signedAtLabel: formatWorkflowDateTime(signedAt),
+        technicalStatusCode: trace?.technical_status?.code || '',
+        technicalStatusLabel: trace?.technical_status?.name || trace?.technical_status?.code || 'Sin estado técnico',
+        signatureTypeLabel: trace?.signature_type?.name || trace?.signature_type?.code || '',
+        evidencePathLabel: trace?.evidence?.path || '',
+        note: String(trace?.note_short || '').trim()
+      };
+    })
+    .sort((a, b) => {
+      if (a.stepOrder !== b.stepOrder) return a.stepOrder - b.stepOrder;
+      const timeA = a.signedAt ? new Date(a.signedAt).getTime() : 0;
+      const timeB = b.signedAt ? new Date(b.signedAt).getTime() : 0;
+      return timeA - timeB;
+    });
+});
 
 const getUploadActionLabel = (payload) => {
   const subject = getDeliverableSubject(payload);
@@ -2064,6 +2196,10 @@ const handleDeliverableFutureAction = (action, payload) => {
   }
   if (action === 'manage_fill') {
     openFillWorkflowModal(payload);
+    return;
+  }
+  if (action === 'review_signature_flow') {
+    openSignatureWorkflowModal(payload);
     return;
   }
   if (action === 'download_template') {

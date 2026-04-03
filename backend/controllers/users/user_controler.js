@@ -734,6 +734,57 @@ const getFillWorkflowStepsForDocumentVersions = async (pool, documentVersionIds)
   return rows;
 };
 
+const getDocumentSignaturesHistoryForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       ds.id,
+       ds.document_version_id,
+       ds.signature_request_id,
+       ds.signer_user_id,
+       ds.note_short,
+       ds.signed_file_path,
+       ds.signed_at,
+       ds.created_at,
+       st.code AS signature_type_code,
+       st.name AS signature_type_name,
+       ss.code AS technical_status_code,
+       ss.name AS technical_status_name,
+       sfs.id AS step_id,
+       sfs.step_order,
+       sfs.selection_mode AS step_selection_mode,
+       sfs.resolver_type AS step_resolver_type,
+       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS signer_name
+     FROM document_signatures ds
+     LEFT JOIN signature_types st ON st.id = ds.signature_type_id
+     LEFT JOIN signature_statuses ss ON ss.id = ds.signature_status_id
+     LEFT JOIN signature_requests sr ON sr.id = ds.signature_request_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+     LEFT JOIN persons p ON p.id = ds.signer_user_id
+     WHERE ds.document_version_id IN (${placeholders})
+     ORDER BY ds.document_version_id ASC, sfs.step_order ASC, ds.signed_at ASC, ds.created_at ASC, ds.id ASC`,
+    documentVersionIds
+  );
+  return rows;
+};
+
+const buildSignatureEvidenceMetadata = (signatureRow) => {
+  const signedFilePath = String(signatureRow.signed_file_path || "").trim();
+  if (!signedFilePath) {
+    return null;
+  }
+  const fileName = path.posix.basename(signedFilePath);
+  const extensionMatch = /\.([a-zA-Z0-9]+)$/.exec(fileName);
+  return {
+    path: signedFilePath,
+    file_name: fileName || null,
+    file_extension: extensionMatch ? extensionMatch[1].toLowerCase() : null
+  };
+};
+
 const buildFillStepDisplayLabel = (step) => {
   const resolverType = String(step.resolver_type || "").trim();
   if (step.assigned_person_name) {
@@ -874,6 +925,12 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       .map((item) => Number(item.document_version_id || 0))
       .filter((id) => id > 0)
   );
+  const signatureHistoryRows = await getDocumentSignaturesHistoryForDocumentVersions(
+    pool,
+    taskItems
+      .map((item) => Number(item.document_version_id || 0))
+      .filter((id) => id > 0)
+  );
   const fillRequestsByDocumentVersion = new Map();
   fillRequests.forEach((request) => {
     const key = Number(request.document_version_id);
@@ -922,6 +979,38 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       unit_type_name: step.unit_type_name || null
     });
   });
+  const signatureHistoryByDocumentVersion = new Map();
+  signatureHistoryRows.forEach((entry) => {
+    const key = Number(entry.document_version_id || 0);
+    if (!signatureHistoryByDocumentVersion.has(key)) {
+      signatureHistoryByDocumentVersion.set(key, []);
+    }
+    signatureHistoryByDocumentVersion.get(key).push({
+      id: Number(entry.id),
+      document_version_id: key,
+      signature_request_id: entry.signature_request_id ? Number(entry.signature_request_id) : null,
+      signer_user_id: entry.signer_user_id ? Number(entry.signer_user_id) : null,
+      signer_name: entry.signer_name || null,
+      step: {
+        id: entry.step_id ? Number(entry.step_id) : null,
+        order: entry.step_order ? Number(entry.step_order) : null,
+        resolver_type: entry.step_resolver_type || null,
+        selection_mode: entry.step_selection_mode || null
+      },
+      signature_type: {
+        code: entry.signature_type_code || null,
+        name: entry.signature_type_name || null
+      },
+      technical_status: {
+        code: entry.technical_status_code || null,
+        name: entry.technical_status_name || null
+      },
+      signed_at: entry.signed_at || null,
+      created_at: entry.created_at || null,
+      note_short: entry.note_short || null,
+      evidence: buildSignatureEvidenceMetadata(entry)
+    });
+  });
 
   const documents = taskItems
     .filter((item) => item.document_id)
@@ -934,6 +1023,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
         current_step_order: null,
         steps: []
       };
+      const signatureHistory = signatureHistoryByDocumentVersion.get(documentVersionId) || [];
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
       const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
       const canUploadDeliverable = ["manual_fill", "attachment"].includes(String(item.template_usage_role || ""));
@@ -958,6 +1048,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           fill_flow: fillWorkflow,
           fill_steps: fillWorkflow.steps,
           signature_requests: relatedSignatureRequests,
+          signature_traceability: signatureHistory,
           current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
           current_signature_step_order: relatedSignatureRequests[0]?.step_order || null
         },
@@ -993,6 +1084,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       const fillWorkflow = documentVersionId
         ? (fillWorkflowByDocumentVersion.get(documentVersionId) || { status: null, current_step_order: null, steps: [] })
         : { status: null, current_step_order: null, steps: [] };
+      const signatureHistory = documentVersionId ? (signatureHistoryByDocumentVersion.get(documentVersionId) || []) : [];
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
       const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
       const canUploadDeliverable = ["manual_fill", "attachment"].includes(String(item.template_usage_role || ""));
@@ -1021,6 +1113,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           fill_flow: fillWorkflow,
           fill_steps: fillWorkflow.steps,
           signature_requests: relatedSignatureRequests,
+          signature_traceability: signatureHistory,
           current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
           current_signature_step_order: relatedSignatureRequests[0]?.step_order || null
         },
