@@ -47,6 +47,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
+          BASE_REF: ${{ github.base_ref }}
           INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
           INPUT_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
           SHA: ${{ github.sha }}
@@ -55,7 +56,12 @@ jobs:
             DEPLOY_ENV="$INPUT_ENVIRONMENT"
             DEPLOY_ENABLED="true"
           else
-            case "$REF_NAME" in
+            TARGET_REF="$REF_NAME"
+            if [ "$EVENT_NAME" = "pull_request" ]; then
+              TARGET_REF="$BASE_REF"
+            fi
+
+            case "$TARGET_REF" in
               develop)
                 DEPLOY_ENV="dev"
                 DEPLOY_ENABLED="false"
@@ -69,7 +75,7 @@ jobs:
                 DEPLOY_ENABLED="true"
                 ;;
               *)
-                echo "Rama no soportada: $REF_NAME"
+                echo "Rama no soportada: $TARGET_REF"
                 exit 1
                 ;;
             esac
@@ -179,7 +185,10 @@ jobs:
             org.opencontainers.image.version=${{ needs.prepare.outputs.channel_tag }}
 
   deploy:
-    if: github.event_name == 'push' && needs.prepare.outputs.deploy_enabled == 'true'
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.prepare.outputs.deploy_enabled == 'true' &&
+      vars.DEPLOY_DELIVERY_MODE == 'gh-actions'
     needs:
       - prepare
       - publish-images
@@ -204,7 +213,7 @@ jobs:
         run: |
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts'"
           rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
-          rsync -az scripts/docker-env.sh scripts/deploy-env.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
       - name: Upload runtime environment file
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -227,7 +236,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -euo pipefail
             cd '$DEPLOY_PATH'
-            chmod +x scripts/docker-env.sh scripts/deploy-env.sh
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh
             printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
             bash scripts/deploy-env.sh '$DEPLOY_ENV' '$DEPLOY_IMAGE_TAG'
           "

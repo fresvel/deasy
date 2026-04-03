@@ -216,18 +216,39 @@ bash scripts/docker-env.sh qa up -d
 bash scripts/docker-env.sh prod down
 ```
 
-### Wrapper de despliegue remoto
+### Wrapper de despliegue comun
+
+Archivo:
+
+- [`scripts/apply-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/apply-env.sh)
+
+Este script concentra la logica comun de despliegue para `qa` y `prod`.
+
+Su objetivo es evitar que existan dos implementaciones distintas:
+
+- una para GitHub Actions,
+- otra para el servidor.
+
+Recibe:
+
+- ambiente,
+- modo de origen del despliegue,
+- tag opcional de imagen.
+
+Modos actuales previstos:
+
+- `gh-actions`
+- `server-pull`
+
+### Wrapper de despliegue remoto por GitHub Actions
 
 Archivo:
 
 - [`scripts/deploy-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/deploy-env.sh)
 
-Este script:
-
-- carga el archivo runtime del ambiente si existe,
-- sobreescribe tags si se indica uno,
-- hace `pull` de imagenes,
-- levanta el stack con compose.
+Este script ya no contiene la logica principal; ahora actua como wrapper de
+compatibilidad para el flujo iniciado desde GitHub Actions y delega en
+`scripts/apply-env.sh`.
 
 ### Compose base
 
@@ -335,6 +356,19 @@ El job `deploy` solo corre en:
 - push a `main`
 - o `workflow_dispatch`
 
+Ademas, el despliegue remoto por GitHub Actions solo se activa si la variable
+de GitHub `DEPLOY_DELIVERY_MODE` existe y vale:
+
+```text
+gh-actions
+```
+
+Si esa variable no existe o tiene otro valor, el workflow:
+
+- sigue validando,
+- sigue publicando imagenes,
+- pero no intenta conectarse al servidor por SSH.
+
 Lo que hace:
 
 1. prepara SSH en el runner,
@@ -373,6 +407,187 @@ Eso significa:
 - baja imagenes nuevas,
 - recrea contenedores si hace falta,
 - elimina contenedores huérfanos.
+
+## 7.1 Estrategia dual de despliegue
+
+El proyecto queda preparado para dos formas de despliegue:
+
+### Modo 1. Push remoto desde GitHub Actions
+
+GitHub:
+
+- construye,
+- publica imagenes,
+- entra por SSH al servidor,
+- y ejecuta el despliegue.
+
+Este modo es util cuando:
+
+- tienes IP o DNS accesible,
+- el runner puede entrar al host,
+- quieres mayor automatizacion extremo a extremo.
+
+Para activarlo en GitHub, define:
+
+```text
+DEPLOY_DELIVERY_MODE=gh-actions
+```
+
+Si no la defines, el camino por SSH queda preparado pero desactivado.
+
+### Modo 2. Pull iniciado desde el servidor
+
+El servidor:
+
+- hace `git pull` o actualiza archivos localmente,
+- y luego ejecuta el mismo despliegue usando scripts del repo.
+
+Este modo es util cuando:
+
+- no tienes IP publica estatica,
+- no quieres abrir entrada SSH desde GitHub,
+- el servidor puede operar de forma autonomica o programada.
+
+Este modo pasa a ser el predeterminado recomendado cuando no existe conectividad
+entrante estable desde GitHub hacia el host.
+
+### Regla de diseño adoptada
+
+La logica de despliegue del stack no debe duplicarse.
+
+Por eso:
+
+- `scripts/apply-env.sh` contiene la logica comun,
+- `scripts/deploy-env.sh` queda como wrapper del modo `gh-actions`,
+- los futuros flujos de `server-pull` reutilizaran `scripts/apply-env.sh`.
+
+## 7.2 Flujo manual desde servidor
+
+Archivo principal:
+
+- [`scripts/server-pull-deploy.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/server-pull-deploy.sh)
+
+Este script agrega la parte que GitHub Actions no necesita:
+
+- verificar rama local,
+- verificar limpieza del repo,
+- hacer `git fetch`,
+- hacer `git pull --ff-only`,
+- y luego ejecutar el despliegue del ambiente.
+
+Sintaxis:
+
+```bash
+bash scripts/server-pull-deploy.sh <qa|prod> <git|skip-git> [image-tag]
+```
+
+Ejemplos:
+
+```bash
+bash scripts/server-pull-deploy.sh qa git
+bash scripts/server-pull-deploy.sh prod git
+bash scripts/server-pull-deploy.sh qa skip-git sha-abc123
+```
+
+Validacion sin cambios reales:
+
+```bash
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh qa skip-git qa
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh prod skip-git prod
+```
+
+Significado:
+
+- `git`: actualiza el repo desde `origin` antes de desplegar.
+- `skip-git`: no toca git y solo aplica el stack.
+
+Mapeo actual:
+
+- `qa` espera estar en rama `qa`
+- `prod` espera estar en rama `main`
+
+El modo `git` falla si:
+
+- el repo tiene cambios locales,
+- o la rama activa no coincide con el ambiente esperado.
+
+Eso evita despliegues ambiguos desde un checkout desalineado.
+
+Los scripts `apply-env.sh` y `server-pull-deploy.sh` aceptan:
+
+```text
+DEASY_DRY_RUN=1
+```
+
+para mostrar los comandos que ejecutarian sin tocar contenedores ni git.
+
+## 7.3 Opcion con systemd
+
+Se dejaron ejemplos listos en:
+
+- [`deploy/systemd/deasy-server-pull@.service`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.service)
+- [`deploy/systemd/deasy-server-pull@.timer`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.timer)
+
+La idea sigue la buena practica de Context7 para `systemd`:
+
+- un `service` `oneshot` hace el trabajo,
+- un `timer` lo programa,
+- y no se mezcla logica de scheduling dentro del servicio.
+
+### Que hace el service
+
+El servicio ejecuta:
+
+```bash
+/bin/bash /opt/deasy/scripts/server-pull-deploy.sh %i git
+```
+
+Donde `%i` es el ambiente:
+
+- `qa`
+- `prod`
+
+### Que hace el timer
+
+El timer dispara ese servicio periodicamente.
+
+Configuracion actual de ejemplo:
+
+- primer disparo: `5m` despues de boot
+- recurrencia: cada `15m`
+
+Eso es solo una base y puede ajustarse.
+
+### Instalacion ejemplo en servidor
+
+Asumiendo que el repo vive en `/opt/deasy`:
+
+```bash
+sudo cp deploy/systemd/deasy-server-pull@.service /etc/systemd/system/
+sudo cp deploy/systemd/deasy-server-pull@.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now deasy-server-pull@qa.timer
+```
+
+Para `prod`:
+
+```bash
+sudo systemctl enable --now deasy-server-pull@prod.timer
+```
+
+### Ejecucion manual via systemd
+
+```bash
+sudo systemctl start deasy-server-pull@qa.service
+sudo systemctl status deasy-server-pull@qa.service
+```
+
+### Consideraciones
+
+- el `WorkingDirectory` del ejemplo esta en `/opt/deasy`
+- si tu ruta real es otra, debes ajustar la unidad
+- el host debe tener `git`, `docker` y `docker compose`
+- el repo del servidor debe tener acceso al remoto si vas a usar modo `git`
 
 ## 8. Diferencia entre dev, qa y prod
 
@@ -678,17 +893,47 @@ Lo que todavia debes hacer fuera del repo es:
 
 Tecnologicamente, la base ya esta implementada.
 
-Para considerarlo completamente operativo faltan estas acciones manuales:
+### Operativo hoy mismo
 
-1. crear `qa` y `prod` en `GitHub Environments`,
-2. cargar todos los `secrets`,
-3. verificar que el servidor remoto tenga:
+Sin cambios extra de infraestructura, hoy ya queda operativo:
+
+1. CI para `develop`, `qa` y `main`
+2. publicacion de imagenes a GHCR
+3. despliegue iniciado desde el servidor con:
+   - `scripts/server-pull-deploy.sh`
+   - `scripts/apply-env.sh`
+   - opcion de `systemd`
+4. validacion segura con `DEASY_DRY_RUN=1`
+
+### Pendiente de infraestructura futura
+
+Para habilitar completamente el modo `gh-actions` por SSH faltan estas acciones:
+
+1. crear `qa` y `prod` en `GitHub Environments`
+2. cargar todos los `secrets`
+3. definir `DEPLOY_DELIVERY_MODE=gh-actions`
+4. verificar que el servidor remoto tenga:
    - `docker`
    - `docker compose`
    - `rsync`
    - acceso SSH correcto
-4. probar un deploy real a `qa`,
-5. probar un deploy real a `prod` cuando corresponda.
+   - conectividad adecuada para ese modelo
+5. probar un deploy real a `qa`
+6. probar un deploy real a `prod` cuando corresponda
+
+### Tradeoff entre ambos modos
+
+`gh-actions`:
+
+- mas automatizado
+- mas comodo para promover cambios desde GitHub
+- depende de conectividad entrante y secretos completos
+
+`server-pull`:
+
+- mas simple para hosts cerrados o sin IP publica estatica
+- evita entrada SSH desde GitHub
+- exige que el propio servidor tenga acceso al repo y al registry
 
 ## 18. Como saber si todo esta bien
 

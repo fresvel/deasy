@@ -235,6 +235,73 @@ El flujo de CD queda asi:
 `qa` y `prod` ya no dependen de `build` local en Compose. Ahora consumen
 imagenes versionadas desde GHCR mediante variables de entorno por servicio.
 
+El job de deploy por SSH desde GitHub Actions queda condicionado por la variable
+de GitHub:
+
+- `DEPLOY_DELIVERY_MODE=gh-actions`
+
+Si esa variable no existe o tiene otro valor, el workflow mantiene CI y
+publicacion de imagenes, pero no intenta entrar al host remoto.
+
+## Estrategia dual de despliegue
+
+La estrategia operativa deja dos modos compatibles:
+
+- `gh-actions`: GitHub publica imagenes, entra por SSH al host y ejecuta el
+  despliegue remoto.
+- `server-pull`: el propio servidor actualiza codigo o artefactos y luego
+  ejecuta el despliegue localmente.
+
+La logica comun del stack queda centralizada en `scripts/apply-env.sh`.
+
+Wrappers actuales:
+
+- `scripts/deploy-env.sh`: compatibilidad para el flujo iniciado por GitHub
+  Actions.
+- `scripts/docker-env.sh`: interfaz comun para ejecutar compose por ambiente.
+
+Esta separacion evita duplicar logica de despliegue entre CI/CD y operacion
+manual o programada desde el servidor.
+
+## Modo server-pull
+
+Para hosts sin IP publica estatica, el servidor puede iniciar su propia
+actualizacion usando:
+
+- `scripts/server-pull-deploy.sh`
+- o unidades `systemd` basadas en `deploy/systemd/`
+
+Ejemplos manuales:
+
+```bash
+bash scripts/server-pull-deploy.sh qa git
+bash scripts/server-pull-deploy.sh prod git
+bash scripts/server-pull-deploy.sh qa skip-git sha-abc123
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh qa skip-git qa
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh prod skip-git prod
+```
+
+Reglas del modo `git`:
+
+- `qa` espera checkout en rama `qa`
+- `prod` espera checkout en rama `main`
+- falla si el repo tiene cambios locales
+- usa `git pull --ff-only` para evitar merges implicitos
+
+Base `systemd` incluida:
+
+- `deploy/systemd/deasy-server-pull@.service`
+- `deploy/systemd/deasy-server-pull@.timer`
+
+La ruta por SSH se conserva lista para reactivarse mas adelante definiendo
+`DEPLOY_DELIVERY_MODE=gh-actions`.
+
+Estado practico actual:
+
+- operativo hoy para CI y publicacion de imagenes
+- operativo hoy para despliegue `server-pull`
+- pendiente de infraestructura para despliegue `gh-actions` por SSH
+
 Secrets requeridos en GitHub Environments:
 
 - `DEPLOY_HOST`
