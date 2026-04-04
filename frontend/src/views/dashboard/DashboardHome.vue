@@ -1202,6 +1202,220 @@
       </template>
     </AdminModalShell>
 
+    <AppButton
+      v-if="processChatLauncherVisible"
+      variant="plain"
+      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 shadow-xl shadow-sky-900/15 transition hover:-translate-y-0.5 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70 sm:right-6"
+      aria-label="Abrir chat del proceso"
+      title="Abrir chat del proceso"
+      @click="openProcessChatLauncher"
+    >
+      <IconMessages class="h-6 w-6" />
+    </AppButton>
+
+    <div
+      v-if="showProcessChat"
+      class="fixed inset-0 z-[95] bg-slate-950/30 backdrop-blur-[2px]"
+      @click="closeProcessChatOverlay"
+    />
+
+    <aside
+      v-if="showProcessChat"
+      class="fixed inset-x-3 bottom-3 z-[100] flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(26rem,calc(100vw-3rem))]"
+      aria-label="Panel de chat"
+    >
+      <header class="border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-sky-600">
+              Chat
+            </p>
+            <h3 class="m-0 mt-1 truncate text-base font-bold text-slate-900">
+              {{ processChatView === 'conversation' ? (processChatThread?.title || 'Chat del proceso') : 'Bandeja de chats' }}
+            </h3>
+            <p class="m-0 mt-1 text-xs font-medium text-slate-500">
+              {{ processChatView === 'conversation' ? 'Seguimiento del proceso y sus entregables' : 'Modo actual: procesos' }}
+            </p>
+          </div>
+
+          <AppButton
+            variant="plain"
+            class-name="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Cerrar chat"
+            title="Cerrar chat"
+            @click="closeProcessChatOverlay"
+          >
+            <IconX class="h-5 w-5" />
+          </AppButton>
+        </div>
+
+        <div class="mt-4 flex items-center gap-2">
+          <AppButton
+            v-if="processChatView === 'conversation'"
+            variant="plain"
+            class-name="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+            @click="processChatView = 'inbox'"
+          >
+            <IconArrowLeft class="h-4 w-4" />
+            Volver
+          </AppButton>
+
+          <div class="grid flex-1 grid-cols-3 gap-2">
+            <button
+              type="button"
+              class="rounded-2xl border px-3 py-2 text-xs font-bold transition"
+              :class="processChatMode === 'processes' ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'"
+              @click="processChatMode = 'processes'"
+            >
+              Procesos
+            </button>
+            <button
+              type="button"
+              class="cursor-not-allowed rounded-2xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-400"
+              disabled
+            >
+              Grupos
+            </button>
+            <button
+              type="button"
+              class="cursor-not-allowed rounded-2xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-400"
+              disabled
+            >
+              Usuarios
+            </button>
+          </div>
+        </div>
+
+        <label class="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <IconSearch class="h-4 w-4 text-slate-400" />
+          <input
+            v-model="processChatSearch"
+            type="search"
+            class="w-full border-0 bg-transparent p-0 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
+            placeholder="Buscar conversación"
+          >
+        </label>
+      </header>
+
+      <div class="min-h-0 flex-1 bg-slate-50/70">
+        <div v-if="processChatLoading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
+          <div class="h-12 w-12 animate-pulse rounded-full border border-sky-100 bg-sky-50" />
+          <p class="m-0 text-sm font-semibold">Cargando chat del proceso...</p>
+        </div>
+
+        <div v-else-if="processChatError" class="m-4 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-700">
+          {{ processChatError }}
+        </div>
+
+        <div v-else-if="processChatView === 'inbox'" class="flex h-full flex-col">
+          <div class="px-4 pb-4 pt-4 sm:px-5">
+            <div v-if="filteredProcessChatThreadItems.length" class="flex flex-col gap-3">
+              <button
+                v-for="item in filteredProcessChatThreadItems"
+                :key="item.id"
+                type="button"
+                class="rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                @click="openProcessChatThreadItem(item)"
+              >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
+                      <p class="m-0 mt-1 text-xs font-medium text-slate-500">
+                        {{ item.scopeLabel }}
+                      </p>
+                    </div>
+                    <div class="shrink-0 text-right">
+                      <span class="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                        {{ item.lastMessageAtLabel }}
+                      </span>
+                      <span
+                        v-if="Number(item.unreadCount || 0) > 0"
+                        class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                      >
+                        {{ item.unreadCount }}
+                      </span>
+                    </div>
+                  </div>
+                <p class="m-0 mt-3 text-sm font-medium text-slate-600">
+                  {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
+                </p>
+              </button>
+            </div>
+
+            <div v-else class="rounded-[24px] border-2 border-dashed border-slate-200 bg-white px-5 py-10 text-center">
+              <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+                <IconInbox class="h-6 w-6" />
+              </div>
+              <p class="m-0 mt-4 text-sm font-bold text-slate-700">Sin conversaciones visibles</p>
+              <p class="m-0 mt-2 text-sm font-medium text-slate-500">
+                Ajusta la búsqueda o abre el chat desde un entregable del proceso.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="flex h-full min-h-0 flex-col">
+          <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+            <div v-if="processChatMessages.length" class="flex flex-col gap-3">
+              <article
+                v-for="message in processChatMessages"
+                :key="message.id"
+                class="max-w-[88%] rounded-[24px] px-4 py-3 shadow-sm"
+                :class="Number(message.sender_person_id) === Number(currentUserId)
+                  ? 'ml-auto bg-sky-700 text-white'
+                  : 'mr-auto border border-slate-200 bg-white text-slate-800'"
+              >
+                <p class="m-0 whitespace-pre-wrap break-words text-sm font-medium leading-6">
+                  {{ message.content || 'Adjunto sin texto' }}
+                </p>
+                <div
+                  class="mt-2 flex items-center gap-2 text-[11px] font-bold"
+                  :class="Number(message.sender_person_id) === Number(currentUserId) ? 'text-white/80' : 'text-slate-400'"
+                >
+                  <span>{{ Number(message.sender_person_id) === Number(currentUserId) ? 'Tú' : `Persona #${message.sender_person_id}` }}</span>
+                  <span>·</span>
+                  <span>{{ formatDateTime(message.created_at) }}</span>
+                </div>
+              </article>
+            </div>
+
+            <div v-else class="flex h-full flex-col items-center justify-center gap-3 text-center text-slate-500">
+              <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
+                <IconMessages class="h-6 w-6" />
+              </div>
+              <p class="m-0 text-sm font-bold text-slate-700">Aún no hay mensajes</p>
+              <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+                Este thread queda ligado al proceso y se mantiene entre periodos y versiones.
+              </p>
+            </div>
+          </div>
+
+          <footer class="border-t border-slate-200 bg-white px-4 py-4 sm:px-5">
+            <div class="flex items-end gap-3">
+              <textarea
+                ref="processChatComposerRef"
+                v-model="processChatDraft"
+                rows="1"
+                class="max-h-40 min-h-[52px] flex-1 resize-none rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                placeholder="Escribe un mensaje para el seguimiento del proceso"
+                @input="resizeProcessChatComposer"
+                @keydown.enter.exact.prevent="sendProcessChatMessage"
+              />
+              <AppButton
+                variant="primary"
+                size="sm"
+                class-name="h-[52px] shrink-0 rounded-[18px] px-4"
+                :disabled="processChatSubmitting || !String(processChatDraft || '').trim()"
+                @click="sendProcessChatMessage"
+              >
+                {{ processChatSubmitting ? 'Enviando...' : 'Enviar' }}
+              </AppButton>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </aside>
+
   </div>
 </template>
 
@@ -1238,7 +1452,12 @@ import {
   IconSignature,
   IconUpload,
   IconArrowRight,
-  IconBuildingMonument
+  IconArrowLeft,
+  IconBuildingMonument,
+  IconInbox,
+  IconMessages,
+  IconSearch,
+  IconX
 } from '@tabler/icons-vue';
 
 const router = useRouter();
@@ -1279,6 +1498,22 @@ const selectedProcessPanel = ref(null);
 const processPanelLoading = ref(false);
 const processPanelError = ref('');
 const processActionMessage = ref(null);
+const showProcessChat = ref(false);
+const processChatLoading = ref(false);
+const processChatSubmitting = ref(false);
+const processChatError = ref('');
+const processChatMode = ref('processes');
+const processChatSearch = ref('');
+const processChatView = ref('inbox');
+const processChatThread = ref(null);
+const processChatMessages = ref([]);
+const processChatDraft = ref('');
+const processChatContext = ref({
+  processId: null,
+  scopeUnitId: null,
+  definitionId: null
+});
+const processChatComposerRef = ref(null);
 const showTaskLaunchModal = ref(false);
 const taskLaunchSubmitting = ref(false);
 const taskLaunchError = ref('');
@@ -1329,6 +1564,7 @@ let fillWorkflowModalInstance = null;
 let deliverableUploadModalInstance = null;
 let deliverableOperationModalInstance = null;
 let deliverablePreviewModalInstance = null;
+let processChatPollTimer = null;
 const taskLaunchForm = ref({
   description: '',
   term_id: '',
@@ -1536,11 +1772,47 @@ const clearSelectedProcess = () => {
   selectedProcessPanel.value = null;
   processPanelError.value = '';
   processActionMessage.value = null;
+  resetProcessChatState();
   showTaskLaunchModal.value = false;
   resetTaskLaunchForm();
 };
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
+
+const selectedProcessChatContext = computed(() => selectedProcessPanel.value?.definition?.chat_context || null);
+
+const processChatLauncherVisible = computed(() => {
+  return Boolean(
+    selectedProcessPanel.value
+    && selectedProcessChatContext.value?.process_id
+  );
+});
+
+const processChatThreadItems = computed(() => {
+  if (!processChatThread.value) return [];
+  return [{
+    id: processChatThread.value.id,
+    title: processChatThread.value.title || 'Chat del proceso',
+    summary: processChatThread.value.mobile_summary || '',
+    unreadCount: Number(processChatThread.value.unread_count || 0),
+    scopeLabel: processChatThread.value.scope?.scope_unit_id
+      ? `Unidad #${processChatThread.value.scope.scope_unit_id}`
+      : 'Ambito operativo resuelto',
+    lastMessageAtLabel: processChatThread.value.last_message_at ? formatDateTime(processChatThread.value.last_message_at) : 'Nuevo',
+  }];
+});
+
+const filteredProcessChatThreadItems = computed(() => {
+  const normalizedSearch = String(processChatSearch.value || '').trim().toLowerCase();
+  if (!normalizedSearch) {
+    return processChatThreadItems.value;
+  }
+  return processChatThreadItems.value.filter((item) => {
+    return [item.title, item.summary, item.scopeLabel]
+      .map((value) => String(value || '').toLowerCase())
+      .some((value) => value.includes(normalizedSearch));
+  });
+});
 
 const canSubmitTaskLaunch = computed(() => {
   if (!selectedProcessPanel.value?.permissions?.can_launch_manual || taskLaunchSubmitting.value) {
@@ -1661,6 +1933,7 @@ const loadSelectedProcessPanel = async (process) => {
 };
 
 const handleProcessSelect = async (process) => {
+  resetProcessChatState();
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
   if (window.innerWidth < 1024) {
@@ -1901,8 +2174,21 @@ const getDeliverableSubject = (payload = {}) => {
   const preloadPdfPath = canPreviewInline(workingFilePath) ? workingFilePath : '';
   return {
     itemId: payload?.id || documentPayload?.task_item_id || null,
+    taskId: payload?.task_id || documentPayload?.task_id || null,
     documentId: documentPayload?.document_id || null,
     documentVersionId: documentPayload?.document_version_id || null,
+    processId:
+      payload?.process_id
+      || payload?.workflow?.process_id
+      || selectedProcessPanel.value?.definition?.chat_context?.process_id
+      || selectedProcessPanel.value?.definition?.process_id
+      || null,
+    scopeUnitId:
+      payload?.scope_unit_id
+      || documentPayload?.scope_unit_id
+      || payload?.scopeUnitId
+      || documentPayload?.scopeUnitId
+      || null,
     title: payload?.template_artifact_name || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
     actions: payload?.actions || documentPayload?.actions || {},
     workflow: payload?.workflow || documentPayload?.workflow || {},
@@ -1912,6 +2198,235 @@ const getDeliverableSubject = (payload = {}) => {
     preloadPdfPath
   };
 };
+
+const resolvePreferredScopeUnitId = (payload = null) => {
+  const subject = getDeliverableSubject(payload || {});
+  if (subject.scopeUnitId) {
+    return Number(subject.scopeUnitId);
+  }
+  const scopeIds = Array.isArray(selectedProcessChatContext.value?.accessible_scope_unit_ids)
+    ? selectedProcessChatContext.value.accessible_scope_unit_ids
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    : [];
+  if (scopeIds.length === 1) {
+    return scopeIds[0];
+  }
+  return null;
+};
+
+const resetProcessChatState = () => {
+  if (processChatPollTimer) {
+    window.clearInterval(processChatPollTimer);
+    processChatPollTimer = null;
+  }
+  showProcessChat.value = false;
+  processChatLoading.value = false;
+  processChatSubmitting.value = false;
+  processChatError.value = '';
+  processChatSearch.value = '';
+  processChatView.value = 'inbox';
+  processChatThread.value = null;
+  processChatMessages.value = [];
+  processChatDraft.value = '';
+  processChatContext.value = {
+    processId: null,
+    scopeUnitId: null,
+    definitionId: null
+  };
+};
+
+const closeProcessChatOverlay = () => {
+  if (processChatPollTimer) {
+    window.clearInterval(processChatPollTimer);
+    processChatPollTimer = null;
+  }
+  showProcessChat.value = false;
+  processChatError.value = '';
+  processChatSearch.value = '';
+  processChatView.value = 'inbox';
+  processChatDraft.value = '';
+};
+
+const resizeProcessChatComposer = async () => {
+  await nextTick();
+  const element = processChatComposerRef.value;
+  if (!element) return;
+  element.style.height = 'auto';
+  element.style.height = `${Math.min(element.scrollHeight, 160)}px`;
+};
+
+const loadProcessChatMessages = async (conversationId) => {
+  const response = await processPanelService.getConversationMessages(conversationId, { limit: 50 });
+  processChatMessages.value = Array.isArray(response?.data) ? response.data : [];
+};
+
+const markProcessChatConversationRead = async (conversationId) => {
+  if (!conversationId) return;
+  try {
+    await processPanelService.markConversationRead(conversationId);
+    if (processChatThread.value?.id === conversationId) {
+      processChatThread.value = {
+        ...processChatThread.value,
+        unread_count: 0
+      };
+    }
+  } catch (error) {
+    console.error('No se pudo marcar el chat como leído:', error);
+  }
+};
+
+const startProcessChatPolling = () => {
+  if (!showProcessChat.value || processChatView.value !== 'conversation' || !processChatThread.value?.id) {
+    return;
+  }
+  if (processChatPollTimer) {
+    window.clearInterval(processChatPollTimer);
+  }
+  processChatPollTimer = window.setInterval(async () => {
+    if (processChatLoading.value || processChatSubmitting.value || !processChatThread.value?.id) {
+      return;
+    }
+    try {
+      await loadProcessChatMessages(processChatThread.value.id);
+      await markProcessChatConversationRead(processChatThread.value.id);
+    } catch (error) {
+      console.error('No se pudo refrescar el chat del proceso:', error);
+    }
+  }, 12000);
+};
+
+const openResolvedProcessChat = async ({ processId, scopeUnitId = null, openConversation = false } = {}) => {
+  if (!processId) {
+    setProcessActionInfo('No se pudo resolver el proceso asociado al chat.', 'error');
+    return;
+  }
+
+  showProcessChat.value = true;
+  processChatLoading.value = true;
+  processChatError.value = '';
+  processChatMode.value = 'processes';
+
+  try {
+    const response = await processPanelService.createOrGetProcessThread(processId, scopeUnitId);
+    const thread = response?.data || null;
+    processChatThread.value = thread;
+    processChatContext.value = {
+      processId: Number(processId),
+      scopeUnitId: Number(response?.meta?.scope_unit_id || scopeUnitId || thread?.scope?.scope_unit_id || 0) || null,
+      definitionId: Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value || 0) || null
+    };
+    if (thread?.id) {
+      await loadProcessChatMessages(thread.id);
+      if (openConversation) {
+        await markProcessChatConversationRead(thread.id);
+      }
+    } else {
+      processChatMessages.value = [];
+    }
+    processChatView.value = openConversation ? 'conversation' : 'inbox';
+  } catch (error) {
+    const responseMessage = error?.response?.data?.message || error?.message || 'No se pudo abrir el chat del proceso.';
+    processChatError.value = responseMessage;
+    processChatMessages.value = [];
+    processChatThread.value = null;
+    processChatView.value = 'inbox';
+    if (error?.response?.status === 409) {
+      setProcessActionInfo(
+        'Este proceso tiene más de un ámbito operativo. Abre el chat desde un entregable de la unidad correcta mientras se agrega el selector de ámbito.',
+        'error'
+      );
+      return;
+    }
+    setProcessActionInfo(responseMessage, 'error');
+  } finally {
+    processChatLoading.value = false;
+  }
+};
+
+const openProcessChatLauncher = async () => {
+  const processId = Number(selectedProcessChatContext.value?.process_id || 0);
+  const scopeUnitId = resolvePreferredScopeUnitId();
+  await openResolvedProcessChat({
+    processId,
+    scopeUnitId,
+    openConversation: false
+  });
+};
+
+const openProcessChatFromPayload = async (payload) => {
+  const subject = getDeliverableSubject(payload);
+  await openResolvedProcessChat({
+    processId: Number(subject.processId || 0),
+    scopeUnitId: resolvePreferredScopeUnitId(payload),
+    openConversation: true
+  });
+};
+
+const openProcessChatThreadItem = async (item) => {
+  if (!item?.id) return;
+  processChatLoading.value = true;
+  processChatError.value = '';
+  try {
+    await loadProcessChatMessages(item.id);
+    await markProcessChatConversationRead(item.id);
+    processChatView.value = 'conversation';
+  } catch (error) {
+    processChatError.value = error?.response?.data?.message || error?.message || 'No se pudieron cargar los mensajes del chat.';
+  } finally {
+    processChatLoading.value = false;
+  }
+};
+
+const sendProcessChatMessage = async () => {
+  if (!processChatThread.value?.id || !String(processChatDraft.value || '').trim() || processChatSubmitting.value) {
+    return;
+  }
+
+  processChatSubmitting.value = true;
+  processChatError.value = '';
+  try {
+    await processPanelService.sendConversationMessage(processChatThread.value.id, {
+      content: String(processChatDraft.value || '').trim()
+    });
+    processChatDraft.value = '';
+    await loadProcessChatMessages(processChatThread.value.id);
+    await markProcessChatConversationRead(processChatThread.value.id);
+    const refreshedThread = await processPanelService.getProcessThread(
+      processChatContext.value.processId,
+      processChatContext.value.scopeUnitId
+    );
+    processChatThread.value = refreshedThread?.data || processChatThread.value;
+  } catch (error) {
+    processChatError.value = error?.response?.data?.message || error?.message || 'No se pudo enviar el mensaje.';
+  } finally {
+    processChatSubmitting.value = false;
+  }
+};
+
+watch(
+  () => [showProcessChat.value, processChatView.value, processChatDraft.value],
+  () => {
+    if (processChatView.value === 'conversation') {
+      resizeProcessChatComposer();
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => [showProcessChat.value, processChatView.value, processChatThread.value?.id],
+  () => {
+    if (processChatPollTimer) {
+      window.clearInterval(processChatPollTimer);
+      processChatPollTimer = null;
+    }
+    if (showProcessChat.value && processChatView.value === 'conversation' && processChatThread.value?.id) {
+      startProcessChatPolling();
+    }
+  },
+  { immediate: true }
+);
 
 const getFileNameFromPath = (filePath = '') => filePath.split('/').pop() || 'archivo';
 
@@ -2295,6 +2810,10 @@ const handleDeliverableFutureAction = (action, payload) => {
   }
   if (action === 'review_signature_flow') {
     openSignatureFlowModal(payload);
+    return;
+  }
+  if (action === 'process_chat') {
+    openProcessChatFromPayload(payload);
     return;
   }
   const actionLabels = {

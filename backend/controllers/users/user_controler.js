@@ -1047,7 +1047,17 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       rules_count: rules.length,
       matching_rules_count: matchingRules.length,
       templates_count: templates.length,
-      triggers_count: triggers.length
+      triggers_count: triggers.length,
+      chat_context: {
+        process_id: Number(definition.process_id),
+        accessible_scope_unit_ids: Array.from(
+          new Set(
+            taskItems
+              .map((item) => Number(item.scope_unit_id || 0))
+              .filter((value) => Number.isFinite(value) && value > 0)
+          )
+        )
+      }
     },
     summary: {
       tasks_total: enrichedTasks.length,

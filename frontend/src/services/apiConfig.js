@@ -32,6 +32,9 @@ export const API_ROUTES = {
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/template-download`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_FILE: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/file`,
+  CHAT_PROCESS_THREAD: (processId) => `${API_PREFIX}/chat/processes/${processId}/thread`,
+  CHAT_CONVERSATION_MESSAGES: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/messages`,
+  CHAT_CONVERSATION_READ: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/read`,
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,

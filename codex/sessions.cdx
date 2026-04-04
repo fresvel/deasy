@@ -4,3 +4,5 @@ saneamiento: "run codex resume 019d4b1e-ece8-7753-bac5-5e90c4c46bd1"
 arborl: "codex resume 019d3b5a-9122-7ca0-aec3-231588a7fe33"
 entornos_ci_cd: "codex resume 019d5075-fc4b-7691-92b8-524d8ad545d2"
 flujo_firmas: "codex resume 019d5189-4109-70a3-ab51-6460981d8ce2"
+
+sistema_chat: "codex resume 019d5917-7c29-7c40-914b-53fc67915a12"

@@ -160,6 +160,80 @@ class ProcessDefinitionPanelService {
     );
     return response.data;
   }
+
+  async getProcessThread(processId, scopeUnitId = null) {
+    if (!processId) {
+      throw new Error("Se requiere processId.");
+    }
+    const { data } = await axios.get(API_ROUTES.CHAT_PROCESS_THREAD(processId), {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      params: scopeUnitId ? { scope_unit_id: scopeUnitId } : undefined
+    });
+    return data;
+  }
+
+  async createOrGetProcessThread(processId, scopeUnitId = null) {
+    if (!processId) {
+      throw new Error("Se requiere processId.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.CHAT_PROCESS_THREAD(processId),
+      scopeUnitId ? { scope_unit_id: scopeUnitId } : {},
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return data;
+  }
+
+  async getConversationMessages(conversationId, params = {}) {
+    if (!conversationId) {
+      throw new Error("Se requiere conversationId.");
+    }
+    const { data } = await axios.get(API_ROUTES.CHAT_CONVERSATION_MESSAGES(conversationId), {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      params,
+    });
+    return data;
+  }
+
+  async sendConversationMessage(conversationId, payload = {}) {
+    if (!conversationId) {
+      throw new Error("Se requiere conversationId.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.CHAT_CONVERSATION_MESSAGES(conversationId),
+      payload,
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return data;
+  }
+
+  async markConversationRead(conversationId) {
+    if (!conversationId) {
+      throw new Error("Se requiere conversationId.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.CHAT_CONVERSATION_READ(conversationId),
+      {},
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return data;
+  }
 }
 
 export default ProcessDefinitionPanelService;
