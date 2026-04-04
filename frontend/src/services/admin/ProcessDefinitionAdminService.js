@@ -47,7 +47,7 @@ export class ProcessDefinitionAdminService {
   createArtifactForm() {
     return {
       template_artifact_id: "",
-      usage_role: "manual_fill",
+      usage_role: "primary",
       creates_task: "1",
       is_required: "1",
       sort_order: "1"
@@ -138,7 +138,7 @@ export class ProcessDefinitionAdminService {
     return {
       process_definition_id: Number(definitionId),
       template_artifact_id: Number(form.template_artifact_id),
-      usage_role: form.usage_role || "manual_fill",
+      usage_role: form.usage_role || "primary",
       creates_task: Number(form.creates_task) === 1 ? 1 : 0,
       is_required: Number(form.is_required) === 1 ? 1 : 0,
       sort_order: Number(form.sort_order || 1) || 1

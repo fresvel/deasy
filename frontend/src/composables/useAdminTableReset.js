@@ -122,7 +122,6 @@ export function useAdminTableReset({
         status: ""
       };
       processTargetRuleInlineFilters.value = {
-        definition_execution_mode: "",
         definition_status: ""
       };
       templateArtifactInlineFilters.value = {

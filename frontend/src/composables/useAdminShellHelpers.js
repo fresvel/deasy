@@ -123,8 +123,7 @@ export function useAdminShellHelpers({
       ...fkFiltersRef.value,
       process_id: "",
       variation_key: "",
-      status: "active",
-      execution_mode: ""
+      status: "active"
     };
     await fetchFkRowsRef();
   };

@@ -31,7 +31,6 @@ export function useAdminShellSearchActions({
 
   const clearProcessTargetRuleInlineFilters = async () => {
     processTargetRuleInlineFilters.value = {
-      definition_execution_mode: "",
       definition_status: ""
     };
     await fetchRows();

@@ -68,64 +68,53 @@ systemctl --version
 
 ## 4. Donde debe vivir el proyecto
 
-En la documentacion y ejemplos se asume:
+Segun tu decision, la base sera:
 
 ```text
-/opt/deasy
+/srv
 ```
 
-Puedes usar otra ruta, pero si cambias esto debes ajustar:
+Y la recomendacion concreta para este caso es:
 
-- los comandos manuales,
-- el `WorkingDirectory` del archivo `.service`,
-- la ruta del `ExecStart`.
+```text
+/srv/deasy-qa
+/srv/deasy-prod
+```
+
+Eso deja un checkout separado por ambiente.
 
 ## 5. Como clonar el repositorio en el servidor
 
-### Opcion recomendada: un checkout por ambiente
+En tu caso ya esta definida la estrategia recomendada:
 
-Lo mas limpio es tener un checkout separado por ambiente.
-
-Ejemplo:
-
-```text
-/opt/deasy-qa
-/opt/deasy-prod
-```
+- un checkout para `qa`
+- un checkout para `prod`
 
 Ventajas:
 
-- `qa` y `prod` no comparten rama en el mismo checkout,
-- se evita estar cambiando de rama,
-- reduce errores operativos.
-
-### Opcion minima: un solo checkout
-
-Tambien puedes usar un unico checkout, pero en ese caso:
-
-- para `qa` debes estar parado en rama `qa`
-- para `prod` debes estar parado en rama `main`
-
-Eso es mas delicado.
+- `qa` y `prod` no comparten rama en el mismo checkout
+- se evita estar cambiando de rama
+- reduce errores operativos
+- encaja mejor con operacion manual y con `systemd`
 
 ### Clonado ejemplo
 
 Para `qa`:
 
 ```bash
-sudo mkdir -p /opt
-cd /opt
+sudo mkdir -p /srv
+cd /srv
 sudo git clone git@github.com:fresvel/deasy.git deasy-qa
-cd /opt/deasy-qa
+cd /srv/deasy-qa
 sudo git checkout qa
 ```
 
 Para `prod`:
 
 ```bash
-cd /opt
+cd /srv
 sudo git clone git@github.com:fresvel/deasy.git deasy-prod
-cd /opt/deasy-prod
+cd /srv/deasy-prod
 sudo git checkout main
 ```
 
@@ -133,11 +122,9 @@ sudo git checkout main
 
 El servidor necesita poder leer el repo.
 
-Tienes dos opciones:
+En tu caso se usara:
 
-### Opcion A. SSH deploy key
-
-Es la mas recomendada para servidores.
+### SSH deploy key
 
 Pasos:
 
@@ -159,12 +146,6 @@ La publica normalmente quedara en:
 
 Luego debes registrar esa clave publica en GitHub.
 
-### Opcion B. HTTPS con token
-
-Es posible, pero menos comodo para automatizacion local.
-
-Si usas esta ruta, tendras que resolver almacenamiento seguro del token.
-
 ## 7. Como dar acceso del servidor a GHCR
 
 El servidor no construye las imagenes de `qa` y `prod`.
@@ -176,6 +157,12 @@ Por eso debe poder hacer login a:
 ```text
 ghcr.io
 ```
+
+Importante para tu caso actual:
+
+- ahora mismo indicaste que el servidor todavia no tiene esta configuracion
+- por tanto esta parte sigue pendiente
+- sin esto no podra hacer `docker pull` de las imagenes publicadas
 
 ### Login manual
 
@@ -224,13 +211,13 @@ El script `apply-env.sh` detecta esos archivos automaticamente.
 Si tu checkout es:
 
 ```text
-/opt/deasy-qa
+/srv/deasy-qa
 ```
 
 Entonces el archivo seria:
 
 ```text
-/opt/deasy-qa/docker/.env.qa.runtime
+/srv/deasy-qa/docker/.env.qa.runtime
 ```
 
 ### Que debe contener
@@ -276,26 +263,26 @@ Sirve cuando:
 
 ### QA manual
 
-Si usas un checkout dedicado en `/opt/deasy-qa`:
+Tu ruta objetivo para `qa`:
 
 ```bash
-cd /opt/deasy-qa
+cd /srv/deasy-qa
 bash scripts/server-pull-deploy.sh qa git
 ```
 
 ### PROD manual
 
-Si usas un checkout dedicado en `/opt/deasy-prod`:
+Tu ruta objetivo para `prod`:
 
 ```bash
-cd /opt/deasy-prod
+cd /srv/deasy-prod
 bash scripts/server-pull-deploy.sh prod git
 ```
 
 ### Desplegar un tag especifico
 
 ```bash
-cd /opt/deasy-qa
+cd /srv/deasy-qa
 bash scripts/server-pull-deploy.sh qa skip-git sha-abc123
 ```
 
@@ -304,14 +291,14 @@ bash scripts/server-pull-deploy.sh qa skip-git sha-abc123
 Puedes validar el flujo con:
 
 ```bash
-cd /opt/deasy-qa
+cd /srv/deasy-qa
 DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh qa skip-git qa
 ```
 
 Y para `prod`:
 
 ```bash
-cd /opt/deasy-prod
+cd /srv/deasy-prod
 DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh prod skip-git prod
 ```
 
@@ -326,20 +313,17 @@ El repo ya incluye estos templates:
 
 ### Importante sobre la ruta
 
-El template incluido asume:
+El template generico incluido en el repo asume `/opt/deasy`, pero en tu caso no
+debes usar esa ruta.
+
+Tu caso real es:
 
 ```text
-/opt/deasy
+/srv/deasy-qa
+/srv/deasy-prod
 ```
 
-Si vas a usar:
-
-```text
-/opt/deasy-qa
-/opt/deasy-prod
-```
-
-entonces debes ajustar el archivo `.service` o crear una variante para cada
+Por eso lo correcto para ti es crear unidades finales especificas para cada
 checkout.
 
 ## 13. Opcion recomendada de systemd: una unidad por checkout
@@ -365,8 +349,8 @@ After=network-online.target docker.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/deasy-qa
-ExecStart=/bin/bash /opt/deasy-qa/scripts/server-pull-deploy.sh qa git
+WorkingDirectory=/srv/deasy-qa
+ExecStart=/bin/bash /srv/deasy-qa/scripts/server-pull-deploy.sh qa git
 TimeoutStartSec=1800
 ```
 
@@ -408,8 +392,8 @@ After=network-online.target docker.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/deasy-prod
-ExecStart=/bin/bash /opt/deasy-prod/scripts/server-pull-deploy.sh prod git
+WorkingDirectory=/srv/deasy-prod
+ExecStart=/bin/bash /srv/deasy-prod/scripts/server-pull-deploy.sh prod git
 TimeoutStartSec=1800
 ```
 
@@ -507,24 +491,35 @@ Dado que ahora no tienes IP publica estatica, el flujo recomendado es:
 
 ### En el servidor
 
+- crear `/srv/deasy-qa`
+- crear `/srv/deasy-prod`
 - instalar `git`
 - instalar `docker`
 - instalar `docker compose`
-- clonar el repo
-- decidir si usaras un checkout por ambiente
-- configurar acceso SSH o HTTPS al repo
+- verificar salida a internet del servidor
+- clonar el repo en ambos checkouts
+- configurar acceso SSH al repo
 - configurar login a `ghcr.io`
-- crear `docker/.env.qa.runtime`
-- crear `docker/.env.prod.runtime`
+- crear `/srv/deasy-qa/docker/.env.qa.runtime`
+- crear `/srv/deasy-prod/docker/.env.prod.runtime`
 - probar `DEASY_DRY_RUN=1`
 - probar despliegue manual real
-- opcionalmente habilitar `systemd`
+- habilitar `systemd` para `qa`
+- habilitar `systemd` para `prod`
 
 ### En GitHub
 
 - mantener el workflow activo
 - no definir `DEPLOY_DELIVERY_MODE=gh-actions` por ahora
 - opcionalmente revisar visibilidad y permisos de paquetes GHCR
+
+No necesitas en este momento:
+
+- `DEPLOY_HOST`
+- `DEPLOY_USER`
+- `DEPLOY_SSH_KEY`
+- `DEPLOY_PATH`
+- `RUNTIME_ENV_FILE`
 
 ## 18. Resumen corto
 
@@ -542,3 +537,35 @@ GitHub, en este modo, puede limitarse a:
 - validar,
 - construir,
 - y publicar imagenes.
+
+## 19. Ruta exacta recomendada para ti
+
+### QA
+
+```text
+/srv/deasy-qa
+```
+
+- rama local: `qa`
+- runtime file: `/srv/deasy-qa/docker/.env.qa.runtime`
+- comando manual:
+
+```bash
+cd /srv/deasy-qa
+bash scripts/server-pull-deploy.sh qa git
+```
+
+### PROD
+
+```text
+/srv/deasy-prod
+```
+
+- rama local: `main`
+- runtime file: `/srv/deasy-prod/docker/.env.prod.runtime`
+- comando manual:
+
+```bash
+cd /srv/deasy-prod
+bash scripts/server-pull-deploy.sh prod git
+```

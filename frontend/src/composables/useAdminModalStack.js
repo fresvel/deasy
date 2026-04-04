@@ -1,5 +1,11 @@
 export function useAdminModalStack() {
   const modalOriginStack = [];
+  const blurActiveElement = () => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.activeElement?.blur?.();
+  };
 
   const pushModalOrigin = (origin) => {
     if (!origin) {
@@ -47,8 +53,9 @@ export function useAdminModalStack() {
     if (!instance || !isModalShown(target)) {
       return false;
     }
-    instance.hide();
     pushModalOrigin(origin);
+    blurActiveElement();
+    instance.hide();
     return true;
   };
 

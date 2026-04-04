@@ -70,22 +70,6 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Modo" label-class="text-slate-700" group-class="md:col-span-2">
-          <AdminSelectField
-            :model-value="fkFilters.execution_mode"
-            @update:model-value="updateFilter('execution_mode', $event)"
-            @change="$emit('process-definition-filter-change')"
-          >
-            <option value="">Todos</option>
-            <option
-              v-for="option in getFkTableFieldOptions('execution_mode')"
-              :key="option"
-              :value="option"
-            >
-              {{ formatSelectOptionLabel(getFkTableField('execution_mode'), option) }}
-            </option>
-          </AdminSelectField>
-        </AdminFieldGroup>
         <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
           <AdminButton
             variant="secondary"

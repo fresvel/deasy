@@ -51,7 +51,6 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
-       pdv.execution_mode,
        tar.artifact_origin,
        COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
@@ -77,12 +76,12 @@ const shouldInferSignatureFlowForContext = (context) => {
     return false;
   }
 
-  const usageRole = String(context.template_usage_role || "manual_fill");
+  const usageRole = String(context.template_usage_role || "primary");
   if (usageRole === "attachment" || usageRole === "support") {
     return false;
   }
 
-  return String(context.artifact_origin || "") === "system";
+  return String(context.artifact_origin || "") === "process";
 };
 
 const getActiveSignatureFlowTemplateForDefinitionTemplate = async (

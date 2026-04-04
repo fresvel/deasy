@@ -215,7 +215,6 @@ const getDefinitionContext = async (pool, definitionId) => {
        pdv.name,
        pdv.description,
        pdv.has_document,
-       pdv.execution_mode,
        pdv.status,
        pdv.effective_from,
        pdv.effective_to,
@@ -376,7 +375,7 @@ const getUserOwnedTemplateArtifacts = async (pool, userId) => {
        created_at
      FROM template_artifacts
      WHERE owner_person_id = ?
-       AND artifact_origin = 'user'
+       AND artifact_origin = 'general'
        AND is_active = 1
      ORDER BY created_at DESC, id DESC
      LIMIT 12`,
@@ -936,7 +935,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       };
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
       const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
-      const canUploadDeliverable = ["manual_fill", "attachment"].includes(String(item.template_usage_role || ""));
+      const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
       return {
         document_id: item.document_id,
         task_id: item.task_id,
@@ -995,7 +994,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
         : { status: null, current_step_order: null, steps: [] };
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
       const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
-      const canUploadDeliverable = ["manual_fill", "attachment"].includes(String(item.template_usage_role || ""));
+      const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
       const actions = relatedDocument?.actions || {
         can_upload_deliverable: canUploadDeliverable,
         can_download_template: Boolean(item.template_artifact_id),
@@ -1761,7 +1760,7 @@ export const uploadDeliverablePdf = async (req, res) => {
     }
 
     const normalizedRole = String(target.template_usage_role || "").trim().toLowerCase();
-    if (!["manual_fill", "attachment"].includes(normalizedRole)) {
+    if (!["primary", "attachment"].includes(normalizedRole)) {
       return res.status(400).json({
         message: "Este entregable no requiere carga manual de archivos."
       });

@@ -76,7 +76,6 @@ export const SQL_TABLES = [
       { name: "parent_id", label: "Proceso padre", type: "number" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "active_definition_version", label: "Definicion activa", type: "text", readOnly: true, virtual: true },
-      { name: "active_execution_mode", label: "Modo activo", type: "text", readOnly: true, virtual: true },
       { name: "active_definition_status", label: "Estado definicion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
@@ -96,13 +95,6 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
-      {
-        name: "execution_mode",
-        label: "Modo",
-        type: "select",
-        options: ["manual", "system", "hybrid"],
-        defaultValue: "manual"
-      },
       {
         name: "status",
         label: "Estado",
@@ -314,10 +306,10 @@ export const SQL_TABLES = [
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
         name: "template_usage_role",
-        label: "Uso",
+        label: "Rol",
         type: "select",
-        options: ["system_render", "manual_fill", "attachment", "support"],
-        defaultValue: "manual_fill"
+        options: ["primary", "attachment", "support"],
+        defaultValue: "primary"
       },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
@@ -390,10 +382,10 @@ export const SQL_TABLES = [
       { name: "storage_version", label: "Version storage", type: "text", required: true },
       {
         name: "artifact_origin",
-        label: "Origen",
+        label: "Catalogo",
         type: "select",
-        options: ["system", "user"],
-        defaultValue: "system"
+        options: ["process", "general"],
+        defaultValue: "process"
       },
       {
         name: "artifact_stage",
@@ -425,10 +417,10 @@ export const SQL_TABLES = [
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
         name: "usage_role",
-        label: "Uso",
+        label: "Rol",
         type: "select",
-        options: ["system_render", "manual_fill", "attachment", "support"],
-        defaultValue: "manual_fill"
+        options: ["primary", "attachment", "support"],
+        defaultValue: "primary"
       },
       { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
       { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },

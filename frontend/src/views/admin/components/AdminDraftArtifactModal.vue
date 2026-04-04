@@ -2,7 +2,7 @@
   <AdminModalShell
     ref="modalRef"
     labelled-by="draftArtifactModalLabel"
-    :title="draftArtifactEditId ? 'Editar paquete de usuario' : 'Crear paquete de usuario'"
+    :title="draftArtifactEditId ? 'Editar artifact general' : 'Crear artifact general'"
     size="xl"
     dialog-class="max-w-7xl"
     content-class="border-0 shadow"
@@ -11,7 +11,7 @@
   >
     <div v-if="draftArtifactError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ draftArtifactError }}</div>
     <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-      Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} el paquete de usuario y lo sube directamente a <strong>MinIO</strong>. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
+      Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} el artifact general y lo sube directamente a <strong>MinIO</strong>. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
     </div>
     <div v-if="draftArtifactLoading" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.

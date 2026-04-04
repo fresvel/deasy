@@ -750,7 +750,6 @@ const processDefinitionInlineFilters = ref({
   status: ""
 });
 const processTargetRuleInlineFilters = ref({
-  definition_execution_mode: "",
   definition_status: ""
 });
 const templateArtifactInlineFilters = ref({
@@ -852,7 +851,7 @@ const definitionArtifactsError = ref("");
 const definitionArtifactsEditId = ref("");
 const definitionArtifactsForm = ref({
   template_artifact_id: "",
-  usage_role: "manual_fill",
+  usage_role: "primary",
   creates_task: "1",
   is_required: "1",
   sort_order: "1"
@@ -1170,7 +1169,7 @@ const fkListExtraFields = computed(() => {
   }
   if (fkTable.value.table === "process_definition_versions") {
     return fkTable.value.fields.filter((field) =>
-      ["variation_key", "definition_version", "name", "description", "status", "execution_mode"].includes(field.name)
+      ["variation_key", "definition_version", "name", "description", "status"].includes(field.name)
     );
   }
   if (fkTable.value.table === "units") {
@@ -1229,7 +1228,6 @@ const hasFkProcessDefinitionFilters = computed(() =>
   Boolean(
     fkFilters.value.process_id
     || fkFilters.value.variation_key?.trim()
-    || fkFilters.value.execution_mode
   )
 );
 const hasFkTemplateArtifactFilters = computed(() =>
@@ -1252,14 +1250,28 @@ const isPositionFilterTable = computed(() =>
   isUnitPositionsTable.value || isPositionAssignmentsTable.value
 );
 const isProcessTargetRuleFilterTable = computed(() => props.table?.table === "process_target_rules");
+const isDraftDefinitionStatus = (...candidates) =>
+  candidates.some((value) => String(value || "").trim().toLowerCase() === "draft");
 const canManageDefinitionArtifacts = computed(() =>
-  String(definitionArtifactsContext.value?.status || "") === "draft"
+  isDraftDefinitionStatus(
+    definitionArtifactsContext.value?.status,
+    selectedRow.value?.status,
+    formData.value?.status
+  )
 );
 const canManageDefinitionRules = computed(() =>
-  String(definitionRulesContext.value?.status || "") === "draft"
+  isDraftDefinitionStatus(
+    definitionRulesContext.value?.status,
+    selectedRow.value?.status,
+    formData.value?.status
+  )
 );
 const canManageDefinitionTriggers = computed(() =>
-  String(definitionTriggersContext.value?.status || "") === "draft"
+  isDraftDefinitionStatus(
+    definitionTriggersContext.value?.status,
+    selectedRow.value?.status,
+    formData.value?.status
+  )
 );
 const canSubmitDefinitionArtifact = computed(() =>
   canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.template_artifact_id)
@@ -1370,8 +1382,7 @@ const hasProcessDefinitionInlineFilters = computed(() =>
 );
 const hasProcessTargetRuleInlineFilters = computed(() =>
   Boolean(
-    processTargetRuleInlineFilters.value.definition_execution_mode
-    || processTargetRuleInlineFilters.value.definition_status
+    processTargetRuleInlineFilters.value.definition_status
   )
 );
 const hasTemplateArtifactInlineFilters = computed(() =>
@@ -1621,6 +1632,7 @@ const {
   processDefinitionActivationHasRequiredArtifacts,
   processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
+  processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
@@ -1834,8 +1846,7 @@ const clearFkProcessDefinitionFilters = async () => {
     ...fkFilters.value,
     process_id: "",
     variation_key: "",
-    status: "active",
-    execution_mode: ""
+    status: "active"
   };
   await fetchFkRows();
 };
@@ -2315,6 +2326,7 @@ const {
   processDefinitionActivationHasRequiredArtifacts,
   processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
+  processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,

@@ -38,10 +38,9 @@
             @search="$emit('open-fk-search')"
           />
         </div>
-        <AdminFieldGroup label="Uso" group-class="md:col-span-3">
+        <AdminFieldGroup label="Rol" group-class="md:col-span-3">
           <AdminSelectField :model-value="form.usage_role" :disabled="!canManage" @update:model-value="updateField('usage_role', $event)">
-            <option value="manual_fill">manual_fill</option>
-            <option value="system_render">system_render</option>
+            <option value="primary">primary</option>
             <option value="attachment">attachment</option>
             <option value="support">support</option>
           </AdminSelectField>

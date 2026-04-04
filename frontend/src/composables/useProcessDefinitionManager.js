@@ -57,6 +57,13 @@ export function useProcessDefinitionManager({
   getDefinitionArtifactsInstance,
   getDefinitionArtifactsPromptInstance
 }) {
+  const blurActiveElement = () => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.activeElement?.blur?.();
+  };
+
   const resetDefinitionArtifactsForm = () => {
     definitionArtifactsEditId.value = "";
     definitionArtifactsForm.value = processDefinitionAdminService.createArtifactForm();
@@ -168,6 +175,7 @@ export function useProcessDefinitionManager({
 
   const closeDefinitionRulesManager = () => {
     clearModalOrigins();
+    blurActiveElement();
     getDefinitionRulesInstance()?.hide();
   };
 
@@ -189,6 +197,7 @@ export function useProcessDefinitionManager({
     }
     clearModalOrigins();
     pushModalOrigin("editor");
+    blurActiveElement();
     resolveEditorInstance()?.hide();
     await openDefinitionRulesManager(selectedRow.value);
   };
@@ -392,6 +401,7 @@ export function useProcessDefinitionManager({
 
   const closeDefinitionTriggersManager = () => {
     clearModalOrigins();
+    blurActiveElement();
     getDefinitionTriggersInstance()?.hide();
   };
 
@@ -413,6 +423,7 @@ export function useProcessDefinitionManager({
     }
     clearModalOrigins();
     pushModalOrigin("editor");
+    blurActiveElement();
     resolveEditorInstance()?.hide();
     await openDefinitionTriggersManager(selectedRow.value);
   };
@@ -575,6 +586,7 @@ export function useProcessDefinitionManager({
 
   const closeDefinitionArtifactsManager = () => {
     clearModalOrigins();
+    blurActiveElement();
     getDefinitionArtifactsInstance()?.hide();
   };
 
@@ -610,6 +622,7 @@ export function useProcessDefinitionManager({
     }
     clearModalOrigins();
     pushModalOrigin("editor");
+    blurActiveElement();
     resolveEditorInstance()?.hide();
     await openDefinitionArtifactsManager(selectedRow.value);
   };
@@ -651,7 +664,7 @@ export function useProcessDefinitionManager({
     definitionArtifactsEditId.value = row.id ? String(row.id) : "";
     definitionArtifactsForm.value = {
       template_artifact_id: row.template_artifact_id ? String(row.template_artifact_id) : "",
-      usage_role: row.usage_role || "manual_fill",
+      usage_role: row.usage_role || "primary",
       creates_task: Number(row.creates_task) === 1 ? "1" : "0",
       is_required: Number(row.is_required) === 1 ? "1" : "0",
       sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : "1"

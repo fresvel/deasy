@@ -45,34 +45,6 @@ workflows:
           - "signatures.elaborado.fecha"
         required: true
         can_reject: true
-      - order: 2
-        code: "calidad_review"
-        name: "Revision de calidad"
-        resolver:
-          type: "cargo_in_scope"
-          cargo_code: "responsable_aseguramiento_calidad"
-          unit_scope_type: "unit_exact"
-          selection_mode: "auto_one"
-        field_refs:
-          - "signatures.revisado.nombre"
-          - "signatures.revisado.cargo"
-          - "signatures.revisado.fecha"
-        required: true
-        can_reject: true
-      - order: 3
-        code: "direccion_review"
-        name: "Revision de direccion"
-        resolver:
-          type: "cargo_in_scope"
-          cargo_code: "director_escuela"
-          unit_scope_type: "unit_exact"
-          selection_mode: "auto_one"
-        field_refs:
-          - "signatures.aprobado.nombre"
-          - "signatures.aprobado.cargo"
-          - "signatures.aprobado.fecha"
-        required: true
-        can_reject: true
   signatures:
     required: true
     source: "artifact"

@@ -24,7 +24,6 @@ export class AdminFkService {
       payload.process_id = "";
       payload.variation_key = "";
       payload.status = "active";
-      payload.execution_mode = "";
     }
     if (tableName === "template_artifacts") {
       payload.template_code = "";

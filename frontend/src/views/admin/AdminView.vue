@@ -230,7 +230,7 @@
                     <AppNavCard
                       v-if="selectedGestionCrudItem?.key === 'plantillas'"
                       layout="stacked"
-                      title="Nuevo paquete de usuario"
+                      title="Nuevo artifact general"
                       meta=""
                       description="Crear desde seed o archivos"
                       :icon="resolveIcon('plus')"

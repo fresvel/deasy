@@ -756,7 +756,7 @@ const validateTableRules = (tableName, candidate) => {
           throw new Error("Debes registrar al menos un formato disponible en available_formats.");
         }
         if (!candidate.artifact_origin) {
-          candidate.artifact_origin = candidate.owner_ref ? "user" : "system";
+          candidate.artifact_origin = candidate.owner_ref ? "general" : "process";
         }
       }
       break;
@@ -942,12 +942,11 @@ export default class SqlAdminService {
 
     if (tableName === "processes") {
       joinClause = `LEFT JOIN (
-        SELECT process_id, definition_version, execution_mode, status
+        SELECT process_id, definition_version, status
         FROM (
           SELECT
             process_id,
             definition_version,
-            execution_mode,
             status,
             ROW_NUMBER() OVER (
               PARTITION BY process_id
@@ -964,9 +963,6 @@ export default class SqlAdminService {
         selectFields.push("pd_main.definition_version AS active_definition_version");
         orderableFields.push("active_definition_version");
       }
-      if (availableFields.includes("active_execution_mode")) {
-        selectFields.push("pd_main.execution_mode AS active_execution_mode");
-      }
       if (availableFields.includes("active_definition_status")) {
         selectFields.push("pd_main.status AS active_definition_status");
       }
@@ -980,23 +976,13 @@ export default class SqlAdminService {
       selectClause = `SELECT ${selectFields.join(", ")}`;
 
       const definitionStatus = normalizedFilters.definition_status;
-      const definitionExecutionMode = normalizedFilters.definition_execution_mode;
       delete normalizedFilters.definition_status;
-      delete normalizedFilters.definition_execution_mode;
 
       if (definitionStatus !== undefined && definitionStatus !== null && definitionStatus !== "") {
         conditions.push("pd_rule.status = ?");
         params.push(definitionStatus);
       }
 
-      if (
-        definitionExecutionMode !== undefined
-        && definitionExecutionMode !== null
-        && definitionExecutionMode !== ""
-      ) {
-        conditions.push("pd_rule.execution_mode = ?");
-        params.push(definitionExecutionMode);
-      }
     }
 
     if (tableName === "template_artifacts") {
@@ -1640,7 +1626,7 @@ export default class SqlAdminService {
     }
 
     if (tableName === "template_artifacts") {
-      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de artifact de usuario.");
+      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de artifact general.");
     }
 
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
@@ -2082,8 +2068,8 @@ export default class SqlAdminService {
       updates.code = code;
     }
     if (tableName === "template_artifacts") {
-      if (String(existing.artifact_origin || "system") === "system") {
-        throw new Error("Los artifacts del sistema se sincronizan desde MinIO y no se pueden editar manualmente.");
+      if (String(existing.artifact_origin || "process") === "process") {
+        throw new Error("Los artifacts de proceso se sincronizan desde MinIO y no se pueden editar manualmente.");
       }
       if (Object.prototype.hasOwnProperty.call(updates, "artifact_origin")) {
         if (String(updates.artifact_origin || "") !== String(existing.artifact_origin || "")) {
@@ -2181,7 +2167,6 @@ export default class SqlAdminService {
           "name",
           "description",
           "has_document",
-          "execution_mode",
           "status",
           "effective_from",
           "effective_to"
@@ -2553,7 +2538,7 @@ export default class SqlAdminService {
           step.requiredSignersMin,
           step.requiredSignersMax,
           step.isRequired,
-          step.anchorRefs
+          JSON.stringify(Array.isArray(step.anchorRefs) ? step.anchorRefs : [])
         ]
       );
     }
@@ -2947,7 +2932,7 @@ export default class SqlAdminService {
                    description = COALESCE(description, NULL),
                    owner_ref = NULL,
                    owner_person_id = NULL,
-                   artifact_origin = 'system',
+                   artifact_origin = 'process',
                    source_version = ?,
                    artifact_stage = ?,
                    template_seed_id = ?,
@@ -3002,7 +2987,7 @@ export default class SqlAdminService {
                 displayName,
                 null,
                 null,
-                "system",
+                "process",
                 sourceVersion,
                 storageVersion,
                 repositoryStage,
@@ -3286,8 +3271,8 @@ export default class SqlAdminService {
       if (!existingArtifact) {
         throw new Error("El artifact seleccionado no existe.");
       }
-      if (String(existingArtifact.artifact_origin || "system") !== "user") {
-        throw new Error("Solo se pueden editar artifacts de usuario con este flujo.");
+      if (String(existingArtifact.artifact_origin || "process") !== "general") {
+        throw new Error("Solo se pueden editar artifacts generales con este flujo.");
       }
     }
 
@@ -3476,7 +3461,7 @@ export default class SqlAdminService {
                display_name = ?,
                description = ?,
                owner_ref = ?,
-               artifact_origin = 'user',
+               artifact_origin = 'general',
                source_version = ?,
                artifact_stage = ?,
                bucket = ?,
@@ -3532,7 +3517,7 @@ export default class SqlAdminService {
             displayName,
             description,
             ownerRef,
-            "user",
+            "general",
             sourceVersion,
             storageVersion,
             bucket,
@@ -3554,7 +3539,7 @@ export default class SqlAdminService {
         display_name: displayName,
         description,
         owner_ref: ownerRef,
-        artifact_origin: "user",
+        artifact_origin: "general",
         source_version: sourceVersion,
         storage_version: storageVersion,
         artifact_stage: artifactStage,
@@ -3566,8 +3551,8 @@ export default class SqlAdminService {
         content_hash: contentHash,
         is_active: 1,
         __notice: isEdit
-          ? "El artifact de usuario fue actualizado y cargado correctamente en MinIO."
-          : "El artifact de usuario fue cargado correctamente en MinIO y registrado en el sistema."
+          ? "El artifact general fue actualizado y cargado correctamente en MinIO."
+          : "El artifact general fue cargado correctamente en MinIO y registrado en el sistema."
       };
     } catch (error) {
       if (createdId && !isEdit) {

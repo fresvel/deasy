@@ -77,17 +77,31 @@ const getTargetRulesMap = async (connection, termStart, termEnd) => {
   return map;
 };
 
-const getExecutableTemplatesMap = async (connection) => {
+const getExecutableTemplatesMap = async (connection, options = {}) => {
+  const artifactOrigin = String(options.artifactOrigin || "").trim().toLowerCase();
+  const params = [];
+  const artifactJoin = artifactOrigin
+    ? "\n     INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id"
+    : "";
+  const artifactWhere = artifactOrigin
+    ? "\n       AND LOWER(ta.artifact_origin) = ?"
+    : "";
+
+  if (artifactOrigin) {
+    params.push(artifactOrigin);
+  }
+
   const [rows] = await connection.query(
     `SELECT
-       id,
-       process_definition_id,
-       template_artifact_id,
-       usage_role,
-       sort_order
-     FROM process_definition_templates
-     WHERE creates_task = 1
-     ORDER BY process_definition_id ASC, sort_order ASC, id ASC`
+       pdt.id,
+       pdt.process_definition_id,
+       pdt.template_artifact_id,
+       pdt.usage_role,
+       pdt.sort_order
+     FROM process_definition_templates pdt${artifactJoin}
+     WHERE pdt.creates_task = 1${artifactWhere}
+     ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`,
+    params
   );
   const map = new Map();
   rows.forEach((row) => {
@@ -230,7 +244,6 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
-       pdv.execution_mode,
        tar.artifact_origin,
        COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
@@ -455,13 +468,13 @@ const shouldInferSignatureFlowForContext = (context) => {
     return false;
   }
 
-  const usageRole = String(context.template_usage_role || "manual_fill");
+  const usageRole = String(context.template_usage_role || "primary");
   if (usageRole === "attachment" || usageRole === "support") {
     return false;
   }
 
   const artifactOrigin = String(context.artifact_origin || "");
-  if (artifactOrigin !== "system") {
+  if (artifactOrigin !== "process") {
     return false;
   }
 
@@ -992,7 +1005,7 @@ const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, e
         taskId,
         template.id,
         template.template_artifact_id,
-        template.usage_role || "manual_fill",
+        template.usage_role || "primary",
         template.sort_order ?? 1,
         "pendiente"
       ]
@@ -1106,7 +1119,9 @@ export const generateTasksForTerm = async (termId) => {
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
-    const executableTemplatesMap = await getExecutableTemplatesMap(connection);
+    const executableTemplatesMap = await getExecutableTemplatesMap(connection, {
+      artifactOrigin: "process"
+    });
     const existingTasksMap = await getExistingAutomaticTasksMap(connection, term.id);
 
     const createdTaskIds = [];
@@ -1117,6 +1132,12 @@ export const generateTasksForTerm = async (termId) => {
     const definitionsWithoutAssignees = [];
 
     for (const definition of activeDefinitions) {
+      const definitionTemplates = executableTemplatesMap.get(definition.id) || [];
+      if (!definitionTemplates.length) {
+        definitionsWithoutTaskItems.push(definition.id);
+        continue;
+      }
+
       const processRunId = await ensureProcessRun({
         connection,
         processDefinitionId: definition.id,
@@ -1140,7 +1161,7 @@ export const generateTasksForTerm = async (termId) => {
              end_date,
              status
           )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             definition.id,
             processRunId,

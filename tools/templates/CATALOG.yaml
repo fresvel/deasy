@@ -11,8 +11,6 @@ templates:
       user:
         docx: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/formativa/informe-carrera/1.0.0/modes/system/jinja2/src"
   - key: "investigación/formativa/informe-docente"
@@ -23,10 +21,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/formativa/informe-docente/1.0.0/modes/system/jinja2/src"
   - key: "investigación/formativa/informe-estudiantes"
@@ -37,10 +32,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/system/jinja2/src"
     origins:
@@ -53,10 +45,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/formativa/plan-carrera/1.0.0/modes/system/jinja2/src"
   - key: "investigación/formativa/plan-docente"
@@ -67,10 +56,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/formativa/plan-docente/1.0.0/modes/system/jinja2/src"
   - key: "investigación/integración/artículos-académicos/planes/trabajo-uic"
@@ -81,10 +67,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/system/jinja2/src"
   - key: "investigación/integración/artículos-académicos/revistas/ieee"
@@ -95,10 +78,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/xlsx/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2026/PPO2026/Investigación/Integración/Artículos Académicos/Estudiantes/Estudiante Demo Uno"
   - key: "investigación/integración/artículos-académicos/revistas/mdpi"
@@ -109,10 +89,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/xlsx/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2026/PPO2026/Investigación/Productiva/Resultados/Docente Demo Principal/A0X/mdpi"
   - key: "investigación/integración/artículos-académicos/revistas/springer"
@@ -123,10 +100,7 @@ templates:
     template_id: null
     modes:
       user:
-        docx: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/xlsx/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2023/PPO2023/Investigación/Formativa/Formatos/03_artículo/Springer.zip"
   - key: "investigación/productiva/informe-carrera"
@@ -139,8 +113,6 @@ templates:
       user:
         docx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/productiva/informe-carrera/1.0.0/modes/system/jinja2/src"
   - key: "investigación/productiva/informe-docente"
@@ -153,7 +125,33 @@ templates:
       user:
         docx: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/docx/src"
         latex: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/xlsx/src"
       system:
         jinja2: "templates/investigación/productiva/informe-docente/1.0.0/modes/system/jinja2/src"
+  - key: "talento-humano/requerimiento/administrativo"
+    export_id: "tpl_talento_humano_requerimiento_administrativo"
+    name: "Requerimiento Administrativo"
+    version: "1.0.0"
+    storage_version: "v0001"
+    template_id: null
+    modes:
+      user:
+        docx: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/user/docx/src"
+        latex: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/user/latex/src"
+        pdf: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/user/pdf/src"
+        xlsx: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/user/xlsx/src"
+      system:
+        jinja2: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/system/jinja2/src"
+  - key: "talento-humano/requerimiento/docente"
+    export_id: "tpl_talento_humano_requerimiento_docente"
+    name: "Requerimiento Docente"
+    version: "1.0.0"
+    storage_version: "v0001"
+    template_id: null
+    modes:
+      user:
+        docx: "templates/talento-humano/requerimiento/docente/1.0.0/modes/user/docx/src"
+        latex: "templates/talento-humano/requerimiento/docente/1.0.0/modes/user/latex/src"
+        pdf: "templates/talento-humano/requerimiento/docente/1.0.0/modes/user/pdf/src"
+        xlsx: "templates/talento-humano/requerimiento/docente/1.0.0/modes/user/xlsx/src"
+      system:
+        jinja2: "templates/talento-humano/requerimiento/docente/1.0.0/modes/system/jinja2/src"

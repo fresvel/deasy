@@ -45,6 +45,19 @@ class AdminPresentationService {
   }
 
   formatSelectOptionLabel(field, value) {
+    if (field?.name === "artifact_origin") {
+      return {
+        process: "Proceso",
+        general: "General"
+      }[value] || value;
+    }
+    if (field?.name === "usage_role" || field?.name === "template_usage_role") {
+      return {
+        primary: "Principal",
+        attachment: "Adjunto",
+        support: "Soporte"
+      }[value] || value;
+    }
     if (field?.name === "scope") {
       return {
         owner: "Propietario",
@@ -163,7 +176,7 @@ class AdminPresentationService {
         row.template_artifact_id
           ? (getFkCachedLabel("template_artifacts", row.template_artifact_id) || `Paquete ${row.template_artifact_id}`)
           : null,
-        row.usage_role
+        this.formatSelectOptionLabel({ name: "usage_role" }, row.usage_role)
       ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
       if (parts.length) {
         return parts.join(" · ");

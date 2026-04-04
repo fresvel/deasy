@@ -59,12 +59,12 @@ export function useAdminEditorFlow({
   const openEdit = async (row) => {
     if (
       props.table?.table === "template_artifacts"
-      && String(row?.artifact_origin || "") === "system"
+      && String(row?.artifact_origin || "") === "process"
     ) {
       showFeedbackToast({
         kind: "error",
         title: "Edicion bloqueada",
-        message: "Los artifacts del sistema se sincronizan desde MinIO y no se editan manualmente."
+        message: "Los artifacts de proceso se sincronizan desde MinIO y no se editan manualmente."
       });
       return { blocked: true };
     }

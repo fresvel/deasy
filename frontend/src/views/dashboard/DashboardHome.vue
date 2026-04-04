@@ -273,24 +273,99 @@
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
                       <p class="text-slate-500 text-sm mt-1 mb-0 font-medium">Solo se muestran las tareas donde participas o que creaste manualmente.</p>
                     </div>
-                    <AppButton
-                      variant="primary"
-                      size="md"
-                      class-name="shrink-0"
-                      type="button"
-                      :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
-                      @click="openTaskLaunchModal"
-                    >
-                      Crear tarea
-                    </AppButton>
+                    <div class="flex flex-wrap gap-2">
+                      <AppButton
+                        variant="secondary"
+                        size="md"
+                        type="button"
+                        @click="showGeneralTaskInfo"
+                      >
+                        Nueva tarea general
+                      </AppButton>
+                      <AppButton
+                        variant="softNeutral"
+                        size="md"
+                        type="button"
+                        @click="showProcessDeliverableInfo"
+                      >
+                        Nuevo entregable del proceso
+                      </AppButton>
+                      <AppButton
+                        variant="primary"
+                        size="md"
+                        class-name="shrink-0"
+                        type="button"
+                        :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
+                        @click="openTaskLaunchModal"
+                      >
+                        Crear tarea
+                      </AppButton>
+                    </div>
                   </header>
+
+                  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3">
+                    <label class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+                      <input
+                        v-model="taskListFilters.query"
+                        type="text"
+                        placeholder="Periodo o entregable"
+                        class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400"
+                      />
+                    </label>
+                    <label class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+                      <select v-model="taskListFilters.year" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
+                        <option value="all">Todos</option>
+                        <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
+                      </select>
+                    </label>
+                    <label class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
+                      <select v-model="taskListFilters.term" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
+                        <option value="all">Todos</option>
+                        <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
+                      </select>
+                    </label>
+                    <label class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
+                      <select v-model="taskListFilters.termType" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
+                        <option value="all">Todos</option>
+                        <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
+                      </select>
+                    </label>
+                    <label class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Origen</span>
+                      <select v-model="taskListFilters.origin" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
+                        <option value="all">Todos</option>
+                        <option value="manual">Manual</option>
+                        <option value="automatic">Automática</option>
+                      </select>
+                    </label>
+                    <label class="flex flex-col gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
+                      <select v-model="taskListFilters.status" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
+                        <option value="all">Todos</option>
+                        <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
+                      </select>
+                    </label>
+                  </section>
+
+                  <div class="flex flex-wrap gap-2">
+                    <AppTag variant="muted">{{ filteredProcessTasks.length }} tareas visibles</AppTag>
+                    <AppTag variant="neutral">{{ selectedProcessPanel.tasks.length }} tareas totales</AppTag>
+                  </div>
 
                   <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta definición.
                   </div>
 
+                  <div v-else-if="!filteredProcessTasks.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                    No hay tareas que coincidan con los filtros actuales.
+                  </div>
+
                   <div v-else class="flex flex-col gap-4">
-                    <article v-for="task in selectedProcessPanel.tasks" :key="task.id" class="border border-slate-200 rounded-[1.5rem] p-5 lg:p-6 bg-slate-50/30">
+                    <article v-for="task in filteredProcessTasks" :key="task.id" class="border border-slate-200 rounded-[1.5rem] p-5 lg:p-6 bg-slate-50/30">
                       <header class="flex flex-col sm:flex-row justify-between gap-4 items-start mb-3">
                         <div class="flex flex-col gap-2">
                           <h3 class="text-base font-bold text-slate-800 m-0 leading-tight">{{ task.term_name }}</h3>
@@ -317,13 +392,28 @@
                         <AppTag v-if="task.is_current_user_creator" variant="info">Creada por ti</AppTag>
                       </div>
 
-                      <div v-if="task.items.length" class="flex flex-col gap-2.5 mt-5">
+                      <div class="flex flex-wrap items-center justify-between gap-3 mt-5 pt-4 border-t border-slate-200/70">
+                        <div class="flex flex-wrap gap-2">
+                          <AppTag variant="muted">{{ task.items.length }} entregables relacionados</AppTag>
+                          <AppTag v-if="task.items.some((item) => Number(item.pending_fill_count || 0) > 0)" variant="info">
+                            {{ task.items.reduce((acc, item) => acc + Number(item.pending_fill_count || 0), 0) }} solicitudes de llenado
+                          </AppTag>
+                          <AppTag v-if="task.items.some((item) => Number(item.pending_signature_count || 0) > 0)" variant="warning">
+                            {{ task.items.reduce((acc, item) => acc + Number(item.pending_signature_count || 0), 0) }} solicitudes de firma
+                          </AppTag>
+                        </div>
+                        <AppButton variant="softPrimary" size="sm" type="button" @click="toggleTaskExpansion(task.id)">
+                          {{ isTaskExpanded(task.id) ? 'Ocultar entregables' : 'Ver entregables' }}
+                        </AppButton>
+                      </div>
+
+                      <div v-if="task.items.length && isTaskExpanded(task.id)" class="flex flex-col gap-2.5 mt-5">
                         <div v-for="item in task.items" :key="item.id" class="flex flex-col gap-4 p-4 rounded-xl bg-white border border-slate-200 shadow-sm hover:border-sky-200 transition-colors">
                           <div class="flex flex-col sm:flex-row justify-between gap-3">
                             <div class="flex flex-col gap-1.5 flex-1 min-w-0">
                               <strong class="block text-[0.95rem] font-bold text-slate-800 leading-tight">{{ item.template_artifact_name || `Entregable #${item.id}` }}</strong>
                               <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500 mt-1">
-                                <span>{{ item.template_usage_role }}</span>
+                                <span>{{ prettifyArtifactRole(item.template_usage_role) }}</span>
                                 <span class="text-slate-400">|</span>
                                 <span :class="item.status === 'completado' ? 'text-emerald-600' : 'text-amber-600'">{{ item.status }}</span>
                                 <template v-if="item.responsible_position_title">
@@ -365,7 +455,7 @@
                               variant="softPrimary"
                               size="sm"
                               type="button"
-                              :disabled="processingFillItemId === item.id"
+                              :disabled="processingFillItemId === item.id || !canStartDeliverableAction(item)"
                               @click="startDeliverableFlow(item)"
                             >
                               {{ processingFillItemId === item.id ? 'Iniciando...' : 'Iniciar' }}
@@ -466,76 +556,8 @@
                   </div>
                 </article>
 
-                <div class="lg:col-span-4 flex flex-col gap-6">
-                  <!-- Llenado -->
-                  <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-                    <header class="flex flex-col gap-4">
-                      <div>
-                        <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Flujo de llenado</h2>
-                        <p class="text-slate-500 text-sm mt-1 mb-0 font-medium leading-snug">Solicitudes de llenado o revisión que te corresponden.</p>
-                      </div>
-                    </header>
-                    <div v-if="!selectedProcessPanel.fill_requests?.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
-                      No tienes solicitudes de llenado activas.
-                    </div>
-                    <div v-else class="flex flex-col gap-3">
-                      <div v-for="fillRequest in selectedProcessPanel.fill_requests" :key="fillRequest.id" class="flex flex-col gap-1.5 p-4 rounded-xl bg-slate-50/50 border border-slate-100 relative overflow-hidden group">
-                        <div v-if="!fillRequest.responded_at" class="absolute top-0 left-0 w-1 h-full bg-sky-500"></div>
-                        <strong class="text-sm font-bold text-slate-800 leading-tight pl-1 block truncate">{{ fillRequest.template_artifact_name || 'Documento' }}</strong>
-                        <div class="flex flex-wrap justify-between items-center gap-2 pl-1 mt-1 text-xs font-semibold">
-                          <span class="text-slate-500">Paso {{ fillRequest.step_order || 1 }}</span>
-                          <span :class="fillRequest.responded_at ? 'text-emerald-600' : 'text-sky-700'">{{ fillRequest.status_name || (fillRequest.responded_at ? 'Respondida' : 'Pendiente') }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-
-                  <!-- Paquetes -->
-                  <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-                    <header class="flex flex-col gap-2">
-                      <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Mis paquetes</h2>
-                      <p class="text-slate-500 text-sm m-0 font-medium leading-snug">Paquetes de usuario asociados a tu cuenta.</p>
-                    </header>
-                    <div v-if="!selectedProcessPanel.user_packages.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
-                      Aún no tienes paquetes registrados.
-                    </div>
-                    <div v-else class="flex flex-col gap-3">
-                      <div v-for="item in selectedProcessPanel.user_packages" :key="item.id" class="flex justify-between items-center gap-3 p-3.5 rounded-xl bg-slate-50/50 border border-slate-100">
-                        <strong class="text-sm font-bold text-slate-800 leading-tight">{{ item.display_name }}</strong>
-                        <span class="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200 shrink-0">{{ item.artifact_stage }}</span>
-                      </div>
-                    </div>
-                  </article>
-
-                  <!-- Firmas -->
-                  <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-                    <header class="flex flex-col gap-4">
-                      <div>
-                        <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Flujo de firmas</h2>
-                        <p class="text-slate-500 text-sm mt-1 mb-0 font-medium leading-snug">Solicitudes de firma que te corresponden.</p>
-                      </div>
-                      <AppButton variant="secondary" size="md" class-name="self-start" type="button" @click="navigateTo('firmar')">
-                        Ir a firmas
-                      </AppButton>
-                    </header>
-                    <div v-if="!selectedProcessPanel.signatures.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-slate-500 bg-slate-50 text-center text-sm font-medium">
-                      No tienes solicitudes de firma activas.
-                    </div>
-                    <div v-else class="flex flex-col gap-3">
-                      <div v-for="signature in selectedProcessPanel.signatures" :key="signature.id" class="flex flex-col gap-1.5 p-4 rounded-xl bg-slate-50/50 border border-slate-100 relative overflow-hidden group">
-                        <div v-if="!signature.responded_at" class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                        <strong class="text-sm font-bold text-slate-800 leading-tight pl-1 block truncate">{{ signature.template_artifact_name || 'Documento' }}</strong>
-                        <div class="flex flex-wrap justify-between items-center gap-2 pl-1 mt-1 text-xs font-semibold">
-                          <span class="text-slate-500">{{ signature.signature_type_name || 'Firma' }} · Paso {{ signature.step_order || 1 }}</span>
-                          <span :class="signature.responded_at ? 'text-emerald-600' : 'text-amber-600'">{{ signature.status_name || (signature.responded_at ? 'Respondida' : 'Pendiente') }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                </div>
-
                 <!-- Documentos (Wide) -->
-                <article class="lg:col-span-8 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-4 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5 self-start">
                   <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
                     <div class="flex flex-col gap-2">
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
@@ -574,7 +596,7 @@
                 <article class="lg:col-span-12 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
                     <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
-                    <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y paquetes del sistema que hacen operativa esta definición.</p>
+                    <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta definición.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
@@ -602,13 +624,13 @@
                     <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
                       <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-slate-400"/> Paquetes</h3>
                       <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-slate-500 font-medium italic">
-                        Sin paquetes vinculados.
+                        Sin artifacts vinculados.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
                         <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                           <span>{{ template.template_artifact_name }}</span>
                           <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                            <span class="bg-slate-100 px-2 py-0.5 rounded">{{ template.usage_role }}</span>
+                            <span class="bg-slate-100 px-2 py-0.5 rounded">{{ prettifyArtifactRole(template.usage_role) }}</span>
                             <span :class="template.creates_task ? 'text-sky-600' : 'text-slate-400'">{{ template.creates_task ? 'Genera tarea' : 'Soporte' }}</span>
                           </span>
                         </li>
@@ -644,63 +666,213 @@
         </div>
       </template>
 
-          <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
-            {{ taskLaunchError }}
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-wrap items-center gap-2">
+          <div
+            v-for="step in taskLaunchSteps"
+            :key="step.id"
+            class="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold transition-colors"
+            :class="taskLaunchStep >= step.id ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-400'"
+          >
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]" :class="taskLaunchStep >= step.id ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-500'">
+              {{ step.id }}
+            </span>
+            <span>{{ step.label }}</span>
+          </div>
+        </div>
+
+        <div v-if="taskLaunchError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
+          {{ taskLaunchError }}
+        </div>
+
+        <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
+          <div class="md:col-span-2 rounded-[1.5rem] border border-slate-200 bg-slate-50/60 p-5">
+            <div class="flex flex-wrap gap-2">
+              <AppTag variant="info">Tarea ligada a proceso</AppTag>
+              <AppTag variant="muted">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
+            </div>
+            <p class="mt-3 mb-0 text-sm font-medium text-slate-600">
+              Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta definición.
+            </p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-            <label class="flex flex-col gap-2 md:col-span-2">
-              <span class="font-bold text-slate-700 text-sm">Descripción</span>
-              <textarea
-                v-model="taskLaunchForm.description"
-                class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
-                rows="3"
-                placeholder="Describe brevemente la tarea manual que vas a lanzar."
-              />
-            </label>
+          <label class="flex flex-col gap-2 md:col-span-2">
+            <span class="font-bold text-slate-700 text-sm">Descripción</span>
+            <textarea
+              v-model="taskLaunchForm.description"
+              class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400 resize-none"
+              rows="3"
+              placeholder="Describe brevemente la tarea manual que vas a lanzar."
+            />
+          </label>
 
+          <label class="flex flex-col gap-2">
+            <span class="font-bold text-slate-700 text-sm">Periodo existente</span>
+            <div class="relative">
+              <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
+                <option value="">Seleccionar</option>
+                <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
+                  {{ term.name }} · {{ term.term_type_name }}
+                </option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                <svg fill="none" stroke="currentColor" class="h-4 w-4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
+              </div>
+            </div>
+          </label>
+
+          <label v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-7 p-3 rounded-2xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+            <span class="font-bold text-slate-700 text-sm select-none">Crear periodo custom</span>
+            <input v-model="taskLaunchUseCustomTerm" type="checkbox" class="w-5 h-5 rounded text-sky-600 focus:ring-sky-500 border-slate-300 transition-colors" />
+          </label>
+
+          <template v-if="taskLaunchUseCustomTerm">
+            <label class="flex flex-col gap-2 md:col-span-2">
+              <span class="font-bold text-slate-700 text-sm">Nombre del periodo custom</span>
+              <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
+            </label>
             <label class="flex flex-col gap-2">
-              <span class="font-bold text-slate-700 text-sm">Periodo existente</span>
-              <div class="relative">
-                <select v-model="taskLaunchForm.term_id" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none disabled:opacity-50 disabled:cursor-not-allowed" :disabled="taskLaunchUseCustomTerm">
-                  <option value="">Seleccionar</option>
-                  <option v-for="term in selectedProcessPanel?.available_terms || []" :key="term.id" :value="String(term.id)">
-                    {{ term.name }} · {{ term.term_type_name }}
-                  </option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                  <svg fill="none" stroke="currentColor" class="h-4 w-4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
+              <span class="font-bold text-slate-700 text-sm">Fecha inicial</span>
+              <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+            </label>
+            <label class="flex flex-col gap-2">
+              <span class="font-bold text-slate-700 text-sm">Fecha final</span>
+              <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
+            </label>
+          </template>
+        </section>
+
+        <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-5">
+          <div class="rounded-[1.5rem] border border-sky-200 bg-sky-50/70 p-5">
+            <h3 class="m-0 text-base font-bold text-sky-900">Base documental de la tarea</h3>
+            <p class="mt-2 mb-0 text-sm font-medium text-sky-800/80">
+              Esta tarea se creará usando los templates activos de la definición. En este corte, el dashboard informa el alcance documental real antes de confirmar la creación.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+              <header class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="m-0 text-base font-bold text-slate-800">Templates operativos</h3>
+                  <p class="mt-1 mb-0 text-sm font-medium text-slate-500">Se materializan al crear la tarea.</p>
+                </div>
+                <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
+              </header>
+              <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
+                Esta definición no tiene templates de proceso que generen tarea.
+              </div>
+              <div v-else class="flex flex-col gap-3">
+                <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <strong class="text-sm font-bold text-slate-800">{{ template.template_artifact_name }}</strong>
+                    <AppTag variant="muted">{{ prettifyArtifactRole(template.usage_role) }}</AppTag>
+                    <AppTag variant="success">Proceso</AppTag>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <AppTag variant="neutral">{{ template.signature_flow_count ? `Firmas: ${template.signature_flow_count}` : 'Sin flujo de firma activo' }}</AppTag>
+                    <AppTag :variant="template.is_required ? 'warning' : 'muted'">
+                      {{ template.is_required ? 'Requerido' : 'Opcional' }}
+                    </AppTag>
+                  </div>
+                </article>
+              </div>
+            </article>
+
+            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+              <header class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="m-0 text-base font-bold text-slate-800">Artifacts generales</h3>
+                  <p class="mt-1 mb-0 text-sm font-medium text-slate-500">Disponibles para iteraciones posteriores del flujo manual.</p>
+                </div>
+                <AppTag variant="muted">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
+              </header>
+              <div v-if="!selectedProcessPanel?.user_packages?.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
+                No tienes artifacts generales registrados en esta cuenta.
+              </div>
+              <div v-else class="flex flex-col gap-3">
+                <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <strong class="block truncate text-sm font-bold text-slate-800">{{ item.display_name }}</strong>
+                    <p class="mt-1 mb-0 text-xs font-medium text-slate-500">{{ item.description || 'Artifact general registrado por el usuario.' }}</p>
+                  </div>
+                  <AppTag variant="muted" class-name="shrink-0">{{ item.artifact_stage }}</AppTag>
+                </article>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section v-else class="flex flex-col gap-5">
+          <div class="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/70 p-5">
+            <h3 class="m-0 text-base font-bold text-emerald-900">Confirmación</h3>
+            <p class="mt-2 mb-0 text-sm font-medium text-emerald-800/80">
+              Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+              <h3 class="m-0 text-base font-bold text-slate-800">Resumen operativo</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Definición</div>
+                  <div class="mt-2 text-sm font-bold text-slate-800">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</div>
+                  <div class="mt-2 text-sm font-bold text-slate-800">{{ taskLaunchSelectedTermLabel }}</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4 sm:col-span-2">
+                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Descripción</div>
+                  <div class="mt-2 text-sm font-medium text-slate-700">{{ taskLaunchForm.description || 'Sin descripción adicional.' }}</div>
                 </div>
               </div>
-            </label>
+            </article>
 
-            <label v-if="selectedProcessPanel?.permissions?.can_launch_custom_term" class="flex flex-row items-center justify-between md:justify-end gap-3 mt-1 md:mt-7 p-3 rounded-2xl border border-slate-100 bg-slate-50/50 cursor-pointer">
-              <span class="font-bold text-slate-700 text-sm select-none">Crear periodo custom</span>
-              <input v-model="taskLaunchUseCustomTerm" type="checkbox" class="w-5 h-5 rounded text-sky-600 focus:ring-sky-500 border-slate-300 transition-colors" />
-            </label>
-
-            <template v-if="taskLaunchUseCustomTerm">
-              <label class="flex flex-col gap-2 md:col-span-2">
-                <span class="font-bold text-slate-700 text-sm">Nombre del periodo custom</span>
-                <input v-model="taskLaunchForm.custom_name" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400" type="text" placeholder="Ejemplo: Seguimiento extraordinario abril" />
-              </label>
-              <label class="flex flex-col gap-2">
-                <span class="font-bold text-slate-700 text-sm">Fecha inicial</span>
-                <input v-model="taskLaunchForm.custom_start_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
-              </label>
-              <label class="flex flex-col gap-2">
-                <span class="font-bold text-slate-700 text-sm">Fecha final</span>
-                <input v-model="taskLaunchForm.custom_end_date" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium" type="date" />
-              </label>
-            </template>
+            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+              <h3 class="m-0 text-base font-bold text-slate-800">Impacto documental</h3>
+              <div class="flex flex-wrap gap-2">
+                <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
+                <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.triggers?.length || 0 }} disparadores activos</AppTag>
+                <AppTag variant="muted">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
+              </div>
+              <ul class="m-0 pl-5 text-sm font-medium text-slate-600 flex flex-col gap-2">
+                <li>La tarea se creará en modo manual dentro de esta definición.</li>
+                <li>El backend generará entregables y documentos según los templates activos.</li>
+                <li>Los flujos de llenado y firma dependerán de la configuración actual de cada template.</li>
+              </ul>
+            </article>
           </div>
+        </section>
+      </div>
       <template #footer>
-          <AppButton variant="secondary" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
-            Cancelar
-          </AppButton>
-          <AppButton variant="primary" size="lg" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
-            {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
-          </AppButton>
+        <AppButton variant="secondary" size="lg" type="button" :disabled="taskLaunchSubmitting" @click="closeTaskLaunchModal">
+          Cancelar
+        </AppButton>
+        <AppButton
+          v-if="taskLaunchStep > 1"
+          variant="softNeutral"
+          size="lg"
+          type="button"
+          :disabled="taskLaunchSubmitting"
+          @click="goToPreviousTaskLaunchStep"
+        >
+          Volver
+        </AppButton>
+        <AppButton
+          v-if="taskLaunchStep < taskLaunchSteps.length"
+          variant="primary"
+          size="lg"
+          type="button"
+          :disabled="!canAdvanceTaskLaunchStep"
+          @click="goToNextTaskLaunchStep"
+        >
+          Continuar
+        </AppButton>
+        <AppButton v-else variant="primary" size="lg" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
+          {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
+        </AppButton>
       </template>
     </AdminModalShell>
 
@@ -957,148 +1129,146 @@
       body-class="pt-4"
       @close="closeSignatureFlowModal"
     >
-      <template #body>
-        <div class="flex flex-col gap-5">
-          <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
-            Consultando la secuencia de firmas...
-          </div>
-          <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
-            {{ signatureFlowState.error }}
-          </div>
-          <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Documento</p>
-                <h3 class="text-lg font-bold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
-                <div class="flex flex-wrap gap-2">
-                  <AppTag variant="neutral">
-                    {{ signatureFlowState.subject?.documentId ? `Documento #${signatureFlowState.subject.documentId}` : 'Sin documento' }}
-                  </AppTag>
-                  <AppTag variant="muted">
-                    {{ signatureFlowState.subject?.documentVersion ? `Versión v${signatureFlowState.subject.documentVersion}` : `v${signatureFlowState.subject?.documentVersionId || '—'}` }}
-                  </AppTag>
-                  <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
-                    {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
-                  </AppTag>
-                </div>
-                <p class="text-xs text-slate-500">
-                  Estado documental: {{ capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente de firma' }}
-                </p>
-                <p v-if="!signatureFlowState.snapshot.readiness?.ok" class="text-xs text-rose-600">
-                  Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
-                </p>
-              </section>
-              <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-2 shadow-sm">
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Responsable actual</p>
-                <p class="text-sm font-semibold text-slate-800 mb-0">
-                  {{ signatureFlowState.snapshot?.responsableActual
-                    ? `${signatureFlowState.snapshot.responsableActual.firstName || ''} ${signatureFlowState.snapshot.responsableActual.lastName || ''}`.trim()
-                    : 'Sin responsable resuelto' }}
-                </p>
-                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
-                  {{ signatureFlowState.snapshot?.canOperate ? 'Puedes operar este paso' : 'Solo visualización' }}
-                </AppTag>
-                <p class="text-xs text-slate-500">
-                  Paso actual: {{ signatureFlowState.snapshot?.currentSignatureStepOrder || '—' }}
-                </p>
-              </section>
-              <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
-                <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Secuencia</p>
-                <p class="text-sm font-semibold text-slate-800 mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
-                <p class="text-xs text-slate-500">
-                  {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
-                </p>
-                <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-rose-600">
-                  Pasos sin firmantes: {{ signatureFlowState.snapshot.readiness.unresolvedRequiredSteps.map((step) => step.stepOrder).join(', ') }}
-                </p>
-              </section>
-            </div>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-3">
-              <div class="flex items-center justify-between gap-2">
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
-                <AppTag variant="muted">
-                  {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
-                </AppTag>
-              </div>
-              <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
-                La definición todavía no tiene pasos de firma visibles.
-              </div>
-              <div v-else class="flex flex-col gap-3">
-                <div
-                  v-for="step in signatureFlowState.snapshot.signatureSteps"
-                  :key="`signature-step-${step.id || step.step_order}`"
-                  class="rounded-2xl border border-slate-100 bg-slate-50/70 p-3"
-                >
-                  <div class="flex flex-wrap justify-between items-center gap-2">
-                    <div>
-                      <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
-                      <p class="text-xs text-slate-500 m-0">Resolución: {{ step.resolverType || step.selection_mode || 'Cargo en alcance' }}</p>
-                    </div>
-                    <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
-                      {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
-                    </AppTag>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
-              <div class="flex items-center justify-between gap-2">
-                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Historial y trazabilidad</h3>
-                <AppTag variant="neutral">
-                  {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
-                </AppTag>
-              </div>
-              <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="text-sm text-slate-500">
-                Aún no se ha registrado actividad sobre este flujo.
-              </div>
-              <div v-else class="flex flex-col gap-3">
-                <div
-                  v-for="request in signatureFlowState.snapshot.signatureRequests"
-                  :key="`flow-request-${request.id}`"
-                  class="rounded-2xl border border-slate-100 bg-white p-3 flex flex-col gap-1"
-                >
-                  <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ request.stepOrder }}</p>
-                    <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
-                      {{ signatureRequestStatusLabel(request.requestStatusCode) }}
-                    </AppTag>
-                  </div>
-                  <p class="text-xs text-slate-500 m-0">
-                    {{ request.assignedPerson ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim() : 'Firmante no resuelto' }}
-                    · Cargo {{ request.cargoName || '—' }}
-                  </p>
-                  <p class="text-xs text-slate-500 m-0">
-                    {{ request.respondedAt ? formatDateTime(request.respondedAt) : formatDateTime(request.requestedAt) }}
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Firmar documento</h3>
-                  <p class="text-xs text-slate-500 m-0">Utiliza el visor integrado para completar tu paso actual.</p>
-                </div>
-                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
-                  {{ signatureFlowState.snapshot?.canOperate ? 'Listo para operar' : 'Acceso en modo lectura' }}
-                </AppTag>
-              </div>
-              <div v-if="signatureFlowState.snapshot?.canOperate">
-                <FirmarPdf ref="signatureFlowSignerRef" embedded />
-              </div>
-              <div v-else class="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
-                No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
-              </div>
-            </section>
-          </div>
-          <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
-            Selecciona una solicitud de firma para revisar su flujo.
-          </div>
+      <div class="flex flex-col gap-5">
+        <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
+          Consultando la secuencia de firmas...
         </div>
-      </template>
+        <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
+          {{ signatureFlowState.error }}
+        </div>
+        <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+              <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Documento</p>
+              <h3 class="text-lg font-bold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</h3>
+              <div class="flex flex-wrap gap-2">
+                <AppTag variant="neutral">
+                  {{ signatureFlowState.subject?.documentId ? `Documento #${signatureFlowState.subject.documentId}` : 'Sin documento' }}
+                </AppTag>
+                <AppTag variant="muted">
+                  {{ signatureFlowState.subject?.documentVersion ? `Versión v${signatureFlowState.subject.documentVersion}` : `v${signatureFlowState.subject?.documentVersionId || '—'}` }}
+                </AppTag>
+                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
+                  {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
+                </AppTag>
+              </div>
+              <p class="text-xs text-slate-500">
+                Estado documental: {{ capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente de firma' }}
+              </p>
+              <p v-if="!signatureFlowState.snapshot.readiness?.ok" class="text-xs text-rose-600">
+                Motivo: {{ signatureFlowState.snapshot.readiness?.reason || 'Revisa el PDF o los firmantes.' }}
+              </p>
+            </section>
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-2 shadow-sm">
+              <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Responsable actual</p>
+              <p class="text-sm font-semibold text-slate-800 mb-0">
+                {{ signatureFlowState.snapshot?.responsableActual
+                  ? `${signatureFlowState.snapshot.responsableActual.firstName || ''} ${signatureFlowState.snapshot.responsableActual.lastName || ''}`.trim()
+                  : 'Sin responsable resuelto' }}
+              </p>
+              <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
+                {{ signatureFlowState.snapshot?.canOperate ? 'Puedes operar este paso' : 'Solo visualización' }}
+              </AppTag>
+              <p class="text-xs text-slate-500">
+                Paso actual: {{ signatureFlowState.snapshot?.currentSignatureStepOrder || '—' }}
+              </p>
+            </section>
+            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+              <p class="text-xs uppercase tracking-wider font-semibold text-slate-500">Secuencia</p>
+              <p class="text-sm font-semibold text-slate-800 mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
+              <p class="text-xs text-slate-500">
+                {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
+              </p>
+              <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-rose-600">
+                Pasos sin firmantes: {{ signatureFlowState.snapshot.readiness.unresolvedRequiredSteps.map((step) => step.stepOrder).join(', ') }}
+              </p>
+            </section>
+          </div>
+
+          <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
+              <AppTag variant="muted">
+                {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
+              </AppTag>
+            </div>
+            <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
+              La definición todavía no tiene pasos de firma visibles.
+            </div>
+            <div v-else class="flex flex-col gap-3">
+              <div
+                v-for="step in signatureFlowState.snapshot.signatureSteps"
+                :key="`signature-step-${step.id || step.step_order}`"
+                class="rounded-2xl border border-slate-100 bg-slate-50/70 p-3"
+              >
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
+                    <p class="text-xs text-slate-500 m-0">Resolución: {{ step.resolverType || step.selection_mode || 'Cargo en alcance' }}</p>
+                  </div>
+                  <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
+                    {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
+                  </AppTag>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Historial y trazabilidad</h3>
+              <AppTag variant="neutral">
+                {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
+              </AppTag>
+            </div>
+            <div v-if="!signatureFlowState.snapshot.signatureRequests?.length" class="text-sm text-slate-500">
+              Aún no se ha registrado actividad sobre este flujo.
+            </div>
+            <div v-else class="flex flex-col gap-3">
+              <div
+                v-for="request in signatureFlowState.snapshot.signatureRequests"
+                :key="`flow-request-${request.id}`"
+                class="rounded-2xl border border-slate-100 bg-white p-3 flex flex-col gap-1"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ request.stepOrder }}</p>
+                  <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
+                    {{ signatureRequestStatusLabel(request.requestStatusCode) }}
+                  </AppTag>
+                </div>
+                <p class="text-xs text-slate-500 m-0">
+                  {{ request.assignedPerson ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim() : 'Firmante no resuelto' }}
+                  · Cargo {{ request.cargoName || '—' }}
+                </p>
+                <p class="text-xs text-slate-500 m-0">
+                  {{ request.respondedAt ? formatDateTime(request.respondedAt) : formatDateTime(request.requestedAt) }}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Firmar documento</h3>
+                <p class="text-xs text-slate-500 m-0">Utiliza el visor integrado para completar tu paso actual.</p>
+              </div>
+              <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'muted'">
+                {{ signatureFlowState.snapshot?.canOperate ? 'Listo para operar' : 'Acceso en modo lectura' }}
+              </AppTag>
+            </div>
+            <div v-if="signatureFlowState.snapshot?.canOperate">
+              <FirmarPdf ref="signatureFlowSignerRef" embedded />
+            </div>
+            <div v-else class="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+              No hay firmas pendientes para tu usuario o el paso aún no está listo para operar.
+            </div>
+          </section>
+        </div>
+        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+          Selecciona una solicitud de firma para revisar su flujo.
+        </div>
+      </div>
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
@@ -1336,6 +1506,21 @@ const taskLaunchForm = ref({
   custom_start_date: '',
   custom_end_date: ''
 });
+const taskLaunchStep = ref(1);
+const taskLaunchSteps = [
+  { id: 1, label: 'Contexto' },
+  { id: 2, label: 'Base documental' },
+  { id: 3, label: 'Confirmación' }
+];
+const taskListFilters = ref({
+  query: '',
+  year: 'all',
+  term: 'all',
+  termType: 'all',
+  origin: 'all',
+  status: 'all'
+});
+const expandedTaskIds = ref(new Set());
 
 const userFullName = computed(() => {
   if (!currentUser.value) return 'Usuario';
@@ -1525,25 +1710,164 @@ const resetTaskLaunchForm = () => {
     custom_start_date: '',
     custom_end_date: ''
   };
+  taskLaunchStep.value = 1;
   taskLaunchUseCustomTerm.value = false;
   taskLaunchSubmitting.value = false;
   taskLaunchError.value = '';
+};
+
+const resetTaskListFilters = () => {
+  taskListFilters.value = {
+    query: '',
+    year: 'all',
+    term: 'all',
+    termType: 'all',
+    origin: 'all',
+    status: 'all'
+  };
+};
+
+const isTaskExpanded = (taskId) => expandedTaskIds.value.has(Number(taskId));
+
+const toggleTaskExpansion = (taskId) => {
+  const normalized = Number(taskId || 0);
+  if (!normalized) return;
+  const next = new Set(expandedTaskIds.value);
+  if (next.has(normalized)) {
+    next.delete(normalized);
+  } else {
+    next.add(normalized);
+  }
+  expandedTaskIds.value = next;
 };
 
 const clearSelectedProcess = () => {
   selectedProcessKey.value = null;
   selectedProcessContext.value = null;
   selectedProcessPanel.value = null;
+  expandedTaskIds.value = new Set();
   processPanelError.value = '';
   processActionMessage.value = null;
   showTaskLaunchModal.value = false;
+  resetTaskListFilters();
   resetTaskLaunchForm();
 };
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
 
+const taskLaunchSystemTemplates = computed(() =>
+  (selectedProcessPanel.value?.dependencies?.templates || [])
+    .filter((template) =>
+      Number(template.creates_task) === 1
+      && String(template.artifact_origin || '').trim().toLowerCase() === 'process'
+    )
+);
+
+const taskLaunchSelectedTermLabel = computed(() => {
+  if (taskLaunchUseCustomTerm.value) {
+    return taskLaunchForm.value.custom_name || 'Periodo custom';
+  }
+  const currentTermId = Number(taskLaunchForm.value.term_id || 0);
+  if (!currentTermId) {
+    return 'Sin periodo seleccionado';
+  }
+  const term = (selectedProcessPanel.value?.available_terms || []).find((item) => Number(item.id) === currentTermId);
+  if (!term) {
+    return 'Periodo seleccionado';
+  }
+  return `${term.name} · ${term.term_type_name}`;
+});
+
+const taskFilterYears = computed(() => {
+  const years = new Set();
+  (selectedProcessPanel.value?.tasks || []).forEach((task) => {
+    const source = String(task.term_name || task.start_date || task.end_date || '');
+    const match = source.match(/(20\d{2})/);
+    if (match?.[1]) {
+      years.add(match[1]);
+    }
+  });
+  return Array.from(years).sort((a, b) => Number(b) - Number(a));
+});
+
+const taskFilterTerms = computed(() => {
+  const map = new Map();
+  (selectedProcessPanel.value?.tasks || []).forEach((task) => {
+    const value = String(task.term_id || task.term_name || task.id);
+    const label = task.term_name || `Tarea ${task.id}`;
+    if (!map.has(value)) {
+      map.set(value, { value, label });
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+});
+
+const taskFilterTermTypes = computed(() => {
+  const types = new Set(
+    (selectedProcessPanel.value?.tasks || [])
+      .map((task) => String(task.term_type_name || '').trim())
+      .filter(Boolean)
+  );
+  return Array.from(types).sort((a, b) => a.localeCompare(b));
+});
+
+const taskFilterStatuses = computed(() => {
+  const statuses = new Set(
+    (selectedProcessPanel.value?.tasks || [])
+      .map((task) => String(task.status || '').trim())
+      .filter(Boolean)
+  );
+  return Array.from(statuses).sort((a, b) => a.localeCompare(b));
+});
+
+const filteredProcessTasks = computed(() => {
+  const query = String(taskListFilters.value.query || '').trim().toLowerCase();
+  return (selectedProcessPanel.value?.tasks || []).filter((task) => {
+    const taskYearSource = String(task.term_name || task.start_date || task.end_date || '');
+    const yearMatch = taskYearSource.match(/(20\d{2})/);
+    const taskYear = yearMatch?.[1] || '';
+    const matchesYear = taskListFilters.value.year === 'all' || taskYear === taskListFilters.value.year;
+    const matchesTerm = taskListFilters.value.term === 'all' || String(task.term_id || task.term_name || task.id) === taskListFilters.value.term;
+    const matchesTermType = taskListFilters.value.termType === 'all' || String(task.term_type_name || '').trim() === taskListFilters.value.termType;
+    const matchesOrigin = taskListFilters.value.origin === 'all' || String(task.launch_mode || '').trim().toLowerCase() === taskListFilters.value.origin;
+    const matchesStatus = taskListFilters.value.status === 'all' || String(task.status || '').trim() === taskListFilters.value.status;
+    const haystack = [
+      task.term_name,
+      task.term_type_name,
+      task.description,
+      ...(task.items || []).map((item) => item.template_artifact_name),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    const matchesQuery = !query || haystack.includes(query);
+    return matchesYear && matchesTerm && matchesTermType && matchesOrigin && matchesStatus && matchesQuery;
+  });
+});
+
+const canAdvanceTaskLaunchStep = computed(() => {
+  if (taskLaunchSubmitting.value) {
+    return false;
+  }
+  if (taskLaunchStep.value === 1) {
+    if (taskLaunchUseCustomTerm.value) {
+      return Boolean(
+        taskLaunchForm.value.custom_name
+        && taskLaunchForm.value.custom_start_date
+        && taskLaunchForm.value.custom_end_date
+      );
+    }
+    return Boolean(taskLaunchForm.value.term_id);
+  }
+  return true;
+});
+
 const canSubmitTaskLaunch = computed(() => {
-  if (!selectedProcessPanel.value?.permissions?.can_launch_manual || taskLaunchSubmitting.value) {
+  if (
+    !selectedProcessPanel.value?.permissions?.can_launch_manual
+    || taskLaunchSubmitting.value
+    || taskLaunchStep.value !== taskLaunchSteps.length
+  ) {
     return false;
   }
   if (taskLaunchUseCustomTerm.value) {
@@ -1634,6 +1958,14 @@ const formatTriggerLabel = (trigger) => {
   return 'Manual sobre periodo existente';
 };
 
+const prettifyArtifactRole = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'primary') return 'Principal';
+  if (normalized === 'attachment') return 'Adjunto';
+  if (normalized === 'support') return 'Soporte';
+  return value || 'Principal';
+};
+
 const loadSelectedProcessPanel = async (process) => {
   const userId = currentUserId.value;
   const definitionId = Number(process?.process_definition_id);
@@ -1651,6 +1983,8 @@ const loadSelectedProcessPanel = async (process) => {
     }
     selectedProcessPanel.value = panel;
     selectedProcessKey.value = `${definitionId}`;
+    resetTaskListFilters();
+    expandedTaskIds.value = new Set((panel?.tasks || []).slice(0, 1).map((task) => Number(task.id)).filter(Boolean));
   } catch (error) {
     console.error('Error al cargar el panel operativo de la definición:', error);
     selectedProcessPanel.value = null;
@@ -1680,6 +2014,31 @@ const openTaskLaunchModal = () => {
 const closeTaskLaunchModal = () => {
   showTaskLaunchModal.value = false;
   resetTaskLaunchForm();
+};
+
+const showGeneralTaskInfo = () => {
+  setProcessActionInfo(
+    'La creación de tareas generales todavía no tiene backend habilitado en este dashboard. El siguiente paso es conectar este botón al flujo de artifacts generales y entregables personalizados.',
+    'error'
+  );
+};
+
+const showProcessDeliverableInfo = () => {
+  setProcessActionInfo(
+    'La creación personalizada de entregables dentro de una definición de proceso quedó visible como punto de entrada, pero aún falta su backend y el flujo de artifact general asociado.',
+    'error'
+  );
+};
+
+const goToNextTaskLaunchStep = () => {
+  if (!canAdvanceTaskLaunchStep.value) {
+    return;
+  }
+  taskLaunchStep.value = Math.min(taskLaunchStep.value + 1, taskLaunchSteps.length);
+};
+
+const goToPreviousTaskLaunchStep = () => {
+  taskLaunchStep.value = Math.max(taskLaunchStep.value - 1, 1);
 };
 
 const submitTaskLaunch = async () => {
@@ -1822,6 +2181,19 @@ onMounted(async () => {
 });
 
 watch(
+  taskLaunchUseCustomTerm,
+  (enabled) => {
+    if (enabled) {
+      taskLaunchForm.value.term_id = '';
+      return;
+    }
+    taskLaunchForm.value.custom_name = '';
+    taskLaunchForm.value.custom_start_date = '';
+    taskLaunchForm.value.custom_end_date = '';
+  }
+);
+
+watch(
   () => route.fullPath,
   async () => {
     if (route.path !== '/dashboard') return;
@@ -1936,7 +2308,17 @@ const subjectHasWorkingArtifact = (payload) => {
 const getCurrentFillStepCandidates = (payload) => {
   const subject = getDeliverableSubject(payload);
   const currentStepOrder = Number(subject.workflow?.fill_flow?.current_step_order || subject.workflow?.current_fill_step_order || 0);
-  return (subject.workflow?.fill_steps || []).filter((item) => Number(item.step_order) === currentStepOrder);
+  if (!currentStepOrder) {
+    const pendingRequests = (subject.workflow?.fill_requests || []).filter((item) => !item.responded_at);
+    if (pendingRequests.length) {
+      return pendingRequests;
+    }
+  }
+  const stepCandidates = (subject.workflow?.fill_steps || []).filter((item) => Number(item.step_order) === currentStepOrder);
+  if (stepCandidates.length) {
+    return stepCandidates;
+  }
+  return (subject.workflow?.fill_requests || []).filter((item) => Number(item.step_order || 0) === currentStepOrder);
 };
 
 const getCurrentFillWorkflowRequest = (payload) => {
@@ -1968,6 +2350,9 @@ const getFillRequestId = (request) => Number(request?.request_id || request?.id 
 
 const isReviewLikeFillStep = (request) => {
   const resolverType = String(request?.resolver_type || '').trim().toLowerCase();
+  if (!resolverType) {
+    return false;
+  }
   return ['cargo_in_scope', 'position', 'specific_person'].includes(resolverType);
 };
 
@@ -2017,6 +2402,10 @@ const isFillRequestActionableByCurrentUser = (request) => {
 const currentUserCanOperateFillStep = (payload) => {
   const currentUser = Number(currentUserId.value || 0);
   const candidates = getCurrentFillStepCandidates(payload);
+  if (!candidates.length) {
+    const fallbackRequest = getCurrentFillWorkflowRequest(payload);
+    return isFillRequestActionableByCurrentUser(fallbackRequest);
+  }
   return candidates.some((request) => {
     const assignedPersonId = Number(request?.assigned_person_id || 0);
     if (assignedPersonId > 0) {
@@ -2037,16 +2426,24 @@ const hasDeliverableBeenStarted = (payload) => {
 
 const shouldShowStartDeliverable = (payload) => {
   const subject = getDeliverableSubject(payload);
-  if (subject.itemId && startedDeliverableIds.value.has(Number(subject.itemId))) return false;
-  if (subjectHasWorkingArtifact(payload)) return false;
   const request = getCurrentFillWorkflowRequest(payload);
   const code = getFillRequestStatusCode(request);
   return Boolean(
     subject.documentId
     && code === 'pending'
-    && currentUserCanOperateFillStep(payload)
-    && !isReviewLikeFillStep(request)
   );
+};
+
+const canStartDeliverableAction = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  if (subject.itemId && startedDeliverableIds.value.has(Number(subject.itemId))) return false;
+  if (subjectHasWorkingArtifact(payload)) return false;
+  const request = getCurrentFillWorkflowRequest(payload);
+  const code = getFillRequestStatusCode(request);
+  if (code !== 'pending') {
+    return false;
+  }
+  return currentUserCanOperateFillStep(payload) || isFillRequestActionableByCurrentUser(request);
 };
 
 const shouldShowUploadDeliverable = (payload) => {

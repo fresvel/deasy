@@ -68,14 +68,6 @@
 
             <template v-else-if="isProcessTargetRuleFilterTable">
               <div class="md:col-span-6 lg:col-span-2">
-                <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_execution_mode" @update:model-value="updateProcessTargetRuleFilter('definition_execution_mode', $event)" @change="$emit('fetch-rows')">
-                  <option value="">Modo</option>
-                  <option value="manual">manual</option>
-                  <option value="system">system</option>
-                  <option value="hybrid">hybrid</option>
-                </AdminSelectField>
-              </div>
-              <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_status" @update:model-value="updateProcessTargetRuleFilter('definition_status', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
                   <option value="draft">draft</option>
@@ -88,9 +80,9 @@
             <template v-else-if="isTemplateArtifactsTable">
               <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_origin" @update:model-value="updateTemplateArtifactFilter('artifact_origin', $event)" @change="$emit('fetch-rows')">
-                  <option value="">Origen</option>
-                  <option value="system">system</option>
-                  <option value="user">user</option>
+                  <option value="">Catalogo</option>
+                  <option value="process">process</option>
+                  <option value="general">general</option>
                 </AdminSelectField>
               </div>
               <div class="md:col-span-6 lg:col-span-2">
@@ -224,10 +216,10 @@
                     size="sm"
                     icon-only
                     class-name="text-primary hope-action-btn hope-action-edit"
-                    :title="String(row?.artifact_origin || '') === 'system' ? 'Los artifacts del sistema se sincronizan desde MinIO' : 'Editar'"
-                    :aria-label="String(row?.artifact_origin || '') === 'system' ? 'Edicion bloqueada para artifacts del sistema' : 'Editar'"
-                    :disabled="String(row?.artifact_origin || '') === 'system'"
-                    @click="String(row?.artifact_origin || '') === 'system' ? undefined : $emit('open-edit', row)"
+                    :title="String(row?.artifact_origin || '') === 'process' ? 'Los artifacts de proceso se sincronizan desde MinIO' : 'Editar'"
+                    :aria-label="String(row?.artifact_origin || '') === 'process' ? 'Edicion bloqueada para artifacts de proceso' : 'Editar'"
+                    :disabled="String(row?.artifact_origin || '') === 'process'"
+                    @click="String(row?.artifact_origin || '') === 'process' ? undefined : $emit('open-edit', row)"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M11.4925 2.78906H7.75349C4.67849 2.78906 2.75049 4.96606 2.75049 8.04806V16.3621C2.75049 19.4441 4.66949 21.6211 7.75349 21.6211H16.5775C19.6625 21.6211 21.5815 19.4441 21.5815 16.3621V12.3341" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />

@@ -45,7 +45,6 @@
             <div><strong>Proceso:</strong> {{ formatCell(selectedRow?.process_id, { name: 'process_id' }, selectedRow || {}) }}</div>
             <div><strong>Serie:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
             <div><strong>Version:</strong> {{ selectedRow?.definition_version || "—" }}</div>
-            <div><strong>Modo:</strong> {{ selectedRow?.execution_mode || "—" }}</div>
             <div class="md:col-span-2"><strong>Nombre:</strong> {{ selectedRow?.name || "—" }}</div>
             <div class="md:col-span-2"><strong>Descripcion:</strong> {{ selectedRow?.description || "—" }}</div>
           </div>
@@ -123,7 +122,7 @@
               </template>
             </template>
           </AdminDataTable>
-          <div v-else class="text-sm text-slate-500">Sin paquetes vinculados.</div>
+          <div v-else class="text-sm text-slate-500">Sin artifacts vinculados.</div>
         </div>
       </div>
     </template>

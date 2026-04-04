@@ -15,7 +15,9 @@ export const DIST_ROOT = path.join(ROOT_DIR, "dist", "Plantillas");
 export const CATALOG_PATH = path.join(ROOT_DIR, "CATALOG.yaml");
 export const PYTHON_DIR = path.join(ROOT_DIR, "python");
 export const DOCKER_DIR = path.join(REPO_ROOT, "docker");
+export const DOCKER_ENV_SCRIPT = path.join(REPO_ROOT, "scripts", "docker-env.sh");
 export const DEFAULT_SEED = "informe-docente";
+const SUPPORTED_DOCKER_ENVS = new Set(["dev", "qa", "prod"]);
 const GENERATED_FILES = new Set([
   "main.aux",
   "main.bbl",
@@ -76,9 +78,9 @@ export function usage() {
     Recalcula y sincroniza el CATALOG.yaml a partir de los templates fuente existentes.
   node tools/templates/cli.mjs package
     Empaqueta todos los templates fuente y genera tools/templates/dist/Plantillas listo para publicacion.
-  node tools/templates/cli.mjs publish [--skip-package]
+  node tools/templates/cli.mjs publish [--skip-package] [--env dev|qa|prod]
     Publica los templates oficiales a MinIO bajo deasy-templates/System. Con --skip-package reutiliza el dist actual.
-  node tools/templates/cli.mjs publish-seeds
+  node tools/templates/cli.mjs publish-seeds [--env dev|qa|prod]
     Publica las semillas LaTeX a MinIO bajo deasy-templates/Seeds.
   node tools/templates/cli.mjs tui
     Abre una interfaz interactiva en terminal para navegar las operaciones principales.
@@ -87,6 +89,7 @@ Notas:
   - La fuente vive en tools/templates/templates
   - El empaquetado genera tools/templates/dist/Plantillas
   - publish sube directo a MinIO usando docker compose + minio/mc
+  - Si no indicas --env, publish usa dev por defecto
 `);
 }
 
@@ -116,6 +119,34 @@ function fail(message) {
     process.exit(1);
   }
   throw new Error(message);
+}
+
+function resolveDockerEnvironment(inputEnv) {
+  const candidates = [
+    inputEnv,
+    process.env.DEASY_ENV,
+    process.env.DEASY_ENVIRONMENT,
+  ];
+
+  const envFile = process.env.DEASY_ENV_FILE;
+  if (envFile) {
+    const match = path.basename(envFile).match(/^\.env\.(dev|qa|prod)(?:\.runtime)?$/);
+    if (match) {
+      candidates.push(match[1]);
+    }
+  }
+
+  candidates.push("dev");
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const normalized = String(candidate).trim().toLowerCase();
+    if (SUPPORTED_DOCKER_ENVS.has(normalized)) {
+      return normalized;
+    }
+  }
+
+  fail(`Ambiente Docker no soportado: ${inputEnv}`);
 }
 
 function resolvePath(inputPath) {
@@ -952,19 +983,21 @@ export function validateDistTemplates() {
   }
 }
 
-export function publishTemplates(skipPackage) {
+export function publishTemplates(skipPackage, environmentInput) {
+  const environment = resolveDockerEnvironment(environmentInput);
   if (!skipPackage) {
     packageTemplates();
   }
   validateDistTemplates();
-  runCommand("docker", ["compose", "--profile", "storage-publish", "run", "--rm", "minio-publish"], {
-    cwd: DOCKER_DIR,
+  runCommand("bash", [DOCKER_ENV_SCRIPT, environment, "--profile", "storage-publish", "run", "--rm", "--no-deps", "minio-publish"], {
+    cwd: REPO_ROOT,
   });
 }
 
-export function publishSeeds() {
-  runCommand("docker", ["compose", "--profile", "storage-publish-seeds", "run", "--rm", "minio-publish-seeds"], {
-    cwd: DOCKER_DIR,
+export function publishSeeds(environmentInput) {
+  const environment = resolveDockerEnvironment(environmentInput);
+  runCommand("bash", [DOCKER_ENV_SCRIPT, environment, "--profile", "storage-publish-seeds", "run", "--rm", "--no-deps", "minio-publish-seeds"], {
+    cwd: REPO_ROOT,
   });
 }
 
@@ -1003,10 +1036,10 @@ export async function main(argv = process.argv.slice(2)) {
       packageTemplates();
       return;
     case "publish":
-      publishTemplates(args["skip-package"] === true);
+      publishTemplates(args["skip-package"] === true, args.env);
       return;
     case "publish-seeds":
-      publishSeeds();
+      publishSeeds(args.env);
       return;
     case "tui": {
       const { runTui } = await import("./tui.mjs");

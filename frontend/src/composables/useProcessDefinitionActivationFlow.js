@@ -23,6 +23,7 @@ export function useProcessDefinitionActivationFlow({
   processDefinitionActivationHasRequiredArtifacts,
   processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
+  processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
@@ -46,6 +47,12 @@ export function useProcessDefinitionActivationFlow({
   const resolveEditorInstance = () => (
     typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
   );
+  const blurActiveElement = () => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.activeElement?.blur?.();
+  };
 
   const loadProcessDefinitionActivationDetail = async (definitionId) => {
     processDefinitionActivationRules.value = [];
@@ -124,6 +131,7 @@ export function useProcessDefinitionActivationFlow({
   };
 
   const closeProcessDefinitionActivationModal = () => {
+    blurActiveElement();
     getProcessDefinitionActivationInstance()?.hide();
   };
 
@@ -152,6 +160,7 @@ export function useProcessDefinitionActivationFlow({
     if (!context) {
       return;
     }
+    blurActiveElement();
     closeProcessDefinitionActivationModal();
     processDefinitionActivationConfirmed.value = false;
     setTimeout(() => {

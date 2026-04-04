@@ -185,13 +185,13 @@ export function useAdminDraftArtifactFlow({
         kind: "success",
         title: isEditingDraft ? "Artifact actualizado" : "Artifact creado",
         message: response.data?.__notice || (isEditingDraft
-          ? "El paquete de usuario fue actualizado correctamente."
-          : "El paquete de usuario fue creado correctamente.")
+          ? "El artifact general fue actualizado correctamente."
+          : "El artifact general fue creado correctamente.")
       });
     } catch (err) {
       draftArtifactError.value = err?.response?.data?.message || (isEditingDraft
-        ? "No se pudo actualizar el paquete de usuario."
-        : "No se pudo crear el paquete de usuario.");
+        ? "No se pudo actualizar el artifact general."
+        : "No se pudo crear el artifact general.");
     } finally {
       draftArtifactLoading.value = false;
     }
