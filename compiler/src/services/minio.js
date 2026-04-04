@@ -10,7 +10,7 @@ export const minioClient = new Minio.Client({
   port: Number(minioUrl.port || (useSSL ? 443 : 80)),
   useSSL,
   accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
-  secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || ""
+  secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || "",
 });
 
 export const ensureBucketExists = (bucket) =>
@@ -36,34 +36,23 @@ export const ensureBucketExists = (bucket) =>
 
 export const uploadFileToMinio = (bucket, objectName, filePath, meta = {}) =>
   new Promise((resolve, reject) => {
-    minioClient.fPutObject(bucket, objectName, filePath, meta, (error, etag) => {
+    minioClient.fPutObject(bucket, objectName, filePath, meta, (error, uploadInfo) => {
       if (error) {
         reject(error);
         return;
       }
-      resolve(etag);
+      resolve(uploadInfo);
     });
   });
 
-export const removeMinioObject = (bucket, objectName) =>
+export const getMinioObjectStream = (bucket, objectName) =>
   new Promise((resolve, reject) => {
-    minioClient.removeObject(bucket, objectName, (error) => {
+    minioClient.getObject(bucket, objectName, (error, stream) => {
       if (error) {
         reject(error);
         return;
       }
-      resolve(true);
-    });
-  });
-
-export const statMinioObject = (bucket, objectName) =>
-  new Promise((resolve, reject) => {
-    minioClient.statObject(bucket, objectName, (error, stat) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(stat);
+      resolve(stream);
     });
   });
 
@@ -80,13 +69,16 @@ export const listMinioObjects = (bucket, prefix = "", recursive = true) =>
     stream.on("end", () => resolve(objects));
   });
 
-export const getMinioObjectStream = (bucket, objectName) =>
+export const streamToBuffer = (stream) =>
   new Promise((resolve, reject) => {
-    minioClient.getObject(bucket, objectName, (error, stream) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(stream);
-    });
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
   });
+
+export const readMinioObjectAsText = async (bucket, objectName) => {
+  const stream = await getMinioObjectStream(bucket, objectName);
+  const buffer = await streamToBuffer(stream);
+  return buffer.toString("utf8");
+};

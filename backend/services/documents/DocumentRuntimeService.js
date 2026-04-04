@@ -3,7 +3,7 @@ import path from "path";
 import yaml from "js-yaml";
 
 import { getMariaDBPool } from "../../config/mariadb.js";
-import { getMinioObjectStream } from "../storage/minio_service.js";
+import { getMinioObjectStream, listMinioObjects } from "../storage/minio_service.js";
 
 const SERVICE_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
@@ -51,14 +51,36 @@ const loadObjectIfExists = async (bucket, objectName) => {
 };
 
 const normalizeObjectName = (value) => String(value || "").replace(/^\/+/, "");
+const normalizeObjectPrefix = (value) => `${normalizeObjectName(value).replace(/\/?$/, "/")}`;
+const normalizeArtifactRelativePath = (value) =>
+  String(value || "").trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
 
 const resolveBaseDataObjectNames = (artifact) => {
-  const prefix = String(artifact.base_object_prefix || "").replace(/^\/+/, "").replace(/\/?$/, "/");
+  const prefix = normalizeObjectPrefix(artifact.base_object_prefix || "");
   return [
     `${prefix}data.json`,
     `${prefix}data.yaml`,
     `${prefix}data.yml`,
   ];
+};
+
+const resolveRenderSourceConfig = ({ artifactContext, meta }) => {
+  const renderEngine = String(artifactContext?.render_engine || "").trim() || "jinja2";
+  const systemMode = (((meta || {}).modes || {}).system || {})[renderEngine];
+  const relativePath = normalizeArtifactRelativePath(systemMode?.path);
+
+  if (!relativePath) {
+    throw new Error(
+      `El artifact no declara una fuente tecnica utilizable para el render_engine ${renderEngine}.`
+    );
+  }
+
+  const objectPrefix = `${normalizeObjectPrefix(artifactContext?.base_object_prefix || "")}${relativePath}/`;
+  return {
+    renderEngine,
+    relativePath,
+    objectPrefix,
+  };
 };
 
 const resolvePatternPath = (patternRef) => {
@@ -330,6 +352,49 @@ export class DocumentRuntimeService {
     };
   }
 
+  async loadArtifactRenderSource(artifactContext, meta) {
+    if (!artifactContext?.bucket || !artifactContext?.base_object_prefix) {
+      throw new Error("La document_version no tiene un prefijo base de artifact resoluble.");
+    }
+
+    const renderSource = resolveRenderSourceConfig({ artifactContext, meta });
+    const objectNames = await listMinioObjects(artifactContext.bucket, renderSource.objectPrefix, true);
+    const sourceFiles = objectNames
+      .filter((objectName) => objectName.startsWith(renderSource.objectPrefix))
+      .map((objectName) => ({
+        objectName,
+        relativePath: objectName.slice(renderSource.objectPrefix.length),
+      }))
+      .filter((item) => item.relativePath);
+
+    if (!sourceFiles.length) {
+      throw new Error(
+        `No se encontraron archivos del artifact bajo ${renderSource.objectPrefix}.`
+      );
+    }
+
+    const preferredEntryCandidates = [
+      "main.tex.j2",
+      "main.j2",
+      "index.tex.j2",
+      "index.j2",
+    ];
+
+    const entryFile = preferredEntryCandidates
+      .map((candidate) => sourceFiles.find((item) => item.relativePath === candidate))
+      .find(Boolean) || sourceFiles[0];
+
+    return {
+      bucket: artifactContext.bucket,
+      renderEngine: renderSource.renderEngine,
+      relativePath: renderSource.relativePath,
+      objectPrefix: renderSource.objectPrefix,
+      entryObjectKey: entryFile?.objectName || null,
+      fileCount: sourceFiles.length,
+      files: sourceFiles,
+    };
+  }
+
   async buildDocumentCompilationInput(documentVersionId, externalConnection = null) {
     const connection = externalConnection || await this.pool.getConnection();
     const shouldRelease = !externalConnection;
@@ -341,6 +406,10 @@ export class DocumentRuntimeService {
       }
 
       const artifactDocuments = await this.loadArtifactSourceDocuments(artifactContext);
+      const artifactRenderSource = await this.loadArtifactRenderSource(
+        artifactContext,
+        artifactDocuments.meta
+      );
       const pattern = loadPatternForMeta(artifactDocuments.meta);
       const signatureRows = await getSignatureRuntimeRows(connection, documentVersionId);
       const runtimePayload = pattern
@@ -382,7 +451,10 @@ export class DocumentRuntimeService {
           dataObjectKey: artifactDocuments.dataObjectKey,
           patternRef: pattern?.ref || null,
           patternPath: pattern?.path || null,
+          renderSourcePrefix: artifactRenderSource.objectPrefix,
+          renderSourceEntryObjectKey: artifactRenderSource.entryObjectKey,
         },
+        renderSource: artifactRenderSource,
         schema: artifactDocuments.schema,
         meta: artifactDocuments.meta,
         baseData: artifactDocuments.baseData,

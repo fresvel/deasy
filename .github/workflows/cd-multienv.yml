@@ -146,6 +146,9 @@ jobs:
           - service: backend
             dockerfile: docker/backend/Dockerfile
             build_args: ""
+          - service: compiler
+            dockerfile: docker/compiler/Dockerfile
+            build_args: ""
           - service: frontend
             dockerfile: docker/frontend/Dockerfile
             build_args: VITE_API_PORT=${{ needs.prepare.outputs.frontend_api_port }}

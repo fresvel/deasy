@@ -1,6 +1,5 @@
 import path from "path";
 import fs from "fs-extra";
-import { randomUUID } from "crypto";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
@@ -14,80 +13,19 @@ import {
   getMinioObjectStream
 } from "../../services/storage/minio_service.js";
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
+import {
+  MINIO_DOCUMENTS_BUCKET,
+  MINIO_DOCUMENTS_PREFIX,
+  buildCanonicalDocumentVersionBasePath,
+  buildWorkingObjectPathForUpload,
+  resolveStoredDocumentObject,
+} from "../../services/documents/DocumentStoragePaths.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 
 const userRepository = new UserRepository();
 const sqlAdminService = new SqlAdminService();
 const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
-const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-
-const sanitizeStorageSegment = (value, fallback = "na") =>
-  String(value ?? fallback)
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "") || fallback;
-
-const buildDocumentVersionFolder = (sequenceValue) => {
-  const sequence = Math.max(1, Number(sequenceValue || 1));
-  return `v${String(sequence).padStart(4, "0")}`;
-};
-
-const buildCanonicalDocumentVersionBasePath = (target) => {
-  const year =
-    Number(target.term_year) ||
-    Number(String(target.term_start_date || "").slice(0, 4)) ||
-    new Date().getFullYear();
-  const versionFolder = buildDocumentVersionFolder(target.document_version_sequence);
-  return [
-    String(target.scope_unit_id),
-    "PROCESOS",
-    String(target.process_id),
-    "ANIOS",
-    String(year),
-    "TIPOS_PERIODO",
-    String(target.term_type_id),
-    "PERIODOS",
-    String(target.term_id),
-    "TAREAS",
-    String(target.task_id),
-    "Documentos",
-    String(target.document_id),
-    versionFolder
-  ].join("/");
-};
-
-const buildWorkingObjectPathForUpload = ({ basePath, originalName, extension }) => {
-  const safeOriginalName = sanitizeStorageSegment(originalName, `archivo.${extension || "bin"}`);
-  const safeExtension = sanitizeStorageSegment(extension || "bin", "bin").toLowerCase();
-  return [
-    basePath,
-    "working",
-    safeExtension,
-    `${Date.now()}-${randomUUID()}-${safeOriginalName}`
-  ].join("/");
-};
-
-const resolveStoredDocumentObject = (storedPath) => {
-  const normalizedPath = String(storedPath || "").trim().replace(/^\/+/, "");
-  if (!normalizedPath) {
-    return null;
-  }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
-    return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
-      objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
-    };
-  }
-  return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
-    relativePath: normalizedPath
-  };
-};
 
 const getNumericUserId = (req) => {
   const userIdRaw = req.params?.id ?? req.query?.user_id ?? req.query?.userId ?? req.body?.user_id ?? req.body?.userId;

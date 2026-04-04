@@ -118,6 +118,25 @@ services:
     ports:
       - "24000:4000"
 
+  compiler:
+    image: ${IMAGE_REGISTRY}/${COMPILER_IMAGE_REPOSITORY}:${COMPILER_IMAGE_TAG}
+    pull_policy: always
+    env_file:
+      - .env.prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4100/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "${COMPILER_PORT}:4100"
+
   analytics:
     image: ${IMAGE_REGISTRY}/${ANALYTICS_IMAGE_REPOSITORY}:${ANALYTICS_IMAGE_TAG}
     pull_policy: always

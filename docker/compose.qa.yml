@@ -76,6 +76,14 @@ services:
     ports:
       - "14000:4000"
 
+  compiler:
+    image: ${IMAGE_REGISTRY}/${COMPILER_IMAGE_REPOSITORY}:${COMPILER_IMAGE_TAG}
+    pull_policy: always
+    env_file:
+      - .env.qa
+    ports:
+      - "${COMPILER_PORT}:4100"
+
   analytics:
     image: ${IMAGE_REGISTRY}/${ANALYTICS_IMAGE_REPOSITORY}:${ANALYTICS_IMAGE_TAG}
     pull_policy: always

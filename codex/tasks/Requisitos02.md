@@ -10,6 +10,16 @@
   - Producir salidas en working/ y, cuando aplique, metadata técnica de compilación.
   - Reportar estado, errores, warnings y artefactos generados al backend principal.
 
+  Requisito arquitectónico de aislamiento
+
+  - El compilador documental debe vivir como microservicio separado del backend principal.
+  - Debe tener su propio contenedor, su propio proceso de arranque y su propia superficie HTTP.
+  - El backend principal solo debe orquestar la compilación mediante API, callback o polling.
+  - No se debe cerrar la implementación final dejando el pipeline de compilación embebido dentro de
+    `backend/` como solución definitiva.
+  - Si se reutilizan scripts o utilidades de `tools/` durante el desarrollo, deben migrarse o
+    empaquetarse dentro del microservicio compilador antes de considerar la tarea terminada.
+
   Alcance inicial recomendado
 
   - Soporte prioritario para jinja2 + latex -> pdf.
@@ -144,6 +154,18 @@
   - errores de storage
   - errores de runtime incompleto
   - todos deben devolverse de forma estructurada y comprensible
+
+  Requisitos de contenedor y compilación LaTeX
+
+  - El contenedor del microservicio compilador debe construirse con `FROM
+    texlive/texlive:<tag>` usando una variante estable o, si todavía no se fija
+    versión, `texlive/texlive:latest` de forma explícita.
+  - Se debe preferir una etiqueta estable fijada sobre `latest` cuando el flujo
+    pase a operación reproducible.
+  - La imagen del compilador no debe reimplementar manualmente una
+    instalación completa de TeX Live si ya está resuelta por la imagen base.
+  - La decisión final del tag usado debe quedar documentada junto con el
+    contrato técnico del microservicio.
 
   Requisitos específicos para firmas
 

@@ -149,6 +149,8 @@ services:
       RABBITMQ_URL: amqp://rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
+      COMPILER_BASE_URL: http://compiler:4100
+      COMPILER_SHARED_TOKEN: ${COMPILER_SHARED_TOKEN}
     depends_on:
       mariadb:
         condition: service_healthy
@@ -203,6 +205,25 @@ services:
       SIGNER_EMBED_VALIDATION_INFO: ${SIGNER_EMBED_VALIDATION_INFO:-1}
       SIGNER_USE_PADES_LTA: ${SIGNER_USE_PADES_LTA:-0}
       SIGNER_USE_GHOSTSCRIPT: ${SIGNER_USE_GHOSTSCRIPT:-1}
+    depends_on:
+      - minio
+      - rabbitmq
+
+  compiler:
+    restart: unless-stopped
+    environment:
+      COMPILER_PORT: ${COMPILER_PORT}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: 0
+      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
+      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
+      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
+      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
+      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      COMPILER_SHARED_TOKEN: ${COMPILER_SHARED_TOKEN}
     depends_on:
       - minio
       - rabbitmq
