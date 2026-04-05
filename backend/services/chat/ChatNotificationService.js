@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ChatNotification } from "../../models/chat/notification_model.js";
+import { logChatInfo } from "./chat_logging.js";
 
 const toNotificationSummary = (notification) => ({
   id: notification._id.toString(),
@@ -69,6 +70,12 @@ export default class ChatNotificationService {
       }))
     );
 
+    logChatInfo("chat.notification.created", {
+      conversation_id: String(conversation.id),
+      message_id: String(message.id),
+      notifications_count: createdNotifications.length
+    });
+
     return createdNotifications.map(toNotificationSummary);
   }
 
@@ -123,6 +130,12 @@ export default class ChatNotificationService {
       recipient_person_id: Number(personId),
       conversation_id: new mongoose.Types.ObjectId(conversationId)
     }).sort({ created_at: -1 });
+
+    logChatInfo("chat.notification.read", {
+      conversation_id: String(conversationId),
+      person_id: Number(personId),
+      notifications_count: notifications.length
+    });
 
     return notifications.map(toNotificationSummary);
   }

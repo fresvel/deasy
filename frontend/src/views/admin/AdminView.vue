@@ -395,6 +395,7 @@
       </s-body>
 
       <s-message :show="vnotify" />
+      <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
     </div>
   </div>
 </template>
@@ -427,6 +428,7 @@ import AppWorkspaceSidebar from "@/layouts/AppWorkspaceSidebar.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import AppWorkspaceHeader from "@/layouts/AppWorkspaceHeader.vue";
+import WorkspaceChatLauncher from "@/components/WorkspaceChatLauncher.vue";
 import AdminTableManager from "./components/AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 

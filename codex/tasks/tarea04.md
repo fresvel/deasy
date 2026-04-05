@@ -1,6 +1,6 @@
 # Listado de actividades
 
-Avance del checklist: `18/20`
+Avance del checklist: `20/20`
 
 Buenas prácticas base validadas con Context7:
 - `MongoDB` (`/mongodb/docs`): para colecciones con crecimiento no acotado, usar referencias entre documentos y evitar arrays crecientes; esto aplica a `conversations` y `messages`.
@@ -22,10 +22,10 @@ Buenas prácticas base validadas con Context7:
 12. [x] Integrar el panel de usuario o dashboard para que el botón `Chat del proceso` abra el flujo real dentro de ese overlay y deje de mostrar el placeholder actual.
 13. [x] Implementar en frontend la carga paginada de mensajes, composición/envío y refresco realtime o fallback seguro si la conexión al broker falla.
 14. [x] Implementar el estado mínimo de lectura/no lectura para notificaciones y decidir si `read_by` vive inicialmente en `messages` o se separa luego.
-15. [ ] Evaluar e implementar adjuntos en MinIO solo si el MVP llega a tiempo; si no, dejar contrato y estructura listos sin forzar la carga de archivos en esta primera fase.
+15. [x] Evaluar e implementar adjuntos en MinIO solo si el MVP llega a tiempo; si no, dejar contrato y estructura listos sin forzar la carga de archivos en esta primera fase.
 16. [x] Ajustar el contrato de API y eventos para que sea reutilizable por una futura app móvil, sin acoplarlo a payloads o estructuras del dashboard web.
 17. [x] Dejar definida la estrategia de sincronización cliente para móvil: bootstrap HTTP, paginación/cursor, unread state y fallback sin realtime.
-18. [ ] Agregar observabilidad técnica del módulo: logs estructurados, correlación por conversación/mensaje/proceso y manejo de errores de publicación a EMQX.
+18. [x] Agregar observabilidad técnica del módulo: logs estructurados, correlación por conversación/mensaje/proceso y manejo de errores de publicación a EMQX.
 19. [x] Documentar explícitamente la decisión de no crear aún un microservicio dedicado de chat, pero dejar el backlog de extracción futura a `chat-service` con hitos y disparadores operativos.
 
 ## Comentarios para el usuario, ignora esta sección.

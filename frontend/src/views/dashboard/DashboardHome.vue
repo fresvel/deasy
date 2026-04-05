@@ -1368,6 +1368,21 @@
                 <p class="m-0 whitespace-pre-wrap break-words text-sm font-medium leading-6">
                   {{ message.content || 'Adjunto sin texto' }}
                 </p>
+                <div v-if="message.attachments?.length" class="mt-3 flex flex-col gap-2">
+                  <button
+                    v-for="(attachment, attachmentIndex) in message.attachments"
+                    :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
+                    type="button"
+                    class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
+                    :class="Number(message.sender_person_id) === Number(currentUserId)
+                      ? 'border-white/20 bg-white/10 text-white hover:bg-white/15'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'"
+                    @click="downloadProcessChatAttachment(message, attachmentIndex)"
+                  >
+                    <span class="truncate">{{ attachment.filename }}</span>
+                    <IconDownload class="h-4 w-4 shrink-0" />
+                  </button>
+                </div>
                 <div
                   class="mt-2 flex items-center gap-2 text-[11px] font-bold"
                   :class="Number(message.sender_person_id) === Number(currentUserId) ? 'text-white/80' : 'text-slate-400'"
@@ -1391,7 +1406,39 @@
           </div>
 
           <footer class="border-t border-slate-200 bg-white px-4 py-4 sm:px-5">
+            <div v-if="processChatPendingAttachments.length" class="mb-3 flex flex-wrap gap-2">
+              <span
+                v-for="(file, index) in processChatPendingAttachments"
+                :key="`${file.name}-${index}`"
+                class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"
+              >
+                <span class="max-w-40 truncate">{{ file.name }}</span>
+                <button
+                  type="button"
+                  class="text-slate-400 transition hover:text-slate-600"
+                  @click="removePendingProcessChatAttachment(index)"
+                >
+                  <IconX class="h-3.5 w-3.5" />
+                </button>
+              </span>
+            </div>
             <div class="flex items-end gap-3">
+              <input
+                ref="processChatAttachmentInputRef"
+                type="file"
+                class="hidden"
+                multiple
+                @change="handleProcessChatAttachmentSelection"
+              >
+              <AppButton
+                variant="plain"
+                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[18px] border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Adjuntar archivos"
+                title="Adjuntar archivos"
+                @click="openProcessChatAttachmentPicker"
+              >
+                <IconPaperclip class="h-5 w-5" />
+              </AppButton>
               <textarea
                 ref="processChatComposerRef"
                 v-model="processChatDraft"
@@ -1405,7 +1452,7 @@
                 variant="primary"
                 size="sm"
                 class-name="h-[52px] shrink-0 rounded-[18px] px-4"
-                :disabled="processChatSubmitting || !String(processChatDraft || '').trim()"
+                :disabled="processChatSubmitting || (!String(processChatDraft || '').trim() && !processChatPendingAttachments.length)"
                 @click="sendProcessChatMessage"
               >
                 {{ processChatSubmitting ? 'Enviando...' : 'Enviar' }}
@@ -1443,6 +1490,7 @@ import PdfDropField from '@/components/PdfDropField.vue';
 import {
   IconGlobe,
   IconLock,
+  IconPaperclip,
   IconCertificate,
   IconIdBadge,
   IconMapPins,
@@ -1454,6 +1502,7 @@ import {
   IconArrowRight,
   IconArrowLeft,
   IconBuildingMonument,
+  IconDownload,
   IconInbox,
   IconMessages,
   IconSearch,
@@ -1465,6 +1514,7 @@ const route = useRoute();
 const menuService = new UserMenuService();
 const processPanelService = new ProcessDefinitionPanelService();
 const signatureFlowService = new SignatureFlowService();
+const WORKSPACE_CHAT_CONTEXT_KEY = 'deasy_workspace_chat_context';
 
 const currentUser = ref(null);
 const userPhoto = ref('/images/avatar.png');
@@ -1508,12 +1558,14 @@ const processChatView = ref('inbox');
 const processChatThread = ref(null);
 const processChatMessages = ref([]);
 const processChatDraft = ref('');
+const processChatPendingAttachments = ref([]);
 const processChatContext = ref({
   processId: null,
   scopeUnitId: null,
   definitionId: null
 });
 const processChatComposerRef = ref(null);
+const processChatAttachmentInputRef = ref(null);
 const showTaskLaunchModal = ref(false);
 const taskLaunchSubmitting = ref(false);
 const taskLaunchError = ref('');
@@ -2246,6 +2298,7 @@ const closeProcessChatOverlay = () => {
   processChatSearch.value = '';
   processChatView.value = 'inbox';
   processChatDraft.value = '';
+  processChatPendingAttachments.value = [];
 };
 
 const resizeProcessChatComposer = async () => {
@@ -2254,6 +2307,26 @@ const resizeProcessChatComposer = async () => {
   if (!element) return;
   element.style.height = 'auto';
   element.style.height = `${Math.min(element.scrollHeight, 160)}px`;
+};
+
+const openProcessChatAttachmentPicker = () => {
+  processChatAttachmentInputRef.value?.click?.();
+};
+
+const handleProcessChatAttachmentSelection = (event) => {
+  const selectedFiles = Array.from(event?.target?.files || []);
+  if (!selectedFiles.length) return;
+  processChatPendingAttachments.value = [
+    ...processChatPendingAttachments.value,
+    ...selectedFiles
+  ].slice(0, 5);
+  if (event?.target) {
+    event.target.value = '';
+  }
+};
+
+const removePendingProcessChatAttachment = (index) => {
+  processChatPendingAttachments.value = processChatPendingAttachments.value.filter((_, currentIndex) => currentIndex !== index);
 };
 
 const loadProcessChatMessages = async (conversationId) => {
@@ -2378,18 +2451,44 @@ const openProcessChatThreadItem = async (item) => {
   }
 };
 
+const downloadProcessChatAttachment = async (message, attachmentIndex) => {
+  if (!processChatThread.value?.id || !message?.id) return;
+  try {
+    const blob = await processPanelService.downloadConversationAttachment(
+      processChatThread.value.id,
+      message.id,
+      attachmentIndex
+    );
+    const attachment = Array.isArray(message.attachments) ? message.attachments[attachmentIndex] : null;
+    downloadBlob(blob, attachment?.filename || `adjunto-${attachmentIndex + 1}`);
+  } catch (error) {
+    processChatError.value = error?.response?.data?.message || error?.message || 'No se pudo descargar el adjunto.';
+  }
+};
+
 const sendProcessChatMessage = async () => {
-  if (!processChatThread.value?.id || !String(processChatDraft.value || '').trim() || processChatSubmitting.value) {
+  const trimmedContent = String(processChatDraft.value || '').trim();
+  if (!processChatThread.value?.id || processChatSubmitting.value || (!trimmedContent && !processChatPendingAttachments.value.length)) {
     return;
   }
 
   processChatSubmitting.value = true;
   processChatError.value = '';
   try {
+    let attachments = [];
+    if (processChatPendingAttachments.value.length) {
+      const uploadResponse = await processPanelService.uploadConversationAttachments(
+        processChatThread.value.id,
+        processChatPendingAttachments.value
+      );
+      attachments = Array.isArray(uploadResponse?.data) ? uploadResponse.data : [];
+    }
     await processPanelService.sendConversationMessage(processChatThread.value.id, {
-      content: String(processChatDraft.value || '').trim()
+      content: trimmedContent,
+      attachments
     });
     processChatDraft.value = '';
+    processChatPendingAttachments.value = [];
     await loadProcessChatMessages(processChatThread.value.id);
     await markProcessChatConversationRead(processChatThread.value.id);
     const refreshedThread = await processPanelService.getProcessThread(
@@ -2426,6 +2525,37 @@ watch(
     }
   },
   { immediate: true }
+);
+
+watch(
+  () => [
+    selectedProcessPanel.value?.definition?.chat_context?.process_id,
+    selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids,
+    processChatContext.value.processId,
+    processChatContext.value.scopeUnitId,
+    selectedProcessPanel.value?.definition?.name
+  ],
+  () => {
+    if (typeof window === 'undefined') return;
+    const processId = Number(processChatContext.value.processId || selectedProcessPanel.value?.definition?.chat_context?.process_id || 0) || null;
+    const accessibleScopeUnitIds = Array.isArray(selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids)
+      ? selectedProcessPanel.value.definition.chat_context.accessible_scope_unit_ids
+      : [];
+    if (!processId) {
+      window.sessionStorage.removeItem(WORKSPACE_CHAT_CONTEXT_KEY);
+      return;
+    }
+    window.sessionStorage.setItem(
+      WORKSPACE_CHAT_CONTEXT_KEY,
+      JSON.stringify({
+        processId,
+        scopeUnitId: processChatContext.value.scopeUnitId || null,
+        title: selectedProcessPanel.value?.definition?.name || selectedProcessContext.value?.name || 'Proceso',
+        accessibleScopeUnitIds
+      })
+    );
+  },
+  { immediate: true, deep: true }
 );
 
 const getFileNameFromPath = (filePath = '') => filePath.split('/').pop() || 'archivo';

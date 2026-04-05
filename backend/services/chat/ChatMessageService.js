@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { ChatConversation } from "../../models/chat/conversation_model.js";
 import { ChatMessage } from "../../models/chat/message_model.js";
+import { logChatInfo } from "./chat_logging.js";
 
 const toMessageSummary = (message) => ({
   id: message._id.toString(),
@@ -118,6 +119,14 @@ export default class ChatMessageService {
     const activeParticipantIds = getActiveParticipantIds(conversation);
     const recipientPersonIds = activeParticipantIds.filter((participantId) => participantId !== Number(personId));
 
+    logChatInfo("chat.message.created", {
+      conversation_id: conversation._id.toString(),
+      message_id: message._id.toString(),
+      process_id: Number(conversation.process_id || conversation.scope?.process_id || 0) || null,
+      person_id: Number(personId),
+      attachments_count: attachments.length
+    });
+
     return {
       conversation: {
         id: conversation._id.toString(),
@@ -173,6 +182,12 @@ export default class ChatMessageService {
       conversation_id: conversation._id,
       sender_person_id: { $ne: Number(personId) },
       read_by: { $ne: Number(personId) }
+    });
+
+    logChatInfo("chat.conversation.read", {
+      conversation_id: conversation._id.toString(),
+      person_id: Number(personId),
+      unread_count: unreadCount
     });
 
     return {

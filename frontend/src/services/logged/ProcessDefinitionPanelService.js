@@ -234,6 +234,46 @@ class ProcessDefinitionPanelService {
     );
     return data;
   }
+
+  async uploadConversationAttachments(conversationId, files = []) {
+    if (!conversationId) {
+      throw new Error("Se requiere conversationId.");
+    }
+    if (!Array.isArray(files) || !files.length) {
+      throw new Error("Debes seleccionar al menos un archivo.");
+    }
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+    const { data } = await axios.post(
+      API_ROUTES.CHAT_CONVERSATION_ATTACHMENTS(conversationId),
+      formData,
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return data;
+  }
+
+  async downloadConversationAttachment(conversationId, messageId, attachmentIndex) {
+    if (!conversationId || !messageId || attachmentIndex === null || attachmentIndex === undefined) {
+      throw new Error("Se requiere conversación, mensaje y adjunto.");
+    }
+    const response = await axios.get(
+      API_ROUTES.CHAT_MESSAGE_ATTACHMENT(conversationId, messageId, attachmentIndex),
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+        responseType: "blob",
+      }
+    );
+    return response.data;
+  }
 }
 
 export default ProcessDefinitionPanelService;

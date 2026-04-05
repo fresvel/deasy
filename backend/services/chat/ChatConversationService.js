@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { ChatConversation } from "../../models/chat/conversation_model.js";
 import { ChatMessage } from "../../models/chat/message_model.js";
+import { logChatInfo } from "./chat_logging.js";
 
 const toParticipantSummary = (participant) => ({
   person_id: Number(participant.person_id),
@@ -141,6 +142,13 @@ export default class ChatConversationService {
       mobile_summary: null
     });
 
+    logChatInfo("chat.conversation.created", {
+      conversation_id: conversation._id.toString(),
+      type,
+      process_id: Number(processId || 0) || null,
+      person_id: Number(createdBy)
+    });
+
     return toConversationSummary(conversation, 0);
   }
 
@@ -256,6 +264,13 @@ export default class ChatConversationService {
       mobile_summary: null
     });
 
+    logChatInfo("chat.process_thread.created", {
+      conversation_id: conversation._id.toString(),
+      process_id: Number(processId),
+      scope_unit_id: Number(scopeUnitId),
+      person_id: Number(createdBy)
+    });
+
     return toConversationSummary(conversation, 0);
   }
 
@@ -308,6 +323,12 @@ export default class ChatConversationService {
       current_definition_id: currentDefinitionId ? Number(currentDefinitionId) : conversation.scope?.current_definition_id ?? null
     };
     await conversation.save();
+
+    logChatInfo("chat.process_thread.synced", {
+      conversation_id: conversation._id.toString(),
+      process_id: Number(conversation.process_id || conversation.scope?.process_id || 0) || null,
+      current_definition_id: Number(currentDefinitionId || conversation.scope?.current_definition_id || 0) || null
+    });
 
     return toConversationSummary(conversation, 0);
   }

@@ -470,6 +470,10 @@
 
   - `GET /chat/conversations` y `GET /chat/conversations/:id/messages` deben
     diseñarse con paginación compatible con móvil.
+  - si se soportan adjuntos, el módulo debe exponer endpoints protegidos para:
+      - cargar archivos a la conversación,
+      - descargar adjuntos por mensaje e índice,
+    sin exponer acceso directo no autorizado al bucket.
 
 ### 5. Endpoint recomendado de conveniencia
 
@@ -660,7 +664,9 @@
   - al abrir una conversación, el cambio de estado debe sentirse continuo dentro
     del mismo panel,
   - el footer de composición no debe tapar mensajes recientes ni romper el
-    scroll.
+    scroll,
+  - el flujo de adjuntar archivo debe ser discreto y no romper el envío de
+    texto simple.
 
 ### 4. Reglas UX
 
@@ -691,6 +697,11 @@
       - `conversation_id`
       - `message_id`
       - motivo de error
+  - registrar además eventos estructurados de:
+      - creación de conversación/thread,
+      - creación de mensaje,
+      - marcado de lectura,
+      - carga de adjuntos
 
 ## Requisitos de unread / read state
 

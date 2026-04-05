@@ -1,3 +1,5 @@
+import { logChatError, logChatInfo } from "./chat_logging.js";
+
 const DEFAULT_EMQX_API_BASE_URL = "http://emqx:18083/api/v5";
 const DEFAULT_EMQX_API_USERNAME = "admin";
 const DEFAULT_EMQX_API_PASSWORD = "public";
@@ -65,6 +67,11 @@ export default class ChatRealtimePublisherService {
 
     if (!response.ok) {
       const responseText = await response.text();
+      logChatError("chat.realtime.publish_failed", {
+        topic,
+        status: response.status,
+        details: responseText
+      });
       const error = new Error(`No se pudo publicar evento realtime en EMQX (${response.status}).`);
       error.status = 502;
       error.details = responseText;
@@ -132,6 +139,12 @@ export default class ChatRealtimePublisherService {
         await this.publish(`processes/${processId}/thread`, envelope)
       );
     }
+
+    logChatInfo("chat.realtime.published", {
+      conversation_id: conversationId,
+      message_id: messageId,
+      publications_count: publications.length
+    });
 
     return {
       published: true,

@@ -1,11 +1,16 @@
+import path from "path";
+import fs from "fs-extra";
 import ChatConversationService from "../../services/chat/ChatConversationService.js";
 import ChatAuthorizationService from "../../services/chat/ChatAuthorizationService.js";
+import ChatAttachmentService from "../../services/chat/ChatAttachmentService.js";
 import ChatIdentityService from "../../services/chat/ChatIdentityService.js";
 import ChatMessageService from "../../services/chat/ChatMessageService.js";
 import ChatNotificationService from "../../services/chat/ChatNotificationService.js";
 import ChatRealtimePublisherService from "../../services/chat/ChatRealtimePublisherService.js";
+import { logChatError } from "../../services/chat/chat_logging.js";
 
 const identityService = new ChatIdentityService();
+const attachmentService = new ChatAttachmentService();
 const conversationService = new ChatConversationService();
 const authorizationService = new ChatAuthorizationService();
 const messageService = new ChatMessageService();
@@ -14,6 +19,12 @@ const realtimePublisherService = new ChatRealtimePublisherService();
 
 const handleControllerError = (res, error, fallbackMessage) => {
   const status = Number(error?.status || 500);
+  if (status >= 500) {
+    logChatError("chat.controller.error", {
+      status,
+      message: error?.message || fallbackMessage
+    });
+  }
   return res.status(status).json({
     message: error?.message || fallbackMessage
   });
@@ -116,6 +127,56 @@ export const markConversationRead = async (req, res) => {
     });
   } catch (error) {
     return handleControllerError(res, error, "No se pudo marcar la conversación como leída.");
+  }
+};
+
+export const uploadConversationAttachments = async (req, res) => {
+  const files = Array.isArray(req.files) ? req.files : [];
+  try {
+    const { personId } = await identityService.resolveAuthenticatedPerson(req);
+    const attachments = await attachmentService.uploadAttachments(req.params.id, personId, files);
+    return res.status(201).json({ data: attachments });
+  } catch (error) {
+    return handleControllerError(res, error, "No se pudieron cargar los adjuntos del chat.");
+  } finally {
+    await Promise.all(files.map((file) => fs.remove(file.path).catch(() => {})));
+  }
+};
+
+export const downloadConversationAttachment = async (req, res) => {
+  try {
+    const { personId } = await identityService.resolveAuthenticatedPerson(req);
+    const result = await attachmentService.downloadAttachment(
+      req.params.id,
+      req.params.messageId,
+      req.params.attachmentIndex,
+      personId
+    );
+
+    res.setHeader("Content-Type", result.contentType);
+    if (result.contentLength) {
+      res.setHeader("Content-Length", result.contentLength);
+    }
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${path.basename(result.attachment.filename || "adjunto")}"`
+    );
+    result.stream.on("error", (streamError) => {
+      logChatError("chat.attachment.download_failed", {
+        conversation_id: req.params.id,
+        message_id: req.params.messageId,
+        attachment_index: Number(req.params.attachmentIndex),
+        error: streamError?.message || streamError
+      });
+      if (!res.headersSent) {
+        res.status(500).json({ message: "No se pudo transmitir el adjunto del chat." });
+      } else {
+        res.destroy(streamError);
+      }
+    });
+    result.stream.pipe(res);
+  } catch (error) {
+    return handleControllerError(res, error, "No se pudo descargar el adjunto del chat.");
   }
 };
 

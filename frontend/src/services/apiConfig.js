@@ -35,6 +35,9 @@ export const API_ROUTES = {
   CHAT_PROCESS_THREAD: (processId) => `${API_PREFIX}/chat/processes/${processId}/thread`,
   CHAT_CONVERSATION_MESSAGES: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/messages`,
   CHAT_CONVERSATION_READ: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/read`,
+  CHAT_CONVERSATION_ATTACHMENTS: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/attachments`,
+  CHAT_MESSAGE_ATTACHMENT: (conversationId, messageId, attachmentIndex) =>
+    `${API_PREFIX}/chat/conversations/${conversationId}/messages/${messageId}/attachments/${attachmentIndex}`,
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
