@@ -6,9 +6,9 @@ repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
-  user:
+  general:
     latex:
-      path: "modes/user/latex/src"
+      path: "modes/general/latex/src"
 origins:
   - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2023/PPO2023/Investigación/Formativa/Formatos/03_artículo/Springer.zip"
 workflows:

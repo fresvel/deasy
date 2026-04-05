@@ -322,9 +322,16 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
     `SELECT
        id,
        step_order,
+       resolver_type,
+       assigned_person_id,
+       unit_scope_type,
+       unit_id,
+       unit_type_id,
+       position_id,
        step_type_id,
        required_cargo_id,
        selection_mode,
+       approval_mode,
        required_signers_min,
        required_signers_max,
        is_required
@@ -365,13 +372,17 @@ const resolveCurrentPersonsForPosition = async (connection, positionId) => {
 };
 
 const resolveScopeForStep = (step, context) => {
-  const unitScopeType = String(step?.unit_scope_type || "unit_exact");
+  const unitScopeType = String(step?.unit_scope_type || "context_exact");
   return {
     unitScopeType,
-    unitId: step?.unit_id ? Number(step.unit_id) : (context?.scope_unit_id ? Number(context.scope_unit_id) : null),
-    unitTypeId: step?.unit_type_id
-      ? Number(step.unit_type_id)
-      : (context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null)
+    unitId:
+      (step?.unit_id ? Number(step.unit_id) : null)
+      || (unitScopeType === "context_exact" || unitScopeType === "context_subtree" || unitScopeType === "context_ancestor_type"
+        ? (context?.scope_unit_id ? Number(context.scope_unit_id) : null)
+        : null),
+    unitTypeId:
+      (step?.unit_type_id ? Number(step.unit_type_id) : null)
+      || (unitScopeType === "unit_type" ? (context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null) : null)
   };
 };
 
@@ -425,6 +436,58 @@ const resolvePersonsForCargoInScope = async (connection, step, context = null) =
     }
     query += "\n      AND u.unit_type_id = ?";
     params.push(scope.unitTypeId);
+  } else if (scope.unitScopeType === "context_subtree") {
+    if (!scope.unitId) {
+      return [];
+    }
+    query = `
+      WITH RECURSIVE scoped_units AS (
+        SELECT id
+        FROM units
+        WHERE id = ?
+        UNION ALL
+        SELECT ur.child_unit_id
+        FROM unit_relations ur
+        INNER JOIN relation_unit_types rt
+          ON rt.id = ur.relation_type_id
+         AND rt.code = 'org'
+        INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
+      )
+      ${query}
+        AND up.unit_id IN (SELECT id FROM scoped_units)`;
+    params.unshift(scope.unitId);
+  } else if (scope.unitScopeType === "context_ancestor_type") {
+    if (!scope.unitId || !scope.unitTypeId) {
+      return [];
+    }
+    query = `
+      WITH RECURSIVE ancestor_units AS (
+        SELECT id, unit_type_id
+        FROM units
+        WHERE id = ?
+        UNION ALL
+        SELECT parent_u.id, parent_u.unit_type_id
+        FROM unit_relations ur
+        INNER JOIN relation_unit_types rt
+          ON rt.id = ur.relation_type_id
+         AND rt.code = 'org'
+        INNER JOIN ancestor_units au ON au.id = ur.child_unit_id
+        INNER JOIN units parent_u ON parent_u.id = ur.parent_unit_id
+      )
+      ${query}
+        AND up.unit_id IN (
+          SELECT id
+          FROM ancestor_units
+          WHERE unit_type_id = ?
+        )`;
+    params.unshift(scope.unitTypeId);
+    params.unshift(scope.unitId);
+  } else if (scope.unitScopeType === "context_exact") {
+    if (!scope.unitId) {
+      return [];
+    }
+    query += "\n      AND up.unit_id = ?";
+    params.push(scope.unitId);
   }
 
   query += "\n    ORDER BY pa.person_id ASC";
@@ -482,7 +545,7 @@ const shouldInferSignatureFlowForContext = (context) => {
 };
 
 const resolveSignatureStepAssignees = async (connection, step, context) => {
-  if (!step?.required_cargo_id || !context?.task_id) {
+  if (!step || !context?.task_id) {
     return [];
   }
 
@@ -490,21 +553,41 @@ const resolveSignatureStepAssignees = async (connection, step, context) => {
     return [];
   }
 
-  const assignees = await resolvePersonsForCargoInScope(
-    connection,
-    {
-      cargo_id: step.required_cargo_id,
-      unit_scope_type: "unit_exact",
-      unit_id: context.scope_unit_id,
-      unit_type_id: context.scope_unit_type_id,
-      selection_mode: step.selection_mode
-    },
-    context
-  );
-  if (String(step.selection_mode || "auto_all") === "auto_one") {
-    return assignees.slice(0, 1);
+  switch (String(step.resolver_type || "cargo_in_scope")) {
+    case "specific_person":
+      return step.assigned_person_id ? [Number(step.assigned_person_id)] : [];
+    case "document_owner":
+      return context.owner_person_id ? [Number(context.owner_person_id)] : [];
+    case "task_assignee": {
+      const assignee = context.task_item_assigned_person_id || context.task_created_by_user_id;
+      return assignee ? [Number(assignee)] : [];
+    }
+    case "position": {
+      const people = await resolveCurrentPersonsForPosition(connection, step.position_id);
+      return String(step.selection_mode || "auto_all") === "auto_one" ? people.slice(0, 1) : people;
+    }
+    case "cargo_in_scope":
+    default: {
+      if (!step.required_cargo_id) {
+        return [];
+      }
+      const assignees = await resolvePersonsForCargoInScope(
+        connection,
+        {
+          cargo_id: step.required_cargo_id,
+          unit_scope_type: step.unit_scope_type,
+          unit_id: step.unit_id,
+          unit_type_id: step.unit_type_id,
+          selection_mode: step.selection_mode
+        },
+        context
+      );
+      if (String(step.selection_mode || "auto_all") === "auto_one") {
+        return assignees.slice(0, 1);
+      }
+      return assignees;
+    }
   }
-  return assignees;
 };
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {

@@ -8,18 +8,18 @@ repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
-  system:
+  process:
     jinja2:
-      path: "modes/system/jinja2/src"
-  user:
+      path: "modes/process/jinja2/src"
+  general:
     docx:
-      path: "modes/user/docx/src"
+      path: "modes/general/docx/src"
     latex:
-      path: "modes/user/latex/src"
+      path: "modes/general/latex/src"
     pdf:
-      path: "modes/user/pdf/src"
+      path: "modes/general/pdf/src"
     xlsx:
-      path: "modes/user/xlsx/src"
+      path: "modes/general/xlsx/src"
 origins: []
 workflows:
   fill:

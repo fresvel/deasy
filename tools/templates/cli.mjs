@@ -619,16 +619,16 @@ export function prepareRuntimePayload(baseDir, runtimePathArg, outPathArg) {
 }
 
 export function renderTemplate(baseDir) {
-  const systemDir = path.join(baseDir, "modes", "system", "jinja2", "src");
-  const userDir = path.join(baseDir, "modes", "user", "latex", "src");
+  const processDir = path.join(baseDir, "modes", "process", "jinja2", "src");
+  const generalDir = path.join(baseDir, "modes", "general", "latex", "src");
   const dataYaml = path.join(baseDir, "data.yaml");
-  if (!fs.existsSync(systemDir)) fail(`No se encontro system/jinja2 en ${baseDir}`);
+  if (!fs.existsSync(processDir)) fail(`No se encontro process/jinja2 en ${baseDir}`);
   if (!fs.existsSync(dataYaml)) fail(`No se encontro data.yaml en ${baseDir}`);
-  removeIfExists(userDir);
-  ensureDir(userDir);
-  runPython("render_seed.py", ["--seed", systemDir, "--out", userDir, "--defaults", dataYaml]);
+  removeIfExists(generalDir);
+  ensureDir(generalDir);
+  runPython("render_seed.py", ["--seed", processDir, "--out", generalDir, "--defaults", dataYaml]);
   renderDataJson(baseDir);
-  console.log(`Render completado: ${userDir}`);
+  console.log(`Render completado: ${generalDir}`);
 }
 
 export function renderSeedPreview(seedRoot, compile = false) {
@@ -651,13 +651,13 @@ export function renderSeedPreview(seedRoot, compile = false) {
 
 function createDefaultUserModeDirs(baseDir) {
   for (const engine of ["docx", "latex", "pdf", "xlsx"]) {
-    ensureDir(path.join(baseDir, "modes", "user", engine, "src"));
+    ensureDir(path.join(baseDir, "modes", "general", engine, "src"));
   }
 }
 
 function createDefaultPackagedUserModeDirs(templateDir) {
   for (const engine of ["docx", "latex", "pdf", "xlsx"]) {
-    ensureDir(path.join(templateDir, "modes", "user", engine, "src"));
+    ensureDir(path.join(templateDir, "modes", "general", engine, "src"));
   }
 }
 
@@ -693,7 +693,7 @@ function buildMetaContent({
   workflowBlock = WORKFLOW_CONTRACT_BLOCK
 }) {
   const normalizedWorkflowBlock = normalizeWorkflowBlock(workflowBlock);
-  if (includeSystem || mode === "user") {
+  if (includeSystem || mode === "general") {
     return `key: "${escapeYamlString(key)}"
 export_id: ""
 name: "${escapeYamlString(name)}"
@@ -702,18 +702,18 @@ repository_stage: published
 version: ${version}
 storage_version: v0001
 modes:
-${includeSystem ? `  system:
+${includeSystem ? `  process:
     jinja2:
-      path: "modes/system/jinja2/src"
-` : ""}  user:
+      path: "modes/process/jinja2/src"
+` : ""}  general:
     docx:
-      path: "modes/user/docx/src"
+      path: "modes/general/docx/src"
     latex:
-      path: "modes/user/latex/src"
+      path: "modes/general/latex/src"
     pdf:
-      path: "modes/user/pdf/src"
+      path: "modes/general/pdf/src"
     xlsx:
-      path: "modes/user/xlsx/src"
+      path: "modes/general/xlsx/src"
 origins: []
 ${normalizedWorkflowBlock}`;
   }
@@ -755,7 +755,8 @@ export function createTemplate(args) {
   const key = resolveNewKey(args);
   const version = args.version || "1.0.0";
   let name = args.name || key;
-  const mode = args.mode || "user";
+  const rawMode = args.mode || "general";
+  const mode = rawMode === "user" ? "general" : rawMode === "system" ? "process" : rawMode;
   const engine = (args.engine || "latex").replace("excel", "xlsx");
   if (!key.includes("/")) {
     fail(`El key debe incluir al menos grupo/template. Valor actual: ${key}`);
@@ -784,7 +785,7 @@ export function createTemplate(args) {
     metaContent = upsertYamlScalar(metaContent, "storage_version", "v0001", false);
     metaContent = ensureWorkflowContract(metaContent);
     fs.writeFileSync(metaPath, metaContent, "utf8");
-  } else if (mode === "user" && engine === "latex") {
+  } else if (mode === "general" && engine === "latex") {
     const seedRoot = resolveSeedRoot(args.seed, false);
     const seedCode = getSeedCodeFromRoot(seedRoot);
     const seedName = seedCode ? seedCode.split("/").pop() : "";
@@ -795,14 +796,14 @@ export function createTemplate(args) {
     if (!fs.existsSync(seedSrc) || !fs.existsSync(seedDefaults)) {
       fail(`La semilla no es valida: ${seedRoot}`);
     }
-    ensureDir(path.join(dest, "modes", "system", "jinja2", "src"));
+    ensureDir(path.join(dest, "modes", "process", "jinja2", "src"));
     createDefaultUserModeDirs(dest);
-    copyDirContents(seedSrc, path.join(dest, "modes", "system", "jinja2", "src"));
+    copyDirContents(seedSrc, path.join(dest, "modes", "process", "jinja2", "src"));
     runPython("render_seed.py", [
       "--seed",
-      path.join(dest, "modes", "system", "jinja2", "src"),
+      path.join(dest, "modes", "process", "jinja2", "src"),
       "--out",
-      path.join(dest, "modes", "user", "latex", "src"),
+      path.join(dest, "modes", "general", "latex", "src"),
       "--defaults",
       seedDefaults,
     ]);
@@ -823,14 +824,14 @@ export function createTemplate(args) {
       fs.copyFileSync(seedSchema, path.join(dest, "schema.json"));
     }
   } else {
-    if (mode === "user") {
+    if (mode === "general") {
       createDefaultUserModeDirs(dest);
     } else {
       ensureDir(path.join(dest, "modes", mode, engine, "src"));
     }
     if (engine === "latex") {
-      const latexDir = mode === "user"
-        ? path.join(dest, "modes", "user", "latex", "src")
+      const latexDir = mode === "general"
+        ? path.join(dest, "modes", "general", "latex", "src")
         : path.join(dest, "modes", mode, engine, "src");
       writeMinimalLatexFiles(latexDir);
     }
@@ -903,21 +904,21 @@ export function syncCatalog({ quiet = false } = {}) {
     catalogLines.push(`    template_id: ${templateId === "null" ? "null" : `"${escapeYamlString(templateId)}"`}`);
     catalogLines.push("    modes:");
 
-    const userModes = [];
+    const generalModes = [];
     for (const engine of ["docx", "latex", "pdf", "xlsx"]) {
-      const enginePath = path.join(baseDir, "modes", "user", engine, "src");
+      const enginePath = path.join(baseDir, "modes", "general", engine, "src");
       if (fs.existsSync(enginePath)) {
-        userModes.push(`        ${engine}: "templates/${templatePath}/${version}/modes/user/${engine}/src"`);
+        generalModes.push(`        ${engine}: "templates/${templatePath}/${version}/modes/general/${engine}/src"`);
       }
     }
-    if (userModes.length) {
-      catalogLines.push("      user:");
-      catalogLines.push(...userModes);
+    if (generalModes.length) {
+      catalogLines.push("      general:");
+      catalogLines.push(...generalModes);
     }
 
-    if (fs.existsSync(path.join(baseDir, "modes", "system", "jinja2", "src"))) {
-      catalogLines.push("      system:");
-      catalogLines.push(`        jinja2: "templates/${templatePath}/${version}/modes/system/jinja2/src"`);
+    if (fs.existsSync(path.join(baseDir, "modes", "process", "jinja2", "src"))) {
+      catalogLines.push("      process:");
+      catalogLines.push(`        jinja2: "templates/${templatePath}/${version}/modes/process/jinja2/src"`);
     }
 
     if (/^origins:\s*$/m.test(metaContent)) {

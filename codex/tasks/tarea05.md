@@ -1,6 +1,8 @@
 # Listado de actividades
 
-Avance del checklist: `20/25`
+Avance del checklist: `22/26`
+
+Estado actual: `En revisiones funcionales y tecnicas del flujo`.
 
 Buenas practicas base para esta tarea:
 - Usar `Requisitos05.md` como fuente de verdad funcional y tecnica.
@@ -36,10 +38,11 @@ Buenas practicas base para esta tarea:
 19. [ ] Refactorizar la base y contratos para incluir `anio` y fechas de inicio/fin en tareas y entregables cuando corresponda.
 20. [ ] Endurecer la politica de versionado para que un artifact publicado que ya disparo tareas quede inmutable y obligue nueva version para cambios de workflow o estructura.
 21. [x] Simplificar los workflows de llenado de templates de investigacion formativa y productiva a un solo paso operado por `document_owner`, preservando el flujo de firmas actual.
-22. [ ] Realizar una validacion en los casos de que un mismo documento podra ser llenado/firmado por varias personas en un mismo punto (colisiones), modelando adecuadamente si la resolucion es `or` o `and`.
-23. [ ] Modelar soporte multiunidad y multifirma para `talento-humano/requerimiento` antes de sincronizar su flujo de firmas, evitando una configuracion enganosa del template.
+22. [x] Realizar una validacion en los casos de que un mismo documento podra ser llenado/firmado por varias personas en un mismo punto (colisiones), modelando adecuadamente si la resolucion es `or`, `and` o `at_least`.
+23. [x] Modelar soporte multiunidad y multifirma para `talento-humano/requerimiento`, extendiendo contrato, sync y runtime de firmas para resolver cargo/persona/puesto por alcance y unidad.
 24. [x] Retirar `execution_mode` del flujo operativo y del admin activo, dejando `trigger_mode` como fuente principal para el inicio del proceso, con migracion local de BD incluida.
 25. [x] Refactorizar el modelo de artifacts para separar catalogo (`process` / `general`) de rol operativo (`primary` / `attachment` / `support`), eliminando `system_render` / `manual_fill` del flujo de negocio.
+26. [ ] Cerrar la ronda actual de revisiones funcionales, corrigiendo autenticacion de cuentas demo, activacion de definiciones y regresiones visibles detectadas en pruebas manuales.
 
 ## Context7 Decision Log
 - `/vuejs/docs`: se mantuvo el flujo guiado con estado local reactivo en `<script setup>` usando `ref` y `computed`, evitando complejidad adicional para el wizard de `Crear tarea` en un solo componente.

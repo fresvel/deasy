@@ -139,6 +139,9 @@ export function useAdminModalRegistry({
         if (peekModalOrigin() === "definitionActivation") {
           return;
         }
+        if (processDefinitionActivationConfirmed.value) {
+          return;
+        }
         processDefinitionActivationConfirmed.value = false;
         processDefinitionActivationFromEditor.value = false;
         processDefinitionActivationChecking.value = false;

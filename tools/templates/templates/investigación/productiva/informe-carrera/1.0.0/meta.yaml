@@ -5,12 +5,12 @@ repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
-  system:
+  process:
     jinja2:
-      path: "modes/system/jinja2/src"
-  user:
+      path: "modes/process/jinja2/src"
+  general:
     latex:
-      path: "modes/user/latex/src"
+      path: "modes/general/latex/src"
 origins: []
 workflows:
   fill:

@@ -870,13 +870,38 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text" },
       { name: "slot", label: "Slot", type: "text" },
       { name: "step_type_id", label: "Tipo", type: "number", required: true },
-      { name: "required_cargo_id", label: "Cargo", type: "number", required: true },
+      {
+        name: "resolver_type",
+        label: "Resolver",
+        type: "select",
+        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
+        defaultValue: "cargo_in_scope"
+      },
+      { name: "assigned_person_id", label: "Persona asignada", type: "number" },
+      {
+        name: "unit_scope_type",
+        label: "Alcance unidad",
+        type: "select",
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units", "context_exact", "context_subtree", "context_ancestor_type"],
+        defaultValue: "context_exact"
+      },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "position_id", label: "Puesto", type: "number" },
+      { name: "required_cargo_id", label: "Cargo", type: "number" },
       {
         name: "selection_mode",
         label: "Seleccion",
         type: "select",
-        options: ["auto_all", "select", "auto_quorum"],
+        options: ["auto_one", "auto_all", "manual"],
         defaultValue: "auto_all"
+      },
+      {
+        name: "approval_mode",
+        label: "Resolucion",
+        type: "select",
+        options: ["and", "or", "at_least"],
+        defaultValue: "and"
       },
       { name: "required_signers_min", label: "Min firmantes", type: "number" },
       { name: "required_signers_max", label: "Max firmantes", type: "number" },

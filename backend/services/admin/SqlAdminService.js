@@ -71,6 +71,24 @@ const FILL_RESOLVER_TYPES = new Set([
 const FILL_UNIT_SCOPE_TYPES = new Set(["unit_exact", "unit_subtree", "unit_type", "all_units"]);
 const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
+const SIGNATURE_RESOLVER_TYPES = new Set([
+  "task_assignee",
+  "document_owner",
+  "specific_person",
+  "position",
+  "cargo_in_scope",
+  "manual_pick"
+]);
+const SIGNATURE_UNIT_SCOPE_TYPES = new Set([
+  "unit_exact",
+  "unit_subtree",
+  "unit_type",
+  "all_units",
+  "context_exact",
+  "context_subtree",
+  "context_ancestor_type"
+]);
+const SIGNATURE_APPROVAL_MODES = new Set(["and", "or", "at_least"]);
 const SIGNATURE_TYPE_CODE_ALIASES = new Map([
   ["electronic", "electronic"],
   ["firma_electronica", "electronic"],
@@ -79,7 +97,10 @@ const SIGNATURE_TYPE_CODE_ALIASES = new Map([
 const CARGO_CODE_ALIASES = new Map([
   ["coordinador_carrera", "coordinador"],
   ["director_escuela", "director"],
-  ["responsable_aseguramiento_calidad", "responsable-de-calidad"]
+  ["director_docencia", "director"],
+  ["responsable_aseguramiento_calidad", "responsable-de-calidad"],
+  ["responsable_financiero", "responsable"],
+  ["jefe_talento_humano", "jefe"]
 ]);
 const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
 const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
@@ -296,7 +317,10 @@ const parseAvailableFormats = (value) => {
   }
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
   } catch {
     return {};
   }
@@ -363,6 +387,63 @@ const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) =>
         canReject: normalizeBooleanFlag(step?.can_reject, true) ? 1 : 0
       };
     })
+    .sort((left, right) => left.stepOrder - right.stepOrder);
+};
+
+const normalizeSignatureSteps = (
+  workflow = {},
+  { cargoCodeMap = new Map(), signatureTypeCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
+) => {
+  const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
+  return rawSteps
+    .filter((step) => step && typeof step === "object")
+    .map((step, index) => {
+      const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
+      const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
+      const rawCargoCode = String(
+        step?.resolver?.cargo_code
+        || step.required_cargo_code
+        || ""
+      ).trim().toLowerCase();
+      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+      const normalizedSlot = String(step.slot || "").trim() || null;
+      const stepCode = String(step.code || "").trim() || null;
+      const stepName = String(step.name || "").trim() || null;
+      const anchorRefs = normalizeSignatureStepAnchorRefs(step.anchor_refs);
+      const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
+      const unitScopeType = String(step?.resolver?.unit_scope_type || "context_exact").trim();
+      const selectionMode = String(step?.resolver?.selection_mode || step.selection_mode || "auto_all").trim();
+      const approvalMode = String(step.approval_mode || "and").trim().toLowerCase();
+      const rawUnitTypeName = String(step?.resolver?.unit_type_name || "").trim().toLowerCase();
+      return {
+        stepOrder: Number(step.order) || index + 1,
+        code: stepCode,
+        name: stepName,
+        slot: normalizedSlot,
+        stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
+        resolverType: SIGNATURE_RESOLVER_TYPES.has(resolverType) ? resolverType : "cargo_in_scope",
+        assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
+        unitScopeType: SIGNATURE_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "context_exact",
+        unitId: normalizeNumericId(step?.resolver?.unit_id),
+        unitTypeId:
+          normalizeNumericId(step?.resolver?.unit_type_id)
+          || unitTypeNameMap.get(rawUnitTypeName)
+          || null,
+        positionId: normalizeNumericId(step?.resolver?.position_id),
+        requiredCargoId:
+          normalizeNumericId(step?.resolver?.cargo_id)
+          || cargoCodeMap.get(normalizedCargoCode)
+          || null,
+        selectionMode: SIGNATURE_SELECTION_MODES.has(selectionMode) ? selectionMode : "auto_all",
+        approvalMode: SIGNATURE_APPROVAL_MODES.has(approvalMode) ? approvalMode : "and",
+        requiredSignersMin: normalizeNumericId(step.required_signers_min),
+        requiredSignersMax: normalizeNumericId(step.required_signers_max),
+        isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0,
+        anchorRefs
+      };
+    })
+    .filter((step) => step.stepTypeId)
+    .filter((step) => step.resolverType !== "cargo_in_scope" || step.requiredCargoId)
     .sort((left, right) => left.stepOrder - right.stepOrder);
 };
 
@@ -2429,6 +2510,23 @@ export default class SqlAdminService {
     return map;
   }
 
+  async getUnitTypeNameMap(connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT id, name
+       FROM unit_types
+       WHERE is_active = 1
+       ORDER BY id ASC`
+    );
+    const map = new Map();
+    for (const row of rows) {
+      const normalizedName = String(row.name || "").trim().toLowerCase();
+      if (normalizedName && !map.has(normalizedName)) {
+        map.set(normalizedName, Number(row.id));
+      }
+    }
+    return map;
+  }
+
   async ensureSignatureTypeCatalog(connection = this.pool) {
     await connection.query(
       `INSERT INTO signature_types (code, name, description, is_active)
@@ -2519,13 +2617,20 @@ export default class SqlAdminService {
            name,
            slot,
            step_type_id,
+           resolver_type,
+           assigned_person_id,
+           unit_scope_type,
+           unit_id,
+           unit_type_id,
+           position_id,
            required_cargo_id,
            selection_mode,
+           approval_mode,
            required_signers_min,
            required_signers_max,
            is_required,
            anchor_refs
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           signatureFlowTemplateId,
           step.stepOrder,
@@ -2533,8 +2638,15 @@ export default class SqlAdminService {
           step.name,
           step.slot,
           step.stepTypeId,
+          step.resolverType,
+          step.assignedPersonId,
+          step.unitScopeType,
+          step.unitId,
+          step.unitTypeId,
+          step.positionId,
           step.requiredCargoId,
           step.selectionMode,
+          step.approvalMode,
           step.requiredSignersMin,
           step.requiredSignersMax,
           step.isRequired,
@@ -2675,36 +2787,9 @@ export default class SqlAdminService {
 
     const cargoCodeMap = await this.getCargoCodeMap(connection);
     const signatureTypeCodeMap = await this.getSignatureTypeCodeMap(connection);
+    const unitTypeNameMap = await this.getUnitTypeNameMap(connection);
     const normalizedSteps = syncEnabled
-      ? (Array.isArray(workflow?.steps) ? workflow.steps : [])
-        .filter((step) => step && typeof step === "object")
-        .map((step, index) => {
-          const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
-          const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
-          const rawCargoCode = String(step.required_cargo_code || "").trim().toLowerCase();
-          const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
-          const normalizedSlot = String(step.slot || "").trim() || null;
-          const stepCode = String(step.code || "").trim() || null;
-          const stepName = String(step.name || "").trim() || null;
-          const anchorRefs = normalizeSignatureStepAnchorRefs(step.anchor_refs);
-          return {
-            stepOrder: Number(step.order) || index + 1,
-            code: stepCode,
-            name: stepName,
-            slot: normalizedSlot,
-            stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
-            requiredCargoId: cargoCodeMap.get(normalizedCargoCode) || null,
-            selectionMode: SIGNATURE_SELECTION_MODES.has(String(step.selection_mode || "auto_all"))
-              ? String(step.selection_mode || "auto_all")
-              : "auto_all",
-            requiredSignersMin: normalizeNumericId(step.required_signers_min),
-            requiredSignersMax: normalizeNumericId(step.required_signers_max),
-            isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0,
-            anchorRefs
-          };
-        })
-        .filter((step) => step.stepTypeId && step.requiredCargoId)
-        .sort((left, right) => left.stepOrder - right.stepOrder)
+      ? normalizeSignatureSteps(workflow, { cargoCodeMap, signatureTypeCodeMap, unitTypeNameMap })
       : [];
 
     let syncedTemplates = 0;
@@ -2861,29 +2946,29 @@ export default class SqlAdminService {
 
         const candidates = [
           {
-            mode: "system",
+            mode: "process",
             format: "jinja2",
-            dirPath: path.join(packagedTemplateDir, "modes", "system", "jinja2", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "process", "jinja2", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "docx",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "docx", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "docx", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "latex",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "latex", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "latex", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "pdf",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "pdf", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "pdf", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "xlsx",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "xlsx", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "xlsx", "src")
           }
         ];
 
@@ -3355,9 +3440,9 @@ export default class SqlAdminService {
       await downloadMinioPrefixToDirectory(
         MINIO_TEMPLATES_BUCKET,
         `${seedRow.source_path}src/`,
-        buildArtifactModeDir(draftDir, "system", "jinja2")
+        buildArtifactModeDir(draftDir, "process", "jinja2")
       );
-      setAvailableFormatEntry(availableFormats, "system", "jinja2", baseObjectPrefix);
+      setAvailableFormatEntry(availableFormats, "process", "jinja2", baseObjectPrefix);
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
         await copyMinioObjectToFile(
@@ -3372,15 +3457,15 @@ export default class SqlAdminService {
         await downloadMinioPrefixToDirectory(
           MINIO_TEMPLATES_BUCKET,
           `${seedRow.source_path}render/`,
-          buildArtifactModeDir(draftDir, "user", "latex")
+          buildArtifactModeDir(draftDir, "general", "latex")
         );
-        setAvailableFormatEntry(availableFormats, "user", "latex", baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, "general", "latex", baseObjectPrefix);
       }
     }
 
     if (!seedRow) {
-      await preserveExistingFormat("system", "jinja2");
-      await preserveExistingFormat("user", "latex");
+      await preserveExistingFormat("process", "jinja2");
+      await preserveExistingFormat("general", "latex");
     }
 
     const fileFieldMap = {
@@ -3391,9 +3476,9 @@ export default class SqlAdminService {
     };
 
     for (const [format, file] of Object.entries(uploadedFiles)) {
-      const relativeDir = path.join("template", "modes", "user", fileFieldMap[format], "src");
+      const relativeDir = path.join("template", "modes", "general", fileFieldMap[format], "src");
       const targetDir = path.join(draftDir, relativeDir);
-      const existingEntry = existingAvailableFormats?.user?.[fileFieldMap[format]];
+      const existingEntry = existingAvailableFormats?.general?.[fileFieldMap[format]];
 
       if (file) {
         const safeName = slugify(path.parse(file.originalname || format).name) || format;
@@ -3404,7 +3489,7 @@ export default class SqlAdminService {
           : fallbackFileName;
         fs.mkdirSync(targetDir, { recursive: true });
         fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
-        setAvailableFormatEntry(availableFormats, "user", fileFieldMap[format], baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, "general", fileFieldMap[format], baseObjectPrefix);
         continue;
       }
 
@@ -3416,7 +3501,7 @@ export default class SqlAdminService {
         } else {
           await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
         }
-        setAvailableFormatEntry(availableFormats, "user", fileFieldMap[format], baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, "general", fileFieldMap[format], baseObjectPrefix);
       }
     }
 

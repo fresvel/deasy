@@ -1,0 +1,50 @@
+% Plantilla Jinja2: completar variables y renderizar a Preambulo/datos.tex
+
+\newif\ifshowfirmas
+\showfirmastrue
+
+\newif\ifshowbibliografia
+\showbibliografiafalse
+% Si make.sh genera Preambulo/bibflag.tex, se usa como override automático
+\IfFileExists{Preambulo/bibflag.tex}{\input{Preambulo/bibflag}}{}
+
+% Parámetros de firma (definidos aquí; sobrescribir con \def o \renewcommand si es necesario)
+\def\firmaCoordinadorToken{!-9b6D6WnuUE-!}
+\def\firmaFinancieroToken{!-0000000000-!}
+\def\firmaDirectorEscuelaToken{!-0000000000-!}
+\def\firmaDirectorDocenciaToken{!-0000000000-!}
+\def\firmaJefeTthhToken{!-0000000000-!}
+\def\firmaProrrectorToken{!-0000000000-!}
+\def\nombreCoordinador{Mgt. Coordinador Demo Principal}
+\def\nombreFinanciero{Mgt. Responsable Financiero Demo}
+\def\nombreDirectorEscuela{Mgt. Director de Escuela Demo}
+\def\nombreDirectorDocencia{Mgt. Director de Docencia Demo}
+\def\nombreJefeTthh{Mgt. Jefatura de Talento Humano Demo}
+\def\nombreProrrector{Mgt. Prorrector Demo}
+\def\cargoCoordinador{Coordinador de Carrera}
+\def\cargoFinanciero{Responsable Financiero}
+\def\cargoDirectorEscuela{Director de Escuela}
+\def\cargoDirectorDocencia{Director de Docencia y Estudiantes}
+\def\cargoJefeTthh{Jefatura de Talento Humano}
+\def\cargoProrrector{Prorrector}
+\def\fechaCoordinador{\mydate\today}
+\def\fechaFinanciero{\mydate\AdvanceDate[1]\today}
+\def\fechaDirectorEscuela{\mydate\AdvanceDate[2]\today}
+\def\fechaDirectorDocencia{\mydate\AdvanceDate[3]\today}
+\def\fechaJefeTthh{\mydate\AdvanceDate[4]\today}
+\def\fechaProrrector{\mydate\AdvanceDate[5]\today}
+
+\def\semestre{2025-I}
+\def\titulo{\textbf{INFORME DE PERFIL DOCENTE}}
+\def\carrera{Carrera de Ingeniería en Tecnologías de la Información}
+\def\coordinador{Docente Demo Principal}
+
+% Layouts
+\def\layoutDefaultName{portrait}
+
+
+\def\layoutOptionsportrait{a4paper,portrait, total={160mm,247mm}, left=25mm, top=0mm}
+
+
+
+\def\layoutOptionslandscape{a4paper,landscape, total={289mm,170mm}, left=4mm, top=0mm}

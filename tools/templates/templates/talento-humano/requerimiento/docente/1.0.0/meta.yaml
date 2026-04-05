@@ -8,18 +8,18 @@ repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
-  system:
+  process:
     jinja2:
-      path: "modes/system/jinja2/src"
-  user:
+      path: "modes/process/jinja2/src"
+  general:
     docx:
-      path: "modes/user/docx/src"
+      path: "modes/general/docx/src"
     latex:
-      path: "modes/user/latex/src"
+      path: "modes/general/latex/src"
     pdf:
-      path: "modes/user/pdf/src"
+      path: "modes/general/pdf/src"
     xlsx:
-      path: "modes/user/xlsx/src"
+      path: "modes/general/xlsx/src"
 origins: []
 workflows:
   fill:
@@ -40,9 +40,9 @@ workflows:
           - "general.coordinador"
           - "display.show_firmas"
           - "display.show_bibliography"
-          - "signatures.elaborado.nombre"
-          - "signatures.elaborado.cargo"
-          - "signatures.elaborado.fecha"
+          - "signatures.coordinador.nombre"
+          - "signatures.coordinador.cargo"
+          - "signatures.coordinador.fecha"
         required: true
         can_reject: true
       - order: 2
@@ -54,10 +54,7 @@ workflows:
           unit_scope_type: "unit_exact"
           unit_id: 6
           selection_mode: "auto_one"
-        field_refs:
-          - "signatures.revisado.nombre"
-          - "signatures.revisado.cargo"
-          - "signatures.revisado.fecha"
+        field_refs: []
         required: true
         can_reject: true
       - order: 3
@@ -69,10 +66,7 @@ workflows:
           unit_scope_type: "unit_exact"
           unit_id: 12
           selection_mode: "auto_one"
-        field_refs:
-          - "signatures.aprobado.nombre"
-          - "signatures.aprobado.cargo"
-          - "signatures.aprobado.fecha"
+        field_refs: []
         required: true
         can_reject: true
       - order: 4
@@ -85,72 +79,153 @@ workflows:
           unit_id: 13
           selection_mode: "auto_one"
         field_refs:
-          - "signatures.aprobado.nombre"
-          - "signatures.aprobado.cargo"
-          - "signatures.aprobado.fecha"
+          - "signatures.financiero.nombre"
+          - "signatures.financiero.cargo"
+          - "signatures.financiero.fecha"
         required: true
         can_reject: true
   signatures:
     required: true
     source: "artifact"
     sync_mode: "artifact_to_db"
-    pattern_ref: "signatures/three-stage-era"
+    pattern_ref: "signatures/six-stage-tthh"
     anchors:
-      - code: "firma_elaborado"
+      - code: "firma_coordinador"
         placement:
           strategy: "token"
-          token_field_ref: "signatures.elaborado.token"
+          token_field_ref: "signatures.coordinador.token"
         size:
           width: 124
           height: 48
-      - code: "firma_revisado"
+      - code: "firma_financiero"
         placement:
           strategy: "token"
-          token_field_ref: "signatures.revisado.token"
+          token_field_ref: "signatures.financiero.token"
         size:
           width: 124
           height: 48
-      - code: "firma_aprobado"
+      - code: "firma_director_escuela"
         placement:
           strategy: "token"
-          token_field_ref: "signatures.aprobado.token"
+          token_field_ref: "signatures.director_escuela.token"
+        size:
+          width: 124
+          height: 48
+      - code: "firma_director_docencia"
+        placement:
+          strategy: "token"
+          token_field_ref: "signatures.director_docencia.token"
+        size:
+          width: 124
+          height: 48
+      - code: "firma_jefe_tthh"
+        placement:
+          strategy: "token"
+          token_field_ref: "signatures.jefe_tthh.token"
+        size:
+          width: 124
+          height: 48
+      - code: "firma_prorrector"
+        placement:
+          strategy: "token"
+          token_field_ref: "signatures.prorrector.token"
         size:
           width: 124
           height: 48
     steps:
       - order: 1
-        code: "firma_docente"
-        name: "Firma del docente"
+        code: "firma_coordinador"
+        name: "Firma de coordinador de carrera"
         step_type_code: "electronic"
-        required_cargo_code: "coordinador_carrera"
-        selection_mode: "auto_all"
+        resolver:
+          type: "document_owner"
+          selection_mode: "auto_one"
+        approval_mode: "and"
         required_signers_min: 1
         required_signers_max: 1
         required: true
         anchor_refs:
-          - "firma_elaborado"
+          - "firma_coordinador"
       - order: 2
-        code: "firma_calidad"
-        name: "Firma de calidad"
+        code: "firma_financiero"
+        name: "Firma de responsable financiero"
         step_type_code: "electronic"
-        required_cargo_code: "responsable_aseguramiento_calidad"
-        selection_mode: "auto_all"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "responsable_financiero"
+          unit_scope_type: "unit_exact"
+          unit_id: 13
+          selection_mode: "auto_one"
+        approval_mode: "and"
         required_signers_min: 1
         required_signers_max: 1
         required: true
         anchor_refs:
-          - "firma_revisado"
+          - "firma_financiero"
       - order: 3
-        code: "firma_direccion"
-        name: "Firma de direccion"
+        code: "firma_director_escuela"
+        name: "Firma de director de escuela"
         step_type_code: "electronic"
-        required_cargo_code: "director_escuela"
-        selection_mode: "auto_all"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "director_escuela"
+          unit_scope_type: "context_ancestor_type"
+          unit_type_name: "Escuela"
+          selection_mode: "auto_one"
+        approval_mode: "and"
         required_signers_min: 1
         required_signers_max: 1
         required: true
         anchor_refs:
-          - "firma_aprobado"
+          - "firma_director_escuela"
+      - order: 4
+        code: "firma_director_docencia"
+        name: "Firma de director de docencia"
+        step_type_code: "electronic"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "director_docencia"
+          unit_scope_type: "unit_exact"
+          unit_id: 6
+          selection_mode: "auto_one"
+        approval_mode: "and"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs:
+          - "firma_director_docencia"
+      - order: 5
+        code: "firma_jefe_tthh"
+        name: "Firma de jefatura de talento humano"
+        step_type_code: "electronic"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "jefe_talento_humano"
+          unit_scope_type: "unit_exact"
+          unit_id: 12
+          selection_mode: "auto_one"
+        approval_mode: "and"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs:
+          - "firma_jefe_tthh"
+      - order: 6
+        code: "firma_prorrector"
+        name: "Firma de prorrector"
+        step_type_code: "electronic"
+        resolver:
+          type: "cargo_in_scope"
+          cargo_code: "prorrector"
+          unit_scope_type: "unit_type"
+          unit_type_name: "Prorrectorado"
+          selection_mode: "auto_one"
+        approval_mode: "and"
+        required_signers_min: 1
+        required_signers_max: 1
+        required: true
+        anchor_refs:
+          - "firma_prorrector"
 dependencies:
   templates: []
   data: []

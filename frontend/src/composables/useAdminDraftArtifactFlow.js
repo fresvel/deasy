@@ -95,10 +95,10 @@ export function useAdminDraftArtifactFlow({
         source_version: row.source_version ? String(row.source_version) : "1.0.0"
       };
       draftArtifactExistingFiles.value = {
-        pdf: getFileNameFromObjectKey(availableFormats?.user?.pdf?.entry_object_key),
-        docx: getFileNameFromObjectKey(availableFormats?.user?.docx?.entry_object_key),
-        xlsx: getFileNameFromObjectKey(availableFormats?.user?.xlsx?.entry_object_key),
-        pptx: getFileNameFromObjectKey(availableFormats?.user?.pptx?.entry_object_key)
+        pdf: getFileNameFromObjectKey(availableFormats?.general?.pdf?.entry_object_key),
+        docx: getFileNameFromObjectKey(availableFormats?.general?.docx?.entry_object_key),
+        xlsx: getFileNameFromObjectKey(availableFormats?.general?.xlsx?.entry_object_key),
+        pptx: getFileNameFromObjectKey(availableFormats?.general?.pptx?.entry_object_key)
       };
     } else {
       draftArtifactForm.value = {

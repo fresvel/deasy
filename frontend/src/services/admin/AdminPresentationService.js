@@ -111,8 +111,8 @@ class AdminPresentationService {
       return [];
     }
     const modeLabels = {
-      system: "Sistema",
-      user: "Usuario"
+      process: "Proceso",
+      general: "General"
     };
     return Object.entries(parsed)
       .map(([mode, formats]) => {
@@ -233,11 +233,11 @@ class AdminPresentationService {
 
   getDefaultAvailableFormatColor(mode, format) {
     return {
-      "system:jinja2": "#18b7a3",
-      "user:latex": "#8b5cf6",
-      "user:docx": "#2563eb",
-      "user:pdf": "#ef4444",
-      "user:xlsx": "#16a34a"
+      "process:jinja2": "#18b7a3",
+      "general:latex": "#8b5cf6",
+      "general:docx": "#2563eb",
+      "general:pdf": "#ef4444",
+      "general:xlsx": "#16a34a"
     }[`${mode}:${format}`] || "#8a94a6";
   }
 

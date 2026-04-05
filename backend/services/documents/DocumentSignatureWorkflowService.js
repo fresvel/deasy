@@ -15,6 +15,9 @@ const SIGN_ACTIVE = new Set([SIGNATURE_REQUEST_STATUS.IN_PROGRESS]);
 const SIGN_APPROVED = new Set([SIGNATURE_REQUEST_STATUS.COMPLETED]);
 const SIGN_REJECTED = new Set([SIGNATURE_REQUEST_STATUS.REJECTED, SIGNATURE_REQUEST_STATUS.CANCELLED]);
 const DOC_SIGNATURE_SUCCESS = new Set([SIGNATURE_STATUS.SIGNED]);
+const SIGNATURE_APPROVAL_AND = "and";
+const SIGNATURE_APPROVAL_OR = "or";
+const SIGNATURE_APPROVAL_AT_LEAST = "at_least";
 
 const parseSignatureStepAnchorRefs = (value) => {
   if (Array.isArray(value)) {
@@ -46,11 +49,13 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        d.owner_person_id,
        d.task_item_id,
        ti.task_id,
+       ti.assigned_person_id AS task_item_assigned_person_id,
        ti.process_definition_template_id,
        ti.template_usage_role,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
+       t.created_by_user_id AS task_created_by_user_id,
        tar.artifact_origin,
        COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
@@ -109,8 +114,15 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
        name,
        slot,
        step_type_id,
+       resolver_type,
+       assigned_person_id,
+       unit_scope_type,
+       unit_id,
+       unit_type_id,
+       position_id,
        required_cargo_id,
        selection_mode,
+       approval_mode,
        required_signers_min,
        required_signers_max,
        is_required,
@@ -127,8 +139,15 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
     name: String(row.name || "").trim() || null,
     slot: String(row.slot || "").trim() || null,
     stepTypeId: row.step_type_id ? Number(row.step_type_id) : null,
+    resolverType: String(row.resolver_type || "cargo_in_scope").trim() || "cargo_in_scope",
+    assignedPersonId: row.assigned_person_id ? Number(row.assigned_person_id) : null,
+    unitScopeType: String(row.unit_scope_type || "context_exact").trim() || "context_exact",
+    unitId: row.unit_id ? Number(row.unit_id) : null,
+    unitTypeId: row.unit_type_id ? Number(row.unit_type_id) : null,
+    positionId: row.position_id ? Number(row.position_id) : null,
     requiredCargoId: row.required_cargo_id ? Number(row.required_cargo_id) : null,
     selectionMode: String(row.selection_mode || "auto_all").trim() || "auto_all",
+    approvalMode: String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase() || SIGNATURE_APPROVAL_AND,
     requiredSignersMin: row.required_signers_min !== null && row.required_signers_min !== undefined
       ? Number(row.required_signers_min)
       : null,
@@ -152,14 +171,26 @@ const getSignaturePendingStatusId = async (connection) => {
   return rows?.[0] ? Number(rows[0].id) : null;
 };
 
-const resolveScopeForStep = (step, context) => ({
-  unitScopeType: String(step?.unit_scope_type || "unit_exact"),
-  unitId: step?.unit_id ? Number(step.unit_id) : (context?.scope_unit_id ? Number(context.scope_unit_id) : null),
-  unitTypeId: step?.unit_type_id
-    ? Number(step.unit_type_id)
-    : (context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null),
-  cargoId: step?.required_cargo_id ? Number(step.required_cargo_id) : null,
-});
+const resolveScopeForStep = (step, context) => {
+  const unitScopeType = String(step?.unitScopeType || "context_exact");
+  const contextUnitId = context?.scope_unit_id ? Number(context.scope_unit_id) : null;
+  const contextUnitTypeId = context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null;
+  const explicitUnitId = step?.unitId ? Number(step.unitId) : null;
+  const explicitUnitTypeId = step?.unitTypeId ? Number(step.unitTypeId) : null;
+
+  return {
+    unitScopeType,
+    unitId:
+      explicitUnitId
+      || (unitScopeType === "context_exact" || unitScopeType === "context_subtree" || unitScopeType === "context_ancestor_type"
+        ? contextUnitId
+        : null),
+    unitTypeId:
+      explicitUnitTypeId
+      || (unitScopeType === "unit_type" ? contextUnitTypeId : null),
+    cargoId: step?.requiredCargoId ? Number(step.requiredCargoId) : null,
+  };
+};
 
 const resolveCurrentPersonsForPosition = async (connection, positionId) => {
   if (!positionId) {
@@ -227,6 +258,58 @@ const resolvePersonsForCargoInScope = async (connection, step, context = null) =
     }
     query += "\n      AND u.unit_type_id = ?";
     params.push(scope.unitTypeId);
+  } else if (scope.unitScopeType === "context_subtree") {
+    if (!scope.unitId) {
+      return [];
+    }
+    query = `
+      WITH RECURSIVE scoped_units AS (
+        SELECT id
+        FROM units
+        WHERE id = ?
+        UNION ALL
+        SELECT ur.child_unit_id
+        FROM unit_relations ur
+        INNER JOIN relation_unit_types rt
+          ON rt.id = ur.relation_type_id
+         AND rt.code = 'org'
+        INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
+      )
+      ${query}
+        AND up.unit_id IN (SELECT id FROM scoped_units)`;
+    params.unshift(scope.unitId);
+  } else if (scope.unitScopeType === "context_ancestor_type") {
+    if (!scope.unitId || !scope.unitTypeId) {
+      return [];
+    }
+    query = `
+      WITH RECURSIVE ancestor_units AS (
+        SELECT id, unit_type_id
+        FROM units
+        WHERE id = ?
+        UNION ALL
+        SELECT parent_u.id, parent_u.unit_type_id
+        FROM unit_relations ur
+        INNER JOIN relation_unit_types rt
+          ON rt.id = ur.relation_type_id
+         AND rt.code = 'org'
+        INNER JOIN ancestor_units au ON au.id = ur.child_unit_id
+        INNER JOIN units parent_u ON parent_u.id = ur.parent_unit_id
+      )
+      ${query}
+        AND up.unit_id IN (
+          SELECT id
+          FROM ancestor_units
+          WHERE unit_type_id = ?
+        )`;
+    params.unshift(scope.unitTypeId);
+    params.unshift(scope.unitId);
+  } else if (scope.unitScopeType === "context_exact") {
+    if (!scope.unitId) {
+      return [];
+    }
+    query += "\n      AND up.unit_id = ?";
+    params.push(scope.unitId);
   }
 
   query += "\n    ORDER BY pa.person_id ASC";
@@ -254,10 +337,10 @@ const collectAssignees = (...sources) => {
 };
 
 const resolveSpecificPersonAssignees = (step) => {
-  if (!step?.assigned_person_id) {
+  if (!step?.assignedPersonId) {
     return [];
   }
-  return [Number(step.assigned_person_id)];
+  return [Number(step.assignedPersonId)];
 };
 
 const resolveDocumentOwnerAssignee = (context) => (context?.owner_person_id ? [Number(context.owner_person_id)] : []);
@@ -276,16 +359,16 @@ const resolveTaskAssignee = (context) => {
 const resolvePositionAssignees = async (connection, step, context) => {
   return resolveCurrentPersonsForPosition(
     connection,
-    Number(step?.position_id || context?.task_item_responsible_position_id || context?.task_responsible_position_id)
+    Number(step?.positionId || context?.task_item_responsible_position_id || context?.task_responsible_position_id)
   );
 };
 
 const resolveSignatureStepAssignees = async (connection, step, context) => {
-  if (!step || step.is_manual === 1 || String(step.selection_mode || "auto_all") === "manual") {
+  if (!step || String(step.selectionMode || "auto_all") === "manual") {
     return [];
   }
 
-  const resolverType = String(step.resolver_type || step.selection_mode || "cargo_in_scope").trim();
+  const resolverType = String(step.resolverType || "cargo_in_scope").trim();
   switch (resolverType) {
     case "specific_person":
       return collectAssignees(resolveSpecificPersonAssignees(step));
@@ -330,6 +413,7 @@ const getSignatureRequestContext = async (connection, signatureRequestId) => {
        sr.instance_id,
        sr.step_id,
        sfi.document_version_id,
+       sfs.step_order,
        sfs.step_type_id
      FROM signature_requests sr
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
@@ -357,8 +441,15 @@ const summarizeSignatureRequests = (rows) => {
   for (const row of rows) {
     const stepOrder = Number(row.step_order);
     if (!byStep.has(stepOrder)) {
+      const approvalMode = String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase();
+      const requiredSignersMin =
+        row.required_signers_min !== null && row.required_signers_min !== undefined
+          ? Number(row.required_signers_min)
+          : null;
       byStep.set(stepOrder, {
         stepOrder,
+        approvalMode,
+        requiredSignersMin,
         total: 0,
         approvedCount: 0,
         rejectedCount: 0,
@@ -381,11 +472,29 @@ const summarizeSignatureRequests = (rows) => {
     .sort((a, b) => a.stepOrder - b.stepOrder)
     .map((item) => ({
       ...item,
-      approved: item.total > 0 && item.approvedCount === item.total,
+      approved: isSignatureStepApproved(item),
       hasRejected: item.rejectedCount > 0,
       hasActive: item.activeCount > 0,
       hasPending: item.pendingCount > 0,
     }));
+};
+
+const isSignatureStepApproved = (summary) => {
+  if (!summary || summary.total < 1) {
+    return false;
+  }
+  switch (summary.approvalMode) {
+    case SIGNATURE_APPROVAL_OR:
+      return summary.approvedCount > 0;
+    case SIGNATURE_APPROVAL_AT_LEAST: {
+      const min = Number(summary.requiredSignersMin || 0);
+      const effectiveMin = min > 0 ? min : 1;
+      return summary.approvedCount >= effectiveMin;
+    }
+    case SIGNATURE_APPROVAL_AND:
+    default:
+      return summary.approvedCount === summary.total;
+  }
 };
 
 export const inspectDocumentVersionSignatureReadiness = async (connection, documentVersionId) => {
@@ -423,16 +532,16 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
   const unresolvedRequiredSteps = [];
   const resolvedSteps = [];
   for (const step of steps) {
-    const resolverType = String(step.resolver_type || step.selection_mode || "cargo_in_scope").trim();
+    const resolverType = String(step.resolverType || "cargo_in_scope").trim();
     const assignees = await resolveSignatureStepAssignees(connection, step, context);
     if (
-      Number(step.is_required) === 1
+      Number(step.isRequired) === 1
       && !assignees.length
       && resolverType !== "manual_pick"
       && resolverType !== "manual"
     ) {
       unresolvedRequiredSteps.push({
-        stepOrder: Number(step.step_order),
+        stepOrder: Number(step.stepOrder),
         resolverType,
         reason: "no_assignees",
       });
@@ -473,22 +582,34 @@ export const resolveCurrentSignatureStep = async (connection, documentVersionId)
 
   const [rows] = await connection.query(
     `SELECT
-       sfs.id AS step_id,
        sfs.step_order,
-       COUNT(sr.id) AS total_requests,
-       SUM(CASE WHEN srs.code = 'completado' THEN 1 ELSE 0 END) AS completed_requests,
-       SUM(CASE WHEN srs.code = 'rechazado' THEN 1 ELSE 0 END) AS rejected_requests,
-       SUM(CASE WHEN srs.code = 'cancelado' THEN 1 ELSE 0 END) AS cancelled_requests
-     FROM signature_flow_steps sfs
-     INNER JOIN signature_requests sr ON sr.step_id = sfs.id
+       sfs.approval_mode,
+       sfs.required_signers_min,
+       srs.code AS request_status_code,
+       ss.code AS signature_status_code
+     FROM signature_requests sr
+     INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
      INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id
+     LEFT JOIN (
+       SELECT ds1.signature_request_id, ds1.signature_status_id
+       FROM document_signatures ds1
+       INNER JOIN (
+         SELECT signature_request_id, MAX(id) AS max_id
+         FROM document_signatures
+         WHERE signature_request_id IS NOT NULL
+         GROUP BY signature_request_id
+       ) latest ON latest.max_id = ds1.id
+     ) latest_ds ON latest_ds.signature_request_id = sr.id
+     LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
      WHERE sr.instance_id = ?
-     GROUP BY sfs.id, sfs.step_order
-     ORDER BY sfs.step_order ASC`,
+     ORDER BY sfs.step_order ASC, sr.id ASC`,
     [instanceId]
   );
 
-  return rows.find((row) => Number(row.completed_requests || 0) < Number(row.total_requests || 0)) || null;
+  const stepSummaries = summarizeSignatureRequests(rows);
+  return stepSummaries.find((row) => !row.approved && !row.hasRejected)
+    || stepSummaries.find((row) => !row.approved)
+    || null;
 };
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
@@ -581,6 +702,11 @@ export const registerSignatureEvidence = async ({ connection, context, result })
       && Number(signatureRequest.document_version_id) !== Number(context.documentVersionId)
     ) {
       throw new Error("La solicitud de firma no pertenece a la versión documental indicada.");
+    }
+
+    const currentStep = await resolveCurrentSignatureStep(connection, Number(signatureRequest.document_version_id));
+    if (currentStep && Number(currentStep.stepOrder || 0) !== Number(signatureRequest.step_order || 0)) {
+      throw new Error("La solicitud de firma no pertenece al paso actual del flujo.");
     }
   }
 
@@ -713,6 +839,8 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
        sr.responded_at,
        sfs.id AS step_id,
        sfs.step_order,
+       sfs.approval_mode,
+       sfs.required_signers_min,
        sfs.required_cargo_id,
        srs.code AS request_status_code,
        ss.code AS signature_status_code,
@@ -760,6 +888,10 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
       id: Number(row.id),
       stepId: Number(row.step_id),
       stepOrder: Number(row.step_order),
+      approvalMode: String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase(),
+      requiredSignersMin: row.required_signers_min !== null && row.required_signers_min !== undefined
+        ? Number(row.required_signers_min)
+        : null,
       requestStatusCode,
       signatureStatusCode: String(row.signature_status_code || "").trim() || null,
       isManual: Boolean(Number(row.is_manual || 0)),
@@ -769,19 +901,25 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
       respondedAt: row.responded_at,
     });
 
-    if (snapshot.currentSignatureStepOrder === null && requestStatusCode !== completedStatusCode) {
-      snapshot.currentSignatureStepOrder = Number(row.step_order);
-    }
+  }
 
+  const stepSummaries = summarizeSignatureRequests(snapshot.signatureRequests);
+  const currentStep = stepSummaries.find((item) => !item.approved && !item.hasRejected)
+    || stepSummaries.find((item) => !item.approved)
+    || null;
+  snapshot.currentSignatureStepOrder = currentStep ? Number(currentStep.stepOrder) : null;
+
+  for (const request of snapshot.signatureRequests) {
+    if (Number(request.stepOrder) !== Number(snapshot.currentSignatureStepOrder || 0)) {
+      continue;
+    }
+    if (!snapshot.responsableActual && pendingStatusCodes.has(request.requestStatusCode) && request.assignedPerson) {
+      snapshot.responsableActual = request.assignedPerson;
+    }
     if (
-      !snapshot.responsableActual
-      && pendingStatusCodes.has(requestStatusCode)
-      && assignedPerson
+      pendingStatusCodes.has(request.requestStatusCode)
+      && Number(userId || 0) === Number(request.assignedPerson?.id || 0)
     ) {
-      snapshot.responsableActual = assignedPerson;
-    }
-
-    if (pendingStatusCodes.has(requestStatusCode) && Number(userId || 0) === assignedPersonId) {
       snapshot.canOperate = true;
     }
   }
@@ -808,6 +946,8 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
     `SELECT
        sr.id,
        sfs.step_order,
+       sfs.approval_mode,
+       sfs.required_signers_min,
        srs.code AS request_status_code,
        ss.code AS signature_status_code
      FROM signature_requests sr

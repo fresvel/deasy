@@ -233,7 +233,7 @@ export async function runTui() {
         [
           { label: "Nuevo template", description: paths.sourceDir, value: "new" },
           { label: "Nueva versión", description: "Copiar estructura desde una versión existente", value: "version" },
-          { label: "Renderizar template", description: "Genera modes/user/latex/src desde system/jinja2/src", value: "render" },
+          { label: "Renderizar template", description: "Genera modes/general/latex/src desde process/jinja2/src", value: "render" },
           { label: "Regenerar data.json", description: "Convierte data.yaml a data.json", value: "json" },
           { label: "Preparar runtime", description: "Materializa payload runtime desde pattern_ref", value: "prepare-runtime" },
           { label: "Preview de seed", description: paths.seedsDir, value: "seed" },

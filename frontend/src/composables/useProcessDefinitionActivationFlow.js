@@ -44,6 +44,7 @@ export function useProcessDefinitionActivationFlow({
   openDefinitionArtifactsFromActivation,
   submitForm
 }) {
+  let suppressNextActivationCancel = false;
   const resolveEditorInstance = () => (
     typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
   );
@@ -150,6 +151,10 @@ export function useProcessDefinitionActivationFlow({
   };
 
   const cancelProcessDefinitionActivation = () => {
+    if (suppressNextActivationCancel) {
+      suppressNextActivationCancel = false;
+      return;
+    }
     processDefinitionActivationConfirmed.value = false;
     processDefinitionActivationFromEditor.value = false;
     closeProcessDefinitionActivationModal();
@@ -205,8 +210,13 @@ export function useProcessDefinitionActivationFlow({
       };
     }
     processDefinitionActivationConfirmed.value = true;
+    suppressNextActivationCancel = true;
     closeProcessDefinitionActivationModal();
-    await submitForm();
+    try {
+      await submitForm();
+    } finally {
+      suppressNextActivationCancel = false;
+    }
   };
 
   const cancelProcessDefinitionEdit = (closeProcessDefinitionVersioningModal) => {

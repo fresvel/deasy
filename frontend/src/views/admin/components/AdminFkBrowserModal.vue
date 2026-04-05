@@ -215,7 +215,7 @@
                 v-for="section in getAvailableFormatSections(row[field.name])"
                 :key="section.mode"
                 class="available-formats-group"
-                :class="{ 'is-inline': section.mode === 'user' }"
+                :class="{ 'is-inline': section.mode === 'general' }"
               >
                 <span class="available-formats-mode">{{ section.label }}</span>
                 <div class="available-formats-badges">
