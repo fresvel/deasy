@@ -2185,24 +2185,6 @@ onMounted(async () => {
 });
 
 watch(
-  () => [
-    selectedProcessPanel.value?.definition?.chat_context?.process_id,
-    selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids,
-    selectedProcessPanel.value?.definition?.name,
-    selectedProcessContext.value?.name
-  ],
-  () => {
-    persistWorkspaceChatContext({
-      processId: selectedProcessPanel.value?.definition?.chat_context?.process_id,
-      scopeUnitId: resolvePreferredChatScopeUnitId(),
-      title: selectedProcessPanel.value?.definition?.name || selectedProcessContext.value?.name || 'Proceso',
-      accessibleScopeUnitIds: selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids || []
-    });
-  },
-  { immediate: true, deep: true }
-);
-
-watch(
   taskLaunchUseCustomTerm,
   (enabled) => {
     if (enabled) {
@@ -2377,6 +2359,24 @@ const openWorkspaceProcessChat = ({ processId, scopeUnitId = null, openConversat
     window.dispatchEvent(new CustomEvent('workspace-chat:open-process', { detail }));
   }
 };
+
+watch(
+  () => [
+    selectedProcessPanel.value?.definition?.chat_context?.process_id,
+    selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids,
+    selectedProcessPanel.value?.definition?.name,
+    selectedProcessContext.value?.name
+  ],
+  () => {
+    persistWorkspaceChatContext({
+      processId: selectedProcessPanel.value?.definition?.chat_context?.process_id,
+      scopeUnitId: resolvePreferredChatScopeUnitId(),
+      title: selectedProcessPanel.value?.definition?.name || selectedProcessContext.value?.name || 'Proceso',
+      accessibleScopeUnitIds: selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids || []
+    });
+  },
+  { immediate: true, deep: true }
+);
 
 const getFileNameFromPath = (filePath = '') => filePath.split('/').pop() || 'archivo';
 
