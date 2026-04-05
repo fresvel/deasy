@@ -100,6 +100,7 @@
       </s-body>
         
       <s-message :show="vnotify" @close="vnotify = false" />
+      <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
     </div>
   </div>
 </template>
@@ -114,6 +115,7 @@ import axios from 'axios';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
     import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
+    import WorkspaceChatLauncher from '@/components/WorkspaceChatLauncher.vue';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
       IconInfoCircle, IconMenu2, IconHome

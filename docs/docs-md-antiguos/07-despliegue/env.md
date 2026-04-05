@@ -33,6 +33,10 @@ Contenido actual:
 - RABBITMQ_HTTP_USER=guest
 - RABBITMQ_HTTP_PASSWORD=guest
 - RABBITMQ_STORAGE_QUEUE=deasy.storage.uploads
+- EMQX_API_BASE_URL=http://emqx:18083/api/v5
+- EMQX_API_USERNAME=admin
+- EMQX_API_PASSWORD=public
+- CHAT_REALTIME_ENABLED=1
 
 ## Backend (docker env)
 
@@ -66,6 +70,10 @@ Variables inyectadas en el contenedor backend desde docker-compose:
 - RABBITMQ_HTTP_USER
 - RABBITMQ_HTTP_PASSWORD
 - RABBITMQ_STORAGE_QUEUE
+- EMQX_API_BASE_URL
+- EMQX_API_USERNAME
+- EMQX_API_PASSWORD
+- CHAT_REALTIME_ENABLED
 
 ## Frontend (docker env)
 
@@ -74,6 +82,12 @@ Variables inyectadas en el contenedor backend desde docker-compose:
 ## Broker
 
 - EMQX_ALLOW_ANONYMOUS (en docker-compose, por defecto true)
+- el backend publica eventos realtime por la API HTTP de EMQX usando:
+  - EMQX_API_BASE_URL
+  - EMQX_API_USERNAME
+  - EMQX_API_PASSWORD
+- si CHAT_REALTIME_ENABLED=0, el envío de mensajes persiste igual pero no intenta
+  publicar eventos realtime.
 
 ## Storage
 
@@ -105,6 +119,10 @@ Variables ya alineadas en `backend/.env` y `backend/.env_model`:
 - RABBITMQ_HTTP_USER=guest
 - RABBITMQ_HTTP_PASSWORD=guest
 - RABBITMQ_STORAGE_QUEUE=deasy.storage.uploads
+- EMQX_API_BASE_URL=http://localhost:18083/api/v5
+- EMQX_API_USERNAME=admin
+- EMQX_API_PASSWORD=public
+- CHAT_REALTIME_ENABLED=1
 
 ## Politica de buckets
 

@@ -1,38 +1,39 @@
 # Listado de actividades
 
-Avance del checklist: `0/18`
+Avance del checklist: `20/20`
 
-Buenas practicas base para esta tarea:
-- Usar `Requisitos04.md` como fuente de verdad funcional y tecnica.
-- Mantener el refactor incremental, sin reescrituras completas salvo evidencia tecnica clara.
-- Validar decisiones de organizacion con el codigo actual del repositorio antes de introducir nuevas abstracciones.
-- Registrar decisiones de frontend con Context7 `/vuejs/docs` y decisiones de backend con Context7 `/expressjs/express/v5.1.0` cuando el cambio dependa de APIs o patrones del framework.
+Buenas prácticas base validadas con Context7:
+- `MongoDB` (`/mongodb/docs`): para colecciones con crecimiento no acotado, usar referencias entre documentos y evitar arrays crecientes; esto aplica a `conversations` y `messages`.
+- `EMQX` (`/emqx/emqx-docs`): EMQX puede autenticarse/autorizase contra un servicio HTTP externo y aceptar ACL por cliente; por eso conviene diseñar el módulo de chat como frontera extraíble aunque se implemente primero dentro del backend.
+- `Express` (`/expressjs/express`): organizar routers y middleware por módulo permite incorporar `chat` en el backend actual sin bloquear una extracción futura a microservicio.
 
-0. [ ] Revisar `Requisitos04.md` y convertir este listado en hoja de ruta operativa del refactor general.
-1. [ ] Crear un inventario tecnico inicial con los archivos de mayor tamano, duplicaciones visibles y modulos legacy de frontend y backend.
-2. [ ] Definir el mapa objetivo de responsabilidades del backend: bootstrap, rutas, controladores, servicios, repositorios, middlewares y modulos de infraestructura.
-3. [ ] Refactorizar `backend/index.js` para dejar un entrypoint liviano y extraer configuracion global, Swagger, middlewares y registro de rutas a modulos dedicados.
-4. [ ] Diseñar una estrategia comun de manejo de errores HTTP y agregar un middleware central de errores para el backend.
-5. [ ] Dividir progresivamente `backend/controllers/users/user_controler.js` por casos de uso o subdominios sin romper contratos HTTP existentes.
-6. [ ] Dividir progresivamente `backend/controllers/sign/sign_controller.js`, dejando la logica operativa principal en servicios reutilizables.
-7. [ ] Normalizar nombres backend inconsistentes como `*_controler.js`, `*_ctl.js` y revisar el tratamiento correcto de archivos placeholder `Vacio(...)`.
-8. [ ] Reducir logging disperso en backend y establecer una politica minima de logs operativos y logs de error.
-9. [ ] Definir scripts minimos de calidad del backend y documentar validaciones locales para endpoints refactorizados.
-10. [ ] Definir el mapa objetivo de responsabilidades del frontend: vistas shell, componentes base, componentes de seccion, composables y servicios.
-11. [ ] Consolidar la capa base de componentes del frontend usando `frontend/src/components` como fuente principal para botones, tablas, modales y primitives compartidas.
-12. [ ] Auditar el modulo `admin` para eliminar duplicacion conceptual y dejar wrappers o imports directos solo cuando exista una diferencia funcional real.
-13. [ ] Particionar vistas sobredimensionadas como `DashboardHome.vue`, `AdminView.vue` y `AdminTableManager.vue` en subcomponentes y composables con contratos claros.
-14. [ ] Unificar la capa HTTP del frontend para evitar llamadas directas desde router u otras zonas transversales cuando ya exista un servicio adecuado.
-15. [ ] Refactorizar servicios legacy, especialmente `frontend/src/services/EasymServices.js`, para alinearlos con el patron actual de servicios y estado del proyecto.
-16. [ ] Normalizar organizacion de frontend, incluyendo carpetas paralelas como `composable/` y `composables/`, y revisar duplicados entre componentes compartidos y vistas funcionales.
-17. [ ] Ejecutar validaciones finales por modulo impactado, incluyendo `cd frontend && pnpm run lint` para cambios de frontend y verificaciones manuales de endpoints backend afectados.
+0. [x] Revisar el archivo `Requisitos04.md` para tener el contexto completo de la implementación.
+1. [x] Confirmar el caso de uso prioritario del MVP: thread de proceso abierto desde el dashboard antes que chat global, grupos o bandeja universal.
+2. [x] Definir la política de autorización para thread de proceso usando el dominio SQL actual, dejando explícito quién crea, quién participa y quién administra participantes.
+3. [x] Diseñar el módulo `chat` dentro de `backend/` con estructura extraíble: rutas, controladores, servicios y modelos separados del resto del dominio.
+4. [x] Implementar los modelos Mongo iniciales de `conversations`, `messages` y `notifications`, con índices compatibles con lectura por conversación y orden temporal.
+5. [x] Implementar el servicio de conversaciones para crear o recuperar el thread canónico por `process_id`.
+6. [x] Implementar el servicio de mensajes para persistir mensajes, actualizar metadata de conversación y validar membresía/autorización.
+7. [x] Implementar el servicio de notificaciones internas asociado a eventos de mensaje y acciones relevantes del thread.
+8. [x] Implementar el publicador realtime a EMQX desde backend, manteniendo la regla de que el frontend solo se suscribe.
+9. [x] Exponer la API mínima `/chat` y `/notifications`, incluyendo endpoints de conveniencia por `process_id` para el panel del dashboard.
+10. [x] Implementar el launcher flotante del chat en la esquina inferior derecha y definir el patrón overlay del panel sin comprimir el contenido principal del dashboard.
+11. [x] Implementar el panel superpuesto de chat con estructura vertical `header + body + footer`, incluyendo tabs de modo, búsqueda, listado por recientes y composer adaptable.
+12. [x] Integrar el panel de usuario o dashboard para que el botón `Chat del proceso` abra el flujo real dentro de ese overlay y deje de mostrar el placeholder actual.
+13. [x] Implementar en frontend la carga paginada de mensajes, composición/envío y refresco realtime o fallback seguro si la conexión al broker falla.
+14. [x] Implementar el estado mínimo de lectura/no lectura para notificaciones y decidir si `read_by` vive inicialmente en `messages` o se separa luego.
+15. [x] Evaluar e implementar adjuntos en MinIO solo si el MVP llega a tiempo; si no, dejar contrato y estructura listos sin forzar la carga de archivos en esta primera fase.
+16. [x] Ajustar el contrato de API y eventos para que sea reutilizable por una futura app móvil, sin acoplarlo a payloads o estructuras del dashboard web.
+17. [x] Dejar definida la estrategia de sincronización cliente para móvil: bootstrap HTTP, paginación/cursor, unread state y fallback sin realtime.
+18. [x] Agregar observabilidad técnica del módulo: logs estructurados, correlación por conversación/mensaje/proceso y manejo de errores de publicación a EMQX.
+19. [x] Documentar explícitamente la decisión de no crear aún un microservicio dedicado de chat, pero dejar el backlog de extracción futura a `chat-service` con hitos y disparadores operativos.
 
-## Context7 Decision Log
-- Date: 2026-04-03
-  - Library: `/vuejs/docs`
-  - Decision: Priorizar la extraccion de logica stateful a composables y mantener las vistas grandes como shells de composicion en lugar de seguir agregando logica directamente en componentes sobredimensionados.
-  - Reason: La documentacion oficial de Vue 3 recomienda encapsular logica stateful reutilizable en composables y mantener la composicion con `script setup`, lo que encaja con el estado actual de `AdminView.vue`, `DashboardHome.vue` y `AdminTableManager.vue`.
-- Date: 2026-04-03
-  - Library: `/expressjs/express/v5.1.0`
-  - Decision: Separar el bootstrap del backend en middleware y routers montados por dominio, con manejo de errores centralizado en la composicion de `app`.
-  - Reason: La organizacion oficial de Express favorece el montaje de routers y middlewares mediante `app.use()` y `router.use()`, lo que reduce acoplamiento en `backend/index.js` y deja a los controladores con menor responsabilidad transversal.
+## Comentarios para el usuario, ignora esta sección.
+
+Para tener control del desarrollo, se debe seguir la hoja de ruta. Si durante la implementación del chat aparecen decisiones grandes, conviene abrir subtareas por fase:
+
+- `4.1` contratos y modelos,
+- `4.2` autorización por proceso,
+- `4.3` realtime/EMQX,
+- `4.4` panel frontend,
+- `4.5` extracción futura a microservicio.

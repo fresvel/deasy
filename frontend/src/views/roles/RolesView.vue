@@ -84,6 +84,7 @@
         </s-body>
         
         <s-message :show="vnotify" />
+        <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
         
         <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
     </div>
@@ -115,6 +116,7 @@ import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
     import SBody from '@/layouts/SBody.vue';
     import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
     import SNavMenu from '@/layouts/SNavMenu.vue';
+    import WorkspaceChatLauncher from '@/components/WorkspaceChatLauncher.vue';
 
 import IndexAcademia from '@/views/academia/AcademiaView.vue';
 import LogrosView from '@/views/academia/LogrosView.vue';

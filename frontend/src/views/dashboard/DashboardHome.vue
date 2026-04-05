@@ -1372,6 +1372,8 @@
       </template>
     </AdminModalShell>
 
+    <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
+
   </div>
 </template>
 
@@ -1395,6 +1397,7 @@ import { Modal } from '@/utils/modalController';
 import AdminModalShell from '@/components/AppModalShell.vue';
 import AppButton from '@/components/AppButton.vue';
 import PdfDropField from '@/components/PdfDropField.vue';
+import WorkspaceChatLauncher from '@/components/WorkspaceChatLauncher.vue';
 
 import {
   IconGlobe,
@@ -1416,6 +1419,7 @@ const route = useRoute();
 const menuService = new UserMenuService();
 const processPanelService = new ProcessDefinitionPanelService();
 const signatureFlowService = new SignatureFlowService();
+const WORKSPACE_CHAT_CONTEXT_KEY = 'deasy_workspace_chat_context';
 
 const currentUser = ref(null);
 const userPhoto = ref('/images/avatar.png');
@@ -2181,6 +2185,24 @@ onMounted(async () => {
 });
 
 watch(
+  () => [
+    selectedProcessPanel.value?.definition?.chat_context?.process_id,
+    selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids,
+    selectedProcessPanel.value?.definition?.name,
+    selectedProcessContext.value?.name
+  ],
+  () => {
+    persistWorkspaceChatContext({
+      processId: selectedProcessPanel.value?.definition?.chat_context?.process_id,
+      scopeUnitId: resolvePreferredChatScopeUnitId(),
+      title: selectedProcessPanel.value?.definition?.name || selectedProcessContext.value?.name || 'Proceso',
+      accessibleScopeUnitIds: selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids || []
+    });
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
   taskLaunchUseCustomTerm,
   (enabled) => {
     if (enabled) {
@@ -2273,8 +2295,21 @@ const getDeliverableSubject = (payload = {}) => {
   const preloadPdfPath = canPreviewInline(workingFilePath) ? workingFilePath : '';
   return {
     itemId: payload?.id || documentPayload?.task_item_id || null,
+    taskId: payload?.task_id || documentPayload?.task_id || null,
     documentId: documentPayload?.document_id || null,
     documentVersionId: documentPayload?.document_version_id || null,
+    processId:
+      payload?.process_id
+      || payload?.workflow?.process_id
+      || selectedProcessPanel.value?.definition?.chat_context?.process_id
+      || selectedProcessPanel.value?.definition?.process_id
+      || null,
+    scopeUnitId:
+      payload?.scope_unit_id
+      || documentPayload?.scope_unit_id
+      || payload?.scopeUnitId
+      || documentPayload?.scopeUnitId
+      || null,
     title: payload?.template_artifact_name || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
     actions: payload?.actions || documentPayload?.actions || {},
     workflow: payload?.workflow || documentPayload?.workflow || {},
@@ -2283,6 +2318,64 @@ const getDeliverableSubject = (payload = {}) => {
     preloadFilePath,
     preloadPdfPath
   };
+};
+
+const resolvePreferredChatScopeUnitId = (payload = null) => {
+  const subject = payload ? getDeliverableSubject(payload) : null;
+  if (subject?.scopeUnitId) {
+    return Number(subject.scopeUnitId);
+  }
+  const scopeIds = Array.isArray(selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids)
+    ? selectedProcessPanel.value.definition.chat_context.accessible_scope_unit_ids
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    : [];
+  if (scopeIds.length === 1) {
+    return scopeIds[0];
+  }
+  return null;
+};
+
+const persistWorkspaceChatContext = ({ processId, scopeUnitId = null, title = '', accessibleScopeUnitIds = [] } = {}) => {
+  if (typeof window === 'undefined') return;
+  const normalizedProcessId = Number(processId || 0) || null;
+  if (!normalizedProcessId) {
+    window.sessionStorage.removeItem(WORKSPACE_CHAT_CONTEXT_KEY);
+    return;
+  }
+
+  const nextValue = {
+    processId: normalizedProcessId,
+    scopeUnitId: Number(scopeUnitId || 0) || null,
+    title: String(title || ''),
+    accessibleScopeUnitIds: Array.isArray(accessibleScopeUnitIds) ? accessibleScopeUnitIds : []
+  };
+
+  window.sessionStorage.setItem(WORKSPACE_CHAT_CONTEXT_KEY, JSON.stringify(nextValue));
+  window.dispatchEvent(new CustomEvent('workspace-chat:context-updated', { detail: nextValue }));
+};
+
+const openWorkspaceProcessChat = ({ processId, scopeUnitId = null, openConversation = false } = {}) => {
+  const normalizedProcessId = Number(processId || 0) || null;
+  if (!normalizedProcessId) {
+    setProcessActionInfo('No se pudo resolver el proceso asociado al chat.', 'error');
+    return;
+  }
+
+  const detail = {
+    processId: normalizedProcessId,
+    scopeUnitId: Number(scopeUnitId || 0) || null,
+    title: selectedProcessPanel.value?.definition?.name || selectedProcessContext.value?.name || 'Proceso',
+    accessibleScopeUnitIds: Array.isArray(selectedProcessPanel.value?.definition?.chat_context?.accessible_scope_unit_ids)
+      ? selectedProcessPanel.value.definition.chat_context.accessible_scope_unit_ids
+      : [],
+    openConversation
+  };
+
+  persistWorkspaceChatContext(detail);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('workspace-chat:open-process', { detail }));
+  }
 };
 
 const getFileNameFromPath = (filePath = '') => filePath.split('/').pop() || 'archivo';
@@ -2692,6 +2785,14 @@ const handleDeliverableFutureAction = (action, payload) => {
   }
   if (action === 'review_signature_flow') {
     openSignatureFlowModal(payload);
+    return;
+  }
+  if (action === 'process_chat') {
+    openWorkspaceProcessChat({
+      processId: Number(subject.processId || 0),
+      scopeUnitId: resolvePreferredChatScopeUnitId(payload),
+      openConversation: true
+    });
     return;
   }
   const actionLabels = {
