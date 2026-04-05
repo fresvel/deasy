@@ -18,6 +18,8 @@ import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
+import chat_router from "./routes/chat_router.js";
+import notification_router from "./routes/notification_router.js";
 
 const app = express();
 
@@ -1189,6 +1191,8 @@ app.use(ROUTES.area, area_router)
 app.use(ROUTES.tarea, tarea_router)
 
 app.use(ROUTES.whatsapp, whatsapp_router)
+app.use(ROUTES.chat, chat_router)
+app.use(ROUTES.notifications, notification_router)
 
 app.use(ROUTES.dossier, dossier_router)
 
