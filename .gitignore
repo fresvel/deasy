@@ -15,3 +15,7 @@ backend/templates_legacy/_runtime/
 __pycache__/
 *.pyc
 codex_refac.md
+signer/trust/roots/*
+signer/trust/extra/*
+!signer/trust/roots/.gitkeep
+!signer/trust/extra/.gitkeep

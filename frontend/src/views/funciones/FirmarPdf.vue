@@ -1034,6 +1034,9 @@
       clearAllBoxes();
       uploadError.value = '';
     } catch (err) {
+      if (err?.name === 'RenderingCancelledException') {
+        return;
+      }
       uploadError.value = 'No se pudo visualizar la página del PDF seleccionado.';
       console.error('Error al renderizar el PDF:', err);
     }

@@ -197,6 +197,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
+      SIGMAKER_DIR: /opt/sigmaker
       RABBITMQ_URL: amqp://rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}
