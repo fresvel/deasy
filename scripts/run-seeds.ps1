@@ -134,7 +134,7 @@ function Resolve-MariaDbHostPort($ComposeEnv) {
     }
 
     # Fallback al puerto publicado actual en docker-compose.yml.
-    return '3308'
+    return '3306'
 }
 
 function Run-DbSeed($ComposeEnv) {
@@ -144,7 +144,7 @@ function Run-DbSeed($ComposeEnv) {
     $previous = @{}
     $seedEnv = @{
         MARIADB_HOST     = '127.0.0.1'
-        MARIADB_PORT     = '3308'
+        MARIADB_PORT     = $mariadbPort
         MARIADB_USER     = $ComposeEnv['MARIADB_USER']
         MARIADB_PASSWORD = $ComposeEnv['MARIADB_PASSWORD']
         MARIADB_DATABASE = $ComposeEnv['MARIADB_DATABASE']
