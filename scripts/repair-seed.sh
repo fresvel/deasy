@@ -22,7 +22,7 @@ Comportamiento por defecto:
 
 Ejemplos:
   scripts/repair-seed.sh
-  scripts/repair-seed.sh --seed-file scripts/seeds/pucese.seed.backup.json --skip-storage
+  scripts/repair-seed.sh --seed-file backend/scripts/seeds/pucese.seed.backup.json --skip-storage
   scripts/repair-seed.sh --skip-db
 EOF
 }

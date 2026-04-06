@@ -71,7 +71,7 @@ Si se desea iniciar solo el stack principal, omitir el perfil workers.
 - `scripts/run-seeds.sh`
 - `scripts/run-seeds.sh --skip-storage`
 - `scripts/run-seeds.sh --skip-db`
-- `scripts/run-seeds.sh --seed-file scripts/seeds/pucese.seed.backup.json --skip-storage`
+- `scripts/run-seeds.sh --seed-file backend/scripts/seeds/pucese.seed.backup.json --skip-storage`
 
 ### Comportamiento run-seeds.sh
 
@@ -92,6 +92,59 @@ Si se desea iniciar solo el stack principal, omitir el perfil workers.
 2) Misma resolucion dinamica del puerto de MariaDB.
 3) Misma ejecucion de seeds SQL y/o storage segun flags.
 
+## Operacion DB en Docker por ambiente
+
+- Scripts:
+  - `scripts/seed-db.sh`
+  - `scripts/reset-db.sh`
+  - `scripts/migrate-db.sh`
+- Objetivo: ejecutar operaciones de base de datos dentro del contenedor `backend`, reutilizando `scripts/docker-env.sh` para resolver `dev`, `qa` y `prod`.
+
+### Uso seed-db.sh
+
+- `bash scripts/seed-db.sh dev capture`
+- `bash scripts/seed-db.sh qa apply`
+- `bash scripts/seed-db.sh qa apply --file /app/backend/scripts/seeds/pucese.seed.json`
+
+### Uso reset-db.sh
+
+- `bash scripts/reset-db.sh dev`
+- `bash scripts/reset-db.sh qa`
+
+### Uso migrate-db.sh
+
+- `bash scripts/migrate-db.sh dev --list`
+- `bash scripts/migrate-db.sh qa process-definition-series`
+- `bash scripts/migrate-db.sh qa drop-legacy-tables`
+
+### Comportamiento de wrappers DB
+
+1) Validan ambiente `dev|qa|prod`.
+2) Reutilizan `scripts/docker-env.sh` para ejecutar `docker compose exec backend ...`.
+3) Exigen que el servicio `backend` ya este corriendo en el ambiente seleccionado.
+4) Ejecutan los scripts reales desde `backend/scripts/`.
+
+### Politica de prod para wrappers DB
+
+- `prod` esta bloqueado por defecto.
+- Para habilitarlo se debe exportar `DEASY_PROD_DB_APPROVAL_FILE`.
+- Esa variable debe apuntar a un archivo:
+  - existente
+  - dentro del repositorio
+  - ignorado por git
+
+Ejemplo:
+
+```bash
+mkdir -p .ops
+touch .ops/prod-db-approved
+export DEASY_PROD_DB_APPROVAL_FILE="$PWD/.ops/prod-db-approved"
+
+bash scripts/seed-db.sh prod capture
+```
+
+La carpeta `.ops/` puede mantenerse ignorada localmente mediante `.git/info/exclude` para no introducir artefactos operativos en el repositorio versionado.
+
 ## repair-seed.sh
 
 - Ubicacion: scripts/repair-seed.sh
@@ -100,7 +153,7 @@ Si se desea iniciar solo el stack principal, omitir el perfil workers.
 ### Uso repair-seed.sh
 
 - `scripts/repair-seed.sh`
-- `scripts/repair-seed.sh --seed-file scripts/seeds/pucese.seed.backup.json --skip-storage`
+- `scripts/repair-seed.sh --seed-file backend/scripts/seeds/pucese.seed.backup.json --skip-storage`
 - `scripts/repair-seed.sh --skip-db`
 
 ### Comportamiento repair-seed.sh
@@ -113,20 +166,21 @@ Si se desea iniciar solo el stack principal, omitir el perfil workers.
 
 ## reset_mariadb.mjs
 
-- Ubicacion: scripts/reset_mariadb.mjs
+- Ubicacion: backend/scripts/reset_mariadb.mjs
 - Objetivo: resetear y reconstruir el esquema MariaDB usando `backend/database/mariadb_initializer.js`.
 
 ### Uso reset_mariadb.mjs
 
-- `node scripts/reset_mariadb.mjs`
+- `node backend/scripts/reset_mariadb.mjs`
 
 ### Nota reset_mariadb.mjs
 
 Depende de la conectividad definida por variables MariaDB (`backend/.env` o entorno actual).
+Su uso operativo recomendado es via `bash scripts/reset-db.sh <dev|qa|prod>`.
 
 ## seed_pucese.mjs
 
-- Ubicacion: scripts/seed_pucese.mjs
+- Ubicacion: backend/scripts/seed_pucese.mjs
 - Objetivo: capturar y reaplicar una semilla completa desde MariaDB leyendo tablas del esquema.
 
 Modos:
@@ -136,11 +190,16 @@ Modos:
 
 Uso:
 
-- `node scripts/seed_pucese.mjs capture`
-- `node scripts/seed_pucese.mjs apply`
-- `node scripts/seed_pucese.mjs apply --file scripts/seeds/pucese.seed.json`
+- `node backend/scripts/seed_pucese.mjs capture`
+- `node backend/scripts/seed_pucese.mjs apply`
+- `node backend/scripts/seed_pucese.mjs apply --file backend/scripts/seeds/pucese.seed.json`
 
-Credenciales demo en `scripts/seeds/pucese.seed.json`:
+Uso operativo recomendado:
+
+- `bash scripts/seed-db.sh <dev|qa|prod> capture`
+- `bash scripts/seed-db.sh <dev|qa|prod> apply`
+
+Credenciales demo en `backend/scripts/seeds/pucese.seed.json`:
 
 - Los usuarios existentes del seed almacenan solo `password_hash` (bcrypt), no password en texto plano.
 - Usuario admin seed:
@@ -150,7 +209,7 @@ Credenciales demo en `scripts/seeds/pucese.seed.json`:
   - `rol`: `admin` (tabla `roles`, asignado en `role_assignments`)
   - `vinculos operativos`: posiciones activas en `position_assignments` (puestos `6` y `18`) para habilitar menu/panel/tareas en el flujo de usuario.
 
-## Migraciones y ajustes SQL (scripts/*.mjs)
+## Migraciones y ajustes SQL (backend/scripts/*.mjs)
 
 - `backfill_unit_labels.mjs`: rellena/normaliza etiquetas de unidades.
 - `drop_legacy_tables.mjs`: elimina tablas legacy ya reemplazadas.
@@ -164,6 +223,11 @@ Credenciales demo en `scripts/seeds/pucese.seed.json`:
 - `migrate_template_seed_drafts.mjs`: transforma seeds draft al nuevo modelo.
 - `enforce_process_definition_active_series.mjs`: enforce de regla de serie activa por definicion.
 - `enforce_process_definition_document_artifacts.mjs`: enforce de artifacts documentales requeridos.
+
+Uso operativo recomendado:
+
+- `bash scripts/migrate-db.sh <dev|qa|prod> --list`
+- `bash scripts/migrate-db.sh <dev|qa|prod> <migracion>`
 
 ## Validacion de diseno
 

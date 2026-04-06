@@ -259,9 +259,29 @@ Wrappers actuales:
 - `scripts/deploy-env.sh`: compatibilidad para el flujo iniciado por GitHub
   Actions.
 - `scripts/docker-env.sh`: interfaz comun para ejecutar compose por ambiente.
+- `scripts/seed-db.sh`: ejecuta `seed_pucese.mjs` dentro del contenedor
+  `backend` por ambiente.
+- `scripts/reset-db.sh`: ejecuta `reset_mariadb.mjs` dentro del contenedor
+  `backend` por ambiente.
+- `scripts/migrate-db.sh`: ejecuta migraciones SQL de `backend/scripts/`
+  dentro del contenedor `backend`.
 
 Esta separacion evita duplicar logica de despliegue entre CI/CD y operacion
 manual o programada desde el servidor.
+
+Ejemplos:
+
+```bash
+bash scripts/seed-db.sh dev capture
+bash scripts/reset-db.sh qa
+bash scripts/migrate-db.sh dev --list
+```
+
+Politica de prod para operaciones DB:
+
+- `prod` no se ejecuta por defecto.
+- requiere `DEASY_PROD_DB_APPROVAL_FILE`
+- el archivo debe existir dentro del repo y estar ignorado por git
 
 ## Modo server-pull
 

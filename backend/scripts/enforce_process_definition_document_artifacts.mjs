@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import fs from "fs";
+import { createRequire } from "node:module";
 import path from "path";
-import mysql from "../backend/node_modules/mysql2/promise.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const REPO_ROOT = path.resolve(__dirname, "..");
-const ENV_PATH = path.join(REPO_ROOT, "backend", ".env");
+const BACKEND_ROOT = path.resolve(__dirname, "..");
+const require = createRequire(import.meta.url);
+const mysql = require(path.join(BACKEND_ROOT, "package.json"))("mysql2/promise");
+const ENV_PATH = path.join(BACKEND_ROOT, ".env");
 
 const parseEnvFile = (filePath) => {
   const env = {};

@@ -6,7 +6,7 @@ $DockerDir = Join-Path $RootDir 'docker'
 $DockerEnvFile = Join-Path $DockerDir '.env'
 $DockerEnvExampleFile = Join-Path $DockerDir '.env.example'
 $BackendDir = Join-Path $RootDir 'backend'
-$DefaultSeedFile = Join-Path $RootDir 'scripts/seeds/pucese.seed.json'
+$DefaultSeedFile = Join-Path $RootDir 'backend/scripts/seeds/pucese.seed.json'
 
 $RunDbSeed = $true
 $RunStorageSeeds = $true
@@ -156,7 +156,7 @@ function Run-DbSeed($ComposeEnv) {
     }
 
     try {
-        node (Join-Path $RootDir 'scripts/seed_pucese.mjs') apply --file $SeedFile
+        node (Join-Path $RootDir 'backend/scripts/seed_pucese.mjs') apply --file $SeedFile
     } finally {
         foreach ($entry in $seedEnv.GetEnumerator()) {
             [Environment]::SetEnvironmentVariable($entry.Key, $previous[$entry.Key])

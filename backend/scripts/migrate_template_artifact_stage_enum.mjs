@@ -1,4 +1,4 @@
-import { getMariaDBPool, closeMariaDBPool } from "../backend/config/mariadb.js";
+import { getMariaDBPool, closeMariaDBPool } from "../config/mariadb.js";
 
 const pool = getMariaDBPool();
 

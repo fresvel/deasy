@@ -4,11 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "..");
-const require = createRequire(import.meta.url);
-const mysql = require(path.join(repoRoot, "backend", "node_modules", "mysql2", "promise"));
+const backendRoot = path.resolve(__dirname, "..");
+const backendRequire = createRequire(path.join(backendRoot, "package.json"));
+const mysql = backendRequire("mysql2/promise");
 
-const envPath = path.join(repoRoot, "backend", ".env");
+const envPath = path.join(backendRoot, ".env");
 
 const LEGACY_TABLES = [
   "process_definition_template_bindings",

@@ -3,14 +3,15 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SQL_TABLES } from "../backend/config/sqlTables.js";
+import { SQL_TABLES } from "../config/sqlTables.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "..");
-const require = createRequire(import.meta.url);
-const mysql = require(path.join(repoRoot, "backend", "node_modules", "mysql2", "promise"));
+const backendRoot = path.resolve(__dirname, "..");
+const projectRoot = path.resolve(backendRoot, "..");
+const backendRequire = createRequire(path.join(backendRoot, "package.json"));
+const mysql = backendRequire("mysql2/promise");
 
-const envPath = path.join(repoRoot, "backend", ".env");
+const envPath = path.join(backendRoot, ".env");
 const defaultSeedName = "pucese";
 const defaultSeedFile = path.join(__dirname, "seeds", `${defaultSeedName}.seed.json`);
 
@@ -27,13 +28,13 @@ const formatError = (error) => {
 
 const usage = () => {
   console.log("Uso:");
-  console.log("  node scripts/seed_pucese.mjs [apply] [--file <ruta>]");
-  console.log("  node scripts/seed_pucese.mjs capture [--file <ruta>]");
+  console.log("  node backend/scripts/seed_pucese.mjs [apply] [--file <ruta>]");
+  console.log("  node backend/scripts/seed_pucese.mjs capture [--file <ruta>]");
   console.log("");
   console.log("Ejemplos:");
-  console.log("  node scripts/seed_pucese.mjs");
-  console.log("  node scripts/seed_pucese.mjs apply --file scripts/seeds/pucese.seed.json");
-  console.log("  node scripts/seed_pucese.mjs capture");
+  console.log("  node backend/scripts/seed_pucese.mjs");
+  console.log("  node backend/scripts/seed_pucese.mjs apply --file backend/scripts/seeds/pucese.seed.json");
+  console.log("  node backend/scripts/seed_pucese.mjs capture");
 };
 
 const parseArgs = () => {
@@ -51,7 +52,7 @@ const parseArgs = () => {
     if (arg === "--file") {
       const next = args[i + 1];
       if (!next) throw new Error("Falta el valor para --file.");
-      file = path.isAbsolute(next) ? next : path.join(repoRoot, next);
+      file = path.isAbsolute(next) ? next : path.join(projectRoot, next);
       i += 1;
       continue;
     }
