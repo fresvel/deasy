@@ -1008,6 +1008,7 @@ const openGroupIndex = (group) => {
 };
 
 const onGroupTitleClick = (group) => {
+  isSigningView.value = false;
   if (!group) {
     return;
   }
@@ -1019,6 +1020,7 @@ const onGroupTitleClick = (group) => {
 };
 
 const selectTable = (table) => {
+  isSigningView.value = false;
   if (!table) {
     return;
   }
@@ -1091,6 +1093,7 @@ const openAcademyIndex = () => {
 };
 
 const openAcademyItem = (item) => {
+  isSigningView.value = false;
   if (!item) {
     return;
   }
@@ -1114,6 +1117,7 @@ const openGestionIndex = () => {
   openCategories.value[GESTION_GROUP_LABEL] = true;
 };
 const openGestionItem = (item) => {
+  isSigningView.value = false;
   if (!item) {
     return;
   }
@@ -1232,6 +1236,7 @@ const isHomeActive = computed(() => {
 });
 
 const goAdminHome = () => {
+  isSigningView.value = false;
   selectedTable.value = null;
   selectedSection.value = "";
   selectedAcademyItem.value = "";

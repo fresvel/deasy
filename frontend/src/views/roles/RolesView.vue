@@ -345,6 +345,7 @@ import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
     
 
     const onmenuClick=(item)=>{
+        isSigningView.value = false;
         for (const el of mainmenu.value){
             if(el.label === item){
                 el.active =true;
@@ -357,6 +358,7 @@ import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
     
 
     const onheadClick=(item)=>{
+        isSigningView.value = false;
         syncAreaState(item.name);
         switch(item.name){
             case 'Roles':

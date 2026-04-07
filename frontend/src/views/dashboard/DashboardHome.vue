@@ -2032,6 +2032,7 @@ const loadSelectedProcessPanel = async (process) => {
 };
 
 const handleProcessSelect = async (process) => {
+  isSigningView.value = false;
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
   if (window.innerWidth < 1024) {
