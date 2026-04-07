@@ -1,41 +1,6 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
     <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="navigateTo('firmar')">
-        <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-          <AppButton
-            variant="plain"
-            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] group"
-            :class="selectedGroupId === null ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
-            type="button"
-            @click="selectConsolidated"
-          >
-            <span class="deasy-nav-chip__icon" :class="selectedGroupId === null ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
-              <IconGlobe class="w-5 h-5" />
-            </span>
-            <div class="min-w-0 hidden lg:block flex-1">
-              <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Consolidado</div>
-            </div>
-          </AppButton>
-
-          <AppButton
-            v-for="group in unitGroups"
-            :key="group.id"
-            variant="plain"
-            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] group"
-            :class="group.id === selectedGroupId ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
-            type="button"
-            @click="selectGroup(group)"
-          >
-            <span class="deasy-nav-chip__icon" :class="group.id === selectedGroupId ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
-              <component :is="iconForUnitGroup(group)" class="w-5 h-5" />
-            </span>
-            <div class="min-w-0 hidden lg:block flex-1">
-              <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis" :title="group.name">
-                {{ group.label || group.name }}
-              </div>
-            </div>
-          </AppButton>
-        </div>
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
@@ -44,7 +9,32 @@
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <app-workspace-sidebar :show="showMenu" :photo="userPhoto" :username="userFullName" @close-mobile="showMenu = false">
         <div class="deasy-nav-group">
-          <div class="deasy-nav-meta mt-3 mb-2">
+          <div class="px-2 mt-3 mb-2" v-if="unitGroups.length">
+            <label class="flex flex-col gap-1.5 relative">
+              <span class="text-xs font-bold uppercase tracking-wider text-white/50">Cargos asignados</span>
+              <div class="relative">
+                <select
+                  :value="selectedGroupId || ''"
+                  @change="(e) => { const v = e.target.value; if (!v) selectConsolidated(); else selectGroup(unitGroups.find(g => String(g.id) === String(v))); }"
+                  class="block w-full pl-3 pr-8 py-2.5 bg-white/10 border border-white/10 rounded-[10px] text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:bg-sky-950 transition-all outline-none text-sm font-semibold appearance-none cursor-pointer"
+                >
+                  <option value="" class="text-slate-900 font-semibold bg-white">Consolidado</option>
+                  <option
+                    v-for="group in unitGroups"
+                    :key="group.id"
+                    :value="group.id"
+                    class="text-slate-900 font-semibold bg-white"
+                  >
+                    {{ group.label || group.name }}
+                  </option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/70">
+                  <IconChevronDown class="w-4 h-4" />
+                </div>
+              </div>
+            </label>
+          </div>
+          <div v-else class="deasy-nav-meta mt-3 mb-2">
             {{ menuContextLabel }}
           </div>
 
@@ -1396,7 +1386,8 @@ import {
   IconSignature,
   IconUpload,
   IconArrowRight,
-  IconBuildingMonument
+  IconBuildingMonument,
+  IconChevronDown
 } from '@tabler/icons-vue';
 
 const router = useRouter();
