@@ -1,4 +1,15 @@
 services:
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+      - backend
+
   mariadb:
     image: mariadb:11.4
     restart: unless-stopped
@@ -197,6 +208,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
+      SIGMAKER_DIR: /opt/sigmaker
       RABBITMQ_URL: amqp://rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}
