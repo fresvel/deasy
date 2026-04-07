@@ -85,15 +85,21 @@ const navItems = computed(() => {
       label: "Admin",
       title: "Ir a administración",
       to: "/admin",
-      icon: IconSettings
+      icon: IconSettings,
+      showAlways: true
     },
     {
       key: "roles",
       label: "Roles",
       title: "Gestión de roles",
       to: "/roles",
-      icon: IconUsers
+      icon: IconUsers,
+      showOnlyIn: ["perfil"]
     }
-  ].filter(item => item.key !== props.currentSection);
+  ].filter(item => {
+    if (item.key === props.currentSection) return false;
+    if (item.showOnlyIn && !item.showOnlyIn.includes(props.currentSection)) return false;
+    return true;
+  });
 });
 </script>
