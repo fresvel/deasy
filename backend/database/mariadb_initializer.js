@@ -86,6 +86,19 @@ ALTER TABLE users
 MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
 `;
 
+/**
+ * Migración: agrega las columnas verification_token y token_used
+ * a email_verification_codes. Usa ADD COLUMN IF NOT EXISTS para que
+ * sea idempotente (no falla si ya existen).
+ * El token es un string único de un solo uso que protege el endpoint
+ * público de verificación de correo.
+ */
+const ADD_VERIFICATION_TOKEN_COLUMN_SQL = `
+ALTER TABLE email_verification_codes
+ADD COLUMN IF NOT EXISTS verification_token VARCHAR(64) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS token_used TINYINT(1) DEFAULT 0;
+`;
+
 const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
 
 const splitSqlStatements = (sql) => {
@@ -212,25 +225,30 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
 
   const connection = await pool.getConnection();
   try {
-    // 1. Tablas legacy de autenticación (no dependen del schema principal)
+    // ── 1. Tablas legacy de autenticación (no dependen del schema principal) ──
     await connection.query(CREATE_USERS_TABLE_SQL);
     await connection.query(CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL);
     await connection.query(ADD_PHOTO_COLUMN_SQL);
     await connection.query(MODIFY_PHOTO_COLUMN_SQL);
     await connection.query(CREATE_PASSWORD_RESET_CODES_TABLE_SQL);
+    await connection.query(ADD_VERIFICATION_TOKEN_COLUMN_SQL);
     console.log("✅ Tabla 'users' verificada/creada en MariaDB");
     console.log("✅ Tabla 'email_verification_codes' verificada/creada");
     console.log("✅ Tabla 'password_reset_codes' verificada/creada");
+    console.log("✅ Migración 'verification_token' aplicada en email_verification_codes");
 
-    // 2. Schema principal — esto crea processes, persons, templates, etc.
+    // ── 2. Schema principal (persons, units, processes, templates, etc.) ──────
     const schemaSQL = await fs.readFile(SCHEMA_FILE_URL, "utf8");
     const statements = splitSqlStatements(schemaSQL);
     for (const statement of statements) {
       await connection.query(statement);
     }
     console.log("✅ Schema principal aplicado desde mariadb_schema.sql");
+    console.log("✅ TTHH: columnas de persons, person_health, person_bank_accounts, person_emergency_contacts verificadas/creadas");
 
-    // 3. Migraciones sobre tablas del schema (ahora sí existen)
+    // ── 3. Migraciones sobre tablas del schema (ahora sí existen) ─────────────
+
+    // document_versions
     const [columns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_versions'`
@@ -314,6 +332,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudo crear FK de document_versions.template_artifact_id:", error.message);
     }
 
+    // documents
     const [documentColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents'`
@@ -350,6 +369,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     }
 
+    // cargos
     const [cargoColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cargos'`
@@ -359,15 +379,11 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       await connection.query("ALTER TABLE cargos ADD COLUMN code VARCHAR(120) NULL AFTER id");
     }
     const [cargoRows] = await connection.query(
-      `SELECT id, name, code
-       FROM cargos
-       ORDER BY id ASC`
+      `SELECT id, name, code FROM cargos ORDER BY id ASC`
     );
     for (const cargo of cargoRows) {
       const currentCode = String(cargo.code || "").trim();
-      if (currentCode) {
-        continue;
-      }
+      if (currentCode) continue;
       const normalizedCode = String(cargo.name || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -407,30 +423,28 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudo crear FK de documents.owner_person_id:", error.message);
     }
 
+    // signature catalog normalization
     try {
       await connection.query(
         `UPDATE signature_request_statuses
-         SET code = 'pendiente',
-             name = 'Pendiente',
-             is_active = 1
+         SET code = 'pendiente', name = 'Pendiente', is_active = 1
          WHERE LOWER(code) = 'pendiente'`
       );
       await connection.query(
         `UPDATE signature_request_statuses
-         SET is_active = 0,
-             description = 'Estado legacy fuera del estándar actual.'
+         SET is_active = 0, description = 'Estado legacy fuera del estándar actual.'
          WHERE LOWER(code) = 'firmado'`
       );
       await connection.query(
         `UPDATE signature_statuses
-         SET is_active = 0,
-             description = 'Estado legacy fuera del estándar técnico actual.'
+         SET is_active = 0, description = 'Estado legacy fuera del estándar técnico actual.'
          WHERE LOWER(code) IN ('revisado', 'aprobado', 'elaborado', 'enviado', 'recibido', 'asistencia')`
       );
     } catch (error) {
       console.warn("⚠️  No se pudieron normalizar catálogos de firma legacy:", error.message);
     }
 
+    // tasks → process_runs
     const [taskColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tasks'`
@@ -461,56 +475,33 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudo crear FK de tasks.process_run_id:", error.message);
     }
 
+    // backfill process_runs from tasks
     try {
       await connection.query(
         `INSERT INTO process_runs (
-           process_definition_id,
-           term_id,
-           run_mode,
-           created_by_user_id,
-           status
+           process_definition_id, term_id, run_mode, created_by_user_id, status
          )
          SELECT DISTINCT
            t.process_definition_id,
            t.term_id,
-           CASE
-             WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
-             ELSE 'manual'
-           END,
-           CASE
-             WHEN t.launch_mode = 'manual' THEN t.created_by_user_id
-             ELSE NULL
-           END,
+           CASE WHEN t.launch_mode = 'automatic' THEN 'automatic_term' ELSE 'manual' END,
+           CASE WHEN t.launch_mode = 'manual' THEN t.created_by_user_id ELSE NULL END,
            'active'
          FROM tasks t
          LEFT JOIN process_runs pr
            ON pr.process_definition_id = t.process_definition_id
           AND pr.term_id <=> t.term_id
-          AND pr.run_mode = CASE
-            WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
-            ELSE 'manual'
-          END
-          AND (
-            t.launch_mode <> 'manual'
-            OR pr.created_by_user_id <=> t.created_by_user_id
-          )
-         WHERE t.process_run_id IS NULL
-           AND pr.id IS NULL`
+          AND pr.run_mode = CASE WHEN t.launch_mode = 'automatic' THEN 'automatic_term' ELSE 'manual' END
+          AND (t.launch_mode <> 'manual' OR pr.created_by_user_id <=> t.created_by_user_id)
+         WHERE t.process_run_id IS NULL AND pr.id IS NULL`
       );
-
       await connection.query(
         `UPDATE tasks t
          INNER JOIN process_runs pr
            ON pr.process_definition_id = t.process_definition_id
           AND pr.term_id <=> t.term_id
-          AND pr.run_mode = CASE
-            WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
-            ELSE 'manual'
-          END
-          AND (
-            t.launch_mode <> 'manual'
-            OR pr.created_by_user_id <=> t.created_by_user_id
-          )
+          AND pr.run_mode = CASE WHEN t.launch_mode = 'automatic' THEN 'automatic_term' ELSE 'manual' END
+          AND (t.launch_mode <> 'manual' OR pr.created_by_user_id <=> t.created_by_user_id)
          SET t.process_run_id = pr.id
          WHERE t.process_run_id IS NULL`
       );
@@ -518,82 +509,45 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudo backfillear tasks.process_run_id:", error.message);
     }
 
+    // backfill documents/document_versions/fill_flows from task_items
     try {
       await connection.query(
-        `INSERT INTO documents (
-           task_item_id,
-           owner_person_id,
-           origin_type,
-           title,
-           status
-         )
+        `INSERT INTO documents (task_item_id, owner_person_id, origin_type, title, status)
          SELECT
-           ti.id,
-           ti.assigned_person_id,
-           'task_item',
-           COALESCE(tar.display_name, CONCAT('Documento ', ti.id)),
-           'Inicial'
+           ti.id, ti.assigned_person_id, 'task_item',
+           COALESCE(tar.display_name, CONCAT('Documento ', ti.id)), 'Inicial'
          FROM task_items ti
          LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
          LEFT JOIN documents d ON d.task_item_id = ti.id
          WHERE d.id IS NULL`
       );
-
       await connection.query(
-        `INSERT INTO document_versions (
-           document_id,
-           version,
-           template_artifact_id,
-           status
-         )
-         SELECT
-           d.id,
-           0.1,
-           ti.template_artifact_id,
-           'Borrador'
+        `INSERT INTO document_versions (document_id, version, template_artifact_id, status)
+         SELECT d.id, 0.1, ti.template_artifact_id, 'Borrador'
          FROM documents d
          INNER JOIN task_items ti ON ti.id = d.task_item_id
          LEFT JOIN document_versions dv ON dv.document_id = d.id
          WHERE dv.id IS NULL`
       );
-
       await connection.query(
-        `INSERT INTO document_fill_flows (
-           fill_flow_template_id,
-           document_version_id,
-           status,
-           current_step_order
-         )
-         SELECT
-           fft.id,
-           dv.id,
-           'pending',
-           MIN(ffs.step_order)
+        `INSERT INTO document_fill_flows (fill_flow_template_id, document_version_id, status, current_step_order)
+         SELECT fft.id, dv.id, 'pending', MIN(ffs.step_order)
          FROM document_versions dv
          INNER JOIN documents d ON d.id = dv.document_id
          INNER JOIN task_items ti ON ti.id = d.task_item_id
          INNER JOIN fill_flow_templates fft
-           ON fft.process_definition_template_id = ti.process_definition_template_id
-          AND fft.is_active = 1
-         LEFT JOIN fill_flow_steps ffs
-           ON ffs.fill_flow_template_id = fft.id
-         LEFT JOIN document_fill_flows dff
-           ON dff.document_version_id = dv.id
+           ON fft.process_definition_template_id = ti.process_definition_template_id AND fft.is_active = 1
+         LEFT JOIN fill_flow_steps ffs ON ffs.fill_flow_template_id = fft.id
+         LEFT JOIN document_fill_flows dff ON dff.document_version_id = dv.id
          WHERE dff.id IS NULL
          GROUP BY fft.id, dv.id`
       );
-
       await connection.query(
         `INSERT INTO fill_requests (
-           document_fill_flow_id,
-           fill_flow_step_id,
-           assigned_person_id,
-           status,
-           is_manual
+           document_fill_flow_id, fill_flow_step_id, assigned_person_id, status, is_manual
          )
          SELECT
-           dff.id,
-           ffs.id,
+           dff.id, ffs.id,
            CASE
              WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
              WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
@@ -618,11 +572,9 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
          INNER JOIN documents d ON d.id = dv.document_id
          LEFT JOIN task_items ti ON ti.id = d.task_item_id
          LEFT JOIN tasks t ON t.id = ti.task_id
-         INNER JOIN fill_flow_steps ffs
-           ON ffs.fill_flow_template_id = dff.fill_flow_template_id
+         INNER JOIN fill_flow_steps ffs ON ffs.fill_flow_template_id = dff.fill_flow_template_id
          LEFT JOIN fill_requests fr_same_step
-           ON fr_same_step.document_fill_flow_id = dff.id
-          AND fr_same_step.fill_flow_step_id = ffs.id
+           ON fr_same_step.document_fill_flow_id = dff.id AND fr_same_step.fill_flow_step_id = ffs.id
          LEFT JOIN fill_requests fr_same_assignee
            ON fr_same_assignee.document_fill_flow_id = dff.id
           AND fr_same_assignee.fill_flow_step_id = ffs.id
@@ -635,47 +587,35 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
             END
           )
          WHERE (
-             (
-               CASE
-                 WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
-                 WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
-                 WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
-                 ELSE NULL
-               END
-             ) IS NULL
-             AND fr_same_step.id IS NULL
-           )
-            OR (
-             (
-               CASE
-                 WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
-                 WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
-                 WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
-                 ELSE NULL
-               END
-             ) IS NOT NULL
-             AND fr_same_assignee.id IS NULL
+             (CASE
+               WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+               WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+               WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+               ELSE NULL
+             END) IS NULL AND fr_same_step.id IS NULL
+           ) OR (
+             (CASE
+               WHEN ffs.resolver_type = 'specific_person' THEN ffs.assigned_person_id
+               WHEN ffs.resolver_type = 'document_owner' THEN d.owner_person_id
+               WHEN ffs.resolver_type = 'task_assignee' THEN COALESCE(ti.assigned_person_id, t.created_by_user_id)
+               ELSE NULL
+             END) IS NOT NULL AND fr_same_assignee.id IS NULL
            )`
       );
-
       await connection.query(
-        `DELETE fr_manual
-         FROM fill_requests fr_manual
+        `DELETE fr_manual FROM fill_requests fr_manual
          INNER JOIN fill_requests fr_resolved
            ON fr_resolved.document_fill_flow_id = fr_manual.document_fill_flow_id
           AND fr_resolved.fill_flow_step_id = fr_manual.fill_flow_step_id
           AND fr_resolved.assigned_person_id IS NOT NULL
-         WHERE fr_manual.assigned_person_id IS NULL
-           AND fr_manual.is_manual = 1`
+         WHERE fr_manual.assigned_person_id IS NULL AND fr_manual.is_manual = 1`
       );
-
       await connection.query(
         `UPDATE document_versions dv
          INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
          SET dv.status = 'Pendiente de llenado'
          WHERE dv.status = 'Borrador'`
       );
-
       await connection.query(
         `UPDATE documents d
          INNER JOIN document_versions dv ON dv.document_id = d.id
@@ -683,31 +623,15 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
          SET d.status = 'Pendiente de llenado'
          WHERE d.status IN ('Inicial', 'Borrador')`
       );
-
-      await connection.query(
-        `UPDATE documents
-         SET status = 'Observado'
-         WHERE status = 'Rechazado'`
-      );
-      await connection.query(
-        `UPDATE document_versions
-         SET status = 'Observado'
-         WHERE status = 'Rechazado'`
-      );
-      await connection.query(
-        `UPDATE documents
-         SET status = 'Final'
-         WHERE status = 'Aprobado'`
-      );
-      await connection.query(
-        `UPDATE document_versions
-         SET status = 'Final'
-         WHERE status = 'Aprobado'`
-      );
+      await connection.query(`UPDATE documents SET status = 'Observado' WHERE status = 'Rechazado'`);
+      await connection.query(`UPDATE document_versions SET status = 'Observado' WHERE status = 'Rechazado'`);
+      await connection.query(`UPDATE documents SET status = 'Final' WHERE status = 'Aprobado'`);
+      await connection.query(`UPDATE document_versions SET status = 'Final' WHERE status = 'Aprobado'`);
     } catch (error) {
       console.warn("⚠️  No se pudo backfillear documents/document_versions/fill_flows desde task_items:", error.message);
     }
 
+    // drop legacy document_versions columns
     try {
       const [legacyVersionColumns] = await connection.query(
         `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -721,6 +645,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudieron eliminar columnas legacy de document_versions:", error.message);
     }
 
+    // processes
     const [processColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'`
@@ -770,7 +695,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
         console.warn("⚠️  No se pudo eliminar CHECK de processes:", error.message);
     }
 
-    // Migración legacy: solo si la tabla 'templates' aún existe (schema viejo)
+    // legacy templates migration
     const [legacyTables] = await connection.query(
       `SELECT TABLE_NAME FROM information_schema.TABLES
        WHERE TABLE_SCHEMA = DATABASE()
