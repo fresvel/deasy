@@ -6,6 +6,7 @@ services:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../nginx/conf.d:/etc/nginx/conf.d:ro
       - ../nginx/certs:/etc/nginx/certs:ro
+      - ../nginx/acme:/var/www/certbot:ro
     depends_on:
       - frontend
       - backend
