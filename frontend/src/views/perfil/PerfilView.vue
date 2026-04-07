@@ -148,7 +148,7 @@ import IndexAcademia from '@/views/academia/AcademiaView.vue';
 import LogrosView from '@/views/academia/LogrosView.vue';
 
 
-import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';

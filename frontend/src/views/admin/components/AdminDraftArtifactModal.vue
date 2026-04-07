@@ -132,7 +132,7 @@ import AdminFieldGroup from "@/views/admin/components/AdminFieldGroup.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
 import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 
 const props = defineProps({
   draftArtifactEditId: {

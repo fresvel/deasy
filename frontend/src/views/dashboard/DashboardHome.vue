@@ -1363,7 +1363,7 @@ import SNavMenu from '@/layouts/SNavMenu.vue';
 import AppDataTable from '@/components/AppDataTable.vue';
 import AppPageIntro from '@/components/AppPageIntro.vue';
 import AppTag from '@/components/AppTag.vue';
-import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
 import SignatureFlowService from '@/services/sign/SignatureFlowService.js';
@@ -1371,7 +1371,7 @@ import { API_ROUTES } from '@/services/apiConfig';
 import { Modal } from '@/utils/modalController';
 import AdminModalShell from '@/components/AppModalShell.vue';
 import AppButton from '@/components/AppButton.vue';
-import PdfDropField from '@/components/PdfDropField.vue';
+import PdfDropField from '@/components/firmas/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/components/WorkspaceChatLauncher.vue';
 
 import {

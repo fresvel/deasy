@@ -434,7 +434,7 @@ import SBody from "@/layouts/SBody.vue";
 import AppWorkspaceHeader from "@/layouts/AppWorkspaceHeader.vue";
 import WorkspaceChatLauncher from "@/components/WorkspaceChatLauncher.vue";
 import AdminTableManager from "./components/AdminTableManager.vue";
-import FirmarPdf from "@/views/funciones/FirmarPdf.vue";
+import FirmarPdf from "@/components/firmas/FirmarPdf.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const isClient = typeof window !== 'undefined';

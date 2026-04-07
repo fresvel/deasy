@@ -1,38 +1,48 @@
 <template>
-  <div class="flex flex-col gap-6 w-full">
+  <div :class="rootClasses">
     <div class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
+          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">
+            {{ embedded ? 'Firma documental' : 'Firmas electrónicas' }}
+          </h2>
           <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
-            Carga documentos y define las areas de estampado para la firma.
+            {{ workflowSignContext
+              ? 'Estás en una sesión de firma documental. Carga el PDF correspondiente y completa la firma con tu certificado.'
+              : 'Carga documentos y define las areas de estampado para la firma.' }}
           </p>
         </div>
-        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:flex-shrink-0">
-          <div v-if="pdfReady">
-            <PdfDropField
-              variant="inline"
-              title=""
-              action-text="Cambiar PDF"
-              help-text="Selecciona otro PDF"
-              :icon="IconFileUpload"
-              input-id="change-pdf-input"
-              @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
-            />
-          </div>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-            title="Cerrar módulo de firmas"
-            @click="emit('close')"
-          >
-            <IconX class="w-6 h-6 hidden sm:block" />
-            <span class="sm:hidden flex items-center gap-2 text-sm font-bold text-slate-600">
-              <IconArrowLeft class="w-5 h-5" />
-              Volver
-            </span>
-          </button>
+        <div v-if="pdfReady" class="sm:flex-shrink-0">
+          <PdfDropField
+            variant="inline"
+            title=""
+            action-text="Cambiar PDF"
+            help-text="Selecciona otro PDF"
+            :icon="IconFileUpload"
+            input-id="change-pdf-input"
+            @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
+          />
         </div>
+      </div>
+    </div>
+
+    <div
+      v-if="workflowSignContext"
+      class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+    >
+      <div class="font-semibold">Sesión documental activa</div>
+      <div class="mt-1 text-sky-800">
+        Documento:
+        <span class="font-semibold">{{ workflowSignContext.documentTitle || `Documento #${workflowSignContext.documentVersionId}` }}</span>
+        · Versión
+        <span class="font-semibold">{{ workflowSignContext.documentVersionLabel || workflowSignContext.documentVersionId }}</span>
+      </div>
+      <div class="mt-1 text-sky-800">
+        Solicitud de firma:
+        <span class="font-semibold">#{{ workflowSignContext.signatureRequestId }}</span>
+      </div>
+      <div v-if="workflowPdfStatus.message" class="mt-2" :class="workflowPdfStatus.type === 'error' ? 'text-rose-700' : workflowPdfStatus.type === 'success' ? 'text-emerald-700' : 'text-sky-800'">
+        {{ workflowPdfStatus.message }}
       </div>
     </div>
 
@@ -285,17 +295,14 @@
 
   </div>
 
-  <div class="deasy-dialog-root fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/40 backdrop-blur-sm" data-dialog-root id="deleteFieldsModal" tabindex="-1" aria-hidden="true" ref="deleteModal">
-    <div class="flex items-center justify-center min-h-screen px-4 py-8">
-      <div class="sign-dialog-shell relative w-full max-w-4xl mx-auto my-12">
-        <div class="sign-dialog-panel bg-white rounded-2xl shadow-2xl flex flex-col border border-slate-100">
-          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h5 class="text-xl font-bold text-slate-800">Eliminar campos</h5>
-            <button type="button" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition" data-modal-dismiss aria-label="Close">
-              <IconX class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="p-6 overflow-y-auto max-h-[80vh]">
+  <AdminModalShell
+    ref="deleteModal"
+    id="deleteFieldsModal"
+    labelled-by="delete-fields-modal-title"
+    title="Eliminar campos"
+    size="xl"
+    body-class="p-6 overflow-y-auto max-h-[80vh]"
+  >
             <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
             <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <div class="flex flex-col gap-4">
@@ -339,11 +346,7 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  </AdminModalShell>
 
   <AdminModalShell
     ref="assignSignerModal"
@@ -546,9 +549,7 @@
           >
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-sm font-bold text-slate-800">{{ certificate.label }}</span>
-              <span v-if="certificate.is_default" class="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-700">
-                Predeterminado
-              </span>
+              <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
             </div>
             <div class="text-xs text-slate-500 mt-1">{{ certificate.original_filename }}</div>
           </button>
@@ -647,20 +648,26 @@
   </AdminModalShell>
 </template>
   <script setup>
-  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineEmits } from 'vue';
+  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps } from 'vue';
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
   import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
-  import PdfDropField from '@/components/PdfDropField.vue';
-  import UserCertificatesPanel from '@/components/UserCertificatesPanel.vue';
-  import AdminModalShell from '@/views/admin/components/AdminModalShell.vue';
-  import AdminButton from '@/views/admin/components/AdminButton.vue';
-  import MultiSignerPanel from '@/components/MultiSignerPanel.vue';
+  import AppTag from '@/components/AppTag.vue';
+  import PdfDropField from '@/components/firmas/PdfDropField.vue';
+  import UserCertificatesPanel from '@/components/firmas/UserCertificatesPanel.vue';
+  import AdminModalShell from '@/components/AppModalShell.vue';
+  import AdminButton from '@/components/AppButton.vue';
+  import MultiSignerPanel from '@/components/firmas/MultiSignerPanel.vue';
 
-  const emit = defineEmits(['close']);
+  const props = defineProps({
+    embedded: {
+      type: Boolean,
+      default: false
+    }
+  });
 
   let ctx;
   const colPdf=ref(null)
@@ -750,6 +757,8 @@
   const signSuccess = ref(false);
   const signedMinioPath = ref('');
   const signedFieldsCount = ref(0);
+  const workflowSignContext = ref(null);
+  const workflowPdfStatus = ref({ type: 'info', message: '' });
   const multiBatchRequest = ref(null);
   const activeMultiBatchJob = ref(null);
   const activeMultiBatchJobId = ref('');
@@ -765,6 +774,11 @@
     const rawToken = currentUser.value?.signatureToken || currentUser.value?.token || '';
     return rawToken ? `!-${rawToken}-!` : '';
   });
+  const rootClasses = computed(() =>
+    props.embedded
+      ? 'w-full h-full max-w-7xl mx-auto p-0 flex flex-col gap-6'
+      : 'w-full h-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
+  );
 
   const removeBox = () => {
     const signbox = document.getElementById('active-signbox');
@@ -905,8 +919,8 @@
 
   onMounted(() => {
     registerEvents();
-    if (deleteModal.value) {
-      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value);
+    if (deleteModal.value?.el) {
+      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value.el);
     }
     if (assignSignerModal.value?.el) {
       assignSignerModalInstance = Modal.getOrCreateInstance(assignSignerModal.value.el);
@@ -934,6 +948,7 @@
         console.error('Error al cargar usuario en firmador:', error);
       }
     }
+    ensureCurrentUserProfile();
     ensureResizeObserver();
     window.addEventListener('resize', scheduleResizeRender);
   });
@@ -1120,6 +1135,65 @@
         uploadError.value = 'No se pudo leer el archivo PDF seleccionado.';
         console.error('Error al leer el archivo PDF:', err);
         resetPdfState();
+      }
+    };
+
+    const loadPdfFromRemotePath = async (objectPath, mode = 'sign') => {
+      if (!objectPath) {
+        workflowPdfStatus.value = {
+          type: 'info',
+          message: 'Este entregable todavía no tiene un PDF vinculado para precargar.'
+        };
+        return;
+      }
+      workflowPdfStatus.value = {
+        type: 'info',
+        message: 'Precargando PDF del entregable...'
+      };
+      try {
+        let response = null;
+        if (workflowSignContext.value?.taskItemId && workflowSignContext.value?.processDefinitionId) {
+          const resolvedUser = await ensureCurrentUserProfile();
+          const currentUserId = Number(resolvedUser?.id || 0);
+          if (currentUserId) {
+            response = await fetch(
+              API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_FILE(
+                currentUserId,
+                workflowSignContext.value.processDefinitionId,
+                workflowSignContext.value.taskItemId
+              ),
+              {
+                headers: getAuthHeaders()
+              }
+            );
+          }
+        }
+        if (!response) {
+          response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(objectPath)}`, {
+            headers: getAuthHeaders()
+          });
+        }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData?.message || 'No se pudo descargar el PDF vinculado.');
+        }
+        const blob = await response.blob();
+        const remoteFile = new File(
+          [blob],
+          objectPath.split('/').pop() || 'documento.pdf',
+          { type: 'application/pdf' }
+        );
+        uploadedFiles.value = [{ content: remoteFile, isRenaming: false, name: remoteFile.name }];
+        await loadPdfFromFile(remoteFile, mode);
+        workflowPdfStatus.value = {
+          type: 'success',
+          message: 'El PDF del entregable se precargó correctamente.'
+        };
+      } catch (error) {
+        workflowPdfStatus.value = {
+          type: 'error',
+          message: error?.message || 'No se pudo precargar el PDF del entregable.'
+        };
       }
     };
 
@@ -1438,8 +1512,8 @@
     };
 
     const openDeleteModal = () => {
-      if (!deleteModal.value) return;
-      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value);
+      if (!deleteModal.value?.el) return;
+      deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value.el);
       deleteModalInstance.show();
     };
 
@@ -1541,6 +1615,35 @@
 
     const handleCertificateSelected = (certificate) => {
       selectedCertificateId.value = certificate?.id || null;
+    };
+
+    const ensureCurrentUserProfile = async () => {
+      const hasSignatureToken = Boolean(
+        currentUser.value?.signatureMarker
+        || currentUser.value?.signatureToken
+        || currentUser.value?.token
+      );
+      if (hasSignatureToken) {
+        return currentUser.value;
+      }
+      try {
+        const response = await fetch(API_ROUTES.USERS_ME, {
+          headers: getAuthHeaders()
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data?.user) {
+          throw new Error(data?.message || 'No se pudo refrescar el perfil del usuario.');
+        }
+        currentUser.value = data.user;
+        localStorage.setItem('user', JSON.stringify(data.user));
+        if (!stampText.value && currentUser.value) {
+          stampText.value = `${currentUser.value.first_name ?? ''} ${currentUser.value.last_name ?? ''}`.trim();
+        }
+        return currentUser.value;
+      } catch (error) {
+        console.error('No se pudo refrescar el perfil del usuario para la firma:', error);
+        return currentUser.value;
+      }
     };
 
     const openCertificatesManagerModal = () => {
@@ -1758,6 +1861,12 @@
         } else {
           formData.append('token', currentSignatureMarker.value);
         }
+        if (workflowSignContext.value?.signatureRequestId) {
+          formData.append('signature_request_id', String(workflowSignContext.value.signatureRequestId));
+        }
+        if (workflowSignContext.value?.documentVersionId) {
+          formData.append('document_version_id', String(workflowSignContext.value.documentVersionId));
+        }
         formData.append('allow_untrusted_signer', allowUntrustedSigner.value ? 'true' : 'false');
 
         const response = await fetch(API_ROUTES.SIGN, {
@@ -1857,13 +1966,45 @@
       isStartingMultiBatch.value = false;
       isDownloadingMultiBatch.value = false;
       multiBatchRequest.value = null;
+      workflowSignContext.value = null;
+      workflowPdfStatus.value = { type: 'info', message: '' };
       stopMultiBatchPolling();
       pendingDeleteFieldId.value = null;
       workspaceMode.value = 'single';
       resetPdfState();
     };
 
-    defineExpose({ resetToStart });
+    const initializeWorkflowSignatureSession = (payload = {}) => {
+      workflowSignContext.value = {
+        signatureRequestId: payload.signatureRequestId ? Number(payload.signatureRequestId) : null,
+        documentVersionId: payload.documentVersionId ? Number(payload.documentVersionId) : null,
+        taskItemId: payload.taskItemId ? Number(payload.taskItemId) : null,
+        processDefinitionId: payload.processDefinitionId ? Number(payload.processDefinitionId) : null,
+        documentTitle: payload.documentTitle || '',
+        documentVersionLabel: payload.documentVersionLabel || '',
+        preloadPdfPath: payload.preloadPdfPath || ''
+      };
+      workflowPdfStatus.value = {
+        type: 'info',
+        message: payload.preloadPdfPath
+          ? 'Preparando PDF vinculado del entregable...'
+          : 'Este entregable todavía no tiene un PDF vinculado para precargar.'
+      };
+      signError.value = '';
+      signSuccess.value = false;
+      signedMinioPath.value = '';
+      uploadError.value = '';
+      multiBatchRequest.value = null;
+      activeMultiBatchJob.value = null;
+      activeMultiBatchJobId.value = '';
+      requestMode.value = false;
+      workspaceMode.value = 'single';
+      if (payload.preloadPdfPath) {
+        loadPdfFromRemotePath(payload.preloadPdfPath, 'sign');
+      }
+    };
+
+    defineExpose({ resetToStart, initializeWorkflowSignatureSession });
 
   </script>
 <style scoped>

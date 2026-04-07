@@ -124,7 +124,7 @@ import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
 import IndexAcademia from '@/views/academia/AcademiaView.vue';
 import LogrosView from '@/views/academia/LogrosView.vue';
 import MemorandumView from '@/views/roles/MemorandumView.vue';
-import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';

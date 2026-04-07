@@ -363,9 +363,9 @@ import {
   IconChevronRight,
   IconFiles
 } from "@tabler/icons-vue";
-import AdminButton from "@/views/admin/components/AdminButton.vue";
+import AdminButton from "@/components/AppButton.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 const props = defineProps({
   batchJob: {
     type: Object,
