@@ -1,31 +1,26 @@
 <template>
   <s-header :menu-open="menuOpen" @onclick="emit('menu-toggle')">
     <div class="flex items-center gap-3 overflow-hidden flex-1">
-      <div class="flex items-center gap-2 shrink-0">
-        <component
-          :is="item.to ? 'router-link' : 'div'"
-          v-for="item in navItems"
-          :key="item.key"
-          :to="item.to"
-          class="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] group"
-          :class="item.active ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
-          :title="item.title"
-        >
-          <span class="deasy-nav-chip__icon" :class="item.active ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
-            <component :is="item.icon" class="w-5 h-5 shrink-0" />
-          </span>
-          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center whitespace-nowrap">
-            {{ item.label }}
-          </span>
-        </component>
-      </div>
-
       <slot />
     </div>
 
     <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+      <component
+        :is="item.to ? 'router-link' : 'div'"
+        v-for="item in navItems"
+        :key="item.key"
+        :to="item.to"
+        class="flex shrink-0 items-center justify-center rounded-lg sm:rounded-xl h-9 w-9 sm:h-11 sm:w-11 transition-all focus:outline-none focus:ring-2 focus:ring-white/30"
+        :class="item.active ? 'bg-white/20 text-white border border-white/30 shadow-sm' : 'border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white'"
+        :title="item.title"
+      >
+        <component :is="item.icon" class="w-4 h-4 sm:w-5 sm:h-5" />
+      </component>
+
+      <div class="w-px h-5 sm:h-7 bg-white/20 mx-0.5 sm:mx-1 rounded-full"></div>
+
       <button
-        class="deasy-nav-action h-9 w-9 rounded-lg sm:ms-3 sm:h-11 sm:w-11 sm:rounded-xl"
+        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white/80 hover:!text-white"
         type="button"
         title="Firmar documentos"
         @click="emit('sign')"
@@ -72,39 +67,31 @@ const props = defineProps({
 const emit = defineEmits(["menu-toggle", "notify", "sign"]);
 
 const navItems = computed(() => {
-  const items = [];
-
-  if (props.currentSection !== "dashboard") {
-    items.push({
+  return [
+    {
       key: "dashboard",
       label: "Home",
       title: "Ir a dashboard",
-      to: "/dashboard",
+      to: props.currentSection === "dashboard" ? null : "/dashboard",
       icon: IconHome,
       active: props.currentSection === "dashboard"
-    });
-  }
-
-  if (props.currentSection !== "perfil") {
-    items.push({
+    },
+    {
       key: "perfil",
       label: "Perfil",
       title: "Ir a perfil",
-      to: "/perfil",
+      to: props.currentSection === "perfil" ? null : "/perfil",
       icon: IconUser,
       active: props.currentSection === "perfil"
-    });
-  }
-
-  items.push({
-    key: "admin",
-    label: "Admin",
-    title: "Ir a administración",
-    to: props.currentSection === "admin" ? null : "/admin",
-    icon: IconSettings,
-    active: props.currentSection === "admin"
-  });
-
-  return items;
+    },
+    {
+      key: "admin",
+      label: "Admin",
+      title: "Ir a administración",
+      to: props.currentSection === "admin" ? null : "/admin",
+      icon: IconSettings,
+      active: props.currentSection === "admin"
+    }
+  ];
 });
 </script>
