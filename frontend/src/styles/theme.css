@@ -238,6 +238,18 @@ a:hover {
   border-color: rgba(var(--color-puce-light-rgb), 0.46);
 }
 
+.hope-action-delete-pdf {
+  color: #f59e0b !important; /* amber-500 */
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.26);
+}
+
+.hope-action-delete-pdf:hover {
+  color: #d97706 !important; /* amber-600 */
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
 .btn-group .hope-action-btn {
   flex: 0 0 auto;
 }

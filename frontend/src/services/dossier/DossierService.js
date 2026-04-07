@@ -66,6 +66,12 @@ class DossierService {
     return response.data;
   }
 
+  async updateExperiencia(experienciaId, payload) {
+    const cedula = this.getCedula();
+    const response = await axios.put(`${API_PREFIX}/dossier/${cedula}/experiencia/${experienciaId}`, payload);
+    return response.data;
+  }
+
   async deleteExperiencia(experienciaId) {
     const cedula = this.getCedula();
     const response = await axios.delete(`${API_PREFIX}/dossier/${cedula}/experiencia/${experienciaId}`);
@@ -94,6 +100,12 @@ class DossierService {
   async createReferencia(payload) {
     const cedula = this.getCedula();
     const response = await axios.post(`${API_PREFIX}/dossier/${cedula}/referencias`, payload);
+    return response.data;
+  }
+
+  async updateReferencia(referenciaId, payload) {
+    const cedula = this.getCedula();
+    const response = await axios.put(`${API_PREFIX}/dossier/${cedula}/referencias/${referenciaId}`, payload);
     return response.data;
   }
 
@@ -128,6 +140,12 @@ class DossierService {
     return response.data;
   }
 
+  async updateCertificacion(certificacionId, payload) {
+    const cedula = this.getCedula();
+    const response = await axios.put(`${API_PREFIX}/dossier/${cedula}/certificaciones/${certificacionId}`, payload);
+    return response.data;
+  }
+
   async deleteCertificacion(certificacionId) {
     const cedula = this.getCedula();
     const response = await axios.delete(`${API_PREFIX}/dossier/${cedula}/certificaciones/${certificacionId}`);
@@ -156,6 +174,13 @@ class DossierService {
   async createCapacitacion(payload) {
     const cedula = this.getCedula();
     const response = await axios.post(`${API_PREFIX}/dossier/${cedula}/formacion`, payload);
+    return response.data;
+  }
+
+  async updateCapacitacion(capacitacionId, payload) {
+    const cedula = this.getCedula();
+    // Capacitacion se mapea a 'formacion' en la DB
+    const response = await axios.put(`${API_PREFIX}/dossier/${cedula}/formacion/${capacitacionId}`, payload);
     return response.data;
   }
 
@@ -190,6 +215,13 @@ class DossierService {
     return response.data;
   }
 
+  async updateInvestigacion(tipo, investigacionId, payload) {
+    const cedula = this.getCedula();
+    // Asegurar que el tipo sea correcto (articulos, libros, etc)
+    const response = await axios.put(`${API_PREFIX}/dossier/${cedula}/investigacion/${tipo}/${investigacionId}`, payload);
+    return response.data;
+  }
+
   async deleteInvestigacion(tipo, investigacionId) {
     const cedula = this.getCedula();
     const response = await axios.delete(`${API_PREFIX}/dossier/${cedula}/investigacion/${tipo}/${investigacionId}`);
@@ -216,6 +248,12 @@ class DossierService {
       { responseType: 'blob' }
     );
     return response;
+  }
+
+  async deleteDocument(tipo, registroId) {
+    const cedula = this.getCedula();
+    const response = await axios.delete(`${API_PREFIX}/dossier/${cedula}/documentos/${tipo}/${registroId}`);
+    return response.data;
   }
 }
 

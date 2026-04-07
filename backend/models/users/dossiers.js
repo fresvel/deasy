@@ -23,6 +23,7 @@ const experienciaSchema = new mongoose.Schema({
     fecha_inicio:{type: Date,},
     fecha_fin:{type: Date,}, // Calcular años
     funcion_catedra:{type: [String]},
+    modalidad:{type: String},
     tipo:{type: String,enum:["Docencia", "Profesional"]},
     url_documento:{type: String, default:""},
     sera:{type: String,enum: ["Enviado", "Revisado", "Aprobado"]},
@@ -65,6 +66,7 @@ const certificacionSchema = new mongoose.Schema({
     horas:{type: Number},
     fecha:{type: Date},
     tipo: {type: String, enum: ["Nacional","Internacional"]},
+    descripcion:{type: String},
     url_documento:{type: String, default:""},
     sera:{type: String, enum: ["Enviado", "Revisado", "Aprobado"]}
 });

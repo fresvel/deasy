@@ -17,12 +17,13 @@
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fecha</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Ámbito</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Descripción</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="!certificaciones.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado certificaciones aún.
               </td>
             </tr>
@@ -33,12 +34,15 @@
               <td class="px-4 py-3 text-slate-700">{{ certificacion.horas || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(certificacion.fecha) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ certificacion.tipo || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700 max-w-xs truncate">{{ certificacion.descripcion || 'N/A' }}</td>
               <td class="px-4 py-3">
                 <DossierDocumentActions
                   :has-document="Boolean(certificacion.url_documento)"
+                  @edit="editarCertificacion(certificacion)"
                   @preview="previewDocument(certificacion)"
                   @download="openDocument(certificacion)"
                   @upload="triggerFileUpload(certificacion._id)"
+                  @delete-document="eliminarSoloPDF(certificacion)"
                   @delete="openDelete(certificacion)"
                 />
               </td>
@@ -49,45 +53,43 @@
     </ProfileTableBlock>
     </ProfileSectionShell>
 
-    <AppModalShell
-      ref="modal"
-      id="certificacionModal"
-      labelled-by="certificacionModalLabel"
-      size="md"
-      :show-header="false"
-      body-class="p-0"
-      content-class="profile-admin-skin"
-    >
-      <AgregarCertificacion @certificacion-added="handleCertificacionAdded" />
-    </AppModalShell>
-
-    <AppModalShell
-      ref="deleteModal"
-      id="certificacionDeleteModal"
-      labelled-by="certificacionDeleteModalLabel"
-      title="Confirmar eliminación"
-      size="md"
-      content-class="profile-admin-skin"
-    >
-      <div class="profile-confirm-body">
-        ¿Deseas eliminar la certificación
-        <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
+    <!-- Modal Agregar/Editar -->
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="certificacionModal" tabindex="-1" ref="modal" aria-hidden="true">
+      <div class="profile-dialog-shell">
+        <div class="profile-dialog-panel">
+          <AgregarCertificacion 
+            :editing-item="pendingEdit" 
+            @certificacion-added="loadDossier" 
+            @certificacion-updated="handleCertificacionUpdated"
+          />
+        </div>
       </div>
-      <template #footer>
-        <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
-        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
-      </template>
-    </AppModalShell>
+    </div>
 
-    <DossierDocumentUploadModal
-      :open="isUploadModalOpen"
-      :selected-file="selectedUploadFile"
-      :is-submitting="isUploadingDocument"
-      @close="closeUploadModal"
-      @files-selected="handleUploadFilesSelected"
-      @clear="clearUploadSelection"
-      @submit="submitSelectedUpload"
-    />
+    <!-- Modal Eliminar -->
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="certificacionDeleteModal" tabindex="-1" ref="deleteModal" aria-hidden="true">
+      <div class="profile-dialog-shell profile-dialog-shell--compact">
+        <div class="profile-dialog-panel">
+          <div class="profile-confirm-header">
+            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
+            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
+              <span class="text-xl leading-none">&times;</span>
+            </button>
+          </div>
+          <div class="profile-confirm-body">
+            ¿Deseas eliminar la certificación
+            <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
+          </div>
+          <div class="profile-confirm-footer">
+            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
+            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input file oculto -->
+    <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
@@ -95,32 +97,28 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Modal } from "@/utils/modalController";
-import RowActionMenu from "@/components/RowActionMenu.vue";
 import BtnSera from "@/components/BtnSera.vue";
 import AgregarCertificacion from "./components/AgregarCertificacion.vue";
 import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
-import AppModalShell from "@/components/AppModalShell.vue";
-import AppButton from "@/components/AppButton.vue";
-import DossierDocumentUploadModal from "@/components/DossierDocumentUploadModal.vue";
+import AdminButton from "@/views/admin/components/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 import DossierService from "@/services/dossier/DossierService";
 
 const modal = ref(null);
 const deleteModal = ref(null);
 const pdfPreviewModal = ref(null);
+const fileInput = ref(null);
 const selectedItemId = ref(null);
-const selectedUploadFile = ref(null);
-const isUploadModalOpen = ref(false);
-const isUploadingDocument = ref(false);
 const dossier = ref(null);
 const loading = ref(true);
-const currentUser = ref(null);
+const pendingEdit = ref(null);
+const pendingDelete = ref(null);
+
 let modalInstance = null;
 let deleteInstance = null;
-const pendingDelete = ref(null);
 
 const certificaciones = computed(() => {
     if (!dossier.value || !dossier.value.certificaciones) return [];
@@ -129,25 +127,19 @@ const certificaciones = computed(() => {
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
-// Formatear fecha para mostrar
 const formatDate = (date) => {
     if (!date) return '';
     const d = new Date(date);
     return d.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
 };
 
-// Cargar datos del usuario y su dossier
 const loadDossier = async () => {
     try {
         loading.value = true;
-        
         const data = await DossierService.getDossier();
-        
         if (data.success) {
             dossier.value = data.data;
-            currentUser.value = { cedula: DossierService.getCedula() };
         }
-        
     } catch (error) {
         console.error('Error al cargar dossier:', error);
     } finally {
@@ -156,42 +148,52 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
-    if (!modal.value?.el) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value.el);
+    pendingEdit.value = null;
+    if (!modal.value) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value);
     modalInstance.show();
+};
+
+const editarCertificacion = (certificacion) => {
+    pendingEdit.value = { ...certificacion };
+    if (!modal.value) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value);
+    modalInstance.show();
+};
+
+const handleCertificacionUpdated = () => {
+    pendingEdit.value = null;
+    loadDossier();
 };
 
 const openDelete = (certificacion) => {
     pendingDelete.value = certificacion;
-    if (!deleteModal.value?.el) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value.el);
+    if (!deleteModal.value) return;
+    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
     deleteInstance.show();
-};
-
-const handleCertificacionAdded = () => {
-    loadDossier();
-};
-
-const eliminarCertificacion = async (certificacion) => {
-    try {
-        await DossierService.deleteCertificacion(certificacion._id);
-        await loadDossier();
-        alert('Certificación eliminada correctamente');
-    } catch (error) {
-        console.error('Error al eliminar certificación:', error);
-        alert('Error al eliminar la certificación');
-    }
 };
 
 const confirmDelete = async () => {
     if (!pendingDelete.value) return;
-    await eliminarCertificacion(pendingDelete.value);
-    deleteInstance?.hide();
-    pendingDelete.value = null;
+    try {
+        await DossierService.deleteCertificacion(pendingDelete.value._id);
+        await loadDossier();
+        deleteInstance?.hide();
+    } catch (error) {
+        console.error('Error al eliminar:', error);
+        alert('Error al eliminar');
+    }
 };
 
-const editarCertificacion = (registro) => {
-    console.info("Editar certificación", registro);
+const eliminarSoloPDF = async (certificacion) => {
+    if (!confirm('¿Estás seguro de eliminar solo el documento PDF?')) return;
+    try {
+        await DossierService.deleteDocument("certificacion", certificacion._id);
+        await loadDossier();
+    } catch (error) {
+        console.error('Error al eliminar PDF:', error);
+        alert('Error al eliminar el documento');
+    }
 };
 
 const getDocumentBlob = async (tipoDocumento, registroId) => {
@@ -204,8 +206,7 @@ const previewDocument = async (certificacion) => {
         const blob = await getDocumentBlob("certificacion", certificacion._id);
         pdfPreviewModal.value?.openFromBlob(blob);
     } catch (error) {
-        console.error("Error al previsualizar documento:", error);
-        alert("Error al visualizar el documento");
+        console.error("Error al previsualizar:", error);
     }
 };
 
@@ -221,61 +222,29 @@ const openDocument = async (certificacion) => {
         document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
-        console.error('Error al abrir documento:', error);
-        alert('Error al abrir el documento');
+        console.error('Error al descargar:', error);
     }
 };
 
 const triggerFileUpload = (itemId) => {
     selectedItemId.value = itemId;
-    selectedUploadFile.value = null;
-    isUploadModalOpen.value = true;
+    fileInput.value.click();
 };
 
-const handleUploadFilesSelected = (files) => {
-    const [file] = files || [];
+const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
     if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-        alert('Solo se permiten archivos PDF');
-        return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo no puede superar los 10MB');
-        return;
-    }
-
-    selectedUploadFile.value = file;
-};
-
-const clearUploadSelection = () => {
-    selectedUploadFile.value = null;
-};
-
-const closeUploadModal = () => {
-    if (isUploadingDocument.value) return;
-    selectedUploadFile.value = null;
-    isUploadModalOpen.value = false;
-};
-
-const submitSelectedUpload = async () => {
-    if (!selectedUploadFile.value || !selectedItemId.value) return;
-
+    
     try {
-        isUploadingDocument.value = true;
-        const response = await DossierService.uploadCertificacionDocument(selectedItemId.value, selectedUploadFile.value);
+        const response = await DossierService.uploadCertificacionDocument(selectedItemId.value, file);
         if (response.success) {
-            alert('Documento subido correctamente');
             await loadDossier();
-            closeUploadModal();
         }
     } catch (error) {
-        console.error('Error al subir documento:', error);
+        console.error('Error al subir:', error);
         alert('Error al subir el documento');
-    } finally {
-        isUploadingDocument.value = false;
     }
+    event.target.value = '';
 };
 
 onMounted(() => {
@@ -287,21 +256,11 @@ onBeforeUnmount(() => {
     if (modalInstance) {
         modalInstance.hide();
         modalInstance.dispose();
-        modalInstance = null;
     }
     if (deleteInstance) {
         deleteInstance.hide();
         deleteInstance.dispose();
-        deleteInstance = null;
     }
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
-
-<style scoped lang="postcss">
-.table thead th {
-  color: var(--brand-ink);
-  font-weight: 600;
-}
-
-</style>

@@ -15,6 +15,7 @@
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Tema</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">País</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Inicio</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fin</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Rol</th>
@@ -23,7 +24,7 @@
           </thead>
           <tbody>
             <tr v-if="!capacitacionesDocentes.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
+              <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado capacitación docente.
               </td>
             </tr>
@@ -32,15 +33,18 @@
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.pais || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
               <td class="px-4 py-3">
                 <DossierDocumentActions
                   :has-document="Boolean(capacitacion.url_documento)"
+                  @edit="editarCapacitacion(capacitacion)"
                   @preview="previewDocument(capacitacion)"
                   @download="openDocument(capacitacion)"
                   @upload="triggerFileUpload(capacitacion._id)"
+                  @delete-document="eliminarSoloPDF(capacitacion)"
                   @delete="openDelete(capacitacion)"
                 />
               </td>
@@ -59,6 +63,7 @@
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Tema</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
+              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">País</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Inicio</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fin</th>
               <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Rol</th>
@@ -67,7 +72,7 @@
           </thead>
           <tbody>
             <tr v-if="!capacitacionesProfesionales.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
+              <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">
                 No has registrado capacitación profesional.
               </td>
             </tr>
@@ -76,15 +81,18 @@
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
+              <td class="px-4 py-3 text-slate-700">{{ capacitacion.pais || 'N/A' }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
               <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
               <td class="px-4 py-3">
                 <DossierDocumentActions
                   :has-document="Boolean(capacitacion.url_documento)"
+                  @edit="editarCapacitacion(capacitacion)"
                   @preview="previewDocument(capacitacion)"
                   @download="openDocument(capacitacion)"
                   @upload="triggerFileUpload(capacitacion._id)"
+                  @delete-document="eliminarSoloPDF(capacitacion)"
                   @delete="openDelete(capacitacion)"
                 />
               </td>
@@ -97,45 +105,59 @@
     </ProfileSectionShell>
 
 
-    <AppModalShell
-      ref="modal"
-      id="capacitacionModal"
-      labelled-by="capacitacionModalLabel"
-      size="md"
-      :show-header="false"
-      body-class="p-0"
-      content-class="profile-admin-skin"
-    >
-      <AgregarCapacitacion @capacitacion-added="handleCapacitacionAdded" />
-    </AppModalShell>
-
-    <AppModalShell
-      ref="deleteModal"
-      id="capacitacionDeleteModal"
-      labelled-by="capacitacionDeleteModalLabel"
-      title="Confirmar eliminación"
-      size="md"
-      content-class="profile-admin-skin"
-    >
-      <div class="profile-confirm-body">
-        ¿Deseas eliminar la capacitación
-        <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
+      <div class="profile-dialog-shell">
+        <div class="profile-dialog-panel">
+          <AgregarCapacitacion @capacitacion-added="loadDossier" />
+        </div>
       </div>
-      <template #footer>
-        <AppButton variant="cancel" data-modal-dismiss>Cancelar</AppButton>
-        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
-      </template>
-    </AppModalShell>
+    </div>
 
-    <DossierDocumentUploadModal
-      :open="isUploadModalOpen"
-      :selected-file="selectedUploadFile"
-      :is-submitting="isUploadingDocument"
-      @close="closeUploadModal"
-      @files-selected="handleUploadFilesSelected"
-      @clear="clearUploadSelection"
-      @submit="submitSelectedUpload"
-    />
+    <!-- Modal Editar -->
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionEditModal" tabindex="-1" ref="editModal" aria-hidden="true">
+      <div class="profile-dialog-shell">
+        <div class="profile-dialog-panel">
+          <AgregarCapacitacion :editing-item="pendingEdit" @capacitacion-updated="handleCapacitacionUpdated" />
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="profile-admin-skin profile-dialog-root"
+      data-dialog-root
+      id="capacitacionDeleteModal"
+      tabindex="-1"
+      ref="deleteModal"
+      aria-hidden="true"
+    >
+      <div class="profile-dialog-shell profile-dialog-shell--compact">
+        <div class="profile-dialog-panel">
+          <div class="profile-confirm-header">
+            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
+            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
+              <span class="text-xl leading-none">&times;</span>
+            </button>
+          </div>
+          <div class="profile-confirm-body">
+            ¿Deseas eliminar la capacitación
+            <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
+          </div>
+          <div class="profile-confirm-footer">
+            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
+            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input file oculto para subir documentos -->
+    <input 
+      type="file" 
+      ref="fileInput" 
+      accept="application/pdf" 
+      style="display: none" 
+      @change="handleFileSelect"
+    >
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
@@ -151,22 +173,21 @@ import ProfileSectionShell from "@/views/perfil/components/ProfileSectionShell.v
 import ProfileTableBlock from "@/views/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/views/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/views/perfil/components/DossierPdfPreviewModal.vue";
-import AppModalShell from "@/components/AppModalShell.vue";
-import AppButton from "@/components/AppButton.vue";
-import DossierDocumentUploadModal from "@/components/DossierDocumentUploadModal.vue";
+import AdminButton from "@/views/admin/components/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/views/perfil/utils/dossierStatus";
 
 const modal = ref(null);
+const editModal = ref(null);
 const deleteModal = ref(null);
+const fileInput = ref(null);
 const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
-const selectedUploadFile = ref(null);
-const isUploadModalOpen = ref(false);
-const isUploadingDocument = ref(false);
 const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
+const pendingEdit = ref(null);
 let modalInstance = null;
+let editModalInstance = null;
 let deleteInstance = null;
 const pendingDelete = ref(null);
 
@@ -210,15 +231,15 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
-    if (!modal.value?.el) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value.el);
+    if (!modal.value) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value);
     modalInstance.show();
 };
 
 const openDelete = (capacitacion) => {
     pendingDelete.value = capacitacion;
-    if (!deleteModal.value?.el) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value.el);
+    if (!deleteModal.value) return;
+    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
     deleteInstance.show();
 };
 
@@ -237,6 +258,18 @@ const eliminarCapacitacion = async (capacitacion) => {
     }
 };
 
+const eliminarSoloPDF = async (capacitacion) => {
+    if (!confirm('¿Estás seguro de eliminar solo el documento PDF? El registro se mantendrá.')) return;
+    try {
+        await DossierService.deleteDocument("formacion", capacitacion._id);
+        await loadDossier();
+        alert('Documento eliminado correctamente');
+    } catch (error) {
+        console.error('Error al eliminar documento:', error);
+        alert('Error al eliminar el documento');
+    }
+};
+
 const confirmDelete = async () => {
     if (!pendingDelete.value) return;
     await eliminarCapacitacion(pendingDelete.value);
@@ -245,7 +278,15 @@ const confirmDelete = async () => {
 };
 
 const editarCapacitacion = (registro) => {
-    console.info("Editar capacitación", registro);
+    pendingEdit.value = { ...registro };
+    if (!editModal.value) return;
+    editModalInstance = Modal.getOrCreateInstance(editModal.value);
+    editModalInstance.show();
+};
+
+const handleCapacitacionUpdated = () => {
+    pendingEdit.value = null;
+    loadDossier();
 };
 
 const getDocumentBlob = async (tipoDocumento, registroId) => {
@@ -282,66 +323,53 @@ const openDocument = async (capacitacion) => {
 
 const triggerFileUpload = (itemId) => {
     selectedItemId.value = itemId;
-    selectedUploadFile.value = null;
-    isUploadModalOpen.value = true;
+    fileInput.value.click();
 };
 
-const handleUploadFilesSelected = (files) => {
-    const [file] = files || [];
+const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
     if (!file) return;
-
+    
     if (file.type !== 'application/pdf') {
         alert('Solo se permiten archivos PDF');
+        event.target.value = '';
         return;
     }
-
+    
     if (file.size > 10 * 1024 * 1024) {
         alert('El archivo no puede superar los 10MB');
+        event.target.value = '';
         return;
     }
-
-    selectedUploadFile.value = file;
-};
-
-const clearUploadSelection = () => {
-    selectedUploadFile.value = null;
-};
-
-const closeUploadModal = () => {
-    if (isUploadingDocument.value) return;
-    selectedUploadFile.value = null;
-    isUploadModalOpen.value = false;
-};
-
-const submitSelectedUpload = async () => {
-    if (!selectedUploadFile.value || !selectedItemId.value) return;
-
+    
     try {
-        isUploadingDocument.value = true;
-        const response = await DossierService.uploadCapacitacionDocument(selectedItemId.value, selectedUploadFile.value);
+        const response = await DossierService.uploadCapacitacionDocument(selectedItemId.value, file);
         if (response.success) {
             alert('Documento subido correctamente');
             await loadDossier();
-            closeUploadModal();
         }
     } catch (error) {
         console.error('Error al subir documento:', error);
         alert('Error al subir el documento');
-    } finally {
-        isUploadingDocument.value = false;
     }
+    
+    event.target.value = '';
 };
 
 onMounted(() => {
     loadDossier();
     window.addEventListener('dossier-updated', loadDossier);
 });
-
 onBeforeUnmount(() => {
     if (modalInstance) {
         modalInstance.hide();
         modalInstance.dispose();
         modalInstance = null;
+    }
+    if (editModalInstance) {
+        editModalInstance.hide();
+        editModalInstance.dispose();
+        editModalInstance = null;
     }
     if (deleteInstance) {
         deleteInstance.hide();
