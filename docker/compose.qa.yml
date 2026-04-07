@@ -58,9 +58,6 @@ services:
     pull_policy: always
     env_file:
       - .env.qa
-    ports:
-      - "${BACKEND_PORT}:3030"
-
   storage-uploader:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always

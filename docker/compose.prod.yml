@@ -73,9 +73,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
-    ports:
-      - "${BACKEND_PORT}:3030"
-
   storage-uploader:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always

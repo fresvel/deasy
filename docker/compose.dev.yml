@@ -35,8 +35,6 @@ services:
       dockerfile: docker/backend/Dockerfile.dev
     env_file:
       - .env.dev
-    ports:
-      - "${BACKEND_PORT}:3030"
     volumes:
       - ../backend:/app/backend
       - ../tools/templates:/app/tools/templates:ro
