@@ -432,7 +432,8 @@ import WorkspaceChatLauncher from "@/components/WorkspaceChatLauncher.vue";
 import AdminTableManager from "./components/AdminTableManager.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
-const vmenu = ref(true);
+const isClient = typeof window !== 'undefined';
+const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const vnotify = ref(false);
 const showNavMenu = ref(false);
 const tables = ref([]);
