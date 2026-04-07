@@ -179,7 +179,7 @@
       body-class="p-0"
       @close="closeModal"
     >
-      <div class="bg-white rounded-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div v-if="selectedMemorandum" class="bg-white rounded-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <h3 id="memorandum-modal-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
