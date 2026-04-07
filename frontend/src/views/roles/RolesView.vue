@@ -1,6 +1,6 @@
 <template>  
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="roles" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace">
+    <app-workspace-header :menu-open="vmenu" current-section="roles" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
         <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <button
             v-for="(item, index) in areas"
@@ -51,6 +51,10 @@
             :shownotify="vnotify"
             :shownavmenu="showNavMenu"
         >
+            <template v-if="isSigningView">
+                <FirmarPdf />
+            </template>
+            <template v-else>
             <div v-if="area=='Roles'" id="validar" class="p-6">
                 <div v-if="process==='Proceso de contratación'">
                     <div class="mb-6">
@@ -78,9 +82,7 @@
                 <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
                 <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
             </div>
-            <div v-else-if="area=='Firmar'" class="p-6">
-                <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
-            </div>
+            </template>
         </s-body>
         
         <s-message :show="vnotify" />
@@ -100,6 +102,7 @@ import axios from 'axios';
 import { IconUsers, IconHome, IconChevronDown, IconBook, IconMicroscope, IconLink, IconWorld, IconAppWindow, IconUser } from '@tabler/icons-vue';
 
 const isClient = typeof window !== 'undefined';
+const isSigningView = ref(false);
 const resolveAreaIcon = (name) => {
     switch(name) {
         case 'Academia': return IconBook;
@@ -277,20 +280,20 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     const openSigningWorkspace = () => {
         syncAreaState('Firmar');
         process.value = 'Firmar';
-        router.replace({ path: '/roles', query: { view: 'firmar' } });
+        // router.replace({ path: '/roles', query: { view: 'firmar' } }); // Removido
     };
 
     const syncViewFromRoute = () => {
-        if (route.query?.view === 'firmar') {
-            syncAreaState('Firmar');
-            process.value = 'Firmar';
-            return;
-        }
-        if (area.value === 'Firmar') {
-            syncAreaState('Roles');
-            mainmenu.value = buildRolesMenu();
-            process.value = 'Proceso de contratación';
-        }
+        // if (route.query?.view === 'firmar') {
+        //     syncAreaState('Firmar');
+        //     process.value = 'Firmar';
+        //     return;
+        // }
+        // if (area.value === 'Firmar') {
+        //     syncAreaState('Roles');
+        //     mainmenu.value = buildRolesMenu();
+        //     process.value = 'Proceso de contratación';
+        // }
     };
     
     const handlePhotoSelected = async (file) => {

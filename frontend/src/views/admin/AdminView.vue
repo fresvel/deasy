@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace" />
+    <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView" />
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false">
@@ -130,7 +130,10 @@
       </app-workspace-sidebar>
 
       <s-body class="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8" :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
-        
+        <template v-if="isSigningView">
+          <FirmarPdf />
+        </template>
+        <template v-else>
         <div v-if="!selectedTable" class="w-full max-w-6xl mx-auto space-y-6">
           <div class="deasy-section-card flex flex-col min-h-[400px]">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
@@ -392,6 +395,7 @@
              />
           </div>
         </div>
+        </template>
       </s-body>
 
       <s-message :show="vnotify" />
@@ -430,12 +434,14 @@ import SBody from "@/layouts/SBody.vue";
 import AppWorkspaceHeader from "@/layouts/AppWorkspaceHeader.vue";
 import WorkspaceChatLauncher from "@/components/WorkspaceChatLauncher.vue";
 import AdminTableManager from "./components/AdminTableManager.vue";
+import FirmarPdf from "@/views/funciones/FirmarPdf.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
 const isClient = typeof window !== 'undefined';
 const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const vnotify = ref(false);
 const showNavMenu = ref(false);
+const isSigningView = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
@@ -461,10 +467,6 @@ const userFullName = computed(() => {
   }
   return "Administrador";
 });
-
-const openSigningWorkspace = () => {
-  router.push({ path: "/perfil", query: { view: "firmar" } });
-};
 
 const handleHeaderToggle = () => {
   vmenu.value = !vmenu.value;

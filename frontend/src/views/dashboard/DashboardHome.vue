@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="navigateTo('firmar')">
+    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
@@ -1531,7 +1531,7 @@ const deliverableUploadModalHelp = computed(() => {
   return `Carga el archivo de trabajo para ${subject.title || subject.template_artifact_name || `#${subject.itemId || subject.id}`}.`;
 });
 
-const isSigningView = computed(() => route.query?.view === 'firmar');
+const isSigningView = ref(false);
 
 const summaryTableFields = [
   { name: 'section', label: 'Sección' },
@@ -1609,6 +1609,7 @@ const applyMenuCargos = (cargos) => {
 };
 
 const selectConsolidated = () => {
+  isSigningView.value = false;
   selectedGroupId.value = null;
   applyMenuCargos(consolidatedCargos.value);
 };
@@ -1646,6 +1647,7 @@ const buildGroupCargos = (group) => {
 };
 
 const selectGroup = (group) => {
+  isSigningView.value = false;
   selectedGroupId.value = group?.id ?? null;
   applyMenuCargos(buildGroupCargos(group));
   if (!showMenu.value) {
@@ -2252,7 +2254,7 @@ const navigateTo = (destination) => {
       router.push('/dashboard');
       break;
     case 'firmar':
-      router.push({ path: '/dashboard', query: { view: 'firmar' } });
+      isSigningView.value = true;
       break;
     case 'perfil':
     default:
