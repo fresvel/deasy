@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-4xl w-full bg-white rounded-[2rem] shadow-2xl shadow-slate-300/50 overflow-hidden flex flex-col md:flex-row border border-slate-200">
+    <div class="max-w-4xl w-full bg-white rounded-4xl shadow-2xl shadow-slate-300/50 overflow-hidden flex flex-col md:flex-row border border-slate-200">
       
       <!-- Left side (Image/Gradient info) -->
-      <div class="hidden md:flex md:w-5/12 bg-sky-700 bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-12 flex-col justify-between text-white relative overflow-hidden">
+      <div class="hidden md:flex md:w-5/12 bg-sky-700 bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-12 flex-col justify-between text-white relative overflow-hidden">
         <!-- Abstract shapes -->
         <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
           <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>

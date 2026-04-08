@@ -6,7 +6,7 @@
       <div class="deasy-page-intro__layout items-center text-center sm:text-left">
       <div class="flex flex-col items-center gap-3 shrink-0">
         <img class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-slate-100" :src="photo" alt="Foto de perfil" />
-        <div v-if="signatureMarker" class="max-w-[14rem] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+        <div v-if="signatureMarker" class="max-w-56 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
           <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Token firma</p>
           <p class="mt-1 break-all font-mono text-xs text-slate-700">{{ signatureMarker }}</p>
         </div>

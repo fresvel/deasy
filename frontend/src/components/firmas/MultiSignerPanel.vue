@@ -1,12 +1,12 @@
 <template>
   <div class="w-full h-full flex flex-col">
     <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6 h-full">
-      <div class="bg-white rounded-[24px] shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
         <!-- Page Header -->
         <div class="flex items-start gap-3">
           <button
             type="button"
-            class="flex-shrink-0 inline-flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm group"
+            class="shrink-0 inline-flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm group"
             title="Regresar"
             aria-label="Regresar"
             @click="$emit('back')"
@@ -217,7 +217,7 @@
             <IconFiles class="w-8 h-8 opacity-50" />
             <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
           </div>
-          <div v-else class="flex flex-col gap-2.5 max-h-[16rem] overflow-y-auto pr-2 custom-scrollbar">
+          <div v-else class="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
             <button
               v-for="(doc, index) in documents"
               :key="doc.id"
@@ -243,11 +243,11 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-[24px] shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden relative">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden relative">
         <!-- Floating Actions Bar (Bottom) for PC/Mobile like FirmarPdf -->
         <div 
           v-if="documents.length > 0 && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-          class="absolute bottom-6 left-1/2 -translate-x-1/2 z-[50] flex flex-wrap items-center justify-center gap-2.5 bg-slate-950/75 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-700/50"
+          class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center justify-center gap-2.5 bg-slate-950/75 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-700/50"
         >
           <span class="text-white/90 text-sm font-semibold tracking-wide pr-2 border-r border-slate-600/50 hidden sm:inline">Navegar PDF</span>
           <button @click="prevPage" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition" :disabled="!canPrevPage">
@@ -283,7 +283,7 @@
             <button @click="prevDocument" class="text-slate-500 hover:text-sky-600 p-2 rounded-lg hover:bg-sky-50 transition" :disabled="!canPrevDocument" title="Documento anterior">
               <IconChevronLeft class="w-5 h-5" />
             </button>
-            <div class="px-3 py-1 flex flex-col items-center justify-center border-x border-slate-100 min-w-[70px]">
+            <div class="px-3 py-1 flex flex-col items-center justify-center border-x border-slate-100 min-w-17.5">
               <span class="text-xs font-bold text-slate-500">{{ currentDocumentIndex + 1 }} / {{ documents.length }}</span>
             </div>
             <button @click="nextDocument" class="text-slate-500 hover:text-sky-600 p-2 rounded-lg hover:bg-sky-50 transition" :disabled="!canNextDocument" title="Siguiente documento">
@@ -293,7 +293,7 @@
         </div>
 
         <!-- Workspace Canvas -->
-        <div class="flex-grow bg-slate-200 overflow-hidden relative" :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'">
+        <div class="grow bg-slate-200 overflow-hidden relative" :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'">
           <div class="w-full h-full p-6 overflow-auto custom-scrollbar flex justify-center" ref="canvasHost" @click.self="selectedFieldId = null" id="pdf-scroll-container">
             <div
               v-if="currentDocument"
@@ -304,7 +304,7 @@
               @mouseup="handlePointerUp"
               @mouseleave="handlePointerLeave"
             >
-              <canvas ref="pdfCanvas" class="block w-full h-auto z-[0] bg-white"></canvas>
+              <canvas ref="pdfCanvas" class="block w-full h-auto z-0 bg-white"></canvas>
 
               <!-- Previsualización / Hover -->
               <SignatureBox
@@ -334,7 +334,7 @@
               <!-- PREVIEW PREDEFINIDA BOX (Ghost Signature) -->
               <div
                 v-if="isMouseOverPdf && !activeSelectionBox"
-                class="absolute pointer-events-none border-sky-400 bg-sky-400/20 backdrop-blur-[1px] shadow-[0_0_15px_rgba(56,189,248,0.3)] z-[20]"
+                class="absolute pointer-events-none border-sky-400 bg-sky-400/20 backdrop-blur-[1px] shadow-[0_0_15px_rgba(56,189,248,0.3)] z-20"
                 :style="previewBoxStyle"
               >
                 <!-- Ghost indicators -->
@@ -346,7 +346,7 @@
               <!-- Rectángulo de selección en dibujado -->
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-                class="absolute border-2 border-rose-500 border-dashed bg-rose-500/20 z-[20] rounded-sm pointer-events-none mix-blend-multiply"
+                class="absolute border-2 border-rose-500 border-dashed bg-rose-500/20 z-20 rounded-sm pointer-events-none mix-blend-multiply"
                 :style="activeSelectionBox"
               >
                   <div class="absolute -top-6 left-0 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
@@ -356,7 +356,7 @@
               </div>
             </div>
             
-            <div v-if="!currentDocument" class="flex flex-col items-center justify-center text-center h-full w-full max-w-sm mx-auto opacity-70 relative z-[5] animate-fade-in">
+            <div v-if="!currentDocument" class="flex flex-col items-center justify-center text-center h-full w-full max-w-sm mx-auto opacity-70 relative z-5 animate-fade-in">
               <div class="w-20 h-20 bg-slate-300/50 rounded-full flex items-center justify-center mb-6 shadow-inner ring-8 ring-white/40">
                 <IconFiles class="w-10 h-10 text-slate-500 ml-1" />
               </div>

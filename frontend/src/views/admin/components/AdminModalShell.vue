@@ -1,7 +1,7 @@
 <template>
   <div
     ref="rootElement"
-    class="deasy-dialog-root admin-dialog-root fixed inset-0 z-[1060] hidden overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
+    class="deasy-dialog-root admin-dialog-root fixed inset-0 z-1060 hidden overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
     data-dialog-root
     tabindex="-1"
     :aria-labelledby="labelledBy"

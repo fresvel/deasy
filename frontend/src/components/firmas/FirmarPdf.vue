@@ -7,7 +7,7 @@
         <div class="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
-            class="flex-shrink-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
+            class="shrink-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
             title="Regresar"
             @click="goBackToStart"
           >
@@ -17,7 +17,7 @@
           <!-- Status / Action Area -->
           <div v-if="workflowSignContext" class="flex flex-col pl-1 sm:pl-0 border-l-2 sm:border-l-0 border-sky-200">
             <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-sky-600 mb-0.5">Sesión Activa</span>
-            <div class="text-xs sm:text-sm font-semibold text-slate-800 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
+            <div class="text-xs sm:text-sm font-semibold text-slate-800 truncate max-w-45 sm:max-w-xs md:max-w-md">
               {{ workflowSignContext.documentTitle || `Documento #${workflowSignContext.documentVersionId}` }}
               <span class="text-slate-400 font-normal">· v{{ workflowSignContext.documentVersionLabel || workflowSignContext.documentVersionId }}</span>
             </div>
@@ -104,7 +104,7 @@
 
           <button
             type="button"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 active:scale-95 transform text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/40 transition-all border border-sky-600/50 focus:ring-2 focus:ring-sky-500/30 outline-none"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 rounded-xl bg-linear-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 active:scale-95 transform text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/40 transition-all border border-sky-600/50 focus:ring-2 focus:ring-sky-500/30 outline-none"
             @click="submitAction"
           >
             <IconSignature v-if="!requestMode" class="w-5 h-5" stroke-width="2" />
@@ -137,7 +137,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- MAIN ACTION: Firmar individual (Colspan 8) -->
-        <div class="lg:col-span-8 group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-center min-h-[320px]">
+        <div class="lg:col-span-8 group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-center min-h-80">
           <div class="absolute -right-24 -top-24 w-72 h-72 bg-sky-50 rounded-full blur-3xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
           
           <div class="relative z-10 flex flex-col items-center text-center">
@@ -167,7 +167,7 @@
           <div class="bg-white border border-slate-200 hover:border-indigo-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer h-full flex flex-col justify-center" @click="openMultiSigner">
             <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
             <div class="relative z-10 flex items-start gap-4">
-              <div class="flex-shrink-0 w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div class="shrink-0 w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
                 <IconFiles class="w-6 h-6" stroke-width="1.5" />
               </div>
               <div>
@@ -183,7 +183,7 @@
           <!-- Solicitar/Enviar -->
           <div class="bg-white border border-slate-200 border-dashed hover:border-emerald-300 rounded-3xl p-6 shadow-sm transition-all duration-300 relative group">
             <div class="flex items-start gap-4">
-              <div class="flex-shrink-0 w-12 h-12 bg-emerald-50 text-emerald-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div class="shrink-0 w-12 h-12 bg-emerald-50 text-emerald-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
                 <IconSend class="w-6 h-6" stroke-width="1.5" />
               </div>
               <div class="flex-1 w-full">
@@ -211,7 +211,7 @@
         
         <!-- Validar Documento -->
         <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center sm:items-start gap-5 group">
-           <div class="flex-shrink-0 w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+           <div class="shrink-0 w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
               <IconShieldCheck class="w-7 h-7" stroke-width="1.5" />
            </div>
            <div class="flex-1 w-full text-center sm:text-left">
@@ -228,7 +228,7 @@
 
         <!-- Buscar BD -->
         <div class="bg-slate-50/50 border border-slate-200 border-dashed rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5 opacity-70 cursor-not-allowed">
-           <div class="flex-shrink-0 w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center">
+           <div class="shrink-0 w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center">
               <IconSearch class="w-7 h-7" stroke-width="1.5" />
            </div>
            <div class="text-center sm:text-left">
@@ -241,7 +241,7 @@
       
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
         <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
-          <IconX class="w-5 h-5 flex-shrink-0" />
+          <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
       </div>
@@ -342,7 +342,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             
             <div class="flex items-start gap-4">
-              <div class="flex-shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center font-bold">
+              <div class="shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center font-bold">
                 <IconSignature class="w-5 h-5" />
               </div>
               <div>
@@ -412,7 +412,7 @@
         </select>
       </div>
       
-      <div class="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+      <div class="flex flex-col gap-2 max-h-100 overflow-y-auto pr-2 custom-scrollbar">
         <div
           v-for="field in filteredFields"
           :key="field.id"
@@ -516,7 +516,7 @@
         </div>
       </div>
 
-      <div class="mt-2 min-h-[260px] max-h-[360px] overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
+      <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
         <div v-if="isSearchingUsers" class="text-slate-500 text-sm text-center py-10 font-medium">Buscando usuarios...</div>
         <div v-else-if="userResults.length === 0" class="text-slate-500 text-sm text-center py-10 font-medium">
           No se han encontrado resultados.
@@ -794,7 +794,7 @@
       </div>
 
       <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-sm animate-fade-in">
-        <IconAlertCircle class="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
@@ -838,7 +838,7 @@
         v-if="validationResult?.summary?.timestampCount"
         class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-sm animate-fade-in"
       >
-        <IconAlertTriangle class="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
+        <IconAlertTriangle class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
       </div>
 
@@ -846,7 +846,7 @@
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
         class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-sm animate-fade-in"
       >
-        <IconAlertCircle class="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
         <div class="flex flex-col gap-1">
           <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
         </div>
@@ -854,7 +854,7 @@
     </div>
 
     <!-- TABLA -->
-    <div class="bg-white border-t border-slate-200 relative min-h-[200px]">
+    <div class="bg-white border-t border-slate-200 relative min-h-50">
       <Loading 
         :visible="isValidatingDocument" 
         text="Validando firmas..." 

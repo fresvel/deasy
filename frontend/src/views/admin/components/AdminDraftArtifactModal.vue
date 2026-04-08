@@ -105,7 +105,7 @@
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</label>
         <iframe
           :src="draftArtifactPreviewUrl"
-          class="min-h-[420px] w-full rounded-xl border border-slate-200 bg-white"
+          class="min-h-105 w-full rounded-xl border border-slate-200 bg-white"
           title="Preview del seed"
         ></iframe>
       </div>
