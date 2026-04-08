@@ -47,6 +47,7 @@ export class SenescytPdfProcessorService {
             cedulaDosier,
             originalName
         );
+        
 
         // 2. Extraer texto del PDF
         const { rawText } = await this._extractor.extract(pdfBuffer);
