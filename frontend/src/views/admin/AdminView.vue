@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace" />
+  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
+    <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView" />
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false">
           
           <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
@@ -130,9 +130,12 @@
       </app-workspace-sidebar>
 
       <s-body class="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8" :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
-        
+        <template v-if="isSigningView">
+          <FirmarPdf />
+        </template>
+        <template v-else>
         <div v-if="!selectedTable" class="w-full max-w-6xl mx-auto space-y-6">
-          <div class="deasy-section-card flex flex-col min-h-[400px]">
+          <div class="deasy-section-card flex flex-col min-h-100">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">
                  <div class="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
@@ -382,7 +385,7 @@
           </div>
         </div>
 
-        <div v-else class="w-full flex-1 bg-white border border-slate-200 p-0 sm:p-2 rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative flex flex-col min-h-0">
+        <div v-else class="w-full flex-1 bg-white border border-slate-200 p-0 sm:p-2 rounded-4xl shadow-xl shadow-slate-200/50 overflow-hidden relative flex flex-col min-h-0">
           <div class="admin-page admin-typography w-full h-full relative overflow-y-auto">
              <AdminTableManager
                ref="adminManager"
@@ -392,6 +395,7 @@
              />
           </div>
         </div>
+        </template>
       </s-body>
 
       <s-message :show="vnotify" />
@@ -430,11 +434,14 @@ import SBody from "@/layouts/SBody.vue";
 import AppWorkspaceHeader from "@/layouts/AppWorkspaceHeader.vue";
 import WorkspaceChatLauncher from "@/components/WorkspaceChatLauncher.vue";
 import AdminTableManager from "./components/AdminTableManager.vue";
+import FirmarPdf from "@/components/firmas/FirmarPdf.vue";
 import { API_ROUTES } from "@/services/apiConfig";
 
-const vmenu = ref(true);
+const isClient = typeof window !== 'undefined';
+const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const vnotify = ref(false);
 const showNavMenu = ref(false);
+const isSigningView = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
@@ -460,10 +467,6 @@ const userFullName = computed(() => {
   }
   return "Administrador";
 });
-
-const openSigningWorkspace = () => {
-  router.push({ path: "/perfil", query: { view: "firmar" } });
-};
 
 const handleHeaderToggle = () => {
   vmenu.value = !vmenu.value;
@@ -1005,6 +1008,7 @@ const openGroupIndex = (group) => {
 };
 
 const onGroupTitleClick = (group) => {
+  isSigningView.value = false;
   if (!group) {
     return;
   }
@@ -1016,6 +1020,7 @@ const onGroupTitleClick = (group) => {
 };
 
 const selectTable = (table) => {
+  isSigningView.value = false;
   if (!table) {
     return;
   }
@@ -1088,6 +1093,7 @@ const openAcademyIndex = () => {
 };
 
 const openAcademyItem = (item) => {
+  isSigningView.value = false;
   if (!item) {
     return;
   }
@@ -1111,6 +1117,7 @@ const openGestionIndex = () => {
   openCategories.value[GESTION_GROUP_LABEL] = true;
 };
 const openGestionItem = (item) => {
+  isSigningView.value = false;
   if (!item) {
     return;
   }
@@ -1229,6 +1236,7 @@ const isHomeActive = computed(() => {
 });
 
 const goAdminHome = () => {
+  isSigningView.value = false;
   selectedTable.value = null;
   selectedSection.value = "";
   selectedAcademyItem.value = "";

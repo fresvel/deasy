@@ -19,8 +19,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY signer ./
 
+WORKDIR /opt/sigmaker
+COPY signer/sigmaker/package.json ./package.json
+COPY signer/sigmaker/index.js ./index.js
+COPY signer/sigmaker/cli.mjs ./cli.mjs
+COPY signer/sigmaker/puce_logo.png ./puce_logo.png
+RUN npm install
+
+WORKDIR /app
+
 RUN mkdir -p /tmp/deasy-signer-workspace /app/trust/roots /app/trust/extra \
-  && chown -R appuser:appuser /app /tmp/deasy-signer-workspace
+  && chown -R appuser:appuser /app /opt/sigmaker /tmp/deasy-signer-workspace
 
 USER appuser
 

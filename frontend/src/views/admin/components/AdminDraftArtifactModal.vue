@@ -105,7 +105,7 @@
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</label>
         <iframe
           :src="draftArtifactPreviewUrl"
-          class="min-h-[420px] w-full rounded-xl border border-slate-200 bg-white"
+          class="min-h-105 w-full rounded-xl border border-slate-200 bg-white"
           title="Preview del seed"
         ></iframe>
       </div>
@@ -132,7 +132,7 @@ import AdminFieldGroup from "@/views/admin/components/AdminFieldGroup.vue";
 import AdminInputField from "@/views/admin/components/AdminInputField.vue";
 import AdminModalShell from "@/components/AppModalShell.vue";
 import AdminSelectField from "@/views/admin/components/AdminSelectField.vue";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 
 const props = defineProps({
   draftArtifactEditId: {

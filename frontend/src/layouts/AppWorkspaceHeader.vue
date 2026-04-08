@@ -1,31 +1,24 @@
 <template>
   <s-header :menu-open="menuOpen" @onclick="emit('menu-toggle')">
     <div class="flex items-center gap-3 overflow-hidden flex-1">
-      <div class="flex items-center gap-2 shrink-0">
-        <component
-          :is="item.to ? 'router-link' : 'div'"
-          v-for="item in navItems"
-          :key="item.key"
-          :to="item.to"
-          class="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] group"
-          :class="item.active ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
-          :title="item.title"
-        >
-          <span class="deasy-nav-chip__icon" :class="item.active ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
-            <component :is="item.icon" class="w-5 h-5 shrink-0" />
-          </span>
-          <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center whitespace-nowrap">
-            {{ item.label }}
-          </span>
-        </component>
-      </div>
-
       <slot />
     </div>
 
     <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+      <router-link
+        v-for="item in navItems"
+        :key="item.key"
+        :to="item.to"
+        class="flex shrink-0 items-center justify-center rounded-lg sm:rounded-xl h-9 w-9 sm:h-11 sm:w-11 transition-all focus:outline-none focus:ring-2 focus:ring-white/30 border border-white/10 bg-white/5 !text-white hover:bg-white/10"
+        :title="item.title"
+      >
+        <component :is="item.icon" class="w-4 h-4 sm:w-5 sm:h-5" />
+      </router-link>
+
+      <div class="w-px h-5 sm:h-7 bg-white/20 mx-0.5 sm:mx-1 rounded-full"></div>
+
       <button
-        class="deasy-nav-action h-9 w-9 rounded-lg sm:ms-3 sm:h-11 sm:w-11 sm:rounded-xl"
+        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white hover:bg-white/20"
         type="button"
         title="Firmar documentos"
         @click="emit('sign')"
@@ -34,7 +27,7 @@
       </button>
 
       <button
-        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl"
+        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white hover:bg-white/20"
         type="button"
         title="Notificaciones"
         @click="emit('notify')"
@@ -44,7 +37,7 @@
 
       <router-link
         to="/logout"
-        class="deasy-nav-action h-9 w-9 rounded-lg !text-white/90 sm:h-11 sm:w-11 sm:rounded-xl hover:!text-white"
+        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white hover:bg-white/20"
         title="Cerrar sesión"
       >
         <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -55,7 +48,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { IconBell, IconHome, IconLogout, IconSettings, IconSignature, IconUser } from "@tabler/icons-vue";
+import { IconBell, IconHome, IconLogout, IconSettings, IconSignature, IconUser, IconUsers } from "@tabler/icons-vue";
 import SHeader from "@/layouts/SHeader.vue";
 
 const props = defineProps({
@@ -72,39 +65,41 @@ const props = defineProps({
 const emit = defineEmits(["menu-toggle", "notify", "sign"]);
 
 const navItems = computed(() => {
-  const items = [];
-
-  if (props.currentSection !== "dashboard") {
-    items.push({
+  return [
+    {
       key: "dashboard",
       label: "Home",
       title: "Ir a dashboard",
       to: "/dashboard",
-      icon: IconHome,
-      active: props.currentSection === "dashboard"
-    });
-  }
-
-  if (props.currentSection !== "perfil") {
-    items.push({
+      icon: IconHome
+    },
+    {
       key: "perfil",
       label: "Perfil",
       title: "Ir a perfil",
       to: "/perfil",
-      icon: IconUser,
-      active: props.currentSection === "perfil"
-    });
-  }
-
-  items.push({
-    key: "admin",
-    label: "Admin",
-    title: "Ir a administración",
-    to: props.currentSection === "admin" ? null : "/admin",
-    icon: IconSettings,
-    active: props.currentSection === "admin"
+      icon: IconUser
+    },
+    {
+      key: "admin",
+      label: "Admin",
+      title: "Ir a administración",
+      to: "/admin",
+      icon: IconSettings,
+      showAlways: true
+    },
+    {
+      key: "roles",
+      label: "Roles",
+      title: "Gestión de roles",
+      to: "/roles",
+      icon: IconUsers,
+      showOnlyIn: ["perfil"]
+    }
+  ].filter(item => {
+    if (item.key === props.currentSection) return false;
+    if (item.showOnlyIn && !item.showOnlyIn.includes(props.currentSection)) return false;
+    return true;
   });
-
-  return items;
 });
 </script>

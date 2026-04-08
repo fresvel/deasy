@@ -115,7 +115,7 @@ resolve_mariadb_host_port() {
   fi
 
   # Fallback al puerto publicado actual en docker-compose.yml.
-  echo "3308"
+  echo "3306"
 }
 
 run_db_seed() {

@@ -16,5 +16,5 @@
 </template>
 
 <script setup>
-import UserCertificatesPanel from "@/components/UserCertificatesPanel.vue";
+import UserCertificatesPanel from "@/components/firmas/UserCertificatesPanel.vue";
 </script>

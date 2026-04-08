@@ -30,7 +30,7 @@
 
 @layer components {
     .deasy-shell {
-        @apply mx-auto w-full max-w-[2560px];
+        @apply mx-auto w-full max-w-640;
     }
 
     .deasy-section-gap {
@@ -38,15 +38,15 @@
     }
 
     .deasy-card {
-        @apply rounded-[1.5rem] border border-slate-200 bg-white shadow-sm;
+        @apply rounded-3xl border border-slate-200 bg-white shadow-sm;
     }
 
     .deasy-card-muted {
-        @apply rounded-[1.5rem] border border-slate-200 bg-slate-50 shadow-sm;
+        @apply rounded-3xl border border-slate-200 bg-slate-50 shadow-sm;
     }
 
     .deasy-card-soft {
-        @apply rounded-[1.5rem] border border-slate-100 bg-slate-50/70 shadow-sm;
+        @apply rounded-3xl border border-slate-100 bg-slate-50/70 shadow-sm;
     }
 
     .deasy-card-padding {

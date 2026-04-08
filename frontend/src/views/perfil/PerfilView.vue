@@ -1,11 +1,11 @@
 <template>  
-  <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="perfil" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="openSigningWorkspace">
+  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
+    <app-workspace-header :menu-open="vmenu" current-section="perfil" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
         <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
           <button
             v-for="(item, index) in areas"
             :key="index"
-            class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-[44px] sm:min-w-[100px] lg:min-w-[140px] px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-[1px]" :title="item.name"
+            class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-11 sm:min-w-25 lg:min-w-35 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-px" :title="item.name"
             :class="item.active ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
             type="button"
             @click="onheadClick(item)"
@@ -16,7 +16,7 @@
         </div>
     </app-workspace-header>
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :signature-marker="signatureMarker" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
         <div class="flex flex-col">
             <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white px-2">
@@ -74,6 +74,10 @@
       </app-workspace-sidebar>
 
       <s-body :showmenu="vmenu" :shownotify="vnotify">
+        <template v-if="isSigningView">
+            <FirmarPdf />
+        </template>
+        <template v-else>
         <div v-if="area=='Perfil'" id="validar" class="w-full">
             <ProfileHomePanel
               v-if="process==='Inicio'"
@@ -94,9 +98,7 @@
             <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
             <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
         </div>
-        <div v-else-if="area=='Firmar'" class="w-full">
-            <FirmarPdf v-if="area=='Firmar'"></FirmarPdf>
-        </div>
+        </template>
       </s-body>
         
       <s-message :show="vnotify" @close="vnotify = false" />
@@ -146,7 +148,7 @@ import IndexAcademia from '@/views/academia/AcademiaView.vue';
 import LogrosView from '@/views/academia/LogrosView.vue';
 
 
-import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
 
 
     import EasymServices from '@/services/EasymServices';
@@ -156,6 +158,7 @@ import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
     const route = useRoute();
     const service = new EasymServices();
     const API_BASE_URL = API_ROUTES.BASE;
+    const isSigningView = ref(false);
 
     // Obtener datos del usuario desde localStorage
     const currentUser = ref(null);
@@ -437,27 +440,28 @@ const resolveAreaIcon = (name) => {
     const openSigningWorkspace = () => {
         syncAreaState('Firmar');
         process.value = 'Firmar';
-        router.replace({ path: '/perfil', query: { view: 'firmar' } });
+        // router.replace({ path: '/perfil', query: { view: 'firmar' } }); // Removido
     };
 
     const syncViewFromRoute = () => {
-        if (route.query?.view === 'firmar') {
-            syncAreaState('Firmar');
-            process.value = 'Firmar';
-            return;
-        }
-        if (area.value === 'Firmar') {
-            syncAreaState('Perfil');
-            mainmenu.value = buildPerfilMenu();
-            process.value = 'Inicio';
-        }
+        // if (route.query?.view === 'firmar') {
+        //     syncAreaState('Firmar');
+        //     process.value = 'Firmar';
+        //     return;
+        // }
+        // if (area.value === 'Firmar') {
+        //     syncAreaState('Perfil');
+        //     mainmenu.value = buildPerfilMenu();
+        //     process.value = 'Inicio';
+        // }
     };
     
 
     const onmenuClick=(item)=>{
+        isSigningView.value = false;
         if (area.value === 'Firmar') {
             syncAreaState('Perfil');
-            router.replace({ path: '/perfil' });
+            // router.replace({ path: '/perfil' }); // Removido
         }
         for (const el of mainmenu.value){
             if(el.label === item){

@@ -6,18 +6,19 @@ import {
 } from "./rabbitmq_http.js";
 
 const SIGN_REQUEST_QUEUE = process.env.SIGN_REQUEST_QUEUE || "deasy.sign.request";
+const SIGN_VALIDATE_REQUEST_QUEUE = process.env.SIGN_VALIDATE_REQUEST_QUEUE || "deasy.sign.validate.request";
 const SIGN_RESPONSE_QUEUE_PREFIX = process.env.SIGN_RESPONSE_QUEUE_PREFIX || "deasy.sign.response";
 const SIGN_TIMEOUT_MS = Number(process.env.SIGN_TIMEOUT_MS || 120000);
 const SIGN_POLL_MS = Number(process.env.SIGN_POLL_MS || 1000);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const requestSignerJob = async (payload) => {
+const requestSignerQueueJob = async (queue, payload) => {
   const correlationId = randomUUID();
   const responseQueue = `${SIGN_RESPONSE_QUEUE_PREFIX}.${correlationId}`;
 
   await ensureRabbitQueue(responseQueue);
-  await publishRabbitMessage(SIGN_REQUEST_QUEUE, {
+  await publishRabbitMessage(queue, {
     ...payload,
     correlationId,
     responseQueue
@@ -38,3 +39,9 @@ export const requestSignerJob = async (payload) => {
 
   throw new Error("Tiempo de espera agotado para la respuesta del signer.");
 };
+
+export const requestSignerJob = async (payload) =>
+  requestSignerQueueJob(SIGN_REQUEST_QUEUE, payload);
+
+export const requestSignerValidationJob = async (payload) =>
+  requestSignerQueueJob(SIGN_VALIDATE_REQUEST_QUEUE, payload);

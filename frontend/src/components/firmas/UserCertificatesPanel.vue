@@ -128,7 +128,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import AppTag from "@/components/AppTag.vue";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
 import AdminButton from "@/components/AppButton.vue";
 import { API_ROUTES } from "@/services/apiConfig";
