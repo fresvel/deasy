@@ -1,26 +1,26 @@
 <template>
-  <div class="w-full h-full flex flex-col gap-6">
-    <!-- Page Header -->
-    <div class="flex items-start gap-4">
-      <button
-        type="button"
-        class="flex-shrink-0 inline-flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm group"
-        title="Regresar"
-        aria-label="Regresar"
-        @click="$emit('back')"
-      >
-        <IconArrowLeft class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-      </button>
-      <div class="flex flex-col pt-0.5">
-        <h2 class="text-2xl sm:text-3xl font-black text-slate-800 m-0 leading-tight tracking-tight">Multifirmador</h2>
-        <p class="text-slate-500 text-sm sm:text-base mt-1 font-medium leading-snug max-w-xl">
-          Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
-        </p>
-      </div>
-    </div>
+  <div class="w-full h-full flex flex-col">
+    <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6 h-full">
+      <div class="bg-white rounded-[24px] shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+        <!-- Page Header -->
+        <div class="flex items-start gap-3">
+          <button
+            type="button"
+            class="flex-shrink-0 inline-flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm group"
+            title="Regresar"
+            aria-label="Regresar"
+            @click="$emit('back')"
+          >
+            <IconArrowLeft class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div class="flex flex-col pt-0.5">
+            <h2 class="text-xl font-black text-slate-800 m-0 leading-tight tracking-tight">Multifirmador</h2>
+            <p class="text-slate-500 text-xs mt-1 font-medium leading-snug">
+              Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
+            </p>
+          </div>
+        </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6">
-      <div class="bg-white rounded-[24px] shadow-sm border border-slate-100 p-5 flex flex-col gap-6">
         <div class="grid grid-cols-2 gap-3">
           <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5 flex flex-col justify-center items-center text-center">
             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Documentos</div>
