@@ -33,6 +33,10 @@
 <script setup>
 import { IconLoader2 } from '@tabler/icons-vue';
 
+defineOptions({
+  name: 'AppLoading'
+});
+
 defineProps({
   visible: {
     type: Boolean,
