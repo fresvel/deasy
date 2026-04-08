@@ -1144,9 +1144,9 @@ export const createUserProcessTask = async (req, res) => {
 };
 
 // ─── imports TTHH (al final del bloque de imports del archivo) ───────────────
-import PersonHealthRepository    from "../../services/tthh/PersonHealthRepository.js";
-import PersonBankRepository      from "../../services/tthh/PersonBankRepository.js";
-import PersonEmergencyRepository from "../../services/tthh/PersonEmergencyRepository.js";
+import PersonHealthRepository    from "../../services/auth/Personhealthrepository.js";
+import PersonBankRepository      from "../../services/auth/PersonBankrepository.js";
+import PersonEmergencyRepository from "../../services/auth/Personemergencyrepository.js";
 
 const healthRepo    = new PersonHealthRepository();
 const bankRepo      = new PersonBankRepository();
