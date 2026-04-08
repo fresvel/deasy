@@ -268,7 +268,7 @@
             
             <!-- PREVIEW PREDEFINIDA BOX -->
             <div 
-              v-if="selectionMode === 'preset' && isMouseOverPdf"
+              v-if="selectionMode === 'preset' && isMouseOverPdf && !isHoveringField"
               class="absolute pointer-events-none z-20 border-2 border-sky-400 bg-sky-400/20 rounded-md backdrop-blur-[1px] transition-opacity duration-150 block shadow-[0_0_15px_rgba(56,189,248,0.3)]"
               :style="previewBoxStyle"
             >
@@ -284,6 +284,8 @@
               :class="[{ 'saved-box--active': field.id === lastFieldId }, 'cursor-move']"
               :data-field-id="field.id"
               :style="getFieldBoxStyle(field)"
+              @mouseenter="isHoveringField = true"
+              @mouseleave="isHoveringField = false"
               @mousedown.stop.prevent="startDragField(field, $event)"
               @click.stop="selectField(field.id)"
             >
@@ -1205,6 +1207,7 @@
   };
 
   const isMouseOverPdf = ref(false);
+  const isHoveringField = ref(false);
   const previewBoxStyle = ref({ display: 'none' });
 
   const handleMouseMove = (event) => {
