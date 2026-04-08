@@ -134,108 +134,102 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="flex flex-col gap-4">
         
-        <!-- MAIN ACTION: Firmar individual (Colspan 8) -->
-        <div class="lg:col-span-8 group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-center min-h-80">
+        <!-- MAIN ACTION: Firmar individual -->
+        <div class="group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col md:flex-row items-center md:items-center gap-5">
           <div class="absolute -right-24 -top-24 w-72 h-72 bg-sky-50 rounded-full blur-3xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
           
-          <div class="relative z-10 flex flex-col items-center text-center">
-            <div class="w-16 h-16 bg-sky-50 border border-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3">
-              <IconSignature class="w-8 h-8" stroke-width="1.5" />
-            </div>
-            <h3 class="text-2xl font-bold text-slate-800 mb-2">Firmar un documento</h3>
-            <p class="text-slate-500 mb-8 max-w-md">Arrastra y suelta tu archivo PDF aquí o explora tus archivos locales para firmarlo al instante.</p>
-            
-            <div class="w-full max-w-lg mx-auto">
-              <PdfDropField
-                variant="card"
-                action-text="Examinar archivos"
-                help-text="Solo se admiten documentos en formato .pdf"
-                input-id="sign-pdf-input"
-                @files-selected="onPdfDropFiles($event, 'sign')"
-                class="w-full"
-              />
-            </div>
+          <div class="shrink-0 w-14 h-14 bg-sky-50 border border-sky-100 text-sky-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 relative z-10">
+            <IconSignature class="w-7 h-7" stroke-width="1.5" />
           </div>
-        </div>
-
-        <!-- SECONDARY ACTIONS -->
-        <div class="lg:col-span-4 flex flex-col gap-6">
           
-          <!-- Multifirmador -->
-          <div class="bg-white border border-slate-200 hover:border-indigo-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer h-full flex flex-col justify-center" @click="openMultiSigner">
-            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
-            <div class="relative z-10 flex items-start gap-4">
-              <div class="shrink-0 w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
-                <IconFiles class="w-6 h-6" stroke-width="1.5" />
-              </div>
-              <div>
-                <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Firma múltiple</h4>
-                <p class="text-sm text-slate-500 mb-3 leading-relaxed">Aplica tu firma sobre múltiples documentos en un solo paso.</p>
-                <div class="inline-flex items-center text-sm font-semibold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                  Abrir herramienta <IconChevronRight class="w-4 h-4 ml-1" />
-                </div>
-              </div>
-            </div>
+          <div class="flex-1 relative z-10 text-center md:text-left">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Firmar un documento</h3>
+            <p class="text-slate-500 mb-4 md:mb-0 text-sm">Sube aquí tu archivo PDF o explora tus archivos locales para firmarlo al instante.</p>
           </div>
-
-          <!-- Solicitar/Enviar -->
-          <div class="bg-white border border-slate-200 border-dashed hover:border-emerald-300 rounded-3xl p-6 shadow-sm transition-all duration-300 relative group">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 w-12 h-12 bg-emerald-50 text-emerald-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
-                <IconSend class="w-6 h-6" stroke-width="1.5" />
-              </div>
-              <div class="flex-1 w-full">
-                <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Solicitar firmas</h4>
-                <p class="text-sm text-slate-500 mb-3 leading-relaxed">Carga un PDF y envíalo para que otros lo firmen.</p>
-                <div class="w-full">
-                  <PdfDropField
-                    variant="inline"
-                    action-text="Subir PDF"
-                    input-id="request-pdf-input"
-                    @files-selected="onPdfDropFiles($event, 'request')"
-                    class="w-full"
-                  />
-                </div>
-              </div>
-            </div>
+          
+          <div class="w-full md:w-80 relative z-10">
+            <PdfDropField
+              variant="inline"
+              action-text="Cargar documento a firmar"
+              input-id="sign-pdf-input"
+              @files-selected="onPdfDropFiles($event, 'sign')"
+              class="w-full"
+            />
           </div>
-
         </div>
 
-      </div>
+        <!-- Multifirmador -->
+        <div class="bg-white border border-slate-200 hover:border-indigo-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer flex flex-col sm:flex-row items-center sm:items-center gap-5" @click="openMultiSigner">
+          <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+          <div class="shrink-0 w-14 h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 relative z-10">
+            <IconFiles class="w-7 h-7" stroke-width="1.5" />
+          </div>
+          <div class="flex-1 relative z-10 text-center sm:text-left">
+            <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Firma múltiple</h4>
+            <p class="text-sm text-slate-500">Aplica tu firma sobre múltiples documentos en un solo paso.</p>
+          </div>
+          <div class="w-full md:w-80 flex items-center justify-end relative z-10">
+            <div class="inline-flex items-center justify-center w-full bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-all font-medium text-sm text-indigo-600 shadow-sm">
+              <span class="group-hover:translate-x-1 transition-transform flex items-center">
+                Abrir herramienta <IconChevronRight class="w-4 h-4 ml-1" />
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <!-- BOTTOM ROW / TERTIARY ACTIONS -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <!-- Solicitar/Enviar -->
+        <div class="bg-white border border-slate-200 hover:border-emerald-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group flex flex-col sm:flex-row items-center sm:items-center gap-5">
+          <div class="shrink-0 w-14 h-14 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 relative z-10">
+            <IconSend class="w-7 h-7" stroke-width="1.5" />
+          </div>
+          <div class="flex-1 relative z-10 text-center sm:text-left">
+            <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Solicitar firmas</h4>
+            <p class="text-sm text-slate-500 mb-4 md:mb-0">Carga un PDF y envíalo para que otros lo firmen.</p>
+          </div>
+          <div class="w-full md:w-80 relative z-10">
+            <PdfDropField
+              variant="inline"
+              action-text="Subir PDF a enviar"
+              input-id="request-pdf-input"
+              @files-selected="onPdfDropFiles($event, 'request')"
+              class="w-full"
+            />
+          </div>
+        </div>
         
         <!-- Validar Documento -->
-        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center sm:items-start gap-5 group">
-           <div class="shrink-0 w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+        <div class="bg-white border border-slate-200 hover:border-amber-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center sm:items-center gap-5 group overflow-hidden relative">
+           <div class="shrink-0 w-14 h-14 bg-amber-50 border border-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 relative z-10">
               <IconShieldCheck class="w-7 h-7" stroke-width="1.5" />
            </div>
-           <div class="flex-1 w-full text-center sm:text-left">
-             <h4 class="text-lg font-bold text-slate-800 mb-1">Validar un documento</h4>
-             <p class="text-sm text-slate-500 mb-4">Verifica la integridad y validez de las firmas contenidas en un documento PDF.</p>
+           <div class="flex-1 relative z-10 text-center sm:text-left">
+             <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-amber-700 transition-colors">Validar un documento</h4>
+             <p class="text-sm text-slate-500 mb-4 md:mb-0">Verifica la integridad y validez de firmas en un PDF.</p>
+           </div>
+           <div class="w-full md:w-80 relative z-10">
              <PdfDropField
                 variant="inline"
                 action-text="Cargar documento a validar"
                 input-id="validate-pdf-input"
                 @files-selected="onPdfDropFiles($event, 'validate')"
+                class="w-full"
               />
            </div>
         </div>
 
         <!-- Buscar BD -->
-        <div class="bg-slate-50/50 border border-slate-200 border-dashed rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5 opacity-70 cursor-not-allowed">
-           <div class="shrink-0 w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center">
+        <div class="bg-slate-50/50 border border-slate-200 border-dashed rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center sm:items-center gap-5 opacity-70 cursor-not-allowed">
+           <div class="shrink-0 w-14 h-14 bg-slate-100 border border-slate-200 text-slate-400 rounded-2xl flex items-center justify-center shadow-sm relative z-10">
               <IconSearch class="w-7 h-7" stroke-width="1.5" />
            </div>
-           <div class="text-center sm:text-left">
+           <div class="flex-1 relative z-10 text-center sm:text-left">
              <div class="inline-flex px-2.5 py-0.5 rounded shadow-sm border border-slate-200/60 text-[10px] font-bold bg-white text-slate-500 uppercase tracking-wider mb-2">Próximamente</div>
              <h4 class="text-lg font-bold text-slate-600 mb-1">Buscar en base de datos</h4>
-             <p class="text-sm text-slate-500 leading-relaxed">Selecciona solicitudes pendientes directamente desde el sistema, sin archivos locales.</p>
+             <p class="text-sm text-slate-500 mb-0">Selecciona solicitudes pendientes desde el sistema.</p>
            </div>
+           <div class="w-full md:w-80 hidden md:block"></div>
         </div>
       </div>
       
