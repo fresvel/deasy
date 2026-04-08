@@ -148,6 +148,7 @@ services:
       RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
       RABBITMQ_URL: amqp://rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
+      SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
     depends_on:
       mariadb:
@@ -200,6 +201,7 @@ services:
       SIGMAKER_DIR: /opt/sigmaker
       RABBITMQ_URL: amqp://rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
+      SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}
       SIGNER_EMBED_VALIDATION_INFO: ${SIGNER_EMBED_VALIDATION_INFO:-1}
       SIGNER_USE_PADES_LTA: ${SIGNER_USE_PADES_LTA:-0}

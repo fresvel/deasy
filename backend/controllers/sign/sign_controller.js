@@ -8,7 +8,10 @@ import { pipeline } from "stream/promises";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import UserCertificateRepository from "../../services/auth/UserCertificateRepository.js";
-import { requestSignerJob } from "../../services/infrastructure/rabbit_signer.js";
+import {
+  requestSignerJob,
+  requestSignerValidationJob
+} from "../../services/infrastructure/rabbit_signer.js";
 import { formatTokenForSigner } from "../../utils/tokenGenerator.js";
 import {
   getSignatureFlowSnapshot,
@@ -46,6 +49,13 @@ const buildSpoolPaths = (user, sessionId) => {
     inputPath: `${prefix}/input.pdf`,
     signedPath: `${prefix}/signed.pdf`
   };
+};
+
+const buildValidationSpoolPath = (user, sessionId, fileName = "documento.pdf") => {
+  const safeName = String(fileName || "documento.pdf")
+    .replace(/[^\w.\-]+/g, "_")
+    .replace(/^\.+/, "") || "documento.pdf";
+  return `users/${user.cedula}/validation/${sessionId}/${safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`}`;
 };
 
 const buildSignContext = async (req) => {
@@ -351,6 +361,43 @@ export const requestSign = async (req, res) => {
   } catch (error) {
     console.error("[sign_controller] Error:", error);
     return res.status(500).json({ error: error.message || "No se pudo firmar el documento." });
+  }
+};
+
+export const validateSignedDocument = async (req, res) => {
+  let minioPdfPath = null;
+  try {
+    const file = req.files?.pdf?.[0];
+    if (!file) {
+      return res.status(400).json({ error: "Se requiere el archivo PDF." });
+    }
+
+    const user = await getCurrentUser(req);
+    const sessionId = randomUUID();
+    minioPdfPath = buildValidationSpoolPath(user, sessionId, file.originalname);
+
+    await ensureBucketExists(MINIO_SPOOL_BUCKET);
+    await uploadFileToMinio(MINIO_SPOOL_BUCKET, minioPdfPath, file.path, {
+      "Content-Type": "application/pdf"
+    });
+
+    const result = await requestSignerValidationJob({
+      minioBucket: MINIO_SPOOL_BUCKET,
+      minioPdfPath,
+      cedula: String(req.body?.cedula || "").trim() || undefined,
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("[sign_controller][validate] Error:", error);
+    return res.status(500).json({ error: error.message || "No se pudo validar el documento." });
+  } finally {
+    if (req.files?.pdf?.[0]?.path) {
+      fs.unlink(req.files.pdf[0].path, () => {});
+    }
+    if (minioPdfPath) {
+      await removeMinioObject(MINIO_SPOOL_BUCKET, minioPdfPath).catch(() => {});
+    }
   }
 };
 

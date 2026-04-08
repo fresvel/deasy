@@ -2,10 +2,15 @@
 
 Servicio HTTP que firma documentos PDF usando pyhanko, MinIO y canvas para el estampado.
 
-## Endpoint
+## Endpoints
 
 ```
 POST /sign
+Content-Type: application/json
+```
+
+```json
+POST /validate
 Content-Type: application/json
 ```
 
@@ -56,6 +61,60 @@ Content-Type: application/json
 }
 ```
 
+## Validación de documentos
+
+### Payload
+
+```json
+{
+  "minioPdfPath": "users/0105998181/validation/abc/documento.pdf",
+  "cedula": "0105998181"
+}
+```
+
+### Respuesta exitosa
+
+```json
+{
+  "status": "success",
+  "message": "Documento validado correctamente.",
+  "summary": {
+    "hasSignatures": true,
+    "signatureCount": 2,
+    "validSignatureCount": 2,
+    "matchingCedulaCount": 1,
+    "warnings": []
+  },
+  "signatures": [
+    {
+      "index": 1,
+      "fieldName": "Signature1",
+      "valid": true,
+      "signerCedula": "0105998181",
+      "signerName": "HUGO FERNANDO SINCHI SINCHI",
+      "signingTime": "2025-08-13T11:13:30-05:00",
+      "certificateAuthority": "SECURITY DATA",
+      "certificateIssuedAt": "2024-01-26T22:59:08+00:00",
+      "certificateExpiresAt": "2026-01-25T22:59:08+00:00",
+      "revocationStatus": "No revocado",
+      "extras": {}
+    }
+  ],
+  "matchByCedula": {
+    "requestedCedula": "0105998181",
+    "found": true,
+    "matches": [
+      {
+        "index": 1,
+        "fieldName": "Signature1",
+        "signerName": "HUGO FERNANDO SINCHI SINCHI",
+        "signerCedula": "0105998181"
+      }
+    ]
+  }
+}
+```
+
 ## Variables de entorno
 
 | Variable | Default | Descripción |
@@ -65,6 +124,7 @@ Content-Type: application/json
 | `MINIO_ACCESS_KEY` | `deasy_minio` | Access key de MinIO |
 | `MINIO_SECRET_KEY` | `deasy_minio_secret` | Secret key de MinIO |
 | `MINIO_SPOOL_BUCKET` | `deasy-spool` | Bucket de spool en MinIO |
+| `SIGN_VALIDATE_REQUEST_QUEUE` | `deasy.sign.validate.request` | Cola RabbitMQ para validación documental |
 
 ## Flujo interno
 

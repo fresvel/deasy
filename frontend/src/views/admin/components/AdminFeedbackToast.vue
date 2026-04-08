@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="visible"
-    class="admin-feedback-toast fixed right-6 top-6 z-[1080] w-full max-w-md rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur"
+    class="admin-feedback-toast fixed right-6 top-6 z-1080 w-full max-w-md rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur"
     :class="`is-${kind}`"
     role="status"
     aria-live="polite"

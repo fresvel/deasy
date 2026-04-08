@@ -8,7 +8,10 @@
     v-bind="attrs"
     @click="$emit('click', $event)"
   >
-    <span v-if="$slots.default && showInnerWrapper" class="btn-inner">
+    <span v-if="variant === 'close'" class="flex items-center justify-center w-full h-full">
+      <IconX class="w-4 h-4" stroke-width="2.5" />
+    </span>
+    <span v-else-if="$slots.default && showInnerWrapper" class="btn-inner">
       <slot />
     </span>
     <slot v-else />
@@ -17,6 +20,7 @@
 
 <script setup>
 import { computed, useAttrs } from "vue";
+import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({
   type: {

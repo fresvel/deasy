@@ -1,352 +1,359 @@
 <template>
-  <div class="w-full h-full flex flex-col gap-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div class="flex items-start gap-3">
-        <button
-          type="button"
-          class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
-          title="Regresar"
-          aria-label="Regresar"
-          @click="$emit('back')"
-        >
-          <IconArrowLeft class="w-5 h-5" />
-        </button>
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Multifirmador</h2>
-          <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
-            Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
-          </p>
+  <div class="w-full h-full flex flex-col">
+    <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6 h-full">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+        <!-- Page Header -->
+        <div class="flex items-start gap-3">
+          <button
+            type="button"
+            class="shrink-0 inline-flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm group"
+            title="Regresar"
+            aria-label="Regresar"
+            @click="$emit('back')"
+          >
+            <IconArrowLeft class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div class="flex flex-col pt-0.5">
+            <h2 class="text-xl font-black text-slate-800 m-0 leading-tight tracking-tight">Multifirmador</h2>
+            <p class="text-slate-500 text-xs mt-1 font-medium leading-snug">
+              Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
+            </p>
+          </div>
         </div>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <PdfDropField
-          variant="inline"
-          title=""
-          action-text="Agregar PDFs"
-          help-text="Selecciona uno o varios archivos"
-          :icon="IconFiles"
-          input-id="multisigner-input"
-          multiple
-          @files-selected="onFilesSelected"
-        />
-        <button
-          type="button"
-          class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition font-semibold text-sm"
-          :disabled="!documents.length"
-          @click="clearQueue"
-        >
-          Limpiar cola
-        </button>
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-6">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col gap-5">
         <div class="grid grid-cols-2 gap-3">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Documentos</div>
-            <div class="text-2xl font-bold text-slate-800 mt-1">{{ documents.length }}</div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5 flex flex-col justify-center items-center text-center">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Documentos</div>
+            <div class="text-2xl font-black text-slate-800 leading-none">{{ documents.length }}</div>
           </div>
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-500">Éxitos</div>
-            <div class="text-2xl font-bold text-emerald-700 mt-1">{{ successCount }}</div>
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 flex flex-col justify-center items-center text-center">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-1">Éxitos</div>
+            <div class="text-2xl font-black text-emerald-700 leading-none">{{ successCount }}</div>
           </div>
-          <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <div class="text-xs font-semibold uppercase tracking-wide text-amber-500">Pendientes</div>
-            <div class="text-2xl font-bold text-amber-700 mt-1">{{ pendingCount }}</div>
+          <div class="rounded-xl border border-amber-200 bg-amber-50 p-3.5 flex flex-col justify-center items-center text-center">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-1">Pendientes</div>
+            <div class="text-2xl font-black text-amber-700 leading-none">{{ pendingCount }}</div>
           </div>
-          <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
-            <div class="text-xs font-semibold uppercase tracking-wide text-rose-500">Fallos</div>
-            <div class="text-2xl font-bold text-rose-700 mt-1">{{ failedCount }}</div>
+          <div class="rounded-xl border border-rose-200 bg-rose-50 p-3.5 flex flex-col justify-center items-center text-center">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-rose-600 mb-1">Fallos</div>
+            <div class="text-2xl font-black text-rose-700 leading-none">{{ failedCount }}</div>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-4">
-          <div class="flex items-center justify-between gap-3">
+        <div class="rounded-xl border border-sky-100 bg-sky-50/50 p-4">
+          <div class="flex items-center justify-between gap-3 mb-3">
             <div>
-              <div class="text-sm font-bold text-slate-800">Resumen del lote</div>
-              <div class="text-xs text-slate-500">
+              <div class="text-sm font-bold text-slate-800">Progreso del lote</div>
+              <div class="text-[11px] font-medium text-slate-500 mt-0.5">
                 {{ batchJob
-                  ? `${batchJob.processed || 0} de ${batchJob.total || documents.length} documento(s) procesados`
-                  : `${documents.length} documento(s) listos para preparar` }}
+                  ? `${batchJob.processed || 0} de ${batchJob.total || documents.length} procesados`
+                  : `${documents.length} documento(s) en cola` }}
               </div>
             </div>
-            <div class="text-sm font-semibold text-slate-700">
+            <div class="text-sm font-black text-sky-600 bg-sky-100 px-2.5 py-1 rounded-lg">
               {{ progressPercent }}%
             </div>
           </div>
-          <div class="mt-3 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+          <div class="h-2 w-full rounded-full bg-slate-200/70 overflow-hidden">
             <div
-              class="h-full rounded-full bg-sky-600 transition-all duration-300"
+              class="h-full rounded-full bg-sky-500 transition-all duration-500 ease-out"
               :style="{ width: `${progressPercent}%` }"
             />
           </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div class="text-sm font-bold text-slate-800">Modo de operación</div>
-          <div class="mt-3 flex flex-col gap-2">
-            <label class="inline-flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
-              <input v-model="batchMode" type="radio" value="token" class="mt-1" />
-              <span>
-                <span class="font-semibold text-slate-900">Firma por token</span>
-                <span class="block text-xs text-slate-500">Buscará el marcador del usuario en cada PDF.</span>
-              </span>
+        <div class="flex flex-col gap-3">
+          <div class="text-sm font-bold text-slate-800 flex items-center justify-between">
+            Modo de operación
+          </div>
+          <div class="grid grid-cols-1 gap-2.5">
+            <label class="group relative flex cursor-pointer rounded-xl border p-3 transition-all hover:bg-slate-50"
+                  :class="batchMode === 'token' ? 'border-sky-500 bg-sky-50/30' : 'border-slate-200 bg-white'">
+              <div class="flex items-start gap-3 w-full">
+                <div class="flex h-5 items-center">
+                  <input v-model="batchMode" type="radio" value="token" class="h-4 w-4 border-slate-300 text-sky-600 focus:ring-sky-600" />
+                </div>
+                <div class="flex flex-col">
+                  <span class="block text-sm font-semibold text-slate-900">Firma por token</span>
+                  <span class="block text-xs text-slate-500 mt-0.5">Busca el marcador del usuario de forma automática en cada PDF.</span>
+                </div>
+              </div>
             </label>
-            <label class="inline-flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
-              <input v-model="batchMode" type="radio" value="shared-coordinates" class="mt-1" />
-              <span>
-                <span class="font-semibold text-slate-900">Coordenadas compartidas</span>
-                <span class="block text-xs text-slate-500">Una misma ubicación para todos los PDF.</span>
-              </span>
+
+            <label class="group relative flex cursor-pointer rounded-xl border p-3 transition-all hover:bg-slate-50"
+                  :class="batchMode === 'shared-coordinates' ? 'border-sky-500 bg-sky-50/30' : 'border-slate-200 bg-white'">
+              <div class="flex items-start gap-3 w-full">
+                <div class="flex h-5 items-center">
+                  <input v-model="batchMode" type="radio" value="shared-coordinates" class="h-4 w-4 border-slate-300 text-sky-600 focus:ring-sky-600" />
+                </div>
+                <div class="flex flex-col">
+                  <span class="block text-sm font-semibold text-slate-900">Misma ubicación</span>
+                  <span class="block text-xs text-slate-500 mt-0.5">Dibuja una vez, firma en las coordenadas de todos.</span>
+                </div>
+              </div>
             </label>
-            <label class="inline-flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
-              <input v-model="batchMode" type="radio" value="per-document" class="mt-1" />
-              <span>
-                <span class="font-semibold text-slate-900">Coordenadas por documento</span>
-                <span class="block text-xs text-slate-500">Se preparará documento por documento.</span>
-              </span>
+
+            <label class="group relative flex cursor-pointer rounded-xl border p-3 transition-all hover:bg-slate-50"
+                  :class="batchMode === 'per-document' ? 'border-sky-500 bg-sky-50/30' : 'border-slate-200 bg-white'">
+              <div class="flex items-start gap-3 w-full">
+                <div class="flex h-5 items-center">
+                  <input v-model="batchMode" type="radio" value="per-document" class="h-4 w-4 border-slate-300 text-sky-600 focus:ring-sky-600" />
+                </div>
+                <div class="flex flex-col">
+                  <span class="block text-sm font-semibold text-slate-900">Por documento</span>
+                  <span class="block text-xs text-slate-500 mt-0.5">Prepara las cajas documento por documento manualmente.</span>
+                </div>
+              </div>
             </label>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-4">
-          <div>
-            <div class="text-sm font-bold text-slate-800">Inicio de firma</div>
-            <div class="text-xs text-slate-500 mt-1">
-              El lote usará el mismo modal de certificados y contraseña del firmador normal.
-            </div>
-          </div>
-
+        <div class="pt-4 border-t border-slate-100 flex flex-col gap-4">
           <div
             v-if="batchJob"
-            class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+            class="rounded-xl border border-slate-200 bg-white p-3.5 flex items-center justify-between gap-3 shadow-sm"
           >
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <div class="font-semibold text-slate-800">Estado del lote</div>
-                <div class="mt-1">
-                  {{ batchJob.status === 'completed' ? 'Completado' : batchJob.status === 'processing' ? 'Procesando' : 'En cola' }}
-                  · {{ batchJob.processed || 0 }} / {{ batchJob.total || documents.length }} documento(s)
-                </div>
-              </div>
-              <AdminButton
-                v-if="batchJob.status === 'completed' && successCount > 0"
-                variant="outlinePrimary"
-                size="sm"
-                :disabled="isDownloadingBatch"
-                @click="emit('download-batch')"
-              >
-                {{ isDownloadingBatch ? 'Descargando lote...' : 'Descargar lote' }}
-              </AdminButton>
+            <div class="flex flex-col">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Estado</span>
+              <span class="text-sm font-semibold text-slate-800">
+                {{ batchJob.status === 'completed' ? 'Completado' : batchJob.status === 'processing' ? 'Procesando' : 'En cola' }}
+              </span>
             </div>
+            <AdminButton
+              v-if="batchJob.status === 'completed' && successCount > 0"
+              variant="outlinePrimary"
+              size="sm"
+              :disabled="isDownloadingBatch"
+              @click="emit('download-batch')"
+            >
+              {{ isDownloadingBatch ? 'Descargando...' : 'Descargar' }}
+            </AdminButton>
           </div>
 
           <div
             v-if="batchMode === 'shared-coordinates' || batchMode === 'per-document'"
-            class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-3"
+            class="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-4 shadow-sm"
           >
             <div class="flex items-center justify-between gap-3">
               <div>
-                <div class="text-sm font-semibold text-slate-800">
-                  {{ batchMode === 'shared-coordinates' ? 'Coordenadas compartidas' : 'Coordenadas por documento' }}
-                </div>
-                <div class="text-xs text-slate-500">
-                  {{ batchMode === 'shared-coordinates'
-                    ? 'Define uno o varios campos que se aplicarán al mismo número de página en todos los documentos.'
-                    : 'Define uno o varios campos para el documento actual y navega documento por documento.' }}
+                <div class="text-[12px] font-bold uppercase tracking-wider text-slate-500">Configuración</div>
+                <div class="text-sm font-semibold text-slate-800 mt-1">
+                  {{ batchMode === 'shared-coordinates' ? 'Coordenadas comp.' : 'Cajas por documento' }}
                 </div>
               </div>
               <button
                 type="button"
-                class="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition text-sm font-medium"
+                class="inline-flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition"
+                title="Limpiar firmas cargadas"
                 :disabled="!currentModeFields.length"
                 @click="clearCurrentModeFields"
               >
-                Limpiar
+                <IconTrash class="w-4 h-4" stroke-width="2.5" />
               </button>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-              <label class="text-sm font-semibold text-slate-600">Modo</label>
-              <select
-                v-model="selectionMode"
-                class="block min-w-[12rem] rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none"
-              >
-                <option value="drag">Manual</option>
-                <option value="preset">Predefinida</option>
-              </select>
-            </div>
-
-            <div v-if="batchMode === 'shared-coordinates'" class="flex flex-wrap items-center gap-3">
-              <label class="text-sm font-semibold text-slate-600">Página de referencia</label>
+            <div v-if="batchMode === 'shared-coordinates'" class="flex flex-col gap-2">
+              <label class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Referencia de página</label>
               <select
                 v-model="sharedPageReference"
-                class="block min-w-[14rem] rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none"
+                class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm outline-none focus:border-sky-500 focus:bg-white transition-colors"
               >
-                <option value="start">Contar desde inicio</option>
-                <option value="end">Contar desde fin</option>
+                <option value="start">Contar desde el inicio</option>
+                <option value="end">Contar desde el final</option>
               </select>
             </div>
 
-            <div class="text-xs text-slate-500">
-              {{ selectionMode === 'preset'
-                ? 'Haz clic en el visor para colocar un campo de firma.'
-                : 'Haz clic y arrastra en el visor para definir el campo de firma.' }}
+            <div v-if="currentModeFields.length" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 border border-emerald-100 text-sm font-semibold text-emerald-700">
+              <IconCheck class="w-4 h-4" />
+              {{ currentModeFields.length }} preparada(s)
             </div>
-
-            <div v-if="currentModeFields.length" class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
-              {{ currentModeFields.length }} campo(s) preparado(s) para
-              {{ batchMode === 'shared-coordinates' ? 'todos los documentos' : 'este documento' }}.
+            
+            <div v-else class="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg p-3">
+              Haz clic en el visor del PDF para elegir dónde colocar la firma.
             </div>
           </div>
 
-          <div v-if="batchError" class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {{ batchError }}
+          <div v-if="batchError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 mt-1 flex items-start gap-2 shadow-sm">
+            <IconAlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
+            <span class="font-medium">{{ batchError }}</span>
           </div>
 
           <AdminButton
             variant="primary"
             :disabled="!canRequestStart"
             @click="requestBatchStart"
+            class="w-full flex justify-center py-3 rounded-xl font-bold shadow-md shadow-sky-500/20 transition-all hover:shadow-lg hover:shadow-sky-500/30"
           >
-            {{ isBatchSubmitting ? 'Preparando lote...' : isBatchRunning ? 'Procesando lote...' : 'Iniciar firma masiva' }}
+            {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>
         </div>
 
-        <div class="flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <div class="text-sm font-bold text-slate-800">Cola de documentos</div>
-            <div class="text-xs text-slate-500">{{ currentDocumentIndex + 1 }} / {{ Math.max(documents.length, 1) }}</div>
+        <div class="flex flex-col mt-2">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <div class="text-sm font-bold text-slate-800">Archivos <span class="text-xs font-semibold text-slate-500 ml-1">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span></div>
+            <div class="flex items-center gap-1">
+              <PdfDropField
+                variant="inline"
+                title=""
+                action-text="Añadir PDF"
+                help-text=""
+                input-id="multisigner-input-sidebar"
+                multiple
+                @files-selected="onFilesSelected"
+                class="text-xs font-bold"
+              />
+              <button
+                v-if="documents.length"
+                type="button"
+                class="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
+                title="Limpiar cola completa"
+                @click="clearQueue"
+              >
+                <IconTrash class="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div v-if="!documents.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            Aún no has cargado documentos.
+          <div v-if="!documents.length" class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center text-slate-400 gap-3">
+            <IconFiles class="w-8 h-8 opacity-50" />
+            <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
           </div>
-          <div v-else class="flex flex-col gap-2 max-h-[28rem] overflow-y-auto pr-1 custom-scrollbar">
+          <div v-else class="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
             <button
               v-for="(doc, index) in documents"
               :key="doc.id"
               type="button"
-              class="w-full rounded-xl border px-3 py-3 text-left transition"
-              :class="index === currentDocumentIndex ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+              class="w-full group rounded-xl border p-3 flex flex-col items-start gap-1 transition-all"
+              :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
               @click="selectDocument(index)"
             >
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="truncate text-sm font-semibold text-slate-800">{{ doc.name }}</div>
-                  <div class="mt-1 text-xs text-slate-500">Estado: {{ doc.status }}</div>
-                  <div v-if="doc.error" class="mt-1 text-xs text-red-600">{{ doc.error }}</div>
+              <div class="flex items-start justify-between w-full gap-3">
+                <div class="min-w-0 flex items-center gap-2">
+                  <IconFileCheck v-if="doc.status === 'completed'" class="w-4 h-4 shrink-0 text-emerald-500" />
+                  <IconAlertCircle v-else-if="doc.status === 'failed'" class="w-4 h-4 shrink-0 text-rose-500" />
+                  <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'">{{ doc.name }}</div>
                 </div>
-                <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
+                <!-- Prevent button inside button behavior by switching wrapper or catching click -->
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <BtnDelete message="Quitar" @onpress.stop="removeDocument(index)" />
+                </div>
               </div>
+              <div v-if="doc.error" class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded w-full text-left truncate">{{ doc.error }}</div>
             </button>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col gap-5">
-        <div v-if="currentDocument" class="flex flex-col gap-4">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden relative">
+        <!-- Floating Actions Bar (Bottom) for PC/Mobile like FirmarPdf -->
+        <div 
+          v-if="documents.length > 0 && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
+          class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center justify-center gap-2.5 bg-slate-950/75 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-700/50"
+        >
+          <span class="text-white/90 text-sm font-semibold tracking-wide pr-2 border-r border-slate-600/50 hidden sm:inline">Navegar PDF</span>
+          <button @click="prevPage" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition" :disabled="!canPrevPage">
+            <IconChevronLeft class="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+          <div class="flex items-center justify-center gap-1.5 bg-slate-800/80 rounded-lg px-2 py-1 sm:px-3 text-white border border-slate-700">
+            <input 
+              v-model="pageInput" 
+              class="w-10 sm:w-12 bg-transparent text-center text-sm font-bold text-white border-0 outline-none p-0 focus:ring-0" 
+              type="number" min="1" :max="totalPages" 
+              @keyup.enter="goToPage" 
+            />
+            <span class="text-slate-400 whitespace-nowrap text-sm font-medium">de {{ totalPages }}</span>
+          </div>
+          <button @click="nextPage" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition" :disabled="!canNextPage">
+            <IconChevronRight class="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        </div>
+
+        <!-- Header Controls for Viewer -->
+        <div v-if="currentDocument" class="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-50/50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
+               <IconFiles class="w-5 h-5" />
+            </div>
             <div>
-              <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Documento actual</div>
-              <div class="text-lg font-bold text-slate-800 mt-1">{{ currentDocument.name }}</div>
-              <div class="text-sm text-slate-500 mt-1">
-                {{ currentDocument.status }} · {{ currentDocument.progressLabel }}
-              </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-              <button @click="prevDocument" class="text-sky-600 hover:text-sky-800 p-2 transition" :disabled="!canPrevDocument">
-                <IconArrowLeft class="w-5 h-5" />
-              </button>
-              <div class="rounded-xl bg-sky-50 px-4 py-2 text-sm font-semibold text-slate-700">
-                PDF {{ currentDocumentIndex + 1 }} de {{ documents.length }}
-              </div>
-              <button @click="nextDocument" class="text-sky-600 hover:text-sky-800 p-2 transition" :disabled="!canNextDocument">
-                <IconArrowRight class="w-5 h-5" />
-              </button>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Previsualizando PDF</div>
+              <div class="text-base font-bold text-slate-800 line-clamp-1" :title="currentDocument.name">{{ currentDocument.name }}</div>
             </div>
           </div>
-
-          <div class="flex flex-wrap items-center justify-center gap-3">
-            <button @click="prevPage" class="text-sky-600 hover:text-sky-800 p-2 transition" :disabled="!canPrevPage">
-              <IconChevronLeft class="w-6 h-6" />
+          
+          <div class="flex items-center bg-white rounded-xl border border-slate-200 shadow-sm p-1">
+            <button @click="prevDocument" class="text-slate-500 hover:text-sky-600 p-2 rounded-lg hover:bg-sky-50 transition" :disabled="!canPrevDocument" title="Documento anterior">
+              <IconChevronLeft class="w-5 h-5" />
             </button>
-            <div class="page-selector flex items-center gap-2 bg-sky-50 text-slate-800 rounded-xl px-4 py-2 font-semibold">
-              <span class="text-sm text-slate-600">Página</span>
-              <input
-                v-model="pageInput"
-                class="page-selector-input w-16 px-2 py-1 rounded-lg bg-white border border-slate-300 text-center text-sm outline-none"
-                type="number"
-                min="1"
-                :max="totalPages"
-                @keyup.enter="goToPage"
-              />
-              <span class="text-sm">de {{ totalPages }}</span>
+            <div class="px-3 py-1 flex flex-col items-center justify-center border-x border-slate-100 min-w-17.5">
+              <span class="text-xs font-bold text-slate-500">{{ currentDocumentIndex + 1 }} / {{ documents.length }}</span>
             </div>
-            <button @click="nextPage" class="text-sky-600 hover:text-sky-800 p-2 transition" :disabled="!canNextPage">
-              <IconChevronRight class="w-6 h-6" />
+            <button @click="nextDocument" class="text-slate-500 hover:text-sky-600 p-2 rounded-lg hover:bg-sky-50 transition" :disabled="!canNextDocument" title="Siguiente documento">
+              <IconChevronRight class="w-5 h-5" />
             </button>
-          </div>
-
-          <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <div class="w-full relative flex justify-center" ref="canvasHost">
-              <div
-                ref="viewerRef"
-                class="relative shadow-sm border border-slate-200"
-                @mousedown="handlePointerDown"
-                @mousemove="handlePointerMove"
-                @mouseup="handlePointerUp"
-                @mouseleave="handlePointerUp"
-              >
-                <canvas ref="pdfCanvas" class="block relative z-10 w-full multisigner-canvas"></canvas>
-                <div
-                  v-for="field in currentPageFields"
-                  :key="field.id"
-                  class="box saved-box"
-                  :class="{ 'saved-box--active': field.id === selectedFieldId }"
-                  :style="getFieldBoxStyle(field)"
-                  @mousedown.stop
-                  @click.stop="selectedFieldId = field.id"
-                >
-                  <div class="saved-box-signer">
-                    {{ currentUserLabel }}
-                  </div>
-                  <div class="saved-box-actions" @mousedown.stop @click.stop>
-                    <BtnDelete message="Eliminar" @onpress="removeField(field.id)" />
-                  </div>
-                </div>
-                <div
-                  v-if="activeSelectionBox && isCoordinateMode"
-                  class="box shared-box--active"
-                  :style="activeSelectionBox"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div v-if="currentModeFields.length && isCoordinateMode" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div class="text-sm font-bold text-slate-800 mb-3">
-              {{ batchMode === 'shared-coordinates' ? 'Campos compartidos' : 'Campos del documento actual' }}
-            </div>
-            <div class="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
-              <div
-                v-for="field in currentModeFields"
-                :key="field.id"
-                class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3"
-                :class="field.id === selectedFieldId ? 'border-sky-500 bg-sky-50' : ''"
-              >
-                <div class="text-xs text-slate-600">
-                  Página {{ describeFieldPage(field) }} · x1={{ field.x1.toFixed(2) }}, y1={{ field.y1.toFixed(2) }},
-                  x2={{ field.x2.toFixed(2) }}, y2={{ field.y2.toFixed(2) }}
-                </div>
-                <BtnDelete message="Eliminar" @onpress="removeField(field.id)" />
-              </div>
-            </div>
           </div>
         </div>
 
-        <div v-else class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-16 text-center text-slate-500">
-          Carga varios PDF para comenzar a preparar la firma masiva.
+        <!-- Workspace Canvas -->
+        <div class="grow bg-slate-200 overflow-hidden relative" :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'">
+          <div class="w-full h-full p-6 overflow-auto custom-scrollbar flex justify-center" ref="canvasHost" @click.self="selectedFieldId = null" id="pdf-scroll-container">
+            <div
+              v-if="currentDocument"
+              ref="viewerRef"
+              class="relative mx-auto shadow-md bg-white mb-28 border border-slate-300 transition-all duration-300"
+              @mousedown="handlePointerDown"
+              @mousemove="handlePointerMove"
+              @mouseup="handlePointerUp"
+              @mouseleave="handlePointerLeave"
+            >
+              <canvas ref="pdfCanvas" class="block w-full h-auto z-0 bg-white"></canvas>
+
+              <!-- Previsualización / Hover -->
+              <SignatureBox
+                v-if="selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
+                :is-preview="true"
+                :left="parseFloat(previewBoxStyle.left)"
+                :top="parseFloat(previewBoxStyle.top)"
+                :width="parseFloat(previewBoxStyle.width)"
+                :height="parseFloat(previewBoxStyle.height)"
+                :label="currentUserLabel"
+              />
+
+              <!-- Dibujar los campos configurados -->
+              <SignatureBox
+                v-for="field in currentPageFields"
+                :key="field.id"
+                :field="field"
+                :is-active="field.id === selectedFieldId"
+                :pdf-scale="pdfScale"
+                :page-height-pdf="pageHeightPdf"
+                :page-width-pdf="pageWidthPdf"
+                :label="currentUserLabel"
+                @select="selectedFieldId = field.id"
+                @delete="removeField(field.id)"
+                @update:position="updateFieldCoordinates"
+                @hover-enter="isHoveringField = true"
+                @hover-leave="isHoveringField = false"
+              />
+              <!-- Rectángulo de selección en dibujado -->
+              <div
+                v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
+                class="absolute border-2 border-rose-500 border-dashed bg-rose-500/20 z-20 rounded-sm pointer-events-none mix-blend-multiply"
+                :style="activeSelectionBox"
+              >
+                  <div class="absolute -top-6 left-0 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                    <IconDragDrop class="w-3 h-3" />
+                    <span>Calculando Área...</span>
+                  </div>
+              </div>
+            </div>
+            
+            <div v-if="!currentDocument" class="flex flex-col items-center justify-center text-center h-full w-full max-w-sm mx-auto opacity-70 relative z-5 animate-fade-in">
+              <div class="w-20 h-20 bg-slate-300/50 rounded-full flex items-center justify-center mb-6 shadow-inner ring-8 ring-white/40">
+                <IconFiles class="w-10 h-10 text-slate-500 ml-1" />
+              </div>
+              <h3 class="text-xl font-bold text-slate-700 mb-2">No hay ningún PDF para visualizar</h3>
+              <p class="text-slate-500 font-medium text-sm">Añade uno o más documentos PDF a la cola desde el panel lateral izquierdo para comenzar a configurar el lote de firmas.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -356,12 +363,16 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/utils/pdfjsSetup";
+import SignatureBox from "@/components/firmas/SignatureBox.vue";
 import {
   IconArrowLeft,
-  IconArrowRight,
   IconChevronLeft,
   IconChevronRight,
-  IconFiles
+  IconFiles,
+  IconTrash,
+  IconFileCheck,
+  IconAlertCircle,
+  IconDragDrop,
 } from "@tabler/icons-vue";
 import AdminButton from "@/components/AppButton.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
@@ -400,6 +411,7 @@ let pdfDoc = null;
 let renderTask = null;
 let pdfScale = 1;
 let pageHeightPdf = 0;
+let pageWidthPdf = 0;
 const FIELD_WIDTH = 124;
 const FIELD_HEIGHT = 48;
 const PDF_LOAD_OPTIONS = {
@@ -441,6 +453,11 @@ const canNextPage = computed(() => currentPage.value < totalPages.value);
 const isBatchRunning = computed(() => ["queued", "processing"].includes(props.batchJob?.status || ""));
 const isCoordinateMode = computed(() => ["shared-coordinates", "per-document"].includes(batchMode.value));
 const currentUserLabel = computed(() => "Firma");
+
+const isMouseOverPdf = ref(false);
+const isHoveringField = ref(false);
+const previewBoxStyle = ref({ display: 'none' });
+
 const currentModeFields = computed(() => {
   if (batchMode.value === "shared-coordinates") return sharedFields.value;
   if (batchMode.value === "per-document" && currentDocument.value) {
@@ -517,6 +534,7 @@ const renderPage = async (pageNum) => {
   const page = await pdfDoc.getPage(pageNum);
   const baseViewport = page.getViewport({ scale: 1 });
   pageHeightPdf = baseViewport.height;
+  pageWidthPdf = baseViewport.width;
   const containerWidth = canvasHost.value?.clientWidth || baseViewport.width;
   pdfScale = containerWidth / baseViewport.width;
   const viewport = page.getViewport({ scale: pdfScale });
@@ -557,21 +575,7 @@ const updateSharedSelection = (left, top, right, bottom, rectHeight) => {
   };
 };
 
-const getFieldBoxStyle = (field) => {
-  const rect = getViewerRect();
-  if (!rect) return {};
-  const left = toCssUnits(field.x1);
-  const right = toCssUnits(field.x2);
-  const top = toCssUnits(pageHeightPdf - field.y1);
-  const bottom = toCssUnits(pageHeightPdf - field.y2);
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${Math.max(0, right - left)}px`,
-    height: `${Math.max(0, bottom - top)}px`,
-    position: "absolute"
-  };
-};
+
 
 const clearCurrentModeFields = () => {
   if (batchMode.value === "shared-coordinates") {
@@ -585,6 +589,23 @@ const clearCurrentModeFields = () => {
   selectedFieldId.value = null;
   lastSelection.value = null;
   activeSelectionBox.value = null;
+};
+
+const updateFieldCoordinates = (updatedField) => {
+  if (batchMode.value === "shared-coordinates") {
+    const idx = sharedFields.value.findIndex(f => f.id === updatedField.id);
+    if (idx !== -1) sharedFields.value[idx] = updatedField;
+  } else if (batchMode.value === "per-document" && currentDocument.value) {
+    const docFields = perDocumentFields.value[currentDocument.value.id] || [];
+    const idx = docFields.findIndex(f => f.id === updatedField.id);
+    if (idx !== -1) {
+      docFields[idx] = updatedField;
+      perDocumentFields.value = {
+        ...perDocumentFields.value,
+        [currentDocument.value.id]: [...docFields]
+      };
+    }
+  }
 };
 
 const appendField = (selection) => {
@@ -615,14 +636,16 @@ const handlePointerDown = (event) => {
   if (!isCoordinateMode.value || !viewerRef.value || !pdfDoc) return;
   const rect = getViewerRect();
   if (!rect) return;
+
   const currentX = event.clientX - rect.left;
   const currentY = event.clientY - rect.top;
 
+  // En modo preset, simplemente usamos el click currentX/Y
   if (selectionMode.value === "preset") {
     const width = toCssUnits(FIELD_WIDTH);
     const height = toCssUnits(FIELD_HEIGHT);
-    const left = Math.min(Math.max(currentX, 0), Math.max(0, rect.width - width));
-    const top = Math.min(Math.max(currentY, 0), Math.max(0, rect.height - height));
+    const left = Math.min(Math.max(currentX - width / 2, 0), rect.width - width);
+    const top = Math.min(Math.max(currentY - height / 2, 0), rect.height - height);
     updateSharedSelection(left, top, left + width, top + height, rect.height);
     appendField(lastSelection.value);
     activeSelectionBox.value = null;
@@ -642,24 +665,57 @@ const handlePointerDown = (event) => {
 };
 
 const handlePointerMove = (event) => {
-  if (!isDragging || !isCoordinateMode.value || !viewerRef.value) return;
+  if (!isCoordinateMode.value || !viewerRef.value) return;
+  
   const rect = getViewerRect();
   if (!rect) return;
+  
   const currentX = event.clientX - rect.left;
   const currentY = event.clientY - rect.top;
-  const left = Math.max(Math.min(currentX, startX), 0);
-  const top = Math.max(Math.min(currentY, startY), 0);
-  const right = Math.min(Math.max(currentX, startX), rect.width);
-  const bottom = Math.min(Math.max(currentY, startY), rect.height);
 
-  activeSelectionBox.value = {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${Math.max(0, right - left)}px`,
-    height: `${Math.max(0, bottom - top)}px`,
-    position: "absolute"
-  };
-  updateSharedSelection(left, top, right, bottom, rect.height);
+  isMouseOverPdf.value = true;
+  
+  // Lógica de "ghost/preview" cuando no se está arrastrando para dibujar
+  if (!isDragging && selectionMode.value === "preset") {
+    const presetWidth = toCssUnits(FIELD_WIDTH);
+    const presetHeight = toCssUnits(FIELD_HEIGHT);
+    
+    const maxLeft = Math.max(0, rect.width - presetWidth);
+    const maxTop = Math.max(0, rect.height - presetHeight);
+    
+    // Centrar la caja en el mouse
+    const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+    const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
+
+    previewBoxStyle.value = {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${presetWidth}px`,
+      height: `${presetHeight}px`
+    };
+  }
+
+  // Lógica de dibujado manual
+  if (isDragging && selectionMode.value !== "preset") {
+    const left = Math.max(Math.min(currentX, startX), 0);
+    const top = Math.max(Math.min(currentY, startY), 0);
+    const right = Math.min(Math.max(currentX, startX), rect.width);
+    const bottom = Math.min(Math.max(currentY, startY), rect.height);
+
+    activeSelectionBox.value = {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${Math.max(0, right - left)}px`,
+      height: `${Math.max(0, bottom - top)}px`,
+      position: "absolute"
+    };
+    updateSharedSelection(left, top, right, bottom, rect.height);
+  }
+};
+
+const handlePointerLeave = () => {
+  isMouseOverPdf.value = false;
+  handlePointerUp();
 };
 
 const handlePointerUp = () => {
@@ -871,48 +927,7 @@ onBeforeUnmount(() => {
   cursor: crosshair;
 }
 
-.box {
-  border: 2px dashed var(--brand-accent, #0ea5e9);
-  position: absolute;
-  background-color: rgba(14, 165, 233, 0.25);
-  border-radius: 5%;
-  z-index: 20;
-}
 
-.saved-box {
-  cursor: pointer;
-}
-
-.saved-box-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(105%, -8%);
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  pointer-events: auto;
-}
-
-.saved-box-signer {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.45rem;
-  text-align: center;
-  font-size: 0.95rem;
-  line-height: 1.1;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.saved-box--active {
-  border-color: #0284c7;
-  background: rgba(14, 165, 233, 0.32);
-}
 
 .shared-box {
   position: absolute;

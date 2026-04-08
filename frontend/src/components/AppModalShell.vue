@@ -1,7 +1,7 @@
 <template>
   <div
     ref="rootElement"
-    class="deasy-dialog-root fixed inset-0 z-[1060] overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
+    class="deasy-dialog-root fixed inset-0 z-1060 overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
     :class="controlled ? (open ? 'flex' : 'hidden') : 'hidden'"
     data-dialog-root
     tabindex="-1"
@@ -20,14 +20,17 @@
           <h5 class="deasy-dialog-title text-lg font-bold text-slate-900" :id="labelledBy">
             <slot name="title">{{ title }}</slot>
           </h5>
-          <AppButton
+          <button
             v-if="showCloseButton"
-            variant="close"
+            type="button"
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
             :aria-label="closeLabel"
             :title="closeLabel"
             v-bind="closeButtonAttrs"
             @click="handleClose"
-          />
+          >
+            <IconX class="h-4 w-4" stroke-width="2.5" />
+          </button>
         </div>
         <div class="deasy-dialog-body px-6 py-5" :class="bodyClass">
           <slot />
@@ -47,6 +50,7 @@
 <script setup>
 import { computed, ref, useAttrs } from "vue";
 import AppButton from "@/components/AppButton.vue";
+import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({
   title: {

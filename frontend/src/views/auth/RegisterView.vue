@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-100 py-8 md:py-12 px-4 sm:px-6 flex justify-center font-sans">
-    <div class="max-w-3xl w-full h-fit bg-white rounded-[2rem] shadow-2xl shadow-slate-300/50 flex flex-col border border-slate-200">
+    <div class="max-w-3xl w-full h-fit bg-white rounded-4xl shadow-2xl shadow-slate-300/50 flex flex-col border border-slate-200">
       
       <!-- Form Container -->
       <div class="w-full p-8 sm:p-10 lg:p-12 relative">
@@ -158,7 +158,7 @@
               </div>
               
               <div v-show="showMap" class="mt-4 relative">
-                <div ref="mapElement" class="h-[300px] w-full rounded-xl border border-slate-200 z-10 shadow-inner"></div>
+                <div ref="mapElement" class="h-75 w-full rounded-xl border border-slate-200 z-10 shadow-inner"></div>
               </div>
             </div>
           </div>

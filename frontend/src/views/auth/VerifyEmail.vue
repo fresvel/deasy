@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-md w-full bg-white rounded-[2rem] shadow-xl shadow-slate-300/50 p-5 sm:p-12 border border-slate-200 relative overflow-hidden">
+    <div class="max-w-md w-full bg-white rounded-4xl shadow-xl shadow-slate-300/50 p-5 sm:p-12 border border-slate-200 relative overflow-hidden">
       
       <!-- Go back button -->
       <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-sky-500/40 rounded-lg pr-2">
@@ -20,7 +20,7 @@
       </div>
 
       <div class="mb-8 flex justify-center w-full">
-        <div class="flex justify-between gap-2 sm:gap-4 w-full max-w-full sm:max-w-[22rem] px-2 sm:px-0">
+        <div class="flex justify-between gap-2 sm:gap-4 w-full max-w-full sm:max-w-88 px-2 sm:px-0">
           <input
             v-for="(digit, index) in code"
             :key="index"

@@ -1,126 +1,118 @@
 <template>
   <div :class="rootClasses">
-    <div class="flex flex-col gap-2">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">
-            {{ embedded ? 'Firma documental' : 'Firmas electrónicas' }}
-          </h2>
-          <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
-            {{ workflowSignContext
-              ? 'Estás en una sesión de firma documental. Carga el PDF correspondiente y completa la firma con tu certificado.'
-              : 'Carga documentos y define las areas de estampado para la firma.' }}
-          </p>
-        </div>
-        <div v-if="pdfReady" class="sm:flex-shrink-0">
-          <PdfDropField
-            variant="inline"
-            title=""
-            action-text="Cambiar PDF"
-            help-text="Selecciona otro PDF"
-            :icon="IconFileUpload"
-            input-id="change-pdf-input"
-            @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
-          />
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="workflowSignContext"
-      class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
-    >
-      <div class="font-semibold">Sesión documental activa</div>
-      <div class="mt-1 text-sky-800">
-        Documento:
-        <span class="font-semibold">{{ workflowSignContext.documentTitle || `Documento #${workflowSignContext.documentVersionId}` }}</span>
-        · Versión
-        <span class="font-semibold">{{ workflowSignContext.documentVersionLabel || workflowSignContext.documentVersionId }}</span>
-      </div>
-      <div class="mt-1 text-sky-800">
-        Solicitud de firma:
-        <span class="font-semibold">#{{ workflowSignContext.signatureRequestId }}</span>
-      </div>
-      <div v-if="workflowPdfStatus.message" class="mt-2" :class="workflowPdfStatus.type === 'error' ? 'text-rose-700' : workflowPdfStatus.type === 'success' ? 'text-emerald-700' : 'text-sky-800'">
-        {{ workflowPdfStatus.message }}
-      </div>
-    </div>
-
-    <div v-if="pdfReady" class="flex flex-col gap-4 mt-4 border-b border-slate-100 pb-4">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex flex-wrap items-center gap-3">
+    <div v-if="pdfReady" class="flex flex-col gap-4 mb-6 animate-fade-in relative z-20">
+      
+      <!-- Top Row: Back, Workflow Info & Settings -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-sm p-3 sm:p-4 rounded-2xl">
+        <div class="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+            class="shrink-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
             title="Regresar"
-            aria-label="Regresar"
             @click="goBackToStart"
           >
             <IconArrowLeft class="w-5 h-5" />
           </button>
-          <div class="flex items-center gap-3 flex-wrap">
-            <label class="text-sm font-semibold text-slate-600">Modo</label>
-            <select
-              v-model="selectionMode"
-              class="block min-w-[12rem] rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-              @change="setSelectionMode(selectionMode)"
-            >
-              <option value="drag">Manual</option>
-              <option value="preset">Predefinida</option>
-            </select>
+
+          <!-- Status / Action Area -->
+          <div v-if="workflowSignContext" class="flex flex-col pl-1 sm:pl-0 border-l-2 sm:border-l-0 border-sky-200">
+            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-sky-600 mb-0.5">Sesión Activa</span>
+            <div class="text-xs sm:text-sm font-semibold text-slate-800 truncate max-w-45 sm:max-w-xs md:max-w-md">
+              {{ workflowSignContext.documentTitle || `Documento #${workflowSignContext.documentVersionId}` }}
+              <span class="text-slate-400 font-normal">· v{{ workflowSignContext.documentVersionLabel || workflowSignContext.documentVersionId }}</span>
+            </div>
+            <div v-if="workflowPdfStatus.message" class="text-[10px] sm:text-xs mt-0.5" :class="workflowPdfStatus.type === 'error' ? 'text-rose-600' : workflowPdfStatus.type === 'success' ? 'text-emerald-600' : 'text-sky-600'">
+              {{ workflowPdfStatus.message }}
+            </div>
+          </div>
+          <div v-else class="text-sm sm:text-base font-bold text-slate-800 border-l sm:border-l-0 pl-3 sm:pl-0 border-slate-200">
+            Firma de Documento
           </div>
         </div>
 
-        <div class="flex items-center justify-center gap-3 flex-wrap xl:flex-nowrap">
-          <button @click="prevPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
-            <IconChevronLeft class="w-6 h-6" />
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Anterior</span>
-          </button>
-          <div class="page-selector flex items-center gap-2 bg-sky-50 text-slate-800 rounded-xl px-4 py-2 font-semibold">
-            <span class="text-sm text-slate-600">Página</span>
-            <input
-              v-model="pageInput"
-              class="page-selector-input w-16 px-2 py-1 rounded-lg bg-white border border-slate-300 text-center text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-              type="number"
-              min="1"
-              :max="totalPages"
-              @keyup.enter="goToPage"
-            />
-            <span class="text-sm">de {{ totalPages }}</span>
-          </div>
-          <button @click="nextPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
-            <IconChevronRight class="w-6 h-6" />
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Siguiente</span>
-          </button>
-        </div>
-
-        <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
-          <button
-            v-if="signMode !== 'token'"
+        <!-- Right Side: Change PDF & Mode Selector -->
+        <div class="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
+          <button 
             type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-red-600 text-red-600 hover:bg-red-50 transition font-semibold text-sm"
-            @click="openDeleteModal"
+            @click="showSignaturesModal = true"
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800 border border-sky-200/60 shadow-sm"
           >
-            Eliminar
+            <IconList class="w-4 h-4" />
+            <span class="hidden sm:inline">Ver campos de firma ({{ visibleFields.length }})</span>
+            <span class="sm:hidden">{{ visibleFields.length }}</span>
           </button>
-          <button
-            v-if="!requestMode"
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-sky-300 text-sky-700 hover:bg-sky-50 transition font-semibold text-sm"
-            @click="submitTokenAction"
-          >
-            Firmar por token
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm"
-            @click="submitAction"
-          >
-            {{ requestMode ? 'Enviar' : 'Firmar' }}
-          </button>
+          
+          <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+          <PdfDropField
+            variant="inline"
+            title=""
+            action-text="Cambiar PDF"
+            help-text=""
+            :icon="IconFileUpload"
+            input-id="change-pdf-input"
+            @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
+            class="change-pdf-compact w-full sm:w-auto"
+          />
         </div>
       </div>
 
+      <!-- Action & Pagination Row (Sticky on Mobile, Regular on Desktop) -->
+      <div class="fixed bottom-4 left-4 right-4 lg:static lg:bottom-auto lg:left-auto lg:right-auto z-50 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 p-3 lg:p-0 bg-white/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border lg:border-0 border-slate-200/80 rounded-[1.25rem] lg:rounded-none shadow-2xl shadow-sky-900/10 lg:shadow-none animate-slide-up lg:animate-none">
+        
+        <!-- Pagination controls -->
+        <div class="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 bg-slate-800 lg:bg-white text-white lg:text-slate-800 p-1.5 rounded-xl shadow-inner lg:shadow-sm border border-slate-700 lg:border-slate-200 w-full sm:w-auto">
+          <button @click="prevPageBtn" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 lg:text-slate-500 hover:text-white lg:hover:text-slate-800 hover:bg-slate-700 lg:hover:bg-slate-100 transition-colors">
+            <IconChevronLeft class="w-5 h-5 sm:w-6 sm:h-6" stroke-width="2" />
+          </button>
+          <div class="flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-2 font-semibold text-xs sm:text-sm">
+            <span class="hidden sm:inline">Pág</span>
+            <input
+              v-model="pageInput"
+              class="w-10 sm:w-12 px-1 text-center bg-slate-900 lg:bg-slate-50 border border-slate-600 lg:border-slate-300 rounded-md py-1 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+              type="number" min="1" :max="totalPages"
+              @keyup.enter="goToPage"
+            />
+            <span class="text-slate-400 lg:text-slate-500 whitespace-nowrap">de {{ totalPages }}</span>
+          </div>
+          <button @click="nextPageBtn" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 lg:text-slate-500 hover:text-white lg:hover:text-slate-800 hover:bg-slate-700 lg:hover:bg-slate-100 transition-colors">
+            <IconChevronRight class="w-5 h-5 sm:w-6 sm:h-6" stroke-width="2" />
+          </button>
+        </div>
+
+        <!-- Primary Actions -->
+        <div class="flex items-center w-full sm:w-auto justify-end gap-2 sm:gap-3">
+          <button
+            v-if="signMode !== 'token'"
+            type="button"
+            class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-rose-600 bg-rose-50/80 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 font-bold text-xs sm:text-sm transition-all shadow-sm"
+            @click="openDeleteModal"
+            title="Eliminar PDF actual"
+          >
+            <IconTrash class="w-4 h-4 sm:w-5 sm:h-5" stroke-width="2" />
+            <span class="hidden sm:inline">Eliminar</span>
+          </button>
+
+          <button
+            v-if="!requestMode"
+            type="button"
+            class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl text-indigo-700 bg-indigo-50/80 border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 font-bold text-xs sm:text-sm transition-all shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+            @click="submitTokenAction"
+          >
+            <IconKey class="w-4 h-4 sm:w-5 sm:h-5" stroke-width="2" />
+            <span class="whitespace-nowrap">Por Token</span>
+          </button>
+
+          <button
+            type="button"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 rounded-xl bg-linear-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 active:scale-95 transform text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/40 transition-all border border-sky-600/50 focus:ring-2 focus:ring-sky-500/30 outline-none"
+            @click="submitAction"
+          >
+            <IconSignature v-if="!requestMode" class="w-5 h-5" stroke-width="2" />
+            <IconSend v-else class="w-5 h-5" stroke-width="2" />
+            <span class="whitespace-nowrap">{{ requestMode ? 'Enviar Solicitud' : 'Firmar Documento' }}</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="workspaceMode === 'multi'" class="mt-4">
@@ -134,164 +126,260 @@
       />
     </div>
 
-    <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
-      <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
+    <div v-else-if="!pdfReady" class="mt-4 mb-10 overflow-hidden animate-fade-in">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Empezar a firmar</h2>
+        <p class="text-slate-500 mt-2 text-base max-w-2xl">
+          Selecciona un documento PDF para comenzar a firmar individualmente, o explora las herramientas avanzadas para envío, validación y firma masiva.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <PdfDropField
-            title="Firmar documento"
-            action-text="Seleccionar documento"
-            help-text="Arrastra y suelta o selecciona un PDF."
-            :icon="IconSignature"
-            input-id="sign-pdf-input"
-            @files-selected="onPdfDropFiles($event, 'sign')"
-          />
-        </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en base de datos</h3>
-          <div class="flex flex-col items-center justify-center flex-grow">
-            <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
-              Próximamente
-            </button>
-            <p class="text-slate-500 text-xs mt-3 text-left">Se mostraran solicitudes pendientes con detalles del documento.</p>
+        <!-- MAIN ACTION: Firmar individual (Colspan 8) -->
+        <div class="lg:col-span-8 group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-center min-h-80">
+          <div class="absolute -right-24 -top-24 w-72 h-72 bg-sky-50 rounded-full blur-3xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+          
+          <div class="relative z-10 flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-sky-50 border border-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3">
+              <IconSignature class="w-8 h-8" stroke-width="1.5" />
+            </div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">Firmar un documento</h3>
+            <p class="text-slate-500 mb-8 max-w-md">Arrastra y suelta tu archivo PDF aquí o explora tus archivos locales para firmarlo al instante.</p>
+            
+            <div class="w-full max-w-lg mx-auto">
+              <PdfDropField
+                variant="card"
+                action-text="Examinar archivos"
+                help-text="Solo se admiten documentos en formato .pdf"
+                input-id="sign-pdf-input"
+                @files-selected="onPdfDropFiles($event, 'sign')"
+                class="w-full"
+              />
+            </div>
           </div>
-        </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <PdfDropField
-            title="Solicitar firmas"
-            action-text="Iniciar solicitud"
-            help-text="Envía el documento a otros usuarios."
-            :icon="IconSend"
-            input-id="request-pdf-input"
-            @files-selected="onPdfDropFiles($event, 'request')"
-          />
-        </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <PdfDropField
-            title="Validar documento"
-            action-text="Validar documento"
-            help-text="Verifica firmas y estado del documento."
-            :icon="IconShieldCheck"
-            input-id="validate-pdf-input"
-            @files-selected="onPdfDropFiles($event, 'validate')"
-          />
         </div>
 
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Multifirmador</h3>
-          <div class="flex flex-col items-center justify-center flex-grow">
-            <div class="inline-flex items-center justify-center rounded-2xl bg-sky-50 p-4 text-sky-700 border border-sky-100 mb-4">
-              <IconFiles class="w-8 h-8" />
+        <!-- SECONDARY ACTIONS -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+          
+          <!-- Multifirmador -->
+          <div class="bg-white border border-slate-200 hover:border-indigo-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer h-full flex flex-col justify-center" @click="openMultiSigner">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10 flex items-start gap-4">
+              <div class="shrink-0 w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <IconFiles class="w-6 h-6" stroke-width="1.5" />
+              </div>
+              <div>
+                <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Firma múltiple</h4>
+                <p class="text-sm text-slate-500 mb-3 leading-relaxed">Aplica tu firma sobre múltiples documentos en un solo paso.</p>
+                <div class="inline-flex items-center text-sm font-semibold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                  Abrir herramienta <IconChevronRight class="w-4 h-4 ml-1" />
+                </div>
+              </div>
             </div>
-            <button
-              type="button"
-              class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm"
-              @click="openMultiSigner"
-            >
-              Abrir multifirmador
-            </button>
-            <p class="text-slate-500 text-xs mt-3 text-left">
-              Aquí se integrará la firma masiva por token o coordenadas sin afectar el flujo actual.
-            </p>
           </div>
+
+          <!-- Solicitar/Enviar -->
+          <div class="bg-white border border-slate-200 border-dashed hover:border-emerald-300 rounded-3xl p-6 shadow-sm transition-all duration-300 relative group">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 w-12 h-12 bg-emerald-50 text-emerald-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <IconSend class="w-6 h-6" stroke-width="1.5" />
+              </div>
+              <div class="flex-1 w-full">
+                <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Solicitar firmas</h4>
+                <p class="text-sm text-slate-500 mb-3 leading-relaxed">Carga un PDF y envíalo para que otros lo firmen.</p>
+                <div class="w-full">
+                  <PdfDropField
+                    variant="inline"
+                    action-text="Subir PDF"
+                    input-id="request-pdf-input"
+                    @files-selected="onPdfDropFiles($event, 'request')"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
-      <p v-if="uploadError" class="text-red-500 font-medium mt-4 text-sm">{{ uploadError }}</p>
+
+      <!-- BOTTOM ROW / TERTIARY ACTIONS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        
+        <!-- Validar Documento -->
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center sm:items-start gap-5 group">
+           <div class="shrink-0 w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              <IconShieldCheck class="w-7 h-7" stroke-width="1.5" />
+           </div>
+           <div class="flex-1 w-full text-center sm:text-left">
+             <h4 class="text-lg font-bold text-slate-800 mb-1">Validar un documento</h4>
+             <p class="text-sm text-slate-500 mb-4">Verifica la integridad y validez de las firmas contenidas en un documento PDF.</p>
+             <PdfDropField
+                variant="inline"
+                action-text="Cargar documento a validar"
+                input-id="validate-pdf-input"
+                @files-selected="onPdfDropFiles($event, 'validate')"
+              />
+           </div>
+        </div>
+
+        <!-- Buscar BD -->
+        <div class="bg-slate-50/50 border border-slate-200 border-dashed rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5 opacity-70 cursor-not-allowed">
+           <div class="shrink-0 w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center">
+              <IconSearch class="w-7 h-7" stroke-width="1.5" />
+           </div>
+           <div class="text-center sm:text-left">
+             <div class="inline-flex px-2.5 py-0.5 rounded shadow-sm border border-slate-200/60 text-[10px] font-bold bg-white text-slate-500 uppercase tracking-wider mb-2">Próximamente</div>
+             <h4 class="text-lg font-bold text-slate-600 mb-1">Buscar en base de datos</h4>
+             <p class="text-sm text-slate-500 leading-relaxed">Selecciona solicitudes pendientes directamente desde el sistema, sin archivos locales.</p>
+           </div>
+        </div>
+      </div>
+      
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
+        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+          <IconX class="w-5 h-5 shrink-0" />
+        </div>
+        {{ uploadError }}
+      </div>
     </div>
 
     <div v-else class="mt-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[75vh] overflow-y-auto overflow-x-hidden relative pb-28 lg:pb-6">
         <div class="w-full relative flex justify-center" ref="colPdf">
-          <div class="relative shadow-sm border border-slate-200" ref="pdfViewer">
+          <div 
+            class="relative shadow-sm border border-slate-200" 
+            ref="pdfViewer"
+            @mousemove="handleMouseMove"
+            @mouseleave="handleMouseLeave"
+          >
             <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
-            <div
+            
+            <!-- Previsualización de hover interactiva -->
+            <SignatureBox
+              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none' && !isHoveringField"
+              :is-preview="true"
+              :left="parseFloat(previewBoxStyle.left)"
+              :top="parseFloat(previewBoxStyle.top)"
+              :width="parseFloat(previewBoxStyle.width)"
+              :height="parseFloat(previewBoxStyle.height)"
+              :label="currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Firma'"
+            />
+
+            <SignatureBox
               v-for="field in currentPageFields"
               :key="field.id"
-              class="box saved-box"
-              :class="{ 'saved-box--active': field.id === lastFieldId }"
-              :data-field-id="field.id"
-              :style="getFieldBoxStyle(field)"
-              @mousedown.stop
-              @click.stop="selectField(field.id)"
+              :field="field"
+              :is-active="field.id === lastFieldId"
+              :pdf-scale="pdfScale"
+              :display-scale="displayScaleRef"
+              :page-height-pdf="pageHeightPdf"
+              :page-width-pdf="pageWidthPdf"
+              :label="field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar'"
+              @select="selectField(field.id)"
+              @delete="requestDeleteField(field.id)"
+              @update:position="updateFieldCoordinates"
+              @drag-start="isDragging = true"
+              @drag-end="isDragging = false"
+              @hover-enter="isHoveringField = true"
+              @hover-leave="isHoveringField = false"
             >
-              <div v-if="field.signer" class="saved-box-signer">
-                {{ field.signer.first_name }} {{ field.signer.last_name }}
-              </div>
-              <div v-if="signMode !== 'token'" class="saved-box-actions" @mousedown.stop @click.stop>
-                <BtnDelete message="Eliminar" @onpress="requestDeleteField(field.id)" />
+              <template #actions>
                 <button
+                  v-if="signMode !== 'token'"
                   type="button"
-                  class="saved-box-action-btn saved-box-sign-btn"
+                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
                 >
-                  <IconSignature class="w-4 h-4" />
+                  <IconSignature class="w-3.5 h-3.5" />
                 </button>
+              </template>
+            </SignatureBox>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <AdminModalShell
+      controlled
+      :open="showSignaturesModal"
+      @close="showSignaturesModal = false"
+      labelled-by="signaturesModalLabel"
+      title="Campos de firma"
+      size="lg"
+    >
+      <div v-if="!visibleFields.length" class="text-center py-10 px-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-slate-400 rounded-full mb-4">
+          <IconSignature class="w-8 h-8" />
+        </div>
+        <h3 class="text-xl font-semibold text-slate-800 mb-2">No hay firmas</h3>
+        <p class="text-slate-500 max-w-sm mx-auto leading-relaxed">
+          Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.
+        </p>
+      </div>
+
+      <div v-else class="flex flex-col gap-3 py-2">
+        <div
+          v-for="field in visibleFields"
+          :key="field.id"
+          class="bg-white border border-slate-200 rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
+          :class="{ 'ring-2 ring-sky-500 border-transparent': field.id === lastFieldId }"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
+            
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center font-bold">
+                <IconSignature class="w-5 h-5" />
+              </div>
+              <div>
+                <div v-if="field.signer" class="font-semibold text-slate-800 text-base mb-0.5">
+                  {{ field.signer.first_name }} {{ field.signer.last_name }}
+                </div>
+                <div v-else class="font-semibold text-slate-800 text-base mb-0.5">
+                  Firmante no asignado
+                </div>
+                
+                <div v-if="field.signer" class="text-sm text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                  <span v-if="field.signer.email" class="inline-flex items-center gap-1">
+                    <span class="font-medium text-slate-400">Email:</span> {{ field.signer.email }}
+                  </span>
+                  <span v-if="field.signer.cedula" class="inline-flex items-center gap-1">
+                    <span class="font-medium text-slate-400">CI:</span> {{ field.signer.cedula }}
+                  </span>
+                </div>
               </div>
             </div>
+
+            <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-slate-100 sm:pl-5">
+              <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-center">
+                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pág</span>
+                <span class="block text-lg font-bold text-slate-800 leading-none mt-0.5">{{ field.page }}</span>
+              </div>
+              
+              <div class="text-xs text-slate-500 grid grid-cols-2 gap-x-4 gap-y-1">
+                <div>x/y: <span class="font-medium text-slate-700">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
+                <div>w/h: <span class="font-medium text-slate-700">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
+              </div>
+            </div>
+            
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="pdfReady" class="text-center font-medium text-slate-500 mt-2 text-sm" ref="coordinatesDisplay">
-      {{ signMode === 'token'
-        ? 'Se muestran las coincidencias detectadas del token en el PDF.'
-        : selectionMode === 'preset'
-        ? 'Haz clic en el PDF para crear el campo de firma.'
-        : 'Haz clic y arrastra en el PDF para crear el campo de firma.' }}
-    </div>
-
-    <div v-if="pdfReady && visibleFields.length" class="mt-6">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-        <h4 class="text-lg font-semibold text-slate-800 mb-4 text-left">
-          {{ signMode === 'token' ? 'Coincidencias detectadas del token' : 'Campos agregados' }}
-        </h4>
-        <div class="flex flex-col gap-3">
-          <div
-            v-for="field in visibleFields"
-            :key="field.id"
-            class="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer gap-4"
-            :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
-            @click="selectField(field.id)"
+          
+          <button
+            v-if="signMode !== 'token'"
+            @click.stop="requestDeleteField(field.id)"
+            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
+            title="Eliminar campo"
           >
-            <span class="text-sm text-slate-700">
-              <span class="font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded mr-1">Pag {{ field.page }}</span>
-              <span class="mx-2 text-slate-400">|</span>
-              x1={{ formatCoord(field.x1) }}, y1={{ formatCoord(field.y1) }}, 
-              x2={{ formatCoord(field.x2) }}, y2={{ formatCoord(field.y2) }}
-              <template v-if="field.signer">
-                <span class="mx-2 text-slate-400">|</span>
-                <span class="text-sky-700 font-medium">
-                  {{ field.signer.first_name }} {{ field.signer.last_name }}
-                </span>
-              </template>
-            </span>
-            <button
-              v-if="signMode !== 'token'"
-              type="button"
-              class="inline-flex px-3 py-1.5 text-sm rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium"
-              @click.stop="requestDeleteField(field.id)"
-            >
-              Eliminar
-            </button>
-          </div>
+            <IconTrash class="w-5 h-5" stroke-width="1.5" />
+          </button>
         </div>
       </div>
-    </div>
-    
-    <div v-if="pdfReady && visibleFields.length" class="mt-6 mb-8">
-      <div class="bg-slate-800 text-slate-300 rounded-2xl shadow-sm border border-slate-700 p-4">
-        <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">JSON Output</div>
-        <pre class="text-xs whitespace-pre-wrap overflow-auto font-mono custom-scrollbar">{{ fieldsJson }}</pre>
-      </div>
-    </div>
+    </AdminModalShell>
 
   </div>
 
@@ -300,52 +388,59 @@
     id="deleteFieldsModal"
     labelled-by="delete-fields-modal-title"
     title="Eliminar campos"
-    size="xl"
+    size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-            <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
-            <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-              <div class="flex flex-col gap-4">
-                <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                  <label class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
-                  <select v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
-                    <option value="all">Todas</option>
-                    <option v-for="page in pagesWithFields" :key="page" :value="page">
-                      Pagina {{ page }}
-                    </option>
-                  </select>
-                </div>
-                <div class="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                  <div
-                    v-for="field in filteredFields"
-                    :key="field.id"
-                    class="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer"
-                    :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
-                    @mouseenter="selectField(field.id, true)"
-                    @focus="selectField(field.id, true)"
-                  >
-                    <span class="text-sm font-medium text-slate-800 flex flex-col gap-1">
-                      {{ field.name }}
-                      <span class="text-slate-500 text-xs font-normal">
-                        {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
-                      </span>
-                    </span>
-                    <button type="button" class="inline-flex px-3 py-1.5 text-xs rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium" @click.stop="requestDeleteField(field.id)">
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 min-h-[320px] flex flex-col relative sticky top-0">
-                <h6 class="text-sm font-semibold text-slate-700 mb-3">Previsualizacion del área</h6>
-                <div class="flex-grow flex items-center justify-center bg-slate-200/50 rounded-lg overflow-hidden border border-slate-200 relative">
-                  <canvas ref="previewCanvas" class="max-w-full block bg-white"></canvas>
-                  <p v-if="!selectedField" class="text-slate-500 text-sm absolute">
-                    Selecciona un campo.
-                  </p>
-                </div>
-              </div>
+    <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
+    <div v-else class="flex flex-col gap-4">
+      <div class="flex items-center justify-between gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+        <label class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
+        <select v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+          <option value="all">Todas</option>
+          <option v-for="page in pagesWithFields" :key="page" :value="page">
+            Pagina {{ page }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="flex flex-col gap-2 max-h-100 overflow-y-auto pr-2 custom-scrollbar">
+        <div
+          v-for="field in filteredFields"
+          :key="field.id"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
+          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+        >
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-slate-800">{{ field.name }}</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
+            <span class="text-slate-500 text-xs font-medium">
+              {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
+            </span>
+          </div>
+          
+          <div class="flex items-center gap-2 sm:self-center self-end">
+            <button 
+              type="button" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
+              @click.stop="goToFieldLocation(field.id)"
+            >
+              <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
+              Ver en documento
+            </button>
+            <button 
+              type="button" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2 focus:ring-red-200" 
+              @click.stop="requestDeleteField(field.id)"
+            >
+              <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </AdminModalShell>
 
   <AdminModalShell
@@ -412,7 +507,7 @@
         </div>
       </div>
 
-      <div class="mt-2 min-h-[260px] max-h-[360px] overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
+      <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
         <div v-if="isSearchingUsers" class="text-slate-500 text-sm text-center py-10 font-medium">Buscando usuarios...</div>
         <div v-else-if="userResults.length === 0" class="text-slate-500 text-sm text-center py-10 font-medium">
           No se han encontrado resultados.
@@ -467,9 +562,6 @@
       ¿Deseas eliminar este campo de firma? Esta acción no se puede deshacer.
     </p>
     <template #footer>
-      <AdminButton variant="outlinePrimary" data-modal-dismiss>
-        Cancelar
-      </AdminButton>
       <AdminButton variant="outlineDanger" @click="confirmDeleteField">
         Eliminar
       </AdminButton>
@@ -646,20 +738,236 @@
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
   </AdminModalShell>
+
+  <AdminModalShell
+    ref="validationResultModal"
+    labelled-by="validation-result-modal-title"
+    title="Validar documento"
+    size="xl"
+    :show-close-button="false"
+    content-class="rounded-3xl shadow-xl border-0 overflow-hidden"
+    header-class="bg-slate-50 border-b border-slate-100"
+    body-class="p-0 bg-slate-50 relative"
+  >
+    <template #title>
+      <div class="flex items-center pb-0">Validar documento</div>
+      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-slate-100/50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
+        <IconX class="w-4 h-4" stroke-width="2.5" />
+      </button>
+    </template>
+    <div class="px-6 pt-6 pb-4">
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
+        <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
+          <label class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
+            <IconSearch class="w-4 h-4 text-sky-600" /> Buscar cédula en las firmas
+          </label>
+          <div class="relative max-w-full md:max-w-sm">
+            <input
+              v-model="validationCedula"
+              type="text"
+              class="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-50"
+              placeholder="Ej. 0999999999 (Opcional)"
+            />
+          </div>
+        </div>
+        <div class="relative z-10 w-full md:w-auto">
+          <button 
+            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-sky-600 text-sky-700 hover:bg-sky-50 hover:border-sky-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isValidatingDocument || !validationFile" 
+            @click="validateDocument"
+          >
+            <IconRefresh v-if="isValidatingDocument" class="w-4 h-4 animate-spin" />
+            <IconShieldCheck v-else class="w-4 h-4" />
+            {{ isValidatingDocument ? 'Validando...' : 'Revalidar documento' }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-sm animate-fade-in">
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+        <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
+      </div>
+
+      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+          <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
+            <div class="p-1.5 bg-slate-100 rounded-lg"><IconSignature class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
+          </div>
+          <div class="text-3xl font-black text-slate-800 z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
+        </div>
+
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+          <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
+          <div class="flex items-center gap-2 text-emerald-700 mb-1 z-10">
+            <div class="p-1.5 bg-emerald-100 rounded-lg"><IconCheck class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Firmas Válidas</div>
+          </div>
+          <div class="text-3xl font-black text-emerald-900 z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+        </div>
+
+        <div class="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-100 rounded-full blur-xl opacity-50"></div>
+          <div class="flex items-center gap-2 text-cyan-700 mb-1 z-10">
+            <div class="p-1.5 bg-cyan-100 rounded-lg"><IconSearch class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Coincidencias</div>
+          </div>
+          <div class="text-3xl font-black text-cyan-900 z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
+        </div>
+
+        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm flex flex-col justify-center relative overflow-hidden">
+          <div class="flex items-center gap-2 text-indigo-700 mb-2 z-10">
+            <div class="p-1.5 bg-indigo-100 rounded-lg"><IconFileCheck class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Documento Activo</div>
+          </div>
+          <div class="text-sm font-bold text-indigo-900 truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
+        </div>
+      </div>
+
+      <div
+        v-if="validationResult?.summary?.timestampCount"
+        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-sm animate-fade-in"
+      >
+        <IconAlertTriangle class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+        <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
+      </div>
+
+      <div
+        v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
+        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-sm animate-fade-in"
+      >
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+        <div class="flex flex-col gap-1">
+          <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="bg-white border-t border-slate-200 relative min-h-50">
+      <Loading 
+        :visible="isValidatingDocument" 
+        text="Validando firmas..." 
+        subText="Por favor espere, esto puede tardar unos segundos dependiendo del tamaño de su documento." 
+        :overlay="true" 
+      />
+      <AppDataTable
+        :fields="validationTableFields"
+        :rows="validationResult?.signatures || []"
+        :row-key="(row) => `${row.index}-${row.fieldName || row.signerCedula || 'firma'}`"
+        class="border-0 shadow-none rounded-none"
+      >
+        <template #cell="{ row, field }">
+          <template v-if="field.name === 'validLabel'">
+            <div class="flex items-center justify-center">
+              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
+                <IconCheck class="w-3.5 h-3.5" /> Válida
+              </span>
+              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
+                <IconX class="w-3.5 h-3.5" /> Inválida
+              </span>
+            </div>
+          </template>
+          <template v-else-if="field.name === 'certificateAuthority'">
+            <div class="flex items-center justify-center">
+              <button
+                v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
+                @click="openCertificateAuthorityModal(row)"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-sky-100 hover:text-sky-600 transition-colors"
+                title="Ver entidad certificadora"
+              >
+                <IconCertificate class="w-4 h-4" />
+              </button>
+              <span v-else class="text-slate-400 text-xs font-semibold uppercase">N/A</span>
+            </div>
+          </template>
+          <template v-else-if="field.name === 'signerCedula'">
+            <div class="flex flex-col gap-1.5 items-start">
+              <span class="font-semibold text-slate-800">{{ row.signerCedula }}</span>
+              <span v-if="row.matchesCedula" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold uppercase tracking-wider border border-cyan-200">
+                <IconCheck class="w-3 h-3" /> Coincide
+              </span>
+            </div>
+          </template>
+          <template v-else-if="field.name === 'details'">
+            <details class="min-w-[16rem] group">
+              <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-sky-600 hover:text-sky-700 transition flex items-center gap-1 list-none">
+                <IconInfoCircle class="w-4 h-4" />
+                <span class="group-open:hidden">Ver técnico</span>
+                <span class="hidden group-open:inline">Ocultar</span>
+              </summary>
+              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+            </details>
+          </template>
+          <template v-else>
+            <span class="text-sm text-slate-600 font-medium">{{ row[field.name] }}</span>
+          </template>
+        </template>
+        <template #empty>
+          <div class="flex flex-col items-center justify-center py-12 px-4">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+              <IconShieldCheck class="w-8 h-8" />
+            </div>
+            <h4 class="text-lg font-bold text-slate-700 mb-1">Sin firmas detectadas</h4>
+            <p class="text-sm text-slate-500 text-center max-w-md">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</p>
+          </div>
+        </template>
+      </AppDataTable>
+    </div>
+  </AdminModalShell>
+
+  <AdminModalShell
+    ref="certificateAuthorityModal"
+    labelled-by="certificate-authority-modal-title"
+    title="Entidad certificadora"
+    size="lg"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+  >
+    <div class="flex flex-col gap-4">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Entidad</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-800">
+          {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}
+        </div>
+      </div>
+
+      <div
+        v-if="selectedCertificateAuthority?.extras?.issuer"
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+      >
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Issuer completo</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+          {{ selectedCertificateAuthority.extras.issuer }}
+        </div>
+      </div>
+
+      <div
+        v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+      >
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
+        <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
+      </div>
+    </div>
+  </AdminModalShell>
 </template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps } from 'vue';
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey} from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
-  import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
+  import AppDataTable from '@/components/AppDataTable.vue';
   import PdfDropField from '@/components/firmas/PdfDropField.vue';
+  import SignatureBox from '@/components/firmas/SignatureBox.vue';
   import UserCertificatesPanel from '@/components/firmas/UserCertificatesPanel.vue';
   import AdminModalShell from '@/components/AppModalShell.vue';
   import AdminButton from '@/components/AppButton.vue';
+  import Loading from '@/components/Loading.vue';
   import MultiSignerPanel from '@/components/firmas/MultiSignerPanel.vue';
 
   const props = defineProps({
@@ -677,7 +985,10 @@
   const currentPage = ref(1);
   const pageInput = ref(1);
   const totalPages = ref(0);
-  const selectionMode = ref('preset');
+  const pageHeightPdf = ref(0);
+  const pageWidthPdf = ref(0);
+  const displayScaleRef = ref(1);
+  const showSignaturesModal = ref(false);
   const uploadedFiles = ref([]);
   const uploadError = ref('');
   const pdfReady = ref(false);
@@ -688,6 +999,8 @@
   const confirmDeleteModal = ref(null);
   const signCertModal = ref(null);
   const signResultModal = ref(null);
+  const validationResultModal = ref(null);
+  const certificateAuthorityModal = ref(null);
   const certificatesManagerModal = ref(null);
   const certificatesPanelRef = ref(null);
   const signerInput = ref('');
@@ -710,7 +1023,6 @@
   const lastFieldId = ref(null);
   const fieldCounter = ref(1);
   const visibleFields = computed(() => (signMode.value === 'token' ? tokenPreviewFields.value : fields.value));
-  const fieldsJson = computed(() => JSON.stringify(visibleFields.value, null, 2));
   const previewCanvas = ref(null);
   const selectedField = ref(null);
   const filterPage = ref('all');
@@ -724,7 +1036,7 @@
     return Array.from(pages).sort((a, b) => a - b);
   });
   let viewport = null;
-  let pdfScale = 1.75; 
+  const pdfScale = ref(1.75); 
   let deleteModalInstance = null;
   let assignSignerModalInstance = null;
   let confirmDeleteModalInstance = null;
@@ -759,6 +1071,12 @@
   const signedFieldsCount = ref(0);
   const workflowSignContext = ref(null);
   const workflowPdfStatus = ref({ type: 'info', message: '' });
+  const validationFile = ref(null);
+  const validationCedula = ref('');
+  const isValidatingDocument = ref(false);
+  const validationError = ref('');
+  const validationResult = ref(null);
+  const selectedCertificateAuthority = ref(null);
   const multiBatchRequest = ref(null);
   const activeMultiBatchJob = ref(null);
   const activeMultiBatchJobId = ref('');
@@ -767,8 +1085,23 @@
   const isLoadingCertificates = ref(false);
   let signCertModalInstance = null;
   let signResultModalInstance = null;
+  let validationResultModalInstance = null;
+  let certificateAuthorityModalInstance = null;
   let certificatesManagerModalInstance = null;
   let multiBatchPollTimer = null;
+  const validationTableFields = [
+    { name: 'signerCedula', label: 'Cédula de Identidad' },
+    { name: 'signerName', label: 'Nombres Apellidos' },
+    { name: 'reasonLocation', label: 'Razón / Localización' },
+    { name: 'signingTime', label: 'Fecha de Firmado' },
+    { name: 'timestampStatus', label: 'Estampa de Tiempo' },
+    { name: 'certificateAuthority', label: 'Entidad Certificadora' },
+    { name: 'certificateIssuedAt', label: 'Fecha de Emisión' },
+    { name: 'certificateExpiresAt', label: 'Fecha de Expiración' },
+    { name: 'revocationStatus', label: 'Fecha de Revocación' },
+    { name: 'validLabel', label: 'Válido' },
+    { name: 'details', label: 'Detalles' }
+  ];
   const currentSignatureMarker = computed(() => {
     if (currentUser.value?.signatureMarker) return currentUser.value.signatureMarker;
     const rawToken = currentUser.value?.signatureToken || currentUser.value?.token || '';
@@ -787,6 +1120,13 @@
     }
   };
 
+  const updateFieldCoordinates = (updatedField) => {
+    const idx = fields.value.findIndex(f => f.id === updatedField.id);
+    if (idx !== -1) {
+      fields.value[idx] = updatedField;
+    }
+  };
+
   const clearAllBoxes = () => {
     removeBox();
   };
@@ -801,12 +1141,12 @@
 
   const toPdfUnits = (cssValue) => {
     const displayScale = getDisplayScale();
-    return (cssValue * displayScale) / pdfScale;
+    return (cssValue * displayScale) / pdfScale.value;
   };
 
   const toCssUnits = (pdfUnits) => {
     const displayScale = getDisplayScale();
-    return (pdfUnits * pdfScale) / displayScale;
+    return (pdfUnits * pdfScale.value) / displayScale;
   };
 
   const updateCoordinates = (left, top, right, bottom, rectHeight) => {
@@ -814,8 +1154,6 @@
     const y1 = toPdfUnits(rectHeight - top);
     const x2 = toPdfUnits(right);
     const y2 = toPdfUnits(rectHeight - bottom);
-    coordinatesDisplay.value.textContent =
-      `Coordenadas Cartesianas: Superior Izquierda (x1=${x1}, y1=${y1}), Inferior Derecha (x2=${x2}, y2=${y2})`;
     lastSelection.value = {
       page: currentPage.value,
       x1,
@@ -840,62 +1178,72 @@
     return box;
   };
 
+
+
   const handleMouseDown = (event) => {
+    isMouseOverPdf.value = false; // Hide preview temporarily on click
     if (!pdfDoc || !pdfViewer.value) return;
 
     const rect = getViewerRect();
     const ofx = rect.left + window.scrollX;
     const ofy = rect.top + window.scrollY;
+    // ... rest of code
     const currentX = event.pageX - ofx;
     const currentY = event.pageY - ofy;
 
-    if (selectionMode.value === 'preset') {
-      const presetWidth = toCssUnits(FIELD_WIDTH);
-      const presetHeight = toCssUnits(FIELD_HEIGHT);
-      const maxLeft = Math.max(0, rect.width - presetWidth);
-      const maxTop = Math.max(0, rect.height - presetHeight);
-      const left = Math.min(Math.max(currentX, 0), maxLeft);
-      const top = Math.min(Math.max(currentY, 0), maxTop);
-      const box = createBox(left, top, presetWidth, presetHeight);
-      updateCoordinates(left, top, left + presetWidth, top + presetHeight, rect.height);
-      activeBox = box;
-      if (requestMode.value) {
-        openAssignSignerModal();
-      } else {
-        saveFieldWithSigner(currentUser.value);
-      }
-      return;
+    const presetWidth = toCssUnits(FIELD_WIDTH);
+    const presetHeight = toCssUnits(FIELD_HEIGHT);
+    const maxLeft = Math.max(0, rect.width - presetWidth);
+    const maxTop = Math.max(0, rect.height - presetHeight);
+    
+    const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+    const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
+      
+    const box = createBox(left, top, presetWidth, presetHeight);
+    updateCoordinates(left, top, left + presetWidth, top + presetHeight, rect.height);
+    activeBox = box;
+    if (requestMode.value) {
+      openAssignSignerModal();
+    } else {
+      saveFieldWithSigner(currentUser.value);
     }
-
-    startX = currentX;
-    startY = currentY;
-    activeBox = createBox(startX, startY, 0, 0);
-    isDragging = true;
   };
 
-  const handleMouseMove = (event) => {
-    if (!isDragging || !activeBox || !pdfViewer.value) return;
+  const isMouseOverPdf = ref(false);
+  const isHoveringField = ref(false);
+  const previewBoxStyle = ref({ display: 'none' });
 
+  const handleMouseMove = (event) => {
+    if (!pdfViewer.value) return;
     const rect = getViewerRect();
+
     const ofx = rect.left + window.scrollX;
     const ofy = rect.top + window.scrollY;
     const currentX = event.pageX - ofx;
     const currentY = event.pageY - ofy;
 
-    const left = Math.max(Math.min(currentX, startX), 0);
-    const top = Math.max(Math.min(currentY, startY), 0);
-    const right = Math.min(Math.max(currentX, startX), rect.width);
-    const bottom = Math.min(Math.max(currentY, startY), rect.height);
+    isMouseOverPdf.value = true;
+    const presetWidth = toCssUnits(FIELD_WIDTH);
+    const presetHeight = toCssUnits(FIELD_HEIGHT);
+    
+    const maxLeft = Math.max(0, rect.width - presetWidth);
+    const maxTop = Math.max(0, rect.height - presetHeight);
+    
+    // Calculate center to place mouse in the middle of the preview
+    const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+    const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
 
-    const width = Math.max(0, right - left);
-    const height = Math.max(0, bottom - top);
+    previewBoxStyle.value = {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${presetWidth}px`,
+      height: `${presetHeight}px`
+    };
+  };
 
-    activeBox.style.left = `${left}px`;
-    activeBox.style.top = `${top}px`;
-    activeBox.style.width = `${width}px`;
-    activeBox.style.height = `${height}px`;
-
-    updateCoordinates(left, top, right, bottom, rect.height);
+  const handleMouseLeave = () => {
+    isMouseOverPdf.value = false;
+    handleMouseUp();
   };
 
   const handleMouseUp = () => {
@@ -933,6 +1281,12 @@
     }
     if (signResultModal.value?.el) {
       signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
+    }
+    if (validationResultModal.value?.el) {
+      validationResultModalInstance = Modal.getOrCreateInstance(validationResultModal.value.el);
+    }
+    if (certificateAuthorityModal.value?.el) {
+      certificateAuthorityModalInstance = Modal.getOrCreateInstance(certificateAuthorityModal.value.el);
     }
     if (certificatesManagerModal.value?.el) {
       certificatesManagerModalInstance = Modal.getOrCreateInstance(certificatesManagerModal.value.el);
@@ -1007,9 +1361,11 @@
       const page = await pdfDoc.getPage(pageNum);
       ctx = pdfCanvas.value.getContext('2d');
       const baseViewport = page.getViewport({ scale: 1 });
+      pageHeightPdf.value = baseViewport.height;
+      pageWidthPdf.value = baseViewport.width;
       const containerWidth = colPdf.value?.clientWidth || baseViewport.width;
-      pdfScale = containerWidth / baseViewport.width;
-      viewport = page.getViewport({ scale: pdfScale });
+      pdfScale.value = containerWidth / baseViewport.width;
+      viewport = page.getViewport({ scale: pdfScale.value });
       pdfCanvas.value.width = viewport.width;
       pdfCanvas.value.height = viewport.height;
       colPdf.value.style.width = '100%';
@@ -1029,6 +1385,7 @@
         viewport
       });
       await renderTask.promise;
+      displayScaleRef.value = getDisplayScale();
       currentPage.value = pageNum;
       pageInput.value = pageNum;
       clearAllBoxes();
@@ -1087,10 +1444,6 @@
       renderPage(target);
     }
 
-    const setSelectionMode = (mode) => {
-      selectionMode.value = mode;
-    }
-
     const resetPdfState = () => {
       pdfDoc = null;
       pdfReady.value = false;
@@ -1099,7 +1452,6 @@
       pageInput.value = 1;
       lastSelection.value = null;
       lastFieldId.value = null;
-      selectionMode.value = 'preset';
     };
 
     const loadPdfFromFile = async (file, mode = 'sign') => {
@@ -1206,12 +1558,97 @@
         uploadError.value = 'El archivo debe ser un PDF.';
         return;
       }
+      if (mode === 'validate') {
+        validationFile.value = file;
+        validateDocument();
+        return;
+      }
       uploadedFiles.value = [{ content: file, isRenaming: false, name: file.name }];
       loadPdfFromFile(file, mode);
     };
 
     const onPdfDropFiles = (files, mode) => {
       onAddFiles(files, mode);
+    };
+
+    const formatValidationDate = (value) => {
+      if (!value) return 'No disponible';
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return String(value);
+      }
+      return parsed.toLocaleString('es-EC');
+    };
+
+    const buildValidationRowsFromPayload = (signatures = []) =>
+      signatures.map((signature) => ({
+        ...signature,
+        signerCedula: signature.signerCedula || 'No disponible',
+        signerName: [
+          signature.firstNames,
+          signature.lastName,
+          signature.secondLastName
+        ].filter(Boolean).join(' ') || signature.signerName || 'No disponible',
+        reasonLocation: [signature.reason, signature.location].filter(Boolean).join(' / ') || 'No disponible',
+        signingTime: formatValidationDate(signature.signingTime),
+        timestampStatus: signature.timestampStatus || 'No',
+        certificateAuthority: signature.certificateAuthority || 'No disponible',
+        certificateIssuedAt: formatValidationDate(signature.certificateIssuedAt),
+        certificateExpiresAt: formatValidationDate(signature.certificateExpiresAt),
+        revocationStatus: signature.revocationStatus || 'No disponible',
+        validLabel: signature.valid ? 'Sí' : 'No'
+      }));
+
+    const openValidationModal = () => {
+      if (!validationResultModal.value?.el) return;
+      validationResultModalInstance = Modal.getOrCreateInstance(validationResultModal.value.el);
+      validationResultModalInstance.show();
+    };
+
+    const openCertificateAuthorityModal = (row) => {
+      selectedCertificateAuthority.value = row;
+      if (!certificateAuthorityModal.value?.el) return;
+      certificateAuthorityModalInstance = Modal.getOrCreateInstance(certificateAuthorityModal.value.el);
+      certificateAuthorityModalInstance.show();
+    };
+
+    const validateDocument = async () => {
+      if (!validationFile.value) {
+        uploadError.value = 'Debes seleccionar un PDF para validarlo.';
+        return;
+      }
+
+      openValidationModal();
+
+      isValidatingDocument.value = true;
+      validationError.value = '';
+      uploadError.value = '';
+      validationResult.value = null;
+      try {
+        const formData = new FormData();
+        formData.append('pdf', validationFile.value);
+        if (validationCedula.value.trim()) {
+          formData.append('cedula', validationCedula.value.trim());
+        }
+        const response = await fetch(API_ROUTES.SIGN_VALIDATE, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: formData
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data?.error || data?.message || 'No se pudo validar el documento.');
+        }
+        validationResult.value = {
+          ...data,
+          signatures: buildValidationRowsFromPayload(data.signatures || [])
+        };
+      } catch (error) {
+        validationError.value = error.message || 'No se pudo validar el documento.';
+        uploadError.value = validationError.value;
+      } finally {
+        isValidatingDocument.value = false;
+      }
     };
 
     const openMultiSigner = () => {
@@ -1434,20 +1871,34 @@
       }
     };
 
-    const getFieldBoxStyle = (field) => {
-      const rect = getViewerRect();
-      const left = toCssUnits(field.x1);
-      const right = toCssUnits(field.x2);
-      const top = rect.height - toCssUnits(field.y1);
-      const bottom = rect.height - toCssUnits(field.y2);
-      return {
-        left: `${left}px`,
-        top: `${top}px`,
-        width: `${Math.max(0, right - left)}px`,
-        height: `${Math.max(0, bottom - top)}px`,
-        position: 'absolute',
-        pointerEvents: 'auto'
-      };
+
+
+    const goToFieldLocation = async (fieldId) => {
+      const field = visibleFields.value.find((item) => item.id === fieldId);
+      if (!field) return;
+
+      if (deleteModalInstance) {
+        deleteModalInstance.hide();
+      }
+
+      if (field.page !== currentPage.value) {
+        await renderPage(field.page);
+      }
+
+      // Add a slight delay to ensure DOM is updated after renderPage
+      nextTick(() => {
+        setTimeout(() => {
+          const boxEl = document.querySelector(`[data-field-id="${fieldId}"]`);
+          if (boxEl) {
+            boxEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // optionally highlight the box temporarily by adding a temporary class
+            boxEl.classList.add('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
+            setTimeout(() => {
+              boxEl.classList.remove('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
+            }, 1500);
+          }
+        }, 100);
+      });
     };
 
     const removeField = (fieldId) => {
@@ -1961,6 +2412,11 @@
       signSuccess.value = false;
       signedMinioPath.value = '';
       signedFieldsCount.value = 0;
+      validationFile.value = null;
+      validationCedula.value = '';
+      isValidatingDocument.value = false;
+      validationError.value = '';
+      validationResult.value = null;
       activeMultiBatchJob.value = null;
       activeMultiBatchJobId.value = '';
       isStartingMultiBatch.value = false;
@@ -2013,84 +2469,7 @@
   max-width: 100%;
 }
 
-:deep(.box) {
-  border: 2px dashed var(--brand-accent, #0ea5e9);
-  position: absolute;
-  background-color: rgba(14, 165, 233, 0.25);
-  border-radius: 5%;
-  z-index: 20;
-}
 
-:deep(.saved-box) {
-  cursor: pointer;
-}
-
-:deep(.saved-box-delete) {
-  z-index: 30;
-}
-
-.saved-box-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(105%, -8%);
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  pointer-events: auto;
-}
-
-.saved-box-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.85rem;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.saved-box-action-btn:hover {
-  background: #f8fafc;
-  color: #0f172a;
-  transform: translateY(-1px);
-}
-
-.saved-box-action-btn:focus-visible {
-  outline: 2px solid rgba(14, 165, 233, 0.35);
-  outline-offset: 2px;
-}
-
-.saved-box-signer {
-  position: absolute;
-  inset: 0.45rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.55rem;
-  border-radius: 0.6rem;
-  background: rgba(15, 23, 42, 0.28);
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  white-space: normal;
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-
-:deep(.saved-box--active) {
-  border-color: var(--brand-accent, #0ea5e9);
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
-}
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
