@@ -2,16 +2,6 @@
   <div :class="rootClasses">
     <div class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">
-            {{ embedded ? 'Firma documental' : 'Firmas electrónicas' }}
-          </h2>
-          <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
-            {{ workflowSignContext
-              ? 'Estás en una sesión de firma documental. Carga el PDF correspondiente y completa la firma con tu certificado.'
-              : 'Carga documentos y define las areas de estampado para la firma.' }}
-          </p>
-        </div>
         <div v-if="pdfReady" class="sm:flex-shrink-0">
           <PdfDropField
             variant="inline"
@@ -134,74 +124,125 @@
       />
     </div>
 
-    <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
-      <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
+    <div v-else-if="!pdfReady" class="mt-4 mb-10 overflow-hidden animate-fade-in">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Empezar a firmar</h2>
+        <p class="text-slate-500 mt-2 text-base max-w-2xl">
+          Selecciona un documento PDF para comenzar a firmar individualmente, o explora las herramientas avanzadas para envío, validación y firma masiva.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <PdfDropField
-            title="Firmar documento"
-            action-text="Seleccionar documento"
-            help-text="Arrastra y suelta o selecciona un PDF."
-            :icon="IconSignature"
-            input-id="sign-pdf-input"
-            @files-selected="onPdfDropFiles($event, 'sign')"
-          />
-        </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en base de datos</h3>
-          <div class="flex flex-col items-center justify-center flex-grow">
-            <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
-              Próximamente
-            </button>
-            <p class="text-slate-500 text-xs mt-3 text-left">Se mostraran solicitudes pendientes con detalles del documento.</p>
+        <!-- MAIN ACTION: Firmar individual (Colspan 8) -->
+        <div class="lg:col-span-8 group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-center min-h-[320px]">
+          <div class="absolute -right-24 -top-24 w-72 h-72 bg-sky-50 rounded-full blur-3xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+          
+          <div class="relative z-10 flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-sky-50 border border-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3">
+              <IconSignature class="w-8 h-8" stroke-width="1.5" />
+            </div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">Firmar un documento</h3>
+            <p class="text-slate-500 mb-8 max-w-md">Arrastra y suelta tu archivo PDF aquí o explora tus archivos locales para firmarlo al instante.</p>
+            
+            <div class="w-full max-w-lg mx-auto">
+              <PdfDropField
+                variant="card"
+                action-text="Examinar archivos"
+                help-text="Solo se admiten documentos en formato .pdf"
+                input-id="sign-pdf-input"
+                @files-selected="onPdfDropFiles($event, 'sign')"
+                class="w-full"
+              />
+            </div>
           </div>
-        </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <PdfDropField
-            title="Solicitar firmas"
-            action-text="Iniciar solicitud"
-            help-text="Envía el documento a otros usuarios."
-            :icon="IconSend"
-            input-id="request-pdf-input"
-            @files-selected="onPdfDropFiles($event, 'request')"
-          />
-        </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <PdfDropField
-            title="Validar documento"
-            action-text="Validar documento"
-            help-text="Verifica firmas y estado del documento."
-            :icon="IconShieldCheck"
-            input-id="validate-pdf-input"
-            @files-selected="onPdfDropFiles($event, 'validate')"
-          />
         </div>
 
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Multifirmador</h3>
-          <div class="flex flex-col items-center justify-center flex-grow">
-            <div class="inline-flex items-center justify-center rounded-2xl bg-sky-50 p-4 text-sky-700 border border-sky-100 mb-4">
-              <IconFiles class="w-8 h-8" />
+        <!-- SECONDARY ACTIONS -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+          
+          <!-- Multifirmador -->
+          <div class="bg-white border border-slate-200 hover:border-indigo-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group cursor-pointer h-full flex flex-col justify-center" @click="openMultiSigner">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10 flex items-start gap-4">
+              <div class="flex-shrink-0 w-12 h-12 bg-indigo-50 text-indigo-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <IconFiles class="w-6 h-6" stroke-width="1.5" />
+              </div>
+              <div>
+                <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">Firma múltiple</h4>
+                <p class="text-sm text-slate-500 mb-3 leading-relaxed">Aplica tu firma sobre múltiples documentos en un solo paso.</p>
+                <div class="inline-flex items-center text-sm font-semibold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                  Abrir herramienta <IconChevronRight class="w-4 h-4 ml-1" />
+                </div>
+              </div>
             </div>
-            <button
-              type="button"
-              class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm"
-              @click="openMultiSigner"
-            >
-              Abrir multifirmador
-            </button>
-            <p class="text-slate-500 text-xs mt-3 text-left">
-              Aquí se integrará la firma masiva por token o coordenadas sin afectar el flujo actual.
-            </p>
           </div>
+
+          <!-- Solicitar/Enviar -->
+          <div class="bg-white border border-slate-200 border-dashed hover:border-emerald-300 rounded-3xl p-6 shadow-sm transition-all duration-300 relative group">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-12 h-12 bg-emerald-50 text-emerald-600 rounded-[14px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <IconSend class="w-6 h-6" stroke-width="1.5" />
+              </div>
+              <div class="flex-1 w-full">
+                <h4 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">Solicitar firmas</h4>
+                <p class="text-sm text-slate-500 mb-3 leading-relaxed">Carga un PDF y envíalo para que otros lo firmen.</p>
+                <div class="w-full">
+                  <PdfDropField
+                    variant="inline"
+                    action-text="Subir PDF"
+                    input-id="request-pdf-input"
+                    @files-selected="onPdfDropFiles($event, 'request')"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
-      <p v-if="uploadError" class="text-red-500 font-medium mt-4 text-sm">{{ uploadError }}</p>
+
+      <!-- BOTTOM ROW / TERTIARY ACTIONS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        
+        <!-- Validar Documento -->
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row items-center sm:items-start gap-5 group">
+           <div class="flex-shrink-0 w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+              <IconShieldCheck class="w-7 h-7" stroke-width="1.5" />
+           </div>
+           <div class="flex-1 w-full text-center sm:text-left">
+             <h4 class="text-lg font-bold text-slate-800 mb-1">Validar un documento</h4>
+             <p class="text-sm text-slate-500 mb-4">Verifica la integridad y validez de las firmas contenidas en un documento PDF.</p>
+             <PdfDropField
+                variant="inline"
+                action-text="Cargar documento a validar"
+                input-id="validate-pdf-input"
+                @files-selected="onPdfDropFiles($event, 'validate')"
+              />
+           </div>
+        </div>
+
+        <!-- Buscar BD -->
+        <div class="bg-slate-50/50 border border-slate-200 border-dashed rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5 opacity-70 cursor-not-allowed">
+           <div class="flex-shrink-0 w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center">
+              <IconSearch class="w-7 h-7" stroke-width="1.5" />
+           </div>
+           <div class="text-center sm:text-left">
+             <div class="inline-flex px-2.5 py-0.5 rounded shadow-sm border border-slate-200/60 text-[10px] font-bold bg-white text-slate-500 uppercase tracking-wider mb-2">Próximamente</div>
+             <h4 class="text-lg font-bold text-slate-600 mb-1">Buscar en base de datos</h4>
+             <p class="text-sm text-slate-500 leading-relaxed">Selecciona solicitudes pendientes directamente desde el sistema, sin archivos locales.</p>
+           </div>
+        </div>
+      </div>
+      
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
+        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+          <IconX class="w-5 h-5 flex-shrink-0" />
+        </div>
+        {{ uploadError }}
+      </div>
     </div>
 
     <div v-else class="mt-4">
@@ -805,7 +846,7 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
