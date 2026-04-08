@@ -258,8 +258,25 @@
     <div v-else class="mt-4">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[75vh] overflow-y-auto overflow-x-hidden relative pb-28 lg:pb-6">
         <div class="w-full relative flex justify-center" ref="colPdf">
-          <div class="relative shadow-sm border border-slate-200" ref="pdfViewer">
+          <div 
+            class="relative shadow-sm border border-slate-200" 
+            ref="pdfViewer"
+            @mousemove="handleMouseMove"
+            @mouseleave="handleMouseLeave"
+          >
             <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
+            
+            <!-- PREVIEW PREDEFINIDA BOX -->
+            <div 
+              v-if="selectionMode === 'preset' && isMouseOverPdf"
+              class="absolute pointer-events-none z-20 border-2 border-sky-400 bg-sky-400/20 rounded-md backdrop-blur-[1px] transition-all duration-75 block shadow-[0_0_15px_rgba(56,189,248,0.3)]"
+              :style="previewBoxStyle"
+            >
+               <div class="absolute inset-0 flex items-center justify-center opacity-70">
+                 <IconSignature class="w-6 h-6 text-sky-700" />
+               </div>
+            </div>
+
             <div
               v-for="field in currentPageFields"
               :key="field.id"
@@ -518,9 +535,6 @@
       ¿Deseas eliminar este campo de firma? Esta acción no se puede deshacer.
     </p>
     <template #footer>
-      <AdminButton variant="outlinePrimary" data-modal-dismiss>
-        Cancelar
-      </AdminButton>
       <AdminButton variant="outlineDanger" @click="confirmDeleteField">
         Eliminar
       </AdminButton>
@@ -1131,6 +1145,7 @@
   };
 
   const handleMouseDown = (event) => {
+    isMouseOverPdf.value = false; // Hide preview temporarily on click
     if (!pdfDoc || !pdfViewer.value) return;
 
     const rect = getViewerRect();
@@ -1144,8 +1159,10 @@
       const presetHeight = toCssUnits(FIELD_HEIGHT);
       const maxLeft = Math.max(0, rect.width - presetWidth);
       const maxTop = Math.max(0, rect.height - presetHeight);
-      const left = Math.min(Math.max(currentX, 0), maxLeft);
-      const top = Math.min(Math.max(currentY, 0), maxTop);
+      
+      const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+      const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
+      
       const box = createBox(left, top, presetWidth, presetHeight);
       updateCoordinates(left, top, left + presetWidth, top + presetHeight, rect.height);
       activeBox = box;
@@ -1163,14 +1180,41 @@
     isDragging = true;
   };
 
+  const isMouseOverPdf = ref(false);
+  const previewBoxStyle = ref({ display: 'none' });
+
   const handleMouseMove = (event) => {
-    if (!isDragging || !activeBox || !pdfViewer.value) return;
+    if (!pdfViewer.value) return;
 
     const rect = getViewerRect();
     const ofx = rect.left + window.scrollX;
     const ofy = rect.top + window.scrollY;
     const currentX = event.pageX - ofx;
     const currentY = event.pageY - ofy;
+
+    if (selectionMode.value === 'preset') {
+      isMouseOverPdf.value = true;
+      const presetWidth = toCssUnits(FIELD_WIDTH);
+      const presetHeight = toCssUnits(FIELD_HEIGHT);
+      
+      const maxLeft = Math.max(0, rect.width - presetWidth);
+      const maxTop = Math.max(0, rect.height - presetHeight);
+      
+      // Calculate center to place mouse in the middle of the preview
+      const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+      const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
+
+      previewBoxStyle.value = {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${presetWidth}px`,
+        height: `${presetHeight}px`
+      };
+      
+      if (!isDragging) return;
+    }
+
+    if (!isDragging || !activeBox) return;
 
     const left = Math.max(Math.min(currentX, startX), 0);
     const top = Math.max(Math.min(currentY, startY), 0);
@@ -1186,6 +1230,11 @@
     activeBox.style.height = `${height}px`;
 
     updateCoordinates(left, top, right, bottom, rect.height);
+  };
+
+  const handleMouseLeave = () => {
+    isMouseOverPdf.value = false;
+    handleMouseUp();
   };
 
   const handleMouseUp = () => {
