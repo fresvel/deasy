@@ -281,10 +281,10 @@
               v-for="field in currentPageFields"
               :key="field.id"
               class="box saved-box"
-              :class="{ 'saved-box--active': field.id === lastFieldId }"
+              :class="[{ 'saved-box--active': field.id === lastFieldId }, 'cursor-move']"
               :data-field-id="field.id"
               :style="getFieldBoxStyle(field)"
-              @mousedown.stop
+              @mousedown.stop.prevent="startDragField(field, $event)"
               @click.stop="selectField(field.id)"
             >
               <div v-if="field.signer" class="saved-box-signer">
@@ -1025,6 +1025,11 @@
   const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   let isDragging = false;
+  let draggedField = null;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragInitialLeft = 0;
+  let dragInitialTop = 0;
   let startX = 0;
   let startY = 0;
   let activeBox = null;
@@ -1144,13 +1149,32 @@
     return box;
   };
 
+  const startDragField = (field, event) => {
+    if (isDragging) return;
+
+    // Check if we are interacting with child buttons
+    if (event.target.closest('.saved-box-actions')) return;
+
+    draggedField = field;
+    dragStartX = event.pageX;
+    dragStartY = event.pageY;
+
+    const rect = getViewerRect();
+    dragInitialLeft = toCssUnits(field.x1);
+    dragInitialTop = rect.height - toCssUnits(field.y1);
+    
+    selectField(field.id);
+  };
+
   const handleMouseDown = (event) => {
+    if (draggedField) return; // Prevent starting a new box if dragging
     isMouseOverPdf.value = false; // Hide preview temporarily on click
     if (!pdfDoc || !pdfViewer.value) return;
 
     const rect = getViewerRect();
     const ofx = rect.left + window.scrollX;
     const ofy = rect.top + window.scrollY;
+    // ... rest of code
     const currentX = event.pageX - ofx;
     const currentY = event.pageY - ofy;
 
@@ -1185,8 +1209,31 @@
 
   const handleMouseMove = (event) => {
     if (!pdfViewer.value) return;
-
     const rect = getViewerRect();
+
+    if (draggedField) {
+      isMouseOverPdf.value = false;
+      const deltaX = event.pageX - dragStartX;
+      const deltaY = event.pageY - dragStartY;
+      
+      const boxWidth = toCssUnits(draggedField.x2 - draggedField.x1);
+      const boxHeight = toCssUnits(draggedField.y1 - draggedField.y2);
+      
+      const maxLeft = Math.max(0, rect.width - boxWidth);
+      const maxTop = Math.max(0, rect.height - boxHeight);
+
+      const boundedLeft = Math.min(Math.max(dragInitialLeft + deltaX, 0), maxLeft);
+      const boundedTop = Math.min(Math.max(dragInitialTop + deltaY, 0), maxTop);
+      
+      draggedField.x1 = toPdfUnits(boundedLeft);
+      draggedField.y1 = toPdfUnits(rect.height - boundedTop);
+      draggedField.x2 = toPdfUnits(boundedLeft + boxWidth);
+      draggedField.y2 = toPdfUnits(rect.height - (boundedTop + boxHeight));
+      
+      updateCoordinates(boundedLeft, boundedTop, boundedLeft + boxWidth, boundedTop + boxHeight, rect.height);
+      return;
+    }
+
     const ofx = rect.left + window.scrollX;
     const ofy = rect.top + window.scrollY;
     const currentX = event.pageX - ofx;
@@ -1238,6 +1285,10 @@
   };
 
   const handleMouseUp = () => {
+    if (draggedField) {
+      draggedField = null;
+      return;
+    }
     if (!isDragging) return;
     isDragging = false;
     if (!activeBox || !lastSelection.value) return;
