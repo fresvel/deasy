@@ -4,7 +4,7 @@
     :class="[
       'flex flex-col items-center justify-center p-6 transition-all duration-300',
       {
-        'fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm': overlay && fullScreen,
+        'fixed inset-0 z-100 bg-slate-900/40 backdrop-blur-sm': overlay && fullScreen,
         'absolute inset-0 z-40 bg-white/80 backdrop-blur-[2px] rounded-inherit': overlay && !fullScreen,
         'relative bg-transparent': !overlay,
       }

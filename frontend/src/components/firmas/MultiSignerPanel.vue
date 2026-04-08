@@ -306,30 +306,31 @@
             >
               <canvas ref="pdfCanvas" class="block w-full h-auto z-[0] bg-white"></canvas>
 
-              <!-- Dibujar los campos configurados (Coordenadas Compartidas o Por Documento) -->
-              <div
+              <!-- Previsualización / Hover -->
+              <SignatureBox
+                v-if="selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging"
+                :is-preview="true"
+                :left="parseFloat(previewBoxStyle.left)"
+                :top="parseFloat(previewBoxStyle.top)"
+                :width="parseFloat(previewBoxStyle.width)"
+                :height="parseFloat(previewBoxStyle.height)"
+                :label="currentUserLabel"
+              />
+
+              <!-- Dibujar los campos configurados -->
+              <SignatureBox
                 v-for="field in currentPageFields"
                 :key="field.id"
-                class="absolute border-2 border-dashed border-sky-400 bg-sky-400/10 z-[10] flex flex-col items-center justify-center p-1 rounded-sm backdrop-blur-[1px] hover:border-sky-500 hover:bg-sky-500/20 transition-colors group shadow-sm cursor-pointer"
-                :class="{ 'ring-4 ring-sky-500 border-solid bg-sky-500/20': field.id === selectedFieldId }"
-                :style="getFieldBoxStyle(field)"
-                @mousedown.stop
-                @click.stop="selectedFieldId = field.id"
-              >
-                <div class="h-full w-full border border-sky-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40">
-                  <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-sky-600 drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
-                  <span class="text-[9px] sm:text-[10px] font-bold text-sky-800 bg-white/90 px-1.5 py-0.5 rounded shadow-sm border border-sky-200 uppercase tracking-widest text-center truncate max-w-full">
-                    {{ currentUserLabel || 'Firma' }}
-                  </span>
-                </div>
-                
-                <!-- Botón eliminar rápido en hover o seleccionado -->
-                <div class="absolute -top-3 -right-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity" :class="{ 'opacity-100': field.id === selectedFieldId }">
-                  <button @click.stop="removeField(field.id)" class="bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors">
-                    <IconTrash class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+                :field="field"
+                :is-active="field.id === selectedFieldId"
+                :pdf-scale="pdfScale"
+                :page-height-pdf="pageHeightPdf"
+                :page-width-pdf="pageWidthPdf"
+                :label="currentUserLabel"
+                @select="selectedFieldId = field.id"
+                @delete="removeField(field.id)"
+                @update:position="updateFieldCoordinates"
+              />
               <!-- PREVIEW PREDEFINIDA BOX (Ghost Signature) -->
               <div
                 v-if="isMouseOverPdf && !activeSelectionBox"
@@ -372,18 +373,16 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/utils/pdfjsSetup";
+import SignatureBox from "@/components/firmas/SignatureBox.vue";
 import {
   IconArrowLeft,
-  IconArrowRight,
   IconChevronLeft,
   IconChevronRight,
   IconFiles,
   IconTrash,
-  IconSignature,
   IconFileCheck,
   IconAlertCircle,
   IconDragDrop,
-  IconWand
 } from "@tabler/icons-vue";
 import AdminButton from "@/components/AppButton.vue";
 import BtnDelete from "@/components/BtnDelete.vue";
@@ -422,6 +421,7 @@ let pdfDoc = null;
 let renderTask = null;
 let pdfScale = 1;
 let pageHeightPdf = 0;
+let pageWidthPdf = 0;
 const FIELD_WIDTH = 124;
 const FIELD_HEIGHT = 48;
 const PDF_LOAD_OPTIONS = {
@@ -544,6 +544,7 @@ const renderPage = async (pageNum) => {
   const page = await pdfDoc.getPage(pageNum);
   const baseViewport = page.getViewport({ scale: 1 });
   pageHeightPdf = baseViewport.height;
+  pageWidthPdf = baseViewport.width;
   const containerWidth = canvasHost.value?.clientWidth || baseViewport.width;
   pdfScale = containerWidth / baseViewport.width;
   const viewport = page.getViewport({ scale: pdfScale });
@@ -584,21 +585,7 @@ const updateSharedSelection = (left, top, right, bottom, rectHeight) => {
   };
 };
 
-const getFieldBoxStyle = (field) => {
-  const rect = getViewerRect();
-  if (!rect) return {};
-  const left = toCssUnits(field.x1);
-  const right = toCssUnits(field.x2);
-  const top = toCssUnits(pageHeightPdf - field.y1);
-  const bottom = toCssUnits(pageHeightPdf - field.y2);
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${Math.max(0, right - left)}px`,
-    height: `${Math.max(0, bottom - top)}px`,
-    position: "absolute"
-  };
-};
+
 
 const clearCurrentModeFields = () => {
   if (batchMode.value === "shared-coordinates") {
@@ -612,6 +599,23 @@ const clearCurrentModeFields = () => {
   selectedFieldId.value = null;
   lastSelection.value = null;
   activeSelectionBox.value = null;
+};
+
+const updateFieldCoordinates = (updatedField) => {
+  if (batchMode.value === "shared-coordinates") {
+    const idx = sharedFields.value.findIndex(f => f.id === updatedField.id);
+    if (idx !== -1) sharedFields.value[idx] = updatedField;
+  } else if (batchMode.value === "per-document" && currentDocument.value) {
+    const docFields = perDocumentFields.value[currentDocument.value.id] || [];
+    const idx = docFields.findIndex(f => f.id === updatedField.id);
+    if (idx !== -1) {
+      docFields[idx] = updatedField;
+      perDocumentFields.value = {
+        ...perDocumentFields.value,
+        [currentDocument.value.id]: [...docFields]
+      };
+    }
+  }
 };
 
 const appendField = (selection) => {
@@ -933,48 +937,7 @@ onBeforeUnmount(() => {
   cursor: crosshair;
 }
 
-.box {
-  border: 2px dashed var(--brand-accent, #0ea5e9);
-  position: absolute;
-  background-color: rgba(14, 165, 233, 0.25);
-  border-radius: 5%;
-  z-index: 20;
-}
 
-.saved-box {
-  cursor: pointer;
-}
-
-.saved-box-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(105%, -8%);
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  pointer-events: auto;
-}
-
-.saved-box-signer {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.45rem;
-  text-align: center;
-  font-size: 0.95rem;
-  line-height: 1.1;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.saved-box--active {
-  border-color: #0284c7;
-  background: rgba(14, 165, 233, 0.32);
-}
 
 .shared-box {
   position: absolute;

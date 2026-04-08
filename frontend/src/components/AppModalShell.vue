@@ -1,7 +1,7 @@
 <template>
   <div
     ref="rootElement"
-    class="deasy-dialog-root fixed inset-0 z-[1060] overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
+    class="deasy-dialog-root fixed inset-0 z-1060 overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
     :class="controlled ? (open ? 'flex' : 'hidden') : 'hidden'"
     data-dialog-root
     tabindex="-1"

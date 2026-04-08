@@ -269,34 +269,46 @@
                </div>
             </div>
 
-            <div
+            <!-- Previsualización de hover interactiva -->
+            <SignatureBox
+              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none'"
+              :is-preview="true"
+              :left="parseFloat(previewBoxStyle.left)"
+              :top="parseFloat(previewBoxStyle.top)"
+              :width="parseFloat(previewBoxStyle.width)"
+              :height="parseFloat(previewBoxStyle.height)"
+              :label="currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Firma'"
+            />
+
+            <SignatureBox
               v-for="field in currentPageFields"
               :key="field.id"
-              class="box saved-box"
-              :class="[{ 'saved-box--active': field.id === lastFieldId }, 'cursor-move']"
-              :data-field-id="field.id"
-              :style="getFieldBoxStyle(field)"
+              :field="field"
+              :is-active="field.id === lastFieldId"
+              :pdf-scale="pdfScale"
+              :display-scale="displayScaleRef"
+              :page-height-pdf="pageHeightPdf"
+              :page-width-pdf="pageWidthPdf"
+              :label="field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar'"
+              @select="selectField(field.id)"
+              @delete="requestDeleteField(field.id)"
+              @update:position="updateFieldCoordinates"
               @mouseenter="isHoveringField = true"
               @mouseleave="isHoveringField = false"
-              @mousedown.stop.prevent="startDragField(field, $event)"
-              @click.stop="selectField(field.id)"
             >
-              <div v-if="field.signer" class="saved-box-signer">
-                {{ field.signer.first_name }} {{ field.signer.last_name }}
-              </div>
-              <div v-if="signMode !== 'token'" class="saved-box-actions" @mousedown.stop @click.stop>
-                <BtnDelete message="Eliminar" @onpress="requestDeleteField(field.id)" />
+              <template #actions>
                 <button
+                  v-if="signMode !== 'token'"
                   type="button"
-                  class="saved-box-action-btn saved-box-sign-btn"
+                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
                 >
-                  <IconSignature class="w-4 h-4" />
+                  <IconSignature class="w-3.5 h-3.5" />
                 </button>
-              </div>
-            </div>
+              </template>
+            </SignatureBox>
           </div>
         </div>
       </div>
@@ -955,12 +967,12 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconList, IconMail, IconCreditCard } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey} from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
-  import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
   import AppDataTable from '@/components/AppDataTable.vue';
   import PdfDropField from '@/components/firmas/PdfDropField.vue';
+  import SignatureBox from '@/components/firmas/SignatureBox.vue';
   import UserCertificatesPanel from '@/components/firmas/UserCertificatesPanel.vue';
   import AdminModalShell from '@/components/AppModalShell.vue';
   import AdminButton from '@/components/AppButton.vue';
@@ -982,6 +994,9 @@
   const currentPage = ref(1);
   const pageInput = ref(1);
   const totalPages = ref(0);
+  const pageHeightPdf = ref(0);
+  const pageWidthPdf = ref(0);
+  const displayScaleRef = ref(1);
   const showSignaturesModal = ref(false);
   const uploadedFiles = ref([]);
   const uploadError = ref('');
@@ -1030,7 +1045,7 @@
     return Array.from(pages).sort((a, b) => a - b);
   });
   let viewport = null;
-  let pdfScale = 1.75; 
+  const pdfScale = ref(1.75); 
   let deleteModalInstance = null;
   let assignSignerModalInstance = null;
   let confirmDeleteModalInstance = null;
@@ -1048,11 +1063,6 @@
   const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   let isDragging = false;
-  let draggedField = null;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let dragInitialLeft = 0;
-  let dragInitialTop = 0;
   let startX = 0;
   let startY = 0;
   let activeBox = null;
@@ -1119,6 +1129,13 @@
     }
   };
 
+  const updateFieldCoordinates = (updatedField) => {
+    const idx = fields.value.findIndex(f => f.id === updatedField.id);
+    if (idx !== -1) {
+      fields.value[idx] = updatedField;
+    }
+  };
+
   const clearAllBoxes = () => {
     removeBox();
   };
@@ -1133,12 +1150,12 @@
 
   const toPdfUnits = (cssValue) => {
     const displayScale = getDisplayScale();
-    return (cssValue * displayScale) / pdfScale;
+    return (cssValue * displayScale) / pdfScale.value;
   };
 
   const toCssUnits = (pdfUnits) => {
     const displayScale = getDisplayScale();
-    return (pdfUnits * pdfScale) / displayScale;
+    return (pdfUnits * pdfScale.value) / displayScale;
   };
 
   const updateCoordinates = (left, top, right, bottom, rectHeight) => {
@@ -1170,25 +1187,9 @@
     return box;
   };
 
-  const startDragField = (field, event) => {
-    if (isDragging) return;
 
-    // Check if we are interacting with child buttons
-    if (event.target.closest('.saved-box-actions')) return;
-
-    draggedField = field;
-    dragStartX = event.pageX;
-    dragStartY = event.pageY;
-
-    const rect = getViewerRect();
-    dragInitialLeft = toCssUnits(field.x1);
-    dragInitialTop = rect.height - toCssUnits(field.y1);
-    
-    selectField(field.id);
-  };
 
   const handleMouseDown = (event) => {
-    if (draggedField) return; // Prevent starting a new box if dragging
     isMouseOverPdf.value = false; // Hide preview temporarily on click
     if (!pdfDoc || !pdfViewer.value) return;
 
@@ -1225,29 +1226,6 @@
     if (!pdfViewer.value) return;
     const rect = getViewerRect();
 
-    if (draggedField) {
-      isMouseOverPdf.value = false;
-      const deltaX = event.pageX - dragStartX;
-      const deltaY = event.pageY - dragStartY;
-      
-      const boxWidth = toCssUnits(draggedField.x2 - draggedField.x1);
-      const boxHeight = toCssUnits(draggedField.y1 - draggedField.y2);
-      
-      const maxLeft = Math.max(0, rect.width - boxWidth);
-      const maxTop = Math.max(0, rect.height - boxHeight);
-
-      const boundedLeft = Math.min(Math.max(dragInitialLeft + deltaX, 0), maxLeft);
-      const boundedTop = Math.min(Math.max(dragInitialTop + deltaY, 0), maxTop);
-      
-      draggedField.x1 = toPdfUnits(boundedLeft);
-      draggedField.y1 = toPdfUnits(rect.height - boundedTop);
-      draggedField.x2 = toPdfUnits(boundedLeft + boxWidth);
-      draggedField.y2 = toPdfUnits(rect.height - (boundedTop + boxHeight));
-      
-      updateCoordinates(boundedLeft, boundedTop, boundedLeft + boxWidth, boundedTop + boxHeight, rect.height);
-      return;
-    }
-
     const ofx = rect.left + window.scrollX;
     const ofy = rect.top + window.scrollY;
     const currentX = event.pageX - ofx;
@@ -1278,10 +1256,6 @@
   };
 
   const handleMouseUp = () => {
-    if (draggedField) {
-      draggedField = null;
-      return;
-    }
     if (!isDragging) return;
     isDragging = false;
     if (!activeBox || !lastSelection.value) return;
@@ -1396,9 +1370,11 @@
       const page = await pdfDoc.getPage(pageNum);
       ctx = pdfCanvas.value.getContext('2d');
       const baseViewport = page.getViewport({ scale: 1 });
+      pageHeightPdf.value = baseViewport.height;
+      pageWidthPdf.value = baseViewport.width;
       const containerWidth = colPdf.value?.clientWidth || baseViewport.width;
-      pdfScale = containerWidth / baseViewport.width;
-      viewport = page.getViewport({ scale: pdfScale });
+      pdfScale.value = containerWidth / baseViewport.width;
+      viewport = page.getViewport({ scale: pdfScale.value });
       pdfCanvas.value.width = viewport.width;
       pdfCanvas.value.height = viewport.height;
       colPdf.value.style.width = '100%';
@@ -1418,6 +1394,7 @@
         viewport
       });
       await renderTask.promise;
+      displayScaleRef.value = getDisplayScale();
       currentPage.value = pageNum;
       pageInput.value = pageNum;
       clearAllBoxes();
@@ -1903,21 +1880,7 @@
       }
     };
 
-    const getFieldBoxStyle = (field) => {
-      const rect = getViewerRect();
-      const left = toCssUnits(field.x1);
-      const right = toCssUnits(field.x2);
-      const top = rect.height - toCssUnits(field.y1);
-      const bottom = rect.height - toCssUnits(field.y2);
-      return {
-        left: `${left}px`,
-        top: `${top}px`,
-        width: `${Math.max(0, right - left)}px`,
-        height: `${Math.max(0, bottom - top)}px`,
-        position: 'absolute',
-        pointerEvents: 'auto'
-      };
-    };
+
 
     const goToFieldLocation = async (fieldId) => {
       const field = visibleFields.value.find((item) => item.id === fieldId);
@@ -2515,84 +2478,7 @@
   max-width: 100%;
 }
 
-:deep(.box) {
-  border: 2px dashed var(--brand-accent, #0ea5e9);
-  position: absolute;
-  background-color: rgba(14, 165, 233, 0.25);
-  border-radius: 5%;
-  z-index: 20;
-}
 
-:deep(.saved-box) {
-  cursor: pointer;
-}
-
-:deep(.saved-box-delete) {
-  z-index: 30;
-}
-
-.saved-box-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(105%, -8%);
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  pointer-events: auto;
-}
-
-.saved-box-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.85rem;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.saved-box-action-btn:hover {
-  background: #f8fafc;
-  color: #0f172a;
-  transform: translateY(-1px);
-}
-
-.saved-box-action-btn:focus-visible {
-  outline: 2px solid rgba(14, 165, 233, 0.35);
-  outline-offset: 2px;
-}
-
-.saved-box-signer {
-  position: absolute;
-  inset: 0.45rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.55rem;
-  border-radius: 0.6rem;
-  background: rgba(15, 23, 42, 0.28);
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  white-space: normal;
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-
-:deep(.saved-box--active) {
-  border-color: var(--brand-accent, #0ea5e9);
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
-}
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
