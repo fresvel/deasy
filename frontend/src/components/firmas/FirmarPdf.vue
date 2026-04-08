@@ -1,116 +1,126 @@
 <template>
   <div :class="rootClasses">
-    <div class="flex flex-col gap-2">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div v-if="pdfReady" class="sm:flex-shrink-0">
-          <PdfDropField
-            variant="inline"
-            title=""
-            action-text="Cambiar PDF"
-            help-text="Selecciona otro PDF"
-            :icon="IconFileUpload"
-            input-id="change-pdf-input"
-            @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
-          />
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="workflowSignContext"
-      class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
-    >
-      <div class="font-semibold">Sesión documental activa</div>
-      <div class="mt-1 text-sky-800">
-        Documento:
-        <span class="font-semibold">{{ workflowSignContext.documentTitle || `Documento #${workflowSignContext.documentVersionId}` }}</span>
-        · Versión
-        <span class="font-semibold">{{ workflowSignContext.documentVersionLabel || workflowSignContext.documentVersionId }}</span>
-      </div>
-      <div class="mt-1 text-sky-800">
-        Solicitud de firma:
-        <span class="font-semibold">#{{ workflowSignContext.signatureRequestId }}</span>
-      </div>
-      <div v-if="workflowPdfStatus.message" class="mt-2" :class="workflowPdfStatus.type === 'error' ? 'text-rose-700' : workflowPdfStatus.type === 'success' ? 'text-emerald-700' : 'text-sky-800'">
-        {{ workflowPdfStatus.message }}
-      </div>
-    </div>
-
-    <div v-if="pdfReady" class="flex flex-col gap-4 mt-4 border-b border-slate-100 pb-4">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex flex-wrap items-center gap-3">
+    <div v-if="pdfReady" class="flex flex-col gap-4 mb-6 animate-fade-in relative z-20">
+      
+      <!-- Top Row: Back, Workflow Info & Settings -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-sm p-3 sm:p-4 rounded-2xl">
+        <div class="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+            class="flex-shrink-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
             title="Regresar"
-            aria-label="Regresar"
             @click="goBackToStart"
           >
             <IconArrowLeft class="w-5 h-5" />
           </button>
-          <div class="flex items-center gap-3 flex-wrap">
-            <label class="text-sm font-semibold text-slate-600">Modo</label>
-            <select
-              v-model="selectionMode"
-              class="block min-w-[12rem] rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-              @change="setSelectionMode(selectionMode)"
+
+          <!-- Status / Action Area -->
+          <div v-if="workflowSignContext" class="flex flex-col pl-1 sm:pl-0 border-l-2 sm:border-l-0 border-sky-200">
+            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-sky-600 mb-0.5">Sesión Activa</span>
+            <div class="text-xs sm:text-sm font-semibold text-slate-800 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
+              {{ workflowSignContext.documentTitle || `Documento #${workflowSignContext.documentVersionId}` }}
+              <span class="text-slate-400 font-normal">· v{{ workflowSignContext.documentVersionLabel || workflowSignContext.documentVersionId }}</span>
+            </div>
+            <div v-if="workflowPdfStatus.message" class="text-[10px] sm:text-xs mt-0.5" :class="workflowPdfStatus.type === 'error' ? 'text-rose-600' : workflowPdfStatus.type === 'success' ? 'text-emerald-600' : 'text-sky-600'">
+              {{ workflowPdfStatus.message }}
+            </div>
+          </div>
+          <div v-else class="text-sm sm:text-base font-bold text-slate-800 border-l sm:border-l-0 pl-3 sm:pl-0 border-slate-200">
+            Firma de Documento
+          </div>
+        </div>
+
+        <!-- Right Side: Change PDF & Mode Selector -->
+        <div class="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
+          <div class="bg-slate-100/80 border border-slate-200/60 rounded-xl flex items-center p-1 w-full sm:w-auto overflow-hidden">
+            <button 
+              type="button"
+              @click="setSelectionMode('drag')"
+              class="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all"
+              :class="selectionMode === 'drag' ? 'bg-white text-sky-700 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'"
             >
-              <option value="drag">Manual</option>
-              <option value="preset">Predefinida</option>
-            </select>
+              Manual
+            </button>
+            <button 
+              type="button"
+              @click="setSelectionMode('preset')"
+              class="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all"
+              :class="selectionMode === 'preset' ? 'bg-white text-sky-700 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'"
+            >
+              Predefinida
+            </button>
           </div>
-        </div>
-
-        <div class="flex items-center justify-center gap-3 flex-wrap xl:flex-nowrap">
-          <button @click="prevPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
-            <IconChevronLeft class="w-6 h-6" />
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Anterior</span>
-          </button>
-          <div class="page-selector flex items-center gap-2 bg-sky-50 text-slate-800 rounded-xl px-4 py-2 font-semibold">
-            <span class="text-sm text-slate-600">Página</span>
-            <input
-              v-model="pageInput"
-              class="page-selector-input w-16 px-2 py-1 rounded-lg bg-white border border-slate-300 text-center text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-              type="number"
-              min="1"
-              :max="totalPages"
-              @keyup.enter="goToPage"
-            />
-            <span class="text-sm">de {{ totalPages }}</span>
-          </div>
-          <button @click="nextPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
-            <IconChevronRight class="w-6 h-6" />
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Siguiente</span>
-          </button>
-        </div>
-
-        <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
-          <button
-            v-if="signMode !== 'token'"
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-red-600 text-red-600 hover:bg-red-50 transition font-semibold text-sm"
-            @click="openDeleteModal"
-          >
-            Eliminar
-          </button>
-          <button
-            v-if="!requestMode"
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-sky-300 text-sky-700 hover:bg-sky-50 transition font-semibold text-sm"
-            @click="submitTokenAction"
-          >
-            Firmar por token
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm"
-            @click="submitAction"
-          >
-            {{ requestMode ? 'Enviar' : 'Firmar' }}
-          </button>
+          <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+          <PdfDropField
+            variant="inline"
+            title=""
+            action-text="Cambiar PDF"
+            help-text=""
+            :icon="IconFileUpload"
+            input-id="change-pdf-input"
+            @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
+            class="change-pdf-compact w-full sm:w-auto"
+          />
         </div>
       </div>
 
+      <!-- Action & Pagination Row (Sticky on Mobile, Regular on Desktop) -->
+      <div class="fixed bottom-4 left-4 right-4 lg:static lg:bottom-auto lg:left-auto lg:right-auto z-50 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 p-3 lg:p-0 bg-white/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border lg:border-0 border-slate-200/80 rounded-[1.25rem] lg:rounded-none shadow-2xl shadow-sky-900/10 lg:shadow-none animate-slide-up lg:animate-none">
+        
+        <!-- Pagination controls -->
+        <div class="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 bg-slate-800 lg:bg-white text-white lg:text-slate-800 p-1.5 rounded-xl shadow-inner lg:shadow-sm border border-slate-700 lg:border-slate-200 w-full sm:w-auto">
+          <button @click="prevPageBtn" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 lg:text-slate-500 hover:text-white lg:hover:text-slate-800 hover:bg-slate-700 lg:hover:bg-slate-100 transition-colors">
+            <IconChevronLeft class="w-5 h-5 sm:w-6 sm:h-6" stroke-width="2" />
+          </button>
+          <div class="flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-2 font-semibold text-xs sm:text-sm">
+            <span class="hidden sm:inline">Pág</span>
+            <input
+              v-model="pageInput"
+              class="w-10 sm:w-12 px-1 text-center bg-slate-900 lg:bg-slate-50 border border-slate-600 lg:border-slate-300 rounded-md py-1 focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+              type="number" min="1" :max="totalPages"
+              @keyup.enter="goToPage"
+            />
+            <span class="text-slate-400 lg:text-slate-500 whitespace-nowrap">de {{ totalPages }}</span>
+          </div>
+          <button @click="nextPageBtn" class="flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-slate-300 lg:text-slate-500 hover:text-white lg:hover:text-slate-800 hover:bg-slate-700 lg:hover:bg-slate-100 transition-colors">
+            <IconChevronRight class="w-5 h-5 sm:w-6 sm:h-6" stroke-width="2" />
+          </button>
+        </div>
+
+        <!-- Primary Actions -->
+        <div class="flex items-center w-full sm:w-auto justify-end gap-2 sm:gap-3">
+          <button
+            v-if="signMode !== 'token'"
+            type="button"
+            class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-rose-600 bg-rose-50/80 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 font-bold text-xs sm:text-sm transition-all shadow-sm"
+            @click="openDeleteModal"
+            title="Eliminar PDF actual"
+          >
+            <IconTrash class="w-4 h-4 sm:w-5 sm:h-5" stroke-width="2" />
+            <span class="hidden sm:inline">Eliminar</span>
+          </button>
+
+          <button
+            v-if="!requestMode"
+            type="button"
+            class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl text-indigo-700 bg-indigo-50/80 border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 font-bold text-xs sm:text-sm transition-all shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+            @click="submitTokenAction"
+          >
+            <IconKey class="w-4 h-4 sm:w-5 sm:h-5" stroke-width="2" />
+            <span class="whitespace-nowrap">Por Token</span>
+          </button>
+
+          <button
+            type="button"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 active:scale-95 transform text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/40 transition-all border border-sky-600/50 focus:ring-2 focus:ring-sky-500/30 outline-none"
+            @click="submitAction"
+          >
+            <IconSignature v-if="!requestMode" class="w-5 h-5" stroke-width="2" />
+            <IconSend v-else class="w-5 h-5" stroke-width="2" />
+            <span class="whitespace-nowrap">{{ requestMode ? 'Enviar Solicitud' : 'Firmar Documento' }}</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="workspaceMode === 'multi'" class="mt-4">
@@ -246,7 +256,7 @@
     </div>
 
     <div v-else class="mt-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[75vh] overflow-y-auto overflow-x-hidden relative pb-28 lg:pb-6">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div class="relative shadow-sm border border-slate-200" ref="pdfViewer">
             <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
@@ -907,7 +917,7 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
