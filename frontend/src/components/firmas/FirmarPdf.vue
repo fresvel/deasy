@@ -693,10 +693,17 @@
     labelled-by="validation-result-modal-title"
     title="Validar documento"
     size="xl"
+    :show-close-button="false"
     content-class="rounded-3xl shadow-xl border-0 overflow-hidden"
     header-class="bg-slate-50 border-b border-slate-100"
     body-class="p-0 bg-slate-50 relative"
   >
+    <template #title>
+      <div class="flex items-center pb-0">Validar documento</div>
+      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-slate-100/50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
+        <IconX class="w-4 h-4" stroke-width="2.5" />
+      </button>
+    </template>
     <div class="px-6 pt-6 pb-4">
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
         <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
@@ -787,7 +794,13 @@
     </div>
 
     <!-- TABLA -->
-    <div class="bg-white border-t border-slate-200">
+    <div class="bg-white border-t border-slate-200 relative min-h-[200px]">
+      <Loading 
+        :visible="isValidatingDocument" 
+        text="Validando firmas..." 
+        subText="Por favor espere, esto puede tardar unos segundos dependiendo del tamaño de su documento." 
+        :overlay="true" 
+      />
       <AppDataTable
         :fields="validationTableFields"
         :rows="validationResult?.signatures || []"
@@ -887,9 +900,6 @@
         <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
       </div>
     </div>
-    <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
-    </template>
   </AdminModalShell>
 </template>
   <script setup>
@@ -906,6 +916,7 @@
   import UserCertificatesPanel from '@/components/firmas/UserCertificatesPanel.vue';
   import AdminModalShell from '@/components/AppModalShell.vue';
   import AdminButton from '@/components/AppButton.vue';
+  import Loading from '@/components/Loading.vue';
   import MultiSignerPanel from '@/components/firmas/MultiSignerPanel.vue';
 
   const props = defineProps({
@@ -1541,9 +1552,12 @@
         return;
       }
 
+      openValidationModal();
+
       isValidatingDocument.value = true;
       validationError.value = '';
       uploadError.value = '';
+      validationResult.value = null;
       try {
         const formData = new FormData();
         formData.append('pdf', validationFile.value);
@@ -1563,7 +1577,6 @@
           ...data,
           signatures: buildValidationRowsFromPayload(data.signatures || [])
         };
-        openValidationModal();
       } catch (error) {
         validationError.value = error.message || 'No se pudo validar el documento.';
         uploadError.value = validationError.value;
