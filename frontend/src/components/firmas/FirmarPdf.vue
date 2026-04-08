@@ -32,24 +32,16 @@
 
         <!-- Right Side: Change PDF & Mode Selector -->
         <div class="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
-          <div class="bg-slate-100/80 border border-slate-200/60 rounded-xl flex items-center p-1 w-full sm:w-auto overflow-hidden">
-            <button 
-              type="button"
-              @click="setSelectionMode('drag')"
-              class="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all"
-              :class="selectionMode === 'drag' ? 'bg-white text-sky-700 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'"
-            >
-              Manual
-            </button>
-            <button 
-              type="button"
-              @click="setSelectionMode('preset')"
-              class="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all"
-              :class="selectionMode === 'preset' ? 'bg-white text-sky-700 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'"
-            >
-              Predefinida
-            </button>
-          </div>
+          <button 
+            type="button"
+            @click="showSignaturesModal = true"
+            class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800 border border-sky-200/60 shadow-sm"
+          >
+            <IconList class="w-4 h-4" />
+            <span class="hidden sm:inline">Ver campos de firma ({{ visibleFields.length }})</span>
+            <span class="sm:hidden">{{ visibleFields.length }}</span>
+          </button>
+          
           <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
           <PdfDropField
             variant="inline"
@@ -268,7 +260,7 @@
             
             <!-- PREVIEW PREDEFINIDA BOX -->
             <div 
-              v-if="selectionMode === 'preset' && isMouseOverPdf && !isHoveringField"
+              v-if="isMouseOverPdf && !isHoveringField"
               class="absolute pointer-events-none z-20 border-2 border-sky-400 bg-sky-400/20 rounded-md backdrop-blur-[1px] transition-opacity duration-150 block shadow-[0_0_15px_rgba(56,189,248,0.3)]"
               :style="previewBoxStyle"
             >
@@ -310,58 +302,81 @@
       </div>
     </div>
 
-    <div v-if="pdfReady" class="text-center font-medium text-slate-500 mt-2 text-sm" ref="coordinatesDisplay">
-      {{ signMode === 'token'
-        ? 'Se muestran las coincidencias detectadas del token en el PDF.'
-        : selectionMode === 'preset'
-        ? 'Haz clic en el PDF para crear el campo de firma.'
-        : 'Haz clic y arrastra en el PDF para crear el campo de firma.' }}
-    </div>
+    <AdminModalShell
+      controlled
+      :open="showSignaturesModal"
+      @close="showSignaturesModal = false"
+      labelled-by="signaturesModalLabel"
+      title="Campos de firma"
+      size="lg"
+    >
+      <div v-if="!visibleFields.length" class="text-center py-10 px-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-slate-400 rounded-full mb-4">
+          <IconSignature class="w-8 h-8" />
+        </div>
+        <h3 class="text-xl font-semibold text-slate-800 mb-2">No hay firmas</h3>
+        <p class="text-slate-500 max-w-sm mx-auto leading-relaxed">
+          Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.
+        </p>
+      </div>
 
-    <div v-if="pdfReady && visibleFields.length" class="mt-6">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-        <h4 class="text-lg font-semibold text-slate-800 mb-4 text-left">
-          {{ signMode === 'token' ? 'Coincidencias detectadas del token' : 'Campos agregados' }}
-        </h4>
-        <div class="flex flex-col gap-3">
-          <div
-            v-for="field in visibleFields"
-            :key="field.id"
-            class="flex flex-wrap sm:flex-nowrap items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer gap-4"
-            :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
-            @click="selectField(field.id)"
-          >
-            <span class="text-sm text-slate-700">
-              <span class="font-semibold text-slate-900 bg-slate-100 px-2 py-1 rounded mr-1">Pag {{ field.page }}</span>
-              <span class="mx-2 text-slate-400">|</span>
-              x1={{ formatCoord(field.x1) }}, y1={{ formatCoord(field.y1) }}, 
-              x2={{ formatCoord(field.x2) }}, y2={{ formatCoord(field.y2) }}
-              <template v-if="field.signer">
-                <span class="mx-2 text-slate-400">|</span>
-                <span class="text-sky-700 font-medium">
+      <div v-else class="flex flex-col gap-3 py-2">
+        <div
+          v-for="field in visibleFields"
+          :key="field.id"
+          class="bg-white border border-slate-200 rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
+          :class="{ 'ring-2 ring-sky-500 border-transparent': field.id === lastFieldId }"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
+            
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center font-bold">
+                <IconSignature class="w-5 h-5" />
+              </div>
+              <div>
+                <div v-if="field.signer" class="font-semibold text-slate-800 text-base mb-0.5">
                   {{ field.signer.first_name }} {{ field.signer.last_name }}
-                </span>
-              </template>
-            </span>
-            <button
-              v-if="signMode !== 'token'"
-              type="button"
-              class="inline-flex px-3 py-1.5 text-sm rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium"
-              @click.stop="requestDeleteField(field.id)"
-            >
-              Eliminar
-            </button>
+                </div>
+                <div v-else class="font-semibold text-slate-800 text-base mb-0.5">
+                  Firmante no asignado
+                </div>
+                
+                <div v-if="field.signer" class="text-sm text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                  <span v-if="field.signer.email" class="inline-flex items-center gap-1">
+                    <span class="font-medium text-slate-400">Email:</span> {{ field.signer.email }}
+                  </span>
+                  <span v-if="field.signer.cedula" class="inline-flex items-center gap-1">
+                    <span class="font-medium text-slate-400">CI:</span> {{ field.signer.cedula }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-slate-100 sm:pl-5">
+              <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-center">
+                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pág</span>
+                <span class="block text-lg font-bold text-slate-800 leading-none mt-0.5">{{ field.page }}</span>
+              </div>
+              
+              <div class="text-xs text-slate-500 grid grid-cols-2 gap-x-4 gap-y-1">
+                <div>x/y: <span class="font-medium text-slate-700">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
+                <div>w/h: <span class="font-medium text-slate-700">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
+              </div>
+            </div>
+            
           </div>
+          
+          <button
+            v-if="signMode !== 'token'"
+            @click.stop="requestDeleteField(field.id)"
+            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
+            title="Eliminar campo"
+          >
+            <IconTrash class="w-5 h-5" stroke-width="1.5" />
+          </button>
         </div>
       </div>
-    </div>
-    
-    <div v-if="pdfReady && visibleFields.length" class="mt-6 mb-8">
-      <div class="bg-slate-800 text-slate-300 rounded-2xl shadow-sm border border-slate-700 p-4">
-        <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">JSON Output</div>
-        <pre class="text-xs whitespace-pre-wrap overflow-auto font-mono custom-scrollbar">{{ fieldsJson }}</pre>
-      </div>
-    </div>
+    </AdminModalShell>
 
   </div>
 
@@ -933,7 +948,7 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconList, IconMail, IconCreditCard } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
@@ -960,7 +975,7 @@
   const currentPage = ref(1);
   const pageInput = ref(1);
   const totalPages = ref(0);
-  const selectionMode = ref('preset');
+  const showSignaturesModal = ref(false);
   const uploadedFiles = ref([]);
   const uploadError = ref('');
   const pdfReady = ref(false);
@@ -995,7 +1010,6 @@
   const lastFieldId = ref(null);
   const fieldCounter = ref(1);
   const visibleFields = computed(() => (signMode.value === 'token' ? tokenPreviewFields.value : fields.value));
-  const fieldsJson = computed(() => JSON.stringify(visibleFields.value, null, 2));
   const previewCanvas = ref(null);
   const selectedField = ref(null);
   const filterPage = ref('all');
@@ -1125,8 +1139,6 @@
     const y1 = toPdfUnits(rectHeight - top);
     const x2 = toPdfUnits(right);
     const y2 = toPdfUnits(rectHeight - bottom);
-    coordinatesDisplay.value.textContent =
-      `Coordenadas Cartesianas: Superior Izquierda (x1=${x1}, y1=${y1}), Inferior Derecha (x2=${x2}, y2=${y2})`;
     lastSelection.value = {
       page: currentPage.value,
       x1,
@@ -1180,30 +1192,22 @@
     const currentX = event.pageX - ofx;
     const currentY = event.pageY - ofy;
 
-    if (selectionMode.value === 'preset') {
-      const presetWidth = toCssUnits(FIELD_WIDTH);
-      const presetHeight = toCssUnits(FIELD_HEIGHT);
-      const maxLeft = Math.max(0, rect.width - presetWidth);
-      const maxTop = Math.max(0, rect.height - presetHeight);
+    const presetWidth = toCssUnits(FIELD_WIDTH);
+    const presetHeight = toCssUnits(FIELD_HEIGHT);
+    const maxLeft = Math.max(0, rect.width - presetWidth);
+    const maxTop = Math.max(0, rect.height - presetHeight);
+    
+    const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+    const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
       
-      const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
-      const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
-      
-      const box = createBox(left, top, presetWidth, presetHeight);
-      updateCoordinates(left, top, left + presetWidth, top + presetHeight, rect.height);
-      activeBox = box;
-      if (requestMode.value) {
-        openAssignSignerModal();
-      } else {
-        saveFieldWithSigner(currentUser.value);
-      }
-      return;
+    const box = createBox(left, top, presetWidth, presetHeight);
+    updateCoordinates(left, top, left + presetWidth, top + presetHeight, rect.height);
+    activeBox = box;
+    if (requestMode.value) {
+      openAssignSignerModal();
+    } else {
+      saveFieldWithSigner(currentUser.value);
     }
-
-    startX = currentX;
-    startY = currentY;
-    activeBox = createBox(startX, startY, 0, 0);
-    isDragging = true;
   };
 
   const isMouseOverPdf = ref(false);
@@ -1242,44 +1246,23 @@
     const currentX = event.pageX - ofx;
     const currentY = event.pageY - ofy;
 
-    if (selectionMode.value === 'preset') {
-      isMouseOverPdf.value = true;
-      const presetWidth = toCssUnits(FIELD_WIDTH);
-      const presetHeight = toCssUnits(FIELD_HEIGHT);
-      
-      const maxLeft = Math.max(0, rect.width - presetWidth);
-      const maxTop = Math.max(0, rect.height - presetHeight);
-      
-      // Calculate center to place mouse in the middle of the preview
-      const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
-      const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
+    isMouseOverPdf.value = true;
+    const presetWidth = toCssUnits(FIELD_WIDTH);
+    const presetHeight = toCssUnits(FIELD_HEIGHT);
+    
+    const maxLeft = Math.max(0, rect.width - presetWidth);
+    const maxTop = Math.max(0, rect.height - presetHeight);
+    
+    // Calculate center to place mouse in the middle of the preview
+    const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+    const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
 
-      previewBoxStyle.value = {
-        left: `${left}px`,
-        top: `${top}px`,
-        width: `${presetWidth}px`,
-        height: `${presetHeight}px`
-      };
-      
-      if (!isDragging) return;
-    }
-
-    if (!isDragging || !activeBox) return;
-
-    const left = Math.max(Math.min(currentX, startX), 0);
-    const top = Math.max(Math.min(currentY, startY), 0);
-    const right = Math.min(Math.max(currentX, startX), rect.width);
-    const bottom = Math.min(Math.max(currentY, startY), rect.height);
-
-    const width = Math.max(0, right - left);
-    const height = Math.max(0, bottom - top);
-
-    activeBox.style.left = `${left}px`;
-    activeBox.style.top = `${top}px`;
-    activeBox.style.width = `${width}px`;
-    activeBox.style.height = `${height}px`;
-
-    updateCoordinates(left, top, right, bottom, rect.height);
+    previewBoxStyle.value = {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${presetWidth}px`,
+      height: `${presetHeight}px`
+    };
   };
 
   const handleMouseLeave = () => {
@@ -1486,10 +1469,6 @@
       renderPage(target);
     }
 
-    const setSelectionMode = (mode) => {
-      selectionMode.value = mode;
-    }
-
     const resetPdfState = () => {
       pdfDoc = null;
       pdfReady.value = false;
@@ -1498,7 +1477,6 @@
       pageInput.value = 1;
       lastSelection.value = null;
       lastFieldId.value = null;
-      selectionMode.value = 'preset';
     };
 
     const loadPdfFromFile = async (file, mode = 'sign') => {
