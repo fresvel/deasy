@@ -269,7 +269,7 @@
             <!-- PREVIEW PREDEFINIDA BOX -->
             <div 
               v-if="selectionMode === 'preset' && isMouseOverPdf"
-              class="absolute pointer-events-none z-20 border-2 border-sky-400 bg-sky-400/20 rounded-md backdrop-blur-[1px] transition-all duration-75 block shadow-[0_0_15px_rgba(56,189,248,0.3)]"
+              class="absolute pointer-events-none z-20 border-2 border-sky-400 bg-sky-400/20 rounded-md backdrop-blur-[1px] transition-opacity duration-150 block shadow-[0_0_15px_rgba(56,189,248,0.3)]"
               :style="previewBoxStyle"
             >
                <div class="absolute inset-0 flex items-center justify-center opacity-70">
