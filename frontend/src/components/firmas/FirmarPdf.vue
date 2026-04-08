@@ -138,7 +138,6 @@
         
         <!-- MAIN ACTION: Firmar individual -->
         <div class="group relative bg-white border border-slate-200 hover:border-sky-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col md:flex-row items-center md:items-center gap-5">
-          <div class="absolute -right-24 -top-24 w-72 h-72 bg-sky-50 rounded-full blur-3xl opacity-60 group-hover:opacity-100 transition-opacity"></div>
           
           <div class="shrink-0 w-14 h-14 bg-sky-50 border border-sky-100 text-sky-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 relative z-10">
             <IconSignature class="w-7 h-7" stroke-width="1.5" />
