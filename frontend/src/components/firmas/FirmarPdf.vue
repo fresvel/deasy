@@ -385,52 +385,59 @@
     id="deleteFieldsModal"
     labelled-by="delete-fields-modal-title"
     title="Eliminar campos"
-    size="xl"
+    size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-            <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
-            <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-              <div class="flex flex-col gap-4">
-                <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                  <label class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
-                  <select v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
-                    <option value="all">Todas</option>
-                    <option v-for="page in pagesWithFields" :key="page" :value="page">
-                      Pagina {{ page }}
-                    </option>
-                  </select>
-                </div>
-                <div class="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                  <div
-                    v-for="field in filteredFields"
-                    :key="field.id"
-                    class="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer"
-                    :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
-                    @mouseenter="selectField(field.id, true)"
-                    @focus="selectField(field.id, true)"
-                  >
-                    <span class="text-sm font-medium text-slate-800 flex flex-col gap-1">
-                      {{ field.name }}
-                      <span class="text-slate-500 text-xs font-normal">
-                        {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
-                      </span>
-                    </span>
-                    <button type="button" class="inline-flex px-3 py-1.5 text-xs rounded-lg border border-red-600 text-red-600 hover:bg-red-50 transition font-medium" @click.stop="requestDeleteField(field.id)">
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 min-h-[320px] flex flex-col relative sticky top-0">
-                <h6 class="text-sm font-semibold text-slate-700 mb-3">Previsualizacion del área</h6>
-                <div class="flex-grow flex items-center justify-center bg-slate-200/50 rounded-lg overflow-hidden border border-slate-200 relative">
-                  <canvas ref="previewCanvas" class="max-w-full block bg-white"></canvas>
-                  <p v-if="!selectedField" class="text-slate-500 text-sm absolute">
-                    Selecciona un campo.
-                  </p>
-                </div>
-              </div>
+    <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
+    <div v-else class="flex flex-col gap-4">
+      <div class="flex items-center justify-between gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+        <label class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
+        <select v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+          <option value="all">Todas</option>
+          <option v-for="page in pagesWithFields" :key="page" :value="page">
+            Pagina {{ page }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+        <div
+          v-for="field in filteredFields"
+          :key="field.id"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
+          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+        >
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-slate-800">{{ field.name }}</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
+            <span class="text-slate-500 text-xs font-medium">
+              {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
+            </span>
+          </div>
+          
+          <div class="flex items-center gap-2 sm:self-center self-end">
+            <button 
+              type="button" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
+              @click.stop="goToFieldLocation(field.id)"
+            >
+              <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
+              Ver en documento
+            </button>
+            <button 
+              type="button" 
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2 focus:ring-red-200" 
+              @click.stop="requestDeleteField(field.id)"
+            >
+              <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </AdminModalShell>
 
   <AdminModalShell
@@ -1910,6 +1917,34 @@
         position: 'absolute',
         pointerEvents: 'auto'
       };
+    };
+
+    const goToFieldLocation = async (fieldId) => {
+      const field = visibleFields.value.find((item) => item.id === fieldId);
+      if (!field) return;
+
+      if (deleteModalInstance) {
+        deleteModalInstance.hide();
+      }
+
+      if (field.page !== currentPage.value) {
+        await renderPage(field.page);
+      }
+
+      // Add a slight delay to ensure DOM is updated after renderPage
+      nextTick(() => {
+        setTimeout(() => {
+          const boxEl = document.querySelector(`[data-field-id="${fieldId}"]`);
+          if (boxEl) {
+            boxEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // optionally highlight the box temporarily by adding a temporary class
+            boxEl.classList.add('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
+            setTimeout(() => {
+              boxEl.classList.remove('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
+            }, 1500);
+          }
+        }, 100);
+      });
     };
 
     const removeField = (fieldId) => {
