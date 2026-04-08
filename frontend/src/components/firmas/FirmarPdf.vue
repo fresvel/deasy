@@ -646,6 +646,159 @@
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
   </AdminModalShell>
+
+  <AdminModalShell
+    ref="validationResultModal"
+    labelled-by="validation-result-modal-title"
+    title="Validar documento"
+    size="xl"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+  >
+    <div class="flex flex-col gap-4">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div class="flex flex-col gap-2">
+          <label class="font-semibold text-sm text-slate-700">Buscar cédula en las firmas</label>
+          <input
+            v-model="validationCedula"
+            type="text"
+            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+            placeholder="Opcional"
+          />
+        </div>
+        <AdminButton variant="outlinePrimary" :disabled="isValidatingDocument || !validationFile" @click="validateDocument">
+          {{ isValidatingDocument ? 'Validando...' : 'Revalidar' }}
+        </AdminButton>
+      </div>
+
+      <div v-if="validationError" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        {{ validationError }}
+      </div>
+
+      <div v-if="validationResult" class="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Firmas detectadas</div>
+          <div class="mt-1 text-2xl font-bold text-slate-900">{{ validationResult.summary?.signatureCount || 0 }}</div>
+        </div>
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Firmas válidas</div>
+          <div class="mt-1 text-2xl font-bold text-emerald-900">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+        </div>
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-sky-700">Coincidencias cédula</div>
+          <div class="mt-1 text-2xl font-bold text-sky-900">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Documento</div>
+          <div class="mt-1 text-sm font-semibold text-slate-900 break-all">{{ validationFile?.name || 'Documento seleccionado' }}</div>
+        </div>
+      </div>
+
+      <div
+        v-if="validationResult?.summary?.timestampCount"
+        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+      >
+        El documento también contiene {{ validationResult.summary.timestampCount }} sello(s) de tiempo. No se muestran en la tabla principal de firmantes.
+      </div>
+
+      <div
+        v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
+        class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      >
+        {{ validationResult.warnings.join(' ') }}
+      </div>
+
+      <AppDataTable
+        :fields="validationTableFields"
+        :rows="validationResult?.signatures || []"
+        :row-key="(row) => `${row.index}-${row.fieldName || row.signerCedula || 'firma'}`"
+      >
+        <template #cell="{ row, field }">
+          <template v-if="field.name === 'validLabel'">
+            <div class="flex items-center justify-center">
+              <AppTag :variant="row.valid ? 'success' : 'danger'">
+                {{ row.valid ? 'Sí' : 'No' }}
+              </AppTag>
+            </div>
+          </template>
+          <template v-else-if="field.name === 'certificateAuthority'">
+            <div class="flex items-center">
+              <AdminTableActions
+                v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
+                :show-view="true"
+                :show-edit="false"
+                :show-delete="false"
+                view-title="Visualizar entidad certificadora"
+                view-label="Visualizar entidad certificadora"
+                @view="openCertificateAuthorityModal(row)"
+              />
+              <span v-else>No disponible</span>
+            </div>
+          </template>
+          <template v-else-if="field.name === 'signerCedula'">
+            <div class="flex flex-col gap-1">
+              <span>{{ row.signerCedula }}</span>
+              <AppTag v-if="row.matchesCedula" variant="info">Coincide</AppTag>
+            </div>
+          </template>
+          <template v-else-if="field.name === 'details'">
+            <details class="min-w-[16rem] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <summary class="cursor-pointer text-sm font-semibold text-slate-700">Ver detalles</summary>
+              <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+            </details>
+          </template>
+          <template v-else>
+            {{ row[field.name] }}
+          </template>
+        </template>
+        <template #empty>
+          <p class="my-3 text-sm text-slate-500">No se encontraron firmas embebidas en el documento.</p>
+        </template>
+      </AppDataTable>
+    </div>
+    <template #footer>
+      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+    </template>
+  </AdminModalShell>
+
+  <AdminModalShell
+    ref="certificateAuthorityModal"
+    labelled-by="certificate-authority-modal-title"
+    title="Entidad certificadora"
+    size="lg"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+  >
+    <div class="flex flex-col gap-4">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Entidad</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-800">
+          {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}
+        </div>
+      </div>
+
+      <div
+        v-if="selectedCertificateAuthority?.extras?.issuer"
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+      >
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Issuer completo</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+          {{ selectedCertificateAuthority.extras.issuer }}
+        </div>
+      </div>
+
+      <div
+        v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+      >
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
+        <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
+      </div>
+    </div>
+    <template #footer>
+      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+    </template>
+  </AdminModalShell>
 </template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps } from 'vue';
@@ -656,10 +809,12 @@
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
+  import AppDataTable from '@/components/AppDataTable.vue';
   import PdfDropField from '@/components/firmas/PdfDropField.vue';
   import UserCertificatesPanel from '@/components/firmas/UserCertificatesPanel.vue';
   import AdminModalShell from '@/components/AppModalShell.vue';
   import AdminButton from '@/components/AppButton.vue';
+  import AdminTableActions from '@/views/admin/components/AdminTableActions.vue';
   import MultiSignerPanel from '@/components/firmas/MultiSignerPanel.vue';
 
   const props = defineProps({
@@ -688,6 +843,8 @@
   const confirmDeleteModal = ref(null);
   const signCertModal = ref(null);
   const signResultModal = ref(null);
+  const validationResultModal = ref(null);
+  const certificateAuthorityModal = ref(null);
   const certificatesManagerModal = ref(null);
   const certificatesPanelRef = ref(null);
   const signerInput = ref('');
@@ -759,6 +916,12 @@
   const signedFieldsCount = ref(0);
   const workflowSignContext = ref(null);
   const workflowPdfStatus = ref({ type: 'info', message: '' });
+  const validationFile = ref(null);
+  const validationCedula = ref('');
+  const isValidatingDocument = ref(false);
+  const validationError = ref('');
+  const validationResult = ref(null);
+  const selectedCertificateAuthority = ref(null);
   const multiBatchRequest = ref(null);
   const activeMultiBatchJob = ref(null);
   const activeMultiBatchJobId = ref('');
@@ -767,8 +930,23 @@
   const isLoadingCertificates = ref(false);
   let signCertModalInstance = null;
   let signResultModalInstance = null;
+  let validationResultModalInstance = null;
+  let certificateAuthorityModalInstance = null;
   let certificatesManagerModalInstance = null;
   let multiBatchPollTimer = null;
+  const validationTableFields = [
+    { name: 'signerCedula', label: 'Cédula de Identidad' },
+    { name: 'signerName', label: 'Nombres Apellidos' },
+    { name: 'reasonLocation', label: 'Razón / Localización' },
+    { name: 'signingTime', label: 'Fecha de Firmado' },
+    { name: 'timestampStatus', label: 'Estampa de Tiempo' },
+    { name: 'certificateAuthority', label: 'Entidad Certificadora' },
+    { name: 'certificateIssuedAt', label: 'Fecha de Emisión' },
+    { name: 'certificateExpiresAt', label: 'Fecha de Expiración' },
+    { name: 'revocationStatus', label: 'Fecha de Revocación' },
+    { name: 'validLabel', label: 'Válido' },
+    { name: 'details', label: 'Detalles' }
+  ];
   const currentSignatureMarker = computed(() => {
     if (currentUser.value?.signatureMarker) return currentUser.value.signatureMarker;
     const rawToken = currentUser.value?.signatureToken || currentUser.value?.token || '';
@@ -933,6 +1111,12 @@
     }
     if (signResultModal.value?.el) {
       signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
+    }
+    if (validationResultModal.value?.el) {
+      validationResultModalInstance = Modal.getOrCreateInstance(validationResultModal.value.el);
+    }
+    if (certificateAuthorityModal.value?.el) {
+      certificateAuthorityModalInstance = Modal.getOrCreateInstance(certificateAuthorityModal.value.el);
     }
     if (certificatesManagerModal.value?.el) {
       certificatesManagerModalInstance = Modal.getOrCreateInstance(certificatesManagerModal.value.el);
@@ -1206,12 +1390,95 @@
         uploadError.value = 'El archivo debe ser un PDF.';
         return;
       }
+      if (mode === 'validate') {
+        validationFile.value = file;
+        validateDocument();
+        return;
+      }
       uploadedFiles.value = [{ content: file, isRenaming: false, name: file.name }];
       loadPdfFromFile(file, mode);
     };
 
     const onPdfDropFiles = (files, mode) => {
       onAddFiles(files, mode);
+    };
+
+    const formatValidationDate = (value) => {
+      if (!value) return 'No disponible';
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return String(value);
+      }
+      return parsed.toLocaleString('es-EC');
+    };
+
+    const buildValidationRowsFromPayload = (signatures = []) =>
+      signatures.map((signature) => ({
+        ...signature,
+        signerCedula: signature.signerCedula || 'No disponible',
+        signerName: [
+          signature.firstNames,
+          signature.lastName,
+          signature.secondLastName
+        ].filter(Boolean).join(' ') || signature.signerName || 'No disponible',
+        reasonLocation: [signature.reason, signature.location].filter(Boolean).join(' / ') || 'No disponible',
+        signingTime: formatValidationDate(signature.signingTime),
+        timestampStatus: signature.timestampStatus || 'No',
+        certificateAuthority: signature.certificateAuthority || 'No disponible',
+        certificateIssuedAt: formatValidationDate(signature.certificateIssuedAt),
+        certificateExpiresAt: formatValidationDate(signature.certificateExpiresAt),
+        revocationStatus: signature.revocationStatus || 'No disponible',
+        validLabel: signature.valid ? 'Sí' : 'No'
+      }));
+
+    const openValidationModal = () => {
+      if (!validationResultModal.value?.el) return;
+      validationResultModalInstance = Modal.getOrCreateInstance(validationResultModal.value.el);
+      validationResultModalInstance.show();
+    };
+
+    const openCertificateAuthorityModal = (row) => {
+      selectedCertificateAuthority.value = row;
+      if (!certificateAuthorityModal.value?.el) return;
+      certificateAuthorityModalInstance = Modal.getOrCreateInstance(certificateAuthorityModal.value.el);
+      certificateAuthorityModalInstance.show();
+    };
+
+    const validateDocument = async () => {
+      if (!validationFile.value) {
+        uploadError.value = 'Debes seleccionar un PDF para validarlo.';
+        return;
+      }
+
+      isValidatingDocument.value = true;
+      validationError.value = '';
+      uploadError.value = '';
+      try {
+        const formData = new FormData();
+        formData.append('pdf', validationFile.value);
+        if (validationCedula.value.trim()) {
+          formData.append('cedula', validationCedula.value.trim());
+        }
+        const response = await fetch(API_ROUTES.SIGN_VALIDATE, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: formData
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data?.error || data?.message || 'No se pudo validar el documento.');
+        }
+        validationResult.value = {
+          ...data,
+          signatures: buildValidationRowsFromPayload(data.signatures || [])
+        };
+        openValidationModal();
+      } catch (error) {
+        validationError.value = error.message || 'No se pudo validar el documento.';
+        uploadError.value = validationError.value;
+      } finally {
+        isValidatingDocument.value = false;
+      }
     };
 
     const openMultiSigner = () => {
@@ -1961,6 +2228,11 @@
       signSuccess.value = false;
       signedMinioPath.value = '';
       signedFieldsCount.value = 0;
+      validationFile.value = null;
+      validationCedula.value = '';
+      isValidatingDocument.value = false;
+      validationError.value = '';
+      validationResult.value = null;
       activeMultiBatchJob.value = null;
       activeMultiBatchJobId.value = '';
       isStartingMultiBatch.value = false;
