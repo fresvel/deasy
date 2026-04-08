@@ -330,7 +330,18 @@
                   </button>
                 </div>
               </div>
-
+              <!-- PREVIEW PREDEFINIDA BOX (Ghost Signature) -->
+              <div
+                v-if="isMouseOverPdf && !activeSelectionBox"
+                class="absolute pointer-events-none border-sky-400 bg-sky-400/20 backdrop-blur-[1px] shadow-[0_0_15px_rgba(56,189,248,0.3)] z-[20]"
+                :style="previewBoxStyle"
+              >
+                <!-- Ghost indicators -->
+                <div class="absolute -top-1 -left-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
+                <div class="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
+                <div class="absolute -bottom-1 -left-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
+                <div class="absolute -bottom-1 -right-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
+              </div>
               <!-- Rectángulo de selección en dibujado -->
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
@@ -452,6 +463,11 @@ const canNextPage = computed(() => currentPage.value < totalPages.value);
 const isBatchRunning = computed(() => ["queued", "processing"].includes(props.batchJob?.status || ""));
 const isCoordinateMode = computed(() => ["shared-coordinates", "per-document"].includes(batchMode.value));
 const currentUserLabel = computed(() => "Firma");
+
+const isMouseOverPdf = ref(false);
+const isHoveringField = ref(false);
+const previewBoxStyle = ref({ display: 'none' });
+
 const currentModeFields = computed(() => {
   if (batchMode.value === "shared-coordinates") return sharedFields.value;
   if (batchMode.value === "per-document" && currentDocument.value) {
@@ -626,14 +642,16 @@ const handlePointerDown = (event) => {
   if (!isCoordinateMode.value || !viewerRef.value || !pdfDoc) return;
   const rect = getViewerRect();
   if (!rect) return;
+
   const currentX = event.clientX - rect.left;
   const currentY = event.clientY - rect.top;
 
+  // En modo preset, simplemente usamos el click currentX/Y
   if (selectionMode.value === "preset") {
     const width = toCssUnits(FIELD_WIDTH);
     const height = toCssUnits(FIELD_HEIGHT);
-    const left = Math.min(Math.max(currentX, 0), Math.max(0, rect.width - width));
-    const top = Math.min(Math.max(currentY, 0), Math.max(0, rect.height - height));
+    const left = Math.min(Math.max(currentX - width / 2, 0), rect.width - width);
+    const top = Math.min(Math.max(currentY - height / 2, 0), rect.height - height);
     updateSharedSelection(left, top, left + width, top + height, rect.height);
     appendField(lastSelection.value);
     activeSelectionBox.value = null;
@@ -653,24 +671,57 @@ const handlePointerDown = (event) => {
 };
 
 const handlePointerMove = (event) => {
-  if (!isDragging || !isCoordinateMode.value || !viewerRef.value) return;
+  if (!isCoordinateMode.value || !viewerRef.value) return;
+  
   const rect = getViewerRect();
   if (!rect) return;
+  
   const currentX = event.clientX - rect.left;
   const currentY = event.clientY - rect.top;
-  const left = Math.max(Math.min(currentX, startX), 0);
-  const top = Math.max(Math.min(currentY, startY), 0);
-  const right = Math.min(Math.max(currentX, startX), rect.width);
-  const bottom = Math.min(Math.max(currentY, startY), rect.height);
 
-  activeSelectionBox.value = {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${Math.max(0, right - left)}px`,
-    height: `${Math.max(0, bottom - top)}px`,
-    position: "absolute"
-  };
-  updateSharedSelection(left, top, right, bottom, rect.height);
+  isMouseOverPdf.value = true;
+  
+  // Lógica de "ghost/preview" cuando no se está arrastrando para dibujar
+  if (!isDragging && selectionMode.value === "preset") {
+    const presetWidth = toCssUnits(FIELD_WIDTH);
+    const presetHeight = toCssUnits(FIELD_HEIGHT);
+    
+    const maxLeft = Math.max(0, rect.width - presetWidth);
+    const maxTop = Math.max(0, rect.height - presetHeight);
+    
+    // Centrar la caja en el mouse
+    const left = Math.min(Math.max(currentX - presetWidth / 2, 0), maxLeft);
+    const top = Math.min(Math.max(currentY - presetHeight / 2, 0), maxTop);
+
+    previewBoxStyle.value = {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${presetWidth}px`,
+      height: `${presetHeight}px`
+    };
+  }
+
+  // Lógica de dibujado manual
+  if (isDragging && selectionMode.value !== "preset") {
+    const left = Math.max(Math.min(currentX, startX), 0);
+    const top = Math.max(Math.min(currentY, startY), 0);
+    const right = Math.min(Math.max(currentX, startX), rect.width);
+    const bottom = Math.min(Math.max(currentY, startY), rect.height);
+
+    activeSelectionBox.value = {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${Math.max(0, right - left)}px`,
+      height: `${Math.max(0, bottom - top)}px`,
+      position: "absolute"
+    };
+    updateSharedSelection(left, top, right, bottom, rect.height);
+  }
+};
+
+const handlePointerLeave = () => {
+  isMouseOverPdf.value = false;
+  handlePointerUp();
 };
 
 const handlePointerUp = () => {
