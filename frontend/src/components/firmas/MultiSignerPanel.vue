@@ -343,6 +343,14 @@
                   </div>
               </div>
             </div>
+            
+            <div v-if="!currentDocument" class="flex flex-col items-center justify-center text-center h-full w-full max-w-sm mx-auto opacity-70 relative z-[5] animate-fade-in">
+              <div class="w-20 h-20 bg-slate-300/50 rounded-full flex items-center justify-center mb-6 shadow-inner ring-8 ring-white/40">
+                <IconFiles class="w-10 h-10 text-slate-500 ml-1" />
+              </div>
+              <h3 class="text-xl font-bold text-slate-700 mb-2">No hay ningún PDF para visualizar</h3>
+              <p class="text-slate-500 font-medium text-sm">Añade uno o más documentos PDF a la cola desde el panel lateral izquierdo para comenzar a configurar el lote de firmas.</p>
+            </div>
           </div>
         </div>
       </div>
