@@ -1,43 +1,21 @@
 <template>
-  <div class="w-full h-full flex flex-col gap-6 relative z-20">
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-sm p-3 sm:p-4 rounded-2xl">
-      <div class="flex items-center gap-3 sm:gap-4">
-        <button
-          type="button"
-          class="flex-shrink-0 flex items-center justify-center p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm"
-          title="Regresar"
-          aria-label="Regresar"
-          @click="$emit('back')"
-        >
-          <IconArrowLeft class="w-5 h-5" />
-        </button>
-        <div class="flex flex-col border-l border-slate-200 pl-3 sm:border-l-0 sm:pl-0">
-          <div class="text-sm sm:text-base font-bold text-slate-800 leading-tight">Lote de firmas</div>
-          <div class="text-[10px] sm:text-xs text-slate-500 font-medium tracking-wide">MULTIFIRMADOR</div>
-        </div>
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-2 lg:gap-3 pl-3 sm:pl-0 lg:pl-0">
-        <PdfDropField
-          variant="inline"
-          title=""
-          action-text="Agregar PDFs"
-          help-text=""
-          :icon="IconFiles"
-          input-id="multisigner-input"
-          multiple
-          @files-selected="onFilesSelected"
-          class="min-w-fit font-bold rounded-lg"
-        />
-        <button
-          v-if="documents.length"
-          type="button"
-          class="inline-flex items-center justify-center p-2 sm:p-2.5 sm:px-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-all font-semibold text-xs sm:text-sm gap-2"
-          @click="clearQueue"
-        >
-          <IconTrash class="w-4 h-4 hidden sm:block" />
-          Limpiar cola
-        </button>
+  <div class="w-full h-full flex flex-col gap-6">
+    <!-- Page Header -->
+    <div class="flex items-start gap-4">
+      <button
+        type="button"
+        class="flex-shrink-0 inline-flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm group"
+        title="Regresar"
+        aria-label="Regresar"
+        @click="$emit('back')"
+      >
+        <IconArrowLeft class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+      </button>
+      <div class="flex flex-col pt-0.5">
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-800 m-0 leading-tight tracking-tight">Multifirmador</h2>
+        <p class="text-slate-500 text-sm sm:text-base mt-1 font-medium leading-snug max-w-xl">
+          Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
+        </p>
       </div>
     </div>
 
@@ -210,10 +188,30 @@
           </AdminButton>
         </div>
 
-        <div class="flex flex-col gap-3 mt-2">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-            <div class="text-sm font-bold text-slate-800">Carga de archivos</div>
-            <div class="text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 text-slate-500">{{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }}</div>
+        <div class="flex flex-col mt-2">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <div class="text-sm font-bold text-slate-800">Archivos <span class="text-xs font-semibold text-slate-500 ml-1">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span></div>
+            <div class="flex items-center gap-1">
+              <PdfDropField
+                variant="inline"
+                title=""
+                action-text="Añadir PDF"
+                help-text=""
+                input-id="multisigner-input-sidebar"
+                multiple
+                @files-selected="onFilesSelected"
+                class="text-xs font-bold"
+              />
+              <button
+                v-if="documents.length"
+                type="button"
+                class="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
+                title="Limpiar cola completa"
+                @click="clearQueue"
+              >
+                <IconTrash class="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <div v-if="!documents.length" class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center text-slate-400 gap-3">
             <IconFiles class="w-8 h-8 opacity-50" />
