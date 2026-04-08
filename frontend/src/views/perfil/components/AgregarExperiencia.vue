@@ -66,7 +66,7 @@ import { Modal } from "@/utils/modalController";
 import DossierService from "@/services/dossier/DossierService";
 import SSelect from "@/components/SSelect.vue";
 import SDate from "@/components/SDate.vue";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 
 const emit = defineEmits(["experiencia-added"]);
 

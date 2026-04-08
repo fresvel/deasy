@@ -35,7 +35,7 @@
 <script setup>
 import AppButton from "@/components/AppButton.vue";
 import AppModalShell from "@/components/AppModalShell.vue";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 
 defineProps({
   open: {

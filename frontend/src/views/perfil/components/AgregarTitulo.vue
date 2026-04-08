@@ -101,7 +101,7 @@ import DossierService from "@/services/dossier/DossierService";
 import SInput from "@/components/SInput.vue";
 import SSelect from "@/components/SSelect.vue";
 import { escountries } from "@/composable/countries";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 
 const emit = defineEmits(["close-modal", "title-added"]);
 

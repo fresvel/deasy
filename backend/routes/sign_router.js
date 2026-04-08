@@ -9,7 +9,8 @@ import {
   getSignatureFlow,
   requestSign,
   requestSignBatch,
-  requestSignBatchStart
+  requestSignBatchStart,
+  validateSignedDocument
 } from "../controllers/sign/sign_controller.js";
 import {
   approveFillRequest,
@@ -37,6 +38,13 @@ router.post(
   authMiddleware,
   upload.fields([{ name: "pdf", maxCount: 1 }]),
   requestSign
+);
+
+router.post(
+  "/validate",
+  authMiddleware,
+  upload.fields([{ name: "pdf", maxCount: 1 }]),
+  validateSignedDocument
 );
 
 router.post(

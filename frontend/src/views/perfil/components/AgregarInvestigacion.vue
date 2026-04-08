@@ -198,7 +198,7 @@ import ProfileModalLayout from "@/components/AppFormModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits } from "vue";
 import { Modal } from "@/utils/modalController";
 import DossierService from "@/services/dossier/DossierService";
-import PdfDropField from "@/components/PdfDropField.vue";
+import PdfDropField from "@/components/firmas/PdfDropField.vue";
 
 const emit = defineEmits(["investigacion-added"]);
 

@@ -7,19 +7,19 @@
       title="Abrir chat"
       @click="openLauncher"
     >
-      <span class="absolute inset-[5px] rounded-full border border-white/70 bg-white/55" />
+      <span class="absolute inset-1.25 rounded-full border border-white/70 bg-white/55" />
       <IconMessages class="relative z-10 h-7 w-7 sm:h-8 sm:w-8" />
     </AppButton>
 
     <div
       v-if="showChat"
-      class="fixed inset-0 z-[95] bg-slate-950/30 backdrop-blur-[2px]"
+      class="fixed inset-0 z-95 bg-slate-950/30 backdrop-blur-[2px]"
       @click="closePanel"
     />
 
     <aside
       v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-[100] flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
       <header class="border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
@@ -118,7 +118,7 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                class="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -152,12 +152,12 @@
               <article
                 v-for="message in messages"
                 :key="message.id"
-                class="max-w-[88%] rounded-[24px] px-4 py-3 shadow-sm"
+                class="max-w-[88%] rounded-3xl px-4 py-3 shadow-sm"
                 :class="Number(message.sender_person_id) === Number(currentPersonId)
                   ? 'ml-auto bg-sky-700 text-white'
                   : 'mr-auto border border-slate-200 bg-white text-slate-800'"
               >
-                <p class="m-0 whitespace-pre-wrap break-words text-sm font-medium leading-6">
+                <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
                   {{ message.content || 'Adjunto sin texto' }}
                 </p>
                 <div v-if="message.attachments?.length" class="mt-3 flex flex-col gap-2">
@@ -215,7 +215,7 @@
                 ref="composerRef"
                 v-model="draft"
                 rows="1"
-                class="max-h-40 min-h-[52px] flex-1 resize-none rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                class="max-h-40 min-h-13 flex-1 resize-none rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:ring-4 focus:ring-sky-100"
                 placeholder="Escribe un mensaje"
                 @input="resizeComposer"
                 @keydown.enter.exact.prevent="sendMessage"

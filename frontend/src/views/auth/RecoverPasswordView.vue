@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-md w-full bg-white rounded-[2rem] shadow-xl shadow-slate-300/50 p-8 sm:p-12 border border-slate-200 relative overflow-hidden">
+    <div class="max-w-md w-full bg-white rounded-4xl shadow-xl shadow-slate-300/50 p-8 sm:p-12 border border-slate-200 relative overflow-hidden">
       
       <!-- Go back button -->
       <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group">

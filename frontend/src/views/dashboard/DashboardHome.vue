@@ -1,50 +1,40 @@
 <template>
-  <div class="min-h-[100vh] bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="navigateTo('firmar')">
-        <div v-if="unitGroups.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-          <AppButton
-            variant="plain"
-            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] group"
-            :class="selectedGroupId === null ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
-            type="button"
-            @click="selectConsolidated"
-          >
-            <span class="deasy-nav-chip__icon" :class="selectedGroupId === null ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
-              <IconGlobe class="w-5 h-5" />
-            </span>
-            <div class="min-w-0 hidden lg:block flex-1">
-              <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">Consolidado</div>
-            </div>
-          </AppButton>
-
-          <AppButton
-            v-for="group in unitGroups"
-            :key="group.id"
-            variant="plain"
-            class-name="deasy-nav-chip min-w-[44px] sm:min-w-[100px] lg:min-w-[198px] group"
-            :class="group.id === selectedGroupId ? 'deasy-nav-chip--active' : 'deasy-nav-chip--idle'"
-            type="button"
-            @click="selectGroup(group)"
-          >
-            <span class="deasy-nav-chip__icon" :class="group.id === selectedGroupId ? 'deasy-nav-chip__icon--active' : 'deasy-nav-chip__icon--idle'">
-              <component :is="iconForUnitGroup(group)" class="w-5 h-5" />
-            </span>
-            <div class="min-w-0 hidden lg:block flex-1">
-              <div class="text-sm font-semibold leading-tight inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis" :title="group.name">
-                {{ group.label || group.name }}
-              </div>
-            </div>
-          </AppButton>
-        </div>
+  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
+    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
     </app-workspace-header>
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-[2560px] mx-auto items-stretch">
+    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
       <app-workspace-sidebar :show="showMenu" :photo="userPhoto" :username="userFullName" @close-mobile="showMenu = false">
         <div class="deasy-nav-group">
-          <div class="deasy-nav-meta mt-3 mb-2">
+          <div class="px-2 mt-3 mb-2" v-if="unitGroups.length">
+            <label class="flex flex-col gap-1.5 relative">
+              <span class="text-xs font-bold uppercase tracking-wider text-white/50">Cargos asignados</span>
+              <div class="relative">
+                <select
+                  :value="selectedGroupId || ''"
+                  @change="(e) => { const v = e.target.value; if (!v) selectConsolidated(); else selectGroup(unitGroups.find(g => String(g.id) === String(v))); }"
+                  class="block w-full pl-3 pr-8 py-2.5 bg-white/10 border border-white/10 rounded-[10px] text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:bg-sky-950 transition-all outline-none text-sm font-semibold appearance-none cursor-pointer"
+                >
+                  <option value="" class="text-slate-900 font-semibold bg-white">Consolidado</option>
+                  <option
+                    v-for="group in unitGroups"
+                    :key="group.id"
+                    :value="group.id"
+                    class="text-slate-900 font-semibold bg-white"
+                  >
+                    {{ group.label || group.name }}
+                  </option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/70">
+                  <IconChevronDown class="w-4 h-4" />
+                </div>
+              </div>
+            </label>
+          </div>
+          <div v-else class="deasy-nav-meta mt-3 mb-2">
             {{ menuContextLabel }}
           </div>
 
@@ -123,7 +113,7 @@
         </AppPageIntro>
 
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-          <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-[160px]" v-for="card in summaryCards" :key="card.title">
+          <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-40" v-for="card in summaryCards" :key="card.title">
             <header class="flex justify-between items-start gap-4">
               <h3 class="text-base font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
               <AppTag :variant="getStatusTagVariant(card.statusClass)" class-name="whitespace-nowrap shrink-0">{{ card.status }}</AppTag>
@@ -138,7 +128,7 @@
           </article>
         </section>
 
-        <section class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
+        <section class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
           <header class="flex items-center justify-between gap-4 mb-5">
             <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Resumen rápido</h2>
             <AppButton variant="secondary" size="md" class-name="hidden sm:inline-flex" @click="navigateTo('perfil')">
@@ -148,7 +138,7 @@
 
           <!-- Vista móvil: Tarjetas -->
           <div class="flex flex-col gap-3 sm:hidden">
-            <div v-for="row in summaryRows" :key="'mob-' + row.section" class="bg-white border border-slate-100 rounded-[1rem] p-4 shadow-sm flex flex-col gap-3">
+            <div v-for="row in summaryRows" :key="'mob-' + row.section" class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
               <div class="flex justify-between items-start gap-2">
                 <div class="flex flex-col gap-0.5">
                   <span class="font-bold text-slate-800 text-sm leading-tight">{{ row.section }}</span>
@@ -196,7 +186,7 @@
 
         <template v-else>
           <section class="flex flex-col gap-8">
-            <section class="bg-gradient-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-[1.5rem] text-white shadow-2xl shadow-sky-900/20 flex flex-col md:flex-row justify-between gap-5 md:gap-7 relative overflow-hidden">
+            <section class="bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-3xl text-white shadow-2xl shadow-sky-900/20 flex flex-col md:flex-row justify-between gap-5 md:gap-7 relative overflow-hidden">
                <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
                   <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
                   <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
@@ -239,23 +229,23 @@
 
             <template v-else>
               <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
                   <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tareas</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.tasks_total }}</strong></header>
                   <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Pendientes o en curso.</p>
                 </article>
-                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
                   <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Entregables</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.task_items_pending }}</strong></header>
                   <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Pendientes de tus tareas.</p>
                 </article>
-                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
                   <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Documentos</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.documents_total }}</strong></header>
                   <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Ligados a entregables.</p>
                 </article>
-                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
                   <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Llenado</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.fill_requests_pending || 0 }}</strong></header>
                   <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Solicitudes pendientes.</p>
                 </article>
-                <article class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
+                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
                   <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Firmas</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.signatures_pending }}</strong></header>
                   <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Solicitudes pendientes.</p>
                 </article>
@@ -267,7 +257,7 @@
 
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-8 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-8 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
@@ -303,7 +293,7 @@
                     </AppTag>
                   </div>
 
-                  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+                  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-3 rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
                     <label class="flex flex-col gap-2">
                       <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
                       <input
@@ -365,11 +355,11 @@
                     </label>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta definición.
                   </div>
 
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
 
@@ -542,7 +532,7 @@
                 </article>
 
                 <!-- Documentos (Wide) -->
-                <article class="lg:col-span-4 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5 self-start">
+                <article class="lg:col-span-4 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5 self-start">
                   <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
                     <div class="flex flex-col gap-2">
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
@@ -578,7 +568,7 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
                     <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
                     <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta definición.</p>
@@ -671,7 +661,7 @@
         </div>
 
         <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-          <div class="md:col-span-2 rounded-[1.5rem] border border-slate-200 bg-slate-50/60 p-5">
+          <div class="md:col-span-2 rounded-3xl border border-slate-200 bg-slate-50/60 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
               <AppTag variant="muted">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
@@ -728,7 +718,7 @@
         </section>
 
         <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-5">
-          <div class="rounded-[1.5rem] border border-sky-200 bg-sky-50/70 p-5">
+          <div class="rounded-3xl border border-sky-200 bg-sky-50/70 p-5">
             <h3 class="m-0 text-base font-bold text-sky-900">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-sky-800/80">
               Esta tarea se creará usando los templates activos de la definición. En este corte, el dashboard informa el alcance documental real antes de confirmar la creación.
@@ -736,7 +726,7 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-slate-800">Templates operativos</h3>
@@ -764,7 +754,7 @@
               </div>
             </article>
 
-            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-slate-800">Artifacts generales</h3>
@@ -789,7 +779,7 @@
         </section>
 
         <section v-else class="flex flex-col gap-5">
-          <div class="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/70 p-5">
+          <div class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5">
             <h3 class="m-0 text-base font-bold text-emerald-900">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-emerald-800/80">
               Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
@@ -797,7 +787,7 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-slate-800">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
@@ -815,7 +805,7 @@
               </div>
             </article>
 
-            <article class="rounded-[1.5rem] border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-slate-800">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
@@ -1373,7 +1363,7 @@ import SNavMenu from '@/layouts/SNavMenu.vue';
 import AppDataTable from '@/components/AppDataTable.vue';
 import AppPageIntro from '@/components/AppPageIntro.vue';
 import AppTag from '@/components/AppTag.vue';
-import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/components/firmas/FirmarPdf.vue';
 import UserMenuService from '@/services/logged/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/services/logged/ProcessDefinitionPanelService.js';
 import SignatureFlowService from '@/services/sign/SignatureFlowService.js';
@@ -1381,7 +1371,7 @@ import { API_ROUTES } from '@/services/apiConfig';
 import { Modal } from '@/utils/modalController';
 import AdminModalShell from '@/components/AppModalShell.vue';
 import AppButton from '@/components/AppButton.vue';
-import PdfDropField from '@/components/PdfDropField.vue';
+import PdfDropField from '@/components/firmas/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/components/WorkspaceChatLauncher.vue';
 
 import {
@@ -1396,7 +1386,8 @@ import {
   IconSignature,
   IconUpload,
   IconArrowRight,
-  IconBuildingMonument
+  IconBuildingMonument,
+  IconChevronDown
 } from '@tabler/icons-vue';
 
 const router = useRouter();
@@ -1540,7 +1531,7 @@ const deliverableUploadModalHelp = computed(() => {
   return `Carga el archivo de trabajo para ${subject.title || subject.template_artifact_name || `#${subject.itemId || subject.id}`}.`;
 });
 
-const isSigningView = computed(() => route.query?.view === 'firmar');
+const isSigningView = ref(false);
 
 const summaryTableFields = [
   { name: 'section', label: 'Sección' },
@@ -1618,6 +1609,7 @@ const applyMenuCargos = (cargos) => {
 };
 
 const selectConsolidated = () => {
+  isSigningView.value = false;
   selectedGroupId.value = null;
   applyMenuCargos(consolidatedCargos.value);
 };
@@ -1655,6 +1647,7 @@ const buildGroupCargos = (group) => {
 };
 
 const selectGroup = (group) => {
+  isSigningView.value = false;
   selectedGroupId.value = group?.id ?? null;
   applyMenuCargos(buildGroupCargos(group));
   if (!showMenu.value) {
@@ -2039,6 +2032,7 @@ const loadSelectedProcessPanel = async (process) => {
 };
 
 const handleProcessSelect = async (process) => {
+  isSigningView.value = false;
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
   if (window.innerWidth < 1024) {
@@ -2261,7 +2255,7 @@ const navigateTo = (destination) => {
       router.push('/dashboard');
       break;
     case 'firmar':
-      router.push({ path: '/dashboard', query: { view: 'firmar' } });
+      isSigningView.value = true;
       break;
     case 'perfil':
     default:
