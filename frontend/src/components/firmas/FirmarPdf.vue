@@ -693,113 +693,164 @@
     labelled-by="validation-result-modal-title"
     title="Validar documento"
     size="xl"
-    content-class="rounded-4 shadow border-0"
-    body-class="pt-4"
+    content-class="rounded-3xl shadow-xl border-0 overflow-hidden"
+    header-class="bg-slate-50 border-b border-slate-100"
+    body-class="p-0 bg-slate-50 relative"
   >
-    <div class="flex flex-col gap-4">
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700">Buscar cédula en las firmas</label>
-          <input
-            v-model="validationCedula"
-            type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            placeholder="Opcional"
-          />
+    <div class="px-6 pt-6 pb-4">
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
+        <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
+          <label class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
+            <IconSearch class="w-4 h-4 text-sky-600" /> Buscar cédula en las firmas
+          </label>
+          <div class="relative max-w-full md:max-w-sm">
+            <input
+              v-model="validationCedula"
+              type="text"
+              class="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-50"
+              placeholder="Ej. 0999999999 (Opcional)"
+            />
+          </div>
         </div>
-        <AdminButton variant="outlinePrimary" :disabled="isValidatingDocument || !validationFile" @click="validateDocument">
-          {{ isValidatingDocument ? 'Validando...' : 'Revalidar' }}
-        </AdminButton>
+        <div class="relative z-10 w-full md:w-auto">
+          <button 
+            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-sky-600 text-sky-700 hover:bg-sky-50 hover:border-sky-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isValidatingDocument || !validationFile" 
+            @click="validateDocument"
+          >
+            <IconRefresh v-if="isValidatingDocument" class="w-4 h-4 animate-spin" />
+            <IconShieldCheck v-else class="w-4 h-4" />
+            {{ isValidatingDocument ? 'Validando...' : 'Revalidar documento' }}
+          </button>
+        </div>
       </div>
 
-      <div v-if="validationError" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-        {{ validationError }}
+      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-sm animate-fade-in">
+        <IconAlertCircle class="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
+        <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
       </div>
 
-      <div v-if="validationResult" class="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Firmas detectadas</div>
-          <div class="mt-1 text-2xl font-bold text-slate-900">{{ validationResult.summary?.signatureCount || 0 }}</div>
+      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+          <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
+            <div class="p-1.5 bg-slate-100 rounded-lg"><IconSignature class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
+          </div>
+          <div class="text-3xl font-black text-slate-800 z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Firmas válidas</div>
-          <div class="mt-1 text-2xl font-bold text-emerald-900">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+          <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
+          <div class="flex items-center gap-2 text-emerald-700 mb-1 z-10">
+            <div class="p-1.5 bg-emerald-100 rounded-lg"><IconCheck class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Firmas Válidas</div>
+          </div>
+          <div class="text-3xl font-black text-emerald-900 z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
         </div>
-        <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
-          <div class="text-xs font-semibold uppercase tracking-wide text-sky-700">Coincidencias cédula</div>
-          <div class="mt-1 text-2xl font-bold text-sky-900">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
+
+        <div class="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-100 rounded-full blur-xl opacity-50"></div>
+          <div class="flex items-center gap-2 text-cyan-700 mb-1 z-10">
+            <div class="p-1.5 bg-cyan-100 rounded-lg"><IconSearch class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Coincidencias</div>
+          </div>
+          <div class="text-3xl font-black text-cyan-900 z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Documento</div>
-          <div class="mt-1 text-sm font-semibold text-slate-900 break-all">{{ validationFile?.name || 'Documento seleccionado' }}</div>
+
+        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm flex flex-col justify-center relative overflow-hidden">
+          <div class="flex items-center gap-2 text-indigo-700 mb-2 z-10">
+            <div class="p-1.5 bg-indigo-100 rounded-lg"><IconFileCheck class="w-4 h-4" /></div>
+            <div class="text-xs font-bold uppercase tracking-wider">Documento Activo</div>
+          </div>
+          <div class="text-sm font-bold text-indigo-900 truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
         </div>
       </div>
 
       <div
         v-if="validationResult?.summary?.timestampCount"
-        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-sm animate-fade-in"
       >
-        El documento también contiene {{ validationResult.summary.timestampCount }} sello(s) de tiempo. No se muestran en la tabla principal de firmantes.
+        <IconAlertTriangle class="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
+        <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
       </div>
 
       <div
         v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-sm animate-fade-in"
       >
-        {{ validationResult.warnings.join(' ') }}
+        <IconAlertCircle class="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
+        <div class="flex flex-col gap-1">
+          <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
+        </div>
       </div>
+    </div>
 
+    <!-- TABLA -->
+    <div class="bg-white border-t border-slate-200">
       <AppDataTable
         :fields="validationTableFields"
         :rows="validationResult?.signatures || []"
         :row-key="(row) => `${row.index}-${row.fieldName || row.signerCedula || 'firma'}`"
+        class="border-0 shadow-none rounded-none"
       >
         <template #cell="{ row, field }">
           <template v-if="field.name === 'validLabel'">
             <div class="flex items-center justify-center">
-              <AppTag :variant="row.valid ? 'success' : 'danger'">
-                {{ row.valid ? 'Sí' : 'No' }}
-              </AppTag>
+              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
+                <IconCheck class="w-3.5 h-3.5" /> Válida
+              </span>
+              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
+                <IconX class="w-3.5 h-3.5" /> Inválida
+              </span>
             </div>
           </template>
           <template v-else-if="field.name === 'certificateAuthority'">
-            <div class="flex items-center">
-              <AdminTableActions
+            <div class="flex items-center justify-center">
+              <button
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
-                :show-view="true"
-                :show-edit="false"
-                :show-delete="false"
-                view-title="Visualizar entidad certificadora"
-                view-label="Visualizar entidad certificadora"
-                @view="openCertificateAuthorityModal(row)"
-              />
-              <span v-else>No disponible</span>
+                @click="openCertificateAuthorityModal(row)"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-sky-100 hover:text-sky-600 transition-colors"
+                title="Ver entidad certificadora"
+              >
+                <IconCertificate class="w-4 h-4" />
+              </button>
+              <span v-else class="text-slate-400 text-xs font-semibold uppercase">N/A</span>
             </div>
           </template>
           <template v-else-if="field.name === 'signerCedula'">
-            <div class="flex flex-col gap-1">
-              <span>{{ row.signerCedula }}</span>
-              <AppTag v-if="row.matchesCedula" variant="info">Coincide</AppTag>
+            <div class="flex flex-col gap-1.5 items-start">
+              <span class="font-semibold text-slate-800">{{ row.signerCedula }}</span>
+              <span v-if="row.matchesCedula" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold uppercase tracking-wider border border-cyan-200">
+                <IconCheck class="w-3 h-3" /> Coincide
+              </span>
             </div>
           </template>
           <template v-else-if="field.name === 'details'">
-            <details class="min-w-[16rem] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-              <summary class="cursor-pointer text-sm font-semibold text-slate-700">Ver detalles</summary>
-              <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+            <details class="min-w-[16rem] group">
+              <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-sky-600 hover:text-sky-700 transition flex items-center gap-1 list-none">
+                <IconInfoCircle class="w-4 h-4" />
+                <span class="group-open:hidden">Ver técnico</span>
+                <span class="hidden group-open:inline">Ocultar</span>
+              </summary>
+              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
             </details>
           </template>
           <template v-else>
-            {{ row[field.name] }}
+            <span class="text-sm text-slate-600 font-medium">{{ row[field.name] }}</span>
           </template>
         </template>
         <template #empty>
-          <p class="my-3 text-sm text-slate-500">No se encontraron firmas embebidas en el documento.</p>
+          <div class="flex flex-col items-center justify-center py-12 px-4">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+              <IconShieldCheck class="w-8 h-8" />
+            </div>
+            <h4 class="text-lg font-bold text-slate-700 mb-1">Sin firmas detectadas</h4>
+            <p class="text-sm text-slate-500 text-center max-w-md">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</p>
+          </div>
         </template>
       </AppDataTable>
     </div>
-    <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
-    </template>
   </AdminModalShell>
 
   <AdminModalShell
@@ -846,7 +897,7 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/utils/pdfjsSetup';
   import { Modal } from '@/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/services/apiConfig';
   import BtnDelete from '@/components/BtnDelete.vue';
   import AppTag from '@/components/AppTag.vue';
@@ -855,7 +906,6 @@
   import UserCertificatesPanel from '@/components/firmas/UserCertificatesPanel.vue';
   import AdminModalShell from '@/components/AppModalShell.vue';
   import AdminButton from '@/components/AppButton.vue';
-  import AdminTableActions from '@/views/admin/components/AdminTableActions.vue';
   import MultiSignerPanel from '@/components/firmas/MultiSignerPanel.vue';
 
   const props = defineProps({
