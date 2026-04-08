@@ -308,7 +308,7 @@
 
               <!-- Previsualización / Hover -->
               <SignatureBox
-                v-if="selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging"
+                v-if="selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
                 :is-preview="true"
                 :left="parseFloat(previewBoxStyle.left)"
                 :top="parseFloat(previewBoxStyle.top)"
@@ -330,19 +330,9 @@
                 @select="selectedFieldId = field.id"
                 @delete="removeField(field.id)"
                 @update:position="updateFieldCoordinates"
+                @hover-enter="isHoveringField = true"
+                @hover-leave="isHoveringField = false"
               />
-              <!-- PREVIEW PREDEFINIDA BOX (Ghost Signature) -->
-              <div
-                v-if="isMouseOverPdf && !activeSelectionBox"
-                class="absolute pointer-events-none border-sky-400 bg-sky-400/20 backdrop-blur-[1px] shadow-[0_0_15px_rgba(56,189,248,0.3)] z-20"
-                :style="previewBoxStyle"
-              >
-                <!-- Ghost indicators -->
-                <div class="absolute -top-1 -left-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
-                <div class="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
-                <div class="absolute -bottom-1 -left-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
-                <div class="absolute -bottom-1 -right-1 w-2 h-2 bg-sky-500 rounded-full shadow-[0_0_5px_rgba(14,165,233,0.5)]"></div>
-              </div>
               <!-- Rectángulo de selección en dibujado -->
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"

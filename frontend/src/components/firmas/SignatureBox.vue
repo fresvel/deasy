@@ -3,13 +3,15 @@
     class="signature-box absolute flex flex-col items-center justify-center p-1 rounded-sm backdrop-blur-[1px] transition-colors group z-20"
     :class="[
       isActive ? 'border-sky-500 bg-sky-500/20 ring-4 ring-sky-500 ring-opacity-30 border-solid' : 'border-dashed border-sky-400 bg-sky-400/10 hover:border-sky-500 hover:bg-sky-500/20',
-      isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto cursor-grab active:cursor-grabbing',
-      isDragging ? 'opacity-80 scale-105 shadow-xl ring-2' : 'shadow-sm',
+      isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto custom-drag-cursor',
+      isDragging ? 'opacity-80 scale-105 shadow-xl ring-2 custom-dragging-cursor' : 'shadow-sm',
       customClass
     ]"
     :style="[computedStyle, { borderWidth: '2px' }]"
     @mousedown.stop.prevent="startDrag"
     @click.stop="onClick"
+    @mouseenter="$emit('hover-enter')"
+    @mouseleave="$emit('hover-leave')"
   >
     <div class="h-full w-full border border-sky-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
       <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-sky-600 drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
@@ -54,7 +56,7 @@ const props = defineProps({
   customClass: { type: String, default: '' }
 });
 
-const emit = defineEmits(['update:position', 'delete', 'select', 'drag-start', 'drag-end']);
+const emit = defineEmits(['update:position', 'delete', 'select', 'drag-start', 'drag-end', 'hover-enter', 'hover-leave']);
 
 const isDragging = ref(false);
 let dragStartX = 0;
@@ -185,3 +187,12 @@ onBeforeUnmount(() => {
 });
 
 </script>
+
+<style scoped>
+.custom-drag-cursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='white' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grab;
+}
+.custom-drag-cursor:active, .custom-dragging-cursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='lightgray' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grabbing !important;
+}
+</style>

@@ -258,20 +258,9 @@
           >
             <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
             
-            <!-- PREVIEW PREDEFINIDA BOX -->
-            <div 
-              v-if="isMouseOverPdf && !isHoveringField"
-              class="absolute pointer-events-none z-20 border-2 border-sky-400 bg-sky-400/20 rounded-md backdrop-blur-[1px] transition-opacity duration-150 block shadow-[0_0_15px_rgba(56,189,248,0.3)]"
-              :style="previewBoxStyle"
-            >
-               <div class="absolute inset-0 flex items-center justify-center opacity-70">
-                 <IconSignature class="w-6 h-6 text-sky-700" />
-               </div>
-            </div>
-
             <!-- Previsualización de hover interactiva -->
             <SignatureBox
-              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none'"
+              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none' && !isHoveringField"
               :is-preview="true"
               :left="parseFloat(previewBoxStyle.left)"
               :top="parseFloat(previewBoxStyle.top)"
@@ -293,8 +282,10 @@
               @select="selectField(field.id)"
               @delete="requestDeleteField(field.id)"
               @update:position="updateFieldCoordinates"
-              @mouseenter="isHoveringField = true"
-              @mouseleave="isHoveringField = false"
+              @drag-start="isDragging = true"
+              @drag-end="isDragging = false"
+              @hover-enter="isHoveringField = true"
+              @hover-leave="isHoveringField = false"
             >
               <template #actions>
                 <button
