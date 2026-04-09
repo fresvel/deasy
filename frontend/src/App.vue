@@ -6,8 +6,8 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
-import SessionExpiryModal from '@/components/SessionExpiryModal.vue';
-import { useSessionMonitor } from '@/composables/useSessionMonitor';
+import SessionExpiryModal from '@/shared/components/ui/SessionExpiryModal.vue';
+import { useSessionMonitor } from '@/shared/composables/useSessionMonitor';
 
 const route = useRoute();
 const sessionModalRef = ref(null);
