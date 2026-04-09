@@ -7,6 +7,7 @@ const DOSSIER_BUCKET = process.env.MINIO_DOSSIER_BUCKET || 'deasy-dossier';
  * Responsabilidad: subir el PDF SENESCYT (y preparar soporte para el PDF
  * adicional por título) a MinIO, devolviendo la metadata de storage.
  *
+ * 
  * Prefijos usados:
  *   dossier/{cedula}/titulos/senescyt/   → PDF del certificado SENESCYT
  *   dossier/{cedula}/titulos/soportes/   → PDFs adicionales de respaldo por título
