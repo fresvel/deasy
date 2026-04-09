@@ -240,7 +240,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
-import ProcessDefinitionPanelService from '@/modules/logged/services/ProcessDefinitionPanelService.js';
+import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
 import {
   IconArrowLeft,
   IconDownload,
