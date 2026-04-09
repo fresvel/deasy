@@ -184,7 +184,7 @@
 <script setup>
 import {ref, computed, onMounted, onBeforeUnmount} from "vue"
 import AgregarTitulo from "@/modules/perfil/components/AgregarTitulo.vue";
-import BtnSera from "@/shared/components/ui/BtnSera.vue";
+import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";

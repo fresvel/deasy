@@ -18,8 +18,8 @@
 
 <script setup>
 import { ref } from "vue";
-import AdminButton from "@/shared/components/ui/AppButton.vue";
-import AdminModalShell from "@/shared/components/ui/AppModalShell.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 defineProps({
   context: { type: Object, default: null }
 });

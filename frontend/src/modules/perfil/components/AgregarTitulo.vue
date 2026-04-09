@@ -108,14 +108,14 @@
 </template>
 
 <script setup>
-import ProfileModalLayout from "@/shared/components/ui/AppFormModalLayout.vue";
+import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import DossierService from "@/modules/dossier/services/DossierService";
-import SInput from "@/shared/components/ui/SInput.vue";
-import SSelect from "@/shared/components/ui/SSelect.vue";
+import SInput from "@/shared/components/forms/SInput.vue";
+import SSelect from "@/shared/components/forms/SSelect.vue";
 import { escountries } from "@/core/constants/countries";
-import PdfDropField from "@/shared/components/ui/PdfDropField.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 
 const props = defineProps({
   editingItem: {

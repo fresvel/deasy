@@ -6,7 +6,7 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
-import SessionExpiryModal from '@/shared/components/ui/SessionExpiryModal.vue';
+import SessionExpiryModal from '@/shared/components/modals/SessionExpiryModal.vue';
 import { useSessionMonitor } from '@/shared/composables/useSessionMonitor';
 
 const route = useRoute();

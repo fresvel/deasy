@@ -127,10 +127,10 @@
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
 import { IconCertificate } from "@tabler/icons-vue";
-import AppTag from "@/shared/components/ui/AppTag.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
-import BtnDelete from "@/shared/components/ui/BtnDelete.vue";
-import AdminButton from "@/shared/components/ui/AppButton.vue";
+import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 const props = defineProps({

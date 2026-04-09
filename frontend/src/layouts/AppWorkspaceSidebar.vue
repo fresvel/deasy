@@ -15,7 +15,7 @@
 
 <script setup>
 import SMenu from "@/layouts/SMenu.vue";
-import UserProfile from "@/shared/components/ui/UserProfile.vue";
+import UserProfile from "@/shared/components/widgets/UserProfile.vue";
 
 defineProps({
   show: {

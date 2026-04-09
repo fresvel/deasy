@@ -215,11 +215,11 @@
 </template>
 
 <script setup>
-import ProfileModalLayout from "@/shared/components/ui/AppFormModalLayout.vue";
+import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
 import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import DossierService from "@/modules/dossier/services/DossierService";
-import PdfDropField from "@/shared/components/ui/PdfDropField.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 
 const props = defineProps({
   editingItem: {

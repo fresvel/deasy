@@ -47,8 +47,8 @@
 <script setup>
 import { computed } from "vue";
 import { IconChevronRight } from "@tabler/icons-vue";
-import AppButton from "@/shared/components/ui/AppButton.vue";
-import AppTag from "@/shared/components/ui/AppTag.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
 
 const props = defineProps({
   title: {

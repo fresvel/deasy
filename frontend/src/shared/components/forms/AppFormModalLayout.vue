@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import AppButton from "@/shared/components/ui/AppButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
 
 defineProps({
   title: String,

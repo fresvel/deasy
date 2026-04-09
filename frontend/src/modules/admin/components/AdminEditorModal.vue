@@ -152,10 +152,10 @@
 
 <script setup>
 import { ref } from "vue";
-import AdminButton from "@/shared/components/ui/AppButton.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/ui/AppModalShell.vue";
+import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
 
 const props = defineProps({

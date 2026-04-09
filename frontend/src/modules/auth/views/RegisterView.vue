@@ -290,9 +290,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import AuthService from '@/modules/auth/services/AuthService';
-import AppButton from '@/shared/components/ui/AppButton.vue';
-import AppModalShell from '@/shared/components/ui/AppModalShell.vue';
-import AppTag from '@/shared/components/ui/AppTag.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
+import AppTag from '@/shared/components/data/AppTag.vue';
 import { countries, getPhoneCodeByCountry } from '@/core/constants/countries';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';

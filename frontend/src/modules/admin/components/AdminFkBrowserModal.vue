@@ -291,11 +291,11 @@
 
 <script setup>
 import { ref } from "vue";
-import AdminButton from "@/shared/components/ui/AppButton.vue";
-import AdminDataTable from "@/shared/components/ui/AppDataTable.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/ui/AppModalShell.vue";
+import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
 
 const props = defineProps({

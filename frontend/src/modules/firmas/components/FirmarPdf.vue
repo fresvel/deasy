@@ -898,14 +898,14 @@
   import { Modal } from '@/shared/utils/modalController';
   import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey} from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
-  import AppTag from '@/shared/components/ui/AppTag.vue';
-  import AppDataTable from '@/shared/components/ui/AppDataTable.vue';
+  import AppTag from '@/shared/components/data/AppTag.vue';
+  import AppDataTable from '@/shared/components/data/AppDataTable.vue';
   import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
   import SignatureBox from '@/modules/firmas/components/SignatureBox.vue';
   import UserCertificatesPanel from '@/modules/firmas/components/UserCertificatesPanel.vue';
-  import AdminModalShell from '@/shared/components/ui/AppModalShell.vue';
-  import AdminButton from '@/shared/components/ui/AppButton.vue';
-  import Loading from '@/shared/components/ui/Loading.vue';
+  import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
+  import AdminButton from '@/shared/components/buttons/AppButton.vue';
+  import Loading from '@/shared/components/feedback/Loading.vue';
   import MultiSignerPanel from '@/modules/firmas/components/MultiSignerPanel.vue';
 
   const props = defineProps({

@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import ObtenerInformes from '@/shared/components/ui/ObtenerInformes.vue';
+import ObtenerInformes from '@/modules/academia/components/ObtenerInformes.vue';
 import { defineProps, onMounted } from 'vue'
 
 const props = defineProps({

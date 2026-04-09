@@ -97,7 +97,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Modal } from "@/shared/utils/modalController";
-import BtnSera from "@/shared/components/ui/BtnSera.vue";
+import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import AgregarCertificacion from "@/modules/perfil/components/AgregarCertificacion.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";

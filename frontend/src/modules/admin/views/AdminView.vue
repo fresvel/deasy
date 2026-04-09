@@ -426,13 +426,13 @@ import {
 
 import axios from "axios";
 import { useRouter } from "vue-router";
-import AppButton from "@/shared/components/ui/AppButton.vue";
-import AppNavCard from "@/shared/components/ui/AppNavCard.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceSidebar from "@/layouts/AppWorkspaceSidebar.vue";
 import SMessage from "@/layouts/SNotify.vue";
 import SBody from "@/layouts/SBody.vue";
 import AppWorkspaceHeader from "@/layouts/AppWorkspaceHeader.vue";
-import WorkspaceChatLauncher from "@/shared/components/ui/WorkspaceChatLauncher.vue";
+import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/AdminTableManager.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";

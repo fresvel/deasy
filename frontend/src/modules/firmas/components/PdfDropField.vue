@@ -38,7 +38,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import BtnDelete from "@/shared/components/ui/BtnDelete.vue";
+import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 
 let inputSequence = 0;
 

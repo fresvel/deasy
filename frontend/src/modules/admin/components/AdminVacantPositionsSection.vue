@@ -93,9 +93,9 @@
 </template>
 
 <script setup>
-import AdminButton from "@/shared/components/ui/AppButton.vue";
-import AppTag from "@/shared/components/ui/AppTag.vue";
-import AdminDataTable from "@/shared/components/ui/AppDataTable.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
 

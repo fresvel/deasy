@@ -374,8 +374,8 @@ import {
   IconAlertCircle,
   IconDragDrop,
 } from "@tabler/icons-vue";
-import AdminButton from "@/shared/components/ui/AppButton.vue";
-import BtnDelete from "@/shared/components/ui/BtnDelete.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 const props = defineProps({
   batchJob: {

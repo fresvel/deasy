@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import AdminButton from "@/shared/components/ui/AppButton.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 const props = defineProps({
   modelValue: {

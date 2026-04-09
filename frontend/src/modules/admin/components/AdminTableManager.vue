@@ -714,10 +714,10 @@ import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
 import AdminTableHeader from "@/modules/admin/components/AdminTableHeader.vue";
 import AdminUnassignedArtifactsSection from "@/modules/admin/components/AdminUnassignedArtifactsSection.vue";
 import AdminVacantPositionsSection from "@/modules/admin/components/AdminVacantPositionsSection.vue";
-import AdminButton from "@/shared/components/ui/AppButton.vue";
-import AdminDataTable from "@/shared/components/ui/AppDataTable.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminLookupField from "@/modules/admin/components/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/ui/AppModalShell.vue";
+import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSearchModal from "@/modules/admin/components/AdminSearchModal.vue";
 import AdminTableActions from "@/modules/admin/components/AdminTableActions.vue";
 

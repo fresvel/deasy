@@ -136,7 +136,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import DossierService from "@/modules/dossier/services/DossierService";
 import { Modal } from "@/shared/utils/modalController";
 import AgregarExperiencia from "@/modules/perfil/components/AgregarExperiencia.vue";
-import BtnSera from "@/shared/components/ui/BtnSera.vue";
+import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";

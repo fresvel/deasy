@@ -14,7 +14,7 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue';
-import AppButton from '@/shared/components/ui/AppButton.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
 
 const props = defineProps({
   message:{

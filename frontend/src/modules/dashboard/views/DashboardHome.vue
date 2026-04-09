@@ -1360,19 +1360,19 @@ import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
 import SBody from '@/layouts/SBody.vue';
 import SMessage from '@/layouts/SNotify.vue';
 import SNavMenu from '@/layouts/SNavMenu.vue';
-import AppDataTable from '@/shared/components/ui/AppDataTable.vue';
-import AppPageIntro from '@/shared/components/ui/AppPageIntro.vue';
-import AppTag from '@/shared/components/ui/AppTag.vue';
+import AppDataTable from '@/shared/components/data/AppDataTable.vue';
+import AppPageIntro from '@/shared/components/layout/AppPageIntro.vue';
+import AppTag from '@/shared/components/data/AppTag.vue';
 import FirmarPdf from '@/modules/firmas/components/FirmarPdf.vue';
 import UserMenuService from '@/modules/logged/services/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/modules/logged/services/ProcessDefinitionPanelService.js';
 import SignatureFlowService from '@/modules/firmas/services/SignatureFlowService.js';
 import { API_ROUTES } from '@/core/config/apiConfig';
 import { Modal } from '@/shared/utils/modalController';
-import AdminModalShell from '@/shared/components/ui/AppModalShell.vue';
-import AppButton from '@/shared/components/ui/AppButton.vue';
+import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
 import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
-import WorkspaceChatLauncher from '@/shared/components/ui/WorkspaceChatLauncher.vue';
+import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 
 import {
   IconGlobe,

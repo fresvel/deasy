@@ -33,8 +33,8 @@
 </template>
 
 <script setup>
-import AppButton from "@/shared/components/ui/AppButton.vue";
-import AppModalShell from "@/shared/components/ui/AppModalShell.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 
 defineProps({

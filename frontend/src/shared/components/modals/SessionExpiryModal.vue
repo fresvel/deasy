@@ -53,8 +53,8 @@ import axios from 'axios';
 import { API_ROUTES } from '@/core/config/apiConfig';
 import { clearAuthData } from '@/core/utils/tokenUtils';
 import { IconAlertTriangle, IconLogout, IconRefresh } from '@tabler/icons-vue';
-import AppButton from '@/shared/components/ui/AppButton.vue';
-import AppModalShell from '@/shared/components/ui/AppModalShell.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
 
 const emit = defineEmits(['session-refreshed', 'session-closed']);
 

@@ -41,7 +41,7 @@
 
 <script setup>
 import { computed, defineProps, defineEmits } from "vue";
-import AppNavCard from "@/shared/components/ui/AppNavCard.vue";
+import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import { 
   IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe 
 } from '@tabler/icons-vue';

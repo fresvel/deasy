@@ -33,8 +33,8 @@
 
 <script setup>
 import {ref, defineProps} from 'vue'
-import SSelect from '@/shared/components/ui/SSelect.vue';
-import SInput from '@/shared/components/ui/SInput.vue';
+import SSelect from '@/shared/components/forms/SSelect.vue';
+import SInput from '@/shared/components/forms/SInput.vue';
 import EasymServices from '@/shared/services/EasymServices';
 
 

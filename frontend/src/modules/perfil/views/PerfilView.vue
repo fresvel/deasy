@@ -116,7 +116,7 @@ import axios from 'axios';
     import SMessage from '@/layouts/SNotify.vue';
     import SBody from '@/layouts/SBody.vue';
     import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
-    import WorkspaceChatLauncher from '@/shared/components/ui/WorkspaceChatLauncher.vue';
+    import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
       IconInfoCircle, IconMenu2, IconHome

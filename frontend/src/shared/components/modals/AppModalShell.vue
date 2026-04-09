@@ -49,7 +49,7 @@
 
 <script setup>
 import { computed, ref, useAttrs } from "vue";
-import AppButton from "@/shared/components/ui/AppButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
 import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({
