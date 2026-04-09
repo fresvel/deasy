@@ -48,7 +48,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { IconBell, IconHome, IconLogout, IconSettings, IconSignature, IconUser, IconUsers } from "@tabler/icons-vue";
+import { IconBell, IconHome, IconLogout, IconSettings, IconSignature, IconUser } from "@tabler/icons-vue";
 import SHeader from "@/layouts/SHeader.vue";
 
 const props = defineProps({
@@ -87,14 +87,6 @@ const navItems = computed(() => {
       to: "/admin",
       icon: IconSettings,
       showAlways: true
-    },
-    {
-      key: "roles",
-      label: "Roles",
-      title: "Gestión de roles",
-      to: "/roles",
-      icon: IconUsers,
-      showOnlyIn: ["perfil"]
     }
   ].filter(item => {
     if (item.key === props.currentSection) return false;

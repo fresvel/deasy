@@ -21,14 +21,6 @@
           <font-awesome-icon icon="user" />
           <span>Perfil</span>
         </router-link>
-        <router-link 
-          to="/roles" 
-          class="nav-menu-item deasy-nav-item"
-          @click="$emit('close')"
-        >
-          <font-awesome-icon icon="id-card" />
-          <span>Roles</span>
-        </router-link>
         <router-link
           :to="{ path: '/dashboard', query: { view: 'firmar' } }"
           class="nav-menu-item deasy-nav-item"
