@@ -83,8 +83,8 @@
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
-import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
+import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
+import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
   searchTerm: { type: String, default: "" },

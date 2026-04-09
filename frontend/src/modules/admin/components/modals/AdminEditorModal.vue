@@ -153,10 +153,10 @@
 <script setup>
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
-import AdminLookupField from "@/modules/admin/components/AdminLookupField.vue";
+import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
+import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
-import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
+import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
   editorMode: { type: String, default: "create" },

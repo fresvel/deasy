@@ -103,7 +103,7 @@ import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/AdminButton.vue";
+import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import DossierService from "@/modules/dossier/services/DossierService";
 

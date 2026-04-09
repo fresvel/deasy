@@ -38,7 +38,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import AdminButton from "@/modules/admin/components/AdminButton.vue";
+import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({

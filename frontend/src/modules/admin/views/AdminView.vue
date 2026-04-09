@@ -433,7 +433,7 @@ import SMessage from "@/layouts/core/SNotify.vue";
 import SBody from "@/layouts/core/SBody.vue";
 import AppWorkspaceHeader from "@/layouts/headers/AppWorkspaceHeader.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
-import AdminTableManager from "@/modules/admin/components/AdminTableManager.vue";
+import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 

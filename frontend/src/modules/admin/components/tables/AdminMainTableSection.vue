@@ -239,9 +239,9 @@
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
-import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
-import AdminTableActions from "@/modules/admin/components/AdminTableActions.vue";
+import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
+import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const props = defineProps({
   table: { type: Object, default: null },

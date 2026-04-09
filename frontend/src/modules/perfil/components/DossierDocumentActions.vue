@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import AdminButton from "@/modules/admin/components/AdminButton.vue";
+import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 
 defineProps({
   hasDocument: {

@@ -293,10 +293,10 @@
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminFieldGroup from "@/modules/admin/components/AdminFieldGroup.vue";
-import AdminInputField from "@/modules/admin/components/AdminInputField.vue";
+import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
+import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
-import AdminSelectField from "@/modules/admin/components/AdminSelectField.vue";
+import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
   fkTable: { type: Object, default: null },
