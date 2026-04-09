@@ -104,7 +104,7 @@
 
     <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
       <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] gap-6">
         
         <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-sky-300 transition-all duration-300 cursor-pointer">
           <PdfDropField
@@ -118,17 +118,23 @@
           />
         </div>
         
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm opacity-70 cursor-not-allowed items-center justify-center">
-          <component :is="CustomIconSearch" />
-          <h3 class="text-lg font-semibold text-slate-800 mb-2">Buscar en BD</h3>
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-indigo-300 transition-all duration-300 cursor-pointer" @click="openMultiSigner">
+          <component :is="CustomIconFiles" />
+          <h3 class="text-lg font-semibold text-slate-800 mb-2">Multifirmador</h3>
           <div class="flex flex-col items-center justify-center mt-auto w-full">
-            <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
-              Próximamente
+            <button
+              type="button"
+              class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition font-semibold text-sm"
+              @click.stop="openMultiSigner"
+            >
+              Abrir multifirmador
             </button>
-            <p class="text-slate-500 text-xs mt-3 text-center">Se mostraran solicitudes pendientes con detalles.</p>
+            <p class="text-slate-500 text-xs mt-3 text-center">
+              Firma masiva de documentos simultáneamente.
+            </p>
           </div>
         </div>
-        
+
         <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-emerald-300 transition-all duration-300 cursor-pointer">
           <PdfDropField
             title="Solicitar firmas"
@@ -153,23 +159,16 @@
           />
         </div>
 
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-indigo-300 transition-all duration-300 cursor-pointer" @click="openMultiSigner">
-          <component :is="CustomIconFiles" />
-          <h3 class="text-lg font-semibold text-slate-800 mb-2">Multifirmador</h3>
+        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm opacity-70 cursor-not-allowed items-center justify-center">
+          <component :is="CustomIconSearch" />
+          <h3 class="text-lg font-semibold text-slate-800 mb-2">Buscar en BD</h3>
           <div class="flex flex-col items-center justify-center mt-auto w-full">
-            <button
-              type="button"
-              class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition font-semibold text-sm"
-              @click.stop="openMultiSigner"
-            >
-              Abrir multifirmador
+            <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
+              Próximamente
             </button>
-            <p class="text-slate-500 text-xs mt-3 text-center">
-              Firma masiva de documentos simultáneamente.
-            </p>
+            <p class="text-slate-500 text-xs mt-3 text-center">Se mostraran solicitudes pendientes con detalles.</p>
           </div>
         </div>
-
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
         <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
