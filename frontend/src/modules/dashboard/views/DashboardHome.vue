@@ -1355,11 +1355,11 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
-import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
-import SBody from '@/layouts/SBody.vue';
-import SMessage from '@/layouts/SNotify.vue';
-import SNavMenu from '@/layouts/SNavMenu.vue';
+import AppWorkspaceHeader from '@/layouts/headers/AppWorkspaceHeader.vue';
+import AppWorkspaceSidebar from '@/layouts/menus/AppWorkspaceSidebar.vue';
+import SBody from '@/layouts/core/SBody.vue';
+import SMessage from '@/layouts/core/SNotify.vue';
+import SNavMenu from '@/layouts/menus/SNavMenu.vue';
 import AppDataTable from '@/shared/components/data/AppDataTable.vue';
 import AppPageIntro from '@/shared/components/layout/AppPageIntro.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';

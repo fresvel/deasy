@@ -49,7 +49,7 @@
 <script setup>
 import { computed } from "vue";
 import { IconBell, IconHome, IconLogout, IconSettings, IconSignature, IconUser } from "@tabler/icons-vue";
-import SHeader from "@/layouts/SHeader.vue";
+import SHeader from "@/layouts/headers/SHeader.vue";
 
 const props = defineProps({
   menuOpen: {

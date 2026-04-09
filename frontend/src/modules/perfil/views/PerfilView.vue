@@ -112,10 +112,10 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-    import AppWorkspaceSidebar from '@/layouts/AppWorkspaceSidebar.vue';
-    import SMessage from '@/layouts/SNotify.vue';
-    import SBody from '@/layouts/SBody.vue';
-    import AppWorkspaceHeader from '@/layouts/AppWorkspaceHeader.vue';
+    import AppWorkspaceSidebar from '@/layouts/menus/AppWorkspaceSidebar.vue';
+    import SMessage from '@/layouts/core/SNotify.vue';
+    import SBody from '@/layouts/core/SBody.vue';
+    import AppWorkspaceHeader from '@/layouts/headers/AppWorkspaceHeader.vue';
     import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
     import { 
       IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 

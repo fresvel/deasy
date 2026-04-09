@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import SMenu from "@/layouts/SMenu.vue";
+import SMenu from "@/layouts/menus/SMenu.vue";
 import UserProfile from "@/shared/components/widgets/UserProfile.vue";
 
 defineProps({
