@@ -1,8 +1,12 @@
-// pdfjs-dist v4+ — importación ESM del build principal.
-// En Node.js no hay DOM ni Worker, por lo que deshabilitamos el worker.
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+// pdfjs-dist v4+ — build legacy requerido en Node.js (no hay DOMMatrix ni Worker).
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { createRequire } from 'module';
+import { pathToFileURL } from 'url';
 
-GlobalWorkerOptions.workerSrc = '';
+const require = createRequire(import.meta.url);
+const workerPath = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+
 
 /**
  * Responsabilidad: leer el PDF SENESCYT y extraer texto crudo,
