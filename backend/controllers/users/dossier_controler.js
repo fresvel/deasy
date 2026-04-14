@@ -455,6 +455,44 @@ export const updateTitulo = async (req, res) => {
     }
 };
 
+// Actualizar experiencia
+export const updateExperiencia = async (req, res) => {
+    try {
+        const { cedula, experienciaId } = req.params;
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+        const item = dossier.experiencia.id(experienciaId);
+        if (!item) return res.status(404).json({ success: false, message: "Experiencia no encontrada" });
+
+        Object.assign(item, req.body);
+        await dossier.save();
+        res.json({ success: true, message: 'Experiencia actualizada', data: dossier });
+    } catch (error) {
+        console.error('Error al actualizar experiencia:', error);
+        res.status(500).json({ success: false, message: 'Error al actualizar', error: error.message });
+    }
+};
+
+// Actualizar referencia
+export const updateReferencia = async (req, res) => {
+    try {
+        const { cedula, referenciaId } = req.params;
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+        const item = dossier.referencias.id(referenciaId);
+        if (!item) return res.status(404).json({ success: false, message: "Referencia no encontrada" });
+
+        Object.assign(item, req.body);
+        await dossier.save();
+        res.json({ success: true, message: 'Referencia actualizada', data: dossier });
+    } catch (error) {
+        console.error('Error al actualizar referencia:', error);
+        res.status(500).json({ success: false, message: 'Error al actualizar', error: error.message });
+    }
+};
+
 // Eliminar título
 export const deleteTitulo = async (req, res) => {
     try {
@@ -609,6 +647,25 @@ export const addFormacion = async (req, res) => {
     }
 };
 
+// Actualizar formacion (capacitación)
+export const updateFormacion = async (req, res) => {
+    try {
+        const { cedula, formacionId } = req.params;
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+        const item = dossier.formacion.id(formacionId);
+        if (!item) return res.status(404).json({ success: false, message: "Capacitación no encontrada" });
+
+        Object.assign(item, req.body);
+        await dossier.save();
+        res.json({ success: true, message: 'Capacitación actualizada', data: dossier });
+    } catch (error) {
+        console.error('Error al actualizar capacitación:', error);
+        res.status(500).json({ success: false, message: 'Error al actualizar', error: error.message });
+    }
+};
+
 // Eliminar formacion (capacitación)
 export const deleteFormacion = async (req, res) => {
     try {
@@ -679,6 +736,25 @@ export const addCertificacion = async (req, res) => {
             message: 'Error al agregar certificación',
             error: error.message 
         });
+    }
+};
+
+// Actualizar certificación
+export const updateCertificacion = async (req, res) => {
+    try {
+        const { cedula, certificacionId } = req.params;
+        const dossier = await getOrCreateDossier(cedula);
+        if (!dossier) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+        const item = dossier.certificaciones.id(certificacionId);
+        if (!item) return res.status(404).json({ success: false, message: "Certificación no encontrada" });
+
+        Object.assign(item, req.body);
+        await dossier.save();
+        res.json({ success: true, message: 'Certificación actualizada', data: dossier });
+    } catch (error) {
+        console.error('Error al actualizar certificación:', error);
+        res.status(500).json({ success: false, message: 'Error al actualizar', error: error.message });
     }
 };
 
@@ -1100,6 +1176,74 @@ export const getDossierDocumentUrl = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error al obtener URL del documento",
+            error: error.message
+        });
+    }
+};
+
+export const deleteDossierDocumentOnly = async (req, res) => {
+    try {
+        const { cedula, tipoDocumento, registroId } = req.params;
+        
+        if (!cedula || !tipoDocumento || !registroId) {
+            return res.status(400).json({
+                success: false,
+                message: "Faltan parámetros requeridos: cedula, tipoDocumento, registroId"
+            });
+        }
+
+        if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`
+            });
+        }
+
+        const mapping = getCollectionAndField(tipoDocumento);
+        if (!mapping) {
+            return res.status(400).json({ success: false, message: "Tipo de documento inválido" });
+        }
+
+        const dossier = await Dossier.findOne({ cedula });
+        if (!dossier) {
+            return res.status(404).json({ success: false, message: "Dossier no encontrado" });
+        }
+
+        let item = null;
+        if (mapping.field.startsWith("investigacion.")) {
+            const investigacionField = mapping.field.replace("investigacion.", "");
+            item = dossier.investigacion?.[investigacionField]?.id(registroId);
+        } else {
+            item = dossier[mapping.field]?.id(registroId);
+        }
+
+        if (!item) {
+            return res.status(404).json({ success: false, message: "Registro no encontrado" });
+        }
+
+        // Eliminar de MinIO si tiene URL
+        if (item.url_documento) {
+            await removeDossierDocument({ 
+                cedula, 
+                tipoDocumento, 
+                registroId, 
+                fileUrl: item.url_documento 
+            });
+            item.url_documento = null;
+            dossier.markModified(mapping.field);
+            await dossier.save();
+        }
+
+        res.json({
+            success: true,
+            message: "Documento eliminado correctamente"
+        });
+
+    } catch (error) {
+        console.error("Error al eliminar documento:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error al eliminar documento",
             error: error.message
         });
     }
