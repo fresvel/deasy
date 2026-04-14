@@ -1,6 +1,6 @@
 <template>
   <div :class="rootClasses">
-    <div class="flex flex-col gap-2">
+    <div v-if="workspaceMode !== 'multi'" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
@@ -96,6 +96,7 @@
         :batch-job="activeMultiBatchJob"
         :is-batch-submitting="isStartingMultiBatch"
         :is-downloading-batch="isDownloadingMultiBatch"
+        :initial-files="multiSignerSeedFiles"
         @back="closeMultiSigner"
         @download-batch="downloadMultiBatch"
         @start-batch="prepareMultiBatchStart"
@@ -105,8 +106,8 @@
     <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
       <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
       <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-sky-300 transition-all duration-300 cursor-pointer">
+
+        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -114,22 +115,21 @@
             :icon="CustomIconSignature"
             input-id="sign-pdf-input"
             @files-selected="onPdfDropFiles($event, 'sign')"
-            class="h-full flex flex-col justify-center dropfield-centered-title"
+            class="h-full"
           />
         </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm opacity-70 cursor-not-allowed items-center justify-center">
-          <component :is="CustomIconSearch" />
-          <h3 class="text-lg font-semibold text-slate-800 mb-2">Buscar en BD</h3>
-          <div class="flex flex-col items-center justify-center mt-auto w-full">
+
+        <div class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm opacity-70">
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
+          <div class="flex flex-col items-center justify-center flex-grow">
             <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
               Próximamente
             </button>
-            <p class="text-slate-500 text-xs mt-3 text-center">Se mostraran solicitudes pendientes con detalles.</p>
+            <p class="text-slate-500 text-xs mt-3 text-left">Se mostraran solicitudes pendientes con detalles del documento.</p>
           </div>
         </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-emerald-300 transition-all duration-300 cursor-pointer">
+
+        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -137,11 +137,11 @@
             :icon="CustomIconSend"
             input-id="request-pdf-input"
             @files-selected="onPdfDropFiles($event, 'request')"
-            class="h-full flex flex-col justify-center dropfield-centered-title"
+            class="h-full"
           />
         </div>
-        
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-amber-300 transition-all duration-300 cursor-pointer">
+
+        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -149,25 +149,21 @@
             :icon="CustomIconShieldCheck"
             input-id="validate-pdf-input"
             @files-selected="onPdfDropFiles($event, 'validate')"
-            class="h-full flex flex-col justify-center dropfield-centered-title"
+            class="h-full"
           />
         </div>
 
-        <div class="flex flex-col h-full bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm group hover:border-indigo-300 transition-all duration-300 cursor-pointer" @click="openMultiSigner">
-          <component :is="CustomIconFiles" />
-          <h3 class="text-lg font-semibold text-slate-800 mb-2">Multifirmador</h3>
-          <div class="flex flex-col items-center justify-center mt-auto w-full">
-            <button
-              type="button"
-              class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition font-semibold text-sm"
-              @click.stop="openMultiSigner"
-            >
-              Abrir multifirmador
-            </button>
-            <p class="text-slate-500 text-xs mt-3 text-center">
-              Firma masiva de documentos simultáneamente.
-            </p>
-          </div>
+        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+          <PdfDropField
+            title="Multifirmador"
+            action-text="Seleccionar documentos"
+            help-text="Arrastra y suelta o selecciona varios PDF."
+            :icon="CustomIconFiles"
+            input-id="multi-pdf-input"
+            multiple
+            @files-selected="onPdfDropFiles($event, 'multi')"
+            class="h-full"
+          />
         </div>
 
       </div>
@@ -915,11 +911,20 @@
     }
   });
 
-  const CustomIconSignature = () => h('div', { class: 'shrink-0 w-14 h-14 bg-sky-50 border border-sky-100 text-sky-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 mx-auto mb-4 mt-2' }, [h(IconSignature, { class: 'w-7 h-7', 'stroke-width': 1.5 })]);
-  const CustomIconSearch = () => h('div', { class: 'shrink-0 w-14 h-14 bg-slate-100 border border-slate-200 text-slate-400 rounded-2xl flex items-center justify-center shadow-sm mx-auto mb-4 mt-2' }, [h(IconSearch, { class: 'w-7 h-7', 'stroke-width': 1.5 })]);
-  const CustomIconSend = () => h('div', { class: 'shrink-0 w-14 h-14 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 mx-auto mb-4 mt-2' }, [h(IconSend, { class: 'w-7 h-7', 'stroke-width': 1.5 })]);
-  const CustomIconShieldCheck = () => h('div', { class: 'shrink-0 w-14 h-14 bg-amber-50 border border-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 mx-auto mb-4 mt-2' }, [h(IconShieldCheck, { class: 'w-7 h-7', 'stroke-width': 1.5 })]);
-  const CustomIconFiles = () => h('div', { class: 'shrink-0 w-14 h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:-rotate-3 mx-auto mb-4 mt-2' }, [h(IconFiles, { class: 'w-7 h-7', 'stroke-width': 1.5 })]);
+  const buildWorkspaceIcon = (IconComponent, colorClasses) =>
+    h(
+      'div',
+      {
+        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border shadow-sm ${colorClasses}`
+      },
+      [h(IconComponent, { class: 'h-7 w-7', 'stroke-width': 1.5 })]
+    );
+
+  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-sky-50 border-sky-100 text-sky-600');
+  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-slate-100 border-slate-200 text-slate-400');
+  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
+  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
+  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
 
   let ctx;
   const colPdf=ref(null)
@@ -1024,6 +1029,7 @@
   const multiBatchRequest = ref(null);
   const activeMultiBatchJob = ref(null);
   const activeMultiBatchJobId = ref('');
+  const multiSignerSeedFiles = ref([]);
   const isStartingMultiBatch = ref(false);
   const isDownloadingMultiBatch = ref(false);
   const isLoadingCertificates = ref(false);
@@ -1053,8 +1059,8 @@
   });
   const rootClasses = computed(() =>
     props.embedded
-      ? 'w-full h-full max-w-7xl mx-auto p-0 flex flex-col gap-6'
-      : 'w-full h-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
+      ? 'w-full h-full max-w-none mx-auto p-0 flex flex-col gap-6'
+      : 'w-full h-full max-w-none mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
   );
 
   const removeBox = () => {
@@ -1495,13 +1501,26 @@
 
     const onAddFiles = (files, mode = 'sign') => {
       uploadError.value = '';
-      const file = files?.[0];
-      if (!file) return;
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      if (!isPdf) {
+      const normalizedFiles = Array.from(files || []);
+      if (!normalizedFiles.length) return;
+      const pdfFiles = normalizedFiles.filter(
+        (file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      );
+      if (!pdfFiles.length) {
         uploadError.value = 'El archivo debe ser un PDF.';
         return;
       }
+      if (pdfFiles.length !== normalizedFiles.length) {
+        uploadError.value = 'Solo se permiten archivos PDF.';
+        return;
+      }
+      if (mode === 'multi') {
+        multiSignerSeedFiles.value = [...pdfFiles];
+        resetToStart();
+        workspaceMode.value = 'multi';
+        return;
+      }
+      const file = pdfFiles[0];
       if (mode === 'validate') {
         validationFile.value = file;
         validateDocument();
@@ -1597,6 +1616,7 @@
 
     const openMultiSigner = () => {
       resetToStart();
+      multiSignerSeedFiles.value = [];
       workspaceMode.value = 'multi';
     };
 
@@ -2402,6 +2422,7 @@
       if (payload.preloadPdfPath) {
         loadPdfFromRemotePath(payload.preloadPdfPath, 'sign');
       }
+      multiSignerSeedFiles.value = [];
     };
 
     defineExpose({ resetToStart, initializeWorkflowSignatureSession });
@@ -2416,6 +2437,27 @@
   text-align: center;
   width: 100%;
 }
+
+.signature-workspace-card :deep(.deasy-dropzone__surface--card) {
+  min-height: 9.75rem;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.signature-workspace-card :deep(.deasy-dropzone__title) {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.signature-workspace-card :deep(.deasy-dropzone__trigger) {
+  gap: 0.375rem;
+}
+
+.signature-workspace-card :deep(.signature-workspace-icon) {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 .pdf-viewer {
   position: relative;
   max-width: 100%;
