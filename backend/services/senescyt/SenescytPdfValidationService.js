@@ -6,6 +6,7 @@ export class SenescytPdfValidationService {
 
     // ─── Validación de cédula ecuatoriana ────────────────────────────────────
 
+    
     /**
      * Algoritmo módulo 10 para cédulas ecuatorianas.
      * @param {string} cedula - exactamente 10 dígitos
