@@ -96,6 +96,7 @@
         :batch-job="activeMultiBatchJob"
         :is-batch-submitting="isStartingMultiBatch"
         :is-downloading-batch="isDownloadingMultiBatch"
+        :signature-marker="currentSignatureMarker"
         @back="closeMultiSigner"
         @download-batch="downloadMultiBatch"
         @start-batch="prepareMultiBatchStart"

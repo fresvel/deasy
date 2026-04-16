@@ -246,11 +246,11 @@
 
           <AdminButton
             variant="primary"
-            :disabled="!canRequestStart"
+            :disabled="!canRequestStart || isCheckingTokens"
             @click="requestBatchStart"
             class="w-full flex justify-center py-3 rounded-xl font-bold shadow-md shadow-sky-500/20 transition-all hover:shadow-lg hover:shadow-sky-500/30"
           >
-            {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
+            {{ isCheckingTokens ? 'Comprobando tokens...' : isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>
         </div>
       </div>
@@ -369,6 +369,46 @@
         </div>
       </div>
     </div>
+    <!-- Modal for missing tokens -->
+    <AppModalShell
+      controlled
+      :open="showMissingTokenModal"
+      title="Token de firma no encontrado"
+      size="md"
+      content-class="profile-admin-skin"
+      @close="showMissingTokenModal = false"
+    >
+      <div class="space-y-4">
+        <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-start gap-3">
+          <IconAlertCircle class="w-6 h-6 shrink-0 mt-0.5" />
+          <div>
+            <h4 class="font-bold mb-1">¡Acción requerida!</h4>
+            <p v-if="signatureMarker" class="text-sm font-medium">
+              No se ha encontrado el token en los siguientes documentos.
+              Para proceder, todos los PDFs deben incluir el token exacto del usuario.
+            </p>
+            <p v-else class="text-sm font-medium">
+              No tienes un token de firma configurado en tu perfil. 
+              No se puede realizar la búsqueda automática sin un token válido asociado a tu cuenta.
+            </p>
+          </div>
+        </div>
+        
+        <div v-if="missingTokenDocuments.length > 0" class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+          <ul class="divide-y divide-slate-200">
+            <li v-for="docName in missingTokenDocuments" :key="docName" class="px-4 py-2.5 text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <IconFileCheck class="w-4 h-4 text-slate-400" />
+              <span class="truncate" :title="docName">{{ docName }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <template #footer>
+        <AdminButton variant="primary" @click="showMissingTokenModal = false">
+          Entendido
+        </AdminButton>
+      </template>
+    </AppModalShell>
   </div>
 </template>
 
@@ -389,6 +429,7 @@ import {
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 const props = defineProps({
   batchJob: {
     type: Object,
@@ -401,6 +442,10 @@ const props = defineProps({
   isDownloadingBatch: {
     type: Boolean,
     default: false
+  },
+  signatureMarker: {
+    type: String,
+    default: ""
   }
 });
 const emit = defineEmits(["back", "start-batch", "download-batch"]);
@@ -418,6 +463,9 @@ const pdfCanvas = ref(null);
 const canvasHost = ref(null);
 const viewerRef = ref(null);
 const batchError = ref("");
+const isCheckingTokens = ref(false);
+const showMissingTokenModal = ref(false);
+const missingTokenDocuments = ref([]);
 
 const isGlobalDragging = ref(false);
 let globalDragCounter = 0;
@@ -881,6 +929,65 @@ const removeField = (fieldId) => {
 const requestBatchStart = async () => {
   if (!canRequestStart.value) return;
   batchError.value = "";
+
+  if (batchMode.value === "token") {
+    console.log("[MultiSigner] Validando tokens para lote...");
+    if (!props.signatureMarker) {
+      console.warn("[MultiSigner] Sin token configurado");
+      missingTokenDocuments.value = []; 
+      showMissingTokenModal.value = true;
+      return;
+    }
+
+    isCheckingTokens.value = true;
+    const missingDocs = [];
+    const marker = props.signatureMarker;
+
+    try {
+      for (const doc of documents.value) {
+        let hasToken = false;
+        try {
+          const fileBuffer = await doc.file.arrayBuffer();
+          const tempPdf = await pdfjsLib.getDocument({
+            data: new Uint8Array(fileBuffer),
+            enableXfa: true,
+            stopAtErrors: false
+          }).promise;
+
+          for (let pageNum = 1; pageNum <= tempPdf.numPages; pageNum++) {
+            const page = await tempPdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(i => (typeof i?.str === 'string' ? i.str : '')).join(' ');
+            if (pageText.includes(marker)) {
+              hasToken = true;
+              break;
+            }
+          }
+          await tempPdf.destroy(); // Liberar memoria
+        } catch (e) {
+          console.error(`Error verificando token en ${doc.name}`, e);
+          // Si falla la lectura, por seguridad lo marcamos como falta de token
+          missingDocs.push(`${doc.name} (Error de lectura)`);
+          continue;
+        }
+
+        if (!hasToken) {
+          missingDocs.push(doc.name);
+        }
+      }
+    } finally {
+      isCheckingTokens.value = false;
+    }
+
+    if (missingDocs.length > 0) {
+      console.warn("[MultiSigner] PDFs con tokens faltantes:", missingDocs);
+      missingTokenDocuments.value = missingDocs;
+      showMissingTokenModal.value = true;
+      return;
+    }
+  }
+
+  console.log("[MultiSigner] Validación exitosa. Iniciando lote...");
   emit("start-batch", {
     mode: batchMode.value,
     documents: documents.value.map((doc) => ({
