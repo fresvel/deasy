@@ -1,5 +1,17 @@
 <template>
-  <div class="w-full h-full flex flex-col">
+  <div class="w-full h-full flex flex-col relative">
+    <!-- Overlay for global drop -->
+    <div 
+      v-if="isGlobalDragging" 
+      class="fixed inset-0 z-[9999] bg-sky-500/20 backdrop-blur-[2px] border-4 border-dashed border-sky-400 flex flex-col items-center justify-center transition-all duration-200 pointer-events-none"
+    >
+      <div class="bg-white/90 p-8 rounded-2xl shadow-xl flex flex-col items-center gap-4">
+        <IconFiles class="w-16 h-16 text-sky-500" />
+        <h3 class="text-2xl font-bold text-sky-900 m-0">Suelta tus PDFs aquí</h3>
+        <p class="text-sky-700 font-medium m-0">Añadirá los documentos a la cola de multifirma</p>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6 h-full">
       <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
         <!-- Page Header -->
@@ -361,7 +373,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
@@ -406,6 +418,36 @@ const pdfCanvas = ref(null);
 const canvasHost = ref(null);
 const viewerRef = ref(null);
 const batchError = ref("");
+
+const isGlobalDragging = ref(false);
+let globalDragCounter = 0;
+
+const handleGlobalDragEnter = (e) => {
+  e.preventDefault();
+  globalDragCounter++;
+  isGlobalDragging.value = true;
+};
+
+const handleGlobalDragLeave = (e) => {
+  e.preventDefault();
+  globalDragCounter--;
+  if (globalDragCounter === 0) {
+    isGlobalDragging.value = false;
+  }
+};
+
+const handleGlobalDragOver = (e) => {
+  e.preventDefault();
+};
+
+const handleGlobalDrop = async (e) => {
+  e.preventDefault();
+  globalDragCounter = 0;
+  isGlobalDragging.value = false;
+  if (e.dataTransfer && e.dataTransfer.files) {
+    await onFilesSelected(e.dataTransfer.files);
+  }
+};
 
 let pdfDoc = null;
 let renderTask = null;
@@ -911,7 +953,19 @@ watch(currentDocumentIndex, async () => {
   }
 });
 
+onMounted(() => {
+  window.addEventListener("dragenter", handleGlobalDragEnter);
+  window.addEventListener("dragleave", handleGlobalDragLeave);
+  window.addEventListener("dragover", handleGlobalDragOver);
+  window.addEventListener("drop", handleGlobalDrop);
+});
+
 onBeforeUnmount(() => {
+  window.removeEventListener("dragenter", handleGlobalDragEnter);
+  window.removeEventListener("dragleave", handleGlobalDragLeave);
+  window.removeEventListener("dragover", handleGlobalDragOver);
+  window.removeEventListener("drop", handleGlobalDrop);
+
   if (renderTask) {
     try {
       renderTask.cancel();
