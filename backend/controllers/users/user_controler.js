@@ -1143,7 +1143,6 @@ export const createUserProcessTask = async (req, res) => {
   }
 };
 
-// ─── imports TTHH (al final del bloque de imports del archivo) ───────────────
 import PersonHealthRepository    from "../../services/auth/Personhealthrepository.js";
 import PersonBankRepository      from "../../services/auth/PersonBankrepository.js";
 import PersonEmergencyRepository from "../../services/auth/Personemergencyrepository.js";
@@ -1152,28 +1151,6 @@ const healthRepo    = new PersonHealthRepository();
 const bankRepo      = new PersonBankRepository();
 const emergencyRepo = new PersonEmergencyRepository();
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * @swagger
- * /users/me:
- *   get:
- *     summary: Obtener perfil propio
- *     description: |
- *       Retorna el perfil completo del usuario autenticado, incluyendo
- *       todos los campos TTHH (identidad, domicilio, salud, banco,
- *       contacto de emergencia).
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Perfil obtenido correctamente
- *       401:
- *         description: Token inválido o ausente
- *       404:
- *         description: Usuario no encontrado
- */
 export const getMyProfile = async (req, res) => {
   try {
     const userId = req.user.uid;
@@ -1183,7 +1160,6 @@ export const getMyProfile = async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // Cargar datos complementarios en paralelo
     const [health, bank, emergency] = await Promise.all([
       healthRepo.findByPersonId(userId),
       bankRepo.findPrimaryByPersonId(userId),
@@ -1205,60 +1181,6 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-/**
- * @swagger
- * /users/me:
- *   patch:
- *     summary: Actualizar datos básicos del perfil
- *     description: |
- *       Actualiza los campos personales del docente autenticado.
- *       Incluye todos los campos TTHH de la tabla `persons`:
- *       identidad, contacto y dirección domiciliaria completa.
- *
- *       Para salud, banco y contacto de emergencia usar
- *       `PATCH /users/me/tthh`.
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               first_name:           { type: string }
- *               last_name:            { type: string }
- *               email:                { type: string, format: email }
- *               whatsapp:             { type: string }
- *               celular:              { type: string }
- *               fecha_nacimiento:     { type: string, format: date, example: "1990-05-20" }
- *               genero:               { type: string, enum: [M, F, LGBTI] }
- *               etnia:                { type: string }
- *               nacionalidad:         { type: string }
- *               estado_civil:         { type: string, enum: [Soltero, Casado, Union libre, Union de hecho, Divorciado, Viudo] }
- *               tipo_sangre:          { type: string }
- *               pasaporte:            { type: string }
- *               tipo_visa:            { type: string }
- *               direccion:            { type: string }
- *               pais:                 { type: string }
- *               provincia_nacimiento: { type: string }
- *               canton:               { type: string }
- *               parroquia:            { type: string }
- *               pais_residencia:      { type: string }
- *               provincia_residencia: { type: string }
- *               ciudad_residencia:    { type: string }
- *               calle_primaria:       { type: string }
- *               calle_secundaria:     { type: string }
- *               numero_casa:          { type: string }
- *               referencia_domicilio: { type: string }
- *               sector_barrio:        { type: string }
- *               codigo_postal:        { type: string }
- *     responses:
- *       200:
- *         description: Perfil actualizado correctamente
- *       401:
- *         description: Token inválido o ausente
- */
 export const updateMyProfile = async (req, res) => {
   try {
     const userId     = req.user.uid;
@@ -1271,57 +1193,6 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
-/**
- * @swagger
- * /users/me/tthh:
- *   patch:
- *     summary: Actualizar datos TTHH complementarios
- *     description: |
- *       Actualiza en una sola llamada los tres bloques de datos
- *       complementarios del formulario TTHH:
- *
- *       - **salud**: discapacidad y enfermedad catastrófica
- *       - **banco**: cuenta bancaria principal para pago de sueldo
- *       - **emergencia**: contacto de emergencia y alergias
- *
- *       Cada bloque es opcional. Solo se actualizan los bloques
- *       que se incluyan en el body.
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               salud:
- *                 type: object
- *                 properties:
- *                   tiene_discapacidad:       { type: boolean }
- *                   tipo_discapacidad:        { type: string, enum: [Auditiva, Fisica, Intelectual, Lenguaje, Visual] }
- *                   porcentaje_discapacidad:  { type: number }
- *                   enfermedad_catastrofica:  { type: boolean }
- *               banco:
- *                 type: object
- *                 properties:
- *                   banco:         { type: string, example: "Banco Pichincha" }
- *                   numero_cuenta: { type: string, example: "2201234567" }
- *                   tipo_cuenta:   { type: string, enum: [Ahorro, Corriente] }
- *               emergencia:
- *                 type: object
- *                 properties:
- *                   nombre:     { type: string }
- *                   parentesco: { type: string }
- *                   telefono:   { type: string }
- *                   celular:    { type: string }
- *                   alergias:   { type: string }
- *     responses:
- *       200:
- *         description: Datos TTHH actualizados correctamente
- *       401:
- *         description: Token inválido o ausente
- */
 export const updateMyTthh = async (req, res) => {
   try {
     const userId = req.user.uid;
