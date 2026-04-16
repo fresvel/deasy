@@ -891,6 +891,35 @@
       </div>
     </div>
   </AdminModalShell>
+
+  <AdminModalShell
+    ref="confirmChangePdfModal"
+    labelled-by="confirm-change-pdf-title"
+    title="¿Deseas cambiar el documento?"
+    size="centered"
+    content-class="rounded-4 shadow border-0"
+    body-class="pt-4"
+    footer-class="border-0 pt-0"
+  >
+    <div class="flex flex-col gap-3">
+      <p class="mb-0 text-sm text-slate-600">
+        Si cambias el PDF actual, <strong class="text-slate-900">se eliminará todo el progreso</strong> realizado (firmas colocadas o validaciones).
+      </p>
+      <p class="mb-0 text-sm text-slate-600 font-medium italic">
+        Nota: Esta acción no se puede deshacer.
+      </p>
+    </div>
+    <template #footer>
+      <div class="flex items-center justify-end gap-2 w-full">
+        <AdminButton variant="secondary" @click="cancelChangePdf">
+          Cancelar
+        </AdminButton>
+        <AdminButton variant="outlineDanger" @click="confirmChangePdf">
+          Cambiar PDF y eliminar progreso
+        </AdminButton>
+      </div>
+    </template>
+  </AdminModalShell>
 </template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, h } from 'vue';
@@ -948,6 +977,9 @@
   const certificateAuthorityModal = ref(null);
   const certificatesManagerModal = ref(null);
   const certificatesPanelRef = ref(null);
+  const confirmChangePdfModal = ref(null);
+  const pendingFiles = ref(null);
+  const pendingMode = ref(null);
   const signerInput = ref('');
   const userResults = ref([]);
   const userSearchError = ref('');
@@ -985,6 +1017,7 @@
   let deleteModalInstance = null;
   let assignSignerModalInstance = null;
   let confirmDeleteModalInstance = null;
+  let confirmChangePdfModalInstance = null;
   let searchTimeout = null;
   let resizeObserver = null;
   let resizeTimer = null;
@@ -1503,6 +1536,16 @@
         uploadError.value = 'El archivo debe ser un PDF.';
         return;
       }
+
+      // Pedir confirmación si ya hay un PDF cargado y trabajo que podría perderse
+      const hasWorkInProgress = fields.value.length > 0 || (mode === 'validate' && validationResult.value);
+      if (pdfReady.value && hasWorkInProgress) {
+        pendingFiles.value = files;
+        pendingMode.value = mode;
+        openConfirmChangePdfModal();
+        return;
+      }
+
       if (mode === 'validate') {
         validationFile.value = file;
         validateDocument();
@@ -1911,6 +1954,36 @@
       if (!deleteModal.value?.el) return;
       deleteModalInstance = Modal.getOrCreateInstance(deleteModal.value.el);
       deleteModalInstance.show();
+    };
+
+    const openConfirmChangePdfModal = () => {
+      if (!confirmChangePdfModal.value?.el) return;
+      confirmChangePdfModalInstance = Modal.getOrCreateInstance(confirmChangePdfModal.value.el);
+      confirmChangePdfModalInstance.show();
+    };
+
+    const confirmChangePdf = () => {
+      const files = pendingFiles.value;
+      const mode = pendingMode.value;
+      pendingFiles.value = null;
+      pendingMode.value = null;
+      confirmChangePdfModalInstance?.hide();
+
+      if (!files?.[0]) return;
+
+      if (mode === 'validate') {
+        validationFile.value = files[0];
+        validateDocument();
+        return;
+      }
+      uploadedFiles.value = [{ content: files[0], isRenaming: false, name: files[0].name }];
+      loadPdfFromFile(files[0], mode);
+    };
+
+    const cancelChangePdf = () => {
+      pendingFiles.value = null;
+      pendingMode.value = null;
+      confirmChangePdfModalInstance?.hide();
     };
 
     const requestDeleteField = (fieldId) => {
