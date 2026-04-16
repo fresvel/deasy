@@ -1053,8 +1053,8 @@
   });
   const rootClasses = computed(() =>
     props.embedded
-      ? 'w-full h-full max-w-7xl mx-auto p-0 flex flex-col gap-6'
-      : 'w-full h-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
+      ? 'w-full h-full max-w-[1700px] mx-auto p-0 flex flex-col gap-6'
+      : 'w-full h-full max-w-[1700px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
   );
 
   const removeBox = () => {

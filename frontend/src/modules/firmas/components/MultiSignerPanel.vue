@@ -12,7 +12,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6 h-full">
+    <div class="grid grid-cols-1 xl:grid-cols-[400px_minmax(0,1fr)] gap-6 h-full">
       <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
         <!-- Page Header -->
         <div class="flex items-start gap-3">
@@ -310,7 +310,7 @@
             <div
               v-if="currentDocument"
               ref="viewerRef"
-              class="relative mx-auto shadow-md bg-white mb-28 border border-slate-300 transition-all duration-300"
+              class="relative mx-auto shadow-md bg-white border border-slate-300 transition-all duration-300"
               @mousedown="handlePointerDown"
               @mousemove="handlePointerMove"
               @mouseup="handlePointerUp"
