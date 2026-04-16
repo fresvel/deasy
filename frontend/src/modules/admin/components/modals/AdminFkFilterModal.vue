@@ -66,13 +66,15 @@
         Limpiar
       </AdminButton>
       <AdminButton variant="primary" title="Buscar" aria-label="Buscar" @click="$emit('apply')">
-        <font-awesome-icon icon="search" />
+        <IconSearch />
       </AdminButton>
     </template>
   </AdminModalShell>
 </template>
 
 <script setup>
+import { IconSearch } from '@tabler/icons-vue';
+
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";

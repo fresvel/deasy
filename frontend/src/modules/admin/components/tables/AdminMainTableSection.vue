@@ -105,7 +105,7 @@
                   :disabled="!hasUnitPositionFilters"
                   @click="$emit('clear-unit-position-inline-filters')"
                 >
-                  <font-awesome-icon icon="times" />
+                  <IconX />
                 </AdminButton>
                 <AdminButton
                   v-else-if="isProcessDefinitionFilterTable"
@@ -116,7 +116,7 @@
                   :disabled="!hasProcessDefinitionInlineFilters"
                   @click="$emit('clear-process-definition-inline-filters')"
                 >
-                  <font-awesome-icon icon="times" />
+                  <IconX />
                 </AdminButton>
                 <AdminButton
                   v-else-if="isProcessTargetRuleFilterTable"
@@ -127,7 +127,7 @@
                   :disabled="!hasProcessTargetRuleInlineFilters"
                   @click="$emit('clear-process-target-rule-inline-filters')"
                 >
-                  <font-awesome-icon icon="times" />
+                  <IconX />
                 </AdminButton>
                 <AdminButton
                   v-else-if="isTemplateArtifactsTable"
@@ -138,10 +138,10 @@
                   :disabled="!hasTemplateArtifactInlineFilters"
                   @click="$emit('clear-template-artifact-inline-filters')"
                 >
-                  <font-awesome-icon icon="times" />
+                  <IconX />
                 </AdminButton>
                 <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')">
-                  <font-awesome-icon icon="rotate-right" />
+                  <IconRefresh />
                 </AdminButton>
               </div>
             </div>
@@ -183,7 +183,7 @@
                     aria-label="Versionar"
                     @click="$emit('start-process-definition-versioning', row)"
                   >
-                    <font-awesome-icon icon="rotate-right" />
+                    <IconRefresh />
                   </AdminButton>
                   <AdminButton
                     v-if="table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
@@ -195,7 +195,7 @@
                     aria-label="Activar"
                     @click="$emit('open-process-definition-activation-for-row', row)"
                   >
-                    <font-awesome-icon icon="check" />
+                    <IconCheck />
                   </AdminButton>
                   <AdminButton
                     v-if="isPersonTable"
@@ -207,7 +207,7 @@
                     aria-label="Gestionar asignaciones"
                     @click="$emit('open-person-assignments', row)"
                   >
-                    <font-awesome-icon icon="list-check" />
+                    <IconListCheck />
                   </AdminButton>
                 </template>
                 <template v-if="isTemplateArtifactsTable" #edit>
@@ -236,6 +236,8 @@
 </template>
 
 <script setup>
+import { IconX, IconRefresh, IconCheck, IconListCheck } from '@tabler/icons-vue';
+
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";

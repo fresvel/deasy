@@ -24,13 +24,15 @@
         :disabled="searchDisabled"
         @click="$emit('search')"
       >
-        <font-awesome-icon icon="search" />
+        <IconSearch />
       </AdminButton>
     </template>
   </AdminModalShell>
 </template>
 
 <script setup>
+import { IconSearch } from '@tabler/icons-vue';
+
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";

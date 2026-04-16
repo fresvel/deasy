@@ -106,15 +106,15 @@
       </div>
       <div class="definition-checklist-items">
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.rules }">
-          <font-awesome-icon :icon="processDefinitionChecklist.rules ? 'check' : 'times'" />
+          <component :is="tablerIconMap[processDefinitionChecklist.rules ? 'check' : 'times'] || tablerIconMap['info-circle']" />
           <span>Al menos una regla activa</span>
         </div>
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.triggers }">
-          <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
+          <component :is="tablerIconMap[processDefinitionChecklist.triggers ? 'check' : 'times'] || tablerIconMap['info-circle']" />
           <span>Al menos un disparador activo</span>
         </div>
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts }">
-          <font-awesome-icon :icon="(processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts) ? 'check' : 'times'" />
+          <component :is="tablerIconMap[(processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts) ? 'check' : 'times'] || tablerIconMap['info-circle']" />
           <span>{{ requiresDefinitionArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}</span>
         </div>
       </div>
@@ -125,7 +125,7 @@
         variant="outlinePrimary"
         @click="$emit('open-definition-rules')"
       >
-        <font-awesome-icon icon="sitemap" />
+        <IconSitemap />
         Reglas
       </AdminButton>
       <AdminButton
@@ -133,7 +133,7 @@
         variant="outlinePrimary"
         @click="$emit('open-definition-triggers')"
       >
-        <font-awesome-icon icon="sitemap" />
+        <IconSitemap />
         Disparadores
       </AdminButton>
       <AdminButton
@@ -141,7 +141,7 @@
         variant="outlinePrimary"
         @click="$emit('open-definition-artifacts')"
       >
-        <font-awesome-icon icon="link" />
+        <IconLink />
         Paquetes
       </AdminButton>
       <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
@@ -151,6 +151,18 @@
 </template>
 
 <script setup>
+import { IconSitemap, IconLink, IconHome, IconUser, IconEdit, IconSettings, IconLogin, IconX, IconSearch, IconCheck, IconEye, IconPlus, IconId, IconLock, IconChecks, IconListCheck, IconRefresh, IconArrowLeft, IconStack, IconCircleX, IconUserPlus, IconDotsVertical, IconArrowUp, IconArrowDown, IconTrash, IconCertificate, IconInfoCircle } from '@tabler/icons-vue';
+
+const tablerIconMap = {
+  'home': IconHome, 'user': IconUser, 'edit': IconEdit, 'cog': IconSettings, 'sign-in-alt': IconLogin,
+  'times': IconX, 'search': IconSearch, 'check': IconCheck, 'sitemap': IconSitemap, 'link': IconLink,
+  'eye': IconEye, 'plus': IconPlus, 'id-card': IconId, 'lock': IconLock, 'check-double': IconChecks,
+  'list-check': IconListCheck, 'rotate-right': IconRefresh, 'backward': IconArrowLeft, 'layer-group': IconStack,
+  'times-circle': IconCircleX, 'user-plus': IconUserPlus, 'ellipsis-vertical': IconDotsVertical,
+  'arrow-up': IconArrowUp, 'arrow-down': IconArrowDown, 'trash': IconTrash, 'certificate': IconCertificate,
+  'info-circle': IconInfoCircle
+};
+
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";

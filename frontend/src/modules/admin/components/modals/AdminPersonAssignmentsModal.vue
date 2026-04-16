@@ -21,7 +21,7 @@
                 :class="{ 'is-active': personAssignmentSection === section.key }"
                 @click="$emit('update:person-assignment-section', section.key)"
               >
-                <font-awesome-icon :icon="section.icon" />
+                <component :is="tablerIconMap[section.icon] || tablerIconMap['info-circle']" />
                 {{ section.label }}
               </AdminButton>
             </div>
@@ -29,7 +29,7 @@
 
           <div v-if="personAssignmentSection === 'ocupaciones'">
             <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-              <font-awesome-icon icon="id-card" />
+              <IconId />
               <span>Ocupaciones</span>
             </h6>
             <div v-if="personCargoError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ personCargoError }}</div>
@@ -106,7 +106,7 @@
 
           <div v-if="personAssignmentSection === 'roles'">
             <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-              <font-awesome-icon icon="lock" />
+              <IconLock />
               <span>Roles</span>
             </h6>
             <div v-if="personRoleError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ personRoleError }}</div>
@@ -174,7 +174,7 @@
 
           <div v-if="personAssignmentSection === 'contratos'">
             <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-              <font-awesome-icon icon="check-double" />
+              <IconChecks />
               <span>Contratos / Puestos</span>
             </h6>
             <div v-if="personContractError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ personContractError }}</div>
@@ -259,6 +259,18 @@
 </template>
 
 <script setup>
+import { IconId, IconLock, IconChecks, IconHome, IconUser, IconEdit, IconSettings, IconLogin, IconX, IconSearch, IconCheck, IconSitemap, IconLink, IconEye, IconPlus, IconListCheck, IconRefresh, IconArrowLeft, IconStack, IconCircleX, IconUserPlus, IconDotsVertical, IconArrowUp, IconArrowDown, IconTrash, IconCertificate, IconInfoCircle } from '@tabler/icons-vue';
+
+const tablerIconMap = {
+  'home': IconHome, 'user': IconUser, 'edit': IconEdit, 'cog': IconSettings, 'sign-in-alt': IconLogin,
+  'times': IconX, 'search': IconSearch, 'check': IconCheck, 'sitemap': IconSitemap, 'link': IconLink,
+  'eye': IconEye, 'plus': IconPlus, 'id-card': IconId, 'lock': IconLock, 'check-double': IconChecks,
+  'list-check': IconListCheck, 'rotate-right': IconRefresh, 'backward': IconArrowLeft, 'layer-group': IconStack,
+  'times-circle': IconCircleX, 'user-plus': IconUserPlus, 'ellipsis-vertical': IconDotsVertical,
+  'arrow-up': IconArrowUp, 'arrow-down': IconArrowDown, 'trash': IconTrash, 'certificate': IconCertificate,
+  'info-circle': IconInfoCircle
+};
+
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";

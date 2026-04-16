@@ -14,7 +14,7 @@
           :disabled="index === 0"
           title="Mover arriba"
         >
-          <font-awesome-icon icon="arrow-up" />
+          <IconArrowUp />
         </button>
         <button
           type="button"
@@ -23,7 +23,7 @@
           :disabled="index === cells.length - 1"
           title="Mover abajo"
         >
-          <font-awesome-icon icon="arrow-down" />
+          <IconArrowDown />
         </button>
         <button
           type="button"
@@ -31,7 +31,7 @@
           @click="toggleEdit(cell)"
           :title="cell.isEditing ? 'Guardar' : 'Editar'"
         >
-          <font-awesome-icon :icon="cell.isEditing ? 'check' : 'edit'" />
+          <component :is="tablerIconMap[cell.isEditing ? 'check' : 'edit'] || tablerIconMap['info-circle']" />
         </button>
         <button
           type="button"
@@ -39,7 +39,7 @@
           @click="deleteCell(index)"
           title="Eliminar"
         >
-          <font-awesome-icon icon="trash" />
+          <IconTrash />
         </button>
         <button
           type="button"
@@ -47,7 +47,7 @@
           @click="showCellMenu(cell)"
           title="Más opciones"
         >
-          <font-awesome-icon icon="ellipsis-vertical" />
+          <IconDotsVertical />
         </button>
       </div>
       
@@ -85,7 +85,7 @@
         class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
         @click="addCell"
       >
-        <font-awesome-icon icon="plus" />
+        <IconPlus />
         Agregar celda
       </button>
     </div>
@@ -93,6 +93,18 @@
 </template>
 
 <script setup>
+import { IconArrowUp, IconArrowDown, IconTrash, IconDotsVertical, IconPlus, IconHome, IconUser, IconEdit, IconSettings, IconLogin, IconX, IconSearch, IconCheck, IconSitemap, IconLink, IconEye, IconId, IconLock, IconChecks, IconListCheck, IconRefresh, IconArrowLeft, IconStack, IconCircleX, IconUserPlus, IconCertificate, IconInfoCircle } from '@tabler/icons-vue';
+
+const tablerIconMap = {
+  'home': IconHome, 'user': IconUser, 'edit': IconEdit, 'cog': IconSettings, 'sign-in-alt': IconLogin,
+  'times': IconX, 'search': IconSearch, 'check': IconCheck, 'sitemap': IconSitemap, 'link': IconLink,
+  'eye': IconEye, 'plus': IconPlus, 'id-card': IconId, 'lock': IconLock, 'check-double': IconChecks,
+  'list-check': IconListCheck, 'rotate-right': IconRefresh, 'backward': IconArrowLeft, 'layer-group': IconStack,
+  'times-circle': IconCircleX, 'user-plus': IconUserPlus, 'ellipsis-vertical': IconDotsVertical,
+  'arrow-up': IconArrowUp, 'arrow-down': IconArrowDown, 'trash': IconTrash, 'certificate': IconCertificate,
+  'info-circle': IconInfoCircle
+};
+
 import { ref, nextTick, watch } from 'vue';
 
 const props = defineProps({
