@@ -74,7 +74,12 @@
       </app-workspace-sidebar>
 
       <s-body :showmenu="vmenu" :shownotify="vnotify">
-        <div v-if="area=='Perfil'" id="validar" class="w-full">
+        <template v-if="isSigningView">
+          <section class="p-6">
+            <FirmarPdf />
+          </section>
+        </template>
+        <div v-else-if="area=='Perfil'" id="validar" class="w-full">
             <ProfileHomePanel
               v-if="process==='Inicio'"
               :current-user="currentUser"
@@ -95,8 +100,7 @@
             <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
         </div>
         <div v-else-if="area=='Firmar'" class="w-full">
-            <!-- <FirmarPdf v-if="area=='Firmar'"></FirmarPdf> -->
-             <div class="p-6 text-center text-slate-500 bg-white rounded-2xl m-4">Módulo de firma en migración (no disponible temporalmente)</div>
+            <FirmarPdf />
         </div>
       </s-body>
         
@@ -146,7 +150,7 @@ import CertificadosFirmaView from '@/modules/perfil/views/CertificadosFirmaView.
 import IndexAcademia from '@/modules/academia/views/AcademiaView.vue';
 import LogrosView from '@/modules/academia/views/LogrosView.vue';
 
-// import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
+import FirmarPdf from '@/modules/firmas/components/FirmarPdf.vue';
 
     import EasymServices from '@/shared/services/EasymServices';
     import { API_PREFIX, API_ROUTES } from '@/core/config/apiConfig';
@@ -349,6 +353,7 @@ const resolveAreaIcon = (name) => {
 
     const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
     const vnotify = ref(false);
+    const isSigningView = ref(false);
     const process= ref("Inicio")
 
     let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true;
