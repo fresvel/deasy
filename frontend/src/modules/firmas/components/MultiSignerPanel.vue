@@ -33,6 +33,60 @@
           </div>
         </div>
 
+        <div class="flex flex-col mt-2">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <div class="text-sm font-bold text-slate-800">Archivos <span class="text-xs font-semibold text-slate-500 ml-1">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span></div>
+            <div class="flex items-center gap-1">
+              <PdfDropField
+                variant="inline"
+                title=""
+                action-text="Añadir PDF"
+                help-text=""
+                input-id="multisigner-input-sidebar"
+                multiple
+                @files-selected="onFilesSelected"
+                class="text-xs font-bold"
+              />
+              <button
+                v-if="documents.length"
+                type="button"
+                class="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
+                title="Limpiar cola completa"
+                @click="clearQueue"
+              >
+                <IconTrash class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div v-if="!documents.length" class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center text-slate-400 gap-3">
+            <IconFiles class="w-8 h-8 opacity-50" />
+            <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
+          </div>
+          <div v-else class="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+            <button
+              v-for="(doc, index) in documents"
+              :key="doc.id"
+              type="button"
+              class="w-full group rounded-xl border p-3 flex flex-col items-start gap-1 transition-all"
+              :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
+              @click="selectDocument(index)"
+            >
+              <div class="flex items-start justify-between w-full gap-3">
+                <div class="min-w-0 flex items-center gap-2">
+                  <IconFileCheck v-if="doc.status === 'completed'" class="w-4 h-4 shrink-0 text-emerald-500" />
+                  <IconAlertCircle v-else-if="doc.status === 'failed'" class="w-4 h-4 shrink-0 text-rose-500" />
+                  <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'">{{ doc.name }}</div>
+                </div>
+                <!-- Prevent button inside button behavior by switching wrapper or catching click -->
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <BtnDelete message="Quitar" @onpress.stop="removeDocument(index)" />
+                </div>
+              </div>
+              <div v-if="doc.error" class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded w-full text-left truncate">{{ doc.error }}</div>
+            </button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5 flex flex-col justify-center items-center text-center">
             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Documentos</div>
@@ -198,60 +252,6 @@
           >
             {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>
-        </div>
-
-        <div class="flex flex-col mt-2">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-            <div class="text-sm font-bold text-slate-800">Archivos <span class="text-xs font-semibold text-slate-500 ml-1">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span></div>
-            <div class="flex items-center gap-1">
-              <PdfDropField
-                variant="inline"
-                title=""
-                action-text="Añadir PDF"
-                help-text=""
-                input-id="multisigner-input-sidebar"
-                multiple
-                @files-selected="onFilesSelected"
-                class="text-xs font-bold"
-              />
-              <button
-                v-if="documents.length"
-                type="button"
-                class="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
-                title="Limpiar cola completa"
-                @click="clearQueue"
-              >
-                <IconTrash class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <div v-if="!documents.length" class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center text-slate-400 gap-3">
-            <IconFiles class="w-8 h-8 opacity-50" />
-            <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
-          </div>
-          <div v-else class="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-            <button
-              v-for="(doc, index) in documents"
-              :key="doc.id"
-              type="button"
-              class="w-full group rounded-xl border p-3 flex flex-col items-start gap-1 transition-all"
-              :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
-              @click="selectDocument(index)"
-            >
-              <div class="flex items-start justify-between w-full gap-3">
-                <div class="min-w-0 flex items-center gap-2">
-                  <IconFileCheck v-if="doc.status === 'completed'" class="w-4 h-4 shrink-0 text-emerald-500" />
-                  <IconAlertCircle v-else-if="doc.status === 'failed'" class="w-4 h-4 shrink-0 text-rose-500" />
-                  <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'">{{ doc.name }}</div>
-                </div>
-                <!-- Prevent button inside button behavior by switching wrapper or catching click -->
-                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <BtnDelete message="Quitar" @onpress.stop="removeDocument(index)" />
-                </div>
-              </div>
-              <div v-if="doc.error" class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded w-full text-left truncate">{{ doc.error }}</div>
-            </button>
-          </div>
         </div>
       </div>
 
