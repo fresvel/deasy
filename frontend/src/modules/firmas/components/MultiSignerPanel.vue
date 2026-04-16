@@ -942,6 +942,8 @@ watch(batchMode, () => {
   activeSelectionBox.value = null;
   lastSelection.value = null;
   selectedFieldId.value = null;
+  previewBoxStyle.value = { display: 'none' };
+  isMouseOverPdf.value = false;
   if (batchMode.value !== "shared-coordinates") {
     sharedPageReference.value = "start";
   }
