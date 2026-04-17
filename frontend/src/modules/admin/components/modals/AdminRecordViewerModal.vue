@@ -45,7 +45,7 @@
 
       <div v-for="section in relatedSections" :key="section.key" class="mt-4">
         <h6 class="mb-2 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-          <font-awesome-icon icon="list-check" />
+          <IconListCheck />
           <span>{{ section.label }}</span>
         </h6>
         <div v-if="section.error" class="mb-0 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ section.error }}</div>
@@ -73,6 +73,8 @@
 </template>
 
 <script setup>
+import { IconListCheck } from '@tabler/icons-vue';
+
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";

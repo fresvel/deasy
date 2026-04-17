@@ -1,93 +1,14 @@
 import path from "path";
 import fs from "fs-extra";
-import { randomUUID } from "crypto";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { hydrateTaskFromDefinition } from "../../services/admin/TaskGenerationService.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
 import { generateUniqueToken } from "../../utils/tokenGenerator.js";
-import {
-  ensureBucketExists,
-  uploadFileToMinio,
-  statMinioObject,
-  getMinioObjectStream
-} from "../../services/storage/minio_service.js";
-import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
-import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 
 const userRepository = new UserRepository();
-const sqlAdminService = new SqlAdminService();
-const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
-const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-
-const sanitizeStorageSegment = (value, fallback = "na") =>
-  String(value ?? fallback)
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "") || fallback;
-
-const buildDocumentVersionFolder = (sequenceValue) => {
-  const sequence = Math.max(1, Number(sequenceValue || 1));
-  return `v${String(sequence).padStart(4, "0")}`;
-};
-
-const buildCanonicalDocumentVersionBasePath = (target) => {
-  const year =
-    Number(target.term_year) ||
-    Number(String(target.term_start_date || "").slice(0, 4)) ||
-    new Date().getFullYear();
-  const versionFolder = buildDocumentVersionFolder(target.document_version_sequence);
-  return [
-    String(target.scope_unit_id),
-    "PROCESOS",
-    String(target.process_id),
-    "ANIOS",
-    String(year),
-    "TIPOS_PERIODO",
-    String(target.term_type_id),
-    "PERIODOS",
-    String(target.term_id),
-    "TAREAS",
-    String(target.task_id),
-    "Documentos",
-    String(target.document_id),
-    versionFolder
-  ].join("/");
-};
-
-const buildWorkingObjectPathForUpload = ({ basePath, originalName, extension }) => {
-  const safeOriginalName = sanitizeStorageSegment(originalName, `archivo.${extension || "bin"}`);
-  const safeExtension = sanitizeStorageSegment(extension || "bin", "bin").toLowerCase();
-  return [
-    basePath,
-    "working",
-    safeExtension,
-    `${Date.now()}-${randomUUID()}-${safeOriginalName}`
-  ].join("/");
-};
-
-const resolveStoredDocumentObject = (storedPath) => {
-  const normalizedPath = String(storedPath || "").trim().replace(/^\/+/, "");
-  if (!normalizedPath) {
-    return null;
-  }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
-    return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
-      objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
-    };
-  }
-  return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
-    relativePath: normalizedPath
-  };
-};
 
 const getNumericUserId = (req) => {
   const userIdRaw = req.params?.id ?? req.query?.user_id ?? req.query?.userId ?? req.body?.user_id ?? req.body?.userId;
@@ -119,11 +40,6 @@ const getActiveUserPositions = async (pool, userId) => {
     [userId]
   );
   return rows;
-};
-
-const getAuthenticatedUserId = (req) => {
-  const userId = Number(req.user?.uid);
-  return Number.isNaN(userId) ? null : userId;
 };
 
 const getOrgChildrenMap = async (pool) => {
@@ -215,6 +131,7 @@ const getDefinitionContext = async (pool, definitionId) => {
        pdv.name,
        pdv.description,
        pdv.has_document,
+       pdv.execution_mode,
        pdv.status,
        pdv.effective_from,
        pdv.effective_to,
@@ -375,7 +292,7 @@ const getUserOwnedTemplateArtifacts = async (pool, userId) => {
        created_at
      FROM template_artifacts
      WHERE owner_person_id = ?
-       AND artifact_origin = 'general'
+       AND artifact_origin = 'user'
        AND is_active = 1
      ORDER BY created_at DESC, id DESC
      LIMIT 12`,
@@ -422,43 +339,9 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId) =
                OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
              )
          )
-         OR EXISTS (
-           SELECT 1
-           FROM task_items ti
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
-           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-           WHERE ti.task_id = t.id
-             AND fr.assigned_person_id = ?
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM task_items ti
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
-           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-           WHERE ti.task_id = t.id
-             AND sr.assigned_person_id = ?
-         )
        )
      ORDER BY t.start_date DESC, t.id DESC`,
-    [definitionId, userId, userId, userId, userId, userId, userId]
+    [definitionId, userId, userId, userId, userId]
   );
   return rows;
 };
@@ -474,7 +357,6 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.task_id,
        ti.process_definition_template_id,
        ti.template_artifact_id,
-       tar.template_seed_id,
        ti.template_usage_role,
        ti.sort_order,
        ti.responsible_position_id,
@@ -486,8 +368,8 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        d.status AS document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
-       dv.working_file_path,
-       dv.final_file_path,
+       dv.pdf_path,
+       dv.signed_pdf_path,
        COALESCE(sig.total_signature_count, 0) AS total_signature_count,
        COALESCE(sig.pending_signature_count, 0) AS pending_signature_count
      FROM task_items ti
@@ -511,15 +393,7 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
          COUNT(sr.id) AS total_signature_count,
          SUM(CASE WHEN sr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
        FROM signature_flow_instances sfi
-       INNER JOIN document_versions dv2 ON dv2.id = sfi.document_version_id
        LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
-       WHERE LOWER(COALESCE(dv2.status, '')) IN (
-         'listo para firma',
-         'pendiente de firma',
-         'firmado',
-         'firmado parcial',
-         'firmado completo'
-       )
        GROUP BY sfi.document_version_id
      ) sig ON sig.document_version_id = dv.id
      WHERE ti.task_id IN (${placeholders})
@@ -527,90 +401,6 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
     taskIds
   );
   return rows;
-};
-
-const getAccessibleTaskItemDocumentForUser = async (pool, userId, definitionId, taskItemId) => {
-  const [rows] = await pool.query(
-    `SELECT
-       ti.id AS task_item_id,
-       t.id AS task_id,
-       t.term_id,
-       ti.template_usage_role,
-       tar.display_name AS template_artifact_name,
-       pdv.process_id,
-       trm.term_type_id,
-       trm.start_date AS term_start_date,
-       YEAR(trm.start_date) AS term_year,
-       COALESCE(task_pos.unit_id, responsible_pos.unit_id, owner_pos.unit_id) AS scope_unit_id,
-       d.id AS document_id,
-       dv.id AS document_version_id,
-       dv.status AS document_version_status,
-       dv.version AS document_version,
-       dv.working_file_path,
-       dv.final_file_path,
-       (
-         SELECT COUNT(*)
-         FROM document_versions dv_seq
-         WHERE dv_seq.document_id = d.id
-           AND dv_seq.id <= dv.id
-       ) AS document_version_sequence
-     FROM task_items ti
-     INNER JOIN tasks t ON t.id = ti.task_id
-     INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     INNER JOIN terms trm ON trm.id = t.term_id
-     INNER JOIN documents d ON d.task_item_id = ti.id
-     INNER JOIN document_versions dv ON dv.document_id = d.id
-     INNER JOIN (
-       SELECT document_id, MAX(version) AS max_version
-       FROM document_versions
-       GROUP BY document_id
-     ) latest
-       ON latest.document_id = dv.document_id
-      AND latest.max_version = dv.version
-     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
-     LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
-     LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
-     LEFT JOIN persons owner_person ON owner_person.id = d.owner_person_id
-     LEFT JOIN position_assignments owner_pa
-       ON owner_pa.person_id = owner_person.id
-      AND owner_pa.is_current = 1
-     LEFT JOIN unit_positions owner_pos ON owner_pos.id = owner_pa.position_id
-     WHERE ti.id = ?
-       AND t.process_definition_id = ?
-       AND (
-         t.created_by_user_id = ?
-         OR EXISTS (
-           SELECT 1
-           FROM task_assignments ta
-           LEFT JOIN position_assignments pa
-             ON pa.position_id = ta.position_id
-            AND pa.is_current = 1
-            AND pa.person_id = ?
-           WHERE ta.task_id = t.id
-             AND (
-               ta.assigned_person_id = ?
-               OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-             )
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM document_fill_flows dff
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-           WHERE dff.document_version_id = dv.id
-             AND fr.assigned_person_id = ?
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM signature_flow_instances sfi
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-           WHERE sfi.document_version_id = dv.id
-             AND sr.assigned_person_id = ?
-         )
-       )
-     LIMIT 1`,
-    [taskItemId, definitionId, userId, userId, userId, userId, userId, userId]
-  );
-  return rows?.[0] || null;
 };
 
 const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId) => {
@@ -639,184 +429,9 @@ const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId)
      LEFT JOIN signature_types st ON st.id = sfs.step_type_id
      WHERE sr.assigned_person_id = ?
        AND t.process_definition_id = ?
-       AND LOWER(COALESCE(dv.status, '')) IN (
-         'listo para firma',
-         'pendiente de firma',
-         'firmado',
-         'firmado parcial',
-         'firmado completo'
-       )
      ORDER BY sr.responded_at IS NOT NULL ASC, sr.requested_at DESC, sr.id DESC
      LIMIT 12`,
     [userId, definitionId]
-  );
-  return rows;
-};
-
-const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionId) => {
-  const [rows] = await pool.query(
-    `SELECT
-       fr.id,
-       fr.requested_at,
-       fr.responded_at,
-       fr.status AS status_name,
-       ffs.step_order,
-       tar.display_name AS template_artifact_name,
-       d.id AS document_id,
-       dv.id AS document_version_id,
-       dv.version AS document_version
-     FROM fill_requests fr
-     INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-     INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-     INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-     INNER JOIN documents d ON d.id = dv.document_id
-     INNER JOIN task_items ti ON ti.id = d.task_item_id
-     INNER JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
-     WHERE fr.assigned_person_id = ?
-       AND t.process_definition_id = ?
-       AND LOWER(COALESCE(dv.status, '')) IN (
-         'pendiente de llenado',
-         'en llenado',
-         'en revisión de llenado',
-         'observado'
-       )
-     ORDER BY fr.responded_at IS NOT NULL ASC, fr.requested_at DESC, fr.id DESC
-     LIMIT 12`,
-    [userId, definitionId]
-  );
-  return rows;
-};
-
-const getFillWorkflowStepsForDocumentVersions = async (pool, documentVersionIds) => {
-  if (!documentVersionIds.length) {
-    return [];
-  }
-  const placeholders = documentVersionIds.map(() => "?").join(", ");
-  const [rows] = await pool.query(
-    `SELECT
-       dff.document_version_id,
-       dff.status AS fill_flow_status,
-       dff.current_step_order,
-       ffs.id AS fill_flow_step_id,
-       ffs.step_order,
-       ffs.resolver_type,
-       ffs.selection_mode,
-       ffs.is_required,
-       ffs.can_reject,
-       fr.id AS fill_request_id,
-       fr.assigned_person_id,
-       fr.is_manual,
-       fr.status AS request_status,
-       fr.requested_at,
-       fr.responded_at,
-       fr.response_note,
-       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name,
-       c.name AS cargo_name,
-       up.title AS position_title,
-       u.name AS unit_name,
-       ut.name AS unit_type_name
-     FROM document_fill_flows dff
-     INNER JOIN fill_flow_steps ffs ON ffs.fill_flow_template_id = dff.fill_flow_template_id
-     LEFT JOIN fill_requests fr
-       ON fr.document_fill_flow_id = dff.id
-      AND fr.fill_flow_step_id = ffs.id
-     LEFT JOIN persons p ON p.id = COALESCE(fr.assigned_person_id, ffs.assigned_person_id)
-     LEFT JOIN cargos c ON c.id = ffs.cargo_id
-     LEFT JOIN unit_positions up ON up.id = ffs.position_id
-     LEFT JOIN units u ON u.id = ffs.unit_id
-     LEFT JOIN unit_types ut ON ut.id = ffs.unit_type_id
-     WHERE dff.document_version_id IN (${placeholders})
-     ORDER BY dff.document_version_id ASC, ffs.step_order ASC, fr.id ASC`,
-    documentVersionIds
-  );
-  return rows;
-};
-
-const buildFillStepDisplayLabel = (step) => {
-  const resolverType = String(step.resolver_type || "").trim();
-  if (step.assigned_person_name) {
-    return step.assigned_person_name;
-  }
-  switch (resolverType) {
-    case "document_owner":
-      return "Propietario del documento";
-    case "task_assignee":
-      return "Responsable de la tarea";
-    case "specific_person":
-      return "Persona específica";
-    case "position":
-      return step.position_title || "Puesto definido";
-    case "cargo_in_scope":
-      if (step.cargo_name && step.unit_name) {
-        return `${step.cargo_name} · ${step.unit_name}`;
-      }
-      if (step.cargo_name && step.unit_type_name) {
-        return `${step.cargo_name} · ${step.unit_type_name}`;
-      }
-      return step.cargo_name || "Cargo según alcance";
-    case "manual_pick":
-      return "Selección manual";
-    default:
-      return "Responsable no resuelto";
-  }
-};
-
-const getUserOperationalProcessRows = async (pool, userId) => {
-  const [rows] = await pool.query(
-    `SELECT DISTINCT
-       p.id AS process_id,
-       p.name AS process_name,
-       p.slug AS process_slug,
-       pdv.id AS process_definition_id,
-       pdv.variation_key,
-       pdv.definition_version
-     FROM process_definition_versions pdv
-     INNER JOIN processes p ON p.id = pdv.process_id
-     WHERE pdv.status = 'active'
-       AND pdv.effective_from <= CURDATE()
-       AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-       AND p.is_active = 1
-       AND (
-         EXISTS (
-           SELECT 1
-           FROM tasks t
-           INNER JOIN task_items ti ON ti.task_id = t.id
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
-           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-           WHERE t.process_definition_id = pdv.id
-             AND fr.assigned_person_id = ?
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM tasks t
-           INNER JOIN task_items ti ON ti.task_id = t.id
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
-           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-           WHERE t.process_definition_id = pdv.id
-             AND sr.assigned_person_id = ?
-         )
-       )
-     ORDER BY p.name ASC, pdv.id ASC`,
-    [userId, userId]
   );
   return rows;
 };
@@ -845,11 +460,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
   const childrenByUnit = await getOrgChildrenMap(pool);
   const getUnitSubtree = createUnitSubtreeResolver(childrenByUnit);
   const matchingRules = rules.filter((rule) => positions.some((position) => doesPositionMatchRule(position, rule, getUnitSubtree)));
-  const tasks = await getUserAccessibleTasksForDefinition(pool, userId, definitionId);
-  const fillRequests = await getUserPendingFillRequestsForDefinition(pool, userId, definitionId);
-  const signatures = await getUserPendingSignaturesForDefinition(pool, userId, definitionId);
-  const hasOperationalAccess = Boolean(matchingRules.length || tasks.length || fillRequests.length || signatures.length);
-  if (!hasOperationalAccess) {
+  if (!matchingRules.length) {
     return null;
   }
 
@@ -857,6 +468,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
   const templates = await getDefinitionTemplates(pool, definitionId);
   const terms = await getAvailableTerms(pool);
   const userPackages = await getUserOwnedTemplateArtifacts(pool, userId);
+  const tasks = await getUserAccessibleTasksForDefinition(pool, userId, definitionId);
   const taskIds = tasks.map((task) => task.id);
   const taskItems = await getTaskItemsForTaskIds(pool, taskIds);
   const taskItemsByTask = new Map();
@@ -867,166 +479,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     taskItemsByTask.get(item.task_id).push(item);
   });
 
-  const fillWorkflowSteps = await getFillWorkflowStepsForDocumentVersions(
-    pool,
-    taskItems
-      .map((item) => Number(item.document_version_id || 0))
-      .filter((id) => id > 0)
-  );
-  const fillRequestsByDocumentVersion = new Map();
-  fillRequests.forEach((request) => {
-    const key = Number(request.document_version_id);
-    if (!fillRequestsByDocumentVersion.has(key)) {
-      fillRequestsByDocumentVersion.set(key, []);
-    }
-    fillRequestsByDocumentVersion.get(key).push(request);
-  });
-  const signaturesByDocumentVersion = new Map();
-  signatures.forEach((request) => {
-    const key = Number(request.document_version_id);
-    if (!signaturesByDocumentVersion.has(key)) {
-      signaturesByDocumentVersion.set(key, []);
-    }
-    signaturesByDocumentVersion.get(key).push(request);
-  });
-  const fillWorkflowByDocumentVersion = new Map();
-  fillWorkflowSteps.forEach((step) => {
-    const key = Number(step.document_version_id);
-    if (!fillWorkflowByDocumentVersion.has(key)) {
-      fillWorkflowByDocumentVersion.set(key, {
-        status: step.fill_flow_status,
-        current_step_order: step.current_step_order ? Number(step.current_step_order) : null,
-        steps: []
-      });
-    }
-    fillWorkflowByDocumentVersion.get(key).steps.push({
-      id: Number(step.fill_flow_step_id),
-      step_order: Number(step.step_order),
-      resolver_type: step.resolver_type,
-      selection_mode: step.selection_mode,
-      is_required: Boolean(step.is_required),
-      can_reject: Boolean(step.can_reject),
-      request_id: step.fill_request_id ? Number(step.fill_request_id) : null,
-      assigned_person_id: step.assigned_person_id ? Number(step.assigned_person_id) : null,
-      is_manual: Boolean(step.is_manual),
-      request_status: step.request_status || "pending",
-      requested_at: step.requested_at || null,
-      responded_at: step.responded_at || null,
-      response_note: step.response_note || null,
-      assigned_person_name: step.assigned_person_name || null,
-      display_label: buildFillStepDisplayLabel(step),
-      cargo_name: step.cargo_name || null,
-      position_title: step.position_title || null,
-      unit_name: step.unit_name || null,
-      unit_type_name: step.unit_type_name || null
-    });
-  });
-
-  const documents = taskItems
-    .filter((item) => item.document_id)
-    .map((item) => {
-      const documentVersionId = Number(item.document_version_id || 0);
-      const relatedFillRequests = fillRequestsByDocumentVersion.get(documentVersionId) || [];
-      const relatedSignatureRequests = signaturesByDocumentVersion.get(documentVersionId) || [];
-      const fillWorkflow = fillWorkflowByDocumentVersion.get(documentVersionId) || {
-        status: null,
-        current_step_order: null,
-        steps: []
-      };
-      const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
-      const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
-      const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
-      return {
-        document_id: item.document_id,
-        task_id: item.task_id,
-        task_item_id: item.id,
-        template_artifact_id: item.template_artifact_id,
-        template_artifact_name: item.template_artifact_name,
-        template_usage_role: item.template_usage_role,
-        document_status: item.document_status,
-        document_version_id: item.document_version_id,
-        document_version: item.document_version,
-        working_file_path: item.working_file_path,
-        final_file_path: item.final_file_path,
-        pending_signature_count: item.pending_signature_count,
-        total_signature_count: item.total_signature_count,
-        pending_fill_count: relatedFillRequests.filter((request) => !request.responded_at).length,
-        total_fill_count: relatedFillRequests.length,
-        workflow: {
-          fill_requests: relatedFillRequests,
-          fill_flow: fillWorkflow,
-          fill_steps: fillWorkflow.steps,
-          signature_requests: relatedSignatureRequests,
-          current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
-          current_signature_step_order: relatedSignatureRequests[0]?.step_order || null
-        },
-        actions: {
-          can_upload_deliverable: canUploadDeliverable,
-          can_download_template: Boolean(item.template_artifact_id),
-          can_manage_fill: canManageFill,
-          can_review_signature_flow: Boolean(Number(item.total_signature_count || 0) > 0 || relatedSignatureRequests.length),
-          can_sign: canSign,
-          can_open_process_chat: true,
-          implemented: {
-            upload_deliverable: false,
-            download_template: false,
-            manage_fill: false,
-            review_signature_flow: false,
-            sign: true,
-            process_chat: true
-          }
-        }
-      };
-    });
-  const documentsByTaskItemId = new Map(
-    documents
-      .filter((document) => document.task_item_id)
-      .map((document) => [Number(document.task_item_id), document])
-  );
   const enrichedTasks = tasks.map((task) => {
-    const items = (taskItemsByTask.get(task.id) || []).map((item) => {
-      const relatedDocument = documentsByTaskItemId.get(Number(item.id)) || null;
-      const documentVersionId = Number(item.document_version_id || relatedDocument?.document_version_id || 0);
-      const relatedFillRequests = documentVersionId ? (fillRequestsByDocumentVersion.get(documentVersionId) || []) : [];
-      const relatedSignatureRequests = documentVersionId ? (signaturesByDocumentVersion.get(documentVersionId) || []) : [];
-      const fillWorkflow = documentVersionId
-        ? (fillWorkflowByDocumentVersion.get(documentVersionId) || { status: null, current_step_order: null, steps: [] })
-        : { status: null, current_step_order: null, steps: [] };
-      const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
-      const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
-      const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
-      const actions = relatedDocument?.actions || {
-        can_upload_deliverable: canUploadDeliverable,
-        can_download_template: Boolean(item.template_artifact_id),
-        can_manage_fill: canManageFill,
-        can_review_signature_flow: Boolean(Number(item.total_signature_count || 0) > 0 || relatedSignatureRequests.length),
-        can_sign: canSign,
-        can_open_process_chat: true,
-        implemented: {
-          upload_deliverable: false,
-          download_template: false,
-          manage_fill: false,
-          review_signature_flow: false,
-          sign: true,
-          process_chat: true
-        }
-      };
-      return {
-        ...item,
-        pending_fill_count: relatedDocument?.pending_fill_count ?? relatedFillRequests.filter((request) => !request.responded_at).length,
-        total_fill_count: relatedDocument?.total_fill_count ?? relatedFillRequests.length,
-        workflow: relatedDocument?.workflow || {
-          fill_requests: relatedFillRequests,
-          fill_flow: fillWorkflow,
-          fill_steps: fillWorkflow.steps,
-          signature_requests: relatedSignatureRequests,
-          current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
-          current_signature_step_order: relatedSignatureRequests[0]?.step_order || null
-        },
-        actions,
-        document: relatedDocument
-      };
-    });
+    const items = taskItemsByTask.get(task.id) || [];
     const pendingItems = items.filter((item) => item.status !== "completada" && item.status !== "cancelada").length;
     return {
       ...task,
@@ -1037,6 +491,23 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     };
   });
 
+  const documents = taskItems
+    .filter((item) => item.document_id)
+    .map((item) => ({
+      document_id: item.document_id,
+      task_id: item.task_id,
+      task_item_id: item.id,
+      template_artifact_name: item.template_artifact_name,
+      document_status: item.document_status,
+      document_version_id: item.document_version_id,
+      document_version: item.document_version,
+      pdf_path: item.pdf_path,
+      signed_pdf_path: item.signed_pdf_path,
+      pending_signature_count: item.pending_signature_count,
+      total_signature_count: item.total_signature_count
+    }));
+
+  const signatures = await getUserPendingSignaturesForDefinition(pool, userId, definitionId);
   const canLaunchManual = triggers.some((trigger) => trigger.trigger_mode === "manual_only");
   const canLaunchCustom = triggers.some((trigger) => trigger.trigger_mode === "manual_custom_term");
 
@@ -1046,24 +517,13 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       rules_count: rules.length,
       matching_rules_count: matchingRules.length,
       templates_count: templates.length,
-      triggers_count: triggers.length,
-      chat_context: {
-        process_id: Number(definition.process_id),
-        accessible_scope_unit_ids: Array.from(
-          new Set(
-            taskItems
-              .map((item) => Number(item.scope_unit_id || 0))
-              .filter((value) => Number.isFinite(value) && value > 0)
-          )
-        )
-      }
+      triggers_count: triggers.length
     },
     summary: {
       tasks_total: enrichedTasks.length,
       tasks_pending: enrichedTasks.filter((task) => task.status !== "completada" && task.status !== "cancelada").length,
       task_items_pending: taskItems.filter((item) => item.status !== "completada" && item.status !== "cancelada").length,
       documents_total: documents.length,
-      fill_requests_pending: fillRequests.filter((request) => !request.responded_at).length,
       signatures_pending: signatures.filter((signature) => !signature.responded_at).length,
       user_packages_total: userPackages.length
     },
@@ -1075,7 +535,6 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     },
     tasks: enrichedTasks,
     documents,
-    fill_requests: fillRequests,
     signatures,
     dependencies: {
       rules: matchingRules.map((rule) => ({
@@ -1167,14 +626,7 @@ export const getUsers = async (req, res) => {
     const term = req.query?.search ?? "";
     const limit = req.query?.limit ?? 20;
     const status = req.query?.status ?? null;
-    const unitTypeId = req.query?.unit_type_id ?? null;
-    const unitId = req.query?.unit_id ?? null;
-    const cargoId = req.query?.cargo_id ?? null;
-    const users = await userRepository.search(term, limit, status, {
-      unitTypeId,
-      unitId,
-      cargoId
-    });
+    const users = await userRepository.search(term, limit, status);
     res.json(users.map((user) => userRepository.toPublicUser(user)));
   } catch (error) {
     console.log("Error Buscando Usuarios");
@@ -1364,7 +816,6 @@ export const getUserMenu = async (req, res) => {
        WHERE p.is_active = 1
        ORDER BY p.name, ptr.priority, ptr.id`
     );
-    const operationalProcessRows = await getUserOperationalProcessRows(pool, userId);
 
     const childrenByUnit = new Map();
     orgTreeRows.forEach((row) => {
@@ -1434,25 +885,11 @@ export const getUserMenu = async (req, res) => {
     const seenByCargo = new Map();
 
     const addProcess = (cargo, process, seenSet) => {
-      const uniqueKey = Number(process.process_definition_id || process.id);
-      const existingIndex = cargo.processes.findIndex(
-        (item) => Number(item.process_definition_id || item.id) === uniqueKey
-      );
-
-      if (existingIndex >= 0) {
-        const existing = cargo.processes[existingIndex];
-        if (existing.access_source !== "process" && process.access_source === "process") {
-          cargo.processes[existingIndex] = {
-            ...existing,
-            ...process,
-          };
-        }
-        seenSet.add(uniqueKey);
+      if (seenSet.has(process.id)) {
         return;
       }
-
       cargo.processes.push(process);
-      seenSet.add(uniqueKey);
+      seenSet.add(process.id);
     };
 
     positions.forEach((position) => {
@@ -1465,8 +902,7 @@ export const getUserMenu = async (req, res) => {
           unit_id: position.unit_id,
           process_definition_id: row.process_definition_id,
           variation_key: row.variation_key,
-          definition_version: row.definition_version,
-          access_source: "process"
+          definition_version: row.definition_version
         };
 
         const unitCargoMap = cargoMapByUnit.get(position.unit_id);
@@ -1484,39 +920,6 @@ export const getUserMenu = async (req, res) => {
             seenByCargo.set(position.cargo_id, new Set());
           }
           addProcess(consolidatedMap.get(position.cargo_id), process, seenByCargo.get(position.cargo_id));
-        }
-      });
-    });
-
-    positions.forEach((position) => {
-      operationalProcessRows.forEach((row) => {
-        const process = {
-          id: row.process_id,
-          name: row.process_name,
-          slug: row.process_slug,
-          unit_id: position.unit_id,
-          process_definition_id: row.process_definition_id,
-          variation_key: row.variation_key,
-          definition_version: row.definition_version,
-          access_source: "flow"
-        };
-
-        const unitCargoMap = cargoMapByUnit.get(position.unit_id);
-        if (unitCargoMap?.has(position.cargo_id)) {
-          const cargo = unitCargoMap.get(position.cargo_id);
-          const key = `${position.unit_id}:${position.cargo_id}:operational`;
-          if (!seenByUnitCargo.has(key)) {
-            seenByUnitCargo.set(key, new Set());
-          }
-          addProcess(cargo, process, seenByUnitCargo.get(key));
-        }
-
-        if (consolidatedMap.has(position.cargo_id)) {
-          const key = `${position.cargo_id}:operational`;
-          if (!seenByCargo.has(key)) {
-            seenByCargo.set(key, new Set());
-          }
-          addProcess(consolidatedMap.get(position.cargo_id), process, seenByCargo.get(key));
         }
       });
     });
@@ -1740,291 +1143,75 @@ export const createUserProcessTask = async (req, res) => {
   }
 };
 
-export const uploadDeliverablePdf = async (req, res) => {
-  const authenticatedUserId = getAuthenticatedUserId(req);
-  const routeUserId = getNumericUserId(req);
-  const definitionId = Number(req.params?.definitionId);
-  const taskItemId = Number(req.params?.taskItemId);
-  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
-    return res.status(403).json({ message: "No autorizado para subir el entregable." });
-  }
-  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
-  }
-  const uploadedFile = req.file;
-  if (!uploadedFile) {
-    return res.status(400).json({ message: "Debes seleccionar un archivo del entregable." });
-  }
+import PersonHealthRepository    from "../../services/auth/Personhealthrepository.js";
+import PersonBankRepository      from "../../services/auth/PersonBankrepository.js";
+import PersonEmergencyRepository from "../../services/auth/Personemergencyrepository.js";
 
-  const pool = getMariaDBPool();
-  if (!pool) {
-    await fs.remove(uploadedFile.path).catch(() => {});
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
-  }
+const healthRepo    = new PersonHealthRepository();
+const bankRepo      = new PersonBankRepository();
+const emergencyRepo = new PersonEmergencyRepository();
 
-  const connection = await pool.getConnection();
-  try {
-    const target = await getAccessibleTaskItemDocumentForUser(connection, authenticatedUserId, definitionId, taskItemId);
-    if (!target?.document_version_id) {
-      return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
-    }
-
-    const normalizedRole = String(target.template_usage_role || "").trim().toLowerCase();
-    if (!["primary", "attachment"].includes(normalizedRole)) {
-      return res.status(400).json({
-        message: "Este entregable no requiere carga manual de archivos."
-      });
-    }
-
-    if (!target.scope_unit_id || !target.process_id || !target.term_id || !target.term_type_id || !target.task_id || !target.document_id) {
-      return res.status(400).json({
-        message: "No se pudo determinar la ruta documental canónica para este entregable."
-      });
-    }
-
-    const originalName = String(uploadedFile.originalname || "entregable.pdf");
-    const extension = path.extname(originalName).replace(/^\./, "").toLowerCase() || "pdf";
-    const relativeObjectPath = buildWorkingObjectPathForUpload({
-      basePath: buildCanonicalDocumentVersionBasePath(target),
-      originalName,
-      extension
-    });
-    const minioObjectName = `${MINIO_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
-
-    await ensureBucketExists(MINIO_DOCUMENTS_BUCKET);
-    await uploadFileToMinio(MINIO_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
-      "Content-Type": uploadedFile.mimetype || "application/octet-stream",
-      "Original-Name": originalName
-    });
-
-    await connection.beginTransaction();
-    await connection.query(
-      `UPDATE document_versions
-       SET working_file_path = ?
-       WHERE id = ?`,
-      [relativeObjectPath, Number(target.document_version_id)]
-    );
-
-    const currentStatus = String(target.document_version_status || "").trim();
-    if (currentStatus === "Borrador" || currentStatus === "Pendiente de llenado" || currentStatus === "Observado") {
-      await transitionDocumentVersionState(connection, Number(target.document_version_id), "En llenado");
-    }
-
-    await connection.commit();
-
-    return res.json({
-      message: "El archivo del entregable se cargó correctamente.",
-      task_item_id: Number(target.task_item_id),
-      document_id: Number(target.document_id),
-      document_version_id: Number(target.document_version_id),
-      working_file_path: relativeObjectPath,
-      file_extension: extension,
-      template_artifact_name: target.template_artifact_name || `Entregable #${target.task_item_id}`
-    });
-  } catch (error) {
-    await connection.rollback().catch(() => {});
-    console.error("Error al subir el archivo del entregable:", error);
-    return res.status(500).json({
-      message: "No se pudo cargar el archivo del entregable.",
-      error: error.message
-    });
-  } finally {
-    connection.release();
-    await fs.remove(uploadedFile.path).catch(() => {});
-  }
-};
-
-export const downloadDeliverableTemplate = async (req, res) => {
-  const authenticatedUserId = getAuthenticatedUserId(req);
-  const routeUserId = getNumericUserId(req);
-  const definitionId = Number(req.params?.definitionId);
-  const taskItemId = Number(req.params?.taskItemId);
-  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
-    return res.status(403).json({ message: "No autorizado para descargar la plantilla." });
-  }
-  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
-  }
-
-  const pool = getMariaDBPool();
-  if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
-  }
-
-  try {
-    const [rows] = await pool.query(
-      `SELECT
-         ti.id AS task_item_id,
-         tar.template_seed_id,
-         tar.display_name AS template_artifact_name
-       FROM task_items ti
-       INNER JOIN tasks t ON t.id = ti.task_id
-       INNER JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
-       WHERE ti.id = ?
-         AND t.process_definition_id = ?
-         AND (
-           t.created_by_user_id = ?
-           OR EXISTS (
-             SELECT 1
-             FROM task_assignments ta
-             LEFT JOIN position_assignments pa
-               ON pa.position_id = ta.position_id
-              AND pa.is_current = 1
-              AND pa.person_id = ?
-             WHERE ta.task_id = t.id
-               AND (
-                 ta.assigned_person_id = ?
-                 OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
-               )
-           )
-         )
-       LIMIT 1`,
-      [taskItemId, definitionId, authenticatedUserId, authenticatedUserId, authenticatedUserId, authenticatedUserId]
-    );
-    const target = rows?.[0];
-    if (!target) {
-      return res.status(404).json({ message: "No se encontró el entregable solicitado." });
-    }
-    if (!target.template_seed_id) {
-      return res.status(404).json({ message: "El entregable no tiene un seed asociado para descargar la plantilla." });
-    }
-
-    const result = await sqlAdminService.getTemplateSeedPreview(target.template_seed_id);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=\"${result.fileName}\"`);
-    result.stream.on("error", (error) => {
-      if (!res.headersSent) {
-        res.status(404).json({ message: error.message });
-        return;
-      }
-      res.end();
-    });
-    result.stream.pipe(res);
-  } catch (error) {
-    console.error("Error al descargar la plantilla del entregable:", error);
-    return res.status(404).json({
-      message: error.message || "No se pudo descargar la plantilla del entregable."
-    });
-  }
-};
-
-export const downloadDeliverableFile = async (req, res) => {
-  const authenticatedUserId = getAuthenticatedUserId(req);
-  const routeUserId = getNumericUserId(req);
-  const definitionId = Number(req.params?.definitionId);
-  const taskItemId = Number(req.params?.taskItemId);
-  const requestedKind = String(req.query?.kind || "best").trim().toLowerCase();
-  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
-    return res.status(403).json({ message: "No autorizado para descargar el archivo del entregable." });
-  }
-  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
-  }
-
-  const pool = getMariaDBPool();
-  if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
-  }
-
-  try {
-    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId);
-    if (!target?.document_version_id) {
-      return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
-    }
-
-    const storedPath =
-      requestedKind === "final"
-        ? target.final_file_path
-        : requestedKind === "working"
-          ? target.working_file_path
-          : target.final_file_path || target.working_file_path;
-    if (!storedPath) {
-      return res.status(404).json({ message: "El entregable todavía no tiene un archivo vinculado." });
-    }
-
-    const resolvedObject = resolveStoredDocumentObject(storedPath);
-    if (!resolvedObject) {
-      return res.status(404).json({ message: "No se pudo resolver la ubicación del archivo del entregable." });
-    }
-
-    const stat = await statMinioObject(resolvedObject.bucket, resolvedObject.objectName);
-    const stream = await getMinioObjectStream(resolvedObject.bucket, resolvedObject.objectName);
-    const fileName = path.basename(resolvedObject.objectName);
-    const contentType = stat?.metaData?.["content-type"] || stat?.metaData?.["Content-Type"] || "application/octet-stream";
-
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Length", stat.size);
-    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
-    stream.on("error", (streamError) => {
-      console.error("Error transmitiendo el archivo del entregable:", streamError);
-      if (!res.headersSent) {
-        res.status(500).json({ message: "No se pudo transmitir el archivo del entregable." });
-      } else {
-        res.destroy(streamError);
-      }
-    });
-    stream.pipe(res);
-  } catch (error) {
-    console.error("Error descargando el archivo del entregable:", error);
-    return res.status(500).json({
-      message: "No se pudo descargar el archivo del entregable.",
-      error: error.message
-    });
-  }
-};
-
-//update user data
-export const updateMyProfile = async (req, res) => {
-  try {
-    const userId = req.user.uid;
-
-    const payload = {
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      whatsapp: req.body.whatsapp,
-      direccion: req.body.direccion,
-      pais: req.body.pais
-    };
-
-    const updatedUser = await userRepository.update(userId, payload);
-
-    res.json({
-      result: "ok",
-      user: updatedUser
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Error actualizando perfil"
-    });
-  }
-};
-
-//get user by id
 export const getMyProfile = async (req, res) => {
   try {
     const userId = req.user.uid;
-
-    const user = await userRepository.findById(userId);
+    const user   = await userRepository.findById(userId);
 
     if (!user) {
-      return res.status(404).json({
-        message: "Usuario no encontrado"
-      });
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
+
+    const [health, bank, emergency] = await Promise.all([
+      healthRepo.findByPersonId(userId),
+      bankRepo.findPrimaryByPersonId(userId),
+      emergencyRepo.findByPersonId(userId),
+    ]);
 
     res.json({
       result: "ok",
-      user: userRepository.toPublicUser(user)
+      user: {
+        ...userRepository.toPublicUser(user),
+        salud:     healthRepo.toPublic(health),
+        banco:     bankRepo.toPublic(bank),
+        emergencia: emergencyRepo.toPublic(emergency),
+      },
     });
-
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: "Error obteniendo perfil" });
+  }
+};
 
-    res.status(500).json({
-      message: "Error obteniendo perfil"
+export const updateMyProfile = async (req, res) => {
+  try {
+    const userId     = req.user.uid;
+    const updatedUser = await userRepository.updateMe(userId, req.body);
+
+    res.json({ result: "ok", user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error actualizando perfil" });
+  }
+};
+
+export const updateMyTthh = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { salud, banco, emergencia } = req.body;
+
+    const [healthResult, bankResult, emergencyResult] = await Promise.all([
+      salud     ? healthRepo.upsert(userId, salud)              : Promise.resolve(null),
+      banco     ? bankRepo.upsertPrimary(userId, banco)         : Promise.resolve(null),
+      emergencia ? emergencyRepo.upsert(userId, emergencia)     : Promise.resolve(null),
+    ]);
+
+    res.json({
+      result: "ok",
+      salud:      healthRepo.toPublic(healthResult),
+      banco:      bankRepo.toPublic(bankResult),
+      emergencia: emergencyRepo.toPublic(emergencyResult),
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error actualizando datos TTHH" });
   }
 };

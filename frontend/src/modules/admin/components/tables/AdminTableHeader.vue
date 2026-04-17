@@ -7,7 +7,7 @@
           :class="{ 'is-template-artifacts': isTemplateArtifactsTable }"
           aria-hidden="true"
         >
-          <font-awesome-icon :icon="tableHeaderIcon" />
+          <component :is="tablerIconMap[tableHeaderIcon] || tablerIconMap['info-circle']" />
         </span>
         <span>{{ tableHeaderTitle }}</span>
       </h2>
@@ -25,7 +25,7 @@
           aria-label="Regresar"
           @click="$emit('go-back')"
         >
-          <font-awesome-icon icon="backward" />
+          <IconArrowLeft />
         </AdminButton>
         <AdminButton
           variant="secondary"
@@ -42,7 +42,7 @@
           :disabled="!table || loading"
           @click="$emit('sync-template-seeds')"
         >
-          <font-awesome-icon icon="rotate-right" class="mr-2" />
+          <IconRefresh class="mr-2" />
           Sincronizar seeds
         </AdminButton>
         <AdminButton
@@ -52,7 +52,7 @@
           :disabled="!table || loading"
           @click="$emit('sync-template-artifacts')"
         >
-          <font-awesome-icon icon="rotate-right" class="mr-2" />
+          <IconRefresh class="mr-2" />
           Sincronizar dist
         </AdminButton>
         <AdminButton
@@ -62,7 +62,7 @@
           :disabled="!table"
           @click="$emit('create')"
         >
-          <font-awesome-icon icon="plus" class="mr-2" />
+          <IconPlus class="mr-2" />
           Agregar
         </AdminButton>
       </div>
@@ -71,6 +71,18 @@
 </template>
 
 <script setup>
+import { IconArrowLeft, IconRefresh, IconPlus, IconHome, IconUser, IconEdit, IconSettings, IconLogin, IconX, IconSearch, IconCheck, IconSitemap, IconLink, IconEye, IconId, IconLock, IconChecks, IconListCheck, IconStack, IconCircleX, IconUserPlus, IconDotsVertical, IconArrowUp, IconArrowDown, IconTrash, IconCertificate, IconInfoCircle } from '@tabler/icons-vue';
+
+const tablerIconMap = {
+  'home': IconHome, 'user': IconUser, 'edit': IconEdit, 'cog': IconSettings, 'sign-in-alt': IconLogin,
+  'times': IconX, 'search': IconSearch, 'check': IconCheck, 'sitemap': IconSitemap, 'link': IconLink,
+  'eye': IconEye, 'plus': IconPlus, 'id-card': IconId, 'lock': IconLock, 'check-double': IconChecks,
+  'list-check': IconListCheck, 'rotate-right': IconRefresh, 'backward': IconArrowLeft, 'layer-group': IconStack,
+  'times-circle': IconCircleX, 'user-plus': IconUserPlus, 'ellipsis-vertical': IconDotsVertical,
+  'arrow-up': IconArrowUp, 'arrow-down': IconArrowDown, 'trash': IconTrash, 'certificate': IconCertificate,
+  'info-circle': IconInfoCircle
+};
+
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 defineProps({

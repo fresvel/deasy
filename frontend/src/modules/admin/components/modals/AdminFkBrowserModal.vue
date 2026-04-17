@@ -37,7 +37,7 @@
             :disabled="!fkPositionFilters.unit_type_id"
             @click="$emit('clear-fk-unit-position-filters')"
           >
-            <font-awesome-icon icon="times" />
+            <IconX />
           </AdminButton>
         </div>
       </template>
@@ -79,7 +79,7 @@
             :disabled="!hasFkProcessDefinitionFilters"
             @click="$emit('clear-fk-process-definition-filters')"
           >
-            <font-awesome-icon icon="times" />
+            <IconX />
           </AdminButton>
         </div>
       </template>
@@ -128,7 +128,7 @@
             :disabled="!hasFkTemplateArtifactFilters"
             @click="$emit('clear-fk-template-artifact-filters')"
           >
-            <font-awesome-icon icon="times" />
+            <IconX />
           </AdminButton>
         </div>
       </template>
@@ -191,7 +191,7 @@
           :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
           @click="$emit('clear-fk-unit-position-filters')"
         >
-          <font-awesome-icon icon="times" />
+          <IconX />
         </AdminButton>
       </div>
     </div>
@@ -248,7 +248,7 @@
             aria-label="Visualizar"
             @click="$emit('open-fk-viewer', row)"
           >
-            <font-awesome-icon icon="eye" />
+            <IconEye />
           </AdminButton>
           <AdminButton
             variant="secondary"
@@ -259,7 +259,7 @@
             aria-label="Seleccionar"
             @click="$emit('select-fk-row', row)"
           >
-            <font-awesome-icon icon="check" />
+            <IconCheck />
           </AdminButton>
         </div>
       </template>
@@ -272,14 +272,14 @@
         aria-label="Buscar"
         @click="$emit('open-fk-filter')"
       >
-        <font-awesome-icon icon="search" />
+        <IconSearch />
       </AdminButton>
       <AdminButton
         variant="outlinePrimary"
         :disabled="!canCreateFkReference"
         @click="$emit('open-fk-create')"
       >
-        <font-awesome-icon icon="plus" class="mr-2" />
+        <IconPlus class="mr-2" />
         Crear nuevo
       </AdminButton>
       <AdminButton variant="outlineDanger" data-modal-dismiss>
@@ -290,6 +290,8 @@
 </template>
 
 <script setup>
+import { IconX, IconEye, IconCheck, IconSearch, IconPlus } from '@tabler/icons-vue';
+
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";

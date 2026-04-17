@@ -12,13 +12,15 @@
         <div class="admin-feedback-toast-message mt-1 text-sm text-slate-600">{{ message }}</div>
       </div>
       <AdminButton variant="close" size="sm" icon-only title="Cerrar" aria-label="Cerrar" @click="$emit('close')">
-        <font-awesome-icon icon="times" />
+        <IconX />
       </AdminButton>
     </div>
   </div>
 </template>
 
 <script setup>
+import { IconX } from '@tabler/icons-vue';
+
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 defineProps({

@@ -11,7 +11,7 @@
       :aria-label="viewLabel"
       @click="$emit('view')"
     >
-      <font-awesome-icon icon="eye" />
+      <IconEye />
     </AdminButton>
     <slot name="between" />
     <slot name="edit">
@@ -53,6 +53,8 @@
 </template>
 
 <script setup>
+import { IconEye } from '@tabler/icons-vue';
+
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 defineProps({

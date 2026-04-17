@@ -1,7 +1,7 @@
 <template>
   <details ref="menuRef" class="row-action-menu">
     <summary class="row-action-menu__trigger" aria-label="Acciones" title="Acciones">
-      <font-awesome-icon icon="ellipsis-vertical" />
+      <IconDotsVertical />
     </summary>
 
     <div class="row-action-menu__panel" role="menu" @click="handlePanelClick">
@@ -19,6 +19,8 @@
 </template>
 
 <script setup>
+import { IconDotsVertical } from '@tabler/icons-vue';
+
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
 defineEmits(["edit", "delete"]);

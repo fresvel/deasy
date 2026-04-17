@@ -4,7 +4,7 @@
         <div>
           <h2 class="text-start profile-section-title table-title-with-icon">
             <span class="table-title-icon" aria-hidden="true">
-              <font-awesome-icon icon="layer-group" />
+              <IconStack />
             </span>
             <span>Artifacts sin definicion</span>
           </h2>
@@ -29,10 +29,10 @@
             <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
               <div class="inline-flex items-center gap-2">
                 <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  <font-awesome-icon icon="times" />
+                  <IconX />
                 </AdminButton>
                 <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
-                  <font-awesome-icon icon="rotate-right" />
+                  <IconRefresh />
                 </AdminButton>
               </div>
             </div>
@@ -67,10 +67,10 @@
             <template #actions="{ row }">
               <div class="inline-flex items-center gap-1">
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-view" title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
-                  <font-awesome-icon icon="eye" />
+                  <IconEye />
                 </AdminButton>
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
-                  <font-awesome-icon icon="link" />
+                  <IconLink />
                 </AdminButton>
               </div>
             </template>
@@ -80,6 +80,8 @@
 </template>
 
 <script setup>
+import { IconStack, IconX, IconRefresh, IconEye, IconLink } from '@tabler/icons-vue';
+
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";

@@ -10,7 +10,7 @@
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="home" />
+          <IconHome />
           <span>Dashboard</span>
         </router-link>
         <router-link 
@@ -18,7 +18,7 @@
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="user" />
+          <IconUser />
           <span>Perfil</span>
         </router-link>
         <router-link
@@ -26,7 +26,7 @@
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="edit" />
+          <IconEdit />
           <span>Firmar documentos</span>
         </router-link>
         <router-link 
@@ -35,7 +35,7 @@
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="cog" />
+          <IconSettings />
           <span>Administración</span>
         </router-link>
         <router-link 
@@ -43,7 +43,7 @@
           class="nav-menu-item nav-menu-item-logout deasy-nav-item"
           @click="$emit('close')"
         >
-          <font-awesome-icon icon="sign-in-alt" />
+          <IconLogin />
           <span>Cerrar sesión</span>
         </router-link>
       </div>
@@ -52,6 +52,8 @@
 </template>
 
 <script setup>
+import { IconHome, IconUser, IconEdit, IconSettings, IconLogin } from '@tabler/icons-vue';
+
 import { defineProps, defineEmits } from "vue"
 
 defineProps({

@@ -4,7 +4,7 @@
         <div>
           <h2 class="text-start profile-section-title table-title-with-icon">
             <span class="table-title-icon" aria-hidden="true">
-              <font-awesome-icon icon="id-card" />
+              <IconId />
             </span>
             <span>Puestos sin ocupaciones</span>
           </h2>
@@ -48,10 +48,10 @@
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
               <div class="inline-flex items-center gap-2">
                 <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  <font-awesome-icon icon="times" />
+                  <IconX />
                 </AdminButton>
                 <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
-                  <font-awesome-icon icon="rotate-right" />
+                  <IconRefresh />
                 </AdminButton>
               </div>
             </div>
@@ -80,10 +80,10 @@
             <template #actions="{ row }">
               <div class="inline-flex items-center gap-1">
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-delete" title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
-                  <font-awesome-icon icon="times-circle" />
+                  <IconCircleX />
                 </AdminButton>
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
-                  <font-awesome-icon icon="user-plus" />
+                  <IconUserPlus />
                 </AdminButton>
               </div>
             </template>
@@ -93,6 +93,8 @@
 </template>
 
 <script setup>
+import { IconId, IconX, IconRefresh, IconCircleX, IconUserPlus } from '@tabler/icons-vue';
+
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";

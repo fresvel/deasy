@@ -25,7 +25,7 @@
       @mousedown="handleButtonMouseDown"
       @click="$emit('clear')"
     >
-      <font-awesome-icon icon="times" />
+      <IconX />
     </AdminButton>
     <AdminButton
       v-if="showSearch"
@@ -37,12 +37,14 @@
       @mousedown="handleButtonMouseDown"
       @click="$emit('search')"
     >
-      <font-awesome-icon icon="search" />
+      <IconSearch />
     </AdminButton>
   </div>
 </template>
 
 <script setup>
+import { IconX, IconSearch } from '@tabler/icons-vue';
+
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
 const props = defineProps({

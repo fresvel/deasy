@@ -1,6 +1,18 @@
 <template>
-  <div class="w-full h-full flex flex-col">
-    <div class="grid grid-cols-1 xl:grid-cols-[330px_minmax(0,1fr)] gap-6 h-full">
+  <div class="w-full h-full flex flex-col relative">
+    <!-- Overlay for global drop -->
+    <div 
+      v-if="isGlobalDragging" 
+      class="fixed inset-0 z-[9999] bg-sky-500/20 backdrop-blur-[2px] border-4 border-dashed border-sky-400 flex flex-col items-center justify-center transition-all duration-200 pointer-events-none"
+    >
+      <div class="bg-white/90 p-8 rounded-2xl shadow-xl flex flex-col items-center gap-4">
+        <IconFiles class="w-16 h-16 text-sky-500" />
+        <h3 class="text-2xl font-bold text-sky-900 m-0">Suelta tus PDFs aquí</h3>
+        <p class="text-sky-700 font-medium m-0">Añadirá los documentos a la cola de multifirma</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[400px_minmax(0,1fr)] gap-6 h-full">
       <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
         <!-- Page Header -->
         <div class="flex items-start gap-3">
@@ -18,6 +30,60 @@
             <p class="text-slate-500 text-xs mt-1 font-medium leading-snug">
               Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
             </p>
+          </div>
+        </div>
+
+        <div class="flex flex-col mt-2">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+            <div class="text-sm font-bold text-slate-800">Archivos <span class="text-xs font-semibold text-slate-500 ml-1">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span></div>
+            <div class="flex items-center gap-1">
+              <PdfDropField
+                variant="inline"
+                title=""
+                action-text="Añadir PDF"
+                help-text=""
+                input-id="multisigner-input-sidebar"
+                multiple
+                @files-selected="onFilesSelected"
+                class="text-xs font-bold"
+              />
+              <button
+                v-if="documents.length"
+                type="button"
+                class="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
+                title="Limpiar cola completa"
+                @click="clearQueue"
+              >
+                <IconTrash class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div v-if="!documents.length" class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center text-slate-400 gap-3">
+            <IconFiles class="w-8 h-8 opacity-50" />
+            <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
+          </div>
+          <div v-else class="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+            <button
+              v-for="(doc, index) in documents"
+              :key="doc.id"
+              type="button"
+              class="w-full group rounded-xl border p-3 flex flex-col items-start gap-1 transition-all"
+              :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
+              @click="selectDocument(index)"
+            >
+              <div class="flex items-start justify-between w-full gap-3">
+                <div class="min-w-0 flex items-center gap-2">
+                  <IconFileCheck v-if="doc.status === 'completed'" class="w-4 h-4 shrink-0 text-emerald-500" />
+                  <IconAlertCircle v-else-if="doc.status === 'failed'" class="w-4 h-4 shrink-0 text-rose-500" />
+                  <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'">{{ doc.name }}</div>
+                </div>
+                <!-- Prevent button inside button behavior by switching wrapper or catching click -->
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <BtnDelete message="Quitar" @onpress.stop="removeDocument(index)" />
+                </div>
+              </div>
+              <div v-if="doc.error" class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded w-full text-left truncate">{{ doc.error }}</div>
+            </button>
           </div>
         </div>
 
@@ -180,66 +246,12 @@
 
           <AdminButton
             variant="primary"
-            :disabled="!canRequestStart"
+            :disabled="!canRequestStart || isCheckingTokens"
             @click="requestBatchStart"
             class="w-full flex justify-center py-3 rounded-xl font-bold shadow-md shadow-sky-500/20 transition-all hover:shadow-lg hover:shadow-sky-500/30"
           >
-            {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
+            {{ isCheckingTokens ? 'Comprobando tokens...' : isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>
-        </div>
-
-        <div class="flex flex-col mt-2">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-            <div class="text-sm font-bold text-slate-800">Archivos <span class="text-xs font-semibold text-slate-500 ml-1">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span></div>
-            <div class="flex items-center gap-1">
-              <PdfDropField
-                variant="inline"
-                title=""
-                action-text="Añadir PDF"
-                help-text=""
-                input-id="multisigner-input-sidebar"
-                multiple
-                @files-selected="onFilesSelected"
-                class="text-xs font-bold"
-              />
-              <button
-                v-if="documents.length"
-                type="button"
-                class="inline-flex items-center justify-center p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
-                title="Limpiar cola completa"
-                @click="clearQueue"
-              >
-                <IconTrash class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <div v-if="!documents.length" class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center text-slate-400 gap-3">
-            <IconFiles class="w-8 h-8 opacity-50" />
-            <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
-          </div>
-          <div v-else class="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-            <button
-              v-for="(doc, index) in documents"
-              :key="doc.id"
-              type="button"
-              class="w-full group rounded-xl border p-3 flex flex-col items-start gap-1 transition-all"
-              :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
-              @click="selectDocument(index)"
-            >
-              <div class="flex items-start justify-between w-full gap-3">
-                <div class="min-w-0 flex items-center gap-2">
-                  <IconFileCheck v-if="doc.status === 'completed'" class="w-4 h-4 shrink-0 text-emerald-500" />
-                  <IconAlertCircle v-else-if="doc.status === 'failed'" class="w-4 h-4 shrink-0 text-rose-500" />
-                  <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'">{{ doc.name }}</div>
-                </div>
-                <!-- Prevent button inside button behavior by switching wrapper or catching click -->
-                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <BtnDelete message="Quitar" @onpress.stop="removeDocument(index)" />
-                </div>
-              </div>
-              <div v-if="doc.error" class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded w-full text-left truncate">{{ doc.error }}</div>
-            </button>
-          </div>
         </div>
       </div>
 
@@ -298,7 +310,7 @@
             <div
               v-if="currentDocument"
               ref="viewerRef"
-              class="relative mx-auto shadow-md bg-white mb-28 border border-slate-300 transition-all duration-300"
+              class="relative mx-auto shadow-md bg-white border border-slate-300 transition-all duration-300"
               @mousedown="handlePointerDown"
               @mousemove="handlePointerMove"
               @mouseup="handlePointerUp"
@@ -357,11 +369,51 @@
         </div>
       </div>
     </div>
+    <!-- Modal for missing tokens -->
+    <AppModalShell
+      controlled
+      :open="showMissingTokenModal"
+      title="Token de firma no encontrado"
+      size="md"
+      content-class="profile-admin-skin"
+      @close="showMissingTokenModal = false"
+    >
+      <div class="space-y-4">
+        <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl flex items-start gap-3">
+          <IconAlertCircle class="w-6 h-6 shrink-0 mt-0.5" />
+          <div>
+            <h4 class="font-bold mb-1">¡Acción requerida!</h4>
+            <p v-if="signatureMarker" class="text-sm font-medium">
+              No se ha encontrado el token en los siguientes documentos.
+              Para proceder, todos los PDFs deben incluir el token exacto del usuario.
+            </p>
+            <p v-else class="text-sm font-medium">
+              No tienes un token de firma configurado en tu perfil. 
+              No se puede realizar la búsqueda automática sin un token válido asociado a tu cuenta.
+            </p>
+          </div>
+        </div>
+        
+        <div v-if="missingTokenDocuments.length > 0" class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+          <ul class="divide-y divide-slate-200">
+            <li v-for="docName in missingTokenDocuments" :key="docName" class="px-4 py-2.5 text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <IconFileCheck class="w-4 h-4 text-slate-400" />
+              <span class="truncate" :title="docName">{{ docName }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <template #footer>
+        <AdminButton variant="primary" @click="showMissingTokenModal = false">
+          Entendido
+        </AdminButton>
+      </template>
+    </AppModalShell>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
@@ -377,6 +429,7 @@ import {
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 const props = defineProps({
   batchJob: {
     type: Object,
@@ -389,6 +442,10 @@ const props = defineProps({
   isDownloadingBatch: {
     type: Boolean,
     default: false
+  },
+  signatureMarker: {
+    type: String,
+    default: ""
   }
 });
 const emit = defineEmits(["back", "start-batch", "download-batch"]);
@@ -406,6 +463,39 @@ const pdfCanvas = ref(null);
 const canvasHost = ref(null);
 const viewerRef = ref(null);
 const batchError = ref("");
+const isCheckingTokens = ref(false);
+const showMissingTokenModal = ref(false);
+const missingTokenDocuments = ref([]);
+
+const isGlobalDragging = ref(false);
+let globalDragCounter = 0;
+
+const handleGlobalDragEnter = (e) => {
+  e.preventDefault();
+  globalDragCounter++;
+  isGlobalDragging.value = true;
+};
+
+const handleGlobalDragLeave = (e) => {
+  e.preventDefault();
+  globalDragCounter--;
+  if (globalDragCounter === 0) {
+    isGlobalDragging.value = false;
+  }
+};
+
+const handleGlobalDragOver = (e) => {
+  e.preventDefault();
+};
+
+const handleGlobalDrop = async (e) => {
+  e.preventDefault();
+  globalDragCounter = 0;
+  isGlobalDragging.value = false;
+  if (e.dataTransfer && e.dataTransfer.files) {
+    await onFilesSelected(e.dataTransfer.files);
+  }
+};
 
 let pdfDoc = null;
 let renderTask = null;
@@ -839,6 +929,65 @@ const removeField = (fieldId) => {
 const requestBatchStart = async () => {
   if (!canRequestStart.value) return;
   batchError.value = "";
+
+  if (batchMode.value === "token") {
+    console.log("[MultiSigner] Validando tokens para lote...");
+    if (!props.signatureMarker) {
+      console.warn("[MultiSigner] Sin token configurado");
+      missingTokenDocuments.value = []; 
+      showMissingTokenModal.value = true;
+      return;
+    }
+
+    isCheckingTokens.value = true;
+    const missingDocs = [];
+    const marker = props.signatureMarker;
+
+    try {
+      for (const doc of documents.value) {
+        let hasToken = false;
+        try {
+          const fileBuffer = await doc.file.arrayBuffer();
+          const tempPdf = await pdfjsLib.getDocument({
+            data: new Uint8Array(fileBuffer),
+            enableXfa: true,
+            stopAtErrors: false
+          }).promise;
+
+          for (let pageNum = 1; pageNum <= tempPdf.numPages; pageNum++) {
+            const page = await tempPdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(i => (typeof i?.str === 'string' ? i.str : '')).join(' ');
+            if (pageText.includes(marker)) {
+              hasToken = true;
+              break;
+            }
+          }
+          await tempPdf.destroy(); // Liberar memoria
+        } catch (e) {
+          console.error(`Error verificando token en ${doc.name}`, e);
+          // Si falla la lectura, por seguridad lo marcamos como falta de token
+          missingDocs.push(`${doc.name} (Error de lectura)`);
+          continue;
+        }
+
+        if (!hasToken) {
+          missingDocs.push(doc.name);
+        }
+      }
+    } finally {
+      isCheckingTokens.value = false;
+    }
+
+    if (missingDocs.length > 0) {
+      console.warn("[MultiSigner] PDFs con tokens faltantes:", missingDocs);
+      missingTokenDocuments.value = missingDocs;
+      showMissingTokenModal.value = true;
+      return;
+    }
+  }
+
+  console.log("[MultiSigner] Validación exitosa. Iniciando lote...");
   emit("start-batch", {
     mode: batchMode.value,
     documents: documents.value.map((doc) => ({
@@ -900,6 +1049,8 @@ watch(batchMode, () => {
   activeSelectionBox.value = null;
   lastSelection.value = null;
   selectedFieldId.value = null;
+  previewBoxStyle.value = { display: 'none' };
+  isMouseOverPdf.value = false;
   if (batchMode.value !== "shared-coordinates") {
     sharedPageReference.value = "start";
   }
@@ -911,7 +1062,19 @@ watch(currentDocumentIndex, async () => {
   }
 });
 
+onMounted(() => {
+  window.addEventListener("dragenter", handleGlobalDragEnter);
+  window.addEventListener("dragleave", handleGlobalDragLeave);
+  window.addEventListener("dragover", handleGlobalDragOver);
+  window.addEventListener("drop", handleGlobalDrop);
+});
+
 onBeforeUnmount(() => {
+  window.removeEventListener("dragenter", handleGlobalDragEnter);
+  window.removeEventListener("dragleave", handleGlobalDragLeave);
+  window.removeEventListener("dragover", handleGlobalDragOver);
+  window.removeEventListener("drop", handleGlobalDrop);
+
   if (renderTask) {
     try {
       renderTask.cancel();

@@ -18,15 +18,15 @@
       <div class="definition-activation-checklist mt-3">
         <div class="definition-checklist-items">
           <div class="definition-checklist-item" :class="{ 'is-complete': hasActiveRules }">
-            <font-awesome-icon :icon="hasActiveRules ? 'check' : 'times'" />
+            <component :is="tablerIconMap[hasActiveRules ? 'check' : 'times'] || tablerIconMap['info-circle']" />
             <span>Al menos una regla activa</span>
           </div>
           <div class="definition-checklist-item" :class="{ 'is-complete': hasActiveTriggers }">
-            <font-awesome-icon :icon="hasActiveTriggers ? 'check' : 'times'" />
+            <component :is="tablerIconMap[hasActiveTriggers ? 'check' : 'times'] || tablerIconMap['info-circle']" />
             <span>Al menos un disparador activo</span>
           </div>
           <div class="definition-checklist-item" :class="{ 'is-complete': hasRequiredArtifacts || !requiresArtifacts }">
-            <font-awesome-icon :icon="(hasRequiredArtifacts || !requiresArtifacts) ? 'check' : 'times'" />
+            <component :is="tablerIconMap[(hasRequiredArtifacts || !requiresArtifacts) ? 'check' : 'times'] || tablerIconMap['info-circle']" />
             <span>{{ requiresArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}</span>
           </div>
         </div>
@@ -135,6 +135,18 @@
 </template>
 
 <script setup>
+import { IconHome, IconUser, IconEdit, IconSettings, IconLogin, IconX, IconSearch, IconCheck, IconSitemap, IconLink, IconEye, IconPlus, IconId, IconLock, IconChecks, IconListCheck, IconRefresh, IconArrowLeft, IconStack, IconCircleX, IconUserPlus, IconDotsVertical, IconArrowUp, IconArrowDown, IconTrash, IconCertificate, IconInfoCircle } from '@tabler/icons-vue';
+
+const tablerIconMap = {
+  'home': IconHome, 'user': IconUser, 'edit': IconEdit, 'cog': IconSettings, 'sign-in-alt': IconLogin,
+  'times': IconX, 'search': IconSearch, 'check': IconCheck, 'sitemap': IconSitemap, 'link': IconLink,
+  'eye': IconEye, 'plus': IconPlus, 'id-card': IconId, 'lock': IconLock, 'check-double': IconChecks,
+  'list-check': IconListCheck, 'rotate-right': IconRefresh, 'backward': IconArrowLeft, 'layer-group': IconStack,
+  'times-circle': IconCircleX, 'user-plus': IconUserPlus, 'ellipsis-vertical': IconDotsVertical,
+  'arrow-up': IconArrowUp, 'arrow-down': IconArrowDown, 'trash': IconTrash, 'certificate': IconCertificate,
+  'info-circle': IconInfoCircle
+};
+
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
