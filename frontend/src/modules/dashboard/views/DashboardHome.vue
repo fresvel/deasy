@@ -414,17 +414,7 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2">
-                          <button
-                            v-if="shouldShowStartDeliverable(deliverable.item)"
-                            type="button"
-                            class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
-                            :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
-                            @click="startDeliverableFlow(deliverable.item)"
-                          >
-                            <IconPlayerPlayFilled class="h-4 w-4" />
-                            {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
-                          </button>
-                          <AppTag v-else :variant="getDeliverableAccessSource(deliverable.item) === 'Derivado' ? 'warning' : 'success'">
+                          <AppTag :variant="getDeliverableAccessSource(deliverable.item) === 'Derivado' ? 'warning' : 'success'">
                             {{ getDeliverableAccessSource(deliverable.item) }}
                           </AppTag>
                           <AppTag :variant="deliverable.item.status === 'completado' ? 'success' : 'warning'">
@@ -450,8 +440,27 @@
 
                       <div class="mt-4 grid gap-4 border-t border-slate-100 pt-4 pr-14 xl:grid-cols-[18rem_minmax(0,1fr)] xl:items-start">
                         <div class="min-w-0">
+                            <button
+                              v-if="shouldShowStartDeliverable(deliverable.item)"
+                              type="button"
+                              class="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/60 disabled:cursor-not-allowed disabled:opacity-60"
+                              :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
+                              @click="startDeliverableFlow(deliverable.item)"
+                            >
+                              <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 shadow-sm transition-all group-hover:bg-sky-50 group-hover:text-sky-600">
+                                <IconPlayerPlayFilled class="h-6 w-6" />
+                              </div>
+                              <div class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">
+                                  {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
+                                </span>
+                                <span class="text-xs font-medium text-slate-500">
+                                  Habilita el flujo operativo del entregable.
+                                </span>
+                              </div>
+                            </button>
                             <div
-                              v-if="shouldShowUploadDeliverable(deliverable.item)"
+                              v-else-if="shouldShowUploadDeliverable(deliverable.item)"
                               class="w-full"
                             >
                               <PdfDropField
@@ -466,16 +475,21 @@
                               />
                             </div>
                             <AppButton
-                              v-else-if="shouldShowSign(deliverable.item)"
-                              variant="softWarning"
-                              size="sm"
-                              class-name="w-full justify-center"
+                            v-else-if="shouldShowSign(deliverable.item)"
+                              variant="plain"
+                              class-name="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-amber-200 hover:bg-amber-50/60"
                               :class="deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                               type="button"
                               :disabled="!(deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath)"
                               @click="openDocumentSignFlow(deliverable.item)"
                             >
-                              Firmar
+                              <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 shadow-sm transition-all group-hover:bg-amber-50 group-hover:text-amber-600">
+                                <IconSignature class="h-6 w-6" />
+                              </span>
+                              <span class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">Firmar</span>
+                                <span class="text-xs font-medium text-slate-500">Abre el firmador sobre el PDF listo.</span>
+                              </span>
                             </AppButton>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -489,46 +503,70 @@
                           >
                             {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
                           </AppButton>
-                          <AppButton
-                            v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
-                            variant="softNeutral"
-                            size="sm"
-                            type="button"
-                            @click="previewDeliverableFile(deliverable.item)"
-                          >
-                            Ver archivo
-                          </AppButton>
-                          <AppButton
-                            v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
-                            variant="softNeutral"
-                            size="sm"
-                            type="button"
-                            @click="downloadDeliverableFile(deliverable.item)"
-                          >
-                            Descargar archivo
-                          </AppButton>
-                          <AppButton
-                            v-if="shouldShowTemplateDownload(deliverable.item)"
-                            variant="softNeutral"
-                            size="sm"
-                            :class="deliverable.item.actions?.can_download_template ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                            type="button"
-                            :disabled="!deliverable.item.actions?.can_download_template"
-                            @click="handleDeliverableFutureAction('download_template', deliverable.item)"
-                          >
-                            Descargar plantilla
-                          </AppButton>
-                          <AppButton
-                            v-if="shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)"
-                            variant="softPrimary"
-                            size="sm"
-                            :class="(shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)) ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                            type="button"
-                            :disabled="processingFillItemId === deliverable.item.id"
-                            @click="openDeliverableWorkspaceModal(deliverable.item)"
-                          >
-                            {{ processingFillItemId === deliverable.item.id ? 'Procesando...' : 'Abrir' }}
-                          </AppButton>
+                            <AppButton
+                              v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
+                              variant="plain"
+                              type="button"
+                              class-name="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/60"
+                              @click="previewDeliverableFile(deliverable.item)"
+                            >
+                              <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 shadow-sm transition-all group-hover:bg-sky-50 group-hover:text-sky-600">
+                                <IconEye class="h-6 w-6" />
+                              </span>
+                              <span class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">Ver archivo</span>
+                                <span class="text-xs font-medium text-slate-500">Abre la vista previa del documento.</span>
+                              </span>
+                            </AppButton>
+                            <AppButton
+                              v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
+                              variant="plain"
+                              type="button"
+                              class-name="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/60"
+                              @click="downloadDeliverableFile(deliverable.item)"
+                            >
+                              <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 shadow-sm transition-all group-hover:bg-sky-50 group-hover:text-sky-600">
+                                <IconDownload class="h-6 w-6" />
+                              </span>
+                              <span class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">Descargar archivo</span>
+                                <span class="text-xs font-medium text-slate-500">Guarda la versión actual del entregable.</span>
+                              </span>
+                            </AppButton>
+                            <AppButton
+                              v-if="shouldShowTemplateDownload(deliverable.item)"
+                              variant="plain"
+                              :class="deliverable.item.actions?.can_download_template ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              type="button"
+                              :disabled="!deliverable.item.actions?.can_download_template"
+                              class-name="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/60"
+                              @click="handleDeliverableFutureAction('download_template', deliverable.item)"
+                            >
+                              <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 shadow-sm transition-all group-hover:bg-sky-50 group-hover:text-sky-600">
+                                <IconDownload class="h-6 w-6" />
+                              </span>
+                              <span class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">Descargar plantilla</span>
+                                <span class="text-xs font-medium text-slate-500">Obtén la base documental del proceso.</span>
+                              </span>
+                            </AppButton>
+                            <AppButton
+                              v-if="shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)"
+                              variant="plain"
+                              :class="(shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)) ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              type="button"
+                              :disabled="processingFillItemId === deliverable.item.id"
+                              class-name="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/60"
+                              @click="openDeliverableWorkspaceModal(deliverable.item)"
+                            >
+                              <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500 shadow-sm transition-all group-hover:bg-sky-50 group-hover:text-sky-600">
+                                <IconCircleCheck class="h-6 w-6" />
+                              </span>
+                              <span class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Procesando...' : 'Abrir' }}</span>
+                                <span class="text-xs font-medium text-slate-500">Gestiona llenado y revisa el flujo de firmas.</span>
+                              </span>
+                            </AppButton>
                           <span
                             v-if="shouldShowPdfRequiredHint(deliverable.item)"
                             class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-500"
@@ -1580,6 +1618,7 @@ import {
   IconMapPins,
   IconUser,
   IconCircleCheck,
+  IconEye,
   IconSquareCheck,
   IconSignature,
   IconUpload,
