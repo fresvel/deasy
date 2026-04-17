@@ -332,55 +332,61 @@ const resetForm = () => {
 };
 
 // Cargar datos si estamos editando
-watch(() => props.editingItem, (newVal) => {
-  if (newVal) {
-    form.tipoProduccion = props.initialType || "articulos";
-    form.pais = newVal.pais || "Ecuador";
-    
-    // Cargar campos específicos según tipo
-    if (form.tipoProduccion === 'articulos') {
-      form.titulo = newVal.titulo || "";
-      form.base_indexada = newVal.base_indexada || "";
-      form.revista = newVal.revista || "";
-      form.doi = newVal.doi || "";
-      form.issn = newVal.issn || "";
-      form.sjr = newVal.sjr || "";
-      form.estado = newVal.estado || "Aceptado";
-      form.rolArticulo = newVal.rol || "Autor";
-      if (newVal.fecha) form.fecha = new Date(newVal.fecha).toISOString().split('T')[0];
-    } else if (form.tipoProduccion === 'libros') {
-      form.titulo = newVal.titulo || "";
-      form.editorial = newVal.editorial || "";
-      form.isbn = newVal.isbn || "";
-      form.isnn = newVal.isnn || "";
-      form.anio = newVal.año || "";
-      form.tipoLibro = newVal.tipo || "Libro";
-    } else if (form.tipoProduccion === 'ponencias') {
-      form.titulo = newVal.titulo || "";
-      form.evento = newVal.evento || "";
-      form.anio = newVal.año || "";
-    } else if (form.tipoProduccion === 'tesis') {
-      form.ies = newVal.ies || "";
-      form.tema = newVal.tema || "";
-      form.programa = newVal.programa || "";
-      form.nivel = newVal.nivel || "Grado";
-      form.anio = newVal.año || "";
-      form.rolTesis = newVal.rol || "Asesor";
-    } else if (form.tipoProduccion === 'proyectos') {
-      form.tema = newVal.tema || "";
-      form.institucion = newVal.institucion || "";
-      form.tipoProyecto = newVal.tipo || "Investigación";
-      form.programa_group = newVal.programa_group || "";
-      form.avance = newVal.avance || "";
-      form.presupuesto = newVal.presupuesto || "";
-      if (newVal.inicio) form.inicio = new Date(newVal.inicio).toISOString().split('T')[0];
-      if (newVal.fin) form.fin = new Date(newVal.fin).toISOString().split('T')[0];
+// Observamos AMBOS props juntos para evitar problemas de sincronización
+watch(
+  [() => props.editingItem, () => props.initialType],
+  ([newItem, newType]) => {
+    if (newItem) {
+      // Primero establecer el tipo (viene del padre junto con el item)
+      form.tipoProduccion = newType || "articulos";
+      form.pais = newItem.pais || "Ecuador";
+
+      // Cargar campos específicos según el tipo
+      if (form.tipoProduccion === 'articulos') {
+        form.titulo = newItem.titulo || "";
+        form.base_indexada = newItem.base_indexada || "";
+        form.revista = newItem.revista || "";
+        form.doi = newItem.doi || "";
+        form.issn = newItem.issn || "";
+        form.sjr = newItem.sjr || "";
+        form.estado = newItem.estado || "Aceptado";
+        form.rolArticulo = newItem.rol || "Autor";
+        form.fecha = newItem.fecha ? new Date(newItem.fecha).toISOString().split('T')[0] : "";
+      } else if (form.tipoProduccion === 'libros') {
+        form.titulo = newItem.titulo || "";
+        form.editorial = newItem.editorial || "";
+        form.isbn = newItem.isbn || "";
+        form.isnn = newItem.isnn || "";
+        form.anio = newItem['año'] || "";
+        form.tipoLibro = newItem.tipo || "Libro";
+      } else if (form.tipoProduccion === 'ponencias') {
+        form.titulo = newItem.titulo || "";
+        form.evento = newItem.evento || "";
+        form.anio = newItem['año'] || "";
+      } else if (form.tipoProduccion === 'tesis') {
+        form.ies = newItem.ies || "";
+        form.tema = newItem.tema || "";
+        form.programa = newItem.programa || "";
+        form.nivel = newItem.nivel || "Grado";
+        form.anio = newItem['año'] || "";
+        form.rolTesis = newItem.rol || "Asesor";
+      } else if (form.tipoProduccion === 'proyectos') {
+        form.tema = newItem.tema || "";
+        form.institucion = newItem.institucion || "";
+        form.tipoProyecto = newItem.tipo || "Investigación";
+        form.programa_group = newItem.programa_group || "";
+        form.avance = newItem.avance || "";
+        form.presupuesto = newItem.presupuesto || "";
+        form.inicio = newItem.inicio ? new Date(newItem.inicio).toISOString().split('T')[0] : "";
+        form.fin = newItem.fin ? new Date(newItem.fin).toISOString().split('T')[0] : "";
+      }
+    } else {
+      resetForm();
+      form.tipoProduccion = newType || "articulos";
     }
-  } else {
-    resetForm();
-    form.tipoProduccion = props.initialType || "articulos";
-  }
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
 const onCancel = () => {
   resetForm();
