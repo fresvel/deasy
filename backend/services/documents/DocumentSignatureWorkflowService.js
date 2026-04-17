@@ -427,6 +427,9 @@ const resolveSignatureStepAssignees = async (connection, step, context) => {
 
 const deriveSignatureStatusCode = (result) => {
   const validation = result?.validation || {};
+  if (validation?.warningAccepted === true) {
+    return SIGNATURE_STATUS.SIGNED;
+  }
   if (validation?.performed && validation?.bottomLine === true) {
     return SIGNATURE_STATUS.SIGNED;
   }
@@ -738,6 +741,12 @@ export const registerSignatureEvidence = async ({ connection, context, result })
     throw new Error("No se pudo determinar la versión documental firmada.");
   }
 
+  const persistedSignedPath = String(
+    result?.signedPath
+    || result?.finalPath
+    || ""
+  ).trim() || null;
+
   const signatureStatusCode = deriveSignatureStatusCode(result);
   const signatureStatusId = await getSignatureStatusIdByCode(connection, signatureStatusCode);
   if (!signatureStatusId) {
@@ -751,12 +760,12 @@ export const registerSignatureEvidence = async ({ connection, context, result })
     throw new Error("No existe un tipo de firma disponible para registrar la evidencia.");
   }
 
-  if (result?.finalPath) {
+  if (persistedSignedPath) {
     await connection.query(
       `UPDATE document_versions
-       SET final_file_path = ?
+       SET working_file_path = ?
        WHERE id = ?`,
-      [String(result.finalPath), documentVersionId]
+      [persistedSignedPath, documentVersionId]
     );
   }
 
@@ -800,7 +809,7 @@ export const registerSignatureEvidence = async ({ connection, context, result })
       Number(signatureTypeId),
       Number(signatureStatusId),
       noteShort,
-      result?.finalPath ? String(result.finalPath) : null,
+      persistedSignedPath,
       new Date(),
     ]
   );
@@ -1085,6 +1094,12 @@ const getDocumentVersionCurrentStatus = async (connection, documentVersionId) =>
 const finalizeDocumentVersionIfComplete = async (connection, documentVersionId) => {
   const currentStatus = await getDocumentVersionCurrentStatus(connection, documentVersionId);
   if (currentStatus === "Firmado completo") {
+    await connection.query(
+      `UPDATE document_versions
+       SET final_file_path = working_file_path
+       WHERE id = ?`,
+      [Number(documentVersionId)]
+    );
     await transitionDocumentVersionState(connection, Number(documentVersionId), "Final");
     return true;
   }

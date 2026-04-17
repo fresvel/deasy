@@ -1932,28 +1932,53 @@ export const downloadDeliverableFile = async (req, res) => {
       return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
     }
 
-    const storedPath =
+    const candidatePaths =
       requestedKind === "final"
-        ? target.final_file_path
+        ? [target.final_file_path]
         : requestedKind === "working"
-          ? target.working_file_path
-          : target.final_file_path || target.working_file_path;
-    if (!storedPath) {
+          ? [target.working_file_path]
+          : [target.final_file_path, target.working_file_path];
+    const normalizedCandidatePaths = candidatePaths
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    if (!normalizedCandidatePaths.length) {
       return res.status(404).json({ message: "El entregable todavía no tiene un archivo vinculado." });
     }
 
-    const resolvedObject = resolveStoredDocumentObject(storedPath);
-    if (!resolvedObject) {
-      return res.status(404).json({ message: "No se pudo resolver la ubicación del archivo del entregable." });
+    let selectedObject = null;
+    let selectedStat = null;
+    let lastResolutionError = null;
+
+    for (const storedPath of normalizedCandidatePaths) {
+      const resolvedObject = resolveStoredDocumentObject(storedPath);
+      if (!resolvedObject) {
+        continue;
+      }
+      try {
+        const stat = await statMinioObject(resolvedObject.bucket, resolvedObject.objectName);
+        selectedObject = resolvedObject;
+        selectedStat = stat;
+        break;
+      } catch (error) {
+        lastResolutionError = error;
+      }
     }
 
-    const stat = await statMinioObject(resolvedObject.bucket, resolvedObject.objectName);
-    const stream = await getMinioObjectStream(resolvedObject.bucket, resolvedObject.objectName);
-    const fileName = path.basename(resolvedObject.objectName);
-    const contentType = stat?.metaData?.["content-type"] || stat?.metaData?.["Content-Type"] || "application/octet-stream";
+    if (!selectedObject || !selectedStat) {
+      const message =
+        lastResolutionError?.message || "No se encontró un archivo válido del entregable en almacenamiento.";
+      return res.status(404).json({ message });
+    }
+
+    const stream = await getMinioObjectStream(selectedObject.bucket, selectedObject.objectName);
+    const fileName = path.basename(selectedObject.objectName);
+    const contentType =
+      selectedStat?.metaData?.["content-type"]
+      || selectedStat?.metaData?.["Content-Type"]
+      || "application/octet-stream";
 
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Length", stat.size);
+    res.setHeader("Content-Length", selectedStat.size);
     res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
     stream.on("error", (streamError) => {
       console.error("Error transmitiendo el archivo del entregable:", streamError);

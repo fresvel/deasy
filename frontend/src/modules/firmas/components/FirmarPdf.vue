@@ -703,7 +703,7 @@
           <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
     </div>
-    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signResultMessage || signError }}</p>
+    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del flujo.' }}</p>
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
@@ -944,7 +944,7 @@
   </AdminModalShell>
 </template>
   <script setup>
-  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, h } from 'vue';
+  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h } from 'vue';
   import axios from 'axios';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
@@ -966,6 +966,7 @@
       default: false
     }
   });
+  const emit = defineEmits(['workflow-signed']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
@@ -981,6 +982,38 @@
   const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
   const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
   const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
+  const resolveUiErrorMessage = (error, fallback) => {
+    const candidates = [
+      error?.response?.data?.error,
+      error?.response?.data?.details,
+      error?.response?.data?.message,
+      error?.details,
+      error?.error,
+      error?.message,
+      typeof error === 'string' ? error : ''
+    ];
+    const resolved = candidates
+      .map((value) => String(value || '').trim())
+      .find(Boolean);
+    if (resolved === "The signer's certificate could not be validated") {
+      return 'No se pudo validar el certificado del firmante. Para este entorno de pruebas, habilita "Permitir certificados no validados".';
+    }
+    return resolved || fallback;
+  };
+
+  const readResponsePayload = async (response) => {
+    const rawText = await response.text().catch(() => '');
+    if (!rawText) {
+      return {};
+    }
+    try {
+      return JSON.parse(rawText);
+    } catch {
+      return {
+        message: rawText
+      };
+    }
+  };
 
   let ctx;
   const colPdf=ref(null)
@@ -1068,7 +1101,19 @@
   const certPassword = ref('');
   const stampText = ref('');
   const signMode = ref('coordinates');
-  const allowUntrustedSigner = ref(false);
+  const ALLOW_UNTRUSTED_SIGNER_STORAGE_KEY = 'deasy.allowUntrustedSigner';
+  const readAllowUntrustedSignerPreference = () => {
+    try {
+      const raw = localStorage.getItem(ALLOW_UNTRUSTED_SIGNER_STORAGE_KEY);
+      if (raw === null) {
+        return true;
+      }
+      return raw === 'true';
+    } catch {
+      return true;
+    }
+  };
+  const allowUntrustedSigner = ref(readAllowUntrustedSignerPreference());
   const isSigning = ref(false);
   const signError = ref('');
   const signSuccess = ref(false);
@@ -1085,6 +1130,14 @@
   const selectedCertificateAuthority = ref(null);
   const multiBatchRequest = ref(null);
   const activeMultiBatchJob = ref(null);
+
+  watch(allowUntrustedSigner, (value) => {
+    try {
+      localStorage.setItem(ALLOW_UNTRUSTED_SIGNER_STORAGE_KEY, value ? 'true' : 'false');
+    } catch {
+      // ignore storage failures in restricted contexts
+    }
+  });
   const activeMultiBatchJobId = ref('');
   const multiSignerSeedFiles = ref([]);
   const isStartingMultiBatch = ref(false);
@@ -2092,16 +2145,16 @@
           throw new Error(data?.message || 'No se pudieron cargar los certificados.');
         }
         availableCertificates.value = Array.isArray(data?.certificates) ? data.certificates : [];
+        const selected = availableCertificates.value.find((item) => item.id === selectedCertificateId.value);
         const defaultCertificate =
           availableCertificates.value.find((item) => item.is_default) ||
           availableCertificates.value[0] ||
           null;
-        if (!selectedCertificateId.value && defaultCertificate) {
-          selectedCertificateId.value = defaultCertificate.id;
-        }
+        selectedCertificateId.value = selected?.id || defaultCertificate?.id || null;
       } catch (error) {
-        signError.value = error.message || 'No se pudieron cargar los certificados.';
+        signError.value = resolveUiErrorMessage(error, 'No se pudieron cargar los certificados.');
         availableCertificates.value = [];
+        selectedCertificateId.value = null;
       } finally {
         isLoadingCertificates.value = false;
       }
@@ -2165,6 +2218,9 @@
       signError.value = '';
       signResultMessage.value = '';
       signSuccess.value = false;
+      if (isEmbeddedWorkflowMode.value) {
+        allowUntrustedSigner.value = true;
+      }
       await loadCertificates();
       if (!signCertModal.value?.el) return;
       signCertModalInstance = Modal.getOrCreateInstance(signCertModal.value.el);
@@ -2203,7 +2259,7 @@
           }, 1500);
         }
       } catch (error) {
-        signError.value = error.message || 'No se pudo consultar el avance de la firma masiva.';
+        signError.value = resolveUiErrorMessage(error, 'No se pudo consultar el avance de la firma masiva.');
       }
     };
 
@@ -2229,7 +2285,7 @@
         link.click();
         URL.revokeObjectURL(url);
       } catch (error) {
-        signError.value = error.message || 'No se pudo descargar el lote firmado.';
+        signError.value = resolveUiErrorMessage(error, 'No se pudo descargar el lote firmado.');
       } finally {
         isDownloadingMultiBatch.value = false;
       }
@@ -2317,7 +2373,7 @@
           await pollMultiBatchStatus(activeMultiBatchJobId.value);
           multiBatchRequest.value = null;
         } catch (error) {
-          signError.value = error.message || 'No se pudo iniciar la firma masiva.';
+          signError.value = resolveUiErrorMessage(error, 'No se pudo iniciar la firma masiva.');
         } finally {
           isSigning.value = false;
           isStartingMultiBatch.value = false;
@@ -2382,20 +2438,36 @@
           headers: getAuthHeaders(),
           body: formData
         });
-        const data = await response.json();
+        const data = await readResponsePayload(response);
         if (!response.ok) {
-          throw new Error(data?.error || data?.message || `Error del servidor (${response.status})`);
+          throw {
+            error: data?.error || '',
+            details: data?.details || '',
+            message: data?.message || `Error del servidor (${response.status})`,
+            status: response.status
+          };
         }
+        signError.value = '';
         signSuccess.value = true;
         signResultMessage.value = `El documento fue firmado correctamente con ${Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0))} campo(s).`;
         signedMinioPath.value = data.signedPath;
         signedFieldsCount.value = Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0));
         signCertModalInstance?.hide();
+        if (props.embedded && isEmbeddedWorkflowMode.value) {
+          emit('workflow-signed', {
+            documentVersionId: workflowSignContext.value?.documentVersionId || null,
+            signatureRequestId: workflowSignContext.value?.signatureRequestId || null,
+            signedPath: data.signedPath || '',
+            workflow: data.workflow || null,
+            message: signResultMessage.value,
+          });
+          return;
+        }
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
         signResultModalInstance.show();
       } catch (error) {
         signSuccess.value = false;
-        signError.value = error.message || 'No se pudo firmar el documento.';
+        signError.value = resolveUiErrorMessage(error, 'No se pudo firmar el documento.');
         signResultMessage.value = signError.value;
         signCertModalInstance?.hide();
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
@@ -2419,7 +2491,7 @@
         window.open(url, '_blank', 'noopener,noreferrer');
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       } catch (error) {
-        signError.value = error.message || 'No se pudo visualizar el documento firmado.';
+        signError.value = resolveUiErrorMessage(error, 'No se pudo visualizar el documento firmado.');
       }
     };
 
@@ -2440,7 +2512,7 @@
         link.click();
         URL.revokeObjectURL(url);
       } catch (error) {
-        signError.value = error.message || 'No se pudo descargar el documento firmado.';
+        signError.value = resolveUiErrorMessage(error, 'No se pudo descargar el documento firmado.');
       }
     };
 
@@ -2495,6 +2567,7 @@
     };
 
     const initializeWorkflowSignatureSession = (payload = {}) => {
+      allowUntrustedSigner.value = true;
       workflowSignContext.value = {
         signatureRequestId: payload.signatureRequestId ? Number(payload.signatureRequestId) : null,
         documentVersionId: payload.documentVersionId ? Number(payload.documentVersionId) : null,

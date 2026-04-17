@@ -30,7 +30,37 @@ const certificateRepository = new UserCertificateRepository();
 const pool = getMariaDBPool();
 const batchJobs = new Map();
 
+const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
+const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
 const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
+const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+
+const sanitizeStorageSegment = (value, fallback = "na") =>
+  String(value ?? fallback)
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "") || fallback;
+
+const resolveStoredDocumentObject = (storedPath) => {
+  const normalizedPath = String(storedPath || "").trim().replace(/^\/+/, "");
+  if (!normalizedPath) {
+    return null;
+  }
+  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
+    return {
+      bucket: MINIO_DOCUMENTS_BUCKET,
+      objectName: normalizedPath,
+      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
+    };
+  }
+  return {
+    bucket: MINIO_DOCUMENTS_BUCKET,
+    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
+    relativePath: normalizedPath
+  };
+};
+
 const getCurrentUser = async (req) => {
   const userId = Number(req.user?.uid);
   if (!userId || Number.isNaN(userId)) {
@@ -41,14 +71,6 @@ const getCurrentUser = async (req) => {
     throw new Error("Usuario no encontrado.");
   }
   return user;
-};
-
-const buildSpoolPaths = (user, sessionId) => {
-  const prefix = `users/${user.cedula}/${sessionId}`;
-  return {
-    inputPath: `${prefix}/input.pdf`,
-    signedPath: `${prefix}/signed.pdf`
-  };
 };
 
 const buildValidationSpoolPath = (user, sessionId, fileName = "documento.pdf") => {
@@ -86,6 +108,11 @@ const buildSignContext = async (req) => {
   const certificate = await certificateRepository.findOwnedById(user.id, certificateId);
   if (!certificate) {
     throw new Error("Certificado no encontrado para este usuario.");
+  }
+  try {
+    await statMinioObject(certificate.bucket, certificate.object_name);
+  } catch (error) {
+    throw new Error("El certificado seleccionado ya no está disponible en almacenamiento. Vuelve a cargar tus certificados y elige uno válido.");
   }
 
   const signMode = String(signModeRaw || "coordinates").trim().toLowerCase();
@@ -132,15 +159,69 @@ const buildSignContext = async (req) => {
   };
 };
 
-const processSinglePdfSigning = async ({ file, context }) => {
-  let inputPath = null;
-  let signedPath = null;
-  try {
-    const sessionId = randomUUID();
-    ({ inputPath, signedPath } = buildSpoolPaths(context.user, sessionId));
+const getDocumentVersionStorageContext = async (documentVersionId) => {
+  if (!pool) {
+    throw new Error("La conexión a MariaDB no está disponible.");
+  }
+  const [rows] = await pool.query(
+    `SELECT id, working_file_path, final_file_path
+     FROM document_versions
+     WHERE id = ?
+     LIMIT 1`,
+    [Number(documentVersionId)]
+  );
+  return rows?.[0] || null;
+};
 
-    await ensureBucketExists(MINIO_SPOOL_BUCKET);
-    await uploadFileToMinio(MINIO_SPOOL_BUCKET, inputPath, file.path, {
+const buildStandaloneUserSignedPath = (user, sessionId, originalName = "documento.pdf") => {
+  const safeName = sanitizeStorageSegment(originalName, "documento.pdf");
+  const fileName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
+  return `users/${user.cedula}/signed/${sessionId}/${fileName}`;
+};
+
+const resolveSigningStoragePlan = async ({ context, file }) => {
+  if (context.documentVersionId) {
+    const documentVersion = await getDocumentVersionStorageContext(context.documentVersionId);
+    if (!documentVersion?.id) {
+      throw new Error("No se encontró la versión documental indicada para la firma.");
+    }
+
+    const resolvedWorkingObject = resolveStoredDocumentObject(documentVersion.working_file_path);
+    if (!resolvedWorkingObject?.objectName) {
+      throw new Error("La versión documental no tiene un working_file_path válido para firmar.");
+    }
+    if (!resolvedWorkingObject.objectName.toLowerCase().endsWith(".pdf")) {
+      throw new Error("El working_file_path de la versión documental no apunta a un PDF.");
+    }
+
+    return {
+      mode: "workflow",
+      bucket: resolvedWorkingObject.bucket,
+      objectPath: resolvedWorkingObject.objectName,
+      storedPath: resolvedWorkingObject.relativePath,
+      downloadPath: resolvedWorkingObject.relativePath,
+      documentVersionId: Number(documentVersion.id)
+    };
+  }
+
+  const sessionId = randomUUID();
+  const storedPath = buildStandaloneUserSignedPath(context.user, sessionId, file?.originalname);
+  return {
+    mode: "standalone",
+    bucket: MINIO_USERS_BUCKET,
+    objectPath: storedPath,
+    storedPath,
+    downloadPath: storedPath,
+    documentVersionId: null
+  };
+};
+
+const processSinglePdfSigning = async ({ file, context }) => {
+  try {
+    const storagePlan = await resolveSigningStoragePlan({ context, file });
+
+    await ensureBucketExists(storagePlan.bucket);
+    await uploadFileToMinio(storagePlan.bucket, storagePlan.objectPath, file.path, {
       "Content-Type": "application/pdf"
     });
 
@@ -148,13 +229,13 @@ const processSinglePdfSigning = async ({ file, context }) => {
     if (context.signMode === "token") {
       lastResult = await requestSignerJob({
         signType: "token",
-        minioBucket: MINIO_SPOOL_BUCKET,
-        minioPdfPath: inputPath,
+        minioBucket: storagePlan.bucket,
+        minioPdfPath: storagePlan.objectPath,
         minioCertBucket: context.certificate.bucket,
         minioCertPath: context.certificate.object_name,
         certPassword: context.password,
         stampText: context.stampText,
-        finalPath: signedPath,
+        finalPath: storagePlan.objectPath,
         use_timestamp: context.useTimestamp,
         allow_untrusted_signer: context.allowUntrustedSigner,
         tsaUrl: context.tsaUrl,
@@ -165,13 +246,13 @@ const processSinglePdfSigning = async ({ file, context }) => {
       for (const field of resolvedFields) {
         lastResult = await requestSignerJob({
           signType: "coordinates",
-          minioBucket: MINIO_SPOOL_BUCKET,
-          minioPdfPath: inputPath,
+          minioBucket: storagePlan.bucket,
+          minioPdfPath: storagePlan.objectPath,
           minioCertBucket: context.certificate.bucket,
           minioCertPath: context.certificate.object_name,
           certPassword: context.password,
           stampText: context.stampText,
-          finalPath: signedPath,
+          finalPath: storagePlan.objectPath,
           use_timestamp: context.useTimestamp,
           allow_untrusted_signer: context.allowUntrustedSigner,
           tsaUrl: context.tsaUrl,
@@ -185,18 +266,19 @@ const processSinglePdfSigning = async ({ file, context }) => {
     }
 
     return {
-      message: "Documento firmado correctamente.",
-      signedPath: lastResult?.signedPath || lastResult?.finalPath || signedPath,
-      finalPath: lastResult?.finalPath || signedPath,
-      fieldsCount: context.signMode === "token" ? Number(lastResult?.signature?.matchCount || 0) : context.fields.length,
+      ...lastResult,
+      message: lastResult?.message || "Documento firmado correctamente.",
+      signedBucket: storagePlan.bucket,
+      signedPath: storagePlan.downloadPath,
+      finalPath: storagePlan.storedPath,
+      fieldsCount: context.signMode === "token"
+        ? Number(lastResult?.signature?.matchCount || 0)
+        : context.fields.length,
       signMode: context.signMode
     };
   } finally {
     if (file?.path) {
       fs.unlink(file.path, () => {});
-    }
-    if (inputPath && signedPath && inputPath !== signedPath) {
-      await removeMinioObject(MINIO_SPOOL_BUCKET, inputPath).catch(() => {});
     }
   }
 };
@@ -348,6 +430,12 @@ export const requestSign = async (req, res) => {
     if (!req.files?.pdf?.[0]) {
       return res.status(400).json({ error: "Se requiere el archivo PDF." });
     }
+    console.info("[sign_controller] requestSign payload", {
+      certificate_id: req.body?.certificate_id ?? null,
+      allow_untrusted_signer: req.body?.allow_untrusted_signer ?? null,
+      signature_request_id: req.body?.signature_request_id ?? null,
+      document_version_id: req.body?.document_version_id ?? null,
+    });
     const context = await buildSignContext(req);
     const result = await processSinglePdfSigning({
       file: req.files.pdf[0],
@@ -360,7 +448,11 @@ export const requestSign = async (req, res) => {
     });
   } catch (error) {
     console.error("[sign_controller] Error:", error);
-    return res.status(500).json({ error: error.message || "No se pudo firmar el documento." });
+    return res.status(500).json({
+      error: error.message || "No se pudo firmar el documento.",
+      details: error?.details || error?.cause?.message || null,
+      error_name: error?.name || null,
+    });
   }
 };
 
@@ -591,7 +683,7 @@ export const downloadSignBatch = async (req, res) => {
       const safeBaseName = String(result.fileName || `documento-${index + 1}.pdf`).replace(/[^\w.\-]+/g, "_");
       const outputName = safeBaseName.toLowerCase().endsWith(".pdf") ? safeBaseName : `${safeBaseName}.pdf`;
       const destinationPath = path.join(workspace, outputName);
-      await streamMinioObjectToFile(MINIO_SPOOL_BUCKET, result.signedPath, destinationPath);
+      await streamMinioObjectToFile(result.signedBucket || MINIO_USERS_BUCKET, result.signedPath, destinationPath);
       filePaths.push(destinationPath);
     }
 
@@ -615,16 +707,55 @@ export const downloadSignBatch = async (req, res) => {
 export const downloadSigned = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-    const objectPath = String(req.query?.path || "");
-    if (!objectPath) {
+    const requestedPath = String(req.query?.path || "").trim().replace(/^\/+/, "");
+    if (!requestedPath) {
       return res.status(400).json({ error: "Falta el parámetro 'path'." });
     }
-    if (!objectPath.startsWith(`users/${user.cedula}/`)) {
-      return res.status(403).json({ error: "No tienes acceso a este documento firmado." });
+
+    let bucket = null;
+    let objectPath = null;
+
+    if (requestedPath.startsWith(`users/${user.cedula}/`)) {
+      bucket = MINIO_USERS_BUCKET;
+      objectPath = requestedPath;
+    } else {
+      if (!pool) {
+        return res.status(500).json({ error: "La conexión a MariaDB no está disponible." });
+      }
+      const [rows] = await pool.query(
+        `SELECT dv.id
+         FROM document_versions dv
+         INNER JOIN documents d ON d.id = dv.document_id
+         LEFT JOIN task_items ti ON ti.id = d.task_item_id
+         LEFT JOIN tasks t ON t.id = ti.task_id
+         LEFT JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
+         LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+         WHERE (
+           dv.working_file_path = ?
+           OR dv.final_file_path = ?
+         )
+           AND (
+             d.owner_person_id = ?
+             OR ti.assigned_person_id = ?
+             OR t.created_by_user_id = ?
+             OR sr.assigned_person_id = ?
+           )
+         LIMIT 1`,
+        [requestedPath, requestedPath, Number(user.id), Number(user.id), Number(user.id), Number(user.id)]
+      );
+      if (!rows?.length) {
+        return res.status(403).json({ error: "No tienes acceso a este documento firmado." });
+      }
+      const resolvedObject = resolveStoredDocumentObject(requestedPath);
+      if (!resolvedObject?.objectName) {
+        return res.status(404).json({ error: "Archivo firmado no encontrado." });
+      }
+      bucket = resolvedObject.bucket;
+      objectPath = resolvedObject.objectName;
     }
 
-    const stat = await statMinioObject(MINIO_SPOOL_BUCKET, objectPath);
-    const stream = await getMinioObjectStream(MINIO_SPOOL_BUCKET, objectPath);
+    const stat = await statMinioObject(bucket, objectPath);
+    const stream = await getMinioObjectStream(bucket, objectPath);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", 'inline; filename="documento_firmado.pdf"');
     if (stat?.size) {
