@@ -15,9 +15,22 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ 
+const upload = multer({
     storage,
     limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Solo se permiten archivos PDF'));
+        }
+    }
+});
+
+// Multer en memoria para SENESCYT (el buffer se sube directo a MinIO, sin escritura en disco)
+const pdfUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'application/pdf') {
             cb(null, true);
@@ -57,5 +70,11 @@ router.delete('/:cedula/investigacion/:tipo/:itemId', dossierController.deleteIn
 
 // Ruta para subir documento PDF al dossier
 router.post('/:cedula/documentos/:tipoDocumento/:registroId', upload.single('archivo'), dossierController.uploadDossierDocument);
+
+// ─── Rutas SENESCYT ──────────────────────────────────────────────────────────
+// Recibe el PDF, lo sube a MinIO, parsea y devuelve preview (sin persistir)
+router.post('/:cedula/titulos/import/senescyt-preview', pdfUpload.single('pdf'), dossierController.senescytPreview);
+// Recibe la selección del preview y persiste los títulos en el dosier
+router.post('/:cedula/titulos/import/senescyt-confirm', dossierController.senescytConfirm);
 
 export default router;
