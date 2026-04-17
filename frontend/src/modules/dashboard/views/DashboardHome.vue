@@ -465,6 +465,18 @@
                                 @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)"
                               />
                             </div>
+                            <AppButton
+                              v-else-if="shouldShowSign(deliverable.item)"
+                              variant="softWarning"
+                              size="sm"
+                              class-name="w-full justify-center"
+                              :class="deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                              type="button"
+                              :disabled="!(deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath)"
+                              @click="openDocumentSignFlow(deliverable.item)"
+                            >
+                              Firmar
+                            </AppButton>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                           <AppButton
@@ -516,17 +528,6 @@
                             @click="openDeliverableWorkspaceModal(deliverable.item)"
                           >
                             {{ processingFillItemId === deliverable.item.id ? 'Procesando...' : 'Abrir' }}
-                          </AppButton>
-                          <AppButton
-                            v-if="shouldShowSign(deliverable.item)"
-                            variant="softWarning"
-                            size="sm"
-                            :class="deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                            type="button"
-                            :disabled="!(deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath)"
-                            @click="openDocumentSignFlow(deliverable.item)"
-                          >
-                            Firmar
                           </AppButton>
                           <span
                             v-if="shouldShowPdfRequiredHint(deliverable.item)"
@@ -2815,10 +2816,13 @@ const canStartDeliverableAction = (payload) => {
 
 const shouldShowUploadDeliverable = (payload) => {
   const subject = getDeliverableSubject(payload);
+  const request = getCurrentFillWorkflowRequest(payload);
+  const code = getFillRequestStatusCode(request);
   return Boolean(
     subject.actions?.can_upload_deliverable
     && currentUserCanOperateFillStep(payload)
     && hasDeliverableBeenStarted(payload)
+    && ['pending', 'in_progress', 'returned'].includes(code)
   );
 };
 
