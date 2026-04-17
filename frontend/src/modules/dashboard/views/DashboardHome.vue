@@ -186,16 +186,16 @@
 
         <template v-else>
           <section class="flex flex-col gap-8">
-            <section class="bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-3xl text-white shadow-2xl shadow-sky-900/20 flex flex-col gap-6 relative overflow-hidden">
-               <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-                  <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
-                  <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
-                  <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
-              </div>
-              <div class="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+            <section class="bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-3xl text-white shadow-2xl shadow-sky-900/20 flex flex-col gap-6">
+              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
                 <div class="flex flex-col gap-4">
-                  <div class="text-sky-200 text-sm uppercase tracking-widest font-bold">
-                    {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+                  <div class="flex flex-wrap items-center gap-2.5">
+                    <div class="text-sky-200 text-lg uppercase tracking-widest font-bold">
+                      {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <AppTag variant="contrast">Entregables {{ selectedProcessPanel?.summary?.task_items_pending || 0 }}</AppTag>
+                    </div>
                   </div>
                   <h1 class="text-2xl md:text-3xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
                   <p class="max-w-3xl opacity-90 text-sm md:text-base font-medium m-0 mt-1">
@@ -204,11 +204,6 @@
                   </p>
                 </div>
                 <div class="flex flex-col gap-3 xl:items-end xl:text-right">
-                  <div class="flex flex-wrap gap-2 xl:justify-end">
-                    <AppTag variant="contrast">Tareas {{ selectedProcessPanel?.summary?.tasks_total || 0 }}</AppTag>
-                    <AppTag variant="contrast">Entregables {{ selectedProcessPanel?.summary?.task_items_pending || 0 }}</AppTag>
-                    <AppTag variant="contrast">Llenado {{ selectedProcessPanel?.summary?.fill_requests_pending || 0 }}</AppTag>
-                  </div>
                   <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:w-[28rem]">
                     <button
                       type="button"
@@ -232,23 +227,31 @@
                       </div>
                       <span class="text-2xl font-extrabold leading-none text-white">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
                     </button>
+                    <button
+                      type="button"
+                      class="flex items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16"
+                      @click="clearSelectedProcess"
+                    >
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Navegación</span>
+                        <span class="text-sm font-medium text-white/90">Volver al panel general</span>
+                      </div>
+                      <span class="text-lg font-extrabold leading-none text-white">←</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="flex items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16 disabled:cursor-not-allowed disabled:opacity-60"
+                      :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
+                      @click="openTaskLaunchModal"
+                    >
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Tareas</span>
+                        <span class="text-sm font-medium text-white/90">Crear tarea manual</span>
+                      </div>
+                      <span class="text-lg font-extrabold leading-none text-white">+</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-              <div class="flex flex-col gap-3 items-start sm:flex-row sm:flex-wrap sm:items-center relative z-10">
-                <AppButton variant="secondary" size="md" class-name="w-full sm:w-auto md:min-w-[12rem]" type="button" @click="clearSelectedProcess">
-                  Volver al panel general
-                </AppButton>
-                <AppButton
-                  variant="primary"
-                  size="md"
-                  class-name="w-full sm:w-auto md:min-w-[12rem]"
-                  type="button"
-                  :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
-                  @click="openTaskLaunchModal"
-                >
-                  Crear tarea
-                </AppButton>
               </div>
             </section>
 
@@ -277,84 +280,90 @@
 
                   <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
-                      <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-4 shadow-sm shadow-slate-200/50">
-                        <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <h4 class="m-0 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Filtros de exploración</h4>
-                          </div>
+                    <div class="flex flex-col gap-4">
+                      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                          <label class="relative min-w-0 flex-1 md:min-w-[22rem]">
+                            <IconSearch class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                              v-model="taskListFilters.query"
+                              type="text"
+                              placeholder="Buscar entregables, periodos o unidades"
+                              class="block w-full rounded-2xl border border-slate-200 bg-white/90 py-3 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+                            />
+                          </label>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
                           <AppButton
                             variant="softNeutral"
                             size="sm"
                             type="button"
-                            class-name="self-start md:self-auto"
-                            @click="Object.assign(taskListFilters, { query: '', year: 'all', termType: 'all', unit: 'all', process: 'all', term: 'all', origin: 'all', status: 'all' })"
+                            class-name="shrink-0"
+                            @click="showAdvancedTaskFilters = !showAdvancedTaskFilters"
+                          >
+                            <component :is="showAdvancedTaskFilters ? IconMinus : IconPlus" class="h-4 w-4" />
+                            {{ showAdvancedTaskFilters ? 'Ocultar filtros' : 'Más filtros' }}
+                          </AppButton>
+                          <AppButton
+                            variant="softNeutral"
+                            size="sm"
+                            type="button"
+                            class-name="shrink-0"
+                            @click="resetTaskListFilters"
                           >
                             Limpiar filtros
                           </AppButton>
                         </div>
-
-                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
-                            <input
-                              v-model="taskListFilters.query"
-                              type="text"
-                              placeholder="Periodo, entregable o unidad"
-                              class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
-                            />
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-                            <select v-model="taskListFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todos</option>
-                              <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
-                            </select>
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
-                            <select v-model="taskListFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todos</option>
-                              <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
-                            </select>
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-                            <select v-model="taskListFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todas</option>
-                              <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
-                            </select>
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-                            <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todos</option>
-                              <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
-                            </select>
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
-                            <select v-model="taskListFilters.term" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todos</option>
-                              <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
-                            </select>
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Origen</span>
-                            <select v-model="taskListFilters.origin" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todos</option>
-                              <option value="manual">Manual</option>
-                              <option value="automatic">Automática</option>
-                            </select>
-                          </label>
-                          <label class="flex flex-col gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
-                            <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                              <option value="all">Todos</option>
-                              <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
-                            </select>
-                          </label>
-                        </div>
                       </div>
+
+                      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+                          <select v-model="taskListFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option value="all">Todos</option>
+                            <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
+                          <select v-model="taskListFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option value="all">Todos</option>
+                            <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
+                          <select v-model="taskListFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option value="all">Todas</option>
+                            <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
+                          </select>
+                        </label>
+                      </div>
+
+                      <div v-if="showAdvancedTaskFilters" class="grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-4 md:grid-cols-3">
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
+                          <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option value="all">Todos</option>
+                            <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
+                          <select v-model="taskListFilters.term" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option value="all">Todos</option>
+                            <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
+                          <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option value="all">Todos</option>
+                            <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
+                          </select>
+                        </label>
+                      </div>
+                    </div>
                     </div>
                   </section>
 
@@ -370,166 +379,175 @@
                     <article
                       v-for="deliverable in filteredProcessDeliverables"
                       :key="deliverable.key"
-                      class="rounded-[1.25rem] border border-sky-100 bg-white p-4 shadow-sm transition-colors hover:border-sky-200"
+                      class="relative rounded-[1.5rem] border border-sky-100 bg-white p-5 pr-20 shadow-sm transition-colors hover:border-sky-200"
                     >
-                      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto] xl:items-start">
-                        <div class="min-w-0">
-                          <div class="flex flex-wrap items-center gap-2">
+                      <div class="flex flex-col gap-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div class="flex min-w-0 flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 text-sm font-semibold shrink-0" :class="deliverable.item.document_id ? 'text-sky-700' : 'text-slate-400'">
+                              <IconSignature v-if="deliverable.item.document_id" class="h-4 w-4" />
+                              {{ deliverable.item.document_id ? (deliverable.item.document_version ? `Doc v${deliverable.item.document_version}` : 'Doc creado') : 'Sin doc' }}
+                            </span>
                             <strong class="text-base font-bold leading-tight text-slate-800">{{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}</strong>
-                            <AppTag variant="muted">{{ prettifyArtifactRole(deliverable.item.template_usage_role) }}</AppTag>
-                          </div>
-                          <p class="m-0 mt-2 text-sm font-medium leading-relaxed text-slate-600">
-                            {{ buildDeliverableInfoLine(deliverable.task, deliverable.item) }}
-                          </p>
-                          <div class="mt-3 flex flex-wrap gap-2">
-                            <AppTag variant="neutral">
-                              {{ deliverable.item.document_id ? (deliverable.item.document_status || 'Documento creado') : 'Sin documento generado' }}
-                            </AppTag>
-                            <AppTag :variant="getDeliverableAccessSource(deliverable.item) === 'Derivado' ? 'warning' : 'success'">
-                              {{ getDeliverableAccessSource(deliverable.item) }}
-                            </AppTag>
-                            <AppTag v-if="deliverable.item.pending_signature_count !== undefined" variant="warning">
-                              Firmas pendientes: {{ deliverable.item.pending_signature_count || 0 }}
-                            </AppTag>
-                            <AppTag v-if="deliverable.item.workflow?.current_fill_step_order" variant="info">
-                              Paso de llenado: {{ deliverable.item.workflow.current_fill_step_order }}
-                            </AppTag>
-                          </div>
-                          <div class="mt-4 flex flex-wrap gap-2">
-                            <AppButton
-                              v-if="shouldShowStartDeliverable(deliverable.item)"
-                              variant="softPrimary"
-                              size="sm"
-                              type="button"
-                              :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
-                              @click="startDeliverableFlow(deliverable.item)"
-                            >
-                              {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
-                            </AppButton>
-                            <AppButton
-                              variant="softNeutral"
-                              size="sm"
-                              :class="deliverable.item.actions?.can_open_process_chat ? 'border-dashed' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                              type="button"
-                              :disabled="!deliverable.item.actions?.can_open_process_chat"
-                              @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
-                            >
-                              Chat del proceso
-                            </AppButton>
-                            <AppButton
-                              v-if="shouldShowUploadDeliverable(deliverable.item)"
-                              variant="softNeutral"
-                              size="sm"
-                              :class="deliverable.item.actions?.can_upload_deliverable && !isUploadingDeliverable ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                              type="button"
-                              :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable"
-                              @click="handleDeliverableFutureAction('upload_deliverable', deliverable.item)"
-                            >
-                              {{ isUploadingDeliverable ? 'Subiendo archivo...' : getUploadActionLabel(deliverable.item) }}
-                            </AppButton>
                           </div>
                         </div>
 
-                        <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                          <div>
+                        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</p>
+                            <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(deliverable.task, deliverable.item) }}</p>
+                          </div>
+                          <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Unidad</p>
+                            <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableUnitLabel(deliverable.item) }}</p>
+                          </div>
+                          <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</p>
+                            <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabel(deliverable.task) }}</p>
+                          </div>
+                          <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
                             <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Fechas</p>
-                            <p class="m-0 mt-1 text-sm font-semibold text-slate-700">
+                            <p class="m-0 mt-1 text-sm font-semibold leading-6 text-slate-700">
                               {{ formatDate(deliverable.task.start_date) }}<span v-if="deliverable.task.end_date"> - {{ formatDate(deliverable.task.end_date) }}</span>
                             </p>
                           </div>
-                          <div>
-                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Estado cumplimiento</p>
-                            <p class="m-0 mt-1 text-sm font-semibold" :class="deliverable.item.status === 'completado' ? 'text-emerald-600' : 'text-amber-600'">
-                              {{ capitalize(deliverable.item.status || deliverable.item.document_status || 'pendiente') }}
-                            </p>
-                          </div>
                         </div>
 
-                        <div class="flex flex-col gap-2 xl:items-end">
-                          <span class="inline-flex items-center gap-1.5 text-sm font-semibold" :class="deliverable.item.document_id ? 'text-sky-700' : 'text-slate-400'">
-                            <IconSignature v-if="deliverable.item.document_id" class="h-4 w-4" />
-                            {{ deliverable.item.document_id ? (deliverable.item.document_version ? `Doc v${deliverable.item.document_version}` : 'Doc creado') : 'Sin doc' }}
-                          </span>
+                        <div class="flex flex-wrap gap-2">
+                          <button
+                            v-if="shouldShowStartDeliverable(deliverable.item)"
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
+                            :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
+                            @click="startDeliverableFlow(deliverable.item)"
+                          >
+                            <IconPlayerPlayFilled class="h-4 w-4" />
+                            {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
+                          </button>
+                          <AppTag v-else :variant="getDeliverableAccessSource(deliverable.item) === 'Derivado' ? 'warning' : 'success'">
+                            {{ getDeliverableAccessSource(deliverable.item) }}
+                          </AppTag>
+                          <AppTag :variant="deliverable.item.status === 'completado' ? 'success' : 'warning'">
+                            {{ capitalize(deliverable.item.status || deliverable.item.document_status || 'pendiente') }}
+                          </AppTag>
+                          <AppTag variant="neutral">
+                            {{ deliverable.item.document_id ? (deliverable.item.document_status || 'Documento creado') : 'Sin documento generado' }}
+                          </AppTag>
+                          <AppTag v-if="deliverable.item.pending_signature_count !== undefined" variant="warning">
+                            Firmas pendientes: {{ deliverable.item.pending_signature_count || 0 }}
+                          </AppTag>
+                          <AppTag v-if="deliverable.item.workflow?.current_fill_step_order" variant="info">
+                            Paso de llenado: {{ deliverable.item.workflow.current_fill_step_order }}
+                          </AppTag>
                           <AppTag v-if="deliverable.item.pending_fill_count" variant="info">
                             Pendiente de llenado
                           </AppTag>
                           <AppTag v-if="deliverable.item.workflow?.current_signature_step_order" variant="warning">
                             Paso de firma: {{ deliverable.item.workflow.current_signature_step_order }}
                           </AppTag>
-                          <AppTag variant="muted">{{ deliverable.task.term_name }}</AppTag>
                         </div>
                       </div>
 
-                      <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                            <AppButton
-                              v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
-                              variant="softNeutral"
-                              size="sm"
-                              type="button"
-                              @click="previewDeliverableFile(deliverable.item)"
+                      <div class="mt-4 grid gap-4 border-t border-slate-100 pt-4 pr-14 xl:grid-cols-[18rem_minmax(0,1fr)] xl:items-start">
+                        <div class="min-w-0">
+                            <div
+                              v-if="shouldShowUploadDeliverable(deliverable.item)"
+                              class="w-full"
                             >
-                              Ver archivo
-                            </AppButton>
-                            <AppButton
-                              v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
-                              variant="softNeutral"
-                              size="sm"
-                              type="button"
-                              @click="downloadDeliverableFile(deliverable.item)"
-                            >
-                              Descargar archivo
-                            </AppButton>
-                            <AppButton
-                              v-if="shouldShowTemplateDownload(deliverable.item)"
-                              variant="softNeutral"
-                              size="sm"
-                              :class="deliverable.item.actions?.can_download_template ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                              type="button"
-                              :disabled="!deliverable.item.actions?.can_download_template"
-                              @click="handleDeliverableFutureAction('download_template', deliverable.item)"
-                            >
-                              Descargar plantilla
-                            </AppButton>
-                            <AppButton
-                              v-if="shouldShowManageFill(deliverable.item)"
-                              variant="softPrimary"
-                              size="sm"
-                              :class="deliverable.item.actions?.can_manage_fill && processingFillItemId !== deliverable.item.id ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                              type="button"
-                              :disabled="!deliverable.item.actions?.can_manage_fill || processingFillItemId === deliverable.item.id"
-                              @click="handleDeliverableFutureAction('manage_fill', deliverable.item)"
-                            >
-                              {{ processingFillItemId === deliverable.item.id ? 'Procesando llenado...' : 'Gestionar llenado' }}
-                            </AppButton>
-                            <AppButton
-                              v-if="shouldShowSignatureFlow(deliverable.item)"
-                              variant="softNeutral"
-                              size="sm"
-                              :class="deliverable.item.actions?.can_review_signature_flow ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                              type="button"
-                              :disabled="!deliverable.item.actions?.can_review_signature_flow"
-                              @click="handleDeliverableFutureAction('review_signature_flow', deliverable.item)"
-                            >
-                              Flujo de firmas
-                            </AppButton>
-                            <AppButton
-                              v-if="shouldShowSign(deliverable.item)"
-                              variant="softWarning"
-                              size="sm"
-                              :class="deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                              type="button"
-                              :disabled="!(deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath)"
-                              @click="openDocumentSignFlow(deliverable.item)"
-                            >
-                              Firmar
-                            </AppButton>
-                            <span
-                              v-if="shouldShowPdfRequiredHint(deliverable.item)"
-                              class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-500"
-                            >
-                              La firma requiere PDF
-                            </span>
+                              <PdfDropField
+                                :input-id="`deliverable-upload-${deliverable.item.id}`"
+                                variant="compact"
+                                :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable"
+                                :title="''"
+                                :action-text="getUploadActionLabel(deliverable.item)"
+                                help-text="Arrastra o selecciona un PDF, Word o Excel."
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)"
+                              />
+                            </div>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          <AppButton
+                            v-if="shouldShowStartDeliverable(deliverable.item)"
+                            variant="softPrimary"
+                            size="sm"
+                            type="button"
+                            :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
+                            @click="startDeliverableFlow(deliverable.item)"
+                          >
+                            {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
+                          </AppButton>
+                          <AppButton
+                            v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
+                            variant="softNeutral"
+                            size="sm"
+                            type="button"
+                            @click="previewDeliverableFile(deliverable.item)"
+                          >
+                            Ver archivo
+                          </AppButton>
+                          <AppButton
+                            v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
+                            variant="softNeutral"
+                            size="sm"
+                            type="button"
+                            @click="downloadDeliverableFile(deliverable.item)"
+                          >
+                            Descargar archivo
+                          </AppButton>
+                          <AppButton
+                            v-if="shouldShowTemplateDownload(deliverable.item)"
+                            variant="softNeutral"
+                            size="sm"
+                            :class="deliverable.item.actions?.can_download_template ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                            type="button"
+                            :disabled="!deliverable.item.actions?.can_download_template"
+                            @click="handleDeliverableFutureAction('download_template', deliverable.item)"
+                          >
+                            Descargar plantilla
+                          </AppButton>
+                          <AppButton
+                            v-if="shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)"
+                            variant="softPrimary"
+                            size="sm"
+                            :class="(shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)) ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                            type="button"
+                            :disabled="processingFillItemId === deliverable.item.id"
+                            @click="openDeliverableWorkspaceModal(deliverable.item)"
+                          >
+                            {{ processingFillItemId === deliverable.item.id ? 'Procesando...' : 'Abrir' }}
+                          </AppButton>
+                          <AppButton
+                            v-if="shouldShowSign(deliverable.item)"
+                            variant="softWarning"
+                            size="sm"
+                            :class="deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                            type="button"
+                            :disabled="!(deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath)"
+                            @click="openDocumentSignFlow(deliverable.item)"
+                          >
+                            Firmar
+                          </AppButton>
+                          <span
+                            v-if="shouldShowPdfRequiredHint(deliverable.item)"
+                            class="inline-flex items-center px-3 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-500"
+                          >
+                            La firma requiere PDF
+                          </span>
+                        </div>
                       </div>
+
+                      <button
+                        type="button"
+                        class="absolute bottom-4 right-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-sky-200/90 bg-gradient-to-br from-white via-sky-50 to-sky-100 text-sky-700 shadow-[0_14px_32px_rgba(2,132,199,0.18)] ring-1 ring-white/80 transition hover:-translate-y-0.5 hover:from-white hover:to-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70 disabled:cursor-not-allowed disabled:opacity-50"
+                        :disabled="!deliverable.item.actions?.can_open_process_chat"
+                        :title="deliverable.item.actions?.can_open_process_chat ? 'Abrir chat del proceso' : 'Chat no disponible'"
+                        aria-label="Abrir chat del proceso"
+                        @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
+                      >
+                        <span class="absolute inset-1 rounded-full border border-white/70 bg-white/55" />
+                        <IconMessages class="relative z-10 h-5 w-5" />
+                      </button>
                     </article>
                   </div>
                 </article>
@@ -868,6 +886,218 @@
             </div>
           </div>
         </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" data-modal-dismiss>
+          Cerrar
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
+      ref="deliverableWorkspaceModal"
+      labelled-by="deliverable-workspace-modal-title"
+      title="Gestión del entregable"
+      size="xl"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+          <AppButton
+            v-if="fillWorkflowState.subject && shouldShowManageFill(fillWorkflowState.subject)"
+            :variant="deliverableWorkspaceState.tab === 'fill' ? 'primary' : 'softNeutral'"
+            size="sm"
+            type="button"
+            @click="deliverableWorkspaceState.tab = 'fill'"
+          >
+            Gestionar llenado
+          </AppButton>
+          <AppButton
+            v-if="signatureFlowState.subject && shouldShowSignatureFlow(signatureFlowState.subject)"
+            :variant="deliverableWorkspaceState.tab === 'signature' ? 'primary' : 'softNeutral'"
+            size="sm"
+            type="button"
+            @click="deliverableWorkspaceState.tab = 'signature'"
+          >
+            Flujo de firmas
+          </AppButton>
+        </div>
+
+        <template v-if="deliverableWorkspaceState.tab === 'fill'">
+          <div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div class="flex flex-col gap-2">
+                <strong class="text-base font-bold text-slate-800">{{ fillWorkflowState.subject.title }}</strong>
+                <div class="flex flex-wrap gap-2">
+                  <AppTag variant="neutral">
+                    Paso {{ fillWorkflowState.request?.step_order || 1 }}
+                  </AppTag>
+                  <AppTag variant="info">
+                    Estado: {{ fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending' }}
+                  </AppTag>
+                  <AppTag :variant="fillWorkflowState.subject.preloadFilePath ? 'success' : 'warning'">
+                    {{ fillWorkflowState.subject.preloadFilePath ? `Archivo: ${getFileNameFromPath(fillWorkflowState.subject.preloadFilePath)}` : 'Sin archivo de trabajo' }}
+                  </AppTag>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Secuencia del flujo</h3>
+              <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-slate-500">
+                Este entregable todavía no tiene una secuencia de llenado visible.
+              </div>
+              <div v-else class="flex flex-col gap-3">
+                <div
+                  v-for="step in fillWorkflowState.subject.workflow.fill_steps"
+                  :key="`fill-step-combined-${step.id}-${step.request_id || 'na'}`"
+                  class="rounded-2xl border p-4"
+                  :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
+                >
+                  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div class="flex flex-col gap-1">
+                      <strong class="text-sm font-bold text-slate-800">Paso {{ step.step_order }}</strong>
+                      <span class="text-sm font-semibold text-slate-600">{{ step.display_label }}</span>
+                      <span class="text-xs font-medium text-slate-500">
+                        {{ getFillStepResolverLabel(step) }}
+                      </span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <AppTag :variant="getFillStepStatusTagVariant(step.request_status)">
+                        {{ getFillStepStatusLabel(step.request_status) }}
+                      </AppTag>
+                      <AppTag
+                        v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
+                        variant="accent"
+                      >
+                        Actual
+                      </AppTag>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Acciones disponibles</h3>
+              <div class="flex flex-wrap gap-2">
+                <AppButton
+                  v-if="canReplaceFillFile"
+                  variant="softNeutral"
+                  size="sm"
+                  :class="isUploadingDeliverable ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                  type="button"
+                  :disabled="isUploadingDeliverable"
+                  @click="triggerFillWorkflowFileReplace"
+                >
+                  {{ isUploadingDeliverable ? 'Subiendo archivo...' : getUploadActionLabel(fillWorkflowState.subject) }}
+                </AppButton>
+                <AppButton
+                  v-if="canApproveFillRequest"
+                  variant="softSuccess"
+                  size="sm"
+                  :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                  type="button"
+                  :disabled="fillWorkflowSubmitting"
+                  @click="submitFillWorkflowAction('approve')"
+                >
+                  {{ fillApproveActionLabel }}
+                </AppButton>
+                <AppButton
+                  v-if="canReturnFillRequest"
+                  variant="softWarning"
+                  size="sm"
+                  :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                  type="button"
+                  :disabled="fillWorkflowSubmitting"
+                  @click="submitFillWorkflowAction('return')"
+                >
+                  Devolver
+                </AppButton>
+                <AppButton
+                  v-if="canRejectFillRequest"
+                  variant="softDanger"
+                  size="sm"
+                  :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
+                  type="button"
+                  :disabled="fillWorkflowSubmitting"
+                  @click="submitFillWorkflowAction('reject')"
+                >
+                  Rechazar
+                </AppButton>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template v-else>
+          <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
+            Consultando la secuencia de firmas...
+          </div>
+          <div v-else-if="signatureFlowState.error" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700">
+            {{ signatureFlowState.error }}
+          </div>
+          <div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-5">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Resumen del flujo</h3>
+                  <p class="text-xs text-slate-500 m-0">Documento y estado actual de firmas.</p>
+                </div>
+                <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
+                  {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
+                </AppTag>
+              </div>
+              <div class="grid gap-3 md:grid-cols-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Documento</p>
+                  <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Paso actual</p>
+                  <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.snapshot?.currentSignatureStepOrder || '—' }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p class="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-1">Solicitudes</p>
+                  <p class="text-sm font-semibold text-slate-800 m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
+                <AppTag variant="muted">
+                  {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
+                </AppTag>
+              </div>
+              <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
+                La definición todavía no tiene pasos de firma visibles.
+              </div>
+              <div v-else class="flex flex-col gap-3">
+                <div
+                  v-for="step in signatureFlowState.snapshot.signatureSteps"
+                  :key="`combined-signature-step-${step.id || step.step_order}`"
+                  class="rounded-2xl border border-slate-100 bg-white p-3"
+                >
+                  <div class="flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                      <p class="text-sm font-semibold text-slate-800 m-0">Paso {{ step.step_order || '—' }}</p>
+                      <p class="text-xs text-slate-500 m-0">Resolución: {{ step.resolverType || step.selection_mode || 'Cargo en alcance' }}</p>
+                    </div>
+                    <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
+                      {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
+                    </AppTag>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+            No hay datos de firmas disponibles para este entregable.
+          </div>
+        </template>
       </div>
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>
@@ -1354,7 +1584,12 @@ import {
   IconUpload,
   IconArrowRight,
   IconBuildingMonument,
-  IconChevronDown
+  IconChevronDown,
+  IconMessages,
+  IconMinus,
+  IconPlayerPlayFilled,
+  IconPlus,
+  IconSearch
 } from '@tabler/icons-vue';
 
 const router = useRouter();
@@ -1405,6 +1640,7 @@ const signatureFlowModal = ref(null);
 const documentCenterModal = ref(null);
 const fillWorkflowModal = ref(null);
 const deliverableUploadModal = ref(null);
+const deliverableWorkspaceModal = ref(null);
 const deliverableOperationModal = ref(null);
 const deliverablePreviewModal = ref(null);
 const embeddedSignerRef = ref(null);
@@ -1432,6 +1668,9 @@ const fillWorkflowState = ref({
   note: '',
   error: ''
 });
+const deliverableWorkspaceState = ref({
+  tab: 'fill'
+});
 const signatureFlowState = ref({
   loading: false,
   error: '',
@@ -1444,6 +1683,7 @@ let signatureFlowModalInstance = null;
 let documentCenterModalInstance = null;
 let fillWorkflowModalInstance = null;
 let deliverableUploadModalInstance = null;
+let deliverableWorkspaceModalInstance = null;
 let deliverableOperationModalInstance = null;
 let deliverablePreviewModalInstance = null;
 const taskLaunchForm = ref({
@@ -1466,9 +1706,9 @@ const taskListFilters = ref({
   termType: 'all',
   unit: 'all',
   process: 'all',
-  origin: 'all',
   status: 'all'
 });
+const showAdvancedTaskFilters = ref(false);
 
 const userFullName = computed(() => {
   if (!currentUser.value) return 'Usuario';
@@ -1690,9 +1930,9 @@ const resetTaskListFilters = () => {
     termType: 'all',
     unit: 'all',
     process: 'all',
-    origin: 'all',
     status: 'all'
   };
+  showAdvancedTaskFilters.value = false;
 };
 
 const clearSelectedProcess = () => {
@@ -1813,7 +2053,6 @@ const filteredProcessTasks = computed(() => {
     const matchesUnit = taskListFilters.value.unit === 'all' || unitLabels.includes(taskListFilters.value.unit);
     const processLabel = String(selectedProcessPanel.value?.definition?.process_name || selectedProcessContext.value?.name || '').trim();
     const matchesProcess = taskListFilters.value.process === 'all' || processLabel === taskListFilters.value.process;
-    const matchesOrigin = taskListFilters.value.origin === 'all' || String(task.launch_mode || '').trim().toLowerCase() === taskListFilters.value.origin;
     const matchesStatus = taskListFilters.value.status === 'all' || String(task.status || '').trim() === taskListFilters.value.status;
     const haystack = [
       task.term_name,
@@ -1825,7 +2064,7 @@ const filteredProcessTasks = computed(() => {
       .join(' ')
       .toLowerCase();
     const matchesQuery = !query || haystack.includes(query);
-    return matchesYear && matchesTerm && matchesTermType && matchesUnit && matchesProcess && matchesOrigin && matchesStatus && matchesQuery;
+    return matchesYear && matchesTerm && matchesTermType && matchesUnit && matchesProcess && matchesStatus && matchesQuery;
   });
 });
 
@@ -1960,16 +2199,18 @@ const prettifyArtifactRole = (value) => {
   return value || 'Principal';
 };
 
-const buildDeliverableInfoLine = (task, item) => {
-  const processLabel = selectedProcessPanel.value?.definition?.process_name || selectedProcessContext.value?.name || 'Proceso';
-  const unitLabel =
-    resolveUnitNameById(item?.scope_unit_id || item?.scopeUnitId || selectedProcessContext.value?.unit_id)
-    || selectedProcessContext.value?.label
-    || selectedProcessContext.value?.name
-    || 'Unidad no definida';
-  const periodLabel = task?.term_name || 'Periodo no definido';
-  return `Proceso: ${processLabel}, Unidad: ${unitLabel}, Periodo: ${periodLabel}`;
-};
+const getDeliverableProcessLabel = () =>
+  selectedProcessPanel.value?.definition?.process_name
+  || selectedProcessContext.value?.name
+  || 'Proceso';
+
+const getDeliverableUnitLabel = (item) =>
+  resolveUnitNameById(item?.scope_unit_id || item?.scopeUnitId || selectedProcessContext.value?.unit_id)
+  || selectedProcessContext.value?.label
+  || selectedProcessContext.value?.name
+  || 'Unidad no definida';
+
+const getDeliverablePeriodLabel = (task) => task?.term_name || 'Periodo no definido';
 
 const loadSelectedProcessPanel = async (process) => {
   const userId = currentUserId.value;
@@ -2168,6 +2409,25 @@ onMounted(async () => {
       };
     });
   }
+  if (deliverableWorkspaceModal.value?.el) {
+    deliverableWorkspaceModalInstance = Modal.getOrCreateInstance(deliverableWorkspaceModal.value.el);
+    deliverableWorkspaceModal.value.el.addEventListener('hidden.bs.modal', () => {
+      fillWorkflowState.value = {
+        subject: null,
+        request: null,
+        note: '',
+        error: ''
+      };
+      signatureFlowState.value = {
+        loading: false,
+        error: '',
+        subject: null,
+        documentVersionId: null,
+        snapshot: null
+      };
+      deliverableWorkspaceState.value = { tab: 'fill' };
+    });
+  }
   if (deliverableUploadModal.value?.el) {
     deliverableUploadModalInstance = Modal.getOrCreateInstance(deliverableUploadModal.value.el);
     deliverableUploadModal.value.el.addEventListener('hidden.bs.modal', () => {
@@ -2264,7 +2524,7 @@ const closeDeliverableUploadModal = () => {
   deliverableUploadModalInstance?.hide();
 };
 
-const openFillWorkflowModal = (payload = {}) => {
+const loadFillWorkflowState = (payload = {}) => {
   const subject = getDeliverableSubject(payload);
   const request = getCurrentFillWorkflowRequest(payload);
   fillWorkflowState.value = {
@@ -2273,6 +2533,10 @@ const openFillWorkflowModal = (payload = {}) => {
     note: '',
     error: ''
   };
+};
+
+const openFillWorkflowModal = (payload = {}) => {
+  loadFillWorkflowState(payload);
   fillWorkflowModalInstance = Modal.getOrCreateInstance(fillWorkflowModal.value?.el);
   fillWorkflowModalInstance?.show();
 };
@@ -2533,6 +2797,7 @@ const shouldShowStartDeliverable = (payload) => {
   return Boolean(
     subject.documentId
     && code === 'pending'
+    && !hasDeliverableBeenStarted(payload)
   );
 };
 
@@ -3019,6 +3284,13 @@ const handleDeliverableFilesSelected = (files) => {
   selectedDeliverableUploadFile.value = files?.[0] || null;
 };
 
+const handleInlineDeliverableUpload = async (payload, files) => {
+  if (!files?.length || isUploadingDeliverable.value) return;
+  pendingDeliverableUploadTarget.value = payload;
+  selectedDeliverableUploadFile.value = files[0] || null;
+  await uploadSelectedDeliverableFile(files[0]);
+};
+
 const uploadSelectedDeliverableFile = async (file) => {
   const target = pendingDeliverableUploadTarget.value;
   if (!file || !target) {
@@ -3176,12 +3448,12 @@ const prepareSignatureSession = async () => {
   });
 };
 
-const openSignatureFlowModal = async (payload) => {
+const loadSignatureFlowState = async (payload) => {
   const subject = getDeliverableSubject(payload);
   const documentVersionId = subject.documentVersionId;
   if (!documentVersionId) {
     setProcessActionInfo(`No se encontró la versión documental asociada a ${subject.title}.`, 'error');
-    return;
+    return false;
   }
   signatureFlowState.value = {
     loading: true,
@@ -3190,18 +3462,50 @@ const openSignatureFlowModal = async (payload) => {
     documentVersionId,
     snapshot: null
   };
-  signatureFlowModalInstance = Modal.getOrCreateInstance(signatureFlowModal.value?.el);
-  signatureFlowModalInstance?.show();
   try {
     const snapshot = await signatureFlowService.getSignatureFlow(documentVersionId);
     signatureFlowState.value.snapshot = snapshot;
     signatureFlowState.value.error = '';
     await prepareSignatureSession();
+    return true;
   } catch (error) {
     signatureFlowState.value.error = error?.response?.data?.message || error?.message || 'No se pudo cargar el flujo de firmas.';
+    return false;
   } finally {
     signatureFlowState.value.loading = false;
   }
+};
+
+const openSignatureFlowModal = async (payload) => {
+  const loaded = await loadSignatureFlowState(payload);
+  if (!loaded) return;
+  signatureFlowModalInstance = Modal.getOrCreateInstance(signatureFlowModal.value?.el);
+  signatureFlowModalInstance?.show();
+};
+
+const openDeliverableWorkspaceModal = async (payload) => {
+  const canManageFill = shouldShowManageFill(payload);
+  const canReviewSignatureFlow = shouldShowSignatureFlow(payload);
+
+  loadFillWorkflowState(payload);
+  deliverableWorkspaceState.value = {
+    tab: canManageFill ? 'fill' : 'signature'
+  };
+
+  if (canReviewSignatureFlow) {
+    await loadSignatureFlowState(payload);
+  } else {
+    signatureFlowState.value = {
+      loading: false,
+      error: '',
+      subject: null,
+      documentVersionId: null,
+      snapshot: null
+    };
+  }
+
+  deliverableWorkspaceModalInstance = Modal.getOrCreateInstance(deliverableWorkspaceModal.value?.el);
+  deliverableWorkspaceModalInstance?.show();
 };
 
 const handleHeaderToggle = () => {
