@@ -186,30 +186,63 @@
 
         <template v-else>
           <section class="flex flex-col gap-8">
-            <section class="bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-3xl text-white shadow-2xl shadow-sky-900/20 flex flex-col md:flex-row justify-between gap-5 md:gap-7 relative overflow-hidden">
+            <section class="bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-3xl text-white shadow-2xl shadow-sky-900/20 flex flex-col gap-6 relative overflow-hidden">
                <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
                   <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white blur-3xl opacity-50"></div>
                   <div class="absolute top-1/2 right-0 w-64 h-64 rounded-full bg-sky-300 blur-3xl opacity-40"></div>
                   <div class="absolute -bottom-24 -left-12 w-80 h-80 rounded-full bg-sky-900 blur-3xl opacity-50"></div>
               </div>
-              <div class="flex flex-col gap-3 relative z-10">
-                <div class="text-sky-200 text-sm uppercase tracking-widest font-bold">
-                  {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+              <div class="relative z-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+                <div class="flex flex-col gap-4">
+                  <div class="text-sky-200 text-sm uppercase tracking-widest font-bold">
+                    {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+                  </div>
+                  <h1 class="text-2xl md:text-3xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
+                  <p class="max-w-3xl opacity-90 text-sm md:text-base font-medium m-0 mt-1">
+                    Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
+                    documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
+                  </p>
                 </div>
-                <h1 class="text-2xl md:text-3xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
-                <p class="max-w-3xl opacity-90 text-sm md:text-base font-medium m-0 mt-1">
-                  Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
-                  documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
-                </p>
+                <div class="flex flex-col gap-3 xl:items-end xl:text-right">
+                  <div class="flex flex-wrap gap-2 xl:justify-end">
+                    <AppTag variant="contrast">Tareas {{ selectedProcessPanel?.summary?.tasks_total || 0 }}</AppTag>
+                    <AppTag variant="contrast">Entregables {{ selectedProcessPanel?.summary?.task_items_pending || 0 }}</AppTag>
+                    <AppTag variant="contrast">Llenado {{ selectedProcessPanel?.summary?.fill_requests_pending || 0 }}</AppTag>
+                  </div>
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:w-[28rem]">
+                    <button
+                      type="button"
+                      class="flex items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16"
+                      @click="showProcessDeliverableInfo"
+                    >
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Documentos</span>
+                        <span class="text-sm font-medium text-white/90">Centro documental de la definición</span>
+                      </div>
+                      <span class="text-2xl font-extrabold leading-none text-white">{{ selectedProcessPanel?.summary?.documents_total || 0 }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="flex items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16"
+                      @click="showSignatureQueueInfo"
+                    >
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Firmas</span>
+                        <span class="text-sm font-medium text-white/90">Solicitudes activas y trazabilidad</span>
+                      </div>
+                      <span class="text-2xl font-extrabold leading-none text-white">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="flex flex-col sm:flex-row md:flex-col gap-3 items-start md:items-end justify-start relative z-10 shrink-0">
-                <AppButton variant="secondary" size="md" class-name="w-full sm:w-auto" type="button" @click="clearSelectedProcess">
+              <div class="flex flex-col gap-3 items-start sm:flex-row sm:flex-wrap sm:items-center relative z-10">
+                <AppButton variant="secondary" size="md" class-name="w-full sm:w-auto md:min-w-[12rem]" type="button" @click="clearSelectedProcess">
                   Volver al panel general
                 </AppButton>
                 <AppButton
                   variant="primary"
                   size="md"
-                  class-name="w-full sm:w-auto"
+                  class-name="w-full sm:w-auto md:min-w-[12rem]"
                   type="button"
                   :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
                   @click="openTaskLaunchModal"
@@ -228,131 +261,101 @@
             </section>
 
             <template v-else>
-              <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tareas</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.tasks_total }}</strong></header>
-                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Pendientes o en curso.</p>
-                </article>
-                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Entregables</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.task_items_pending }}</strong></header>
-                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Pendientes de tus tareas.</p>
-                </article>
-                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Documentos</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.documents_total }}</strong></header>
-                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Ligados a entregables.</p>
-                </article>
-                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Llenado</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.fill_requests_pending || 0 }}</strong></header>
-                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Solicitudes pendientes.</p>
-                </article>
-                <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 border border-slate-100 flex flex-col gap-1 text-sm">
-                  <header class="flex justify-between items-center whitespace-nowrap gap-2"><span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Firmas</span><strong class="text-2xl md:text-3xl font-extrabold text-sky-800 leading-none">{{ selectedProcessPanel.summary.signatures_pending }}</strong></header>
-                  <p class="text-xs font-medium text-slate-500 mt-1 leading-snug">Solicitudes pendientes.</p>
-                </article>
-              </section>
-
               <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'">
                 {{ processActionMessage.text }}
               </section>
 
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-8 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-                  <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <article class="lg:col-span-12 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                  <header class="flex flex-col gap-2">
                     <div>
                       <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
                       <p class="text-slate-500 text-sm mt-1 mb-0 font-medium">Solo se muestran las tareas donde participas o que creaste manualmente.</p>
                     </div>
-                    <div class="flex flex-wrap items-start justify-end gap-2">
-                      <AppButton
-                        variant="primary"
-                        size="md"
-                        class-name="shrink-0"
-                        type="button"
-                        :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
-                        @click="openTaskLaunchModal"
-                      >
-                        Crear tarea
-                      </AppButton>
-                      <AppButton
-                        variant="softNeutral"
-                        size="md"
-                        type="button"
-                        @click="showProcessDeliverableInfo"
-                      >
-                        Nuevo entregable del proceso
-                      </AppButton>
-                    </div>
                   </header>
 
-                  <div class="flex flex-wrap gap-2">
-                    <AppTag variant="muted">{{ filteredProcessDeliverables.length }} entregables visibles</AppTag>
-                    <AppTag variant="neutral">{{ selectedProcessPanel.tasks.length }} tareas totales</AppTag>
-                    <AppTag v-if="selectedProcessPanel?.definition?.process_name" variant="info">
-                      {{ selectedProcessPanel.definition.process_name }}
-                    </AppTag>
-                  </div>
+                  <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
+                    <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
+                      <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-4 shadow-sm shadow-slate-200/50">
+                        <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <h4 class="m-0 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Filtros de exploración</h4>
+                          </div>
+                          <AppButton
+                            variant="softNeutral"
+                            size="sm"
+                            type="button"
+                            class-name="self-start md:self-auto"
+                            @click="Object.assign(taskListFilters, { query: '', year: 'all', termType: 'all', unit: 'all', process: 'all', term: 'all', origin: 'all', status: 'all' })"
+                          >
+                            Limpiar filtros
+                          </AppButton>
+                        </div>
 
-                  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-3 rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
-                      <input
-                        v-model="taskListFilters.query"
-                        type="text"
-                        placeholder="Periodo o entregable"
-                        class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium placeholder-slate-400"
-                      />
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-                      <select v-model="taskListFilters.year" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todos</option>
-                        <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
-                      </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
-                      <select v-model="taskListFilters.termType" class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todos</option>
-                        <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
-                      </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-                      <select v-model="taskListFilters.unit" class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todas</option>
-                        <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
-                      </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-                      <select v-model="taskListFilters.process" class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todos</option>
-                        <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
-                      </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
-                      <select v-model="taskListFilters.term" class="block w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todos</option>
-                        <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
-                      </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Origen</span>
-                      <select v-model="taskListFilters.origin" class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todos</option>
-                        <option value="manual">Manual</option>
-                        <option value="automatic">Automática</option>
-                      </select>
-                    </label>
-                    <label class="flex flex-col gap-2">
-                      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
-                      <select v-model="taskListFilters.status" class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition-all outline-none text-sm font-medium appearance-none">
-                        <option value="all">Todos</option>
-                        <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
-                      </select>
-                    </label>
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+                            <input
+                              v-model="taskListFilters.query"
+                              type="text"
+                              placeholder="Periodo, entregable o unidad"
+                              class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+                            />
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+                            <select v-model="taskListFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todos</option>
+                              <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
+                            </select>
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
+                            <select v-model="taskListFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todos</option>
+                              <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
+                            </select>
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
+                            <select v-model="taskListFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todas</option>
+                              <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
+                            </select>
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
+                            <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todos</option>
+                              <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
+                            </select>
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
+                            <select v-model="taskListFilters.term" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todos</option>
+                              <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
+                            </select>
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Origen</span>
+                            <select v-model="taskListFilters.origin" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todos</option>
+                              <option value="manual">Manual</option>
+                              <option value="automatic">Automática</option>
+                            </select>
+                          </label>
+                          <label class="flex flex-col gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
+                            <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                              <option value="all">Todos</option>
+                              <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
+                            </select>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
                   </section>
 
                   <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
@@ -528,42 +531,6 @@
                             </span>
                       </div>
                     </article>
-                  </div>
-                </article>
-
-                <!-- Documentos (Wide) -->
-                <article class="lg:col-span-4 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5 self-start">
-                  <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-                    <div class="flex flex-col gap-2">
-                      <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Documentos</h2>
-                      <p class="text-slate-500 text-sm m-0 font-medium">Centro documental general de esta definición. Aquí luego podrás filtrar y consultar todos tus documentos.</p>
-                    </div>
-                    <AppButton
-                      variant="secondary"
-                      size="md"
-                      class-name="self-start"
-                      type="button"
-                      @click="openDocumentCenter"
-                    >
-                      Abrir gestor documental
-                    </AppButton>
-                  </header>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-                      <div class="text-xs uppercase tracking-wider font-bold text-slate-500">Total</div>
-                      <div class="mt-2 text-3xl font-extrabold text-slate-800 leading-none">{{ selectedProcessPanel.summary.documents_total }}</div>
-                      <p class="mt-2 text-sm font-medium text-slate-500 m-0">Documentos generados para esta definición.</p>
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-sky-50/70 p-4">
-                      <div class="text-xs uppercase tracking-wider font-bold text-sky-700">Pendientes de llenado</div>
-                      <div class="mt-2 text-3xl font-extrabold text-sky-900 leading-none">{{ selectedProcessPanel.summary.fill_requests_pending }}</div>
-                      <p class="mt-2 text-sm font-medium text-sky-800/80 m-0">Solicitudes de llenado o revisión activas en tu bandeja.</p>
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-amber-50/70 p-4">
-                      <div class="text-xs uppercase tracking-wider font-bold text-amber-700">Pendientes de firma</div>
-                      <div class="mt-2 text-3xl font-extrabold text-amber-900 leading-none">{{ selectedProcessPanel.summary.signatures_pending }}</div>
-                      <p class="mt-2 text-sm font-medium text-amber-800/80 m-0">Solicitudes de firma visibles para tu usuario.</p>
-                    </div>
                   </div>
                 </article>
 
@@ -2064,6 +2031,13 @@ const showGeneralTaskInfo = () => {
 const showProcessDeliverableInfo = () => {
   setProcessActionInfo(
     'La creación personalizada de entregables dentro de una definición de proceso quedó visible como punto de entrada, pero aún falta su backend y el flujo de artifact general asociado.',
+    'error'
+  );
+};
+
+const showSignatureQueueInfo = () => {
+  setProcessActionInfo(
+    'El acceso consolidado a la bandeja de firmas de esta definición todavía no está conectado desde este hero. Por ahora el ingreso operativo sigue ocurriendo desde cada entregable.',
     'error'
   );
 };

@@ -1172,8 +1172,8 @@ export const hydrateTaskFromDefinition = async ({
   const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
 
   const taskItems = await ensureTaskItemsForTask(connection, taskId, processDefinitionId, templatesMap);
-  await ensureDocumentsForTask(connection, taskId);
   const assignments = await ensureTaskAssignmentsForDefinition(connection, taskId, processDefinitionId, rulesMap);
+  await ensureDocumentsForTask(connection, taskId);
 
   return {
     task_items_inserted: taskItems.inserted,

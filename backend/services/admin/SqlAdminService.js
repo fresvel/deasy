@@ -222,6 +222,12 @@ const streamToBuffer = (stream) => new Promise((resolve, reject) => {
   stream.on("end", () => resolve(Buffer.concat(chunks)));
 });
 
+const readMinioObjectAsText = async (bucket, objectName) => {
+  const dataStream = await getMinioObjectStream(bucket, objectName);
+  const buffer = await streamToBuffer(dataStream);
+  return buffer.toString("utf8");
+};
+
 const copyMinioObjectToFile = async (bucket, objectName, targetFile) => {
   const dataStream = await getMinioObjectStream(bucket, objectName);
   fs.mkdirSync(path.dirname(targetFile), { recursive: true });
@@ -1149,6 +1155,68 @@ export default class SqlAdminService {
     return rows?.[0] ?? null;
   }
 
+  async getTemplateArtifact(artifactId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT
+         id,
+         template_code,
+         display_name,
+         storage_version,
+         bucket,
+         meta_object_key
+       FROM template_artifacts
+       WHERE id = ?
+       LIMIT 1`,
+      [artifactId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async loadTemplateArtifactMetaDocument(artifact, connection = this.pool) {
+    if (!artifact?.bucket || !artifact?.meta_object_key) {
+      return null;
+    }
+    const content = await readMinioObjectAsText(
+      artifact.bucket,
+      String(artifact.meta_object_key || "").trim()
+    );
+    return parseYamlDocument(content, {
+      filePath: `${artifact.bucket}/${artifact.meta_object_key}`
+    });
+  }
+
+  async syncArtifactWorkflowsForTemplateArtifactId(artifactId, connection = this.pool) {
+    const artifact = await this.getTemplateArtifact(artifactId, connection);
+    if (!artifact?.id) {
+      return null;
+    }
+
+    const metaDocument = await this.loadTemplateArtifactMetaDocument(artifact, connection);
+    const fillSyncSummary = await this.syncArtifactFillWorkflowForArtifact({
+      connection,
+      artifactId: Number(artifact.id),
+      templateCode: artifact.template_code,
+      storageVersion: artifact.storage_version,
+      displayName: artifact.display_name,
+      metaDocument
+    });
+
+    const signatureSyncSummary = await this.syncArtifactSignatureWorkflowForArtifact({
+      connection,
+      artifactId: Number(artifact.id),
+      templateCode: artifact.template_code,
+      storageVersion: artifact.storage_version,
+      displayName: artifact.display_name,
+      metaDocument
+    });
+
+    return {
+      fill: fillSyncSummary,
+      signatures: signatureSyncSummary
+    };
+  }
+
   async getTaskItem(taskItemId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
@@ -1274,6 +1342,10 @@ export default class SqlAdminService {
           row.sort_order
         ]
       );
+
+      if (row.template_artifact_id) {
+        await this.syncArtifactWorkflowsForTemplateArtifactId(Number(row.template_artifact_id), connection);
+      }
     }
 
     const [ruleRows] = await connection.query(
@@ -1825,6 +1897,25 @@ export default class SqlAdminService {
             await ensureDocumentForTaskItem(connection, taskItem);
           } else {
             await ensureDocumentsForTask(connection, Number(payload.task_id));
+          }
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "process_definition_templates") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          if (payload.template_artifact_id) {
+            await this.syncArtifactWorkflowsForTemplateArtifactId(Number(payload.template_artifact_id), connection);
           }
           await connection.commit();
         } catch (error) {
@@ -2392,6 +2483,30 @@ export default class SqlAdminService {
         } finally {
           connection.release();
         }
+      } else if (tableName === "process_definition_templates") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          const rawArtifactId =
+            updates.template_artifact_id
+            ?? existing.template_artifact_id
+            ?? keyPayload.template_artifact_id
+            ?? 0;
+          const artifactId = Number(rawArtifactId);
+          if (artifactId) {
+            await this.syncArtifactWorkflowsForTemplateArtifactId(artifactId, connection);
+          }
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
       } else {
         await this.pool.query(
           `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
@@ -2626,11 +2741,11 @@ export default class SqlAdminService {
            required_cargo_id,
            selection_mode,
            approval_mode,
-           required_signers_min,
-           required_signers_max,
-           is_required,
-           anchor_refs
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         required_signers_min,
+         required_signers_max,
+         is_required,
+         anchor_refs
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           signatureFlowTemplateId,
           step.stepOrder,

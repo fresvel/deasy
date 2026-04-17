@@ -103,6 +103,62 @@
       />
     </div>
 
+    <div v-else-if="!pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-2">
+          <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
+          <p class="text-sm font-medium leading-snug text-slate-500 m-0">
+            Esta sesión pertenece al documento
+            <span class="font-semibold text-slate-700">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
+            Si el PDF no se precargó correctamente, puedes reintentar la carga o seleccionar el archivo de forma manual.
+          </p>
+        </div>
+
+        <div
+          class="rounded-2xl border px-4 py-4 text-sm font-medium"
+          :class="workflowPdfStatus.type === 'error'
+            ? 'border-rose-200 bg-rose-50 text-rose-700'
+            : workflowPdfStatus.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-sky-200 bg-sky-50 text-sky-700'"
+        >
+          {{ workflowPdfStatus.message || 'Preparando la sesión de firma embebida.' }}
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
+            <PdfDropField
+              title="Cargar PDF del entregable"
+              action-text="Seleccionar documento"
+              help-text="Usa este archivo si necesitas reintentar la sesión manualmente."
+              :icon="CustomIconSignature"
+              input-id="workflow-sign-pdf-input"
+              @files-selected="onPdfDropFiles($event, 'sign')"
+              class="h-full"
+            />
+          </div>
+          <div class="flex flex-col gap-3">
+            <AdminButton
+              variant="outlinePrimary"
+              :disabled="!workflowSignContext?.preloadPdfPath"
+              @click="retryWorkflowPdfLoad"
+            >
+              Reintentar carga automática
+            </AdminButton>
+            <AdminButton variant="secondary" @click="goBackToStart">
+              Limpiar PDF actual
+            </AdminButton>
+          </div>
+        </div>
+      </div>
+      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
+        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+          <IconX class="w-5 h-5 shrink-0" />
+        </div>
+        {{ uploadError }}
+      </div>
+    </div>
+
     <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
       <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
       <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
@@ -640,14 +696,14 @@
   >
       <div v-if="signSuccess" class="flex flex-col gap-4">
         <p class="mb-0 text-sm text-emerald-700 font-medium">
-          El documento fue firmado correctamente con {{ signedFieldsCount }} campo(s).
+          {{ signResultMessage || `El documento fue firmado correctamente con ${signedFieldsCount} campo(s).` }}
         </p>
         <div v-if="signedMinioPath" class="flex flex-wrap gap-3">
           <AdminButton variant="outlinePrimary" @click="viewSignedDocument">Visualizar documento</AdminButton>
           <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
     </div>
-    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signError }}</p>
+    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signResultMessage || signError }}</p>
     <template #footer>
       <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
     </template>
@@ -1016,6 +1072,7 @@
   const isSigning = ref(false);
   const signError = ref('');
   const signSuccess = ref(false);
+  const signResultMessage = ref('');
   const signedMinioPath = ref('');
   const signedFieldsCount = ref(0);
   const workflowSignContext = ref(null);
@@ -1057,6 +1114,10 @@
     const rawToken = currentUser.value?.signatureToken || currentUser.value?.token || '';
     return rawToken ? `!-${rawToken}-!` : '';
   });
+  const isEmbeddedWorkflowMode = computed(() =>
+    props.embedded
+      && Boolean(workflowSignContext.value?.documentVersionId || workflowSignContext.value?.signatureRequestId)
+  );
   const rootClasses = computed(() =>
     props.embedded
       ? 'w-full h-full max-w-none mx-auto p-0 flex flex-col gap-6'
@@ -1923,6 +1984,36 @@
     };
 
     const goBackToStart = () => {
+      if (isEmbeddedWorkflowMode.value) {
+        uploadedFiles.value = [];
+        uploadError.value = '';
+        fields.value = [];
+        tokenPreviewFields.value = [];
+        lastSelection.value = null;
+        lastFieldId.value = null;
+        fieldCounter.value = 1;
+        activeBox = null;
+        clearAllBoxes();
+        selectedField.value = null;
+        filterPage.value = 'all';
+        selectedCertificateId.value = null;
+        availableCertificates.value = [];
+        certPassword.value = '';
+        signMode.value = 'coordinates';
+        signError.value = '';
+        signResultMessage.value = '';
+        signSuccess.value = false;
+        signedMinioPath.value = '';
+        signedFieldsCount.value = 0;
+        resetPdfState();
+        workflowPdfStatus.value = {
+          type: workflowSignContext.value?.preloadPdfPath ? 'info' : 'error',
+          message: workflowSignContext.value?.preloadPdfPath
+            ? 'La sesión quedó lista para reintentar la carga del PDF vinculado.'
+            : 'Este flujo no tiene un PDF vinculado para precargar.'
+        };
+        return;
+      }
       resetToStart();
     };
 
@@ -2072,6 +2163,7 @@
 
     const openSignCertModal = async () => {
       signError.value = '';
+      signResultMessage.value = '';
       signSuccess.value = false;
       await loadCertificates();
       if (!signCertModal.value?.el) return;
@@ -2082,6 +2174,7 @@
     const prepareMultiBatchStart = async (payload) => {
       multiBatchRequest.value = payload;
       signError.value = '';
+      signResultMessage.value = '';
       signSuccess.value = false;
       await openSignCertModal();
     };
@@ -2294,13 +2387,19 @@
           throw new Error(data?.error || data?.message || `Error del servidor (${response.status})`);
         }
         signSuccess.value = true;
+        signResultMessage.value = `El documento fue firmado correctamente con ${Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0))} campo(s).`;
         signedMinioPath.value = data.signedPath;
         signedFieldsCount.value = Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0));
         signCertModalInstance?.hide();
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
         signResultModalInstance.show();
       } catch (error) {
+        signSuccess.value = false;
         signError.value = error.message || 'No se pudo firmar el documento.';
+        signResultMessage.value = signError.value;
+        signCertModalInstance?.hide();
+        signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
+        signResultModalInstance.show();
       } finally {
         isSigning.value = false;
       }
@@ -2373,6 +2472,7 @@
       certPassword.value = '';
       signMode.value = 'coordinates';
       signError.value = '';
+      signResultMessage.value = '';
       signSuccess.value = false;
       signedMinioPath.value = '';
       signedFieldsCount.value = 0;
@@ -2411,6 +2511,7 @@
           : 'Este entregable todavía no tiene un PDF vinculado para precargar.'
       };
       signError.value = '';
+      signResultMessage.value = '';
       signSuccess.value = false;
       signedMinioPath.value = '';
       uploadError.value = '';
@@ -2423,6 +2524,15 @@
         loadPdfFromRemotePath(payload.preloadPdfPath, 'sign');
       }
       multiSignerSeedFiles.value = [];
+    };
+
+    const retryWorkflowPdfLoad = () => {
+      uploadError.value = '';
+      signError.value = '';
+      signResultMessage.value = '';
+      if (workflowSignContext.value?.preloadPdfPath) {
+        loadPdfFromRemotePath(workflowSignContext.value.preloadPdfPath, 'sign');
+      }
     };
 
     defineExpose({ resetToStart, initializeWorkflowSignatureSession });

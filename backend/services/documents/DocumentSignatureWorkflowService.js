@@ -159,6 +159,47 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
   }));
 };
 
+const resolveSignatureTemplateStepsForContext = async (connection, signatureFlowTemplateId, context) => {
+  const steps = await getSignatureFlowSteps(connection, signatureFlowTemplateId);
+  if (!steps.length) {
+    return {
+      steps: [],
+      unresolvedRequiredSteps: [],
+    };
+  }
+
+  const unresolvedRequiredSteps = [];
+  const resolvedSteps = [];
+  for (const step of steps) {
+    const resolverType = String(step.resolverType || "cargo_in_scope").trim();
+    const assignees = await resolveSignatureStepAssignees(connection, step, context);
+    if (
+      Number(step.isRequired) === 1
+      && !assignees.length
+      && resolverType !== "manual_pick"
+      && resolverType !== "manual"
+    ) {
+      unresolvedRequiredSteps.push({
+        stepOrder: Number(step.stepOrder),
+        resolverType,
+        reason: "no_assignees",
+      });
+    }
+    resolvedSteps.push({
+      ...step,
+      step_order: Number(step.stepOrder || 0),
+      selection_mode: step.selectionMode || null,
+      resolverType,
+      assignees,
+    });
+  }
+
+  return {
+    steps: resolvedSteps,
+    unresolvedRequiredSteps,
+  };
+};
+
 const getSignaturePendingStatusId = async (connection) => {
   const [rows] = await connection.query(
     `SELECT id
@@ -398,7 +439,7 @@ const deriveSignatureStatusCode = (result) => {
 const deriveSignatureRequestStatusCode = (signatureStatusCode) =>
   signatureStatusCode === SIGNATURE_STATUS.SIGNED
     ? SIGNATURE_REQUEST_STATUS.COMPLETED
-    : SIGNATURE_REQUEST_STATUS.REJECTED;
+    : SIGNATURE_REQUEST_STATUS.PENDING;
 
 const truncateNote = (value, max = 255) => {
   const normalized = String(value || "").trim();
@@ -524,44 +565,24 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
     return { ok: false, reason: "signature_template_missing", context, currentStatus };
   }
 
-  const steps = await getSignatureFlowSteps(connection, signatureFlowTemplate.id);
-  if (!steps.length) {
+  const resolvedTemplate = await resolveSignatureTemplateStepsForContext(
+    connection,
+    signatureFlowTemplate.id,
+    context
+  );
+  if (!resolvedTemplate.steps.length) {
     return { ok: false, reason: "signature_steps_missing", context, currentStatus, signatureFlowTemplate };
   }
 
-  const unresolvedRequiredSteps = [];
-  const resolvedSteps = [];
-  for (const step of steps) {
-    const resolverType = String(step.resolverType || "cargo_in_scope").trim();
-    const assignees = await resolveSignatureStepAssignees(connection, step, context);
-    if (
-      Number(step.isRequired) === 1
-      && !assignees.length
-      && resolverType !== "manual_pick"
-      && resolverType !== "manual"
-    ) {
-      unresolvedRequiredSteps.push({
-        stepOrder: Number(step.stepOrder),
-        resolverType,
-        reason: "no_assignees",
-      });
-    }
-    resolvedSteps.push({
-      ...step,
-      resolverType,
-      assignees,
-    });
-  }
-
-  if (unresolvedRequiredSteps.length) {
+  if (resolvedTemplate.unresolvedRequiredSteps.length) {
       return {
         ok: false,
         reason: "required_signers_unresolved",
         context,
         currentStatus,
         signatureFlowTemplate,
-        steps: resolvedSteps,
-        unresolvedRequiredSteps,
+        steps: resolvedTemplate.steps,
+        unresolvedRequiredSteps: resolvedTemplate.unresolvedRequiredSteps,
       };
   }
 
@@ -570,7 +591,7 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
     context,
     currentStatus,
     signatureFlowTemplate,
-    steps: resolvedSteps,
+    steps: resolvedTemplate.steps,
   };
 };
 
@@ -745,12 +766,13 @@ export const registerSignatureEvidence = async ({ connection, context, result })
     if (!requestStatusId) {
       throw new Error(`No existe el estado de solicitud de firma '${requestStatusCode}'.`);
     }
+    const shouldMarkRequestAsResponded = requestStatusCode === SIGNATURE_REQUEST_STATUS.COMPLETED;
     await connection.query(
       `UPDATE signature_requests
        SET status_id = ?,
            responded_at = ?
        WHERE id = ?`,
-      [requestStatusId, new Date(), Number(signatureRequest.id)]
+      [requestStatusId, shouldMarkRequestAsResponded ? new Date() : null, Number(signatureRequest.id)]
     );
   }
 
@@ -794,16 +816,26 @@ export const registerSignatureEvidence = async ({ connection, context, result })
 };
 
 export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, userId }) => {
-  const readiness = await inspectDocumentVersionSignatureReadiness(connection, documentVersionId);
+  const context = await getDocumentVersionSignatureContext(connection, documentVersionId);
+  const currentStatus = normalizeDocumentVersionStatus(context?.document_version_status);
+  const readiness = context
+    ? {
+      ok: false,
+      context,
+      currentStatus,
+      steps: [],
+    }
+    : await inspectDocumentVersionSignatureReadiness(connection, documentVersionId);
   const snapshot = {
     documentVersionId,
     readiness,
     signatureFlow: null,
-    signatureSteps: readiness.steps,
+    signatureSteps: readiness.steps || [],
     signatureRequests: [],
     currentSignatureStepOrder: null,
     responsableActual: null,
     canOperate: false,
+    currentStatus: readiness.currentStatus || currentStatus || null,
   };
 
   const [instanceRows] = await connection.query(
@@ -829,6 +861,28 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
     statusCode: instance.status_code,
     createdAt: instance.created_at,
   };
+
+  if (context && instance.template_id) {
+    const resolvedTemplate = await resolveSignatureTemplateStepsForContext(
+      connection,
+      Number(instance.template_id),
+      context
+    );
+    snapshot.signatureSteps = resolvedTemplate.steps;
+    snapshot.readiness = {
+      ok: true,
+      context,
+      currentStatus,
+      signatureFlowTemplate: { id: Number(instance.template_id) },
+      steps: resolvedTemplate.steps,
+      unresolvedRequiredSteps: resolvedTemplate.unresolvedRequiredSteps,
+      source: "active_instance",
+    };
+  } else if (!snapshot.readiness?.reason) {
+    snapshot.readiness = await inspectDocumentVersionSignatureReadiness(connection, documentVersionId);
+    snapshot.signatureSteps = snapshot.readiness?.steps || [];
+    snapshot.currentStatus = snapshot.readiness?.currentStatus || snapshot.currentStatus;
+  }
 
   const [requestRows] = await connection.query(
     `SELECT
