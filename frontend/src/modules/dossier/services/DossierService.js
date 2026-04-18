@@ -241,6 +241,18 @@ class DossierService {
   }
 
   // Métodos genéricos para documentos
+  async uploadDocument(tipo, registroId, file) {
+    const cedula = this.getCedula();
+    const formData = new FormData();
+    formData.append("archivo", file);
+    const response = await axios.post(
+      `${API_PREFIX}/dossier/${cedula}/documentos/${tipo}/${registroId}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  }
+
   async downloadDocument(tipo, documentoId) {
     const cedula = this.getCedula();
     const response = await axios.get(

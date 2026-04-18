@@ -1,9 +1,21 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
-    <ProfileSectionShell title="Formación continua y conferencias"
-      subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."
-      @add="openModal">
+  <DossierPdfViewer
+    v-if="showPdfViewer"
+    :tipo="pdfViewer.tipo"
+    :record-id="pdfViewer.recordId"
+    :item-name="pdfViewer.itemName"
+    :has-document="pdfViewer.hasDocument"
+    @back="showPdfViewer = false"
+    @document-updated="onPdfViewerUpdated"
+    @document-deleted="onPdfViewerDeleted"
+  />
 
+  <div v-else class="profile-admin-skin w-full animate-fade-in">
+    <ProfileSectionShell
+      title="Formación continua y conferencias"
+      subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."
+      @add="openModal"
+    >
       <ProfileTableBlock title="Capacitación en el área docente">
         <div class="profile-table-shell">
           <table class="w-full text-sm text-left border-collapse min-w-max">
@@ -21,29 +33,25 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!capacitacionesDocentes.length"
-                class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">
-                  No has registrado capacitación docente.
-                </td>
+              <tr v-if="!capacitacionesDocentes.length" class="border-b border-slate-100">
+                <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">No has registrado capacitación docente.</td>
               </tr>
-              <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id"
-                class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700">
-                  <BtnSera :type="getSeraType(capacitacion.sera)" />
-                </td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.pais || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
+              <tr v-for="cap in capacitacionesDocentes" :key="cap._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3"><BtnSera :type="getSeraType(cap.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.tema }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.institution }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.horas || 'N/A' }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.pais || 'N/A' }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(cap.fecha_inicio) }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(cap.fecha_fin) }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.rol || 'N/A' }}</td>
                 <td class="px-4 py-3">
-                  <DossierDocumentActions :has-document="Boolean(capacitacion.url_documento)"
-                    @edit="editarCapacitacion(capacitacion)" @preview="previewDocument(capacitacion)"
-                    @download="openDocument(capacitacion)" @upload="triggerFileUpload(capacitacion._id)"
-                    @delete-document="eliminarSoloPDF(capacitacion)" @delete="openDelete(capacitacion)" />
+                  <DossierDocumentActions
+                    :has-document="Boolean(cap.url_documento)"
+                    @edit="editarCapacitacion(cap)"
+                    @manage-pdf="openPdfViewer(cap, 'formacion', cap.tema)"
+                    @delete="openDelete(cap)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -68,65 +76,58 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!capacitacionesProfesionales.length"
-                class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">
-                  No has registrado capacitación profesional.
-                </td>
+              <tr v-if="!capacitacionesProfesionales.length" class="border-b border-slate-100">
+                <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">No has registrado capacitación profesional.</td>
               </tr>
-              <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id"
-                class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700">
-                  <BtnSera :type="getSeraType(capacitacion.sera)" />
-                </td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.pais || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
+              <tr v-for="cap in capacitacionesProfesionales" :key="cap._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3"><BtnSera :type="getSeraType(cap.sera)" /></td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.tema }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.institution }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.horas || 'N/A' }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.pais || 'N/A' }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(cap.fecha_inicio) }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ formatDate(cap.fecha_fin) }}</td>
+                <td class="px-4 py-3 text-slate-700">{{ cap.rol || 'N/A' }}</td>
                 <td class="px-4 py-3">
-                  <DossierDocumentActions :has-document="Boolean(capacitacion.url_documento)"
-                    @edit="editarCapacitacion(capacitacion)" @preview="previewDocument(capacitacion)"
-                    @download="openDocument(capacitacion)" @upload="triggerFileUpload(capacitacion._id)"
-                    @delete-document="eliminarSoloPDF(capacitacion)" @delete="openDelete(capacitacion)" />
+                  <DossierDocumentActions
+                    :has-document="Boolean(cap.url_documento)"
+                    @edit="editarCapacitacion(cap)"
+                    @manage-pdf="openPdfViewer(cap, 'formacion', cap.tema)"
+                    @delete="openDelete(cap)"
+                  />
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </ProfileTableBlock>
-
     </ProfileSectionShell>
 
-
-    <!-- Modal Agregar / Editar (unificado) -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionModal" tabindex="-1"
-      ref="modal" aria-hidden="true">
+    <!-- Modal Agregar/Editar (unificado) -->
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="profile-dialog-shell">
         <div class="profile-dialog-panel">
-          <AgregarCapacitacion :editing-item="pendingEdit" @capacitacion-added="loadDossier"
-            @capacitacion-updated="handleCapacitacionUpdated" />
+          <AgregarCapacitacion
+            :editing-item="pendingEdit"
+            @capacitacion-added="loadDossier"
+            @capacitacion-updated="handleCapacitacionUpdated"
+          />
         </div>
       </div>
     </div>
 
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionDeleteModal" tabindex="-1"
-      ref="deleteModal" aria-hidden="true">
+    <!-- Modal Eliminar -->
+    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionDeleteModal" tabindex="-1" ref="deleteModal" aria-hidden="true">
       <div class="profile-dialog-shell profile-dialog-shell--compact">
         <div class="profile-dialog-panel">
           <div class="profile-confirm-header">
             <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button"
-              class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-              data-modal-dismiss aria-label="Close">
+            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100" data-modal-dismiss>
               <span class="text-xl leading-none">&times;</span>
             </button>
           </div>
           <div class="profile-confirm-body">
-            ¿Deseas eliminar la capacitación
-            <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
+            ¿Deseas eliminar la capacitación <strong>{{ pendingDelete?.tema || 'seleccionada' }}</strong>?
           </div>
           <div class="profile-confirm-footer">
             <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
@@ -135,228 +136,82 @@
         </div>
       </div>
     </div>
-
-    <!-- Input file oculto para subir documentos -->
-    <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
-    <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import { Modal } from "@/shared/utils/modalController";
-import AgregarCapacitacion from "@/modules/perfil/components/AgregarCapacitacion.vue";
-import BtnSera from "@/shared/components/buttons/BtnSera.vue";
-import RowActionMenu from "@/shared/components/data/RowActionMenu.vue";
-import DossierService from "@/modules/dossier/services/DossierService";
-import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
-import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
-import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
-import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { Modal } from '@/shared/utils/modalController';
+import AgregarCapacitacion from '@/modules/perfil/components/AgregarCapacitacion.vue';
+import BtnSera from '@/shared/components/buttons/BtnSera.vue';
+import DossierService from '@/modules/dossier/services/DossierService';
+import ProfileSectionShell from '@/modules/perfil/components/ProfileSectionShell.vue';
+import ProfileTableBlock from '@/modules/perfil/components/ProfileTableBlock.vue';
+import DossierDocumentActions from '@/modules/perfil/components/DossierDocumentActions.vue';
+import DossierPdfViewer from '@/modules/perfil/components/DossierPdfViewer.vue';
+import AdminButton from '@/modules/admin/components/ui/AdminButton.vue';
+import { mapDossierStatusToSeraType } from '@/modules/perfil/utils/dossierStatus';
 
-const modal = ref(null);
+const modal       = ref(null);
 const deleteModal = ref(null);
-const fileInput = ref(null);
-const pdfPreviewModal = ref(null);
-const selectedItemId = ref(null);
-const dossier = ref(null);
-const loading = ref(true);
-const currentUser = ref(null);
-const pendingEdit = ref(null);
-let modalInstance = null;
-let deleteInstance = null;
+const dossier     = ref(null);
+const pendingEdit   = ref(null);
 const pendingDelete = ref(null);
+let modalInstance  = null;
+let deleteInstance = null;
 
-// Computed properties para agrupar capacitaciones por tipo
-const capacitacionesDocentes = computed(() => {
-  if (!dossier.value || !dossier.value.formacion) return [];
-  return dossier.value.formacion.filter(c => c.tipo === 'Docente');
-});
+const showPdfViewer = ref(false);
+const pdfViewer     = ref({ tipo: '', recordId: '', itemName: '', hasDocument: false });
 
-const capacitacionesProfesionales = computed(() => {
-  if (!dossier.value || !dossier.value.formacion) return [];
-  return dossier.value.formacion.filter(c => c.tipo === 'Profesional');
-});
-
-// Formatear fecha para mostrar
-const formatDate = (date) => {
-  if (!date) return '';
-  const d = new Date(date);
-  return d.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
+const openPdfViewer = (item, tipo, itemName) => {
+  pdfViewer.value = { tipo, recordId: item._id, itemName: itemName || 'Documento', hasDocument: Boolean(item.url_documento) };
+  showPdfViewer.value = true;
 };
+const onPdfViewerUpdated = () => { showPdfViewer.value = false; loadDossier(); };
+const onPdfViewerDeleted = () => { showPdfViewer.value = false; loadDossier(); };
+
+const capacitacionesDocentes     = computed(() => dossier.value?.formacion?.filter(c => c.tipo === 'Docente')     || []);
+const capacitacionesProfesionales = computed(() => dossier.value?.formacion?.filter(c => c.tipo === 'Profesional') || []);
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
-
-// Cargar datos del usuario y su dossier
-const loadDossier = async () => {
-  try {
-    loading.value = true;
-
-    const data = await DossierService.getDossier();
-
-    if (data.success) {
-      dossier.value = data.data;
-      currentUser.value = { cedula: DossierService.getCedula() };
-    }
-
-  } catch (error) {
-    console.error('Error al cargar dossier:', error);
-  } finally {
-    loading.value = false;
-  }
+const formatDate = (date) => {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
 };
 
+const loadDossier = async () => {
+  try { const data = await DossierService.getDossier(); if (data.success) dossier.value = data.data; }
+  catch (error) { console.error('Error al cargar dossier:', error); }
+};
 const openModal = () => {
   pendingEdit.value = null;
   if (!modal.value) return;
   modalInstance = Modal.getOrCreateInstance(modal.value);
   modalInstance.show();
 };
-
-const openDelete = (capacitacion) => {
-  pendingDelete.value = capacitacion;
-  if (!deleteModal.value) return;
-  deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-  deleteInstance.show();
-};
-
-const handleCapacitacionAdded = () => {
-  loadDossier();
-};
-
-const eliminarCapacitacion = async (capacitacion) => {
-  try {
-    await DossierService.deleteCapacitacion(capacitacion._id);
-    await loadDossier();
-    alert('Capacitación eliminada correctamente');
-  } catch (error) {
-    console.error('Error al eliminar capacitación:', error);
-    alert('Error al eliminar la capacitación');
-  }
-};
-
-const eliminarSoloPDF = async (capacitacion) => {
-  if (!confirm('¿Estás seguro de eliminar solo el documento PDF? El registro se mantendrá.')) return;
-  try {
-    await DossierService.deleteDocument("formacion", capacitacion._id);
-    await loadDossier();
-    alert('Documento eliminado correctamente');
-  } catch (error) {
-    console.error('Error al eliminar documento:', error);
-    alert('Error al eliminar el documento');
-  }
-};
-
-const confirmDelete = async () => {
-  if (!pendingDelete.value) return;
-  await eliminarCapacitacion(pendingDelete.value);
-  deleteInstance?.hide();
-  pendingDelete.value = null;
-};
-
-const editarCapacitacion = (registro) => {
-  pendingEdit.value = { ...registro };
+const editarCapacitacion = (cap) => {
+  pendingEdit.value = { ...cap };
   if (!modal.value) return;
   modalInstance = Modal.getOrCreateInstance(modal.value);
   modalInstance.show();
 };
-
-const handleCapacitacionUpdated = () => {
-  pendingEdit.value = null;
-  loadDossier();
+const handleCapacitacionUpdated = () => { pendingEdit.value = null; loadDossier(); };
+const openDelete = (cap) => {
+  pendingDelete.value = cap;
+  if (!deleteModal.value) return;
+  deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
+  deleteInstance.show();
+};
+const confirmDelete = async () => {
+  if (!pendingDelete.value) return;
+  try { await DossierService.deleteCapacitacion(pendingDelete.value._id); await loadDossier(); deleteInstance?.hide(); }
+  catch (error) { console.error('Error al eliminar:', error); }
 };
 
-const getDocumentBlob = async (tipoDocumento, registroId) => {
-  const response = await DossierService.downloadDocument(tipoDocumento, registroId);
-  return new Blob([response.data], { type: "application/pdf" });
-};
-
-const previewDocument = async (capacitacion) => {
-  try {
-    const blob = await getDocumentBlob("formacion", capacitacion._id);
-    pdfPreviewModal.value?.openFromBlob(blob);
-  } catch (error) {
-    console.error("Error al previsualizar documento:", error);
-    alert("Error al visualizar el documento");
-  }
-};
-
-const openDocument = async (capacitacion) => {
-  try {
-    const blob = await getDocumentBlob("formacion", capacitacion._id);
-    const blobUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = `${capacitacion.tema || 'capacitacion'}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-  } catch (error) {
-    console.error('Error al abrir documento:', error);
-    alert('Error al abrir el documento');
-  }
-};
-
-const triggerFileUpload = (itemId) => {
-  selectedItemId.value = itemId;
-  fileInput.value.click();
-};
-
-const handleFileSelect = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  if (file.type !== 'application/pdf') {
-    alert('Solo se permiten archivos PDF');
-    event.target.value = '';
-    return;
-  }
-
-  if (file.size > 10 * 1024 * 1024) {
-    alert('El archivo no puede superar los 10MB');
-    event.target.value = '';
-    return;
-  }
-
-  try {
-    const response = await DossierService.uploadCapacitacionDocument(selectedItemId.value, file);
-    if (response.success) {
-      alert('Documento subido correctamente');
-      await loadDossier();
-    }
-  } catch (error) {
-    console.error('Error al subir documento:', error);
-    alert('Error al subir el documento');
-  }
-
-  event.target.value = '';
-};
-
-onMounted(() => {
-  loadDossier();
-  window.addEventListener('dossier-updated', loadDossier);
-});
+onMounted(() => { loadDossier(); window.addEventListener('dossier-updated', loadDossier); });
 onBeforeUnmount(() => {
-  if (modalInstance) {
-    modalInstance.hide();
-    modalInstance.dispose();
-    modalInstance = null;
-  }
-  if (deleteInstance) {
-    deleteInstance.hide();
-    deleteInstance.dispose();
-    deleteInstance = null;
-  }
+  modalInstance?.hide(); modalInstance?.dispose();
+  deleteInstance?.hide(); deleteInstance?.dispose();
   window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
-
-<style scoped>
-.table thead th {
-  color: #1d3557;
-  font-weight: 600;
-}
-</style>

@@ -1,5 +1,17 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
+  <!-- Vista PDF de cuerpo completo -->
+  <DossierPdfViewer
+    v-if="showPdfViewer"
+    :tipo="pdfViewer.tipo"
+    :record-id="pdfViewer.recordId"
+    :item-name="pdfViewer.itemName"
+    :has-document="pdfViewer.hasDocument"
+    @back="showPdfViewer = false"
+    @document-updated="onPdfViewerUpdated"
+    @document-deleted="onPdfViewerDeleted"
+  />
+
+  <div v-else class="profile-admin-skin w-full animate-fade-in">
     <ProfileSectionShell
       title="Formación Profesional"
       subtitle="Registra tu formación académica y títulos obtenidos."
@@ -22,11 +34,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="titulosCuartoNivel.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <tr v-if="titulosCuartoNivel.length === 0" class="border-b border-slate-100">
                 <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">No hay títulos de cuarto nivel registrados</td>
               </tr>
               <tr v-for="titulo in titulosCuartoNivel" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" /></td>
+                <td class="px-4 py-3"><BtnSera :type="getSeraType(titulo.sera)" /></td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
@@ -37,10 +49,7 @@
                   <DossierDocumentActions
                     :has-document="Boolean(titulo.url_documento)"
                     @edit="editarTitulo(titulo)"
-                    @preview="previewDocument(titulo)"
-                    @download="openDocument(titulo)"
-                    @upload="triggerFileUpload(titulo._id)"
-                    @delete-document="eliminarSoloPDF(titulo)"
+                    @manage-pdf="openPdfViewer(titulo, 'titulo', titulo.titulo)"
                     @delete="openDelete(titulo)"
                   />
                 </td>
@@ -67,11 +76,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="titulosGrado.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <tr v-if="titulosGrado.length === 0" class="border-b border-slate-100">
                 <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">No hay títulos de grado registrados</td>
               </tr>
               <tr v-for="titulo in titulosGrado" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" /></td>
+                <td class="px-4 py-3"><BtnSera :type="getSeraType(titulo.sera)" /></td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
@@ -82,10 +91,7 @@
                   <DossierDocumentActions
                     :has-document="Boolean(titulo.url_documento)"
                     @edit="editarTitulo(titulo)"
-                    @preview="previewDocument(titulo)"
-                    @download="openDocument(titulo)"
-                    @upload="triggerFileUpload(titulo._id)"
-                    @delete-document="eliminarSoloPDF(titulo)"
+                    @manage-pdf="openPdfViewer(titulo, 'titulo', titulo.titulo)"
                     @delete="openDelete(titulo)"
                   />
                 </td>
@@ -112,11 +118,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="titulosTecnicos.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <tr v-if="titulosTecnicos.length === 0" class="border-b border-slate-100">
                 <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">No hay títulos técnicos/tecnológicos registrados</td>
               </tr>
               <tr v-for="titulo in titulosTecnicos" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" /></td>
+                <td class="px-4 py-3"><BtnSera :type="getSeraType(titulo.sera)" /></td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
                 <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
@@ -127,10 +133,7 @@
                   <DossierDocumentActions
                     :has-document="Boolean(titulo.url_documento)"
                     @edit="editarTitulo(titulo)"
-                    @preview="previewDocument(titulo)"
-                    @download="openDocument(titulo)"
-                    @upload="triggerFileUpload(titulo._id)"
-                    @delete-document="eliminarSoloPDF(titulo)"
+                    @manage-pdf="openPdfViewer(titulo, 'titulo', titulo.titulo)"
                     @delete="openDelete(titulo)"
                   />
                 </td>
@@ -145,10 +148,10 @@
     <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="tituloModal" tabindex="-1" ref="modal" aria-hidden="true">
       <div class="profile-dialog-shell">
         <div class="profile-dialog-panel">
-          <AgregarTitulo 
-            :editing-item="pendingEdit" 
-            @title-added="loadDossier" 
-            @title-updated="handleTituloUpdated" 
+          <AgregarTitulo
+            :editing-item="pendingEdit"
+            @title-added="loadDossier"
+            @title-updated="handleTituloUpdated"
           />
         </div>
       </div>
@@ -160,13 +163,12 @@
         <div class="profile-dialog-panel">
           <div class="profile-confirm-header">
             <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
+            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100" data-modal-dismiss>
               <span class="text-xl leading-none">&times;</span>
             </button>
           </div>
           <div class="profile-confirm-body">
-            ¿Deseas eliminar el título 
-            <strong>{{ pendingDelete?.titulo || "seleccionado" }}</strong>?
+            ¿Deseas eliminar el título <strong>{{ pendingDelete?.titulo || 'seleccionado' }}</strong>?
           </div>
           <div class="profile-confirm-footer">
             <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
@@ -175,172 +177,103 @@
         </div>
       </div>
     </div>
-
-    <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
-    <DossierPdfPreviewModal ref="pdfPreviewModal" />
   </div>
 </template>
 
 <script setup>
-import {ref, computed, onMounted, onBeforeUnmount} from "vue"
-import AgregarTitulo from "@/modules/perfil/components/AgregarTitulo.vue";
-import BtnSera from "@/shared/components/buttons/BtnSera.vue";
-import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
-import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
-import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
-import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
-import { Modal } from "@/shared/utils/modalController";
-import DossierService from "@/modules/dossier/services/DossierService";
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import AgregarTitulo from '@/modules/perfil/components/AgregarTitulo.vue';
+import BtnSera from '@/shared/components/buttons/BtnSera.vue';
+import ProfileSectionShell from '@/modules/perfil/components/ProfileSectionShell.vue';
+import ProfileTableBlock from '@/modules/perfil/components/ProfileTableBlock.vue';
+import DossierDocumentActions from '@/modules/perfil/components/DossierDocumentActions.vue';
+import DossierPdfViewer from '@/modules/perfil/components/DossierPdfViewer.vue';
+import AdminButton from '@/modules/admin/components/ui/AdminButton.vue';
+import { mapDossierStatusToSeraType } from '@/modules/perfil/utils/dossierStatus';
+import { Modal } from '@/shared/utils/modalController';
+import DossierService from '@/modules/dossier/services/DossierService';
 
-const modal = ref(null);
+const modal       = ref(null);
 const deleteModal = ref(null);
-const pdfPreviewModal = ref(null);
-const fileInput = ref(null);
-const selectedTituloId = ref(null);
-const dossier = ref(null);
-const pendingEdit = ref(null);
+const dossier     = ref(null);
+const pendingEdit   = ref(null);
 const pendingDelete = ref(null);
 
-let modalInstance = null;
+let modalInstance  = null;
 let deleteInstance = null;
 
-const titulosTecnicos = computed(() => {
-    if (!dossier.value || !dossier.value.titulos) return [];
-    return dossier.value.titulos.filter(t => t.nivel === 'Técnico' || t.nivel === 'Tecnólogo');
-});
+// ── PDF viewer ─────────────────────────────────────────
+const showPdfViewer = ref(false);
+const pdfViewer     = ref({ tipo: '', recordId: '', itemName: '', hasDocument: false });
 
-const titulosGrado = computed(() => {
-    if (!dossier.value || !dossier.value.titulos) return [];
-    return dossier.value.titulos.filter(t => t.nivel === 'Grado');
-});
-
-const titulosCuartoNivel = computed(() => {
-    if (!dossier.value || !dossier.value.titulos) return [];
-    const quartoLevels = ['Maestría', 'Maestría Tecnológica', 'Diplomado', 'Doctorado', 'Posdoctorado'];
-    return dossier.value.titulos.filter(t => quartoLevels.includes(t.nivel));
-});
-
-const loadDossier = async () => {
-    try {
-        const data = await DossierService.getDossier();
-        if (data.success) dossier.value = data.data;
-    } catch (error) {
-        console.error('Error al cargar dossier:', error);
-    }
+const openPdfViewer = (item, tipo, itemName) => {
+  pdfViewer.value = { tipo, recordId: item._id, itemName: itemName || 'Documento', hasDocument: Boolean(item.url_documento) };
+  showPdfViewer.value = true;
 };
+const onPdfViewerUpdated = () => { showPdfViewer.value = false; loadDossier(); };
+const onPdfViewerDeleted = () => { showPdfViewer.value = false; loadDossier(); };
+
+// ── Computed ───────────────────────────────────────────
+const titulosTecnicos = computed(() => {
+  if (!dossier.value?.titulos) return [];
+  return dossier.value.titulos.filter(t => t.nivel === 'Técnico' || t.nivel === 'Tecnólogo');
+});
+const titulosGrado = computed(() => {
+  if (!dossier.value?.titulos) return [];
+  return dossier.value.titulos.filter(t => t.nivel === 'Grado');
+});
+const titulosCuartoNivel = computed(() => {
+  if (!dossier.value?.titulos) return [];
+  const niveles = ['Maestría', 'Maestría Tecnológica', 'Diplomado', 'Doctorado', 'Posdoctorado'];
+  return dossier.value.titulos.filter(t => niveles.includes(t.nivel));
+});
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
+// ── CRUD ───────────────────────────────────────────────
+const loadDossier = async () => {
+  try {
+    const data = await DossierService.getDossier();
+    if (data.success) dossier.value = data.data;
+  } catch (error) { console.error('Error al cargar dossier:', error); }
+};
+
 const openModal = () => {
-    pendingEdit.value = null;
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
-    modalInstance.show();
+  pendingEdit.value = null;
+  if (!modal.value) return;
+  modalInstance = Modal.getOrCreateInstance(modal.value);
+  modalInstance.show();
 };
 
 const editarTitulo = (titulo) => {
-    pendingEdit.value = { ...titulo };
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
-    modalInstance.show();
+  pendingEdit.value = { ...titulo };
+  if (!modal.value) return;
+  modalInstance = Modal.getOrCreateInstance(modal.value);
+  modalInstance.show();
 };
 
-const handleTituloUpdated = () => {
-    pendingEdit.value = null;
-    loadDossier();
-};
+const handleTituloUpdated = () => { pendingEdit.value = null; loadDossier(); };
 
 const openDelete = (titulo) => {
-    pendingDelete.value = titulo;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-    deleteInstance.show();
+  pendingDelete.value = titulo;
+  if (!deleteModal.value) return;
+  deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
+  deleteInstance.show();
 };
 
 const confirmDelete = async () => {
-    if (!pendingDelete.value) return;
-    try {
-        await DossierService.deleteTitulo(pendingDelete.value._id);
-        await loadDossier();
-        deleteInstance?.hide();
-    } catch (error) {
-        console.error('Error al eliminar:', error);
-    }
+  if (!pendingDelete.value) return;
+  try {
+    await DossierService.deleteTitulo(pendingDelete.value._id);
+    await loadDossier();
+    deleteInstance?.hide();
+  } catch (error) { console.error('Error al eliminar:', error); }
 };
 
-const eliminarSoloPDF = async (titulo) => {
-    if (!confirm('¿Estás seguro de eliminar solo el documento PDF?')) return;
-    try {
-        await DossierService.deleteDocument("titulo", titulo._id);
-        await loadDossier();
-    } catch (error) {
-        console.error('Error al eliminar PDF:', error);
-    }
-};
-
-const getDocumentBlob = async (tipoDocumento, registroId) => {
-    const response = await DossierService.downloadDocument(tipoDocumento, registroId);
-    return new Blob([response.data], { type: "application/pdf" });
-};
-
-const previewDocument = async (titulo) => {
-    try {
-        const blob = await getDocumentBlob("titulo", titulo._id);
-        pdfPreviewModal.value?.openFromBlob(blob);
-    } catch (error) {
-        console.error("Error al previsualizar:", error);
-    }
-};
-
-const openDocument = async (titulo) => {
-    try {
-        const blob = await getDocumentBlob("titulo", titulo._id);
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `${titulo.titulo || 'titulo'}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch (error) {
-        console.error('Error al descargar:', error);
-    }
-};
-
-const triggerFileUpload = (tituloId) => {
-    selectedTituloId.value = tituloId;
-    fileInput.value.click();
-};
-
-const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    try {
-        await DossierService.uploadTituloDocument(selectedTituloId.value, file);
-        await loadDossier();
-    } catch (error) {
-        console.error('Error al subir:', error);
-    }
-    event.target.value = '';
-};
-
-onMounted(() => {
-    loadDossier();
-    window.addEventListener('dossier-updated', loadDossier);
-});
-
+onMounted(() => { loadDossier(); window.addEventListener('dossier-updated', loadDossier); });
 onBeforeUnmount(() => {
-    if (modalInstance) {
-        modalInstance.hide();
-        modalInstance.dispose();
-    }
-    if (deleteInstance) {
-        deleteInstance.hide();
-        deleteInstance.dispose();
-    }
-    window.removeEventListener('dossier-updated', loadDossier);
+  modalInstance?.hide(); modalInstance?.dispose();
+  deleteInstance?.hide(); deleteInstance?.dispose();
+  window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
