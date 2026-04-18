@@ -982,8 +982,11 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Secuencia del flujo</h3>
+            <div class="rounded-[1.8rem] border border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+              <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Secuencia del flujo</h3>
+                <AppTag variant="muted">Vista operativa</AppTag>
+              </div>
               <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-slate-500">
                 Este entregable todavía no tiene una secuencia de llenado visible.
               </div>
@@ -991,7 +994,7 @@
                 <div
                   v-for="step in fillWorkflowState.subject.workflow.fill_steps"
                   :key="`fill-step-combined-${step.id}-${step.request_id || 'na'}`"
-                  class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 shadow-sm transition"
+                  class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
                   :class="getFillStepCardClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"
                 >
                   <div class="absolute inset-x-0 top-0 h-3" :class="getFillStepAccentClass(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)"></div>
@@ -1119,7 +1122,7 @@
               </div>
             </section>
 
-            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
+            <section class="rounded-[1.8rem] border border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
               <div class="flex items-center justify-between gap-2">
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
                 <AppTag variant="muted">
@@ -1133,7 +1136,7 @@
                 <div
                   v-for="step in signatureFlowState.snapshot.signatureSteps"
                   :key="`combined-signature-step-${step.id || step.step_order}`"
-                  class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 shadow-sm transition"
+                  class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
                   :class="getSignatureStepCardClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"
                 >
                   <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
@@ -1449,7 +1452,7 @@
             </section>
           </div>
 
-          <section class="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-3">
+          <section class="rounded-[1.8rem] border border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 flex flex-col gap-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
             <div class="flex items-center justify-between gap-2">
               <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Pasos del flujo</h3>
               <AppTag variant="muted">
@@ -1463,7 +1466,7 @@
               <div
                 v-for="step in signatureFlowState.snapshot.signatureSteps"
                 :key="`signature-step-${step.id || step.step_order}`"
-                class="relative overflow-hidden rounded-[1.6rem] border bg-white p-4 shadow-sm transition"
+                class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
                 :class="getSignatureStepCardClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"
               >
                 <div class="absolute inset-x-0 top-0 h-3" :class="getSignatureStepAccentClass(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))"></div>
@@ -2381,6 +2384,40 @@ const getSignatureStepStatusVariant = (statusCode) => {
   }
 };
 
+const getSignatureStepCardClass = (step, requests = [], currentStepOrder = null) => {
+  const statusCode = getSignatureStepStatusCode(step, requests, currentStepOrder);
+  switch (statusCode) {
+    case 'completed':
+      return 'border-emerald-200 bg-linear-to-br from-emerald-50/80 via-white to-emerald-100/40';
+    case 'current':
+      return 'border-sky-200 bg-linear-to-br from-sky-50/80 via-white to-sky-100/50';
+    case 'rejected':
+      return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
+    case 'pending':
+    case 'unresolved':
+      return 'border-amber-200 bg-linear-to-br from-amber-50/80 via-white to-amber-100/35';
+    default:
+      return 'border-slate-200 bg-linear-to-br from-slate-50/90 via-white to-slate-100/60';
+  }
+};
+
+const getSignatureStepAccentClass = (step, requests = [], currentStepOrder = null) => {
+  const statusCode = getSignatureStepStatusCode(step, requests, currentStepOrder);
+  switch (statusCode) {
+    case 'completed':
+      return 'bg-linear-to-r from-emerald-300 via-emerald-400 to-green-300';
+    case 'current':
+      return 'bg-linear-to-r from-sky-300 via-sky-400 to-cyan-300';
+    case 'rejected':
+      return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
+    case 'pending':
+    case 'unresolved':
+      return 'bg-linear-to-r from-amber-300 via-amber-400 to-orange-300';
+    default:
+      return 'bg-linear-to-r from-slate-200 via-slate-300 to-slate-200';
+  }
+};
+
 const formatTriggerLabel = (trigger) => {
   if (!trigger) return 'Disparador';
   if (trigger.trigger_mode === 'automatic_by_term_type') {
@@ -3186,12 +3223,24 @@ const formatWorkflowDateTime = (value) => {
 };
 const getFillStepCardClass = (step, currentStepOrder) => {
   if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) {
-    return 'border-sky-200 bg-sky-50/40';
+    return 'border-sky-200 bg-linear-to-br from-sky-50/80 via-white to-sky-100/50';
   }
   const code = String(step?.request_status || '').trim().toLowerCase();
-  if (code === 'approved') return 'border-emerald-200 bg-emerald-50/40';
-  if (code === 'rejected' || code === 'returned') return 'border-amber-200 bg-amber-50/40';
-  return 'border-slate-200 bg-slate-50/40';
+  if (code === 'approved') return 'border-emerald-200 bg-linear-to-br from-emerald-50/80 via-white to-emerald-100/40';
+  if (code === 'rejected') return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
+  if (code === 'returned') return 'border-amber-200 bg-linear-to-br from-amber-50/80 via-white to-amber-100/40';
+  return 'border-slate-200 bg-linear-to-br from-slate-50/90 via-white to-slate-100/60';
+};
+
+const getFillStepAccentClass = (step, currentStepOrder) => {
+  if (Number(currentStepOrder || 0) === Number(step?.step_order || 0)) {
+    return 'bg-linear-to-r from-sky-300 via-sky-400 to-cyan-300';
+  }
+  const code = String(step?.request_status || '').trim().toLowerCase();
+  if (code === 'approved') return 'bg-linear-to-r from-emerald-300 via-emerald-400 to-green-300';
+  if (code === 'rejected') return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
+  if (code === 'returned') return 'bg-linear-to-r from-amber-300 via-amber-400 to-orange-300';
+  return 'bg-linear-to-r from-slate-200 via-slate-300 to-slate-200';
 };
 const getFillStepResolverLabel = (step) => {
   const bits = [];
