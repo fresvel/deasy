@@ -2129,9 +2129,53 @@
       assignSignerModalInstance?.hide();
     };
 
-    const getAuthHeaders = () => {
+  const getAuthHeaders = () => {
       const token = localStorage.getItem('token');
       return token ? { Authorization: `Bearer ${token}` } : {};
+    };
+
+    const reconcileEmbeddedWorkflowSignAfterError = async () => {
+      if (!isEmbeddedWorkflowMode.value) return null;
+
+      const documentVersionId = Number(workflowSignContext.value?.documentVersionId || 0);
+      const signatureRequestId = Number(workflowSignContext.value?.signatureRequestId || 0);
+      if (!documentVersionId || !signatureRequestId) {
+        return null;
+      }
+
+      try {
+        const response = await fetch(API_ROUTES.SIGN_DOCUMENT_SIGNATURE_FLOW(documentVersionId), {
+          headers: getAuthHeaders()
+        });
+        const snapshot = await readResponsePayload(response);
+        if (!response.ok) {
+          return null;
+        }
+
+        const request = Array.isArray(snapshot?.signatureRequests)
+          ? snapshot.signatureRequests.find((item) => Number(item?.id || 0) === signatureRequestId)
+          : null;
+
+        const requestStatusCode = String(request?.requestStatusCode || '').trim().toLowerCase();
+        const completed =
+          requestStatusCode === 'completado'
+          || requestStatusCode === 'completed'
+          || Boolean(request?.respondedAt);
+
+        if (!completed) {
+          return null;
+        }
+
+        return {
+          documentVersionId,
+          signatureRequestId,
+          signedPath: '',
+          workflow: snapshot,
+          message: 'La firma del flujo se registró correctamente.'
+        };
+      } catch {
+        return null;
+      }
     };
 
     const loadCertificates = async () => {
@@ -2466,6 +2510,15 @@
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
         signResultModalInstance.show();
       } catch (error) {
+        const reconciledWorkflow = await reconcileEmbeddedWorkflowSignAfterError();
+        if (reconciledWorkflow) {
+          signError.value = '';
+          signSuccess.value = true;
+          signResultMessage.value = reconciledWorkflow.message;
+          signCertModalInstance?.hide();
+          emit('workflow-signed', reconciledWorkflow);
+          return;
+        }
         signSuccess.value = false;
         signError.value = resolveUiErrorMessage(error, 'No se pudo firmar el documento.');
         signResultMessage.value = signError.value;

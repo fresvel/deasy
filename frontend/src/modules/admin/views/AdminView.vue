@@ -3,45 +3,51 @@
     <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView" />
 
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
-      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :container-class="'flex flex-col gap-4 p-4 h-full xl:min-h-[calc(100vh-4rem)]'" @close-mobile="vmenu = false">
-          
-          <div class="bg-white/5 rounded-2xl p-2 border border-white/10 backdrop-blur-sm shrink-0">
-            <button 
-              type="button" 
-              @click="goAdminHome" 
-              class="flex items-center w-full px-3 py-2 text-sm font-semibold rounded-xl transition-all duration-200 gap-2"
-              :class="isHomeActive ? 'bg-white text-sky-800 shadow-sm' : 'text-white/90 hover:bg-white/10 hover:text-white'"
-            >
-              <IconHome class="w-5 h-5 shrink-0" />
-              <span>Inicio</span>
-            </button>
-          </div>
+      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" @close-mobile="vmenu = false">
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
-            <div v-for="group in groupedTables" :key="group.key" class="bg-white/5 rounded-2xl p-2 pb-1 border border-white/10 mb-1 backdrop-blur-sm">
+            <div class="deasy-nav-shell">
+              <div class="deasy-nav-section">
+                <button 
+                  type="button" 
+                  @click="goAdminHome" 
+                  class="deasy-nav-item"
+                  :class="isHomeActive ? 'deasy-nav-item--active' : ''"
+                >
+                  <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                    <IconHome class="h-4.5 w-4.5 shrink-0" />
+                  </span>
+                  <span>Inicio</span>
+                </button>
+              </div>
+
+            <div v-for="group in groupedTables" :key="group.key" class="deasy-nav-section">
               <button
-                class="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-white/90 hover:text-white transition-colors"
+                class="deasy-nav-group-title"
+                :class="{ 'deasy-nav-item--subtle-active': openCategories[group.label] }"
                 type="button"
                 @click="onGroupTitleClick(group)"
               >
-                <div class="flex items-center gap-2">
-                  <component :is="resolveIcon(iconForGroup(group))" class="w-5 h-5 shrink-0" />
+                <div class="flex items-center gap-3.5">
+                  <component :is="resolveIcon(iconForGroup(group))" class="w-6 h-6 shrink-0 opacity-90" />
                   <span>{{ group.label }}</span>
                 </div>
                 <IconChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openCategories[group.label] }" />
               </button>
 
-              <div v-show="openCategories[group.label]" class="flex flex-col gap-1 mt-2 pl-2">
+              <div v-show="openCategories[group.label]" class="deasy-nav-tree">
                 <template v-if="isAcademiaGroup(group)">
                   <button
                     v-for="item in academyMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isAcademyItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[isAcademyItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openAcademyItem(item)"
                   >
-                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ item.label }}</span>
                   </button>
                 </template>
@@ -49,12 +55,14 @@
                   <button
                     v-for="item in gestionMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isGestionItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[isGestionItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openGestionItem(item)"
                   >
-                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ item.label }}</span>
                   </button>
                 </template>
@@ -62,12 +70,14 @@
                   <button
                     v-for="item in usersMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isUsersItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[isUsersItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openUsersItem(item)"
                   >
-                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ item.label }}</span>
                   </button>
                 </template>
@@ -75,12 +85,14 @@
                   <button
                     v-for="item in contractsMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isContractsItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[isContractsItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openContractsItem(item)"
                   >
-                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ item.label }}</span>
                   </button>
                 </template>
@@ -88,12 +100,14 @@
                   <button
                     v-for="item in securityMenuItems"
                     :key="item.key"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[isSecurityItemActive(item) ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[isSecurityItemActive(item) ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="openSecurityItem(item)"
                   >
-                    <component :is="resolveIcon(item.icon)" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ item.label }}</span>
                   </button>
                 </template>
@@ -101,30 +115,35 @@
                   <button
                     v-for="table in group.mainTables"
                     :key="table.table"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[selectedTable?.table === table.table ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="selectTable(table)"
                   >
-                    <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(iconForTable(table.table))" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ table.label }}</span>
                   </button>
-                  <div v-if="group.supportTables.length" class="text-[0.65rem] font-bold text-white/40 uppercase tracking-widest pl-3 mt-3 mb-1">
+                  <div v-if="group.supportTables.length" class="pl-4 pt-2 pb-1 text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">
                     Relaciones y soporte
                   </div>
                   <button
                     v-for="table in group.supportTables"
                     :key="table.table"
-                    class="px-3 py-2 text-sm font-medium rounded-xl text-left transition-all duration-200 flex items-center gap-2"
-                    :class="[selectedTable?.table === table.table ? 'bg-white text-sky-800 shadow-sm' : 'text-white/80 hover:bg-white/10 hover:text-white']"
+                    class="deasy-nav-item"
+                    :class="[selectedTable?.table === table.table ? 'deasy-nav-item--active' : '']"
                     type="button"
                     @click="selectTable(table)"
                   >
-                    <component :is="resolveIcon(iconForTable(table.table))" class="w-4 h-4 shrink-0" />
+                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                      <component :is="resolveIcon(iconForTable(table.table))" class="h-4.5 w-4.5 shrink-0" />
+                    </span>
                     <span>{{ table.label }}</span>
                   </button>
                 </template>
               </div>
+            </div>
             </div>
           </div>
       </app-workspace-sidebar>

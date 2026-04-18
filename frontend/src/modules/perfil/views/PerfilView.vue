@@ -19,55 +19,57 @@
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
       <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :signature-marker="signatureMarker" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
         <div class="flex flex-col">
-            <div class="text-sm font-semibold mt-3 mb-2 opacity-85 text-white px-2">
+            <div class="deasy-nav-meta mt-3 mb-2">
                 Secciones
             </div>
 
-            <div class="flex flex-col gap-1 mt-2">
-              <div class="flex flex-col mb-1">
+            <div class="deasy-nav-group mt-2">
+              <div class="deasy-nav-shell">
+              <div class="deasy-nav-section">
                 <button
-                  class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
-                  :class="{ 'bg-white/10 font-bold': showCoordinacion }"
+                  class="deasy-nav-group-title"
+                  :class="{ 'deasy-nav-item--subtle-active': showCoordinacion }"
                   type="button"
                   @click="showCoordinacion = !showCoordinacion"
                 >
-                    <span class="flex items-center gap-3 text-sm font-semibold">
-                      <IconId class="w-5 h-5 shrink-0 opacity-90" />
+                    <span class="flex items-center gap-3.5 text-base font-semibold">
+                      <IconId class="w-6 h-6 shrink-0 opacity-90" />
                       <span class="truncate">Coordinación</span>
                     </span>
                 </button>
 
-                <div v-show="showCoordinacion" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
+                <div v-show="showCoordinacion" class="deasy-nav-tree">
                     <button v-for="(item, index) of mainmenu" :key="index"
-                      class="w-full text-left bg-transparent border-none py-2 px-3 rounded-lg text-sm transition-all focus:outline-none flex flex-row items-center justify-between hover:bg-white/10 hover:text-white"
-                      :class="item.active ? 'bg-white text-sky-700 font-bold shadow-sm shadow-sky-900/20' : 'text-white/80'"
+                      class="deasy-nav-item"
+                      :class="item.active ? 'deasy-nav-item--active' : ''"
                       type="button"
                       @click="onmenuClick(item.label)">
-                      <span class="flex items-center gap-2 truncate">
-                        <component :is="getMenuIcon(item.icon)" class="w-4 h-4 shrink-0" />
-                        <span class="truncate">{{ item.label }}</span>
+                      <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
+                        <component :is="getMenuIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
                       </span>
-                      <span v-if="item.key" class="bg-sky-500/20 text-white text-xs py-0.5 px-2 rounded-full font-bold ml-2 shrink-0">
+                      <span class="deasy-nav-item__label">{{ item.label }}</span>
+                      <span v-if="item.key" class="ml-auto inline-flex items-center rounded-lg border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
                         {{ dossierCounts[item.key] ?? 0 }}
                       </span>
                     </button>
                 </div>
               </div>
 
-              <div class="flex flex-col mb-1">
+              <div class="deasy-nav-section">
                 <button
-                  class="w-full text-white bg-transparent border-none py-3 px-2 flex items-center justify-between text-left rounded-xl transition-colors hover:bg-white/10"
-                  :class="{ 'bg-white/10 font-bold': showDocencia }"
+                  class="deasy-nav-group-title"
+                  :class="{ 'deasy-nav-item--subtle-active': showDocencia }"
                   type="button"
                   @click="showDocencia = !showDocencia"
                 >
-                  <span class="flex items-center gap-3 text-sm font-semibold">
-                    <IconCertificate class="w-5 h-5 shrink-0 opacity-90" />
+                  <span class="flex items-center gap-3.5 text-base font-semibold">
+                    <IconCertificate class="w-6 h-6 shrink-0 opacity-90" />
                     <span class="truncate">Docencia</span>
                   </span>
                 </button>
-                <div v-show="showDocencia" class="pl-4 py-2 ml-2 border-l border-white/20 mt-1 flex flex-col gap-1">
+                <div v-show="showDocencia" class="deasy-nav-tree">
                 </div>
+              </div>
               </div>
             </div>
         </div>

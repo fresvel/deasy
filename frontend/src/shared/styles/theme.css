@@ -903,11 +903,32 @@ a:hover {
 }
 
 .deasy-dialog-root .deasy-dialog-header {
-  background: linear-gradient(90deg,
-      rgba(var(--brand-accent-rgb), 0.22) 0%,
-      rgba(var(--color-puce-light-rgb), 0.42) 100%);
-  border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.24);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  background:
+    linear-gradient(0deg, rgba(226, 242, 250, 0.25), rgba(226, 242, 250, 0.25)),
+    linear-gradient(120deg,
+      #6b8a97 0%,
+      #4c6f7d 48%,
+      #33515d 100%);
+  border-bottom: 1px solid rgba(19, 23, 35, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.deasy-dialog-root .deasy-dialog-header .deasy-dialog-title,
+.deasy-dialog-root .deasy-dialog-title {
+  color: #1f3342;
+}
+
+.deasy-dialog-root .deasy-dialog-header button {
+  background: rgba(255, 255, 255, 0.38);
+  color: #28465d;
+  border: 1px solid rgba(84, 120, 148, 0.16);
+}
+
+.deasy-dialog-root .deasy-dialog-header button:hover {
+  background: rgba(255, 255, 255, 0.52);
+  color: #1f3342;
 }
 
 .process-dialog-content,
@@ -924,7 +945,7 @@ a:hover {
 .process-dialog-content .deasy-dialog-header,
 .process-dialog-content .deasy-dialog-header .deasy-dialog-title {
   font-weight: var(--font-weight-semibold);
-  color: var(--brand-ink);
+  color: #1f3342;
 }
 
 .process-dialog-content .deasy-dialog-body,

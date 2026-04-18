@@ -9,27 +9,44 @@
     <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
       <app-workspace-sidebar :show="showMenu" :photo="userPhoto" :username="userFullName" @close-mobile="showMenu = false">
         <div class="deasy-nav-group">
-          <div class="px-2 mt-3 mb-2" v-if="unitGroups.length">
+          <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="unitGroups.length">
             <label class="flex flex-col gap-1.5 relative">
               <span class="text-xs font-bold uppercase tracking-wider text-white/50">Cargos asignados</span>
               <div class="relative">
-                <select
-                  :value="selectedGroupId || ''"
-                  @change="(e) => { const v = e.target.value; if (!v) selectConsolidated(); else selectGroup(unitGroups.find(g => String(g.id) === String(v))); }"
-                  class="block w-full pl-3 pr-8 py-2.5 bg-white/[0.08] border border-white/10 rounded-[10px] text-white focus:ring-2 focus:ring-[#4a8cff]/20 focus:border-[#4a8cff]/30 focus:bg-[#0b2028] transition-all outline-none text-sm font-semibold appearance-none cursor-pointer"
+                <button
+                  type="button"
+                  class="plain deasy-nav-group-title deasy-nav-item--subtle-active deasy-nav-select-trigger"
+                  :aria-expanded="showGroupDropdown ? 'true' : 'false'"
+                  aria-label="Seleccionar grupo de cargos"
+                  @click="toggleGroupDropdown"
                 >
-                  <option value="" class="text-slate-900 font-semibold bg-white">Consolidado</option>
-                  <option
+                  <span class="flex items-center gap-3.5 text-base font-semibold">
+                    <IconIdBadge class="w-6 h-6 shrink-0 opacity-90" />
+                    <span class="truncate">{{ selectedGroupLabel }}</span>
+                  </span>
+                  <span class="inline-flex items-center text-[#486178]">
+                    <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="showGroupDropdown ? 'rotate-180' : ''" />
+                  </span>
+                </button>
+                <div v-if="showGroupDropdown" class="deasy-nav-select-panel">
+                  <button
+                    type="button"
+                    class="deasy-nav-select-option"
+                    :class="!selectedGroupId ? 'deasy-nav-select-option--active' : ''"
+                    @click="selectGroupOption(null)"
+                  >
+                    <span class="truncate">Consolidado</span>
+                  </button>
+                  <button
                     v-for="group in unitGroups"
                     :key="group.id"
-                    :value="group.id"
-                    class="text-slate-900 font-semibold bg-white"
+                    type="button"
+                    class="deasy-nav-select-option"
+                    :class="String(selectedGroupId) === String(group.id) ? 'deasy-nav-select-option--active' : ''"
+                    @click="selectGroupOption(group)"
                   >
-                    {{ group.label || group.name }}
-                  </option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/70">
-                  <IconChevronDown class="w-4 h-4" />
+                    <span class="truncate">{{ group.label || group.name }}</span>
+                  </button>
                 </div>
               </div>
             </label>
@@ -383,16 +400,16 @@
                     <article
                       v-for="deliverable in filteredProcessDeliverables"
                       :key="deliverable.key"
-                      class="relative rounded-[1.5rem] border border-sky-100 bg-white p-5 shadow-[0_18px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition-colors hover:border-sky-200 hover:shadow-[0_22px_48px_rgba(14,165,233,0.12)]"
+                      class="relative overflow-hidden rounded-[1.8rem] border border-[#d6e4f2] bg-[linear-gradient(180deg,#f5f9fe_0%,#eef5fc_100%)] p-5 shadow-[0_20px_42px_rgba(6,12,24,0.14)] ring-1 ring-white/70 transition-all duration-200 hover:border-[#bfd7ee] hover:shadow-[0_24px_52px_rgba(70,110,150,0.16)]"
                     >
                       <div class="flex flex-col gap-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                           <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center gap-1.5 text-sm font-semibold shrink-0" :class="deliverable.item.document_id ? 'text-sky-700' : 'text-slate-400'">
+                            <span class="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold" :class="deliverable.item.document_id ? 'text-[#21517a]' : 'text-slate-400'">
                               <IconSignature v-if="deliverable.item.document_id" class="h-4 w-4" />
                               {{ deliverable.item.document_id ? (deliverable.item.document_version ? `Doc v${deliverable.item.document_version}` : 'Doc creado') : 'Sin doc' }}
                             </span>
-                            <strong class="text-base font-bold leading-tight text-slate-800">{{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}</strong>
+                            <strong class="text-base font-semibold leading-tight text-slate-800">{{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}</strong>
                           </div>
                           <div class="ml-auto flex flex-none items-center justify-end gap-2">
                             <div class="flex min-w-0 flex-nowrap items-center justify-end gap-2 overflow-x-auto whitespace-nowrap">
@@ -407,7 +424,7 @@
                             </div>
                             <button
                               type="button"
-                              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600"
+                              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#d7e4f1] bg-white/80 text-[#486178] shadow-[0_8px_18px_rgba(15,23,42,0.07)] transition hover:border-[#bfd7ee] hover:bg-white hover:text-[#21517a]"
                               :aria-expanded="isDeliverableExpanded(deliverable.key) ? 'true' : 'false'"
                               :aria-label="isDeliverableExpanded(deliverable.key) ? 'Contraer entregable' : 'Expandir entregable'"
                               @click="toggleDeliverableExpanded(deliverable.key)"
@@ -422,19 +439,19 @@
 
                         <div v-show="isDeliverableExpanded(deliverable.key)" class="contents">
                           <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                               <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</p>
                               <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(deliverable.task, deliverable.item) }}</p>
                             </div>
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                               <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Unidad</p>
                               <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableUnitLabel(deliverable.item) }}</p>
                             </div>
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                               <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</p>
                               <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabel(deliverable.task) }}</p>
                             </div>
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                               <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Fechas</p>
                               <p class="m-0 mt-1 text-sm font-semibold leading-6 text-slate-700">
                                 {{ formatDate(deliverable.task.start_date) }}<span v-if="deliverable.task.end_date"> - {{ formatDate(deliverable.task.end_date) }}</span>
@@ -442,7 +459,7 @@
                             </div>
                           </div>
 
-                          <div class="relative mt-4 flex flex-col gap-4 border-t border-slate-100 pt-4 xl:flex-row xl:items-start xl:justify-between before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-slate-100 before:shadow-[0_-10px_24px_rgba(15,23,42,0.12)]">
+                          <div class="relative mt-4 flex flex-col gap-4 border-t border-[#dbe8f4] pt-4 xl:flex-row xl:items-start xl:justify-between before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-[#dbe8f4] before:shadow-[0_-10px_22px_rgba(70,110,150,0.10)]">
                             <div
                               class="min-w-0 xl:shrink-0"
                               :class="shouldShowUploadDeliverable(deliverable.item) ? 'xl:w-[18rem]' : 'xl:w-[9rem]'"
@@ -471,10 +488,7 @@
                                     </span>
                                   </span>
                                 </button>
-                                <div
-                                  v-else-if="shouldShowUploadDeliverable(deliverable.item)"
-                                  class="w-full"
-                                >
+                                <div v-else-if="shouldShowUploadDeliverable(deliverable.item)" class="w-full">
                                   <PdfDropField
                                     :input-id="`deliverable-upload-${deliverable.item.id}`"
                                     variant="compact"
@@ -504,6 +518,24 @@
                                   <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-52 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
                                     <span class="block text-sm font-bold text-slate-800">Firmar</span>
                                     <span class="mt-1 block text-xs font-medium text-slate-500">Abre el firmador sobre el PDF listo.</span>
+                                  </span>
+                                </AppButton>
+                                <AppButton
+                                  v-else-if="shouldShowOpenWorkspacePrimary(deliverable.item)"
+                                  variant="plain"
+                                  class-name="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-2.5 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
+                                  type="button"
+                                  @click="openDeliverableWorkspaceModal(deliverable.item)"
+                                >
+                                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
+                                    <IconChecklist class="h-6 w-6" />
+                                  </div>
+                                  <div class="flex min-w-0 flex-col">
+                                    <span class="text-sm font-bold text-slate-800">Abrir</span>
+                                  </div>
+                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
+                                    <span class="block text-sm font-bold text-slate-800">Abrir</span>
+                                    <span class="mt-1 block text-xs font-medium text-slate-500">Gestiona llenado y revisa el flujo de firmas.</span>
                                   </span>
                                 </AppButton>
                             </div>
@@ -558,7 +590,7 @@
                                   class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
                                   @click="openDeliverableWorkspaceModal(deliverable.item)"
                                 >
-                                  <IconCircleCheck class="h-6 w-6" />
+                                  <IconChecklist class="h-6 w-6" />
                                   <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
                                     <span class="block text-sm font-bold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Procesando...' : 'Abrir' }}</span>
                                     <span class="mt-1 block text-xs font-medium text-slate-500">Gestiona llenado y revisa el flujo de firmas.</span>
@@ -1716,6 +1748,7 @@ import {
   IconMinus,
   IconPlayerPlayFilled,
   IconPlus,
+  IconChecklist,
   IconSearch
 } from '@tabler/icons-vue';
 
@@ -1753,6 +1786,8 @@ const unitGroups = ref([]);
 const consolidatedCargos = ref([]);
 const menuCargos = ref([]);
 const selectedGroupId = ref(null);
+const showGroupDropdown = ref(false);
+const groupDropdownRef = ref(null);
 const selectedProcessKey = ref(null);
 const selectedProcessContext = ref(null);
 const selectedProcessPanel = ref(null);
@@ -1853,6 +1888,12 @@ const menuContextLabel = computed(() => {
   return 'Cargos consolidados';
 });
 
+const selectedGroupLabel = computed(() => {
+  if (!selectedGroupId.value) return 'Consolidado';
+  const group = unitGroups.value.find((item) => String(item.id) === String(selectedGroupId.value));
+  return group?.label || group?.name || 'Área seleccionada';
+});
+
 const deliverableUploadSubject = computed(() => getDeliverableSubject(pendingDeliverableUploadTarget.value));
 const deliverableUploadModalTitle = computed(() => {
   const subject = deliverableUploadSubject.value;
@@ -1946,6 +1987,7 @@ const applyMenuCargos = (cargos) => {
 const selectConsolidated = () => {
   isSigningView.value = false;
   selectedGroupId.value = null;
+  showGroupDropdown.value = false;
   applyMenuCargos(consolidatedCargos.value);
 };
 
@@ -1984,10 +2026,30 @@ const buildGroupCargos = (group) => {
 const selectGroup = (group) => {
   isSigningView.value = false;
   selectedGroupId.value = group?.id ?? null;
+  showGroupDropdown.value = false;
   applyMenuCargos(buildGroupCargos(group));
   if (!showMenu.value) {
     showMenu.value = true;
   }
+};
+
+const toggleGroupDropdown = () => {
+  showGroupDropdown.value = !showGroupDropdown.value;
+};
+
+const selectGroupOption = (group) => {
+  if (!group) {
+    selectConsolidated();
+    return;
+  }
+  selectGroup(group);
+};
+
+const handleGroupDropdownOutsideClick = (event) => {
+  if (!showGroupDropdown.value) return;
+  if (!groupDropdownRef.value) return;
+  if (groupDropdownRef.value.contains(event.target)) return;
+  showGroupDropdown.value = false;
 };
 
 const toggleCargo = (cargo) => {
@@ -2635,6 +2697,7 @@ onMounted(async () => {
   
   if (isClient) {
     window.addEventListener('resize', handleResize);
+    document.addEventListener('click', handleGroupDropdownOutsideClick);
   }
 
   if (documentSignModal.value?.el) {
@@ -2721,6 +2784,7 @@ watch(
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener('resize', handleResize);
+    document.removeEventListener('click', handleGroupDropdownOutsideClick);
   }
   if (deliverablePreviewUrl.value) {
     URL.revokeObjectURL(deliverablePreviewUrl.value);
@@ -3089,6 +3153,13 @@ const shouldShowSign = (payload) => {
   const subject = getDeliverableSubject(payload);
   return Boolean(subject.actions?.can_sign && subject.preloadPdfPath);
 };
+
+const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
+  !shouldShowStartDeliverable(payload)
+  && !shouldShowUploadDeliverable(payload)
+  && !shouldShowSign(payload)
+  && (shouldShowManageFill(payload) || shouldShowSignatureFlow(payload))
+);
 
 const shouldShowPdfRequiredHint = (payload) => {
   const subject = getDeliverableSubject(payload);

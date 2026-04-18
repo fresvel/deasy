@@ -40,7 +40,7 @@ defineProps({
   },
   containerClass: {
     type: [String, Array, Object],
-    default: "flex flex-col"
+    default: "flex flex-col gap-0 p-[0.0625rem] h-full xl:min-h-[calc(100vh-4rem)]"
   }
 });
 

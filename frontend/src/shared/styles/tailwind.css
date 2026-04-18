@@ -465,6 +465,38 @@
         @apply px-2 text-sm font-semibold text-white/88;
     }
 
+    .deasy-nav-select {
+        @apply block w-full appearance-none rounded-[1rem] border border-[#d7e4f1] bg-white/80 py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.07)] outline-none transition-all;
+    }
+
+    .deasy-nav-select:focus {
+        @apply border-[#bfd7ee] bg-white ring-2 ring-[#78abd6]/20;
+    }
+
+    .deasy-nav-select-icon {
+        @apply pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#486178];
+    }
+
+    .deasy-nav-select-trigger {
+        @apply flex w-full items-center justify-between gap-3 rounded-[1rem] border border-[#d7e4f1] bg-white/80 px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.07)] transition-all;
+    }
+
+    .deasy-nav-select-trigger:focus-visible {
+        @apply border-[#bfd7ee] bg-white outline-none ring-2 ring-[#78abd6]/20;
+    }
+
+    .deasy-nav-select-panel {
+        @apply absolute left-0 right-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-[1.2rem] border border-[#d7e4f1] bg-[linear-gradient(180deg,#f5f9fe_0%,#eef5fc_100%)] p-2 shadow-[0_18px_34px_rgba(6,12,24,0.18)] ring-1 ring-white/70;
+    }
+
+    .deasy-nav-select-option {
+        @apply flex w-full items-center justify-between gap-3 rounded-[1rem] px-3.5 py-3 text-left text-sm font-semibold text-slate-700 transition-all hover:bg-white hover:text-slate-900 hover:shadow-[0_8px_18px_rgba(15,23,42,0.06)];
+    }
+
+    .deasy-nav-select-option--active {
+        @apply border border-[#bfd7ee] bg-[linear-gradient(90deg,rgba(120,171,214,0.34)_0%,rgba(226,242,250,0.98)_100%)] text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
+    }
+
     .deasy-nav-feedback {
         @apply rounded-xl px-3 py-2 text-sm font-medium;
     }
