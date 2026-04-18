@@ -504,9 +504,9 @@
                                   v-else-if="shouldShowSign(deliverable.item)"
                                   variant="plain"
                                   class-name="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-amber-50/40 px-4 py-2.5 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:from-white hover:to-amber-50/70 hover:shadow-[0_18px_36px_rgba(245,158,11,0.16)]"
-                                  :class="deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
+                                  :class="shouldShowSign(deliverable.item) && deliverable.item.actions?.implemented?.sign ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
                                   type="button"
-                                  :disabled="!(deliverable.item.actions?.can_sign && deliverable.item.actions?.implemented?.sign && getDeliverableSubject(deliverable.item).preloadPdfPath)"
+                                  :disabled="!(shouldShowSign(deliverable.item) && deliverable.item.actions?.implemented?.sign)"
                                   @click="openDocumentSignFlow(deliverable.item)"
                                 >
                                   <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-amber-100 group-hover:bg-amber-50 group-hover:text-amber-600">
@@ -3149,9 +3149,60 @@ const shouldShowSignatureFlow = (payload) => {
   return Boolean(subject.actions?.can_review_signature_flow);
 };
 
+const getCurrentSignatureStepOrderFromSubject = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const explicit = Number(
+    subject.workflow?.signature_flow?.current_step_order
+    || subject.workflow?.current_signature_step_order
+    || 0
+  );
+  if (explicit > 0) return explicit;
+
+  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+  const pendingLike = requests
+    .filter((request) => {
+      const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
+      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
+    })
+    .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
+  if (pendingLike.length) {
+    return Number(pendingLike[0]?.step_order || 0) || null;
+  }
+
+  return null;
+};
+
+const getCurrentSignatureRequestsFromSubject = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const currentStepOrder = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0);
+  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+  if (!currentStepOrder) {
+    return requests.filter((request) => !request?.responded_at);
+  }
+  return requests.filter((request) => Number(request?.step_order || 0) === currentStepOrder);
+};
+
+const currentUserCanOperateSignatureStep = (payload) => {
+  const currentUser = Number(currentUserId.value || 0);
+  if (!currentUser) return false;
+
+  const requests = getCurrentSignatureRequestsFromSubject(payload);
+  return requests.some((request) => {
+    const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
+    const isPendingLike = ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code);
+    return isPendingLike
+      && !request?.responded_at
+      && Number(request?.assigned_person_id || 0) === currentUser;
+  });
+};
+
 const shouldShowSign = (payload) => {
   const subject = getDeliverableSubject(payload);
-  return Boolean(subject.actions?.can_sign && subject.preloadPdfPath);
+  return Boolean(
+    subject.actions?.can_sign
+    && subject.preloadPdfPath
+    && currentUserCanOperateSignatureStep(payload)
+  );
 };
 
 const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
@@ -3836,7 +3887,12 @@ const openDocumentSignFlow = (payload) => {
     );
     return;
   }
-  const pendingSignatureRequest = (doc.workflow?.signature_requests || []).find((request) => !request.responded_at);
+  const pendingSignatureRequest = getCurrentSignatureRequestsFromSubject(doc).find((request) => {
+    const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
+    return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
+      && !request?.responded_at
+      && Number(request?.assigned_person_id || 0) === Number(currentUserId.value || 0);
+  });
   if (!pendingSignatureRequest?.id || !doc.documentVersionId) {
     setProcessActionInfo(
       `No se encontró una solicitud de firma pendiente para ${doc.title}.`,

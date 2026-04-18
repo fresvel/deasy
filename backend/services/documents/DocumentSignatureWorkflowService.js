@@ -449,7 +449,7 @@ const truncateNote = (value, max = 255) => {
   return normalized ? normalized.slice(0, max) : null;
 };
 
-const getSignatureRequestContext = async (connection, signatureRequestId) => {
+export const getSignatureRequestContext = async (connection, signatureRequestId) => {
   const [rows] = await connection.query(
     `SELECT
        sr.id,
@@ -467,6 +467,33 @@ const getSignatureRequestContext = async (connection, signatureRequestId) => {
     [signatureRequestId]
   );
   return rows?.[0] || null;
+};
+
+export const assertSignatureRequestCanBeSigned = async ({ connection, context }) => {
+  if (!context?.signatureRequestId) {
+    return null;
+  }
+
+  const signatureRequest = await getSignatureRequestContext(connection, Number(context.signatureRequestId));
+  if (!signatureRequest) {
+    throw new Error("La solicitud de firma indicada no existe.");
+  }
+  if (Number(signatureRequest.assigned_person_id || 0) !== Number(context.user?.id || 0)) {
+    throw new Error("No puedes registrar una firma para una solicitud asignada a otro usuario.");
+  }
+  if (
+    context.documentVersionId
+    && Number(signatureRequest.document_version_id) !== Number(context.documentVersionId)
+  ) {
+    throw new Error("La solicitud de firma no pertenece a la versión documental indicada.");
+  }
+
+  const currentStep = await resolveCurrentSignatureStep(connection, Number(signatureRequest.document_version_id));
+  if (currentStep && Number(currentStep.stepOrder || 0) !== Number(signatureRequest.step_order || 0)) {
+    throw new Error("La solicitud de firma no pertenece al paso actual del flujo.");
+  }
+
+  return signatureRequest;
 };
 
 const getExistingSignatureFlowInstance = async (connection, documentVersionId) => {
@@ -712,27 +739,7 @@ export const registerSignatureEvidence = async ({ connection, context, result })
     throw new Error("Usuario autenticado inválido para registrar la firma.");
   }
 
-  let signatureRequest = null;
-  if (context.signatureRequestId) {
-    signatureRequest = await getSignatureRequestContext(connection, Number(context.signatureRequestId));
-    if (!signatureRequest) {
-      throw new Error("La solicitud de firma indicada no existe.");
-    }
-    if (Number(signatureRequest.assigned_person_id || 0) !== Number(context.user.id)) {
-      throw new Error("No puedes registrar una firma para una solicitud asignada a otro usuario.");
-    }
-    if (
-      context.documentVersionId
-      && Number(signatureRequest.document_version_id) !== Number(context.documentVersionId)
-    ) {
-      throw new Error("La solicitud de firma no pertenece a la versión documental indicada.");
-    }
-
-    const currentStep = await resolveCurrentSignatureStep(connection, Number(signatureRequest.document_version_id));
-    if (currentStep && Number(currentStep.stepOrder || 0) !== Number(signatureRequest.step_order || 0)) {
-      throw new Error("La solicitud de firma no pertenece al paso actual del flujo.");
-    }
-  }
+  const signatureRequest = await assertSignatureRequestCanBeSigned({ connection, context });
 
   const documentVersionId = Number(
     context.documentVersionId || signatureRequest?.document_version_id || 0

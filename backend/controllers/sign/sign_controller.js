@@ -14,6 +14,7 @@ import {
 } from "../../services/infrastructure/rabbit_signer.js";
 import { formatTokenForSigner } from "../../utils/tokenGenerator.js";
 import {
+  assertSignatureRequestCanBeSigned,
   getSignatureFlowSnapshot,
   registerSignatureEvidence,
 } from "../../services/documents/DocumentSignatureWorkflowService.js";
@@ -283,6 +284,22 @@ const processSinglePdfSigning = async ({ file, context }) => {
   }
 };
 
+const assertSignContextBeforeSigning = async (context) => {
+  if (!context?.signatureRequestId) {
+    return null;
+  }
+  if (!pool) {
+    throw new Error("La conexión a MariaDB no está disponible.");
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    return await assertSignatureRequestCanBeSigned({ connection, context });
+  } finally {
+    connection.release();
+  }
+};
+
 const parseFields = (rawFields) => {
   const parsed = JSON.parse(rawFields || "[]");
   if (!Array.isArray(parsed) || !parsed.length) {
@@ -437,6 +454,7 @@ export const requestSign = async (req, res) => {
       document_version_id: req.body?.document_version_id ?? null,
     });
     const context = await buildSignContext(req);
+    await assertSignContextBeforeSigning(context);
     const result = await processSinglePdfSigning({
       file: req.files.pdf[0],
       context
