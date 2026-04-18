@@ -21,6 +21,8 @@
         --deasy-primary: #0369a1;
         --deasy-primary-strong: #075985;
         --deasy-primary-soft: #e0f2fe;
+        --deasy-puce-logo: #e2f2fa;
+        --deasy-puce-gray: #64748b;
     }
 
     body {
@@ -402,7 +404,7 @@
     }
 
     .deasy-nav-shell {
-        @apply flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-2 backdrop-blur-sm;
+        @apply flex flex-col gap-2 rounded-2xl border border-white/8 bg-white/[0.04] p-2 shadow-[0_16px_30px_rgba(6,12,24,0.28)] backdrop-blur-sm;
     }
 
     .deasy-nav-group {
@@ -410,27 +412,32 @@
     }
 
     .deasy-nav-group-title {
-        @apply flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold text-white/90 transition-colors hover:text-white;
+        @apply flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-white/90 transition-all hover:bg-white/[0.05] hover:text-[#e2f2fa];
     }
 
     .deasy-nav-item {
-        @apply flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-white/80 transition-all duration-200 hover:bg-white/10 hover:text-white;
+        @apply flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-white/80 transition-all duration-200 hover:bg-[#036065]/35 hover:text-white hover:shadow-[0_8px_18px_rgba(3,96,101,0.18)];
     }
 
     .deasy-nav-item--active {
-        @apply bg-white text-sky-800 shadow-sm;
+        @apply border text-white shadow-[0_12px_24px_rgba(3,96,101,0.28)];
+        border-color: rgba(226, 242, 250, 0.14);
+        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.20) 100%);
     }
 
     .deasy-nav-item--subtle-active {
-        @apply bg-white/10 font-bold text-white;
+        @apply border bg-[#036065]/35 font-bold text-white;
+        border-color: rgba(226, 242, 250, 0.12);
     }
 
     .deasy-nav-item.router-link-active {
-        @apply bg-white text-sky-800 shadow-sm;
+        @apply border text-white shadow-[0_12px_24px_rgba(3,96,101,0.28)];
+        border-color: rgba(226, 242, 250, 0.14);
+        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.20) 100%);
     }
 
     .deasy-nav-meta {
-        @apply px-2 text-sm font-semibold text-white/85;
+        @apply px-2 text-sm font-semibold text-[#e2f2fa]/90;
     }
 
     .deasy-nav-feedback {
@@ -438,15 +445,16 @@
     }
 
     .deasy-nav-feedback--info {
-        @apply bg-white/10 text-white;
+        @apply border border-white/8 bg-white/[0.06] text-white;
     }
 
     .deasy-nav-feedback--muted {
-        @apply bg-white/20 text-white/90;
+        @apply border border-white/8 bg-white/[0.08] text-white/90;
     }
 
     .deasy-nav-tree {
-        @apply ml-2 mt-1 flex flex-col gap-1 border-l border-white/20 py-2 pl-4;
+        @apply ml-2 mt-1 flex flex-col gap-1 border-l py-2 pl-4;
+        border-color: rgba(226, 242, 250, 0.12);
     }
 
     .deasy-nav-chip {
@@ -454,11 +462,13 @@
     }
 
     .deasy-nav-chip--active {
-        @apply bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)];
+        @apply border text-white shadow-[0_10px_22px_rgba(3,96,101,0.24)];
+        border-color: rgba(226, 242, 250, 0.14);
+        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.18) 100%);
     }
 
     .deasy-nav-chip--idle {
-        @apply bg-white/10 text-white/95 hover:bg-white/20;
+        @apply bg-white/[0.08] text-white/95 hover:bg-[#036065]/35;
     }
 
     .deasy-nav-chip__icon {
@@ -466,19 +476,21 @@
     }
 
     .deasy-nav-chip__icon--active {
-        @apply bg-sky-600/10;
+        @apply bg-white/15;
     }
 
     .deasy-nav-chip__icon--idle {
-        @apply bg-white/20;
+        @apply bg-white/12;
     }
 
     .deasy-nav-action {
-        @apply flex shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white shadow-sm transition-all hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30;
+        @apply flex shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.08] text-white shadow-[0_8px_18px_rgba(6,12,24,0.24)] transition-all hover:bg-[#036065]/40 hover:text-white focus:outline-none focus:ring-2 focus:ring-[rgba(226,242,250,0.18)];
     }
 
     .deasy-nav-action--active {
-        @apply bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)];
+        @apply border text-white shadow-[0_10px_22px_rgba(3,96,101,0.24)];
+        border-color: rgba(226, 242, 250, 0.14);
+        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.18) 100%);
     }
 
     .deasy-surface-selectable {

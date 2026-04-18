@@ -120,6 +120,12 @@
 - Evitar acumulaciones locales de utilidades Tailwind si el patrón ya es reutilizable o compartido.
 - No hardcodear colores, radios, spacing, sombras o tipografía si ya existe una clase o componente compartido.
 - Preservar semántica visual consistente para estados success, danger, warning, info, neutral, muted, accent y contrast.
+- En vistas de flujo secuencial como llenado y firmas, preservar el patrón actual de tarjetas operativas en grilla:
+  - tarjeta blanca con `rounded-[5%]`
+  - franja superior de acento por estado
+  - bloques internos separados para responsable/firmante y regla
+  - uso de color por estado para lectura rápida del avance
+- No volver estas tarjetas a listas planas ni cambiar su geometría base salvo que exista una decisión explícita de rediseño.
 
 ### Referencias visuales
 - Tablas y shells de sección: `perfil`

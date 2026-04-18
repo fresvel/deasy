@@ -16,7 +16,7 @@
                 <select
                   :value="selectedGroupId || ''"
                   @change="(e) => { const v = e.target.value; if (!v) selectConsolidated(); else selectGroup(unitGroups.find(g => String(g.id) === String(v))); }"
-                  class="block w-full pl-3 pr-8 py-2.5 bg-white/10 border border-white/10 rounded-[10px] text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:bg-sky-950 transition-all outline-none text-sm font-semibold appearance-none cursor-pointer"
+                  class="block w-full pl-3 pr-8 py-2.5 bg-white/[0.08] border border-white/10 rounded-[10px] text-white focus:ring-2 focus:ring-[#4a8cff]/20 focus:border-[#4a8cff]/30 focus:bg-[#0b2028] transition-all outline-none text-sm font-semibold appearance-none cursor-pointer"
                 >
                   <option value="" class="text-slate-900 font-semibold bg-white">Consolidado</option>
                   <option

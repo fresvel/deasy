@@ -1,11 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --color-puce: #0369a1;
-  --color-puce-light: #38bdf8;
-  --color-puce-light-rgb: 56, 189, 248;
+  --color-puce: #003ba3;
+  --color-puce-rgb: 0, 59, 163;
+  --color-puce-light: #4a8cff;
+  --color-puce-light-rgb: 74, 140, 255;
+  --color-puce-logo: #e2f2fa;
+  --color-puce-logo-rgb: 226, 242, 250;
   --color-puce-soft: #f1f5f9;
   --color-puce-dark: #0f172a;
+  --color-puce-gray: #64748b;
+  --color-puce-gray-rgb: 100, 116, 139;
 
   --brand-primary: #0284c7;
   --brand-accent: #0ea5e9;
