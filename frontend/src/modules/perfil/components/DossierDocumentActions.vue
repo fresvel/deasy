@@ -1,18 +1,13 @@
 <template>
   <div class="inline-flex items-center gap-1">
 
-    <!-- Editar registro -->
-    <AdminButton
-      variant="secondary" size="sm" icon-only
-      class-name="hope-action-btn hope-action-edit"
-      title="Editar registro"
-      @click="$emit('edit')"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24">
+    <!-- Editar registro: AZUL -->
+    <button type="button" class="action-btn action-btn--edit" title="Editar registro" @click="$emit('edit')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
           d="M16.862 4.487 18.549 2.8a1.875 1.875 0 1 1 2.651 2.651L8.093 17.56a4.5 4.5 0 0 1-1.897 1.13l-2.685.805.806-2.685a4.5 4.5 0 0 1 1.13-1.897L16.862 4.487Z" />
       </svg>
-    </AdminButton>
+    </button>
 
     <!-- Gestionar PDF: GRIS sin documento · VERDE con documento -->
     <button
@@ -27,25 +22,18 @@
       </svg>
     </button>
 
-    <!-- Eliminar registro completo -->
-    <AdminButton
-      variant="secondary" size="sm" icon-only
-      class-name="hope-action-btn hope-action-delete"
-      title="Eliminar registro"
-      @click="$emit('delete')"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24">
+    <!-- Eliminar registro completo: ROJO -->
+    <button type="button" class="action-btn action-btn--delete" title="Eliminar registro" @click="$emit('delete')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
           d="M19.325 9.468s-.543 6.735-.858 9.572c-.15 1.355-.987 2.15-2.358 2.174-2.61.047-5.221.05-7.83-.005-1.318-.027-2.141-.83-2.288-2.162-.317-2.862-.857-9.579-.857-9.579M20.708 6.24H3.75m13.69 0a1.65 1.65 0 0 1-1.614-1.324L15.583 3.7a1.28 1.28 0 0 0-1.237-.95h-4.233a1.28 1.28 0 0 0-1.237.95l-.243 1.216A1.65 1.65 0 0 1 7.018 6.24" />
       </svg>
-    </AdminButton>
+    </button>
 
   </div>
 </template>
 
 <script setup>
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
-
 defineProps({
   hasDocument: { type: Boolean, default: false }
 });
@@ -54,7 +42,8 @@ defineEmits(["edit", "manage-pdf", "delete"]);
 </script>
 
 <style scoped>
-/* Botón PDF base */
+/* ── Base común a los 3 botones ─────────────────────── */
+.action-btn,
 .pdf-btn {
   display: inline-flex;
   align-items: center;
@@ -67,9 +56,34 @@ defineEmits(["edit", "manage-pdf", "delete"]);
   transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
   flex-shrink: 0;
 }
+.action-btn:active,
 .pdf-btn:active { transform: scale(0.93); }
 
-/* Sin documento: gris neutro */
+/* Editar: AZUL */
+.action-btn--edit {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+.action-btn--edit:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
+  color: #1d4ed8;
+}
+
+/* Eliminar: ROJO */
+.action-btn--delete {
+  background: #fff1f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+.action-btn--delete:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+/* Sin documento: GRIS */
 .pdf-btn--no-doc {
   background: #f8fafc;
   border-color: #cbd5e1;
@@ -81,7 +95,7 @@ defineEmits(["edit", "manage-pdf", "delete"]);
   color: #64748b;
 }
 
-/* Con documento: verde */
+/* Con documento: VERDE */
 .pdf-btn--has-doc {
   background: #f0fdf4;
   border-color: #86efac;
