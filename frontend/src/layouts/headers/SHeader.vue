@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 z-30 flex flex-col justify-center w-full bg-[linear-gradient(90deg,#406c7b_0%,#567a8a_34%,#6f90a0_72%,#88a4b6_100%)] text-white shadow-[0_14px_34px_rgba(19,23,35,0.22)] border-b border-white/12 px-2 sm:px-4 py-2 min-h-[3.5rem] sm:min-h-[4rem] transition-all duration-300"
+    class="sticky top-0 z-30 flex flex-col justify-center w-full bg-[linear-gradient(90deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] text-white shadow-[0_14px_34px_rgba(19,23,35,0.26)] border-b border-[rgba(226,242,250,0.03)] px-2 sm:px-4 py-2 min-h-[3.5rem] sm:min-h-[4rem] transition-all duration-300"
   >
     <div class="flex items-center gap-2 sm:gap-4 w-full max-w-[2560px] mx-auto">
       <button 

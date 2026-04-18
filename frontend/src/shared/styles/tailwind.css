@@ -404,40 +404,65 @@
     }
 
     .deasy-nav-shell {
-        @apply flex flex-col gap-2 rounded-2xl border border-white/8 bg-white/[0.04] p-2 shadow-[0_16px_30px_rgba(6,12,24,0.28)] backdrop-blur-sm;
+        @apply flex flex-col gap-2.5 rounded-[2rem] border border-[#d6e4f2] bg-[linear-gradient(180deg,#f5f9fe_0%,#eef5fc_100%)] p-3.5 shadow-[0_18px_34px_rgba(6,12,24,0.16)];
     }
 
     .deasy-nav-group {
         @apply flex flex-col gap-1;
     }
 
+    .deasy-nav-section {
+        @apply flex flex-col gap-2;
+    }
+
+    .deasy-nav-section + .deasy-nav-section {
+        @apply border-t border-[#dbe8f4] pt-2.5;
+    }
+
     .deasy-nav-group-title {
-        @apply flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-white/90 transition-all hover:bg-white/[0.05] hover:text-[#e2f2fa];
+        @apply flex w-full items-center justify-between rounded-[1.1rem] border border-transparent px-4 py-3.5 text-left text-base font-semibold text-slate-800 transition-all hover:bg-white hover:border-[#d7e4f1] hover:text-slate-900 hover:shadow-[0_8px_18px_rgba(15,23,42,0.07)];
     }
 
     .deasy-nav-item {
-        @apply flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-white/80 transition-all duration-200 hover:bg-[#036065]/35 hover:text-white hover:shadow-[0_8px_18px_rgba(3,96,101,0.18)];
+        @apply flex w-full items-start gap-2.5 rounded-[1rem] px-4 py-2.5 text-left text-[15px] font-medium text-slate-700 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_8px_18px_rgba(15,23,42,0.08)];
+    }
+
+    .deasy-nav-item__label {
+        @apply block min-w-0 flex-1 break-words pr-2 leading-snug whitespace-normal;
+    }
+
+    .deasy-nav-item__icon {
+        @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border;
+    }
+
+    .deasy-nav-item__icon--direct {
+        @apply border-[#bfd7ee] bg-[#e2f2fa] text-[#21517a];
+    }
+
+    .deasy-nav-item__icon--derived {
+        @apply border-[#bfd7ee] bg-[#e2f2fa] text-[#21517a];
     }
 
     .deasy-nav-item--active {
-        @apply border text-white shadow-[0_12px_24px_rgba(3,96,101,0.28)];
-        border-color: rgba(226, 242, 250, 0.14);
-        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.20) 100%);
+        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
+        border-color: rgba(136, 176, 213, 0.5);
+        background: linear-gradient(90deg, rgba(120, 171, 214, 0.34) 0%, rgba(226, 242, 250, 0.98) 100%);
     }
 
     .deasy-nav-item--subtle-active {
-        @apply border bg-[#036065]/35 font-bold text-white;
-        border-color: rgba(226, 242, 250, 0.12);
+        @apply border font-bold text-slate-900;
+        border-color: rgba(160, 194, 222, 0.68);
+        background: linear-gradient(90deg, rgba(150, 192, 226, 0.48) 0%, rgba(226, 242, 250, 0.9) 100%);
     }
 
     .deasy-nav-item.router-link-active {
-        @apply border text-white shadow-[0_12px_24px_rgba(3,96,101,0.28)];
-        border-color: rgba(226, 242, 250, 0.14);
-        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.20) 100%);
+        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
+        border-color: rgba(136, 176, 213, 0.5);
+        background: linear-gradient(90deg, rgba(120, 171, 214, 0.34) 0%, rgba(226, 242, 250, 0.98) 100%);
     }
 
     .deasy-nav-meta {
-        @apply px-2 text-sm font-semibold text-[#e2f2fa]/90;
+        @apply px-2 text-sm font-semibold text-white/88;
     }
 
     .deasy-nav-feedback {
@@ -445,16 +470,16 @@
     }
 
     .deasy-nav-feedback--info {
-        @apply border border-white/8 bg-white/[0.06] text-white;
+        @apply border border-[#d6e4f2] bg-white/90 text-slate-700;
     }
 
     .deasy-nav-feedback--muted {
-        @apply border border-white/8 bg-white/[0.08] text-white/90;
+        @apply border border-[#d6e4f2] bg-white/85 text-slate-600;
     }
 
     .deasy-nav-tree {
-        @apply ml-2 mt-1 flex flex-col gap-1 border-l py-2 pl-4;
-        border-color: rgba(226, 242, 250, 0.12);
+        @apply ml-0.5 mt-0.5 flex flex-col gap-1 border-l py-1.5 pl-2.5;
+        border-color: rgba(120, 179, 223, 0.28);
     }
 
     .deasy-nav-chip {
@@ -462,13 +487,13 @@
     }
 
     .deasy-nav-chip--active {
-        @apply border text-white shadow-[0_10px_22px_rgba(3,96,101,0.24)];
-        border-color: rgba(226, 242, 250, 0.14);
-        background: linear-gradient(90deg, rgba(3, 96, 101, 0.94) 0%, rgba(74, 140, 255, 0.18) 100%);
+        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
+        border-color: rgba(136, 176, 213, 0.5);
+        background: linear-gradient(90deg, rgba(120, 171, 214, 0.34) 0%, rgba(226, 242, 250, 0.98) 100%);
     }
 
     .deasy-nav-chip--idle {
-        @apply bg-white/[0.08] text-white/95 hover:bg-[#036065]/35;
+        @apply bg-white/92 text-slate-700 hover:bg-white hover:text-slate-900;
     }
 
     .deasy-nav-chip__icon {
@@ -480,7 +505,7 @@
     }
 
     .deasy-nav-chip__icon--idle {
-        @apply bg-white/12;
+        @apply bg-slate-100;
     }
 
     .deasy-nav-action {

@@ -49,7 +49,8 @@
           </div>
 
           <div v-else class="deasy-nav-group mt-2">
-            <div v-for="cargo in menuCargos" :key="cargo.id" class="deasy-nav-shell">
+            <div class="deasy-nav-shell">
+              <div v-for="cargo in menuCargos" :key="cargo.id" class="deasy-nav-section">
               <AppButton
                 variant="plain"
                 class-name="deasy-nav-group-title"
@@ -57,8 +58,8 @@
                 type="button"
                 @click="toggleCargo(cargo)"
               >
-                <span class="flex items-center gap-3 text-sm font-semibold">
-                  <component :is="iconForCargo(cargo.name)" class="w-5 h-5 shrink-0 opacity-90" />
+                <span class="flex items-center gap-3.5 text-base font-semibold">
+                  <component :is="iconForCargo(cargo.name)" class="w-6 h-6 shrink-0 opacity-90" />
                   <span class="truncate">{{ cargo.name }}</span>
                 </span>
               </AppButton>
@@ -71,21 +72,22 @@
                   class-name="deasy-nav-item"
                   :class="selectedProcessKey === String(process.process_definition_id) ? 'deasy-nav-item--active' : ''"
                   type="button"
+                  :title="process.name"
                   @click="handleProcessSelect(process, cargo)"
                 >
-                  <component :is="iconForProcess(process.name)" class="w-4 h-4 shrink-0" />
-                  <span class="truncate block w-full">{{ process.name }}</span>
                   <span
-                    v-if="process.access_source === 'flow'"
-                    class="ml-auto inline-flex items-center rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white/90 shrink-0"
+                    class="deasy-nav-item__icon"
+                    :class="process.access_source === 'flow' ? 'deasy-nav-item__icon--derived' : 'deasy-nav-item__icon--direct'"
                   >
-                    Derivado
+                    <component :is="iconForProcessAccess(process)" class="h-4.5 w-4.5 shrink-0" />
                   </span>
+                  <span class="deasy-nav-item__label">{{ process.name }}</span>
                 </AppButton>
-                <div v-if="!cargo.processes.length" class="text-sm text-white/50 italic px-3 py-1">
+                <div v-if="!cargo.processes.length" class="px-4 py-1 text-sm italic text-slate-400">
                   Sin procesos asignados.
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -2007,6 +2009,11 @@ const iconForProcess = (name = '') => {
   if (normalized.includes('academ')) return IconCertificate;
   if (normalized.includes('unidad')) return IconGlobe;
   return IconSquareCheck;
+};
+
+const iconForProcessAccess = (process = {}) => {
+  if (process?.access_source === 'flow') return IconArrowRight;
+  return iconForProcess(process?.name || '');
 };
 
 const iconForUnitGroup = (group) => {
