@@ -597,6 +597,20 @@
                                   </span>
                                 </AppButton>
                                 <AppButton
+                                  v-if="shouldShowResetWorkflow(deliverable.item)"
+                                  variant="plain"
+                                  type="button"
+                                  :disabled="deliverableResetState.submitting"
+                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-100 hover:bg-amber-50 hover:text-amber-600"
+                                  @click="openDeliverableResetModal(deliverable.item)"
+                                >
+                                  <IconRotateClockwise2 class="h-6 w-6" />
+                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
+                                    <span class="block text-sm font-bold text-slate-800">Resetear flujo</span>
+                                    <span class="mt-1 block text-xs font-medium text-slate-500">Cancela el intento actual y crea una nueva versión del documento.</span>
+                                  </span>
+                                </AppButton>
+                                <AppButton
                                   variant="plain"
                                   type="button"
                                   :disabled="!deliverable.item.actions?.can_open_process_chat"
@@ -1671,6 +1685,41 @@
     </AdminModalShell>
 
     <AdminModalShell
+      ref="deliverableResetModal"
+      labelled-by="deliverable-reset-modal-title"
+      title="Resetear flujo del entregable"
+      size="md"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+      @close="closeDeliverableResetModal"
+    >
+      <div class="flex flex-col gap-4">
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <p class="m-0 font-semibold text-slate-700">
+            {{ deliverableResetState.target?.title || 'Entregable seleccionado' }}
+          </p>
+          <p class="mt-2 mb-0">
+            La versión actual quedará como histórico cancelado. La nueva versión empezará desde cero y el documento no conservará el archivo de trabajo previo.
+          </p>
+        </div>
+        <p v-if="deliverableResetState.error" class="m-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+          {{ deliverableResetState.error }}
+        </p>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" :disabled="deliverableResetState.submitting" @click="closeDeliverableResetModal">
+          Cancelar
+        </AppButton>
+        <AppButton variant="warning" :disabled="deliverableResetState.submitting" @click="submitDeliverableReset">
+          {{ deliverableResetState.submitting ? 'Reseteando...' : 'Resetear flujo' }}
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
       ref="deliverablePreviewModal"
       labelled-by="deliverable-preview-modal-title"
       :title="deliverablePreviewName || 'Vista previa del archivo'"
@@ -1749,7 +1798,8 @@ import {
   IconPlayerPlayFilled,
   IconPlus,
   IconChecklist,
-  IconSearch
+  IconSearch,
+  IconRotateClockwise2
 } from '@tabler/icons-vue';
 
 const router = useRouter();
@@ -1806,6 +1856,7 @@ const deliverableUploadModal = ref(null);
 const deliverableWorkspaceModal = ref(null);
 const deliverableOperationModal = ref(null);
 const deliverablePreviewModal = ref(null);
+const deliverableResetModal = ref(null);
 const embeddedSignerRef = ref(null);
 const signatureFlowSignerRef = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
@@ -1824,6 +1875,11 @@ const deliverableOperationState = ref({
   type: 'info',
   message: '',
   detail: ''
+});
+const deliverableResetState = ref({
+  target: null,
+  submitting: false,
+  error: '',
 });
 const fillWorkflowState = ref({
   subject: null,
@@ -1849,6 +1905,7 @@ let deliverableUploadModalInstance = null;
 let deliverableWorkspaceModalInstance = null;
 let deliverableOperationModalInstance = null;
 let deliverablePreviewModalInstance = null;
+let deliverableResetModalInstance = null;
 const taskLaunchForm = ref({
   description: '',
   term_id: '',
@@ -2822,6 +2879,25 @@ const openDeliverableOperationModal = (payload = {}) => {
   deliverableOperationModalInstance?.show();
 };
 
+const openDeliverableResetModal = (payload) => {
+  deliverableResetState.value = {
+    target: getDeliverableSubject(payload),
+    submitting: false,
+    error: '',
+  };
+  deliverableResetModalInstance = Modal.getOrCreateInstance(deliverableResetModal.value?.el);
+  deliverableResetModalInstance?.show();
+};
+
+const closeDeliverableResetModal = () => {
+  deliverableResetState.value = {
+    target: null,
+    submitting: false,
+    error: '',
+  };
+  deliverableResetModalInstance?.hide();
+};
+
 const openDeliverableUploadModal = (payload) => {
   pendingDeliverableUploadTarget.value = payload;
   selectedDeliverableUploadFile.value = null;
@@ -3149,16 +3225,29 @@ const shouldShowSignatureFlow = (payload) => {
   return Boolean(subject.actions?.can_review_signature_flow);
 };
 
+const shouldShowResetWorkflow = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  return Boolean(subject.actions?.can_reset_workflow && subject.actions?.implemented?.reset_workflow);
+};
+
 const getCurrentSignatureStepOrderFromSubject = (payload) => {
   const subject = getDeliverableSubject(payload);
+  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
   const explicit = Number(
     subject.workflow?.signature_flow?.current_step_order
     || subject.workflow?.current_signature_step_order
     || 0
   );
-  if (explicit > 0) return explicit;
+  if (explicit > 0) {
+    const matchesExplicitPendingStep = requests.some((request) => {
+      const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
+      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
+        && !request?.responded_at
+        && Number(request?.step_order || 0) === explicit;
+    });
+    if (matchesExplicitPendingStep) return explicit;
+  }
 
-  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
   const pendingLike = requests
     .filter((request) => {
       const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
@@ -3200,8 +3289,8 @@ const shouldShowSign = (payload) => {
   const subject = getDeliverableSubject(payload);
   return Boolean(
     subject.actions?.can_sign
-    && subject.preloadPdfPath
     && currentUserCanOperateSignatureStep(payload)
+    && isPdfWorkingFile(payload)
   );
 };
 
@@ -4043,6 +4132,63 @@ const openDeliverableWorkspaceModal = async (payload) => {
 
   deliverableWorkspaceModalInstance = Modal.getOrCreateInstance(deliverableWorkspaceModal.value?.el);
   deliverableWorkspaceModalInstance?.show();
+};
+
+const submitDeliverableReset = async () => {
+  const target = deliverableResetState.value.target;
+  if (!target || deliverableResetState.value.submitting) return;
+
+  try {
+    deliverableResetState.value.submitting = true;
+    deliverableResetState.value.error = '';
+    const userId = currentUserId.value;
+    const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
+    const taskItemId = Number(target.itemId || 0);
+
+    if (!userId || !definitionId || !taskItemId) {
+      throw new Error('No se pudo resolver el contexto del reset del entregable.');
+    }
+
+    openDeliverableOperationModal({
+      title: 'Reseteando flujo',
+      type: 'info',
+      message: `Se está creando una nueva versión para ${target.title}...`,
+      detail: 'El intento actual quedará cancelado.'
+    });
+
+    const result = await processPanelService.resetDeliverableWorkflow(userId, definitionId, taskItemId);
+
+    closeDeliverableResetModal();
+    fillWorkflowModalInstance?.hide();
+    signatureFlowModalInstance?.hide();
+    deliverableWorkspaceModalInstance?.hide();
+    documentSignModalInstance?.hide();
+    resetSignatureFlowState();
+
+    if (selectedProcessContext.value) {
+      await loadSelectedProcessPanel(selectedProcessContext.value);
+    }
+
+    openDeliverableOperationModal({
+      title: 'Flujo reseteado',
+      type: 'success',
+      message: `Se creó la versión v${result?.new_document_version ?? 'nueva'} para ${target.title}.`,
+      detail: 'La versión anterior quedó cancelada y el flujo volvió al inicio.'
+    });
+    setProcessActionInfo(`El flujo de ${target.title} se reseteó correctamente.`, 'success');
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || 'No se pudo resetear el flujo del entregable.';
+    deliverableResetState.value.error = message;
+    openDeliverableOperationModal({
+      title: 'Error al resetear flujo',
+      type: 'error',
+      message,
+      detail: target.title
+    });
+    setProcessActionInfo(message, 'error');
+  } finally {
+    deliverableResetState.value.submitting = false;
+  }
 };
 
 const handleHeaderToggle = () => {

@@ -1114,6 +1114,16 @@ const finalizeDocumentVersionIfComplete = async (connection, documentVersionId) 
 };
 
 export const syncDocumentProgressFromDocumentVersionSignatureSummary = async (connection, documentVersionId) => {
+  const currentStatus = await getDocumentVersionCurrentStatus(connection, Number(documentVersionId));
+  if (currentStatus === "Final") {
+    return {
+      documentVersionId: Number(documentVersionId),
+      successCount: null,
+      totalRequests: null,
+      skipped: "already_final",
+    };
+  }
+
   const [rows] = await connection.query(
     `SELECT
        ds.id,
@@ -1140,10 +1150,16 @@ export const syncDocumentProgressFromDocumentVersionSignatureSummary = async (co
   const totalRequests = Number(requestRows?.[0]?.total || 0);
 
   if (totalRequests > 0 && successCount >= totalRequests) {
-    await transitionDocumentVersionState(connection, Number(documentVersionId), "Firmado completo");
+    const refreshedStatus = await getDocumentVersionCurrentStatus(connection, Number(documentVersionId));
+    if (refreshedStatus !== "Firmado completo" && refreshedStatus !== "Final") {
+      await transitionDocumentVersionState(connection, Number(documentVersionId), "Firmado completo");
+    }
     await finalizeDocumentVersionIfComplete(connection, Number(documentVersionId));
   } else {
-    await transitionDocumentVersionState(connection, Number(documentVersionId), "Firmado parcial");
+    const refreshedStatus = await getDocumentVersionCurrentStatus(connection, Number(documentVersionId));
+    if (refreshedStatus !== "Firmado parcial" && refreshedStatus !== "Final") {
+      await transitionDocumentVersionState(connection, Number(documentVersionId), "Firmado parcial");
+    }
   }
 
   return {

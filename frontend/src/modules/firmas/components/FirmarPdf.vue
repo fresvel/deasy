@@ -2491,11 +2491,18 @@
             status: response.status
           };
         }
+        const signedCount = Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0));
+        const validationWarning =
+          data?.validation?.warning
+          || data?.validation?.details
+          || '';
         signError.value = '';
         signSuccess.value = true;
-        signResultMessage.value = `El documento fue firmado correctamente con ${Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0))} campo(s).`;
+        signResultMessage.value = validationWarning && data?.validation?.warningAccepted
+          ? `El documento fue firmado correctamente con ${signedCount} campo(s). Advertencia: ${validationWarning}`
+          : `El documento fue firmado correctamente con ${signedCount} campo(s).`;
         signedMinioPath.value = data.signedPath;
-        signedFieldsCount.value = Number(data.fieldsCount || (signMode.value === 'coordinates' ? allFields.length : 0));
+        signedFieldsCount.value = signedCount;
         signCertModalInstance?.hide();
         if (props.embedded && isEmbeddedWorkflowMode.value) {
           emit('workflow-signed', {

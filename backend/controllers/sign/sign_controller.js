@@ -222,8 +222,20 @@ const processSinglePdfSigning = async ({ file, context }) => {
     const storagePlan = await resolveSigningStoragePlan({ context, file });
 
     await ensureBucketExists(storagePlan.bucket);
-    await uploadFileToMinio(storagePlan.bucket, storagePlan.objectPath, file.path, {
-      "Content-Type": "application/pdf"
+    if (storagePlan.mode === "standalone") {
+      await uploadFileToMinio(storagePlan.bucket, storagePlan.objectPath, file.path, {
+        "Content-Type": "application/pdf"
+      });
+    } else {
+      await statMinioObject(storagePlan.bucket, storagePlan.objectPath);
+    }
+
+    console.info("[sign_controller] processSinglePdfSigning storage plan", {
+      mode: storagePlan.mode,
+      bucket: storagePlan.bucket,
+      objectPath: storagePlan.objectPath,
+      documentVersionId: storagePlan.documentVersionId,
+      signMode: context.signMode,
     });
 
     let lastResult = null;
@@ -265,6 +277,14 @@ const processSinglePdfSigning = async ({ file, context }) => {
         });
       }
     }
+
+    console.info("[sign_controller] signer result", {
+      status: lastResult?.status || null,
+      signedPath: lastResult?.signedPath || storagePlan.downloadPath,
+      validationPerformed: Boolean(lastResult?.validation?.performed),
+      validationBottomLine: lastResult?.validation?.bottomLine ?? null,
+      validationWarningAccepted: Boolean(lastResult?.validation?.warningAccepted),
+    });
 
     return {
       ...lastResult,

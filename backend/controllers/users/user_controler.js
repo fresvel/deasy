@@ -14,6 +14,7 @@ import {
   getMinioObjectStream
 } from "../../services/storage/minio_service.js";
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
+import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 
@@ -653,6 +654,44 @@ const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId)
   return rows;
 };
 
+const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       sfi.document_version_id,
+       sr.id,
+       sr.assigned_person_id,
+       sr.requested_at,
+       sr.responded_at,
+       srs.code AS request_status_code,
+       srs.name AS status_name,
+       sfs.step_order,
+       st.name AS signature_type_name,
+       tar.display_name AS template_artifact_name,
+       d.id AS document_id,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name
+     FROM signature_flow_instances sfi
+     INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+     INNER JOIN documents d ON d.id = dv.document_id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+     LEFT JOIN persons p ON p.id = sr.assigned_person_id
+     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
+     WHERE sfi.document_version_id IN (${placeholders})
+     ORDER BY sfi.document_version_id ASC, sfs.step_order ASC, sr.id ASC`,
+    documentVersionIds
+  );
+  return rows;
+};
+
 const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
@@ -760,6 +799,45 @@ const buildFillStepDisplayLabel = (step) => {
     default:
       return "Responsable no resuelto";
   }
+};
+
+const isPendingLikeFillStatus = (value) =>
+  ["pending", "in_progress"].includes(String(value || "").trim().toLowerCase());
+
+const isPendingLikeSignatureStatus = (value) =>
+  ["pendiente", "pending", "en_progreso", "in_progress"].includes(String(value || "").trim().toLowerCase());
+
+const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureRequests }) => {
+  const normalizedUserId = Number(userId || 0);
+  if (!normalizedUserId) return false;
+
+  const currentFillStepOrder = Number(fillWorkflow?.current_step_order || 0);
+  if (currentFillStepOrder > 0) {
+    const canResetFromFill = (fillWorkflow?.steps || []).some((step) =>
+      Number(step?.step_order || 0) === currentFillStepOrder
+      && Number(step?.assigned_person_id || 0) === normalizedUserId
+      && isPendingLikeFillStatus(step?.request_status)
+      && !step?.responded_at
+    );
+    if (canResetFromFill) {
+      return true;
+    }
+  }
+
+  const pendingSignatureRequests = (Array.isArray(signatureRequests) ? signatureRequests : [])
+    .filter((request) => isPendingLikeSignatureStatus(request?.request_status_code || request?.status_name || request?.status))
+    .filter((request) => !request?.responded_at)
+    .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
+
+  const currentSignatureStepOrder = Number(pendingSignatureRequests[0]?.step_order || 0);
+  if (!currentSignatureStepOrder) {
+    return false;
+  }
+
+  return pendingSignatureRequests.some((request) =>
+    Number(request?.step_order || 0) === currentSignatureStepOrder
+    && Number(request?.assigned_person_id || 0) === normalizedUserId
+  );
 };
 
 const getUserOperationalProcessRows = async (pool, userId) => {
@@ -873,6 +951,10 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       .map((item) => Number(item.document_version_id || 0))
       .filter((id) => id > 0)
   );
+  const documentVersionIds = taskItems
+    .map((item) => Number(item.document_version_id || 0))
+    .filter((id) => id > 0);
+  const signatureWorkflowRequests = await getSignatureWorkflowRequestsForDocumentVersions(pool, documentVersionIds);
   const fillRequestsByDocumentVersion = new Map();
   fillRequests.forEach((request) => {
     const key = Number(request.document_version_id);
@@ -881,13 +963,21 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     }
     fillRequestsByDocumentVersion.get(key).push(request);
   });
-  const signaturesByDocumentVersion = new Map();
+  const userSignaturesByDocumentVersion = new Map();
   signatures.forEach((request) => {
     const key = Number(request.document_version_id);
-    if (!signaturesByDocumentVersion.has(key)) {
-      signaturesByDocumentVersion.set(key, []);
+    if (!userSignaturesByDocumentVersion.has(key)) {
+      userSignaturesByDocumentVersion.set(key, []);
     }
-    signaturesByDocumentVersion.get(key).push(request);
+    userSignaturesByDocumentVersion.get(key).push(request);
+  });
+  const signatureWorkflowRequestsByDocumentVersion = new Map();
+  signatureWorkflowRequests.forEach((request) => {
+    const key = Number(request.document_version_id);
+    if (!signatureWorkflowRequestsByDocumentVersion.has(key)) {
+      signatureWorkflowRequestsByDocumentVersion.set(key, []);
+    }
+    signatureWorkflowRequestsByDocumentVersion.get(key).push(request);
   });
   const fillWorkflowByDocumentVersion = new Map();
   fillWorkflowSteps.forEach((step) => {
@@ -922,20 +1012,38 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     });
   });
 
+  const getCurrentSignatureStepOrder = (requests = []) => {
+    const pendingLike = (Array.isArray(requests) ? requests : [])
+      .filter((request) => {
+        const code = String(request?.request_status_code || request?.status_name || request?.status || "").trim().toLowerCase();
+        return ["pendiente", "pending", "en_progreso", "in_progress"].includes(code) && !request?.responded_at;
+      })
+      .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
+
+    return pendingLike.length ? (Number(pendingLike[0]?.step_order || 0) || null) : null;
+  };
+
   const documents = taskItems
     .filter((item) => item.document_id)
     .map((item) => {
       const documentVersionId = Number(item.document_version_id || 0);
       const relatedFillRequests = fillRequestsByDocumentVersion.get(documentVersionId) || [];
-      const relatedSignatureRequests = signaturesByDocumentVersion.get(documentVersionId) || [];
+      const relatedSignatureRequests = signatureWorkflowRequestsByDocumentVersion.get(documentVersionId) || [];
+      const relatedUserSignatures = userSignaturesByDocumentVersion.get(documentVersionId) || [];
+      const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = fillWorkflowByDocumentVersion.get(documentVersionId) || {
         status: null,
         current_step_order: null,
         steps: []
       };
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
-      const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
+      const canSign = relatedUserSignatures.some((request) => !request.responded_at);
       const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
+      const canResetWorkflow = canCurrentUserResetWorkflow({
+        userId,
+        fillWorkflow,
+        signatureRequests: relatedSignatureRequests,
+      });
       return {
         document_id: item.document_id,
         task_id: item.task_id,
@@ -958,7 +1066,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           fill_steps: fillWorkflow.steps,
           signature_requests: relatedSignatureRequests,
           current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
-          current_signature_step_order: relatedSignatureRequests[0]?.step_order || null
+          current_signature_step_order: currentSignatureStepOrder
         },
         actions: {
           can_upload_deliverable: canUploadDeliverable,
@@ -966,6 +1074,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           can_manage_fill: canManageFill,
           can_review_signature_flow: Boolean(Number(item.total_signature_count || 0) > 0 || relatedSignatureRequests.length),
           can_sign: canSign,
+          can_reset_workflow: canResetWorkflow,
           can_open_process_chat: true,
           implemented: {
             upload_deliverable: false,
@@ -973,6 +1082,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
             manage_fill: false,
             review_signature_flow: false,
             sign: true,
+            reset_workflow: true,
             process_chat: true
           }
         }
@@ -988,19 +1098,27 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       const relatedDocument = documentsByTaskItemId.get(Number(item.id)) || null;
       const documentVersionId = Number(item.document_version_id || relatedDocument?.document_version_id || 0);
       const relatedFillRequests = documentVersionId ? (fillRequestsByDocumentVersion.get(documentVersionId) || []) : [];
-      const relatedSignatureRequests = documentVersionId ? (signaturesByDocumentVersion.get(documentVersionId) || []) : [];
+      const relatedSignatureRequests = documentVersionId ? (signatureWorkflowRequestsByDocumentVersion.get(documentVersionId) || []) : [];
+      const relatedUserSignatures = documentVersionId ? (userSignaturesByDocumentVersion.get(documentVersionId) || []) : [];
+      const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = documentVersionId
         ? (fillWorkflowByDocumentVersion.get(documentVersionId) || { status: null, current_step_order: null, steps: [] })
         : { status: null, current_step_order: null, steps: [] };
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
-      const canSign = relatedSignatureRequests.some((request) => !request.responded_at);
+      const canSign = relatedUserSignatures.some((request) => !request.responded_at);
       const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
+      const canResetWorkflow = canCurrentUserResetWorkflow({
+        userId,
+        fillWorkflow,
+        signatureRequests: relatedSignatureRequests,
+      });
       const actions = relatedDocument?.actions || {
         can_upload_deliverable: canUploadDeliverable,
         can_download_template: Boolean(item.template_artifact_id),
         can_manage_fill: canManageFill,
         can_review_signature_flow: Boolean(Number(item.total_signature_count || 0) > 0 || relatedSignatureRequests.length),
         can_sign: canSign,
+        can_reset_workflow: canResetWorkflow,
         can_open_process_chat: true,
         implemented: {
           upload_deliverable: false,
@@ -1008,6 +1126,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           manage_fill: false,
           review_signature_flow: false,
           sign: true,
+          reset_workflow: true,
           process_chat: true
         }
       };
@@ -1021,7 +1140,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           fill_steps: fillWorkflow.steps,
           signature_requests: relatedSignatureRequests,
           current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
-          current_signature_step_order: relatedSignatureRequests[0]?.step_order || null
+          current_signature_step_order: currentSignatureStepOrder
         },
         actions,
         document: relatedDocument
@@ -1995,6 +2114,56 @@ export const downloadDeliverableFile = async (req, res) => {
       message: "No se pudo descargar el archivo del entregable.",
       error: error.message
     });
+  }
+};
+
+export const resetDeliverableWorkflow = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para resetear el flujo del entregable." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
+    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+  }
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await resetDocumentWorkflowForTaskItem({
+      connection,
+      userId: authenticatedUserId,
+      definitionId,
+      taskItemId,
+    });
+    await connection.commit();
+
+    return res.json({
+      message: "El flujo del entregable se reseteó correctamente.",
+      document_id: result.documentId,
+      previous_document_version_id: result.previousDocumentVersionId,
+      previous_document_version: result.previousDocumentVersion,
+      new_document_version_id: result.newDocumentVersionId,
+      new_document_version: result.newDocumentVersion,
+      reset_by: result.resetBy,
+    });
+  } catch (error) {
+    await connection.rollback().catch(() => {});
+    const statusCode = Number(error?.statusCode || 500);
+    console.error("Error reseteando el flujo del entregable:", error);
+    return res.status(statusCode).json({
+      message: error?.message || "No se pudo resetear el flujo del entregable.",
+    });
+  } finally {
+    connection.release();
   }
 };
 

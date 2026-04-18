@@ -202,7 +202,22 @@ def upload_to_minio(bucket: str | None, object_name: str, source_path: Path):
     MINIO_CLIENT.fput_object(resolved_bucket, object_name, str(source_path), content_type="application/pdf")
 
 
+def pdf_has_embedded_signatures(source_pdf: Path) -> bool:
+    try:
+        with source_pdf.open("rb") as input_stream:
+            reader = PdfFileReader(input_stream)
+            return bool(reader.embedded_signatures)
+    except Exception as exc:
+        logger.warning("No se pudo inspeccionar el PDF para firmas embebidas, se asumirá sin firmas: %s", exc)
+        return False
+
+
 def clean_pdf_if_needed(source_pdf: Path, cleaned_pdf: Path):
+    if pdf_has_embedded_signatures(source_pdf):
+        logger.info("El PDF ya contiene firmas embebidas; se omite Ghostscript para preservar firmas previas.")
+        shutil.copyfile(source_pdf, cleaned_pdf)
+        return
+
     if not SIGNER_USE_GHOSTSCRIPT:
         shutil.copyfile(source_pdf, cleaned_pdf)
         return

@@ -9,7 +9,8 @@ import {
   updateMyProfile,
   uploadDeliverablePdf,
   downloadDeliverableTemplate,
-  downloadDeliverableFile
+  downloadDeliverableFile,
+  resetDeliverableWorkflow
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -93,6 +94,11 @@ router.get(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/file',
   authMiddleware,
   downloadDeliverableFile
+);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/reset-workflow',
+  authMiddleware,
+  resetDeliverableWorkflow
 );
 
 //perfil 

@@ -161,6 +161,22 @@ class ProcessDefinitionPanelService {
     return response.data;
   }
 
+  async resetDeliverableWorkflow(userId, processDefinitionId, taskItemId) {
+    if (!userId || !processDefinitionId || !taskItemId) {
+      throw new Error("Se requiere usuario, definición y entregable.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_RESET_WORKFLOW(userId, processDefinitionId, taskItemId),
+      {},
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return data;
+  }
+
   async getProcessThread(processId, scopeUnitId = null) {
     if (!processId) {
       throw new Error("Se requiere processId.");
