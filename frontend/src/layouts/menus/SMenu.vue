@@ -1,6 +1,6 @@
 <template>
   <aside 
-    class="flex flex-col w-[280px] shrink-0 h-[calc(100vh-4rem)] z-40 overflow-y-auto border-r border-[rgba(226,242,250,0.10)] bg-[linear-gradient(180deg,#131723_0%,#182232_42%,#0d434d_78%,rgba(74,140,255,0.30)_118%,rgba(226,242,250,0.14)_138%)] p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-all duration-300 left-0
+    class="flex flex-col w-[280px] shrink-0 h-[calc(100vh-4rem)] z-40 overflow-y-auto border-r border-white/10 bg-[linear-gradient(180deg,#406c7b_0%,#567a8a_34%,#6f90a0_72%,#88a4b6_100%)] p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-all duration-300 left-0
            fixed xl:sticky xl:top-16 xl:translate-x-0"
     :class="show ? 'translate-x-0 top-16 shadow-[20px_0_40px_rgba(0,0,0,0.5)] xl:shadow-none' : '-translate-x-[110%] xl:-translate-x-0 xl:hidden'"
   >
