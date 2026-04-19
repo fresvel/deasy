@@ -1,0 +1,89 @@
+- generic [ref=e42]:
+  - banner [ref=e43]:
+    - generic [ref=e44]:
+      - button "Abrir menú" [ref=e45]:
+        - img [ref=e46]
+      - generic [ref=e48]:
+        - link "Ir a perfil" [ref=e49] [cursor=pointer]:
+          - /url: /perfil
+          - img [ref=e50]
+        - link "Ir a administración" [ref=e53] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e54]
+        - button "Firmar documentos" [active] [ref=e58]:
+          - img [ref=e59]
+        - button "Notificaciones" [ref=e61]:
+          - img [ref=e62]
+        - link "Cerrar sesión" [ref=e65] [cursor=pointer]:
+          - /url: /logout
+          - img [ref=e66]
+  - generic [ref=e70]:
+    - complementary [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e75]:
+          - img "User Avatar" [ref=e78]
+          - generic [ref=e79]:
+            - heading "Jefa Talento Demo" [level=3] [ref=e80]
+            - paragraph [ref=e81]: Cuenta institucional
+        - generic [ref=e82]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Cargos asignados
+            - button "Seleccionar grupo de cargos" [ref=e87]:
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e92]: Consolidado
+              - img [ref=e94]
+          - generic [ref=e98]:
+            - button "Jefe" [ref=e99]:
+              - generic [ref=e100]:
+                - img [ref=e101]
+                - generic [ref=e104]: Jefe
+            - button "Requerimiento Docente" [ref=e106]:
+              - img [ref=e108]
+              - generic [ref=e111]: Requerimiento Docente
+    - generic [ref=e200]:
+      - generic [ref=e203]:
+        - heading "Firmas electrónicas" [level=2] [ref=e204]
+        - paragraph [ref=e205]: Carga documentos y define las areas de estampado para la firma.
+      - generic [ref=e206]:
+        - heading "Selecciona el documento" [level=3] [ref=e207]
+        - generic [ref=e208]:
+          - generic [ref=e210]:
+            - heading "Firmar documento" [level=3] [ref=e212]
+            - generic [ref=e213] [cursor=pointer]:
+              - img [ref=e215]
+              - button "Seleccionar documento Arrastra y suelta o selecciona un PDF. Seleccionar documento Arrastra y suelta o selecciona un PDF." [ref=e217]
+              - generic:
+                - generic: Seleccionar documento
+                - generic: Arrastra y suelta o selecciona un PDF.
+          - generic [ref=e218]:
+            - heading "Buscar en BD" [level=3] [ref=e219]
+            - generic [ref=e220]:
+              - button "Próximamente" [disabled] [ref=e221]
+              - paragraph [ref=e222]: Se mostraran solicitudes pendientes con detalles del documento.
+          - generic [ref=e224]:
+            - heading "Solicitar firmas" [level=3] [ref=e226]
+            - generic [ref=e227] [cursor=pointer]:
+              - img [ref=e229]
+              - button "Iniciar solicitud Envía el documento a otros usuarios. Iniciar solicitud Envía el documento a otros usuarios." [ref=e232]
+              - generic:
+                - generic: Iniciar solicitud
+                - generic: Envía el documento a otros usuarios.
+          - generic [ref=e234]:
+            - heading "Validar documento" [level=3] [ref=e236]
+            - generic [ref=e237] [cursor=pointer]:
+              - img [ref=e239]
+              - button "Validar documento Verifica firmas y estado del documento. Validar documento Verifica firmas y estado del documento." [ref=e242]
+              - generic:
+                - generic: Validar documento
+                - generic: Verifica firmas y estado del documento.
+          - generic [ref=e244]:
+            - heading "Multifirmador" [level=3] [ref=e246]
+            - generic [ref=e247] [cursor=pointer]:
+              - img [ref=e249]
+              - button "Seleccionar documentos Arrastra y suelta o selecciona varios PDF. Seleccionar documentos Arrastra y suelta o selecciona varios PDF." [ref=e253]
+              - generic:
+                - generic: Seleccionar documentos
+                - generic: Arrastra y suelta o selecciona varios PDF.
+  - button "Abrir chat" [ref=e194]:
+    - img [ref=e196]

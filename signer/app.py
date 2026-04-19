@@ -205,7 +205,7 @@ def upload_to_minio(bucket: str | None, object_name: str, source_path: Path):
 def pdf_has_embedded_signatures(source_pdf: Path) -> bool:
     try:
         with source_pdf.open("rb") as input_stream:
-            reader = PdfFileReader(input_stream)
+            reader = PdfFileReader(input_stream, strict=False)
             return bool(reader.embedded_signatures)
     except Exception as exc:
         logger.warning("No se pudo inspeccionar el PDF para firmas embebidas, se asumirá sin firmas: %s", exc)
@@ -882,7 +882,11 @@ def sign_pdf_document(data: dict[str, Any], paths: JobPaths, certificate_info: d
 
         target_output = paths.signed_pdf if index == len(coordinates_list) - 1 else paths.signed_pdf.parent / f"signed_{index}.pdf"
         with working_input.open("rb") as input_stream:
-            writer = IncrementalPdfFileWriter(input_stream)
+            # Algunos PDFs de proceso llegan con tablas xref híbridas.
+            # pyHanko las rechaza en modo estricto, pero sí puede operarlas
+            # cuando el reader previo se abre con strict=False.
+            previous_reader = PdfFileReader(input_stream, strict=False)
+            writer = IncrementalPdfFileWriter(input_stream, prev=previous_reader)
             with target_output.open("wb") as output_stream:
                 pdf_signer.sign_pdf(
                     writer,
@@ -917,7 +921,7 @@ def sign_pdf_document(data: dict[str, Any], paths: JobPaths, certificate_info: d
 
 def validate_signed_pdf(signed_pdf: Path) -> dict[str, Any]:
     with signed_pdf.open("rb") as input_stream:
-        reader = PdfFileReader(input_stream)
+        reader = PdfFileReader(input_stream, strict=False)
         if not reader.embedded_signatures:
             return {"performed": False, "message": "El PDF firmado no contiene firmas embebidas."}
         embedded_signature = reader.embedded_signatures[-1]
@@ -1160,7 +1164,7 @@ def process_validation_job(data: dict[str, Any]) -> dict[str, Any]:
             download_from_minio(data.get("minioBucket"), data["minioPdfPath"], source_pdf)
 
             with source_pdf.open("rb") as input_stream:
-                reader = PdfFileReader(input_stream)
+                reader = PdfFileReader(input_stream, strict=False)
                 validation_context = build_validation_context()
                 all_entries = [
                     normalize_signature_entry(index + 1, embedded_signature, validation_context)

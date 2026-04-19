@@ -2134,11 +2134,23 @@
       return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
-    const reconcileEmbeddedWorkflowSignAfterError = async () => {
-      if (!isEmbeddedWorkflowMode.value) return null;
+    const reconcileEmbeddedWorkflowSignAfterError = async (fallbackContext = null) => {
+      const embeddedMode = Boolean(
+        fallbackContext?.embedded
+        ?? isEmbeddedWorkflowMode.value
+      );
+      if (!embeddedMode) return null;
 
-      const documentVersionId = Number(workflowSignContext.value?.documentVersionId || 0);
-      const signatureRequestId = Number(workflowSignContext.value?.signatureRequestId || 0);
+      const documentVersionId = Number(
+        fallbackContext?.documentVersionId
+        ?? workflowSignContext.value?.documentVersionId
+        ?? 0
+      );
+      const signatureRequestId = Number(
+        fallbackContext?.signatureRequestId
+        ?? workflowSignContext.value?.signatureRequestId
+        ?? 0
+      );
       if (!documentVersionId || !signatureRequestId) {
         return null;
       }
@@ -2161,8 +2173,11 @@
           requestStatusCode === 'completado'
           || requestStatusCode === 'completed'
           || Boolean(request?.respondedAt);
+        const currentStepOrder = Number(snapshot?.currentSignatureStepOrder || 0);
+        const requestStepOrder = Number(request?.stepOrder || 0);
+        const workflowAdvanced = Boolean(currentStepOrder && requestStepOrder && currentStepOrder > requestStepOrder);
 
-        if (!completed) {
+        if (!completed && !workflowAdvanced) {
           return null;
         }
 
@@ -2452,6 +2467,11 @@
 
       isSigning.value = true;
       signError.value = '';
+      const embeddedWorkflowContext = {
+        embedded: props.embedded && isEmbeddedWorkflowMode.value,
+        documentVersionId: Number(workflowSignContext.value?.documentVersionId || 0),
+        signatureRequestId: Number(workflowSignContext.value?.signatureRequestId || 0)
+      };
       try {
         const allFields = fields.value.map((field) => ({
           page: field.page,
@@ -2503,26 +2523,25 @@
           : `El documento fue firmado correctamente con ${signedCount} campo(s).`;
         signedMinioPath.value = data.signedPath;
         signedFieldsCount.value = signedCount;
-        signCertModalInstance?.hide();
         if (props.embedded && isEmbeddedWorkflowMode.value) {
           emit('workflow-signed', {
-            documentVersionId: workflowSignContext.value?.documentVersionId || null,
-            signatureRequestId: workflowSignContext.value?.signatureRequestId || null,
+            documentVersionId: embeddedWorkflowContext.documentVersionId || null,
+            signatureRequestId: embeddedWorkflowContext.signatureRequestId || null,
             signedPath: data.signedPath || '',
             workflow: data.workflow || null,
             message: signResultMessage.value,
           });
           return;
         }
+        signCertModalInstance?.hide();
         signResultModalInstance = Modal.getOrCreateInstance(signResultModal.value.el);
         signResultModalInstance.show();
       } catch (error) {
-        const reconciledWorkflow = await reconcileEmbeddedWorkflowSignAfterError();
+        const reconciledWorkflow = await reconcileEmbeddedWorkflowSignAfterError(embeddedWorkflowContext);
         if (reconciledWorkflow) {
           signError.value = '';
           signSuccess.value = true;
           signResultMessage.value = reconciledWorkflow.message;
-          signCertModalInstance?.hide();
           emit('workflow-signed', reconciledWorkflow);
           return;
         }

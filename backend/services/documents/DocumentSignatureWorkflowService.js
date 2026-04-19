@@ -377,6 +377,24 @@ const collectAssignees = (...sources) => {
   return result;
 };
 
+const readRequestStatusCode = (row) =>
+  normalizeCode(row?.request_status_code ?? row?.requestStatusCode);
+
+const readSignatureStatusCode = (row) =>
+  normalizeCode(row?.signature_status_code ?? row?.signatureStatusCode);
+
+const readStepOrder = (row) => Number(row?.step_order ?? row?.stepOrder);
+
+const readApprovalMode = (row) =>
+  String(row?.approval_mode ?? row?.approvalMode ?? SIGNATURE_APPROVAL_AND)
+    .trim()
+    .toLowerCase();
+
+const readRequiredSignersMin = (row) => {
+  const value = row?.required_signers_min ?? row?.requiredSignersMin;
+  return value !== null && value !== undefined ? Number(value) : null;
+};
+
 const resolveSpecificPersonAssignees = (step) => {
   if (!step?.assignedPersonId) {
     return [];
@@ -510,13 +528,10 @@ const getExistingSignatureFlowInstance = async (connection, documentVersionId) =
 const summarizeSignatureRequests = (rows) => {
   const byStep = new Map();
   for (const row of rows) {
-    const stepOrder = Number(row.step_order);
+    const stepOrder = readStepOrder(row);
     if (!byStep.has(stepOrder)) {
-      const approvalMode = String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase();
-      const requiredSignersMin =
-        row.required_signers_min !== null && row.required_signers_min !== undefined
-          ? Number(row.required_signers_min)
-          : null;
+      const approvalMode = readApprovalMode(row);
+      const requiredSignersMin = readRequiredSignersMin(row);
       byStep.set(stepOrder, {
         stepOrder,
         approvalMode,
@@ -530,8 +545,8 @@ const summarizeSignatureRequests = (rows) => {
     }
     const summary = byStep.get(stepOrder);
     summary.total += 1;
-    const code = normalizeCode(row.request_status_code);
-    const signatureCode = normalizeCode(row.signature_status_code);
+    const code = readRequestStatusCode(row);
+    const signatureCode = readSignatureStatusCode(row);
     if (SIGN_APPROVED.has(code)) {
       if (signatureCode && !DOC_SIGNATURE_SUCCESS.has(signatureCode)) summary.rejectedCount += 1;
       else summary.approvedCount += 1;
