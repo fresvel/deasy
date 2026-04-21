@@ -1,25 +1,41 @@
 <template>
   <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 w-full flex flex-col font-sans">
     
-    <!-- User Context Card -->
-    <div class="deasy-page-intro mb-8 transition-shadow hover:shadow-md">
-      <div class="deasy-page-intro__layout items-center text-center sm:text-left">
-      <div class="flex flex-col items-center gap-3 shrink-0">
-        <img class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-slate-100" :src="photo" alt="Foto de perfil" />
-        <div v-if="signatureMarker" class="max-w-56 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Token firma</p>
-          <p class="mt-1 break-all font-mono text-xs text-slate-700">{{ signatureMarker }}</p>
+    <section class="deasy-hero-shell mb-8">
+      <div class="deasy-hero-layout">
+        <div class="deasy-hero-main deasy-hero-main--with-media text-center sm:text-left">
+          <div class="deasy-hero-media flex flex-col items-center gap-3 sm:items-start">
+            <div class="deasy-hero-media-card deasy-hero-media-card--avatar">
+              <img class="h-24 w-24 rounded-[1.3rem] object-cover bg-white/70 sm:h-28 sm:w-28" :src="photo" alt="Foto de perfil" />
+            </div>
+          </div>
+          <div class="deasy-hero-copy sm:pt-1">
+            <div class="deasy-hero-kicker">Perfil académico</div>
+            <h1 class="deasy-hero-title">{{ displayName }}</h1>
+            <p class="deasy-hero-meta">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
+            <p class="deasy-hero-description">
+              Selecciona una sección para continuar con la gestión de tu dossier académico y actualizar tu información profesional.
+            </p>
+          </div>
+        </div>
+        <div class="deasy-hero-side deasy-hero-side--compact xl:text-right">
+          <article v-for="card in profileHeroCards" :key="card.label" class="deasy-hero-stat-card" :class="card.wide ? 'sm:col-span-2' : ''">
+            <div class="deasy-hero-stat-card__lead">
+              <span class="deasy-hero-stat-card__icon">
+                <component :is="getIcon(card.icon)" class="h-5 w-5" />
+              </span>
+              <div class="deasy-hero-stat-card__body">
+                <span class="deasy-hero-stat-card__eyebrow">{{ card.label }}</span>
+                <span class="deasy-hero-stat-card__title">{{ card.title }}</span>
+              </div>
+            </div>
+            <span class="max-w-40 break-all text-right text-sm font-bold leading-tight text-[#21517a]">
+              {{ card.value }}
+            </span>
+          </article>
         </div>
       </div>
-      <div class="deasy-page-intro__body mt-2 flex flex-col justify-center sm:mt-0">
-        <h4 class="deasy-page-intro__title">{{ displayName }}</h4>
-        <p class="deasy-page-intro__meta">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
-        <p class="deasy-page-intro__description">
-          Selecciona una sección para continuar con la gestión de tu dossier académico y actualizar tu información profesional.
-        </p>
-      </div>
-      </div>
-    </div>
+    </section>
 
     <!-- Sections Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -94,6 +110,32 @@ const sectionCards = computed(() =>
     };
   })
 );
+
+const totalRecords = computed(() =>
+  Object.values(props.dossierCounts || {}).reduce((sum, value) => sum + Number(value || 0), 0)
+);
+
+const profileHeroCards = computed(() => [
+  {
+    label: 'Perfil',
+    title: 'Secciones',
+    value: sectionCards.value.length,
+    icon: 'id-card'
+  },
+  {
+    label: 'Dossier',
+    title: 'Registros',
+    value: totalRecords.value,
+    icon: 'check-double'
+  },
+  {
+    label: 'Firma',
+    title: signatureMarker.value ? 'Token activo' : 'Token pendiente',
+    value: signatureMarker.value || 'Pend.',
+    icon: 'certificate',
+    wide: true
+  }
+]);
 
 const displayName = computed(() => {
   const firstName = props.currentUser?.first_name ?? "";

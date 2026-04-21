@@ -163,47 +163,36 @@
             </div>
             <div v-else-if="metaError" class="text-red-500 font-medium text-center p-6 bg-red-50/50 rounded-2xl border border-red-100">{{ metaError }}</div>
             <template v-else>
-               <div class="deasy-page-intro mb-8">
-                 <div class="deasy-page-intro__layout">
-                  <div class="w-16 h-16 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100/50 shadow-inner">
-                    <component :is="resolveIcon(showAcademyCrudIndex ? (selectedAcademyCrudItem?.icon || 'map-marked-alt') : showAcademiaIndex ? 'map-marked-alt' : showGestionCrudIndex ? (selectedGestionCrudItem?.icon || 'check-double') : showGestionesIndex ? 'check-double' : showUsersCrudIndex ? (selectedUsersCrudItem?.icon || 'user') : showUsersIndex ? 'user' : showContractsCrudIndex ? (selectedContractsCrudItem?.icon || 'certificate') : showContractsIndex ? 'certificate' : showSecurityCrudIndex ? (selectedSecurityCrudItem?.icon || 'lock') : showSecurityIndex ? 'lock' : showGroupCrudIndex ? iconForGroup(selectedGroup) : 'lock')" class="w-8 h-8" />
+               <section class="deasy-hero-shell mb-8">
+                 <div class="deasy-hero-layout">
+                  <div class="deasy-hero-main deasy-hero-main--with-media">
+                    <div class="deasy-hero-media">
+                      <div class="deasy-hero-media-card">
+                        <component :is="resolveIcon(adminHeroIcon)" class="h-10 w-10" />
+                      </div>
+                    </div>
+                    <div class="deasy-hero-copy sm:pt-0">
+                      <div class="deasy-hero-kicker">{{ adminHeroKicker }}</div>
+                      <h2 class="deasy-hero-title">{{ adminHeroTitle }}</h2>
+                      <p class="deasy-hero-description">{{ adminHeroDescription }}</p>
+                    </div>
                   </div>
-                  <div class="deasy-page-intro__body">
-                    <h2 class="deasy-page-intro__title">
-                      {{ 
-                        showAcademyCrudIndex ? (selectedAcademyCrudItem?.label || 'Academia') :
-                        showAcademiaIndex ? 'Academia' :
-                        showGestionCrudIndex ? (selectedGestionCrudItem?.label || 'Gestiones') :
-                        showGestionesIndex ? 'Gestiones' :
-                        showUsersCrudIndex ? (selectedUsersCrudItem?.label || 'Usuarios') :
-                        showUsersIndex ? 'Usuarios' :
-                        showContractsCrudIndex ? (selectedContractsCrudItem?.label || 'Contratos') :
-                        showContractsIndex ? 'Contratos' :
-                        showSecurityCrudIndex ? (selectedSecurityCrudItem?.label || 'Seguridad') :
-                        showSecurityIndex ? 'Seguridad' :
-                        showGroupCrudIndex ? (selectedGroup?.label || 'Administración') :
-                        'Panel de administración'
-                      }}
-                    </h2>
-                    <p class="deasy-page-intro__description mt-3">
-                      {{ 
-                        showAcademyCrudIndex ? (selectedAcademyCrudItem?.description || 'Gestiona el CRUD de catálogos y relaciones.') :
-                        showAcademiaIndex ? 'Accesos principales para administrar Unidades, Periodos y Cargos.' :
-                        showGestionCrudIndex ? (selectedGestionCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
-                        showGestionesIndex ? 'Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.' :
-                        showUsersCrudIndex ? (selectedUsersCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
-                        showUsersIndex ? 'Accesos por subgrupo para administrar personas del sistema.' :
-                        showContractsCrudIndex ? (selectedContractsCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
-                        showContractsIndex ? 'Accesos por subgrupo para administrar vacantes, contratos y orígenes.' :
-                        showSecurityCrudIndex ? (selectedSecurityCrudItem?.description || 'Gestiona tablas relacionadas al subgrupo.') :
-                        showSecurityIndex ? 'Accesos por subgrupo para administrar roles y permisos.' :
-                        showGroupCrudIndex ? 'Gestiona el CRUD de las tablas del grupo.' :
-                        'Accesos organizados para crear, editar, leer y eliminar datos del sistema.'
-                      }}
-                    </p>
+                  <div class="deasy-hero-side xl:text-right">
+                    <article v-for="card in adminHeroCards" :key="card.label" class="deasy-hero-stat-card">
+                      <div class="deasy-hero-stat-card__lead">
+                        <span class="deasy-hero-stat-card__icon">
+                          <component :is="resolveIcon(card.icon)" class="h-5 w-5" />
+                        </span>
+                        <div class="deasy-hero-stat-card__body">
+                          <span class="deasy-hero-stat-card__eyebrow">{{ card.label }}</span>
+                          <span class="deasy-hero-stat-card__title">{{ card.meta }}</span>
+                        </div>
+                      </div>
+                      <span class="deasy-hero-stat-card__value">{{ card.value }}</span>
+                    </article>
                   </div>
                  </div>
-               </div>
+               </section>
                
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
                  <template v-if="showAcademyCrudIndex">
@@ -876,6 +865,100 @@ const selectedGroupCrudTables = computed(() => {
   const supportTables = selectedGroup.value.supportTables.map((table) => ({ ...table, bucket: "Soporte" }));
   return [...mainTables, ...supportTables];
 });
+
+const adminHeroIcon = computed(() =>
+  showAcademyCrudIndex.value ? (selectedAcademyCrudItem.value?.icon || 'map-marked-alt')
+  : showAcademiaIndex.value ? 'map-marked-alt'
+  : showGestionCrudIndex.value ? (selectedGestionCrudItem.value?.icon || 'check-double')
+  : showGestionesIndex.value ? 'check-double'
+  : showUsersCrudIndex.value ? (selectedUsersCrudItem.value?.icon || 'user')
+  : showUsersIndex.value ? 'user'
+  : showContractsCrudIndex.value ? (selectedContractsCrudItem.value?.icon || 'certificate')
+  : showContractsIndex.value ? 'certificate'
+  : showSecurityCrudIndex.value ? (selectedSecurityCrudItem.value?.icon || 'lock')
+  : showSecurityIndex.value ? 'lock'
+  : showGroupCrudIndex.value ? iconForGroup(selectedGroup.value)
+  : 'lock'
+);
+
+const adminHeroTitle = computed(() =>
+  showAcademyCrudIndex.value ? (selectedAcademyCrudItem.value?.label || 'Academia')
+  : showAcademiaIndex.value ? 'Academia'
+  : showGestionCrudIndex.value ? (selectedGestionCrudItem.value?.label || 'Gestiones')
+  : showGestionesIndex.value ? 'Gestiones'
+  : showUsersCrudIndex.value ? (selectedUsersCrudItem.value?.label || 'Usuarios')
+  : showUsersIndex.value ? 'Usuarios'
+  : showContractsCrudIndex.value ? (selectedContractsCrudItem.value?.label || 'Contratos')
+  : showContractsIndex.value ? 'Contratos'
+  : showSecurityCrudIndex.value ? (selectedSecurityCrudItem.value?.label || 'Seguridad')
+  : showSecurityIndex.value ? 'Seguridad'
+  : showGroupCrudIndex.value ? (selectedGroup.value?.label || 'Administración')
+  : 'Panel de administración'
+);
+
+const adminHeroDescription = computed(() =>
+  showAcademyCrudIndex.value ? (selectedAcademyCrudItem.value?.description || 'Gestiona el CRUD de catálogos y relaciones.')
+  : showAcademiaIndex.value ? 'Accesos principales para administrar unidades, periodos y cargos institucionales.'
+  : showGestionCrudIndex.value ? (selectedGestionCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
+  : showGestionesIndex.value ? 'Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.'
+  : showUsersCrudIndex.value ? (selectedUsersCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
+  : showUsersIndex.value ? 'Accesos por subgrupo para administrar personas del sistema.'
+  : showContractsCrudIndex.value ? (selectedContractsCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
+  : showContractsIndex.value ? 'Accesos por subgrupo para administrar vacantes, contratos y orígenes.'
+  : showSecurityCrudIndex.value ? (selectedSecurityCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
+  : showSecurityIndex.value ? 'Accesos por subgrupo para administrar roles y permisos.'
+  : showGroupCrudIndex.value ? 'Gestiona el CRUD de las tablas del grupo.'
+  : 'Accesos organizados para crear, editar, leer y eliminar datos del sistema.'
+);
+
+const adminHeroKicker = computed(() =>
+  selectedTable.value ? 'Tabla activa'
+  : showAcademyCrudIndex.value || showGestionCrudIndex.value || showUsersCrudIndex.value || showContractsCrudIndex.value || showSecurityCrudIndex.value || showGroupCrudIndex.value
+    ? 'Índice de gestión'
+    : 'Administración'
+);
+
+const adminHeroVisibleCount = computed(() => {
+  if (showAcademyCrudIndex.value) return academyCrudTables.value.length;
+  if (showAcademiaIndex.value) return academyMenuItems.value.length;
+  if (showGestionCrudIndex.value) return gestionCrudTables.value.length;
+  if (showGestionesIndex.value) return gestionMenuItems.value.length;
+  if (showUsersCrudIndex.value) return usersCrudTables.value.length;
+  if (showUsersIndex.value) return usersMenuItems.value.length;
+  if (showContractsCrudIndex.value) return contractsCrudTables.value.length;
+  if (showContractsIndex.value) return contractsMenuItems.value.length;
+  if (showSecurityCrudIndex.value) return securityCrudTables.value.length;
+  if (showSecurityIndex.value) return securityMenuItems.value.length;
+  if (showGroupCrudIndex.value) return selectedGroupCrudTables.value.length;
+  return homeGroups.value.length;
+});
+
+const adminHeroCards = computed(() => [
+  {
+    label: 'Vista',
+    meta: 'Módulos visibles',
+    value: adminHeroVisibleCount.value,
+    icon: 'circle'
+  },
+  {
+    label: 'Catálogo',
+    meta: 'Tablas activas',
+    value: tables.value.length,
+    icon: 'id-card'
+  },
+  {
+    label: 'Contexto',
+    meta: 'Submódulo activo',
+    value: selectedSection.value ? 1 : homeGroups.value.length,
+    icon: 'check-double'
+  },
+  {
+    label: 'Modo',
+    meta: selectedTable.value ? 'CRUD activo' : 'Vista índice',
+    value: selectedTable.value ? 'CRUD' : 'INDEX',
+    icon: 'lock'
+  }
+]);
 
 const groupIconMap = {
   estructura_academico: "map-marked-alt",

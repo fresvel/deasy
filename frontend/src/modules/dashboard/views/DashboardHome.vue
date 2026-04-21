@@ -205,72 +205,99 @@
 
         <template v-else>
           <section class="flex flex-col gap-8">
-            <section class="overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8">
-              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_30rem] xl:items-start">
-                <div class="flex flex-col gap-5">
-                  <div class="flex flex-wrap items-center gap-2.5">
-                    <div class="rounded-[1rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)]">
-                      {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                      <AppTag variant="contrast">Tareas {{ selectedProcessPanel?.summary?.tasks_total || 0 }}</AppTag>
-                      <AppTag variant="contrast">Entregables {{ selectedProcessPanel?.summary?.task_items_pending || 0 }}</AppTag>
-                      <AppTag variant="contrast">Llenado {{ selectedProcessPanel?.summary?.fill_requests_pending || 0 }}</AppTag>
+            <section class="deasy-hero-shell">
+              <div class="deasy-hero-layout">
+                <div class="deasy-hero-main deasy-hero-main--with-media">
+                  <div class="deasy-hero-media">
+                    <div class="deasy-hero-media-card">
+                      <IconChecklist class="h-10 w-10" />
                     </div>
                   </div>
-                  <div class="flex flex-col gap-3">
-                    <h1 class="m-0 text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl">
-                      {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
-                    </h1>
-                    <p class="m-0 max-w-3xl text-sm font-medium leading-7 text-white/82 md:text-base">
-                      Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
-                      documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
-                    </p>
+                  <div class="deasy-hero-copy sm:pt-1">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                      <div class="deasy-hero-kicker">
+                        {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <AppTag variant="hero">Tareas {{ selectedProcessPanel?.summary?.tasks_total || 0 }}</AppTag>
+                        <AppTag variant="hero">Entregables {{ selectedProcessPanel?.summary?.task_items_pending || 0 }}</AppTag>
+                        <AppTag variant="hero">Llenado {{ selectedProcessPanel?.summary?.fill_requests_pending || 0 }}</AppTag>
+                      </div>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h1 class="deasy-hero-title">
+                        {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
+                      </h1>
+                      <p class="deasy-hero-description">
+                        Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
+                        documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:justify-items-end">
+                <div class="deasy-hero-side">
                   <button
                     type="button"
-                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)]"
+                    class="deasy-hero-stat-card"
                     @click="showProcessDeliverableInfo"
                   >
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Documentos</span>
-                      <span class="text-sm font-semibold text-slate-700">Centro documental de la definición</span>
+                    <div class="deasy-hero-stat-card__lead">
+                      <span class="deasy-hero-stat-card__icon">
+                        <IconFileDescription class="h-5 w-5" />
+                      </span>
+                      <div class="deasy-hero-stat-card__body">
+                        <span class="deasy-hero-stat-card__eyebrow">Documentos</span>
+                        <span class="deasy-hero-stat-card__title">Abrir centro</span>
+                      </div>
                     </div>
-                    <span class="text-2xl font-extrabold leading-none text-[#21517a]">{{ selectedProcessPanel?.summary?.documents_total || 0 }}</span>
+                    <span class="deasy-hero-stat-card__value">{{ selectedProcessPanel?.summary?.documents_total || 0 }}</span>
                   </button>
                   <button
                     type="button"
-                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)]"
+                    class="deasy-hero-stat-card"
                     @click="showSignatureQueueInfo"
                   >
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Firmas</span>
-                      <span class="text-sm font-semibold text-slate-700">Solicitudes activas y trazabilidad</span>
+                    <div class="deasy-hero-stat-card__lead">
+                      <span class="deasy-hero-stat-card__icon">
+                        <IconSignature class="h-5 w-5" />
+                      </span>
+                      <div class="deasy-hero-stat-card__body">
+                        <span class="deasy-hero-stat-card__eyebrow">Firmas</span>
+                        <span class="deasy-hero-stat-card__title">Ver flujo</span>
+                      </div>
                     </div>
-                    <span class="text-2xl font-extrabold leading-none text-[#21517a]">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
+                    <span class="deasy-hero-stat-card__value">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
                   </button>
                   <button
                     type="button"
-                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)]"
+                    class="deasy-hero-stat-card"
                     @click="clearSelectedProcess"
                   >
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Navegación</span>
-                      <span class="text-sm font-semibold text-slate-700">Volver al panel general</span>
+                    <div class="deasy-hero-stat-card__lead">
+                      <span class="deasy-hero-stat-card__icon">
+                        <IconArrowRight class="h-5 w-5 rotate-180" />
+                      </span>
+                      <div class="deasy-hero-stat-card__body">
+                        <span class="deasy-hero-stat-card__eyebrow">Navegación</span>
+                        <span class="deasy-hero-stat-card__title">Volver</span>
+                      </div>
                     </div>
                     <span class="text-lg font-extrabold leading-none text-[#21517a]">←</span>
                   </button>
                   <button
                     type="button"
-                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)] disabled:cursor-not-allowed disabled:opacity-55"
+                    class="deasy-hero-stat-card disabled:cursor-not-allowed disabled:opacity-55"
                     :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
                     @click="openTaskLaunchModal"
                   >
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Tareas</span>
-                      <span class="text-sm font-semibold text-slate-700">Crear tarea manual</span>
+                    <div class="deasy-hero-stat-card__lead">
+                      <span class="deasy-hero-stat-card__icon">
+                        <IconPlus class="h-5 w-5" />
+                      </span>
+                      <div class="deasy-hero-stat-card__body">
+                        <span class="deasy-hero-stat-card__eyebrow">Tareas</span>
+                        <span class="deasy-hero-stat-card__title">Nueva tarea</span>
+                      </div>
                     </div>
                     <span class="text-lg font-extrabold leading-none text-[#21517a]">+</span>
                   </button>

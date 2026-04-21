@@ -255,6 +255,10 @@
         @apply border-white/20 bg-white/15 text-white backdrop-blur-sm;
     }
 
+    .deasy-tag--hero {
+        @apply border-white/16 bg-[linear-gradient(180deg,rgba(245,249,254,0.22)_0%,rgba(226,242,250,0.12)_100%)] text-white shadow-[0_10px_22px_rgba(6,12,24,0.12)] backdrop-blur-sm;
+    }
+
     .deasy-btn {
         @apply inline-flex items-center justify-center gap-2 rounded-xl border font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60;
     }
@@ -335,12 +339,100 @@
         @apply h-9 w-9 p-0;
     }
 
+    .deasy-hero-shell {
+        @apply overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8;
+    }
+
+    .deasy-hero-layout {
+        @apply grid gap-6 xl:grid-cols-[minmax(0,1fr)_30rem] xl:items-start;
+    }
+
+    .deasy-hero-main {
+        @apply flex min-w-0 flex-col gap-5;
+    }
+
+    .deasy-hero-main--with-media {
+        @apply sm:flex-row sm:items-center;
+    }
+
+    .deasy-hero-copy {
+        @apply flex min-w-0 flex-1 flex-col gap-1.5 sm:h-28 sm:justify-between;
+    }
+
+    .deasy-hero-media {
+        @apply shrink-0;
+    }
+
+    .deasy-hero-media-card {
+        @apply flex h-24 w-24 items-center justify-center rounded-[1.8rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] text-white shadow-[0_22px_40px_rgba(6,12,24,0.24)] sm:h-28 sm:w-28;
+    }
+
+    .deasy-hero-media-card--avatar {
+        @apply h-auto w-auto p-2;
+    }
+
+    .deasy-hero-kicker {
+        @apply inline-flex w-fit items-center gap-2 rounded-[1rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)];
+    }
+
+    .deasy-hero-kicker--ghost {
+        @apply border-white/12 bg-white/10 text-sky-100 shadow-none;
+    }
+
+    .deasy-hero-title {
+        @apply m-0 text-[1.75rem] font-bold leading-[0.95] tracking-tight text-white md:text-[2rem];
+    }
+
+    .deasy-hero-meta {
+        @apply text-sm font-semibold uppercase tracking-[0.16em] text-white/72;
+    }
+
+    .deasy-hero-description {
+        @apply m-0 max-w-3xl text-[0.8rem] font-medium leading-4.5 text-white/82 md:text-[0.85rem];
+    }
+
+    .deasy-hero-side {
+        @apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:justify-items-end;
+    }
+
+    .deasy-hero-side--compact {
+        @apply xl:w-[28rem];
+    }
+
+    .deasy-hero-stat-card {
+        @apply flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)];
+    }
+
+    .deasy-hero-stat-card__lead {
+        @apply flex min-w-0 items-center gap-3;
+    }
+
+    .deasy-hero-stat-card__icon {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.95rem] border border-[#d6e4f2] bg-white/90 text-[#4f6c84] shadow-[0_8px_18px_rgba(15,23,42,0.07)];
+    }
+
+    .deasy-hero-stat-card__body {
+        @apply flex min-w-0 flex-col gap-0.5;
+    }
+
+    .deasy-hero-stat-card__eyebrow {
+        @apply text-[10px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0];
+    }
+
+    .deasy-hero-stat-card__title {
+        @apply text-sm font-bold leading-tight text-slate-800;
+    }
+
+    .deasy-hero-stat-card__value {
+        @apply text-xl font-extrabold leading-none text-[#21517a];
+    }
+
     .deasy-page-intro {
-        @apply rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8;
+        @apply overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8;
     }
 
     .deasy-page-intro__layout {
-        @apply flex flex-col gap-5 sm:flex-row sm:items-start;
+        @apply grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start;
     }
 
     .deasy-page-intro__body {
@@ -348,19 +440,19 @@
     }
 
     .deasy-page-intro__title {
-        @apply text-2xl font-bold tracking-tight text-slate-800;
+        @apply m-0 text-[1.75rem] font-bold leading-[0.95] tracking-tight text-white md:text-[2rem];
     }
 
     .deasy-page-intro__meta {
-        @apply mt-1 text-sm font-medium text-slate-500;
+        @apply mt-1 text-sm font-semibold uppercase tracking-[0.16em] text-white/72;
     }
 
     .deasy-page-intro__description {
-        @apply mt-3 max-w-3xl rounded-xl border border-sky-100 bg-sky-50/50 p-4 text-sm font-medium leading-relaxed text-slate-600;
+        @apply mt-2 max-w-3xl text-[0.8rem] font-medium leading-4.5 text-white/82 md:text-[0.85rem];
     }
 
     .deasy-page-intro--dashboard {
-        @apply rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8;
+        @apply overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8;
     }
 
     .deasy-table-shell {
