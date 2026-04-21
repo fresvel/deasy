@@ -40,7 +40,6 @@ jobs:
       channel_tag: ${{ steps.meta.outputs.channel_tag }}
       deploy_env: ${{ steps.meta.outputs.deploy_env }}
       deploy_enabled: ${{ steps.meta.outputs.deploy_enabled }}
-      frontend_api_port: ${{ steps.meta.outputs.frontend_api_port }}
       deploy_image_tag: ${{ steps.meta.outputs.deploy_image_tag }}
     steps:
       - id: meta
@@ -84,15 +83,12 @@ jobs:
           case "$DEPLOY_ENV" in
             dev)
               CHANNEL_TAG="dev"
-              FRONTEND_API_PORT="3030"
               ;;
             qa)
               CHANNEL_TAG="qa"
-              FRONTEND_API_PORT="3130"
               ;;
             prod)
               CHANNEL_TAG="prod"
-              FRONTEND_API_PORT="3230"
               ;;
             *)
               echo "Ambiente no soportado: $DEPLOY_ENV"
@@ -105,7 +101,6 @@ jobs:
           echo "channel_tag=$CHANNEL_TAG" >> "$GITHUB_OUTPUT"
           echo "deploy_env=$DEPLOY_ENV" >> "$GITHUB_OUTPUT"
           echo "deploy_enabled=$DEPLOY_ENABLED" >> "$GITHUB_OUTPUT"
-          echo "frontend_api_port=$FRONTEND_API_PORT" >> "$GITHUB_OUTPUT"
           echo "deploy_image_tag=$DEPLOY_IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
   frontend-lint:
@@ -154,7 +149,7 @@ jobs:
             build_args: ""
           - service: frontend
             dockerfile: docker/frontend/Dockerfile
-            build_args: VITE_API_PORT=${{ needs.prepare.outputs.frontend_api_port }}
+            build_args: VITE_API_BASE_URL=/api
           - service: signer
             dockerfile: docker/signer/Dockerfile
             build_args: ""
@@ -211,8 +206,9 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts'"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx' '$DEPLOY_PATH/nginx/certs/prod'"
           rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
+          rsync -az --delete --exclude 'certs/prod/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
           rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
       - name: Upload runtime environment file
         env:

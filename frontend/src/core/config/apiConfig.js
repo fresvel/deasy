@@ -2,12 +2,15 @@
 // Puedes adaptar HOST, PORT, y rutas aquí según el entorno
 
 const DEFAULT_HOST = typeof window !== "undefined" ? window.location.hostname : "localhost";
+const DEFAULT_PROTOCOL = typeof window !== "undefined" ? window.location.protocol : "http:";
 const API_PORT = import.meta.env.VITE_API_PORT || "3030";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${DEFAULT_HOST}:${API_PORT}`;
-export const API_PREFIX = `${API_BASE_URL}/easym/v1`;
+const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "").trim();
+const API_BASE_URL = RAW_API_BASE_URL || `${DEFAULT_PROTOCOL}//${DEFAULT_HOST}:${API_PORT}`;
+const NORMALIZED_API_BASE_URL = API_BASE_URL.replace(/\/$/, "");
+export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/easym/v1`;
 
 export const API_ROUTES = {
-  BASE: API_BASE_URL,
+  BASE: NORMALIZED_API_BASE_URL,
   PREFIX: API_PREFIX,
   UNITS: `${API_PREFIX}/units`,
   PROGRAMS: `${API_PREFIX}/units`,

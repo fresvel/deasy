@@ -65,15 +65,15 @@ Cada ambiente expone puertos distintos y una red propia:
 
 Puertos de referencia:
 
-- `dev`: backend `3030`, frontend `8080`, MariaDB `3306`, MongoDB `27017`,
-  RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX UI `18083`,
-  MinIO API `9000`, MinIO Console `9001`, signer `4000`
-- `qa`: backend `3130`, frontend `8180`, MariaDB `13306`, MongoDB `12717`,
-  RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, EMQX MQTT `11883`, EMQX UI
-  `18084`, MinIO API `9100`, MinIO Console `9101`, signer `14000`
-- `prod`: backend `3230`, frontend `8280`, MariaDB `23306`, MongoDB `22717`,
-  RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, EMQX MQTT `21883`, EMQX UI
-  `28084`, MinIO API `9200`, MinIO Console `9201`, signer `24000`
+- `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, MariaDB `3306`, MongoDB
+  `27017`, RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX
+  UI `18083`, MinIO API `9000`, MinIO Console `9001`, signer `4000`
+- `qa`: proxy HTTP `9088`, proxy HTTPS `9443`, MariaDB `13306`, MongoDB
+  `12717`, RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, EMQX MQTT `11883`, EMQX
+  UI `18084`, MinIO API `9100`, MinIO Console `9101`, signer `14000`
+- `prod`: proxy HTTP `80`, proxy HTTPS `443`, MariaDB `23306`, MongoDB
+  `22717`, RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, EMQX MQTT `21883`, EMQX
+  UI `28084`, MinIO API `9200`, MinIO Console `9201`, signer `24000`
 
 ## Uso previsto por ambiente
 
@@ -356,3 +356,23 @@ Se aplican medidas iniciales de endurecimiento en `compose.prod.yml`:
 
 Estas medidas no agotan el hardening, pero dejan a `prod` en un estado
 operativamente mas serio y verificable.
+
+## Proxy reverso Nginx
+
+La entrada pública cliente queda centralizada en `nginx-proxy`, que termina TLS
+y enruta internamente hacia:
+
+- `/` -> `frontend:8080`
+- `/api/` -> `backend:3030`
+
+Matriz pública del proxy:
+
+- `dev`: HTTP `8088`, HTTPS `8443`
+- `qa`: HTTP `9088`, HTTPS `9443`
+- `prod`: HTTP `80`, HTTPS `443`
+
+La validación base sigue siendo:
+
+```bash
+bash scripts/docker-env.sh dev up -d --build
+```
