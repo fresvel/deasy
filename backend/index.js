@@ -1143,8 +1143,6 @@ const whitelist = new Set([
   "https://127.0.0.1"
 ].filter(Boolean))
 
-const getHeaderValue = (value) => String(value || "").split(",")[0].trim();
-
 const isPrivateOrLoopbackHost = (hostname = "") => {
   const value = String(hostname || "").trim().toLowerCase();
 
@@ -1181,39 +1179,27 @@ const parseUrl = (value) => {
   }
 };
 
-const resolvePublicOrigin = (req) => {
-  const forwardedProto = getHeaderValue(req.headers["x-forwarded-proto"]);
-  const protocol = forwardedProto || req.protocol || "http";
-  const forwardedHost = getHeaderValue(req.headers["x-forwarded-host"]);
-  const host = forwardedHost || req.get("host") || "";
-
-  if (!host) {
-    return null;
-  }
-
-  return `${protocol}://${host}`;
-};
+const privateProxyPorts = new Set([
+  String(process.env.PROXY_HTTPS_PORT || "").trim(),
+  "8443",
+  "9443"
+].filter(Boolean));
 
 app.use((req, res, next) => cors({
   origin: (origin, callback) => {
     console.log(`Iniciando CORS`)
     console.log("Origin: " + origin);
 
-    const publicOrigin = resolvePublicOrigin(req);
-    const isSamePublicOrigin = Boolean(origin && publicOrigin && origin === publicOrigin);
     const originUrl = parseUrl(origin);
-    const publicOriginUrl = parseUrl(publicOrigin);
     const isPrivateProxyOrigin = Boolean(
       process.env.DEASY_ENV !== "prod" &&
       originUrl &&
-      publicOriginUrl &&
-      originUrl.protocol === publicOriginUrl.protocol &&
-      originUrl.port === publicOriginUrl.port &&
-      isPrivateOrLoopbackHost(originUrl.hostname) &&
-      isPrivateOrLoopbackHost(publicOriginUrl.hostname)
+      originUrl.protocol === "https:" &&
+      privateProxyPorts.has(originUrl.port) &&
+      isPrivateOrLoopbackHost(originUrl.hostname)
     );
 
-    if (!origin || whitelist.has(origin) || isSamePublicOrigin || isPrivateProxyOrigin) {
+    if (!origin || whitelist.has(origin) || isPrivateProxyOrigin) {
       return callback(null, true);
     }
 

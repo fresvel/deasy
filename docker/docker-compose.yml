@@ -6,7 +6,7 @@ services:
     env_file: .env
     environment:
       FRONTEND_UPSTREAM: frontend:8080
-      BACKEND_UPSTREAM: backend:3030
+      BACKEND_UPSTREAM: backend:${BACKEND_PORT}
       HTTPS_REDIRECT_PORT: ${HTTPS_REDIRECT_PORT}
       TLS_CERT_PATH: /etc/nginx/certs/${NGINX_TLS_CERT_DIR}/fullchain.pem
       TLS_KEY_PATH: /etc/nginx/certs/${NGINX_TLS_CERT_DIR}/privkey.pem
