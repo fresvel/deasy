@@ -2,21 +2,30 @@
 set -eu
 
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
-CERT_DIR="$ROOT_DIR/nginx/certs"
-CRT_FILE="$CERT_DIR/tls.crt"
-KEY_FILE="$CERT_DIR/tls.key"
+TARGET_ENV="${1:-dev}"
+
+case "$TARGET_ENV" in
+  dev|qa|prod)
+    ;;
+  *)
+    echo "Ambiente no soportado: $TARGET_ENV"
+    echo "Uso: sh nginx/scripts/generate-self-signed.sh <dev|qa|prod>"
+    exit 1
+    ;;
+esac
+
+CERT_DIR="$ROOT_DIR/nginx/certs/$TARGET_ENV"
+CRT_FILE="$CERT_DIR/fullchain.pem"
+KEY_FILE="$CERT_DIR/privkey.pem"
 
 mkdir -p "$CERT_DIR"
 
-if [ -f "$CRT_FILE" ] && [ -f "$KEY_FILE" ]; then
-  echo "Certificates already exist in $CERT_DIR"
-  exit 0
-fi
-
 openssl req -x509 -nodes -newkey rsa:2048 \
+  -sha256 \
   -keyout "$KEY_FILE" \
   -out "$CRT_FILE" \
   -days 365 \
-  -subj "/C=EC/ST=Esmeraldas/L=Esmeraldas/O=Deasy/OU=Dev/CN=localhost"
+  -subj "/C=EC/ST=Esmeraldas/L=Esmeraldas/O=Deasy/OU=$TARGET_ENV/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 
 echo "Self-signed certificate generated in $CERT_DIR"

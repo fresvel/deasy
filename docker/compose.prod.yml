@@ -1,13 +1,13 @@
 name: deasy-prod
 
 services:
-  nginx:
-    env_file:
-      - .env.prod
+  nginx-proxy:
     restart: always
+    security_opt:
+      - no-new-privileges:true
     ports:
-      - "${NGINX_HTTP_PORT}:80"
-      - "${NGINX_HTTPS_PORT}:443"
+      - "${PROXY_HTTP_PORT}:80"
+      - "${PROXY_HTTPS_PORT}:443"
 
   mariadb:
     env_file:
@@ -101,8 +101,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
-    ports:
-      - "${FRONTEND_PORT}:8080"
 
   signer:
     image: ${IMAGE_REGISTRY}/${SIGNER_IMAGE_REPOSITORY}:${SIGNER_IMAGE_TAG}

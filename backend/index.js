@@ -22,6 +22,7 @@ import chat_router from "./routes/chat_router.js";
 import notification_router from "./routes/notification_router.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 
 const PORT = process.env.PORT || 3030
@@ -1128,29 +1129,98 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-const whitelist = [
+const whitelist = new Set([
   process.env.ORIGIN1,
   process.env.ORIGIN2,
   process.env.ORIGIN3,
   "http://localhost:8080",
   "http://127.0.0.1:8080",
   "https://localhost:8443",
-  "https://127.0.0.1:8443"
-].filter(Boolean)
+  "https://127.0.0.1:8443",
+  "https://localhost:9443",
+  "https://127.0.0.1:9443",
+  "https://localhost",
+  "https://127.0.0.1"
+].filter(Boolean))
 
-app.use(cors({
+const getHeaderValue = (value) => String(value || "").split(",")[0].trim();
+
+const isPrivateOrLoopbackHost = (hostname = "") => {
+  const value = String(hostname || "").trim().toLowerCase();
+
+  if (!value) {
+    return false;
+  }
+
+  if (value === "localhost" || value === "127.0.0.1" || value === "::1") {
+    return true;
+  }
+
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
+    return true;
+  }
+
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(value)) {
+    return true;
+  }
+
+  const match172 = value.match(/^172\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+  if (match172) {
+    const secondOctet = Number(match172[1]);
+    return secondOctet >= 16 && secondOctet <= 31;
+  }
+
+  return false;
+};
+
+const parseUrl = (value) => {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+};
+
+const resolvePublicOrigin = (req) => {
+  const forwardedProto = getHeaderValue(req.headers["x-forwarded-proto"]);
+  const protocol = forwardedProto || req.protocol || "http";
+  const forwardedHost = getHeaderValue(req.headers["x-forwarded-host"]);
+  const host = forwardedHost || req.get("host") || "";
+
+  if (!host) {
+    return null;
+  }
+
+  return `${protocol}://${host}`;
+};
+
+app.use((req, res, next) => cors({
   origin: (origin, callback) => {
     console.log(`Iniciando CORS`)
     console.log("Origin: " + origin);
-    if (!origin || whitelist.includes(origin)) {
-      return callback(null, origin);
+
+    const publicOrigin = resolvePublicOrigin(req);
+    const isSamePublicOrigin = Boolean(origin && publicOrigin && origin === publicOrigin);
+    const originUrl = parseUrl(origin);
+    const publicOriginUrl = parseUrl(publicOrigin);
+    const isPrivateProxyOrigin = Boolean(
+      process.env.DEASY_ENV !== "prod" &&
+      originUrl &&
+      publicOriginUrl &&
+      originUrl.protocol === publicOriginUrl.protocol &&
+      originUrl.port === publicOriginUrl.port &&
+      isPrivateOrLoopbackHost(originUrl.hostname) &&
+      isPrivateOrLoopbackHost(publicOriginUrl.hostname)
+    );
+
+    if (!origin || whitelist.has(origin) || isSamePublicOrigin || isPrivateProxyOrigin) {
+      return callback(null, true);
     }
+
     return callback("Error de cors: " + origin + " not authorized");
   },
   credentials: true // Permite el envío de cookies y credenciales
-}
-
-))
+})(req, res, next))
 
 
 app.use(express.json());

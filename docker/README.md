@@ -258,6 +258,33 @@ Wrappers actuales:
 
 - `scripts/deploy-env.sh`: compatibilidad para el flujo iniciado por GitHub
   Actions.
+
+## Proxy reverso Nginx
+
+El stack multiambiente publica ahora el acceso cliente a traves de
+`nginx-proxy`, que termina TLS y enruta internamente hacia:
+
+- `frontend:8080`
+- `backend:3030` mediante prefijo `/api/`
+
+El backend ya no se publica directamente en host en los overrides por
+ambiente. La matriz publica del proxy queda asi:
+
+- `dev`: HTTP `8088`, HTTPS `8443`
+- `qa`: HTTP `9088`, HTTPS `9443`
+- `prod`: HTTP `80`, HTTPS `443`
+
+Los certificados se resuelven por ambiente desde la raiz del repositorio:
+
+- `nginx/certs/dev`
+- `nginx/certs/qa`
+- `nginx/certs/prod`
+
+La validacion base sigue siendo:
+
+```bash
+bash scripts/docker-env.sh dev up -d --build
+```
 - `scripts/docker-env.sh`: interfaz comun para ejecutar compose por ambiente.
 - `scripts/seed-db.sh`: ejecuta `seed_pucese.mjs` dentro del contenedor
   `backend` por ambiente.

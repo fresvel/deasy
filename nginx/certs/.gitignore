@@ -1,3 +1,9 @@
 *
 !.gitignore
-!.gitkeep
+!README.md
+!dev/
+!dev/**
+!qa/
+!qa/**
+!prod/
+!prod/.gitkeep

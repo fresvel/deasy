@@ -1,35 +1,34 @@
 # Nginx reverse proxy
 
-This folder contains the reverse proxy configuration for Deasy.
+Esta carpeta contiene la configuración del proxy reverso de Deasy.
 
-## What is included
+## Estructura
 
-- `nginx.conf`: base Nginx config and upstream definitions.
-- `conf.d/default.conf`: HTTPS reverse proxy rules.
-- `certs/`: TLS certificate location (`tls.crt`, `tls.key`).
-- `acme/`: webroot directory for future Let's Encrypt HTTP-01 challenges.
-- `scripts/generate-self-signed.sh`: utility to generate local self-signed certificates.
+- `nginx.conf`: configuración base y utilidades globales.
+- `conf.d/default.conf.template`: plantilla renderizada por la imagen oficial de Nginx usando variables de entorno del contenedor.
+- `certs/dev` y `certs/qa`: certificados autofirmados versionados para ambientes no productivos.
+- `certs/prod`: ubicación reservada para certificados reales en despliegue.
+- `acme/`: webroot preparado para futuros desafíos HTTP-01 con Certbot.
+- `scripts/generate-self-signed.sh`: utilidad para regenerar certificados por ambiente.
 
-## Local certificate generation
+## Generar certificados
 
-From repository root:
+Desde la raíz del repositorio:
 
 ```sh
-sh nginx/scripts/generate-self-signed.sh
+sh nginx/scripts/generate-self-signed.sh dev
+sh nginx/scripts/generate-self-signed.sh qa
 ```
 
-Expected files:
+Los archivos generados siguen la convención:
 
-- `nginx/certs/tls.crt`
-- `nginx/certs/tls.key`
+- `nginx/certs/<ambiente>/fullchain.pem`
+- `nginx/certs/<ambiente>/privkey.pem`
 
-These certificates are intended for local/non-production use only.
+## Preparado para Let's Encrypt
 
-## Let's Encrypt readiness
+El proxy expone `/.well-known/acme-challenge/` desde `nginx/acme`.
 
-The current setup is ready for HTTP-01 validation by exposing:
-
-- `/.well-known/acme-challenge/` from `nginx/acme`
-
-Future Certbot integration can mount the same `nginx/acme` folder as webroot
-and replace `tls.crt` / `tls.key` with managed certificates.
+Cuando se incorpore Certbot, `prod` puede reemplazar sus certificados en
+`nginx/certs/prod/` sin cambiar la estructura de Compose ni la convención de
+rutas del proxy.
