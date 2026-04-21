@@ -990,25 +990,36 @@
       body-class="pt-4"
     >
       <div class="flex flex-col gap-5">
-        <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-          <AppButton
+        <div
+          v-if="fillWorkflowState.subject || signatureFlowState.subject"
+          class="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3"
+          role="tablist"
+          aria-label="Secciones del entregable"
+        >
+          <button
             v-if="fillWorkflowState.subject && shouldShowManageFill(fillWorkflowState.subject)"
-            :variant="deliverableWorkspaceState.tab === 'fill' ? 'primary' : 'softNeutral'"
-            size="sm"
             type="button"
+            role="tab"
+            :aria-selected="deliverableWorkspaceState.tab === 'fill'"
+            :tabindex="deliverableWorkspaceState.tab === 'fill' ? 0 : -1"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            :class="getDeliverableWorkspaceTabClass('fill')"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
-            Gestionar llenado
-          </AppButton>
-          <AppButton
+            Flujo de llenado
+          </button>
+          <button
             v-if="signatureFlowState.subject && shouldShowSignatureFlow(signatureFlowState.subject)"
-            :variant="deliverableWorkspaceState.tab === 'signature' ? 'primary' : 'softNeutral'"
-            size="sm"
             type="button"
+            role="tab"
+            :aria-selected="deliverableWorkspaceState.tab === 'signature'"
+            :tabindex="deliverableWorkspaceState.tab === 'signature' ? 0 : -1"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            :class="getDeliverableWorkspaceTabClass('signature')"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
             Flujo de firmas
-          </AppButton>
+          </button>
         </div>
 
         <template v-if="deliverableWorkspaceState.tab === 'fill'">
@@ -3225,6 +3236,45 @@ const shouldShowSignatureFlow = (payload) => {
   return Boolean(subject.actions?.can_review_signature_flow);
 };
 
+const hasPendingFillWorkflow = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
+  return requests.some((request) => !request?.responded_at);
+};
+
+const hasSignatureWorkflowActivity = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+  return requests.length > 0
+    || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.current_signature_step_order || 0) > 0;
+};
+
+const resolveDeliverableWorkspaceTab = (payload) => {
+  const canManageFill = shouldShowManageFill(payload);
+  const canReviewSignatureFlow = shouldShowSignatureFlow(payload);
+
+  if (canManageFill && hasPendingFillWorkflow(payload)) {
+    return 'fill';
+  }
+
+  if (canReviewSignatureFlow && hasSignatureWorkflowActivity(payload)) {
+    return 'signature';
+  }
+
+  if (canManageFill) {
+    return 'fill';
+  }
+
+  return 'signature';
+};
+
+const getDeliverableWorkspaceTabClass = (tab) => {
+  if (deliverableWorkspaceState.value.tab === tab) {
+    return 'border-slate-200 bg-white text-slate-900 shadow-[0_-1px_0_rgba(255,255,255,0.9)]';
+  }
+  return 'border-transparent bg-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700';
+};
+
 const shouldShowResetWorkflow = (payload) => {
   const subject = getDeliverableSubject(payload);
   return Boolean(subject.actions?.can_reset_workflow && subject.actions?.implemented?.reset_workflow);
@@ -3840,6 +3890,7 @@ const submitFillWorkflowAction = async (action) => {
     });
     setProcessActionInfo(`El flujo de llenado de ${subject.title} se actualizó correctamente.`, 'success');
     fillWorkflowModalInstance?.hide();
+    closeDeliverableWorkspaceModal();
     if (selectedProcessContext.value) {
       await loadSelectedProcessPanel(selectedProcessContext.value);
     }
@@ -4115,7 +4166,7 @@ const openDeliverableWorkspaceModal = async (payload) => {
 
   loadFillWorkflowState(payload);
   deliverableWorkspaceState.value = {
-    tab: canManageFill ? 'fill' : 'signature'
+    tab: resolveDeliverableWorkspaceTab(payload)
   };
 
   if (canReviewSignatureFlow) {
@@ -4132,6 +4183,10 @@ const openDeliverableWorkspaceModal = async (payload) => {
 
   deliverableWorkspaceModalInstance = Modal.getOrCreateInstance(deliverableWorkspaceModal.value?.el);
   deliverableWorkspaceModalInstance?.show();
+};
+
+const closeDeliverableWorkspaceModal = () => {
+  deliverableWorkspaceModalInstance?.hide();
 };
 
 const submitDeliverableReset = async () => {
