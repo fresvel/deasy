@@ -205,11 +205,11 @@
 
         <template v-else>
           <section class="flex flex-col gap-8">
-            <section class="bg-linear-to-br from-sky-800 via-sky-700 to-sky-600 p-6 md:p-8 rounded-3xl text-white shadow-2xl shadow-sky-900/20 flex flex-col gap-6">
-              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-                <div class="flex flex-col gap-4">
+            <section class="overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8">
+              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_30rem] xl:items-start">
+                <div class="flex flex-col gap-5">
                   <div class="flex flex-wrap items-center gap-2.5">
-                    <div class="text-sky-200 text-lg uppercase tracking-widest font-bold">
+                    <div class="rounded-[1rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)]">
                       {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -218,60 +218,62 @@
                       <AppTag variant="contrast">Llenado {{ selectedProcessPanel?.summary?.fill_requests_pending || 0 }}</AppTag>
                     </div>
                   </div>
-                  <h1 class="text-2xl md:text-3xl font-bold leading-tight m-0">{{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}</h1>
-                  <p class="max-w-3xl opacity-90 text-sm md:text-base font-medium m-0 mt-1">
-                    Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
-                    documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
-                  </p>
-                </div>
-                <div class="flex flex-col gap-3 xl:items-end xl:text-right">
-                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:w-[28rem] xl:justify-items-end">
-                    <button
-                      type="button"
-                      class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16"
-                      @click="showProcessDeliverableInfo"
-                    >
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Documentos</span>
-                        <span class="text-sm font-medium text-white/90">Centro documental de la definición</span>
-                      </div>
-                      <span class="text-2xl font-extrabold leading-none text-white">{{ selectedProcessPanel?.summary?.documents_total || 0 }}</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16"
-                      @click="showSignatureQueueInfo"
-                    >
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Firmas</span>
-                        <span class="text-sm font-medium text-white/90">Solicitudes activas y trazabilidad</span>
-                      </div>
-                      <span class="text-2xl font-extrabold leading-none text-white">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16"
-                      @click="clearSelectedProcess"
-                    >
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Navegación</span>
-                        <span class="text-sm font-medium text-white/90">Volver al panel general</span>
-                      </div>
-                      <span class="text-lg font-extrabold leading-none text-white">←</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/12 px-4 py-3 text-left text-white shadow-lg shadow-sky-950/10 backdrop-blur-sm transition-colors hover:bg-white/16 disabled:cursor-not-allowed disabled:opacity-60"
-                      :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
-                      @click="openTaskLaunchModal"
-                    >
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100/80">Tareas</span>
-                        <span class="text-sm font-medium text-white/90">Crear tarea manual</span>
-                      </div>
-                      <span class="text-lg font-extrabold leading-none text-white">+</span>
-                    </button>
+                  <div class="flex flex-col gap-3">
+                    <h1 class="m-0 text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl">
+                      {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
+                    </h1>
+                    <p class="m-0 max-w-3xl text-sm font-medium leading-7 text-white/82 md:text-base">
+                      Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
+                      documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
+                    </p>
                   </div>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:justify-items-end">
+                  <button
+                    type="button"
+                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)]"
+                    @click="showProcessDeliverableInfo"
+                  >
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Documentos</span>
+                      <span class="text-sm font-semibold text-slate-700">Centro documental de la definición</span>
+                    </div>
+                    <span class="text-2xl font-extrabold leading-none text-[#21517a]">{{ selectedProcessPanel?.summary?.documents_total || 0 }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)]"
+                    @click="showSignatureQueueInfo"
+                  >
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Firmas</span>
+                      <span class="text-sm font-semibold text-slate-700">Solicitudes activas y trazabilidad</span>
+                    </div>
+                    <span class="text-2xl font-extrabold leading-none text-[#21517a]">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)]"
+                    @click="clearSelectedProcess"
+                  >
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Navegación</span>
+                      <span class="text-sm font-semibold text-slate-700">Volver al panel general</span>
+                    </div>
+                    <span class="text-lg font-extrabold leading-none text-[#21517a]">←</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)] disabled:cursor-not-allowed disabled:opacity-55"
+                    :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
+                    @click="openTaskLaunchModal"
+                  >
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0]">Tareas</span>
+                      <span class="text-sm font-semibold text-slate-700">Crear tarea manual</span>
+                    </div>
+                    <span class="text-lg font-extrabold leading-none text-[#21517a]">+</span>
+                  </button>
                 </div>
               </div>
             </section>
