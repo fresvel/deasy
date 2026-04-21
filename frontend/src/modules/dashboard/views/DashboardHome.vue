@@ -1696,6 +1696,37 @@
     </AdminModalShell>
 
     <AdminModalShell
+      ref="deliverableSignResultModal"
+      labelled-by="deliverable-sign-result-modal-title"
+      :title="deliverableSignResultState.success ? 'Documento firmado' : 'Error al firmar'"
+      size="md"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div v-if="deliverableSignResultState.success" class="flex flex-col gap-4">
+        <p class="mb-0 text-sm text-emerald-700 font-medium">
+          {{ deliverableSignResultState.message || 'La firma del entregable se registró correctamente.' }}
+        </p>
+        <div v-if="deliverableSignResultState.signedPath" class="flex flex-wrap gap-3">
+          <AppButton variant="outlinePrimary" @click="viewSignedDeliverableResult">
+            Visualizar documento
+          </AppButton>
+          <AppButton variant="primary" @click="downloadSignedDeliverableResult">
+            Descargar documento
+          </AppButton>
+        </div>
+      </div>
+      <p v-else class="mb-0 text-sm text-rose-700 font-medium">
+        {{ deliverableSignResultState.message || 'No se pudo completar la firma.' }}
+      </p>
+      <template #footer>
+        <AppButton variant="secondary" data-modal-dismiss>
+          Cerrar
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
       ref="deliverableResetModal"
       labelled-by="deliverable-reset-modal-title"
       title="Resetear flujo del entregable"
@@ -1866,6 +1897,7 @@ const fillWorkflowModal = ref(null);
 const deliverableUploadModal = ref(null);
 const deliverableWorkspaceModal = ref(null);
 const deliverableOperationModal = ref(null);
+const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
 const deliverableResetModal = ref(null);
 const embeddedSignerRef = ref(null);
@@ -1886,6 +1918,12 @@ const deliverableOperationState = ref({
   type: 'info',
   message: '',
   detail: ''
+});
+const deliverableSignResultState = ref({
+  success: true,
+  message: '',
+  signedPath: '',
+  fileName: 'documento_firmado.pdf',
 });
 const deliverableResetState = ref({
   target: null,
@@ -1915,6 +1953,7 @@ let fillWorkflowModalInstance = null;
 let deliverableUploadModalInstance = null;
 let deliverableWorkspaceModalInstance = null;
 let deliverableOperationModalInstance = null;
+let deliverableSignResultModalInstance = null;
 let deliverablePreviewModalInstance = null;
 let deliverableResetModalInstance = null;
 const taskLaunchForm = ref({
@@ -2824,6 +2863,17 @@ onMounted(async () => {
       deliverablePreviewIsPdf.value = false;
     });
   }
+  if (deliverableSignResultModal.value?.el) {
+    deliverableSignResultModalInstance = Modal.getOrCreateInstance(deliverableSignResultModal.value.el);
+    deliverableSignResultModal.value.el.addEventListener('hidden.bs.modal', () => {
+      deliverableSignResultState.value = {
+        success: true,
+        message: '',
+        signedPath: '',
+        fileName: 'documento_firmado.pdf',
+      };
+    });
+  }
   
   await loadUserMenu();
 });
@@ -2888,6 +2938,29 @@ const openDeliverableOperationModal = (payload = {}) => {
   };
   deliverableOperationModalInstance = Modal.getOrCreateInstance(deliverableOperationModal.value?.el);
   deliverableOperationModalInstance?.show();
+};
+
+const sanitizeEmbeddedSignSuccessMessage = (message) => {
+  const raw = String(message || '').trim();
+  if (!raw) {
+    return 'La firma del entregable se registró correctamente.';
+  }
+  const warningIndex = raw.indexOf(' Advertencia: ');
+  if (warningIndex > -1) {
+    return raw.slice(0, warningIndex).trim();
+  }
+  return raw;
+};
+
+const openDeliverableSignResultModal = (payload = {}) => {
+  deliverableSignResultState.value = {
+    success: payload.success !== false,
+    message: payload.message || 'La firma del entregable se registró correctamente.',
+    signedPath: payload.signedPath || '',
+    fileName: payload.fileName || 'documento_firmado.pdf',
+  };
+  deliverableSignResultModalInstance = Modal.getOrCreateInstance(deliverableSignResultModal.value?.el);
+  deliverableSignResultModalInstance?.show();
 };
 
 const openDeliverableResetModal = (payload) => {
@@ -3624,6 +3697,48 @@ const downloadBlob = (blob, fileName) => {
   URL.revokeObjectURL(objectUrl);
 };
 
+const fetchSignedDeliverableResultBlob = async () => {
+  const signedPath = String(deliverableSignResultState.value.signedPath || '').trim();
+  if (!signedPath) {
+    throw new Error('No se encontró el documento firmado para descargar.');
+  }
+  const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedPath)}`, {
+    headers: {
+      ...processPanelService.getAuthHeaders(),
+    },
+  });
+  if (!response.ok) {
+    throw new Error('No se pudo descargar el documento firmado.');
+  }
+  return response.blob();
+};
+
+const viewSignedDeliverableResult = async () => {
+  try {
+    const blob = await fetchSignedDeliverableResultBlob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) {
+    setProcessActionInfo(
+      error?.message || 'No se pudo visualizar el documento firmado.',
+      'error'
+    );
+  }
+};
+
+const downloadSignedDeliverableResult = async () => {
+  try {
+    const blob = await fetchSignedDeliverableResultBlob();
+    downloadBlob(blob, deliverableSignResultState.value.fileName || 'documento_firmado.pdf');
+  } catch (error) {
+    setProcessActionInfo(
+      error?.message || 'No se pudo descargar el documento firmado.',
+      'error'
+    );
+  }
+};
+
 const downloadDeliverableFile = async (payload) => {
   const subject = getDeliverableSubject(payload);
   if (!subject.preloadFilePath) {
@@ -4140,6 +4255,9 @@ const openSignatureFlowModal = async (payload) => {
 const handleEmbeddedWorkflowSigned = async (payload = {}) => {
   const documentVersionId = Number(payload?.documentVersionId || 0);
   const currentSignatureFlowDocumentVersionId = Number(signatureFlowState.value?.documentVersionId || 0);
+  const signedPath = String(payload?.signedPath || '').trim();
+  const successMessage = sanitizeEmbeddedSignSuccessMessage(payload?.message);
+  const resultFileName = `documento_firmado_${documentVersionId || 'flujo'}.pdf`;
 
   documentSignModalInstance?.hide();
 
@@ -4154,10 +4272,13 @@ const handleEmbeddedWorkflowSigned = async (payload = {}) => {
     }
   }
 
-  setProcessActionInfo(
-    payload?.message || 'La firma del entregable se registró correctamente.',
-    'success'
-  );
+  processActionMessage.value = null;
+  openDeliverableSignResultModal({
+    success: true,
+    message: successMessage,
+    signedPath,
+    fileName: resultFileName,
+  });
 };
 
 const openDeliverableWorkspaceModal = async (payload) => {
