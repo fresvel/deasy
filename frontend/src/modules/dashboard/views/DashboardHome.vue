@@ -429,24 +429,30 @@
                     <article
                       v-for="deliverable in filteredProcessDeliverables"
                       :key="deliverable.key"
-                      class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
+                      class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-white/60 transition"
                       :class="getDeliverableCardTone(deliverable.item).card"
                     >
                       <span class="absolute inset-x-0 top-0 h-1.5" :class="getDeliverableCardTone(deliverable.item).accent"></span>
 
                       <div class="flex h-full flex-col gap-3 pt-2">
-                        <div class="flex min-w-0 flex-col gap-2">
+                        <div class="flex min-w-0 flex-col gap-3">
                           <div
-                            class="-mx-4 -mt-4 flex items-center justify-between gap-3 border-b px-4 pb-3 pt-2"
+                            class="-mx-4 -mt-4 flex cursor-pointer items-center justify-between gap-3 border-b px-4 pb-2.5 pt-1.5"
                             :class="deliverable.item.document_id
-                              ? 'border-sky-200/90 bg-linear-to-br from-white via-sky-50/70 to-sky-100/55 text-sky-700'
-                              : 'border-slate-200 bg-linear-to-br from-white via-slate-50 to-slate-100/70 text-slate-500'"
+                              ? 'border-sky-200/90 bg-sky-50/45 text-sky-700'
+                              : 'border-slate-200 bg-slate-50/70 text-slate-500'"
+                            role="button"
+                            tabindex="0"
+                            :aria-expanded="String(!isDeliverableCollapsed(deliverable.item))"
+                            @click="toggleDeliverableCard(deliverable.item)"
+                            @keydown.enter.prevent="toggleDeliverableCard(deliverable.item)"
+                            @keydown.space.prevent="toggleDeliverableCard(deliverable.item)"
                           >
                               <div class="flex min-w-0 flex-1 items-center gap-3">
-                                <div class="min-w-0 flex flex-1 items-center self-stretch py-1">
-                                  <p class="m-0 text-[0.95rem] font-semibold leading-snug" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                <div class="min-w-0 flex flex-1 items-center self-stretch py-1.5">
+                                  <p class="m-0 text-[1rem] font-semibold leading-[1.3]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
                                     {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
-                                    <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                    <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap text-[0.95em] font-medium opacity-90" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
                                       v{{ deliverable.item.document_version }}
                                     </span>
                                   </p>
@@ -456,76 +462,89 @@
                                 <AppButton
                                   variant="plain"
                                   :class-name="[
-                                    'relative inline-flex h-[3.375rem] w-[3.375rem] items-center justify-center rounded-[1rem] border bg-white/88 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                    'relative inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
                                     getDeliverableHeaderActionTone(deliverable.item)
                                   ].join(' ')"
                                   :disabled="!deliverable.item.actions?.can_open_process_chat"
                                   aria-label="Abrir chat"
                                   title="Abrir chat"
+                                  @click.stop
                                   @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
                                 >
-                                  <IconMessages class="h-[1.6875rem] w-[1.6875rem]" />
+                                  <IconMessages class="h-6 w-6" />
                                 </AppButton>
                                 <AppButton
                                   variant="plain"
                                   :class-name="[
-                                    'group inline-flex h-[3.375rem] w-[3.375rem] items-center justify-center rounded-[1rem] border bg-white/88 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                    'group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
                                     getDeliverableHeaderActionTone(deliverable.item)
                                   ].join(' ')"
                                   aria-label="Abrir detalle del entregable"
                                   title="Abrir detalle del entregable"
+                                  @click.stop
                                   @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
                                 >
-                                  <IconEye class="h-[1.6875rem] w-[1.6875rem]" />
+                                  <IconEye class="h-6 w-6" />
                                 </AppButton>
                               </div>
                           </div>
                         </div>
 
-                        <div
-                          v-if="getDeliverableProgress(deliverable.item)"
-                          class="rounded-[1.15rem] border px-4 py-3"
-                          :class="getDeliverableCardTone(deliverable.item).responsibility"
-                        >
-                          <div class="flex items-center justify-between gap-3">
-                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
-                              {{ getDeliverableProgress(deliverable.item).label }}
-                            </p>
-                            <span class="text-xs font-semibold text-slate-600">
-                              Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
-                            </span>
-                          </div>
-                          <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200/80">
-                            <div
-                              class="h-full rounded-full transition-all duration-300"
-                              :class="getDeliverableCardTone(deliverable.item).accent"
-                              :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
-                            ></div>
-                          </div>
-                          <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/70 pt-3">
-                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">Responsable actual</p>
-                            <span class="text-xs font-semibold text-slate-500">{{ getDeliverablePrimaryActionLabel(deliverable.item) }}</span>
-                          </div>
-                          <p class="m-0 mt-2 line-clamp-2 text-sm font-semibold leading-snug text-slate-800">
-                            {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
-                          </p>
-                        </div>
-
-                        <div class="mt-auto border-t border-slate-100 pt-3">
-                          <div class="mb-3 min-w-0 flex-1 rounded-[1.1rem] border border-slate-200 bg-slate-50/80 px-3.5 py-3 shadow-sm">
-                            <div class="flex items-center justify-between gap-3">
+                        <div v-show="!isDeliverableCollapsed(deliverable.item)" class="mt-auto border-t border-slate-100 pt-3">
+                          <div
+                            v-if="getDeliverableProgress(deliverable.item)"
+                            class="rounded-[1.05rem] border px-4 py-3"
+                            :class="getDeliverableCardTone(deliverable.item).responsibility"
+                          >
+                            <div class="flex items-start justify-between gap-3">
                               <div class="min-w-0">
-                                <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).label }}</p>
-                                <div class="mt-1">
+                                <p class="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.18em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                  {{ getDeliverableProgress(deliverable.item).label }}
+                                </p>
+                              </div>
+                              <span class="text-xs font-semibold text-slate-600">
+                                Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
+                              </span>
+                            </div>
+                            <p class="m-0 mt-2.5 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
+                              {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
+                            </p>
+                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
+                              <div
+                                class="h-full rounded-full transition-all duration-300"
+                                :class="getDeliverableCardTone(deliverable.item).accent"
+                                :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
+                              ></div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/70 pt-3">
+                              <span class="text-[0.72rem] font-medium tracking-[0.08em] text-slate-500">Acción</span>
+                              <span class="text-xs font-semibold text-slate-600">
+                                {{ getDeliverablePrimaryActionLabel(deliverable.item) }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div class="mt-3 rounded-[0.95rem] border border-slate-200 bg-slate-50/55 px-3.5 py-2.5">
+                            <div class="grid grid-cols-2 gap-3">
+                              <div class="min-w-0">
+                                <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                  {{ getDeliverableComplianceState(deliverable.item).label }}
+                                </p>
+                                <div class="mt-1.5">
                                   <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
                                     {{ getDeliverableComplianceState(deliverable.item).value }}
                                   </AppTag>
                                 </div>
                               </div>
                               <div class="min-w-0 text-right">
-                                <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).dueLabel }}</p>
-                                <div class="mt-1">
-                                  <AppTag :variant="getDeliverableComplianceState(deliverable.item).dueVariant">
+                                <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                  {{ getDeliverableComplianceState(deliverable.item).dueLabel }}
+                                </p>
+                                <div class="mt-1.5">
+                                  <AppTag
+                                    :variant="getDeliverableComplianceState(deliverable.item).dueVariant"
+                                    :class-name="getDeliverableComplianceState(deliverable.item).dueVariant === 'warning' ? 'deliverable-due-tag--salmon' : ''"
+                                  >
                                     {{ getDeliverableComplianceState(deliverable.item).dueValue }}
                                   </AppTag>
                                 </div>
@@ -533,19 +552,19 @@
                             </div>
                           </div>
 
-                          <div class="grid grid-cols-2 gap-3">
+                          <div class="mt-3 grid grid-cols-2 gap-3">
                             <button
                               v-if="shouldShowStartDeliverable(deliverable.item)"
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)] disabled:cursor-not-allowed disabled:opacity-60"
+                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                               :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
                               @click="startDeliverableFlow(deliverable.item)"
                             >
-                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconPlayerPlayFilled class="h-5 w-5" />
+                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconPlayerPlayFilled class="h-4.5 w-4.5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-bold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span>
+                                <span class="text-sm font-semibold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span>
                               </div>
                             </button>
                             <PdfDropField
@@ -564,55 +583,69 @@
                             <button
                               v-else-if="shouldShowSign(deliverable.item)"
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-violet-200/90 bg-linear-to-br from-white via-violet-50/35 to-fuchsia-50/35 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:from-white hover:to-violet-50/70 hover:shadow-[0_18px_36px_rgba(139,92,246,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-cyan-200/85 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50/45 hover:shadow-[0_10px_20px_rgba(6,182,212,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                               :disabled="!deliverable.item.actions?.implemented?.sign"
                               @click="openDocumentSignFlow(deliverable.item)"
                             >
-                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-violet-100/95 bg-white/92 text-violet-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-violet-200 group-hover:bg-violet-50">
-                                <IconSignature class="h-5 w-5" />
+                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-cyan-100/95 bg-cyan-50/55 text-cyan-700 transition-all group-hover:border-cyan-200 group-hover:bg-cyan-50">
+                                <IconSignature class="h-4.5 w-4.5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-bold text-slate-800">Firmar</span>
+                                <span class="text-sm font-semibold text-slate-800">Firmar</span>
                               </div>
                             </button>
                             <button
                               v-else
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
+                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
                               @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
                             >
-                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconChecklist class="h-5 w-5" />
+                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconChecklist class="h-4.5 w-4.5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-bold text-slate-800">Abrir</span>
+                                <span class="text-sm font-semibold text-slate-800">Abrir</span>
                               </div>
                             </button>
 
                             <button
-                              v-if="!shouldShowStartDeliverable(deliverable.item) && hasSignatureWorkflowActivity(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
+                              v-if="!shouldShowStartDeliverable(deliverable.item) && canApproveFillRequestForPayload(deliverable.item)"
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-sky-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
-                              @click="downloadDeliverableFile(deliverable.item)"
+                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-emerald-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                              :disabled="fillWorkflowSubmitting"
+                              @click="submitDeliverableCardFillAction(deliverable.item, 'approve')"
                             >
-                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconDownload class="h-5 w-5" />
+                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-emerald-100/95 bg-emerald-50/60 text-emerald-700 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                                <IconCircleCheck class="h-4.5 w-4.5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-bold text-slate-800">Descargar PDF</span>
+                                <span class="text-sm font-semibold text-slate-800">{{ getFillApproveActionLabelForPayload(deliverable.item) }}</span>
+                              </div>
+                            </button>
+                            <button
+                              v-else-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
+                              type="button"
+                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-sky-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
+                              @click="downloadDeliverableFile(deliverable.item)"
+                            >
+                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconDownload class="h-4.5 w-4.5" />
+                              </div>
+                              <div class="flex min-w-0 flex-col">
+                                <span class="text-sm font-semibold text-slate-800">Descargar PDF</span>
                               </div>
                             </button>
                             <button
                               v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)"
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-sky-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
+                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-sky-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
                               @click="handleDeliverableFutureAction('download_template', deliverable.item)"
                             >
-                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconFileDescription class="h-5 w-5" />
+                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconFileDescription class="h-4.5 w-4.5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-bold text-slate-800">Descargar plantilla</span>
+                                <span class="text-sm font-semibold text-slate-800">Descargar plantilla</span>
                               </div>
                             </button>
                           </div>
@@ -2162,6 +2195,7 @@ const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
+const collapsedDeliverableIds = ref(new Set());
 const fillWorkflowSubmitting = ref(false);
 const deliverablePreviewUrl = ref('');
 const deliverablePreviewName = ref('');
@@ -3422,36 +3456,42 @@ const subjectHasWorkingArtifact = (payload) => {
 
 const getCurrentFillStepCandidates = (payload) => {
   const subject = getDeliverableSubject(payload);
-  const currentStepOrder = Number(subject.workflow?.fill_flow?.current_step_order || subject.workflow?.current_fill_step_order || 0);
+  const currentStepOrder = Number(
+    subject.workflow?.fill_flow?.current_step_order
+    || subject.workflow?.fill_flow?.currentStepOrder
+    || subject.workflow?.current_fill_step_order
+    || subject.workflow?.currentFillStepOrder
+    || 0
+  );
   if (!currentStepOrder) {
-    const pendingRequests = (subject.workflow?.fill_requests || []).filter((item) => !item.responded_at);
+    const pendingRequests = (subject.workflow?.fill_requests || []).filter((item) => !(item?.responded_at || item?.respondedAt));
     if (pendingRequests.length) {
       return pendingRequests;
     }
   }
-  const stepCandidates = (subject.workflow?.fill_steps || []).filter((item) => Number(item.step_order) === currentStepOrder);
+  const stepCandidates = (subject.workflow?.fill_steps || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
   if (stepCandidates.length) {
     return stepCandidates;
   }
-  return (subject.workflow?.fill_requests || []).filter((item) => Number(item.step_order || 0) === currentStepOrder);
+  return (subject.workflow?.fill_requests || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
 };
 
 const getCurrentFillWorkflowRequest = (payload) => {
   const subject = getDeliverableSubject(payload);
   const currentUser = Number(currentUserId.value || 0);
   const currentStepCandidates = getCurrentFillStepCandidates(payload);
-  const unresolvedCurrentStepCandidates = currentStepCandidates.filter((item) => !item.responded_at);
+  const unresolvedCurrentStepCandidates = currentStepCandidates.filter((item) => !(item?.responded_at || item?.respondedAt));
   const preferredCurrentStepRequest =
-    unresolvedCurrentStepCandidates.find((item) => Number(item.assigned_person_id || 0) === currentUser)
-    || unresolvedCurrentStepCandidates.find((item) => Number(item.assigned_person_id || 0) > 0)
+    unresolvedCurrentStepCandidates.find((item) => Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
+    || unresolvedCurrentStepCandidates.find((item) => Number(item.assigned_person_id || item.assignedPersonId || 0) > 0)
     || unresolvedCurrentStepCandidates.find((item) => item.is_manual)
-    || currentStepCandidates.find((item) => Number(item.assigned_person_id || 0) === currentUser)
+    || currentStepCandidates.find((item) => Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
     || currentStepCandidates[0];
 
   return (
     preferredCurrentStepRequest
-    || (subject.workflow?.fill_requests || []).find((item) => !item.responded_at && Number(item.assigned_person_id || 0) === currentUser)
-    || (subject.workflow?.fill_requests || []).find((item) => !item.responded_at)
+    || (subject.workflow?.fill_requests || []).find((item) => !(item?.responded_at || item?.respondedAt) && Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
+    || (subject.workflow?.fill_requests || []).find((item) => !(item?.responded_at || item?.respondedAt))
     || subject.workflow?.fill_steps?.[0]
     || subject.workflow?.fill_requests?.[0]
     || null
@@ -3459,12 +3499,12 @@ const getCurrentFillWorkflowRequest = (payload) => {
 };
 
 const getFillRequestStatusCode = (request) =>
-  String(request?.status_name || request?.status || request?.request_status || '').trim().toLowerCase();
+  String(request?.status_name || request?.statusName || request?.status || request?.request_status || request?.requestStatus || '').trim().toLowerCase();
 
 const getFillRequestId = (request) => Number(request?.request_id || request?.id || 0) || null;
 
 const isReviewLikeFillStep = (request) => {
-  const resolverType = String(request?.resolver_type || '').trim().toLowerCase();
+  const resolverType = String(request?.resolver_type || request?.resolverType || '').trim().toLowerCase();
   if (!resolverType) {
     return false;
   }
@@ -3483,8 +3523,8 @@ const getDeliverableAccessSource = (payload) => {
   const subject = getDeliverableSubject(payload);
   const currentUser = Number(currentUserId.value || 0);
   const currentFillRequest = getCurrentFillWorkflowRequest(payload);
-  const fillAssignedPersonId = Number(currentFillRequest?.assigned_person_id || 0);
-  const fillResolverType = String(currentFillRequest?.resolver_type || '').trim().toLowerCase();
+  const fillAssignedPersonId = Number(currentFillRequest?.assigned_person_id || currentFillRequest?.assignedPersonId || 0);
+  const fillResolverType = String(currentFillRequest?.resolver_type || currentFillRequest?.resolverType || '').trim().toLowerCase();
 
   if (fillAssignedPersonId > 0 && fillAssignedPersonId === currentUser) {
     if (['cargo_in_scope', 'position', 'specific_person', 'manual_pick'].includes(fillResolverType)) {
@@ -3507,11 +3547,11 @@ const getDeliverableAccessSource = (payload) => {
 const isFillRequestActionableByCurrentUser = (request) => {
   if (!request) return false;
   const currentUser = Number(currentUserId.value || 0);
-  const assignedPersonId = Number(request.assigned_person_id || 0);
+  const assignedPersonId = Number(request.assigned_person_id || request.assignedPersonId || 0);
   if (assignedPersonId > 0) {
     return assignedPersonId === currentUser;
   }
-  return Boolean(request.is_manual);
+  return Boolean(request.is_manual || request.isManual);
 };
 
 const currentUserCanOperateFillStep = (payload) => {
@@ -3522,11 +3562,11 @@ const currentUserCanOperateFillStep = (payload) => {
     return isFillRequestActionableByCurrentUser(fallbackRequest);
   }
   return candidates.some((request) => {
-    const assignedPersonId = Number(request?.assigned_person_id || 0);
+    const assignedPersonId = Number(request?.assigned_person_id || request?.assignedPersonId || 0);
     if (assignedPersonId > 0) {
       return assignedPersonId === currentUser;
     }
-    return Boolean(request?.is_manual);
+    return Boolean(request?.is_manual || request?.isManual);
   });
 };
 
@@ -3579,6 +3619,22 @@ const shouldShowTemplateDownload = (payload) => {
   return Boolean(subject.actions?.can_download_template && hasDeliverableBeenStarted(payload));
 };
 
+const isReviewFillRequestForPayload = (payload) => {
+  const resolver = String(getCurrentFillWorkflowRequest(payload)?.resolver_type || '').trim().toLowerCase();
+  return ['cargo_in_scope', 'position', 'specific_person'].includes(resolver);
+};
+
+const canApproveFillRequestForPayload = (payload) => {
+  const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
+  return currentUserCanOperateFillStep(payload)
+    && ['pending', 'in_progress'].includes(code)
+    && subjectHasWorkingArtifact(payload);
+};
+
+const getFillApproveActionLabelForPayload = (payload) => (
+  isReviewFillRequestForPayload(payload) ? 'Aprobar' : 'Enviar'
+);
+
 const shouldShowManageFill = (payload) => {
   const subject = getDeliverableSubject(payload);
   return Boolean(subject.actions?.can_manage_fill && subject.preloadFilePath);
@@ -3592,7 +3648,11 @@ const shouldShowSignatureFlow = (payload) => {
 const hasPendingFillWorkflow = (payload) => {
   const subject = getDeliverableSubject(payload);
   const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
-  return requests.some((request) => !request?.responded_at);
+  const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
+  const flowSteps = Array.isArray(subject.workflow?.fill_flow?.steps) ? subject.workflow.fill_flow.steps : [];
+  return requests.some((request) => !(request?.responded_at || request?.respondedAt))
+    || steps.some((step) => ['pending', 'in_progress', 'returned'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()))
+    || flowSteps.some((step) => ['pending', 'in_progress', 'returned'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()));
 };
 
 const hasFillWorkflowActivity = (payload) => {
@@ -3603,7 +3663,9 @@ const hasFillWorkflowActivity = (payload) => {
     || requests.length > 0
     || Number(
       subject.workflow?.fill_flow?.current_step_order
+      || subject.workflow?.fill_flow?.currentStepOrder
       || subject.workflow?.current_fill_step_order
+      || subject.workflow?.currentFillStepOrder
       || 0
     ) > 0;
 };
@@ -3708,27 +3770,27 @@ const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
 const getDeliverableCardTone = (payload) => {
   if (shouldShowStartDeliverable(payload)) {
     return {
-      card: 'border-slate-300/80 hover:border-slate-400 hover:shadow-[0_18px_36px_rgba(71,85,105,0.12)]',
+      card: 'border-slate-300/80 hover:border-slate-400 hover:shadow-[0_12px_24px_rgba(71,85,105,0.08)]',
       accent: 'bg-slate-500',
-      responsibility: 'border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/80',
+      responsibility: 'border-slate-200 bg-slate-50/70',
       responsibilityLabel: 'text-slate-600'
     };
   }
 
   if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
     return {
-      card: 'border-cyan-200/85 hover:border-cyan-300 hover:shadow-[0_18px_36px_rgba(6,182,212,0.16)]',
+      card: 'border-cyan-200/85 hover:border-cyan-300 hover:shadow-[0_12px_24px_rgba(6,182,212,0.1)]',
       accent: 'bg-cyan-400',
-      responsibility: 'border-cyan-100 bg-linear-to-br from-cyan-50 via-white to-sky-50/60',
+      responsibility: 'border-cyan-100 bg-cyan-50/50',
       responsibilityLabel: 'text-cyan-700'
     };
   }
 
   if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
     return {
-      card: 'border-sky-200/80 hover:border-sky-300 hover:shadow-[0_18px_36px_rgba(14,165,233,0.12)]',
+      card: 'border-sky-200/80 hover:border-sky-300 hover:shadow-[0_12px_24px_rgba(14,165,233,0.08)]',
       accent: 'bg-sky-500',
-      responsibility: 'border-sky-100 bg-linear-to-br from-sky-50 via-white to-cyan-50/70',
+      responsibility: 'border-sky-100 bg-sky-50/55',
       responsibilityLabel: 'text-sky-700'
     };
   }
@@ -3737,15 +3799,15 @@ const getDeliverableCardTone = (payload) => {
   const variant = getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral');
   if (variant === 'success') {
     return {
-      card: 'border-emerald-200/80 hover:border-emerald-300 hover:shadow-[0_18px_36px_rgba(16,185,129,0.12)]',
+      card: 'border-emerald-200/80 hover:border-emerald-300 hover:shadow-[0_12px_24px_rgba(16,185,129,0.08)]',
       accent: 'bg-emerald-500',
-      responsibility: 'border-emerald-100 bg-linear-to-br from-emerald-50 via-white to-emerald-50/70',
+      responsibility: 'border-emerald-100 bg-emerald-50/60',
       responsibilityLabel: 'text-emerald-700'
     };
   }
 
   return {
-    card: 'border-slate-200 hover:border-slate-300 hover:shadow-[0_18px_36px_rgba(15,23,42,0.09)]',
+    card: 'border-slate-200 hover:border-slate-300 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]',
     accent: 'bg-slate-300',
     responsibility: 'border-slate-200 bg-slate-50/70',
     responsibilityLabel: 'text-slate-600'
@@ -3843,13 +3905,13 @@ const getDeliverableNextActionText = (payload) => {
 
 const getFillResponsibleName = (payload) => {
   const request = getCurrentFillWorkflowRequest(payload);
-  const explicitLabel = String(request?.display_label || request?.label || '').trim();
+  const explicitLabel = String(request?.display_label || request?.displayLabel || request?.label || '').trim();
   if (explicitLabel) return explicitLabel;
   const assignedPersonName = String(request?.assigned_person_name || request?.assignedPersonName || '').trim();
   if (assignedPersonName) return assignedPersonName;
   const cargoName = String(request?.cargo_name || request?.cargoName || '').trim();
   if (cargoName) return cargoName;
-  const assignedPersonId = Number(request?.assigned_person_id || 0);
+  const assignedPersonId = Number(request?.assigned_person_id || request?.assignedPersonId || 0);
   if (assignedPersonId > 0 && assignedPersonId === Number(currentUserId.value || 0)) {
     return userFullName.value;
   }
@@ -3939,7 +4001,7 @@ const getDeliverableProgress = (payload) => {
     });
     const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
     return {
-      label: 'Paso de firma',
+      label: 'Firmas',
       current: Math.min(Math.max(current, 1), total),
       total,
       percent: Math.min(100, Math.max(8, (progressUnits / total) * 100))
@@ -3960,7 +4022,7 @@ const getDeliverableProgress = (payload) => {
   });
   const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
   return {
-    label: 'Paso de llenado',
+    label: 'Entrega',
     current: Math.min(Math.max(current, 1), total),
     total,
     percent: Math.min(100, Math.max(8, (progressUnits / total) * 100))
@@ -3987,6 +4049,19 @@ const getDeliverableWorkspacePayload = (deliverable) => ({
   task_start_date: deliverable?.task?.start_date || null,
   task_end_date: deliverable?.task?.end_date || null,
 });
+
+const getDeliverableCollapseKey = (payload) => String(payload?.id || payload?.document_id || payload?.task_item_id || '');
+
+const isDeliverableCollapsed = (payload) => collapsedDeliverableIds.value.has(getDeliverableCollapseKey(payload));
+
+const toggleDeliverableCard = (payload) => {
+  const key = getDeliverableCollapseKey(payload);
+  if (!key) return;
+  const next = new Set(collapsedDeliverableIds.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  collapsedDeliverableIds.value = next;
+};
 
 const getDeliverableComplianceState = (payload) => {
   if (shouldShowSign(payload)) {
@@ -4517,6 +4592,63 @@ const submitFillWorkflowAction = async (action) => {
   }
 };
 
+const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
+  const subject = getDeliverableSubject(payload);
+  const request = getCurrentFillWorkflowRequest(payload);
+  const requestId = getFillRequestId(request);
+  if (!subject || !requestId) {
+    setProcessActionInfo('No se encontró una solicitud de llenado válida.', 'error');
+    return;
+  }
+  if (action === 'approve' && !subject.preloadFilePath) {
+    setProcessActionInfo('Primero debes cargar un archivo de trabajo para continuar.', 'error');
+    return;
+  }
+
+  const actionLabels = {
+    approve: isReviewFillRequestForPayload(payload) ? 'aprobación' : 'envío'
+  };
+
+  try {
+    fillWorkflowSubmitting.value = true;
+    openDeliverableOperationModal({
+      title: 'Actualizando flujo de llenado',
+      type: 'info',
+      message: `Procesando ${actionLabels[action] || 'acción'} para ${subject.title}...`,
+      detail: `Paso ${request.step_order || 1}`
+    });
+
+    const requestPayload = {};
+    if (action === 'approve') {
+      await processPanelService.approveFillRequest(requestId, requestPayload);
+    } else {
+      throw new Error('Acción de llenado no soportada.');
+    }
+
+    openDeliverableOperationModal({
+      title: 'Flujo de llenado actualizado',
+      type: 'success',
+      message: `La ${actionLabels[action] || 'acción'} del entregable ${subject.title} se completó correctamente.`,
+      detail: 'El panel se actualizará con el nuevo estado.'
+    });
+    setProcessActionInfo(`El flujo de llenado de ${subject.title} se actualizó correctamente.`, 'success');
+    if (selectedProcessContext.value) {
+      await loadSelectedProcessPanel(selectedProcessContext.value);
+    }
+  } catch (error) {
+    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.';
+    openDeliverableOperationModal({
+      title: 'Error en flujo de llenado',
+      type: 'error',
+      message,
+      detail: subject.title
+    });
+    setProcessActionInfo(message, 'error');
+  } finally {
+    fillWorkflowSubmitting.value = false;
+  }
+};
+
 const downloadDeliverableTemplate = async (payload) => {
   const subject = getDeliverableSubject(payload);
   try {
@@ -4896,21 +5028,21 @@ const toggleNavMenu = () => {
   border-style: dashed;
   border-color: rgb(56 189 248);
   border-radius: 1.35rem;
-  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255 / 0.82), rgb(224 242 254 / 0.58));
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  background: rgb(255 255 255);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
   padding: 0.75rem 1rem;
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__surface--clickable:hover) {
   border-color: rgb(14 165 233);
-  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255 / 0.86), rgb(224 242 254 / 0.8));
-  box-shadow: 0 18px 36px rgba(14, 165, 233, 0.14);
+  background: rgb(255 255 255);
+  box-shadow: 0 10px 20px rgba(14, 165, 233, 0.08);
   transform: translateY(-2px);
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__surface--active) {
   border-color: rgb(14 165 233);
-  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255), rgb(224 242 254 / 0.85));
+  background: rgb(255 255 255);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
 }
 
@@ -4957,5 +5089,11 @@ const toggleNavMenu = () => {
 .deliverable-inline-upload :deep(.deasy-dropzone__icon--compact svg) {
   width: 1rem;
   height: 1rem;
+}
+
+.deliverable-due-tag--salmon {
+  background: rgb(255 236 230) !important;
+  border-color: rgb(254 205 190) !important;
+  color: rgb(195 83 62) !important;
 }
 </style>
