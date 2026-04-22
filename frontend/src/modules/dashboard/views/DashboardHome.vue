@@ -3836,6 +3836,7 @@ const shouldShowStartDeliverable = (payload) => {
   const code = getFillRequestStatusCode(request);
   return Boolean(
     subject.documentId
+    && !isSignaturePhaseDocumentStatus(payload)
     && code === 'pending'
     && !hasDeliverableBeenStarted(payload)
   );
@@ -3859,6 +3860,7 @@ const shouldShowUploadDeliverable = (payload) => {
   const code = getFillRequestStatusCode(request);
   return Boolean(
     subject.actions?.can_upload_deliverable
+    && !isSignaturePhaseDocumentStatus(payload)
     && currentUserCanOperateFillStep(payload)
     && hasDeliverableBeenStarted(payload)
     && ['pending', 'in_progress', 'returned'].includes(code)
@@ -3877,7 +3879,8 @@ const isReviewFillRequestForPayload = (payload) => {
 
 const canApproveFillRequestForPayload = (payload) => {
   const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
-  return currentUserCanOperateFillStep(payload)
+  return !isSignaturePhaseDocumentStatus(payload)
+    && currentUserCanOperateFillStep(payload)
     && ['pending', 'in_progress'].includes(code)
     && subjectHasWorkingArtifact(payload);
 };
@@ -3919,6 +3922,18 @@ const hasFillWorkflowActivity = (payload) => {
       || subject.workflow?.currentFillStepOrder
       || 0
     ) > 0;
+};
+
+const isSignaturePhaseDocumentStatus = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const normalized = String(
+    subject.document_status
+    || subject.documentStatus
+    || subject.document_version_status
+    || subject.documentVersionStatus
+    || ''
+  ).trim().toLowerCase();
+  return ['listo para firma', 'pendiente de firma', 'firmado parcial', 'firmado completo', 'firmado'].includes(normalized);
 };
 
 const hasSignatureWorkflowActivity = (payload) => {
@@ -4214,6 +4229,13 @@ const getSignatureResponsibleName = (payload) => {
 };
 
 const getDeliverableCurrentResponsibility = (payload) => {
+  if (isSignaturePhaseDocumentStatus(payload) && (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload))) {
+    return {
+      type: 'signature',
+      name: getSignatureResponsibleName(payload),
+      variant: 'warning'
+    };
+  }
   if (shouldShowStartDeliverable(payload) || shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
     return {
       type: 'fill',
