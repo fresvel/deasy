@@ -177,18 +177,13 @@
                       <p class="deasy-hero-description">{{ adminHeroDescription }}</p>
                     </div>
                   </div>
-                  <div class="deasy-hero-side xl:text-right">
-                    <article v-for="card in adminHeroCards" :key="card.label" class="deasy-hero-stat-card">
-                      <div class="deasy-hero-stat-card__lead">
-                        <span class="deasy-hero-stat-card__icon">
-                          <component :is="resolveIcon(card.icon)" class="h-5 w-5" />
-                        </span>
-                        <div class="deasy-hero-stat-card__body">
-                          <span class="deasy-hero-stat-card__title">{{ card.meta }}</span>
-                        </div>
-                      </div>
-                      <span class="deasy-hero-stat-card__value">{{ card.value }}</span>
-                    </article>
+                  <div class="deasy-hero-side">
+                    <button type="button" class="deasy-hero-back-button" @click="handleHeroBack">
+                      <span class="deasy-hero-back-button__icon">
+                        <IconArrowLeft class="h-4.5 w-4.5" />
+                      </span>
+                      <span>Volver atrás</span>
+                    </button>
                   </div>
                  </div>
                </section>
@@ -427,6 +422,7 @@ import {
   IconInfoCircle,
   IconPlus,
   IconBell,
+  IconArrowLeft,
   IconChevronDown,
   IconHome,
 } from '@tabler/icons-vue'
@@ -917,47 +913,13 @@ const adminHeroKicker = computed(() =>
     : 'Administración'
 );
 
-const adminHeroVisibleCount = computed(() => {
-  if (showAcademyCrudIndex.value) return academyCrudTables.value.length;
-  if (showAcademiaIndex.value) return academyMenuItems.value.length;
-  if (showGestionCrudIndex.value) return gestionCrudTables.value.length;
-  if (showGestionesIndex.value) return gestionMenuItems.value.length;
-  if (showUsersCrudIndex.value) return usersCrudTables.value.length;
-  if (showUsersIndex.value) return usersMenuItems.value.length;
-  if (showContractsCrudIndex.value) return contractsCrudTables.value.length;
-  if (showContractsIndex.value) return contractsMenuItems.value.length;
-  if (showSecurityCrudIndex.value) return securityCrudTables.value.length;
-  if (showSecurityIndex.value) return securityMenuItems.value.length;
-  if (showGroupCrudIndex.value) return selectedGroupCrudTables.value.length;
-  return homeGroups.value.length;
-});
-
-const adminHeroCards = computed(() => [
-  {
-    label: 'Vista',
-    meta: 'Módulos visibles',
-    value: adminHeroVisibleCount.value,
-    icon: 'circle'
-  },
-  {
-    label: 'Catálogo',
-    meta: 'Tablas activas',
-    value: tables.value.length,
-    icon: 'id-card'
-  },
-  {
-    label: 'Contexto',
-    meta: 'Submódulo activo',
-    value: selectedSection.value ? 1 : homeGroups.value.length,
-    icon: 'check-double'
-  },
-  {
-    label: 'Modo',
-    meta: selectedTable.value ? 'CRUD activo' : 'Vista índice',
-    value: selectedTable.value ? 'CRUD' : 'INDEX',
-    icon: 'lock'
+const handleHeroBack = () => {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back();
+    return;
   }
-]);
+  router.push('/dashboard');
+};
 
 const groupIconMap = {
   estructura_academico: "map-marked-alt",

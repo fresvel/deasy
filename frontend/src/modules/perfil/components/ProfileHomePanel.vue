@@ -6,31 +6,24 @@
         <div class="deasy-hero-main deasy-hero-main--with-media text-center sm:text-left">
           <div class="deasy-hero-media flex flex-col items-center gap-3 sm:items-start">
             <div class="deasy-hero-media-card deasy-hero-media-card--avatar">
-              <img class="h-24 w-24 rounded-[1.3rem] object-cover bg-white/70 sm:h-28 sm:w-28" :src="photo" alt="Foto de perfil" />
+              <img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo" alt="Foto de perfil" />
             </div>
           </div>
-          <div class="deasy-hero-copy sm:pt-1">
+          <div class="deasy-hero-copy sm:pt-0">
             <div class="deasy-hero-kicker">Perfil académico</div>
             <h1 class="deasy-hero-title">{{ displayName }}</h1>
             <p class="deasy-hero-description">
-              Selecciona una sección para continuar con la gestión de tu dossier académico y actualizar tu información profesional.
+              Gestiona tu dossier académico y tu información profesional.
             </p>
           </div>
         </div>
-        <div class="deasy-hero-side deasy-hero-side--compact xl:text-right">
-          <article v-for="card in profileHeroCards" :key="card.label" class="deasy-hero-stat-card" :class="card.wide ? 'sm:col-span-2' : ''">
-            <div class="deasy-hero-stat-card__lead">
-              <span class="deasy-hero-stat-card__icon">
-                <component :is="getIcon(card.icon)" class="h-5 w-5" />
-              </span>
-              <div class="deasy-hero-stat-card__body">
-                <span class="deasy-hero-stat-card__title">{{ card.title }}</span>
-              </div>
-            </div>
-            <span class="max-w-40 break-all text-right text-sm font-bold leading-tight text-[#21517a]">
-              {{ card.value }}
+        <div class="deasy-hero-side deasy-hero-side--compact">
+          <button type="button" class="deasy-hero-back-button" @click="$emit('go-back')">
+            <span class="deasy-hero-back-button__icon">
+              <IconArrowLeft class="h-4.5 w-4.5" />
             </span>
-          </article>
+            <span>Volver atrás</span>
+          </button>
         </div>
       </div>
     </section>
@@ -57,7 +50,7 @@
 import { computed, defineProps, defineEmits } from "vue";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import { 
-  IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe 
+  IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe, IconArrowLeft
 } from '@tabler/icons-vue';
 
 const props = defineProps({
@@ -75,7 +68,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(["navigate-section"]);
+defineEmits(["navigate-section", "go-back"]);
 
 const getIcon = (name) => {
   const map = {
@@ -109,45 +102,10 @@ const sectionCards = computed(() =>
   })
 );
 
-const totalRecords = computed(() =>
-  Object.values(props.dossierCounts || {}).reduce((sum, value) => sum + Number(value || 0), 0)
-);
-
-const profileHeroCards = computed(() => [
-  {
-    label: 'Perfil',
-    title: 'Secciones',
-    value: sectionCards.value.length,
-    icon: 'id-card'
-  },
-  {
-    label: 'Dossier',
-    title: 'Registros',
-    value: totalRecords.value,
-    icon: 'check-double'
-  },
-  {
-    label: 'Firma',
-    title: signatureMarker.value ? 'Token activo' : 'Token pendiente',
-    value: signatureMarker.value || 'Pend.',
-    icon: 'certificate',
-    wide: true
-  }
-]);
-
 const displayName = computed(() => {
   const firstName = props.currentUser?.first_name ?? "";
   const lastName = props.currentUser?.last_name ?? "";
   return `${firstName} ${lastName}`.trim() || "Usuario";
-});
-
-const signatureMarker = computed(() => {
-  if (props.currentUser?.signatureMarker) {
-    return props.currentUser.signatureMarker;
-  }
-
-  const rawToken = props.currentUser?.signatureToken ?? props.currentUser?.token ?? "";
-  return rawToken ? `!-${rawToken}-!` : "";
 });
 </script>
 

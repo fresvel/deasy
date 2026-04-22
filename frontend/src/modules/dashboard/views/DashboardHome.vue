@@ -440,7 +440,7 @@
                       <IconChecklist class="h-10 w-10" />
                     </div>
                   </div>
-                  <div class="deasy-hero-copy sm:pt-1">
+                  <div class="deasy-hero-copy sm:pt-0">
                     <div class="flex flex-wrap items-center gap-2.5">
                       <div class="deasy-hero-kicker">
                         {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
@@ -451,8 +451,7 @@
                         {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
                       </h1>
                       <p class="deasy-hero-description">
-                        Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias,
-                        documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
+                        Gestiona tus tareas y entregables de esta definición activa.
                       </p>
                     </div>
                   </div>
@@ -460,64 +459,13 @@
                 <div class="deasy-hero-side">
                   <button
                     type="button"
-                    class="deasy-hero-stat-card"
-                    @click="showProcessDeliverableInfo"
-                  >
-                    <div class="deasy-hero-stat-card__lead">
-                      <span class="deasy-hero-stat-card__icon">
-                        <IconFileDescription class="h-5 w-5" />
-                      </span>
-                      <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__title">Abrir centro</span>
-                      </div>
-                    </div>
-                    <span class="deasy-hero-stat-card__value">{{ selectedProcessPanel?.summary?.documents_total || 0 }}</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="deasy-hero-stat-card"
-                    @click="showSignatureQueueInfo"
-                  >
-                    <div class="deasy-hero-stat-card__lead">
-                      <span class="deasy-hero-stat-card__icon">
-                        <IconSignature class="h-5 w-5" />
-                      </span>
-                      <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__title">Ver flujo</span>
-                      </div>
-                    </div>
-                    <span class="deasy-hero-stat-card__value">{{ selectedProcessPanel?.summary?.signatures_pending || 0 }}</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="deasy-hero-stat-card"
+                    class="deasy-hero-back-button"
                     @click="clearSelectedProcess"
                   >
-                    <div class="deasy-hero-stat-card__lead">
-                      <span class="deasy-hero-stat-card__icon">
-                        <IconArrowRight class="h-5 w-5 rotate-180" />
-                      </span>
-                      <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__title">Volver</span>
-                      </div>
-                    </div>
-                    <span class="text-lg font-extrabold leading-none text-[#21517a]">←</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="deasy-hero-stat-card disabled:cursor-not-allowed disabled:opacity-55"
-                    :disabled="!selectedProcessPanel?.permissions?.can_launch_manual"
-                    @click="openTaskLaunchModal"
-                  >
-                    <div class="deasy-hero-stat-card__lead">
-                      <span class="deasy-hero-stat-card__icon">
-                        <IconPlus class="h-5 w-5" />
-                      </span>
-                      <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__title">Nueva tarea</span>
-                      </div>
-                    </div>
-                    <span class="text-lg font-extrabold leading-none text-[#21517a]">+</span>
+                    <span class="deasy-hero-back-button__icon">
+                        <IconArrowLeft class="h-4.5 w-4.5" />
+                    </span>
+                    <span>Volver atrás</span>
                   </button>
                 </div>
               </div>
@@ -2535,6 +2483,7 @@ import {
   IconSquareCheck,
   IconSignature,
   IconUpload,
+  IconArrowLeft,
   IconArrowRight,
   IconBuildingMonument,
   IconChevronDown,
@@ -3771,14 +3720,6 @@ const handleProcessSelect = async (process) => {
   await loadSelectedProcessPanel(process);
 };
 
-const openTaskLaunchModal = () => {
-  if (!selectedProcessPanel.value?.permissions?.can_launch_manual) {
-    return;
-  }
-  resetTaskLaunchForm();
-  showTaskLaunchModal.value = true;
-};
-
 const closeTaskLaunchModal = () => {
   showTaskLaunchModal.value = false;
   resetTaskLaunchForm();
@@ -3787,20 +3728,6 @@ const closeTaskLaunchModal = () => {
 const showGeneralTaskInfo = () => {
   setProcessActionInfo(
     'La creación de tareas generales todavía no tiene backend habilitado en este dashboard. El siguiente paso es conectar este botón al flujo de artifacts generales y entregables personalizados.',
-    'error'
-  );
-};
-
-const showProcessDeliverableInfo = () => {
-  setProcessActionInfo(
-    'La creación personalizada de entregables dentro de una definición de proceso quedó visible como punto de entrada, pero aún falta su backend y el flujo de artifact general asociado.',
-    'error'
-  );
-};
-
-const showSignatureQueueInfo = () => {
-  setProcessActionInfo(
-    'El acceso consolidado a la bandeja de firmas de esta definición todavía no está conectado desde este hero. Por ahora el ingreso operativo sigue ocurriendo desde cada entregable.',
     'error'
   );
 };

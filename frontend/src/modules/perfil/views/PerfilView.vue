@@ -83,6 +83,7 @@
               :photo="userPhoto"
               :dossier-counts="dossierCounts"
               @navigate-section="onmenuClick"
+              @go-back="goBackFromProfileHome"
             />
             <TitulosView v-else-if="process==='Formación'"></TitulosView>
             <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
@@ -153,10 +154,18 @@ import LogrosView from '@/modules/academia/views/LogrosView.vue';
     import EasymServices from '@/shared/services/EasymServices';
     import { API_PREFIX, API_ROUTES } from '@/core/config/apiConfig';
 
-    const router = useRouter();
+const router = useRouter();
     const route = useRoute();
     const service = new EasymServices();
-    const API_BASE_URL = API_ROUTES.BASE;
+const API_BASE_URL = API_ROUTES.BASE;
+
+const goBackFromProfileHome = () => {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back();
+    return;
+  }
+  router.push('/dashboard');
+};
 
     // Obtener datos del usuario desde localStorage
     const currentUser = ref(null);
