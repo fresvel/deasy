@@ -425,243 +425,76 @@
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
 
-                  <div v-else class="flex flex-col gap-4">
+                  <div v-else class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                     <article
                       v-for="deliverable in filteredProcessDeliverables"
                       :key="deliverable.key"
-                      class="relative overflow-hidden rounded-[1.8rem] border border-[#d6e4f2] bg-[linear-gradient(180deg,#f5f9fe_0%,#eef5fc_100%)] p-5 shadow-[0_20px_42px_rgba(6,12,24,0.14)] ring-1 ring-white/70 transition-all duration-200 hover:border-[#bfd7ee] hover:shadow-[0_24px_52px_rgba(70,110,150,0.16)]"
+                      class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_16px_32px_rgba(15,23,42,0.07)] ring-1 ring-white/70 transition"
+                      :class="getDeliverableCardTone(deliverable.item).card"
                     >
-                      <div class="flex flex-col gap-4">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                          <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                            <span class="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold" :class="deliverable.item.document_id ? 'text-[#21517a]' : 'text-slate-400'">
-                              <IconSignature v-if="deliverable.item.document_id" class="h-4 w-4" />
-                              {{ deliverable.item.document_id ? (deliverable.item.document_version ? `Doc v${deliverable.item.document_version}` : 'Doc creado') : 'Sin doc' }}
-                            </span>
-                            <strong class="text-base font-semibold leading-tight text-slate-800">{{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}</strong>
-                          </div>
-                          <div class="ml-auto flex flex-none items-center justify-end gap-2">
-                            <div class="flex min-w-0 flex-nowrap items-center justify-end gap-2 overflow-x-auto whitespace-nowrap">
-                              <AppTag
-                                v-for="tag in getDeliverableTagGroups(deliverable.item)"
-                                :key="tag.key"
-                                :variant="tag.variant"
-                                class-name="shrink-0 whitespace-nowrap"
-                              >
-                                {{ tag.label }}
-                              </AppTag>
-                            </div>
-                            <button
-                              type="button"
-                              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-[#d7e4f1] bg-white/80 text-[#486178] shadow-[0_8px_18px_rgba(15,23,42,0.07)] transition hover:border-[#bfd7ee] hover:bg-white hover:text-[#21517a]"
-                              :aria-expanded="isDeliverableExpanded(deliverable.key) ? 'true' : 'false'"
-                              :aria-label="isDeliverableExpanded(deliverable.key) ? 'Contraer entregable' : 'Expandir entregable'"
-                              @click="toggleDeliverableExpanded(deliverable.key)"
+                      <span class="absolute inset-x-0 top-0 h-1.5" :class="getDeliverableCardTone(deliverable.item).accent"></span>
+
+                      <div class="flex h-full flex-col gap-3 pt-2">
+                        <div class="flex min-w-0 flex-col gap-2">
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span
+                              class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em]"
+                              :class="deliverable.item.document_id ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500'"
                             >
-                              <IconChevronDown
-                                class="h-5 w-5 transition-transform duration-200"
-                                :class="isDeliverableExpanded(deliverable.key) ? 'rotate-180' : ''"
-                              />
-                            </button>
+                              <IconSignature class="h-3.5 w-3.5" />
+                              {{ getDeliverableDocumentLabel(deliverable.item) }}
+                            </span>
+                            <AppTag :variant="getDeliverableStatusBadge(deliverable.item).variant">
+                              {{ getDeliverableStatusBadge(deliverable.item).label }}
+                            </AppTag>
+                          </div>
+                          <div class="min-w-0">
+                            <strong class="line-clamp-2 text-base font-semibold leading-tight text-slate-800">
+                              {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
+                            </strong>
                           </div>
                         </div>
 
-                        <div v-show="isDeliverableExpanded(deliverable.key)" class="contents">
-                          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-                              <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</p>
-                              <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(deliverable.task, deliverable.item) }}</p>
-                            </div>
-                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-                              <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Unidad</p>
-                              <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableUnitLabel(deliverable.item) }}</p>
-                            </div>
-                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-                              <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</p>
-                              <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabel(deliverable.task) }}</p>
-                            </div>
-                            <div class="rounded-[1.1rem] border border-[#d7e4f1] bg-white/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-                              <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Fechas</p>
-                              <p class="m-0 mt-1 text-sm font-semibold leading-6 text-slate-700">
-                                {{ formatDate(deliverable.task.start_date) }}<span v-if="deliverable.task.end_date"> - {{ formatDate(deliverable.task.end_date) }}</span>
-                              </p>
-                            </div>
+                        <div
+                          v-if="getDeliverableProgress(deliverable.item)"
+                          class="rounded-[1.15rem] border border-slate-200 bg-slate-50/70 px-4 py-3"
+                        >
+                          <div class="flex items-center justify-between gap-3">
+                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                              {{ getDeliverableProgress(deliverable.item).label }}
+                            </p>
+                            <span class="text-xs font-semibold text-slate-600">
+                              Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
+                            </span>
                           </div>
-
-                          <div class="relative mt-4 flex flex-col gap-4 border-t border-[#dbe8f4] pt-4 xl:flex-row xl:items-start xl:justify-between before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-[#dbe8f4] before:shadow-[0_-10px_22px_rgba(70,110,150,0.10)]">
+                          <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
                             <div
-                              class="min-w-0 xl:shrink-0"
-                              :class="shouldShowUploadDeliverable(deliverable.item) ? 'xl:w-[18rem]' : 'xl:w-[9rem]'"
-                            >
-                              <button
-                                v-if="shouldShowStartDeliverable(deliverable.item)"
-                                type="button"
-                                class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-2.5 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)] disabled:cursor-not-allowed disabled:opacity-60"
-                                  :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
-                                  @click="startDeliverableFlow(deliverable.item)"
-                                >
-                                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                                    <IconPlayerPlayFilled class="h-6 w-6" />
-                                  </div>
-                                  <div class="flex min-w-0 flex-col">
-                                    <span class="text-sm font-bold text-slate-800">
-                                      {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
-                                    </span>
-                                  </div>
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">
-                                      {{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}
-                                    </span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">
-                                      Habilita el flujo operativo del entregable.
-                                    </span>
-                                  </span>
-                                </button>
-                                <div v-else-if="shouldShowUploadDeliverable(deliverable.item)" class="w-full">
-                                  <PdfDropField
-                                    :input-id="`deliverable-upload-${deliverable.item.id}`"
-                                    variant="compact"
-                                    :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable"
-                                    :title="''"
-                                    :action-text="getUploadActionLabel(deliverable.item)"
-                                    help-text="Arrastra o selecciona un PDF, Word o Excel."
-                                    accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                    @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)"
-                                  />
-                                </div>
-                                <AppButton
-                                  v-else-if="shouldShowSign(deliverable.item)"
-                                  variant="plain"
-                                  class-name="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-amber-50/40 px-4 py-2.5 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:from-white hover:to-amber-50/70 hover:shadow-[0_18px_36px_rgba(245,158,11,0.16)]"
-                                  :class="shouldShowSign(deliverable.item) && deliverable.item.actions?.implemented?.sign ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                                  type="button"
-                                  :disabled="!(shouldShowSign(deliverable.item) && deliverable.item.actions?.implemented?.sign)"
-                                  @click="openDocumentSignFlow(deliverable.item)"
-                                >
-                                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-amber-100 group-hover:bg-amber-50 group-hover:text-amber-600">
-                                    <IconSignature class="h-6 w-6" />
-                                  </div>
-                                  <div class="flex min-w-0 flex-col">
-                                    <span class="text-sm font-bold text-slate-800">Firmar</span>
-                                  </div>
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-52 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Firmar</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Abre el firmador sobre el PDF listo.</span>
-                                  </span>
-                                </AppButton>
-                                <AppButton
-                                  v-else-if="shouldShowOpenWorkspacePrimary(deliverable.item)"
-                                  variant="plain"
-                                  class-name="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-2.5 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
-                                  type="button"
-                                  @click="openDeliverableWorkspaceModal(deliverable.item)"
-                                >
-                                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                                    <IconChecklist class="h-6 w-6" />
-                                  </div>
-                                  <div class="flex min-w-0 flex-col">
-                                    <span class="text-sm font-bold text-slate-800">Abrir</span>
-                                  </div>
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Abrir</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Gestiona llenado y revisa el flujo de firmas.</span>
-                                  </span>
-                                </AppButton>
-                            </div>
-                            <div class="ml-auto flex min-h-14 flex-wrap items-center gap-2.5 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-slate-100/70 px-3 py-2.5 shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 backdrop-blur-sm">
-                                <AppButton
-                                  v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
-                                  variant="plain"
-                                  type="button"
-                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
-                                  @click="previewDeliverableFile(deliverable.item)"
-                                >
-                                  <IconEye class="h-6 w-6" />
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-52 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Ver archivo</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Abre la vista previa del documento.</span>
-                                  </span>
-                                </AppButton>
-                                <AppButton
-                                  v-if="getDeliverableSubject(deliverable.item).preloadFilePath"
-                                  variant="plain"
-                                  type="button"
-                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
-                                  @click="downloadDeliverableFile(deliverable.item)"
-                                >
-                                  <IconFileDownload class="h-6 w-6" />
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Descargar archivo</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Guarda la versión actual del entregable.</span>
-                                  </span>
-                                </AppButton>
-                                <AppButton
-                                  v-if="shouldShowTemplateDownload(deliverable.item)"
-                                  variant="plain"
-                                  :class="deliverable.item.actions?.can_download_template ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                                  type="button"
-                                  :disabled="!deliverable.item.actions?.can_download_template"
-                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
-                                  @click="handleDeliverableFutureAction('download_template', deliverable.item)"
-                                >
-                                  <IconFileDescription class="h-6 w-6" />
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Descargar plantilla</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Obtén la base documental del proceso.</span>
-                                  </span>
-                                </AppButton>
-                                <AppButton
-                                  v-if="shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)"
-                                  variant="plain"
-                                  :class="(shouldShowManageFill(deliverable.item) || shouldShowSignatureFlow(deliverable.item)) ? '' : 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed'"
-                                  type="button"
-                                  :disabled="processingFillItemId === deliverable.item.id"
-                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
-                                  @click="openDeliverableWorkspaceModal(deliverable.item)"
-                                >
-                                  <IconChecklist class="h-6 w-6" />
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Procesando...' : 'Abrir' }}</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Gestiona llenado y revisa el flujo de firmas.</span>
-                                  </span>
-                                </AppButton>
-                                <AppButton
-                                  v-if="shouldShowResetWorkflow(deliverable.item)"
-                                  variant="plain"
-                                  type="button"
-                                  :disabled="deliverableResetState.submitting"
-                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-transparent bg-white/70 text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-100 hover:bg-amber-50 hover:text-amber-600"
-                                  @click="openDeliverableResetModal(deliverable.item)"
-                                >
-                                  <IconRotateClockwise2 class="h-6 w-6" />
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Resetear flujo</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">Cancela el intento actual y crea una nueva versión del documento.</span>
-                                  </span>
-                                </AppButton>
-                                <AppButton
-                                  variant="plain"
-                                  type="button"
-                                  :disabled="!deliverable.item.actions?.can_open_process_chat"
-                                  class-name="group relative flex h-12 w-12 items-center justify-center rounded-[1rem] border border-sky-200/90 bg-linear-to-br from-white via-sky-50 to-sky-100 text-sky-700 shadow-[0_12px_24px_rgba(2,132,199,0.16)] ring-1 ring-white/80 transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:from-white hover:to-sky-50 hover:text-sky-700"
-                                  @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
-                                >
-                                  <IconMessages class="h-6 w-6" />
-                                  <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-56 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-xl group-hover:block">
-                                    <span class="block text-sm font-bold text-slate-800">Chat del proceso</span>
-                                    <span class="mt-1 block text-xs font-medium text-slate-500">
-                                      {{ deliverable.item.actions?.can_open_process_chat ? 'Abre la conversación operativa de este entregable.' : 'El chat no está disponible para este entregable.' }}
-                                    </span>
-                                  </span>
-                                </AppButton>
-                              <span
-                                v-if="shouldShowPdfRequiredHint(deliverable.item)"
-                                class="inline-flex items-center rounded-[1rem] border border-white/80 bg-white/80 px-3 py-2 text-xs font-bold text-slate-500 shadow-[0_8px_16px_rgba(15,23,42,0.05)]"
-                              >
-                                La firma requiere PDF
-                              </span>
-                            </div>
+                              class="h-full rounded-full transition-all duration-300"
+                              :class="getDeliverableCardTone(deliverable.item).accent"
+                              :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
+                            ></div>
                           </div>
+                        </div>
+
+                        <div class="rounded-[1.15rem] border px-4 py-3" :class="getDeliverableCardTone(deliverable.item).responsibility">
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">Responsable actual</p>
+                            <span class="text-xs font-semibold text-slate-500">{{ getDeliverablePrimaryActionLabel(deliverable.item) }}</span>
+                          </div>
+                          <p class="m-0 mt-2 line-clamp-2 text-sm font-semibold leading-snug text-slate-800">
+                            {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
+                          </p>
+                        </div>
+
+                        <div class="mt-auto border-t border-slate-100 pt-3">
+                          <AppButton
+                            variant="outlinePrimary"
+                            size="sm"
+                            class-name="w-full"
+                            @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                          >
+                            Gestionar
+                          </AppButton>
                         </div>
                       </div>
                     </article>
@@ -1026,6 +859,18 @@
           aria-label="Secciones del entregable"
         >
           <button
+            v-if="deliverableWorkspaceSubject"
+            type="button"
+            role="tab"
+            :aria-selected="deliverableWorkspaceState.tab === 'summary'"
+            :tabindex="deliverableWorkspaceState.tab === 'summary' ? 0 : -1"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            :class="getDeliverableWorkspaceTabClass('summary')"
+            @click="deliverableWorkspaceState.tab = 'summary'"
+          >
+            Resumen
+          </button>
+          <button
             v-if="fillWorkflowState.subject && shouldShowManageFill(fillWorkflowState.subject)"
             type="button"
             role="tab"
@@ -1049,9 +894,167 @@
           >
             Flujo de firmas
           </button>
+          <button
+            v-if="deliverableWorkspaceSubject"
+            type="button"
+            role="tab"
+            :aria-selected="deliverableWorkspaceState.tab === 'history'"
+            :tabindex="deliverableWorkspaceState.tab === 'history' ? 0 : -1"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            :class="getDeliverableWorkspaceTabClass('history')"
+            @click="deliverableWorkspaceState.tab = 'history'"
+          >
+            Historial
+          </button>
         </div>
 
-        <template v-if="deliverableWorkspaceState.tab === 'fill'">
+        <template v-if="deliverableWorkspaceState.tab === 'summary'">
+          <div v-if="deliverableWorkspaceSubject" class="flex flex-col gap-5">
+            <section class="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+              <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div class="min-w-0 flex-1 flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <span
+                        class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.16em]"
+                        :class="deliverableWorkspaceSubject.documentId ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500'"
+                      >
+                        <IconSignature class="h-3.5 w-3.5" />
+                        {{ getDeliverableDocumentLabel(deliverableWorkspaceSubject) }}
+                      </span>
+                      <strong class="text-lg font-semibold leading-tight text-slate-800">{{ deliverableWorkspaceSubject.title }}</strong>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <AppTag
+                        v-for="tag in getDeliverableTagGroups(deliverableWorkspaceSubject)"
+                        :key="`workspace-summary-${tag.key}`"
+                        :variant="tag.variant"
+                      >
+                        {{ tag.label }}
+                      </AppTag>
+                    </div>
+                  </div>
+                  <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 px-4 py-3 lg:w-[18rem]">
+                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Siguiente acción</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-slate-800">{{ getDeliverablePrimaryActionLabel(deliverableWorkspaceSubject) }}</p>
+                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ getDeliverableNextActionText(deliverableWorkspaceSubject) }}</p>
+                  </div>
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.2fr)]">
+                  <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</p>
+                  </div>
+                  <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Unidad</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableUnitLabel(deliverableWorkspaceSubject) }}</p>
+                  </div>
+                  <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</p>
+                  </div>
+                  <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Fechas</p>
+                    <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</p>
+                  </div>
+                  <div class="rounded-[1.2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-cyan-50/70 px-4 py-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-600">Responsable actual</p>
+                      <span class="text-xs font-semibold text-slate-500">
+                        {{ getDeliverableProgress(deliverableWorkspaceSubject)?.label || 'Gestión actual' }}
+                      </span>
+                    </div>
+                    <p class="m-0 mt-2 text-sm font-semibold text-slate-800">
+                      {{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones esenciales</h3>
+                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Las acciones menos frecuentes quedaron movidas a este resumen y al historial.</p>
+                </div>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <AppButton
+                  v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)"
+                  variant="primary"
+                  :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)"
+                  @click="startDeliverableFlow(deliverableWorkspaceSubject)"
+                >
+                  {{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}
+                </AppButton>
+                <AppButton
+                  v-else-if="shouldShowUploadDeliverable(deliverableWorkspaceSubject)"
+                  variant="primary"
+                  :disabled="!deliverableWorkspaceSubject.actions?.can_upload_deliverable || isUploadingDeliverable"
+                  @click="openDeliverableUploadModal(deliverableWorkspaceSubject)"
+                >
+                  {{ getUploadActionLabel(deliverableWorkspaceSubject) }}
+                </AppButton>
+                <AppButton
+                  v-else-if="shouldShowSign(deliverableWorkspaceSubject)"
+                  variant="warning"
+                  :disabled="!deliverableWorkspaceSubject.actions?.implemented?.sign"
+                  @click="openDocumentSignFlow(deliverableWorkspaceSubject)"
+                >
+                  Firmar
+                </AppButton>
+                <AppButton
+                  v-if="shouldShowOpenWorkspacePrimary(deliverableWorkspaceSubject)"
+                  variant="outlinePrimary"
+                  @click="deliverableWorkspaceState.tab = shouldShowManageFill(deliverableWorkspaceSubject) ? 'fill' : 'signature'"
+                >
+                  Ir al detalle operativo
+                </AppButton>
+                <AppButton
+                  variant="softNeutral"
+                  :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat"
+                  @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)"
+                >
+                  Chat
+                </AppButton>
+                <AppButton
+                  v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath"
+                  variant="softNeutral"
+                  @click="previewDeliverableFile(deliverableWorkspaceSubject)"
+                >
+                  Ver archivo
+                </AppButton>
+                <AppButton
+                  v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath"
+                  variant="softNeutral"
+                  @click="downloadDeliverableFile(deliverableWorkspaceSubject)"
+                >
+                  Descargar archivo
+                </AppButton>
+                <AppButton
+                  v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)"
+                  variant="softNeutral"
+                  :disabled="!deliverableWorkspaceSubject.actions?.can_download_template"
+                  @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)"
+                >
+                  Descargar plantilla
+                </AppButton>
+                <AppButton
+                  v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)"
+                  variant="softWarning"
+                  :disabled="deliverableResetState.submitting"
+                  @click="openDeliverableResetModal(deliverableWorkspaceSubject)"
+                >
+                  Resetear flujo
+                </AppButton>
+              </div>
+            </section>
+          </div>
+        </template>
+
+        <template v-else-if="deliverableWorkspaceState.tab === 'fill'">
           <div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
             <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <div class="flex flex-col gap-2">
@@ -1176,7 +1179,7 @@
           </div>
         </template>
 
-        <template v-else>
+        <template v-else-if="deliverableWorkspaceState.tab === 'signature'">
           <div v-if="signatureFlowState.loading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-600">
             Consultando la secuencia de firmas...
           </div>
@@ -1269,6 +1272,71 @@
             No hay datos de firmas disponibles para este entregable.
           </div>
         </template>
+        <template v-else-if="deliverableWorkspaceState.tab === 'history'">
+          <div class="flex flex-col gap-5">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Historial de llenado</h3>
+                <AppTag variant="muted">{{ fillWorkflowNotes.length }} registro{{ fillWorkflowNotes.length === 1 ? '' : 's' }}</AppTag>
+              </div>
+              <div v-if="!fillWorkflowNotes.length" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
+                No hay notas ni respuestas registradas en el flujo de llenado.
+              </div>
+              <div v-else class="mt-4 flex flex-col gap-3">
+                <div
+                  v-for="noteEntry in fillWorkflowNotes"
+                  :key="`workspace-fill-note-${noteEntry.stepId}-${noteEntry.requestId || noteEntry.stepOrder}`"
+                  class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
+                >
+                  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p class="m-0 text-sm font-bold text-slate-800">Paso {{ noteEntry.stepOrder }} · {{ noteEntry.label }}</p>
+                      <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ noteEntry.statusLabel }}</p>
+                    </div>
+                    <span v-if="noteEntry.respondedAtLabel" class="text-xs font-medium text-slate-500">{{ noteEntry.respondedAtLabel }}</span>
+                  </div>
+                  <p class="m-0 mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700">{{ noteEntry.note }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Historial de firmas</h3>
+                <AppTag variant="muted">{{ signatureFlowState.snapshot?.signatureRequests?.length || 0 }} registro{{ (signatureFlowState.snapshot?.signatureRequests?.length || 0) === 1 ? '' : 's' }}</AppTag>
+              </div>
+              <div v-if="!(signatureFlowState.snapshot?.signatureRequests?.length)" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
+                No hay solicitudes de firma registradas para este entregable.
+              </div>
+              <div v-else class="mt-4 flex flex-col gap-3">
+                <div
+                  v-for="request in signatureFlowState.snapshot.signatureRequests"
+                  :key="`workspace-history-signature-${request.id}`"
+                  class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
+                >
+                  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p class="m-0 text-sm font-bold text-slate-800">Paso {{ request.stepOrder }}</p>
+                      <p class="m-0 mt-1 text-xs font-medium text-slate-500">
+                        {{ request.assignedPerson ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim() : 'Firmante no resuelto' }}
+                        <span v-if="request.cargoName"> · {{ request.cargoName }}</span>
+                      </p>
+                    </div>
+                    <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
+                      {{ signatureRequestStatusLabel(request.requestStatusCode) }}
+                    </AppTag>
+                  </div>
+                  <p class="m-0 mt-3 text-xs font-medium text-slate-500">
+                    {{ request.respondedAt ? formatDateTime(request.respondedAt) : formatDateTime(request.requestedAt) }}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </template>
+        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
+          No hay una sección disponible para este entregable.
+        </div>
       </div>
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>
@@ -1856,7 +1924,6 @@ import {
   IconCircleCheck,
   IconDownload,
   IconFileDescription,
-  IconFileDownload,
   IconEye,
   IconSquareCheck,
   IconSignature,
@@ -1869,8 +1936,7 @@ import {
   IconPlayerPlayFilled,
   IconPlus,
   IconChecklist,
-  IconSearch,
-  IconRotateClockwise2
+  IconSearch
 } from '@tabler/icons-vue';
 
 const router = useRouter();
@@ -1887,7 +1953,6 @@ const isClient = typeof window !== 'undefined';
 let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true; // xl en Tailwind es 1280px
 
 const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
-const collapsedDeliverableKeys = ref(new Set());
 const showNotify = ref(false);
 const showNavMenu = ref(false);
 
@@ -1966,7 +2031,7 @@ const fillWorkflowState = ref({
   error: ''
 });
 const deliverableWorkspaceState = ref({
-  tab: 'fill'
+  tab: 'summary'
 });
 const signatureFlowState = ref({
   loading: false,
@@ -2015,6 +2080,7 @@ const userFullName = computed(() => {
   const lastName = currentUser.value.last_name ?? '';
   return `${firstName} ${lastName}`.trim() || 'Usuario';
 });
+const deliverableWorkspaceSubject = computed(() => fillWorkflowState.value.subject || signatureFlowState.value.subject || null);
 
 const menuContextLabel = computed(() => {
   if (selectedGroupId.value) {
@@ -2642,8 +2708,10 @@ const prettifyArtifactRole = (value) => {
   return value || 'Principal';
 };
 
-const getDeliverableProcessLabel = () =>
-  selectedProcessPanel.value?.definition?.process_name
+const getDeliverableProcessLabel = (_task = null, item = null) =>
+  item?.process_label
+  || item?.processLabel
+  || selectedProcessPanel.value?.definition?.process_name
   || selectedProcessContext.value?.name
   || 'Proceso';
 
@@ -2869,7 +2937,7 @@ onMounted(async () => {
         documentVersionId: null,
         snapshot: null
       };
-      deliverableWorkspaceState.value = { tab: 'fill' };
+      deliverableWorkspaceState.value = { tab: 'summary' };
     });
   }
   if (deliverableUploadModal.value?.el) {
@@ -3041,18 +3109,22 @@ const openFillWorkflowModal = (payload = {}) => {
 
 const getDeliverableSubject = (payload = {}) => {
   const documentPayload = payload?.document || payload;
-  const workingFilePath = documentPayload?.working_file_path || documentPayload?.workingFilePath || '';
-  const finalFilePath = documentPayload?.final_file_path || documentPayload?.finalFilePath || '';
+  const workingFilePath = documentPayload?.working_file_path || documentPayload?.workingFilePath || payload?.workingFilePath || '';
+  const finalFilePath = documentPayload?.final_file_path || documentPayload?.finalFilePath || payload?.finalFilePath || '';
   const preloadFilePath = finalFilePath || workingFilePath;
   const preloadPdfPath = [finalFilePath, workingFilePath].find((value) => canPreviewInline(value)) || '';
   return {
-    itemId: payload?.id || documentPayload?.task_item_id || null,
-    taskId: payload?.task_id || documentPayload?.task_id || null,
-    documentId: documentPayload?.document_id || null,
-    documentVersionId: documentPayload?.document_version_id || null,
+    id: payload?.id || documentPayload?.id || documentPayload?.task_item_id || null,
+    itemId: payload?.id || payload?.itemId || documentPayload?.task_item_id || documentPayload?.itemId || null,
+    taskId: payload?.task_id || payload?.taskId || documentPayload?.task_id || documentPayload?.taskId || null,
+    documentId: documentPayload?.document_id || documentPayload?.documentId || payload?.documentId || null,
+    documentVersionId: documentPayload?.document_version_id || documentPayload?.documentVersionId || payload?.documentVersionId || null,
+    documentVersion: documentPayload?.document_version || documentPayload?.documentVersion || payload?.documentVersion || null,
     processId:
       payload?.process_id
+      || payload?.processId
       || payload?.workflow?.process_id
+      || payload?.workflow?.processId
       || selectedProcessPanel.value?.definition?.chat_context?.process_id
       || selectedProcessPanel.value?.definition?.process_id
       || null,
@@ -3063,9 +3135,19 @@ const getDeliverableSubject = (payload = {}) => {
       || documentPayload?.scopeUnitId
       || selectedProcessContext.value?.unit_id
       || null,
-    title: payload?.template_artifact_name || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
+    title: payload?.title || payload?.template_artifact_name || documentPayload?.title || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
+    templateArtifactName: payload?.template_artifact_name || payload?.templateArtifactName || documentPayload?.template_artifact_name || documentPayload?.templateArtifactName || '',
     actions: payload?.actions || documentPayload?.actions || {},
     workflow: payload?.workflow || documentPayload?.workflow || {},
+    status: payload?.status || payload?.status_name || payload?.statusName || documentPayload?.status || documentPayload?.status_name || documentPayload?.statusName || '',
+    documentStatus: payload?.document_status || payload?.documentStatus || documentPayload?.document_status || documentPayload?.documentStatus || '',
+    pendingFillCount: payload?.pending_fill_count || payload?.pendingFillCount || documentPayload?.pending_fill_count || documentPayload?.pendingFillCount || 0,
+    pendingSignatureCount: payload?.pending_signature_count || payload?.pendingSignatureCount || documentPayload?.pending_signature_count || documentPayload?.pendingSignatureCount || 0,
+    taskStartDate: payload?.task_start_date || payload?.taskStartDate || payload?.start_date || payload?.startDate || null,
+    taskEndDate: payload?.task_end_date || payload?.taskEndDate || payload?.end_date || payload?.endDate || null,
+    periodLabel: payload?.period_label || payload?.periodLabel || '',
+    unitLabel: payload?.unit_label || payload?.unitLabel || '',
+    processLabel: payload?.process_label || payload?.processLabel || '',
     workingFilePath,
     finalFilePath,
     preloadFilePath,
@@ -3351,24 +3433,7 @@ const hasSignatureWorkflowActivity = (payload) => {
     || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.current_signature_step_order || 0) > 0;
 };
 
-const resolveDeliverableWorkspaceTab = (payload) => {
-  const canManageFill = shouldShowManageFill(payload);
-  const canReviewSignatureFlow = shouldShowSignatureFlow(payload);
-
-  if (canManageFill && hasPendingFillWorkflow(payload)) {
-    return 'fill';
-  }
-
-  if (canReviewSignatureFlow && hasSignatureWorkflowActivity(payload)) {
-    return 'signature';
-  }
-
-  if (canManageFill) {
-    return 'fill';
-  }
-
-  return 'signature';
-};
+const resolveDeliverableWorkspaceTab = () => 'summary';
 
 const getDeliverableWorkspaceTabClass = (tab) => {
   if (deliverableWorkspaceState.value.tab === tab) {
@@ -3453,23 +3518,42 @@ const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
   && (shouldShowManageFill(payload) || shouldShowSignatureFlow(payload))
 );
 
-const shouldShowPdfRequiredHint = (payload) => {
-  const subject = getDeliverableSubject(payload);
-  return Boolean(subject.preloadFilePath && !subject.preloadPdfPath);
-};
-
-const isDeliverableExpanded = (deliverableKey) => !collapsedDeliverableKeys.value.has(String(deliverableKey || ''));
-
-const toggleDeliverableExpanded = (deliverableKey) => {
-  const key = String(deliverableKey || '');
-  if (!key) return;
-  const next = new Set(collapsedDeliverableKeys.value);
-  if (next.has(key)) {
-    next.delete(key);
-  } else {
-    next.add(key);
+const getDeliverableCardTone = (payload) => {
+  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
+    return {
+      card: 'border-rose-200/80 hover:border-rose-300 hover:shadow-[0_18px_36px_rgba(244,114,182,0.14)]',
+      accent: 'bg-rose-300',
+      responsibility: 'border-rose-100 bg-linear-to-br from-rose-50 via-white to-orange-50/50',
+      responsibilityLabel: 'text-rose-700'
+    };
   }
-  collapsedDeliverableKeys.value = next;
+
+  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
+    return {
+      card: 'border-sky-200/80 hover:border-sky-300 hover:shadow-[0_18px_36px_rgba(14,165,233,0.12)]',
+      accent: 'bg-sky-500',
+      responsibility: 'border-sky-100 bg-linear-to-br from-sky-50 via-white to-cyan-50/70',
+      responsibilityLabel: 'text-sky-700'
+    };
+  }
+
+  const subject = getDeliverableSubject(payload);
+  const variant = getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral');
+  if (variant === 'success') {
+    return {
+      card: 'border-emerald-200/80 hover:border-emerald-300 hover:shadow-[0_18px_36px_rgba(16,185,129,0.12)]',
+      accent: 'bg-emerald-500',
+      responsibility: 'border-emerald-100 bg-linear-to-br from-emerald-50 via-white to-emerald-50/70',
+      responsibilityLabel: 'text-emerald-700'
+    };
+  }
+
+  return {
+    card: 'border-slate-200 hover:border-slate-300 hover:shadow-[0_18px_36px_rgba(15,23,42,0.09)]',
+    accent: 'bg-slate-300',
+    responsibility: 'border-slate-200 bg-slate-50/70',
+    responsibilityLabel: 'text-slate-600'
+  };
 };
 
 const getWorkflowStateTagVariant = (value, fallback = 'neutral') => {
@@ -3490,14 +3574,14 @@ const getDeliverableAccessTagVariant = (accessSource) => {
 };
 
 const getDeliverableDocumentTagVariant = (subject) => {
-  if (!subject?.document_id) return 'warning';
-  return getWorkflowStateTagVariant(subject.document_status, 'info');
+  if (!subject?.documentId) return 'warning';
+  return getWorkflowStateTagVariant(subject.documentStatus, 'info');
 };
 
 const getDeliverableTagGroups = (payload) => {
   const subject = getDeliverableSubject(payload);
   const accessSource = getDeliverableAccessSource(payload);
-  const generalTags = [
+  return [
     {
       key: 'access-source',
       variant: getDeliverableAccessTagVariant(accessSource),
@@ -3505,56 +3589,195 @@ const getDeliverableTagGroups = (payload) => {
     },
     {
       key: 'deliverable-status',
-      variant: getWorkflowStateTagVariant(subject.status || subject.document_status, 'neutral'),
-      label: `Entregable: ${capitalize(subject.status || subject.document_status || 'pendiente')}`
+      variant: getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral'),
+      label: `Entregable: ${capitalize(subject.status || subject.documentStatus || 'pendiente')}`
     },
     {
       key: 'document-status',
       variant: getDeliverableDocumentTagVariant(subject),
-      label: subject.document_id
-        ? `Documento: ${subject.document_status || 'Creado'}`
+      label: subject.documentId
+        ? `Documento: ${subject.documentStatus || 'Creado'}`
         : 'Documento: sin generar'
     }
   ];
-
-  const fillTags = [];
-  if (subject.workflow?.current_fill_step_order) {
-    fillTags.push({
-      key: 'fill-step',
-      variant: 'info',
-      label: `Llenado: paso ${subject.workflow.current_fill_step_order}`
-    });
-  }
-  if (subject.pending_fill_count) {
-    fillTags.push({
-      key: 'fill-pending',
-      variant: 'info',
-      label: `Llenado: ${subject.pending_fill_count} pendiente${Number(subject.pending_fill_count) === 1 ? '' : 's'}`
-    });
-  }
-
-  const signatureTags = [];
-  if (subject.pending_signature_count !== undefined) {
-    signatureTags.push({
-      key: 'signature-pending',
-      variant: 'warning',
-      label: `Firmas: ${subject.pending_signature_count || 0} pendiente${Number(subject.pending_signature_count || 0) === 1 ? '' : 's'}`
-    });
-  }
-  if (subject.workflow?.current_signature_step_order) {
-    signatureTags.push({
-      key: 'signature-step',
-      variant: 'warning',
-      label: `Firma: paso ${subject.workflow.current_signature_step_order}`
-    });
-  }
-
-  return [
-    { key: 'general', tags: generalTags.filter(Boolean) },
-    { key: 'fill', tags: fillTags },
-    { key: 'signature', tags: signatureTags }
-  ].flatMap((group) => group.tags);
 };
+
+const getDeliverableStatusBadge = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  return {
+    variant: getWorkflowStateTagVariant(subject.status || subject.documentStatus, 'neutral'),
+    label: capitalize(subject.status || subject.documentStatus || 'pendiente') || 'Pendiente'
+  };
+};
+
+const getDeliverableDocumentLabel = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  if (!subject.documentId) return 'Sin doc';
+  return subject.documentVersion ? `Doc v${subject.documentVersion}` : 'Doc creado';
+};
+
+const getDeliverablePrimaryActionLabel = (payload) => {
+  if (shouldShowStartDeliverable(payload)) return 'Iniciar';
+  if (shouldShowUploadDeliverable(payload)) return getUploadActionLabel(payload);
+  if (shouldShowSign(payload)) return 'Firmar';
+  if (shouldShowOpenWorkspacePrimary(payload)) return 'Abrir';
+  return 'Sin acción inmediata';
+};
+
+const getDeliverableNextActionText = (payload) => {
+  if (shouldShowStartDeliverable(payload)) return 'El entregable aún no ha sido iniciado.';
+  if (shouldShowUploadDeliverable(payload)) return 'El flujo espera un archivo de trabajo actualizado.';
+  if (shouldShowSign(payload)) return 'El documento ya está listo para completar la firma.';
+  if (shouldShowManageFill(payload) || shouldShowSignatureFlow(payload)) return 'El detalle operativo está disponible en el workspace del entregable.';
+  return 'No hay una acción inmediata disponible en este momento.';
+};
+
+const getFillResponsibleName = (payload) => {
+  const request = getCurrentFillWorkflowRequest(payload);
+  const explicitLabel = String(request?.display_label || request?.label || '').trim();
+  if (explicitLabel) return explicitLabel;
+  const assignedPersonName = String(request?.assigned_person_name || request?.assignedPersonName || '').trim();
+  if (assignedPersonName) return assignedPersonName;
+  const cargoName = String(request?.cargo_name || request?.cargoName || '').trim();
+  if (cargoName) return cargoName;
+  const assignedPersonId = Number(request?.assigned_person_id || 0);
+  if (assignedPersonId > 0 && assignedPersonId === Number(currentUserId.value || 0)) {
+    return userFullName.value;
+  }
+  return 'Responsable no resuelto';
+};
+
+const getSignatureRequestAssignedSummary = (request) => {
+  const personName = request?.assignedPerson
+    ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim()
+    : String(request?.assigned_person_name || request?.assignedPersonName || '').trim();
+  const cargoName = String(request?.cargoName || request?.cargo_name || '').trim();
+  const explicitLabel = String(request?.display_label || request?.label || '').trim();
+  if (personName && cargoName) {
+    return `${personName} · ${cargoName}`;
+  }
+  return personName || cargoName || explicitLabel || 'Responsable no resuelto';
+};
+
+const getCurrentSignatureWorkflowRequest = (payload) => {
+  const currentUser = Number(currentUserId.value || 0);
+  const requests = getCurrentSignatureRequestsFromSubject(payload);
+  return requests.find((request) => Number(request?.assigned_person_id || 0) === currentUser && !request?.responded_at)
+    || requests.find((request) => Number(request?.assigned_person_id || 0) > 0 && !request?.responded_at)
+    || requests.find((request) => !request?.responded_at)
+    || requests[0]
+    || null;
+};
+
+const getSignatureResponsibleName = (payload) => {
+  const request = getCurrentSignatureWorkflowRequest(payload);
+  if (!request) return 'Responsable no resuelto';
+  const summary = getSignatureRequestAssignedSummary(request);
+  if (summary && summary !== 'Responsable no resuelto') return summary;
+  const assignedPersonId = Number(request?.assigned_person_id || 0);
+  if (assignedPersonId > 0 && assignedPersonId === Number(currentUserId.value || 0)) {
+    return userFullName.value;
+  }
+  return 'Responsable no resuelto';
+};
+
+const getDeliverableCurrentResponsibility = (payload) => {
+  if (shouldShowStartDeliverable(payload) || shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
+    return {
+      type: 'fill',
+      name: getFillResponsibleName(payload),
+      variant: 'info'
+    };
+  }
+  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
+    return {
+      type: 'signature',
+      name: getSignatureResponsibleName(payload),
+      variant: 'warning'
+    };
+  }
+  return {
+    type: 'none',
+    name: 'no resuelto',
+    variant: 'muted'
+  };
+};
+
+const getDeliverableProgress = (payload) => {
+  const subject = getDeliverableSubject(payload);
+
+  if (hasSignatureWorkflowActivity(payload)) {
+    const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+    const stepOrders = [...new Set(
+      requests
+        .map((request) => Number(request?.step_order || request?.stepOrder || 0))
+        .filter((value) => value > 0)
+    )].sort((a, b) => a - b);
+    const total = stepOrders.length || Number(subject.pendingSignatureCount || 0) || 0;
+    if (!total) return null;
+    const current = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0) || total;
+    const completedSteps = stepOrders.filter((stepOrder) => {
+      const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
+      if (!relatedRequests.length) return false;
+      return relatedRequests.every((request) => {
+        const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
+        return ['completado', 'completed'].includes(code);
+      });
+    }).length;
+    const hasActivePendingStep = requests.some((request) => {
+      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
+      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
+    });
+    const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
+    return {
+      label: 'Paso de firma',
+      current: Math.min(Math.max(current, 1), total),
+      total,
+      percent: Math.min(100, Math.max(8, (progressUnits / total) * 100))
+    };
+  }
+
+  const fillSteps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
+  const total = fillSteps.length || Number(subject.pendingFillCount || 0) || 0;
+  if (!total) return null;
+  const current = Number(subject.workflow?.fill_flow?.current_step_order || subject.workflow?.current_fill_step_order || getCurrentFillWorkflowRequest(payload)?.step_order || 0) || total;
+  const completedSteps = fillSteps.filter((step) => {
+    const code = String(step?.request_status || '').trim().toLowerCase();
+    return code === 'approved';
+  }).length;
+  const hasActivePendingStep = fillSteps.some((step) => {
+    const code = String(step?.request_status || '').trim().toLowerCase();
+    return ['pending', 'in_progress', 'returned'].includes(code);
+  });
+  const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
+  return {
+    label: 'Paso de llenado',
+    current: Math.min(Math.max(current, 1), total),
+    total,
+    percent: Math.min(100, Math.max(8, (progressUnits / total) * 100))
+  };
+};
+
+const getDeliverablePeriodLabelFromSubject = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  if (subject.periodLabel) return subject.periodLabel;
+  return 'Periodo no resuelto';
+};
+
+const getDeliverableDateRangeLabel = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  if (!subject.taskStartDate && !subject.taskEndDate) return 'Fechas no resueltas';
+  return `${formatDate(subject.taskStartDate)}${subject.taskEndDate ? ` - ${formatDate(subject.taskEndDate)}` : ''}`;
+};
+
+const getDeliverableWorkspacePayload = (deliverable) => ({
+  ...(deliverable?.item || {}),
+  period_label: getDeliverablePeriodLabel(deliverable?.task),
+  process_label: getDeliverableProcessLabel(deliverable?.task, deliverable?.item),
+  unit_label: getDeliverableUnitLabel(deliverable?.item),
+  task_start_date: deliverable?.task?.start_date || null,
+  task_end_date: deliverable?.task?.end_date || null,
+});
 
 const isReviewFillStep = computed(() => {
   const resolver = String(fillWorkflowState.value.request?.resolver_type || '').trim().toLowerCase();
@@ -3634,16 +3857,7 @@ const getSignatureStepAssignedSummary = (step, requests = []) => {
     return 'Firmante no resuelto';
   }
 
-  const labels = relatedRequests.map((request) => {
-    const personName = request?.assignedPerson
-      ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim()
-      : '';
-    const cargoName = String(request?.cargoName || '').trim();
-    if (personName && cargoName) {
-      return `${personName} · ${cargoName}`;
-    }
-    return personName || cargoName || 'Firmante no resuelto';
-  }).filter(Boolean);
+  const labels = relatedRequests.map((request) => getSignatureRequestAssignedSummary(request)).filter(Boolean);
 
   return labels.join(' | ') || 'Firmante no resuelto';
 };

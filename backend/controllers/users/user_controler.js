@@ -670,6 +670,7 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
        srs.name AS status_name,
        sfs.step_order,
        st.name AS signature_type_name,
+       c.name AS cargo_name,
        tar.display_name AS template_artifact_name,
        d.id AS document_id,
        dv.id AS document_version_id,
@@ -685,6 +686,7 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
      LEFT JOIN signature_types st ON st.id = sfs.step_type_id
+     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
      WHERE sfi.document_version_id IN (${placeholders})
      ORDER BY sfi.document_version_id ASC, sfs.step_order ASC, sr.id ASC`,
     documentVersionIds
