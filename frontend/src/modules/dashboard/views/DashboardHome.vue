@@ -5025,7 +5025,8 @@ const toggleNavMenu = () => {
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__surface) {
-  min-height: 100%;
+  min-height: 3.875rem;
+  height: 3.875rem;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
@@ -5072,23 +5073,23 @@ const toggleNavMenu = () => {
 
 .deliverable-inline-upload :deep(.deasy-dropzone__icon) {
   display: inline-flex;
-  height: 2.75rem;
-  width: 2.75rem;
-  padding: 0.7rem;
+  height: 2.25rem;
+  width: 2.25rem;
+  padding: 0.5rem;
   box-sizing: border-box;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 1rem;
+  border-radius: 0.85rem;
   border: 1px solid rgb(224 242 254 / 0.98);
-  background: rgb(255 255 255 / 0.9);
+  background: rgb(240 249 255 / 0.55);
   color: rgb(2 132 199);
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__icon--compact) {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__icon svg),
