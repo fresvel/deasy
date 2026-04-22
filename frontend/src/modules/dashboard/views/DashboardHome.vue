@@ -539,13 +539,6 @@
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
                 <article class="lg:col-span-12 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-                  <header class="flex flex-col gap-2">
-                    <div>
-                      <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Tareas asignadas</h2>
-                      <p class="text-slate-500 text-sm mt-1 mb-0 font-medium">Solo se muestran las tareas donde participas o que creaste manualmente.</p>
-                    </div>
-                  </header>
-
                   <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -555,7 +548,6 @@
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-slate-800">Filtrar tareas</span>
-                            <span class="text-xs font-medium text-slate-500">Busca por periodo, unidad, estado y participación.</span>
                           </span>
                         </button>
                         <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToDocumentCenterPage">
@@ -564,7 +556,6 @@
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-slate-800">Centro documental</span>
-                            <span class="text-xs font-medium text-slate-500">Visualiza y descarga los documentos accesibles de tu cuenta.</span>
                           </span>
                         </button>
                         <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToGlobalSignaturePage">
@@ -573,7 +564,6 @@
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-slate-800">Firma global</span>
-                            <span class="text-xs font-medium text-slate-500">Agrupa los PDF pendientes por firmar y envíalos al multifirmador.</span>
                           </span>
                         </button>
                         <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="showFutureTaskCreationInfo">
@@ -582,7 +572,6 @@
                           </span>
                           <span class="flex min-w-0 flex-col">
                             <span class="text-sm font-bold text-slate-800">Nueva tarea</span>
-                            <span class="text-xs font-medium text-slate-500">Reserva el punto de entrada para la creación manual futura.</span>
                           </span>
                         </button>
                       </div>
