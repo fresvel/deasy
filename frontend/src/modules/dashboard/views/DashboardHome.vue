@@ -436,58 +436,49 @@
 
                       <div class="flex h-full flex-col gap-3 pt-2">
                         <div class="flex min-w-0 flex-col gap-2">
-                          <div class="flex items-center justify-between gap-3">
-                            <div
-                              class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-[1rem] border px-3.5 py-2.5 shadow-[0_10px_22px_rgba(15,23,42,0.05)]"
-                              :class="deliverable.item.document_id
-                                ? 'border-sky-200/90 bg-linear-to-br from-white via-sky-50/70 to-sky-100/55 text-sky-700'
-                                : 'border-slate-200 bg-linear-to-br from-white via-slate-50 to-slate-100/70 text-slate-500'"
-                            >
-                              <div class="flex min-w-0 flex-1 items-center gap-2">
-                                <span
-                                  class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.85rem] border bg-white/90 shadow-sm"
-                                  :class="deliverable.item.document_id ? 'border-sky-100 text-sky-700' : 'border-slate-200 text-slate-500'"
-                                >
-                                  <IconSignature class="h-4 w-4" />
-                                </span>
-                                <span class="min-w-0 truncate text-[11px] font-bold uppercase tracking-[0.16em]">
-                                  {{ getDeliverableDocumentLabel(deliverable.item) }}
-                                </span>
+                          <div
+                            class="-mx-4 -mt-4 flex items-center justify-between gap-3 border-b px-4 pb-3 pt-2"
+                            :class="deliverable.item.document_id
+                              ? 'border-sky-200/90 bg-linear-to-br from-white via-sky-50/70 to-sky-100/55 text-sky-700'
+                              : 'border-slate-200 bg-linear-to-br from-white via-slate-50 to-slate-100/70 text-slate-500'"
+                          >
+                              <div class="flex min-w-0 flex-1 items-center gap-3">
+                                <div class="min-w-0 flex flex-1 items-center self-stretch py-1">
+                                  <p class="m-0 text-[0.95rem] font-semibold leading-snug" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                    {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
+                                    <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                      v{{ deliverable.item.document_version }}
+                                    </span>
+                                  </p>
+                                </div>
                               </div>
                               <div class="flex shrink-0 items-center gap-1.5">
                                 <AppButton
                                   variant="plain"
-                                  class-name="relative inline-flex h-9 w-9 items-center justify-center rounded-[0.9rem] border border-white/80 bg-white/88 text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                  :class-name="[
+                                    'relative inline-flex h-[3.375rem] w-[3.375rem] items-center justify-center rounded-[1rem] border bg-white/88 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                    getDeliverableHeaderActionTone(deliverable.item)
+                                  ].join(' ')"
                                   :disabled="!deliverable.item.actions?.can_open_process_chat"
                                   aria-label="Abrir chat"
                                   title="Abrir chat"
                                   @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
                                 >
-                                  <IconMessages class="h-4.5 w-4.5" />
+                                  <IconMessages class="h-[1.6875rem] w-[1.6875rem]" />
                                 </AppButton>
                                 <AppButton
                                   variant="plain"
                                   :class-name="[
-                                    'group inline-flex h-9 w-9 items-center justify-center rounded-[0.9rem] border bg-white/88 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
-                                    shouldShowSign(deliverable.item) || hasSignatureWorkflowActivity(deliverable.item)
-                                      ? 'border-violet-100/95 text-violet-700 hover:border-violet-200 hover:bg-violet-50 focus:ring-violet-200/70'
-                                      : shouldShowUploadDeliverable(deliverable.item) || hasPendingFillWorkflow(deliverable.item)
-                                        ? 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70'
-                                        : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70'
+                                    'group inline-flex h-[3.375rem] w-[3.375rem] items-center justify-center rounded-[1rem] border bg-white/88 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                    getDeliverableHeaderActionTone(deliverable.item)
                                   ].join(' ')"
                                   aria-label="Abrir detalle del entregable"
                                   title="Abrir detalle del entregable"
                                   @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
                                 >
-                                  <IconEye class="h-4.5 w-4.5" />
+                                  <IconEye class="h-[1.6875rem] w-[1.6875rem]" />
                                 </AppButton>
                               </div>
-                            </div>
-                          </div>
-                          <div class="min-w-0">
-                            <strong class="line-clamp-2 text-base font-semibold leading-tight text-slate-800">
-                              {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
-                            </strong>
                           </div>
                         </div>
 
@@ -3726,10 +3717,10 @@ const getDeliverableCardTone = (payload) => {
 
   if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
     return {
-      card: 'border-violet-200/80 hover:border-violet-300 hover:shadow-[0_18px_36px_rgba(139,92,246,0.16)]',
-      accent: 'bg-violet-500',
-      responsibility: 'border-violet-100 bg-linear-to-br from-violet-50 via-white to-fuchsia-50/50',
-      responsibilityLabel: 'text-violet-700'
+      card: 'border-cyan-200/85 hover:border-cyan-300 hover:shadow-[0_18px_36px_rgba(6,182,212,0.16)]',
+      accent: 'bg-cyan-400',
+      responsibility: 'border-cyan-100 bg-linear-to-br from-cyan-50 via-white to-sky-50/60',
+      responsibilityLabel: 'text-cyan-700'
     };
   }
 
@@ -3759,6 +3750,19 @@ const getDeliverableCardTone = (payload) => {
     responsibility: 'border-slate-200 bg-slate-50/70',
     responsibilityLabel: 'text-slate-600'
   };
+};
+
+const getDeliverableHeaderActionTone = (payload) => {
+  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
+    return 'border-cyan-100/95 text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50 focus:ring-cyan-200/70';
+  }
+  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
+    return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';
+  }
+  if (shouldShowStartDeliverable(payload)) {
+    return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
+  }
+  return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
 };
 
 const getWorkflowStateTagVariant = (value, fallback = 'neutral') => {
@@ -4518,8 +4522,8 @@ const downloadDeliverableTemplate = async (payload) => {
   try {
     const userId = currentUserId.value;
     const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
-    const blob = await processPanelService.downloadDeliverableTemplate(userId, definitionId, subject.itemId);
-    downloadBlob(blob, `${subject.title}.pdf`);
+    const download = await processPanelService.downloadDeliverableTemplate(userId, definitionId, subject.itemId);
+    downloadBlob(download.blob, download.fileName || 'plantilla.zip');
     setProcessActionInfo(`La plantilla de ${subject.title} se descargó correctamente.`, 'success');
   } catch (error) {
     setProcessActionInfo(

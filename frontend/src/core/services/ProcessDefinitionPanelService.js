@@ -2,6 +2,19 @@ import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 class ProcessDefinitionPanelService {
+  extractDownloadFileName(response, fallback = "archivo.bin") {
+    const disposition = String(response?.headers?.["content-disposition"] || "");
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) {
+      return decodeURIComponent(utf8Match[1]).replace(/^["']|["']$/g, "");
+    }
+    const plainMatch = disposition.match(/filename="?([^";]+)"?/i);
+    if (plainMatch?.[1]) {
+      return plainMatch[1].trim();
+    }
+    return fallback;
+  }
+
   getAuthHeaders() {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -141,7 +154,11 @@ class ProcessDefinitionPanelService {
         responseType: "blob",
       }
     );
-    return response.data;
+    return {
+      blob: response.data,
+      fileName: this.extractDownloadFileName(response, "plantilla.zip"),
+      contentType: String(response.headers?.["content-type"] || "application/octet-stream"),
+    };
   }
 
   async downloadDeliverableFile(userId, processDefinitionId, taskItemId, kind = "best") {

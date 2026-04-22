@@ -2109,28 +2109,12 @@ export const downloadDeliverableTemplate = async (req, res) => {
       });
     }
 
-    if (resources.length === 1) {
-      const selected = resources[0];
-      const fileName = path.posix.basename(selected.archiveName);
-      const stream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, selected.objectName);
-      res.setHeader("Content-Type", "application/octet-stream");
-      res.setHeader("Content-Disposition", `attachment; filename=\"${fileName}\"`);
-      stream.on("error", (error) => {
-        if (!res.headersSent) {
-          res.status(404).json({ message: error.message });
-          return;
-        }
-        res.end();
-      });
-      stream.pipe(res);
-      return;
-    }
-
     const workspace = await fs.mkdtemp(path.join(os.tmpdir(), "deliverable-template-"));
     const zipPath = path.join(
       os.tmpdir(),
       `${sanitizeStorageSegment(target.template_artifact_name || "plantilla", "plantilla")}-${randomUUID()}.zip`
     );
+    const downloadFileName = `${sanitizeStorageSegment(target.template_artifact_name || "plantilla", "plantilla")}.zip`;
 
     try {
       for (const resource of resources) {
@@ -2138,7 +2122,8 @@ export const downloadDeliverableTemplate = async (req, res) => {
         await writeMinioObjectToFile(MINIO_TEMPLATES_BUCKET, resource.objectName, destinationPath);
       }
       await createZipArchive(workspace, zipPath);
-      return res.download(zipPath, path.basename(zipPath), async () => {
+      res.setHeader("Content-Type", "application/zip");
+      return res.download(zipPath, downloadFileName, async () => {
         await fs.remove(zipPath).catch(() => {});
         await fs.remove(workspace).catch(() => {});
       });
