@@ -1147,7 +1147,7 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, template_artifact_id, usage_role, sort_order, creates_task
+      `SELECT id, process_definition_id, template_artifact_id, usage_role, instance_mode, sort_order, creates_task
        FROM process_definition_templates
        WHERE id = ?
        LIMIT 1`,
@@ -1317,7 +1317,7 @@ export default class SqlAdminService {
     }
 
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, usage_role, creates_task, is_required, sort_order
+      `SELECT template_artifact_id, usage_role, instance_mode, creates_task, is_required, sort_order
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -1330,14 +1330,16 @@ export default class SqlAdminService {
           process_definition_id,
           template_artifact_id,
           usage_role,
+          instance_mode,
           creates_task,
           is_required,
           sort_order
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.template_artifact_id,
           row.usage_role,
+          row.instance_mode || "single_document",
           row.creates_task,
           row.is_required,
           row.sort_order

@@ -48,6 +48,12 @@
         <AdminFieldGroup label="Orden" group-class="md:col-span-3">
           <AdminInputField :model-value="form.sort_order" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('sort_order', $event)" />
         </AdminFieldGroup>
+        <AdminFieldGroup label="Modo de instancia" group-class="md:col-span-6">
+          <AdminSelectField :model-value="form.instance_mode" :disabled="!canManage" @update:model-value="updateField('instance_mode', $event)">
+            <option value="single_document">single_document</option>
+            <option value="owner_many_documents">owner_many_documents</option>
+          </AdminSelectField>
+        </AdminFieldGroup>
         <AdminFieldGroup label="Genera tarea" group-class="md:col-span-3">
           <AdminSelectField :model-value="form.creates_task" :disabled="!canManage" @update:model-value="updateField('creates_task', $event)">
             <option value="1">Si</option>

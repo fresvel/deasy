@@ -1124,6 +1124,64 @@
               </div>
             </section>
 
+            <section
+              v-if="deliverableWorkspaceSubject.instanceMode === 'owner_many_documents'"
+              class="rounded-2xl border border-slate-200 bg-white p-4"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Instancias documentales</h3>
+                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Cada solicitud se gestiona como un documento independiente dentro del mismo entregable.</p>
+                </div>
+                <AppButton
+                  v-if="deliverableWorkspaceSubject.canCreateDocumentInstance"
+                  variant="softPrimary"
+                  size="sm"
+                  type="button"
+                  :disabled="isCreatingDeliverableDocument"
+                  @click="createDeliverableDocumentInstance(deliverableWorkspaceSubject)"
+                >
+                  {{ isCreatingDeliverableDocument ? 'Creando...' : 'Nuevo requerimiento' }}
+                </AppButton>
+              </div>
+              <div
+                v-if="!deliverableWorkspaceSubject.documents?.length"
+                class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-5 text-sm font-medium text-slate-500"
+              >
+                Todavía no hay instancias documentales creadas para este entregable.
+              </div>
+              <div v-else class="mt-4 flex flex-col gap-3">
+                <button
+                  v-for="document in deliverableWorkspaceSubject.documents"
+                  :key="`workspace-document-${document.document_id}`"
+                  type="button"
+                  class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left transition hover:border-sky-200 hover:bg-sky-50/60"
+                  @click="selectDeliverableDocumentInstance(deliverableWorkspaceSubject, document)"
+                >
+                  <div class="min-w-0">
+                    <p class="m-0 text-sm font-semibold text-slate-800">
+                      {{ document.template_artifact_name || deliverableWorkspaceSubject.title }}
+                      <span class="text-slate-500">· Instancia {{ document.instance_no || 1 }}</span>
+                    </p>
+                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">
+                      {{ document.document_version ? `v${document.document_version}` : `#${document.document_version_id}` }}
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 flex-wrap gap-2">
+                    <AppTag variant="neutral">
+                      {{ document.document_status || 'Inicial' }}
+                    </AppTag>
+                    <AppTag v-if="document.pending_fill_count" variant="info">
+                      Llenado: {{ document.pending_fill_count }}
+                    </AppTag>
+                    <AppTag v-if="document.pending_signature_count" variant="warning">
+                      Firmas: {{ document.pending_signature_count }}
+                    </AppTag>
+                  </div>
+                </button>
+              </div>
+            </section>
+
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
               <div class="flex items-center justify-between gap-2">
                 <div>
@@ -2197,6 +2255,7 @@ const signatureFlowSignerRef = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
 const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
+const isCreatingDeliverableDocument = ref(false);
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
 const collapsedDeliverableIds = ref(new Set());
@@ -2950,6 +3009,99 @@ const getDeliverableUnitLabel = (item) =>
 
 const getDeliverablePeriodLabel = (task) => task?.term_name || 'Periodo no definido';
 
+const getTaskItemFromSelectedPanel = (taskItemId) => {
+  const normalizedTaskItemId = Number(taskItemId || 0);
+  if (!normalizedTaskItemId) {
+    return null;
+  }
+  for (const task of selectedProcessPanel.value?.tasks || []) {
+    const match = (task.items || []).find((item) => Number(item.id || 0) === normalizedTaskItemId);
+    if (match) {
+      return match;
+    }
+  }
+  return null;
+};
+
+const buildDeliverableWorkspacePayload = (taskItem, document = null) => {
+  if (!taskItem) {
+    return null;
+  }
+  if (!document) {
+    return taskItem;
+  }
+  return {
+    ...taskItem,
+    document,
+    document_id: document.document_id,
+    document_version_id: document.document_version_id,
+    document_version: document.document_version,
+    working_file_path: document.working_file_path,
+    final_file_path: document.final_file_path,
+    document_status: document.document_status,
+    instance_no: document.instance_no,
+  };
+};
+
+const selectDeliverableDocumentInstance = async (payload, document) => {
+  const subject = getDeliverableSubject(payload);
+  const taskItem = getTaskItemFromSelectedPanel(subject.itemId) || payload;
+  const nextPayload = buildDeliverableWorkspacePayload(taskItem, document);
+  if (!nextPayload) {
+    return;
+  }
+  await openDeliverableWorkspaceModal(nextPayload);
+};
+
+const createDeliverableDocumentInstance = async (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const userId = currentUserId.value;
+  const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
+  const taskItemId = Number(subject.itemId || 0);
+  if (!userId || !definitionId || !taskItemId) {
+    setProcessActionInfo('No se pudo resolver el contexto del entregable para crear la nueva instancia.', 'error');
+    return;
+  }
+  try {
+    isCreatingDeliverableDocument.value = true;
+    openDeliverableOperationModal({
+      title: 'Creando nueva instancia',
+      type: 'info',
+      message: `Creando un nuevo documento borrador para ${subject.title}...`,
+      detail: 'El flujo no se iniciará automáticamente.'
+    });
+    const created = await processPanelService.createTaskItemDocument(userId, definitionId, taskItemId);
+    if (selectedProcessContext.value) {
+      await loadSelectedProcessPanel(selectedProcessContext.value);
+    }
+    const refreshedTaskItem = getTaskItemFromSelectedPanel(taskItemId);
+    const createdDocument = (refreshedTaskItem?.documents || []).find(
+      (document) => Number(document.document_id || 0) === Number(created?.document_id || 0)
+    ) || null;
+    if (refreshedTaskItem) {
+      await openDeliverableWorkspaceModal(buildDeliverableWorkspacePayload(refreshedTaskItem, createdDocument));
+    }
+    openDeliverableOperationModal({
+      title: 'Instancia creada',
+      type: 'success',
+      message: 'Se creó una nueva instancia documental en borrador.',
+      detail: created?.title || subject.title
+    });
+    setProcessActionInfo(`Se creó una nueva instancia para ${subject.title}.`, 'success');
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || 'No se pudo crear la nueva instancia documental.';
+    openDeliverableOperationModal({
+      title: 'Error al crear instancia',
+      type: 'error',
+      message,
+      detail: subject.title
+    });
+    setProcessActionInfo(message, 'error');
+  } finally {
+    isCreatingDeliverableDocument.value = false;
+  }
+};
+
 const loadSelectedProcessPanel = async (process) => {
   const userId = currentUserId.value;
   const definitionId = Number(process?.process_definition_id);
@@ -3404,6 +3556,31 @@ const getDeliverableSubject = (payload = {}) => {
       || null,
     taskStartDate: payload?.task_start_date || payload?.taskStartDate || documentPayload?.task_start_date || documentPayload?.taskStartDate || null,
     taskEndDate: payload?.task_end_date || payload?.taskEndDate || documentPayload?.task_end_date || documentPayload?.taskEndDate || null,
+    instanceMode:
+      payload?.instance_mode
+      || payload?.instanceMode
+      || documentPayload?.instance_mode
+      || documentPayload?.instanceMode
+      || 'single_document',
+    instanceNo:
+      payload?.instance_no
+      || payload?.instanceNo
+      || documentPayload?.instance_no
+      || documentPayload?.instanceNo
+      || null,
+    documentCount:
+      payload?.document_count
+      || payload?.documentCount
+      || documentPayload?.document_count
+      || documentPayload?.documentCount
+      || (Array.isArray(payload?.documents) ? payload.documents.length : 0),
+    documents: Array.isArray(payload?.documents) ? payload.documents : [],
+    canCreateDocumentInstance: Boolean(
+      payload?.can_create_document_instance
+      || payload?.canCreateDocumentInstance
+      || documentPayload?.can_create_document_instance
+      || documentPayload?.canCreateDocumentInstance
+    ),
     periodLabel: payload?.period_label || payload?.periodLabel || '',
     unitLabel:
       payload?.unit_label
@@ -4387,7 +4564,9 @@ const fetchDeliverableFileBlob = async (payload, kind = 'best') => {
   const subject = getDeliverableSubject(payload);
   const userId = currentUserId.value;
   const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
-  return processPanelService.downloadDeliverableFile(userId, definitionId, subject.itemId, kind);
+  return processPanelService.downloadDeliverableFile(userId, definitionId, subject.itemId, kind, {
+    documentId: subject.documentId || null,
+  });
 };
 
 const downloadBlob = (blob, fileName) => {
@@ -4844,7 +5023,9 @@ const uploadSelectedDeliverableFile = async (file) => {
     const userId = currentUserId.value;
     const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
     const taskItemId = Number(target.itemId || target.id || 0);
-    const uploadResult = await processPanelService.uploadDeliverableFile(userId, definitionId, taskItemId, file);
+    const uploadResult = await processPanelService.uploadDeliverableFile(userId, definitionId, taskItemId, file, {
+      documentId: Number(target.documentId || 0) || null,
+    });
     setProcessActionInfo(`El archivo del entregable ${target.title || target.template_artifact_name || `#${taskItemId}`} se cargó correctamente.`, 'success');
     openDeliverableOperationModal({
       title: 'Archivo cargado',
@@ -5094,7 +5275,9 @@ const submitDeliverableReset = async () => {
       detail: 'El intento actual quedará cancelado.'
     });
 
-    const result = await processPanelService.resetDeliverableWorkflow(userId, definitionId, taskItemId);
+    const result = await processPanelService.resetDeliverableWorkflow(userId, definitionId, taskItemId, {
+      documentId: Number(target.documentId || 0) || null,
+    });
 
     closeDeliverableResetModal();
     fillWorkflowModalInstance?.hide();

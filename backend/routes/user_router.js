@@ -5,6 +5,7 @@ import {
   getUserMenu,
   getUserProcessDefinitionPanel,
   createUserProcessTask,
+  createTaskItemDocumentInstance,
   getMyProfile,
   updateMyProfile,
   uploadDeliverablePdf,
@@ -79,6 +80,11 @@ router.post('/refresh-token', refreshToken)
 router.get('/:id/menu', getUserMenu);
 router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
 router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
+  authMiddleware,
+  createTaskItemDocumentInstance
+);
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',
   authMiddleware,

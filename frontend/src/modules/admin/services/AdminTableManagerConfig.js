@@ -77,6 +77,7 @@ export const processDefinitionActivationTriggerTableFields = [
 export const processDefinitionActivationArtifactTableFields = [
   { name: "template_artifact_id", label: "Paquete" },
   { name: "usage_role", label: "Rol" },
+  { name: "instance_mode", label: "Modo de instancia" },
   { name: "creates_task", label: "Genera tarea" }
 ];
 
@@ -84,6 +85,7 @@ export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
   { name: "template_artifact_id", label: "Artifact" },
   { name: "usage_role", label: "Rol" },
+  { name: "instance_mode", label: "Modo de instancia" },
   { name: "creates_task", label: "Genera tarea" },
   { name: "is_required", label: "Requerido" },
   { name: "sort_order", label: "Orden" }

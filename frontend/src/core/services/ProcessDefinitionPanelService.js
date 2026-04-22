@@ -39,7 +39,23 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async uploadDeliverableFile(userId, processDefinitionId, taskItemId, file) {
+  async createTaskItemDocument(userId, processDefinitionId, taskItemId, payload = {}) {
+    if (!userId || !processDefinitionId || !taskItemId) {
+      throw new Error("Se requiere usuario, definición y entregable.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_DOCUMENTS(userId, processDefinitionId, taskItemId),
+      payload,
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return data;
+  }
+
+  async uploadDeliverableFile(userId, processDefinitionId, taskItemId, file, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, definición y entregable.");
     }
@@ -48,6 +64,9 @@ class ProcessDefinitionPanelService {
     }
     const formData = new FormData();
     formData.append("file", file);
+    if (options.documentId) {
+      formData.append("document_id", String(options.documentId));
+    }
     const { data } = await axios.post(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_UPLOAD_FILE(userId, processDefinitionId, taskItemId),
       formData,
@@ -161,7 +180,7 @@ class ProcessDefinitionPanelService {
     };
   }
 
-  async downloadDeliverableFile(userId, processDefinitionId, taskItemId, kind = "best") {
+  async downloadDeliverableFile(userId, processDefinitionId, taskItemId, kind = "best", options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, definición y entregable.");
     }
@@ -171,20 +190,23 @@ class ProcessDefinitionPanelService {
         headers: {
           ...this.getAuthHeaders(),
         },
-        params: { kind },
+        params: {
+          kind,
+          ...(options.documentId ? { document_id: options.documentId } : {})
+        },
         responseType: "blob",
       }
     );
     return response.data;
   }
 
-  async resetDeliverableWorkflow(userId, processDefinitionId, taskItemId) {
+  async resetDeliverableWorkflow(userId, processDefinitionId, taskItemId, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, definición y entregable.");
     }
     const { data } = await axios.post(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_RESET_WORKFLOW(userId, processDefinitionId, taskItemId),
-      {},
+      options.documentId ? { document_id: options.documentId } : {},
       {
         headers: {
           ...this.getAuthHeaders(),

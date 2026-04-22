@@ -58,6 +58,12 @@ class AdminPresentationService {
         support: "Soporte"
       }[value] || value;
     }
+    if (field?.name === "instance_mode") {
+      return {
+        single_document: "Un documento",
+        owner_many_documents: "Multiples documentos del dueño"
+      }[value] || value;
+    }
     if (field?.name === "scope") {
       return {
         owner: "Propietario",

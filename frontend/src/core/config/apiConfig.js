@@ -29,6 +29,8 @@ export const API_ROUTES = {
   USERS_MENU: (userId) => `${API_PREFIX}/users/${userId}/menu`,
   USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
   USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_DOCUMENTS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/documents`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_UPLOAD_FILE: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/upload-file`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_TEMPLATE_DOWNLOAD: (userId, definitionId, taskItemId) =>

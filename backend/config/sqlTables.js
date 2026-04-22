@@ -425,6 +425,13 @@ export const SQL_TABLES = [
         options: ["primary", "attachment", "support"],
         defaultValue: "primary"
       },
+      {
+        name: "instance_mode",
+        label: "Modo de instancia",
+        type: "select",
+        options: ["single_document", "owner_many_documents"],
+        defaultValue: "single_document"
+      },
       { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
       { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },

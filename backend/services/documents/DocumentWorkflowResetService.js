@@ -8,7 +8,12 @@ import { resolveCurrentSignatureStep } from "./DocumentSignatureWorkflowService.
 
 const RESET_NOTE = "Reset manual del flujo";
 
-const getLatestDocumentVersionForTaskItem = async (connection, definitionId, taskItemId) => {
+const getLatestDocumentVersionForTaskItem = async (connection, definitionId, taskItemId, documentId = null) => {
+  const params = [taskItemId, definitionId];
+  const documentFilter = documentId ? "AND d.id = ?" : "";
+  if (documentId) {
+    params.push(Number(documentId));
+  }
   const [rows] = await connection.query(
     `SELECT
        ti.id AS task_item_id,
@@ -45,8 +50,9 @@ const getLatestDocumentVersionForTaskItem = async (connection, definitionId, tas
       AND latest.max_version = dv.version
      WHERE ti.id = ?
        AND t.process_definition_id = ?
+       ${documentFilter}
      LIMIT 1`,
-    [taskItemId, definitionId]
+    params
   );
   return rows?.[0] || null;
 };
@@ -217,8 +223,9 @@ export const resetDocumentWorkflowForTaskItem = async ({
   userId,
   definitionId,
   taskItemId,
+  documentId = null,
 }) => {
-  const currentVersion = await getLatestDocumentVersionForTaskItem(connection, definitionId, taskItemId);
+  const currentVersion = await getLatestDocumentVersionForTaskItem(connection, definitionId, taskItemId, documentId);
   if (!currentVersion?.document_version_id) {
     const error = new Error("No se encontró una versión documental activa para ese entregable.");
     error.statusCode = 404;
