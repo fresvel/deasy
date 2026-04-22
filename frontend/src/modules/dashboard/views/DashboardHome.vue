@@ -619,6 +619,16 @@
                                     <IconFileDescription class="h-5 w-5" />
                                   </AppButton>
                                   <AppButton
+                                    v-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadPdfPath"
+                                    variant="plain"
+                                    class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                    aria-label="Ver PDF"
+                                    title="Ver PDF"
+                                    @click="previewDeliverableFile(deliverable.item)"
+                                  >
+                                    <IconEye class="h-5 w-5" />
+                                  </AppButton>
+                                  <AppButton
                                     variant="plain"
                                     :class-name="[
                                       'group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
@@ -2126,12 +2136,87 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="secondary" data-modal-dismiss>
-          Cerrar
-        </AppButton>
-        <AppButton variant="primary" @click="downloadPreviewedFile">
-          Descargar archivo
-        </AppButton>
+        <div class="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div
+            v-if="hasDeliverablePreviewActions"
+            class="rounded-2xl border border-slate-200 bg-white p-4"
+          >
+            <h3 class="mb-3 text-sm font-bold uppercase tracking-wider text-slate-700">
+              Acciones disponibles
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-if="canReplacePreviewFillFile"
+                type="button"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="isUploadingDeliverable"
+                @click="openPreviewDeliverableUploadModal"
+              >
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                  <IconUpload class="h-4.5 w-4.5" />
+                </div>
+                <div class="flex min-w-0 flex-col">
+                  <span class="text-sm font-semibold text-slate-800">
+                    {{ isUploadingDeliverable ? 'Subiendo...' : getUploadActionLabel(deliverablePreviewSource) }}
+                  </span>
+                </div>
+              </button>
+              <button
+                v-if="canApprovePreviewFillRequest"
+                type="button"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="fillWorkflowSubmitting"
+                @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'approve')"
+              >
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-emerald-100/95 bg-emerald-50/55 text-emerald-700 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                  <IconCircleCheck class="h-4.5 w-4.5" />
+                </div>
+                <div class="flex min-w-0 flex-col">
+                  <span class="text-sm font-semibold text-slate-800">
+                    {{ getFillApproveActionLabelForPayload(deliverablePreviewSource) }}
+                  </span>
+                </div>
+              </button>
+              <button
+                v-if="canReturnPreviewFillRequest"
+                type="button"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/45 hover:shadow-[0_10px_20px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="fillWorkflowSubmitting"
+                @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'return')"
+              >
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-amber-100/95 bg-amber-50/55 text-amber-700 transition-all group-hover:border-amber-200 group-hover:bg-amber-50">
+                  <IconMinus class="h-4.5 w-4.5" />
+                </div>
+                <div class="flex min-w-0 flex-col">
+                  <span class="text-sm font-semibold text-slate-800">Devolver</span>
+                </div>
+              </button>
+              <button
+                v-if="canRejectPreviewFillRequest"
+                type="button"
+                class="group relative flex items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50/45 hover:shadow-[0_10px_20px_rgba(244,63,94,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="fillWorkflowSubmitting"
+                @click="submitDeliverableCardFillAction(deliverablePreviewSource, 'reject')"
+              >
+                <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-rose-100/95 bg-rose-50/55 text-rose-700 transition-all group-hover:border-rose-200 group-hover:bg-rose-50">
+                  <IconX class="h-4.5 w-4.5" />
+                </div>
+                <div class="flex min-w-0 flex-col">
+                  <span class="text-sm font-semibold text-slate-800">Rechazar</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <AppButton variant="secondary" data-modal-dismiss>
+              Cerrar
+            </AppButton>
+            <AppButton variant="primary" @click="downloadPreviewedFile">
+              Descargar archivo
+            </AppButton>
+          </div>
+        </div>
       </template>
     </AdminModalShell>
 
@@ -2184,7 +2269,8 @@ import {
   IconPlayerPlayFilled,
   IconPlus,
   IconChecklist,
-  IconSearch
+  IconSearch,
+  IconX
 } from '@tabler/icons-vue';
 
 const router = useRouter();
@@ -3885,6 +3971,22 @@ const canApproveFillRequestForPayload = (payload) => {
     && subjectHasWorkingArtifact(payload);
 };
 
+const canReturnFillRequestForPayload = (payload) => {
+  const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
+  return !isSignaturePhaseDocumentStatus(payload)
+    && currentUserCanOperateFillStep(payload)
+    && isReviewFillRequestForPayload(payload)
+    && ['pending', 'in_progress', 'returned'].includes(code);
+};
+
+const canRejectFillRequestForPayload = (payload) => {
+  const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
+  return !isSignaturePhaseDocumentStatus(payload)
+    && currentUserCanOperateFillStep(payload)
+    && isReviewFillRequestForPayload(payload)
+    && ['pending', 'in_progress', 'returned'].includes(code);
+};
+
 const getFillApproveActionLabelForPayload = (payload) => (
   isReviewFillRequestForPayload(payload) ? 'Aprobar' : 'Enviar'
 );
@@ -4585,6 +4687,28 @@ const canRejectFillRequest = computed(() =>
 const canCancelFillRequest = computed(() =>
   canOperateCurrentFillRequest.value && ['pending', 'in_progress'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
 );
+const canReplacePreviewFillFile = computed(() =>
+  Boolean(deliverablePreviewSource.value)
+  && shouldShowUploadDeliverable(deliverablePreviewSource.value)
+);
+const canApprovePreviewFillRequest = computed(() =>
+  Boolean(deliverablePreviewSource.value)
+  && canApproveFillRequestForPayload(deliverablePreviewSource.value)
+);
+const canReturnPreviewFillRequest = computed(() =>
+  Boolean(deliverablePreviewSource.value)
+  && canReturnFillRequestForPayload(deliverablePreviewSource.value)
+);
+const canRejectPreviewFillRequest = computed(() =>
+  Boolean(deliverablePreviewSource.value)
+  && canRejectFillRequestForPayload(deliverablePreviewSource.value)
+);
+const hasDeliverablePreviewActions = computed(() =>
+  canReplacePreviewFillFile.value
+  || canApprovePreviewFillRequest.value
+  || canReturnPreviewFillRequest.value
+  || canRejectPreviewFillRequest.value
+);
 
 const getUploadActionLabel = (payload) => {
   const subject = getDeliverableSubject(payload);
@@ -4716,6 +4840,12 @@ const downloadPreviewedFile = async () => {
       'error'
     );
   }
+};
+
+const openPreviewDeliverableUploadModal = () => {
+  if (!deliverablePreviewSource.value || isUploadingDeliverable.value) return;
+  deliverablePreviewModalInstance?.hide();
+  openDeliverableUploadModal(deliverablePreviewSource.value);
 };
 
 const handleDeliverableFutureAction = (action, payload) => {
@@ -4953,7 +5083,9 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
   }
 
   const actionLabels = {
-    approve: isReviewFillRequestForPayload(payload) ? 'aprobación' : 'envío'
+    approve: isReviewFillRequestForPayload(payload) ? 'aprobación' : 'envío',
+    return: 'devolución',
+    reject: 'rechazo'
   };
 
   try {
@@ -4968,6 +5100,10 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
     const requestPayload = {};
     if (action === 'approve') {
       await processPanelService.approveFillRequest(requestId, requestPayload);
+    } else if (action === 'return') {
+      await processPanelService.returnFillRequest(requestId, requestPayload);
+    } else if (action === 'reject') {
+      await processPanelService.rejectFillRequest(requestId, requestPayload);
     } else {
       throw new Error('Acción de llenado no soportada.');
     }
@@ -4979,6 +5115,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
       detail: 'El panel se actualizará con el nuevo estado.'
     });
     setProcessActionInfo(`El flujo de llenado de ${subject.title} se actualizó correctamente.`, 'success');
+    deliverablePreviewModalInstance?.hide();
     if (selectedProcessContext.value) {
       await loadSelectedProcessPanel(selectedProcessContext.value);
     }
