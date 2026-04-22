@@ -28,6 +28,30 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async getDocumentCenter(userId) {
+    if (!userId) {
+      throw new Error("Se requiere usuario.");
+    }
+    const { data } = await axios.get(API_ROUTES.USERS_DOCUMENT_CENTER(userId), {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+    return data;
+  }
+
+  async getSignatureCenter(userId) {
+    if (!userId) {
+      throw new Error("Se requiere usuario.");
+    }
+    const { data } = await axios.get(API_ROUTES.USERS_SIGNATURE_CENTER(userId), {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+    return data;
+  }
+
   async createTask(userId, processDefinitionId, payload) {
     if (!userId || !processDefinitionId) {
       throw new Error("Se requiere usuario y definicion de proceso.");

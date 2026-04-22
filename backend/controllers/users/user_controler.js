@@ -225,6 +225,187 @@ const getAuthenticatedUserId = (req) => {
   return Number.isNaN(userId) ? null : userId;
 };
 
+const isAuthorizedUserScope = (req, requestedUserId) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  return Boolean(authenticatedUserId && Number(authenticatedUserId) === Number(requestedUserId));
+};
+
+const getUserDocumentCenterRows = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT
+       d.id AS document_id,
+       d.task_item_id,
+       d.instance_no,
+       d.owner_person_id,
+       d.status AS document_status,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       dv.status AS document_version_status,
+       dv.working_file_path,
+       dv.final_file_path,
+       t.id AS task_id,
+       t.status AS task_status,
+       t.term_id,
+       pdv.id AS process_definition_id,
+       pdv.name AS definition_name,
+       pdv.variation_key,
+       pdv.definition_version,
+       p.id AS process_id,
+       p.name AS process_name,
+       p.slug AS process_slug,
+       COALESCE(origin_unit.label, origin_unit.name, scope_unit.label, scope_unit.name) AS unit_label,
+       COALESCE(origin_unit.id, scope_unit.id) AS unit_id,
+       trm.name AS term_name,
+       tt.name AS term_type_name,
+       YEAR(trm.start_date) AS term_year,
+       tar.display_name AS template_artifact_name,
+       COALESCE(fill_stats.pending_fill_count, 0) AS pending_fill_count,
+       COALESCE(signature_stats.pending_signature_count, 0) AS pending_signature_count
+     FROM documents d
+     INNER JOIN (
+       SELECT dv1.*
+       FROM document_versions dv1
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest
+         ON latest.document_id = dv1.document_id
+        AND latest.max_version = dv1.version
+     ) dv ON dv.document_id = d.id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     INNER JOIN processes p ON p.id = pdv.process_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN terms trm ON trm.id = t.term_id
+     LEFT JOIN term_types tt ON tt.id = trm.term_type_id
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN unit_positions scope_position ON scope_position.id = COALESCE(ti.responsible_position_id, t.responsible_position_id)
+     LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
+     LEFT JOIN (
+       SELECT
+         dff.document_version_id,
+         SUM(CASE WHEN fr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_fill_count
+       FROM document_fill_flows dff
+       LEFT JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+       GROUP BY dff.document_version_id
+     ) fill_stats ON fill_stats.document_version_id = dv.id
+     LEFT JOIN (
+       SELECT
+         sfi.document_version_id,
+         SUM(CASE WHEN sr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
+       FROM signature_flow_instances sfi
+       LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+       GROUP BY sfi.document_version_id
+     ) signature_stats ON signature_stats.document_version_id = dv.id
+     WHERE (
+       t.created_by_user_id = ?
+       OR EXISTS (
+         SELECT 1
+         FROM task_assignments ta
+         LEFT JOIN position_assignments pa
+           ON pa.position_id = ta.position_id
+          AND pa.is_current = 1
+          AND pa.person_id = ?
+         WHERE ta.task_id = t.id
+           AND (
+             ta.assigned_person_id = ?
+             OR (ta.assigned_person_id IS NULL AND pa.person_id = ?)
+           )
+       )
+       OR EXISTS (
+         SELECT 1
+         FROM document_versions dv_access
+         INNER JOIN document_fill_flows dff_access ON dff_access.document_version_id = dv_access.id
+         INNER JOIN fill_requests fr_access ON fr_access.document_fill_flow_id = dff_access.id
+         WHERE dv_access.document_id = d.id
+           AND fr_access.assigned_person_id = ?
+       )
+       OR EXISTS (
+         SELECT 1
+         FROM document_versions dv_access
+         INNER JOIN signature_flow_instances sfi_access ON sfi_access.document_version_id = dv_access.id
+         INNER JOIN signature_requests sr_access ON sr_access.instance_id = sfi_access.id
+         WHERE dv_access.document_id = d.id
+           AND sr_access.assigned_person_id = ?
+       )
+     )
+     ORDER BY COALESCE(trm.start_date, t.created_at) DESC, p.name ASC, d.id DESC`,
+    [userId, userId, userId, userId, userId, userId]
+  );
+  return rows;
+};
+
+const getUserGlobalPendingSignatureRows = async (pool, userId) => {
+  const [rows] = await pool.query(
+    `SELECT DISTINCT
+       sr.id AS signature_request_id,
+       sr.requested_at,
+       srs.code AS signature_request_status_code,
+       srs.name AS signature_request_status_name,
+       sfs.step_order,
+       sfs.name AS step_name,
+       st.name AS signature_type_name,
+       d.id AS document_id,
+       d.task_item_id,
+       d.instance_no,
+       d.status AS document_status,
+       dv.id AS document_version_id,
+       dv.version AS document_version,
+       dv.status AS document_version_status,
+       dv.working_file_path,
+       dv.final_file_path,
+       t.id AS task_id,
+       t.term_id,
+       pdv.id AS process_definition_id,
+       pdv.name AS definition_name,
+       p.id AS process_id,
+       p.name AS process_name,
+       p.slug AS process_slug,
+       COALESCE(origin_unit.label, origin_unit.name, scope_unit.label, scope_unit.name) AS unit_label,
+       COALESCE(origin_unit.id, scope_unit.id) AS unit_id,
+       trm.name AS term_name,
+       tt.name AS term_type_name,
+       YEAR(trm.start_date) AS term_year,
+       tar.display_name AS template_artifact_name
+     FROM signature_requests sr
+     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+     INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+     INNER JOIN (
+       SELECT document_id, MAX(version) AS max_version
+       FROM document_versions
+       GROUP BY document_id
+     ) latest
+       ON latest.document_id = dv.document_id
+      AND latest.max_version = dv.version
+     INNER JOIN documents d ON d.id = dv.document_id
+     INNER JOIN task_items ti ON ti.id = d.task_item_id
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     INNER JOIN processes p ON p.id = pdv.process_id
+     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN terms trm ON trm.id = t.term_id
+     LEFT JOIN term_types tt ON tt.id = trm.term_type_id
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
+     LEFT JOIN unit_positions scope_position ON scope_position.id = COALESCE(ti.responsible_position_id, t.responsible_position_id)
+     LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
+     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
+     WHERE sr.assigned_person_id = ?
+       AND sr.responded_at IS NULL
+       AND LOWER(COALESCE(dv.status, '')) IN (
+         'listo para firma',
+         'pendiente de firma',
+         'firmado parcial'
+       )
+     ORDER BY COALESCE(trm.start_date, t.created_at) DESC, sr.requested_at DESC, sr.id DESC`,
+    [userId]
+  );
+  return rows;
+};
+
 const getOrgChildrenMap = async (pool) => {
   const [rows] = await pool.query(
     `SELECT ur.parent_unit_id, ur.child_unit_id
@@ -2220,6 +2401,141 @@ export const getUserProcessDefinitionPanel = async (req, res) => {
     console.error("Error obteniendo panel operativo de la definicion:", error);
     res.status(500).json({
       message: "Error al obtener el panel operativo de la definicion",
+      error: error.message
+    });
+  }
+};
+
+export const getUserDocumentCenter = async (req, res) => {
+  try {
+    const userId = getNumericUserId(req);
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(400).json({ message: "Se requiere el usuario." });
+    }
+    if (!isAuthorizedUserScope(req, userId)) {
+      return res.status(403).json({ message: "No tienes permiso para consultar este centro documental." });
+    }
+
+    const pool = getMariaDBPool();
+    if (!pool) {
+      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    }
+
+    const rows = await getUserDocumentCenterRows(pool, userId);
+    const documents = rows.map((row) => {
+      const preloadFilePath = row.final_file_path || row.working_file_path || null;
+      const preloadPdfPath = [row.final_file_path, row.working_file_path]
+        .map((value) => String(value || "").trim())
+        .find((value) => value.toLowerCase().endsWith(".pdf")) || null;
+      return {
+        document_id: Number(row.document_id),
+        task_item_id: Number(row.task_item_id),
+        task_id: Number(row.task_id),
+        process_definition_id: Number(row.process_definition_id),
+        process_id: Number(row.process_id),
+        process_name: row.process_name,
+        process_slug: row.process_slug,
+        definition_name: row.definition_name,
+        template_artifact_name: row.template_artifact_name || null,
+        unit_id: row.unit_id ? Number(row.unit_id) : null,
+        unit_label: row.unit_label || null,
+        term_id: row.term_id ? Number(row.term_id) : null,
+        term_name: row.term_name || null,
+        term_type_name: row.term_type_name || null,
+        term_year: row.term_year ? Number(row.term_year) : null,
+        instance_no: row.instance_no ? Number(row.instance_no) : null,
+        document_version_id: row.document_version_id ? Number(row.document_version_id) : null,
+        document_version: row.document_version || null,
+        document_status: row.document_status || null,
+        document_version_status: row.document_version_status || null,
+        working_file_path: row.working_file_path || null,
+        final_file_path: row.final_file_path || null,
+        preloadFilePath,
+        preloadPdfPath,
+        pending_fill_count: Number(row.pending_fill_count || 0),
+        pending_signature_count: Number(row.pending_signature_count || 0),
+      };
+    });
+
+    res.json({
+      user_id: userId,
+      total: documents.length,
+      documents
+    });
+  } catch (error) {
+    console.error("Error obteniendo el centro documental del usuario:", error);
+    res.status(500).json({
+      message: "Error al obtener el centro documental del usuario",
+      error: error.message
+    });
+  }
+};
+
+export const getUserGlobalSignatureCenter = async (req, res) => {
+  try {
+    const userId = getNumericUserId(req);
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(400).json({ message: "Se requiere el usuario." });
+    }
+    if (!isAuthorizedUserScope(req, userId)) {
+      return res.status(403).json({ message: "No tienes permiso para consultar esta bandeja de firmas." });
+    }
+
+    const pool = getMariaDBPool();
+    if (!pool) {
+      return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+    }
+
+    const rows = await getUserGlobalPendingSignatureRows(pool, userId);
+    const signatures = rows.map((row) => {
+      const preloadFilePath = row.final_file_path || row.working_file_path || null;
+      const preloadPdfPath = [row.final_file_path, row.working_file_path]
+        .map((value) => String(value || "").trim())
+        .find((value) => value.toLowerCase().endsWith(".pdf")) || null;
+      return {
+        signature_request_id: Number(row.signature_request_id),
+        document_id: Number(row.document_id),
+        task_item_id: Number(row.task_item_id),
+        task_id: Number(row.task_id),
+        process_definition_id: Number(row.process_definition_id),
+        process_id: Number(row.process_id),
+        process_name: row.process_name,
+        process_slug: row.process_slug,
+        definition_name: row.definition_name,
+        template_artifact_name: row.template_artifact_name || null,
+        unit_id: row.unit_id ? Number(row.unit_id) : null,
+        unit_label: row.unit_label || null,
+        term_id: row.term_id ? Number(row.term_id) : null,
+        term_name: row.term_name || null,
+        term_type_name: row.term_type_name || null,
+        term_year: row.term_year ? Number(row.term_year) : null,
+        instance_no: row.instance_no ? Number(row.instance_no) : null,
+        document_version_id: row.document_version_id ? Number(row.document_version_id) : null,
+        document_version: row.document_version || null,
+        document_status: row.document_status || null,
+        document_version_status: row.document_version_status || null,
+        signature_request_status_code: row.signature_request_status_code || null,
+        signature_request_status_name: row.signature_request_status_name || null,
+        requested_at: row.requested_at || null,
+        step_order: row.step_order ? Number(row.step_order) : null,
+        step_name: row.step_name || null,
+        signature_type_name: row.signature_type_name || null,
+        working_file_path: row.working_file_path || null,
+        final_file_path: row.final_file_path || null,
+        preloadFilePath,
+        preloadPdfPath,
+      };
+    });
+
+    res.json({
+      user_id: userId,
+      total: signatures.length,
+      signatures
+    });
+  } catch (error) {
+    console.error("Error obteniendo la bandeja global de firmas:", error);
+    res.status(500).json({
+      message: "Error al obtener la bandeja global de firmas",
       error: error.message
     });
   }

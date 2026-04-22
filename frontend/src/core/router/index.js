@@ -14,6 +14,8 @@ import { API_ROUTES } from "@/core/config/apiConfig";
 const routes = [
   { path: "/", name: "login", component: Login },
   { path: "/dashboard", name: "dashboard", component: DashboardHome },
+  { path: "/dashboard/documentos", name: "dashboard-documents", component: DashboardHome },
+  { path: "/dashboard/firmas", name: "dashboard-signatures", component: DashboardHome },
   { path: "/perfil", name: "perfil", component: IndexPage },
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },

@@ -2687,7 +2687,11 @@
       }
     };
 
-    defineExpose({ resetToStart, initializeWorkflowSignatureSession });
+    const openMultiSignerWithFiles = (files = []) => {
+      onAddFiles(files, 'multi');
+    };
+
+    defineExpose({ resetToStart, initializeWorkflowSignatureSession, openMultiSignerWithFiles });
 
   </script>
 <style scoped>

@@ -111,7 +111,234 @@
       </app-workspace-sidebar>
 
       <s-body :showmenu="showMenu" :shownotify="showNotify">
-        <template v-if="isSigningView">
+        <template v-if="isDocumentCenterRoute">
+          <section class="flex flex-col gap-6">
+            <AppPageIntro
+              variant="dashboard"
+              title="Centro documental"
+              :meta="`${filteredDocumentCenterItems.length} documento(s)`"
+              description="Consulta y descarga los documentos accesibles de tu cuenta, filtrando por unidad, proceso, periodo, año y estado."
+            >
+              <template #actions>
+                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToDashboardHome">
+                  Volver al dashboard
+                </AppButton>
+              </template>
+            </AppPageIntro>
+
+            <section class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+                <label class="flex flex-col gap-2 xl:col-span-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+                  <input v-model="documentCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10" />
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+                  <select v-model="documentCenterFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todos</option>
+                    <option v-for="option in documentCenterFilterYears" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
+                  <select v-model="documentCenterFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todos</option>
+                    <option v-for="option in documentCenterFilterTermTypes" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
+                  <select v-model="documentCenterFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todas</option>
+                    <option v-for="option in documentCenterFilterUnits" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
+                  <select v-model="documentCenterFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todos</option>
+                    <option v-for="option in documentCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-sm font-medium text-slate-500">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
+                <div class="flex flex-wrap gap-2">
+                  <AppButton variant="softNeutral" size="sm" @click="resetDocumentCenterFilters">Limpiar filtros</AppButton>
+                  <AppButton variant="softPrimary" size="sm" @click="loadDocumentCenterPage">Actualizar</AppButton>
+                </div>
+              </div>
+
+              <section v-if="documentCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
+                Cargando centro documental...
+              </section>
+              <section v-else-if="documentCenterError" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">
+                {{ documentCenterError }}
+              </section>
+              <AppDataTable
+                v-else
+                :fields="documentCenterFields"
+                :rows="filteredDocumentCenterItems"
+                :row-key="(row) => `document-center-${row.document_id}`"
+                empty-text="No hay documentos para mostrar."
+                actions-label="ACCIONES"
+              >
+                <template #cell="{ row, field }">
+                  <template v-if="field.name === 'document'">
+                    <div class="flex flex-col gap-1">
+                      <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
+                      <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>
+                  <template v-else-if="field.name === 'unit'">{{ row.unit_label || 'Sin unidad' }}</template>
+                  <template v-else-if="field.name === 'period'">{{ row.term_name || 'Sin periodo' }}</template>
+                  <template v-else-if="field.name === 'status'">
+                    <AppTag :variant="row.pending_signature_count ? 'warning' : row.pending_fill_count ? 'info' : 'neutral'">
+                      {{ row.document_version_status || row.document_status || 'Sin estado' }}
+                    </AppTag>
+                  </template>
+                </template>
+                <template #actions="{ row }">
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <AppButton v-if="row.preloadPdfPath" variant="softNeutral" size="sm" @click="previewDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
+                      Ver PDF
+                    </AppButton>
+                    <AppButton v-if="row.preloadFilePath" variant="softPrimary" size="sm" @click="downloadDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
+                      Descargar
+                    </AppButton>
+                  </div>
+                </template>
+              </AppDataTable>
+            </section>
+          </section>
+        </template>
+        <template v-else-if="isGlobalSignatureRoute">
+          <section class="flex flex-col gap-6">
+            <AppPageIntro
+              variant="dashboard"
+              title="Firma global"
+              :meta="`${filteredSignatureCenterItems.length} documento(s) pendiente(s)`"
+              description="Revisa todos los PDF pendientes por firmar, filtra por contexto académico y envíalos al multifirmador con una sola preparación de lote."
+            >
+              <template #actions>
+                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToDashboardHome">
+                  Volver al dashboard
+                </AppButton>
+              </template>
+            </AppPageIntro>
+
+            <section class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <label class="flex flex-col gap-2 xl:col-span-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+                  <input v-model="signatureCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o paso" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10" />
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+                  <select v-model="signatureCenterFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todos</option>
+                    <option v-for="option in signatureCenterFilterYears" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
+                  <select v-model="signatureCenterFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todos</option>
+                    <option v-for="option in signatureCenterFilterTermTypes" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
+                  <select v-model="signatureCenterFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todas</option>
+                    <option v-for="option in signatureCenterFilterUnits" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
+                  <select v-model="signatureCenterFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                    <option value="all">Todos</option>
+                    <option v-for="option in signatureCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-sm font-medium text-slate-500">
+                  Seleccionados: <span class="font-bold text-slate-700">{{ selectedSignatureCenterItems.length }}</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <AppButton variant="softNeutral" size="sm" @click="resetSignatureCenterFilters">Limpiar filtros</AppButton>
+                  <AppButton variant="softNeutral" size="sm" @click="loadGlobalSignatureCenterPage">Actualizar</AppButton>
+                  <AppButton variant="primary" size="sm" :disabled="!selectedSignatureCenterItems.length" @click="openGlobalSignatureBatch">
+                    Abrir multifirmador
+                  </AppButton>
+                </div>
+              </div>
+
+              <section v-if="signatureCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
+                Cargando bandeja global de firmas...
+              </section>
+              <section v-else-if="signatureCenterError" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">
+                {{ signatureCenterError }}
+              </section>
+              <section v-else class="flex flex-col gap-4">
+                <div v-if="globalSignatureBatchError" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+                  {{ globalSignatureBatchError }}
+                </div>
+                <AppDataTable
+                  :fields="signatureCenterFields"
+                  :rows="filteredSignatureCenterItems"
+                  :row-key="(row) => `signature-center-${row.signature_request_id}`"
+                  empty-text="No hay documentos pendientes de firma."
+                  actions-label="ACCIONES"
+                >
+                  <template #cell="{ row, field }">
+                    <template v-if="field.name === 'select'">
+                      <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" :checked="isSignatureCenterItemSelected(row)" @change="toggleSignatureCenterSelection(row)" />
+                    </template>
+                    <template v-else-if="field.name === 'document'">
+                      <div class="flex flex-col gap-1">
+                        <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
+                        <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
+                      </div>
+                    </template>
+                    <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>
+                    <template v-else-if="field.name === 'unit'">{{ row.unit_label || 'Sin unidad' }}</template>
+                    <template v-else-if="field.name === 'period'">{{ row.term_name || 'Sin periodo' }}</template>
+                    <template v-else-if="field.name === 'requested'">{{ formatDateTime(row.requested_at) }}</template>
+                    <template v-else-if="field.name === 'step'">
+                      <AppTag variant="warning">{{ row.step_name || `Paso ${row.step_order || 's/n'}` }}</AppTag>
+                    </template>
+                  </template>
+                  <template #actions="{ row }">
+                    <div class="flex flex-wrap justify-end gap-2">
+                      <AppButton v-if="row.preloadPdfPath" variant="softNeutral" size="sm" @click="previewDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
+                        Ver PDF
+                      </AppButton>
+                      <AppButton v-if="row.preloadFilePath" variant="softPrimary" size="sm" @click="downloadDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
+                        Descargar
+                      </AppButton>
+                    </div>
+                  </template>
+                </AppDataTable>
+
+                <section v-if="showGlobalSignatureBatch" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div class="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 class="m-0 text-lg font-bold text-slate-800">Multifirmador global</h3>
+                      <p class="m-0 mt-1 text-sm font-medium text-slate-500">El lote se inicializa con los PDF seleccionados en la bandeja global.</p>
+                    </div>
+                  </div>
+                  <FirmarPdf ref="globalSignatureSignerRef" embedded />
+                </section>
+              </section>
+            </section>
+          </section>
+        </template>
+        <template v-else-if="isSigningView">
         <section class="p-6">
           <FirmarPdf />
         </section>
@@ -321,102 +548,62 @@
 
                   <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
-                    <div class="flex flex-col gap-4">
-                      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-                          <label class="relative min-w-0 flex-1 md:min-w-[22rem]">
-                            <IconSearch class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                            <input
-                              v-model="taskListFilters.query"
-                              type="text"
-                              placeholder="Buscar entregables, periodos o unidades"
-                              class="block w-full rounded-2xl border border-slate-200 bg-white/90 py-3 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
-                            />
-                          </label>
+                      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="openTaskFiltersModal">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                            <IconSearch class="h-5 w-5" />
+                          </span>
+                          <span class="flex min-w-0 flex-col">
+                            <span class="text-sm font-bold text-slate-800">Filtrar tareas</span>
+                            <span class="text-xs font-medium text-slate-500">Busca por periodo, unidad, estado y participación.</span>
+                          </span>
+                        </button>
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToDocumentCenterPage">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                            <IconFileDescription class="h-5 w-5" />
+                          </span>
+                          <span class="flex min-w-0 flex-col">
+                            <span class="text-sm font-bold text-slate-800">Centro documental</span>
+                            <span class="text-xs font-medium text-slate-500">Visualiza y descarga los documentos accesibles de tu cuenta.</span>
+                          </span>
+                        </button>
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40" @click="navigateToGlobalSignaturePage">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                            <IconSignature class="h-5 w-5" />
+                          </span>
+                          <span class="flex min-w-0 flex-col">
+                            <span class="text-sm font-bold text-slate-800">Firma global</span>
+                            <span class="text-xs font-medium text-slate-500">Agrupa los PDF pendientes por firmar y envíalos al multifirmador.</span>
+                          </span>
+                        </button>
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="showFutureTaskCreationInfo">
+                          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-slate-200 bg-slate-50/80 text-slate-600 transition-all group-hover:border-slate-300 group-hover:bg-slate-100">
+                            <IconPlus class="h-5 w-5" />
+                          </span>
+                          <span class="flex min-w-0 flex-col">
+                            <span class="text-sm font-bold text-slate-800">Nueva tarea</span>
+                            <span class="text-xs font-medium text-slate-500">Reserva el punto de entrada para la creación manual futura.</span>
+                          </span>
+                        </button>
+                      </div>
+                      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-3">
+                        <div class="text-sm font-medium text-slate-500">
+                          Tareas visibles:
+                          <span class="font-bold text-slate-700">{{ filteredProcessDeliverables.length }}</span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                          <AppButton
-                            variant="softNeutral"
-                            size="sm"
-                            type="button"
-                            class-name="shrink-0"
-                            @click="showAdvancedTaskFilters = !showAdvancedTaskFilters"
-                          >
-                            <component :is="showAdvancedTaskFilters ? IconMinus : IconPlus" class="h-4 w-4" />
-                            {{ showAdvancedTaskFilters ? 'Ocultar filtros' : 'Más filtros' }}
-                          </AppButton>
-                          <AppButton
-                            variant="softNeutral"
-                            size="sm"
-                            type="button"
-                            class-name="shrink-0"
-                            @click="resetTaskListFilters"
-                          >
-                            Limpiar filtros
-                          </AppButton>
+                        <div class="flex flex-wrap gap-2">
+                          <AppTag v-if="taskListFilters.query" variant="info">Búsqueda</AppTag>
+                          <AppTag v-if="taskListFilters.year !== 'all'" variant="neutral">{{ taskListFilters.year }}</AppTag>
+                          <AppTag v-if="taskListFilters.termType !== 'all'" variant="neutral">{{ taskListFilters.termType }}</AppTag>
+                          <AppTag v-if="taskListFilters.participation !== 'all'" variant="warning">
+                            {{ taskFilterParticipationOptions.find((option) => option.value === taskListFilters.participation)?.label || 'Participación' }}
+                          </AppTag>
+                          <AppTag v-if="taskListFilters.actionState !== 'all'" variant="success">
+                            {{ taskFilterActionOptions.find((option) => option.value === taskListFilters.actionState)?.label || 'Acción' }}
+                          </AppTag>
+                          <AppButton variant="softNeutral" size="sm" @click="resetTaskListFilters">Limpiar</AppButton>
                         </div>
                       </div>
-
-                      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-                          <select v-model="taskListFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option value="all">Todos</option>
-                            <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
-                          </select>
-                        </label>
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
-                          <select v-model="taskListFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option value="all">Todos</option>
-                            <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
-                          </select>
-                        </label>
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-                          <select v-model="taskListFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option value="all">Todas</option>
-                            <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
-                          </select>
-                        </label>
-                      </div>
-
-                      <div v-if="showAdvancedTaskFilters" class="grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-4 md:grid-cols-2 xl:grid-cols-5">
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-                          <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option value="all">Todos</option>
-                            <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
-                          </select>
-                        </label>
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
-                          <select v-model="taskListFilters.term" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option value="all">Todos</option>
-                            <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
-                          </select>
-                        </label>
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
-                          <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option value="all">Todos</option>
-                            <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
-                          </select>
-                        </label>
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Participación</span>
-                          <select v-model="taskListFilters.participation" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option v-for="option in taskFilterParticipationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                          </select>
-                        </label>
-                        <label class="flex flex-col gap-2">
-                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Acción</span>
-                          <select v-model="taskListFilters.actionState" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                            <option v-for="option in taskFilterActionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                          </select>
-                        </label>
-                      </div>
-                    </div>
                     </div>
                   </section>
 
@@ -945,6 +1132,92 @@
         <AppButton v-else variant="primary" size="lg" type="button" :disabled="!canSubmitTaskLaunch" @click="submitTaskLaunch">
           {{ taskLaunchSubmitting ? 'Creando tarea...' : 'Crear tarea' }}
         </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
+      ref="taskFiltersModal"
+      labelled-by="task-filters-modal-title"
+      title="Filtrar tareas y entregables"
+      size="lg"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div class="flex flex-col gap-5">
+        <label class="flex flex-col gap-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+          <div class="relative">
+            <IconSearch class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              v-model="taskListFilters.query"
+              type="text"
+              placeholder="Buscar entregables, periodos o unidades"
+              class="block w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+            />
+          </div>
+        </label>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+            <select v-model="taskListFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
+            <select v-model="taskListFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
+            <select v-model="taskListFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todas</option>
+              <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
+            <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
+            <select v-model="taskListFilters.term" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
+            <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Participación</span>
+            <select v-model="taskListFilters.participation" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option v-for="option in taskFilterParticipationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Acción</span>
+            <select v-model="taskListFilters.actionState" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option v-for="option in taskFilterActionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="softNeutral" @click="resetTaskListFilters">Limpiar filtros</AppButton>
+        <AppButton variant="secondary" @click="closeTaskFiltersModal">Cerrar</AppButton>
+        <AppButton variant="primary" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
     </AdminModalShell>
 
@@ -2338,6 +2611,7 @@ const showTaskLaunchModal = ref(false);
 const taskLaunchSubmitting = ref(false);
 const taskLaunchError = ref('');
 const taskLaunchUseCustomTerm = ref(false);
+const taskFiltersModal = ref(null);
 const documentSignModal = ref(null);
 const signatureFlowModal = ref(null);
 const documentCenterModal = ref(null);
@@ -2350,6 +2624,7 @@ const deliverablePreviewModal = ref(null);
 const deliverableResetModal = ref(null);
 const embeddedSignerRef = ref(null);
 const signatureFlowSignerRef = ref(null);
+const globalSignatureSignerRef = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
 const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
@@ -2380,6 +2655,15 @@ const deliverableResetState = ref({
   submitting: false,
   error: '',
 });
+const documentCenterLoading = ref(false);
+const documentCenterError = ref('');
+const documentCenterItems = ref([]);
+const signatureCenterLoading = ref(false);
+const signatureCenterError = ref('');
+const signatureCenterItems = ref([]);
+const globalSignatureSelection = ref([]);
+const showGlobalSignatureBatch = ref(false);
+const globalSignatureBatchError = ref('');
 const fillWorkflowState = ref({
   subject: null,
   request: null,
@@ -2406,6 +2690,7 @@ let deliverableOperationModalInstance = null;
 let deliverableSignResultModalInstance = null;
 let deliverablePreviewModalInstance = null;
 let deliverableResetModalInstance = null;
+let taskFiltersModalInstance = null;
 const taskLaunchForm = ref({
   description: '',
   term_id: '',
@@ -2431,6 +2716,21 @@ const taskListFilters = ref({
   actionState: 'all'
 });
 const showAdvancedTaskFilters = ref(false);
+const documentCenterFilters = ref({
+  query: '',
+  year: 'all',
+  termType: 'all',
+  unit: 'all',
+  process: 'all',
+  status: 'all'
+});
+const signatureCenterFilters = ref({
+  query: '',
+  year: 'all',
+  termType: 'all',
+  unit: 'all',
+  process: 'all'
+});
 const taskFilterParticipationOptions = [
   { value: 'all', label: 'Todas' },
   { value: 'current', label: 'Actual' },
@@ -2704,6 +3004,36 @@ const resetTaskListFilters = () => {
   showAdvancedTaskFilters.value = false;
 };
 
+const resetDocumentCenterFilters = () => {
+  documentCenterFilters.value = {
+    query: '',
+    year: 'all',
+    termType: 'all',
+    unit: 'all',
+    process: 'all',
+    status: 'all'
+  };
+};
+
+const resetSignatureCenterFilters = () => {
+  signatureCenterFilters.value = {
+    query: '',
+    year: 'all',
+    termType: 'all',
+    unit: 'all',
+    process: 'all'
+  };
+};
+
+const openTaskFiltersModal = () => {
+  taskFiltersModalInstance = Modal.getOrCreateInstance(taskFiltersModal.value?.el);
+  taskFiltersModalInstance?.show();
+};
+
+const closeTaskFiltersModal = () => {
+  taskFiltersModalInstance?.hide();
+};
+
 const clearSelectedProcess = () => {
   selectedProcessKey.value = null;
   selectedProcessContext.value = null;
@@ -2715,7 +3045,46 @@ const clearSelectedProcess = () => {
   resetTaskLaunchForm();
 };
 
+const navigateToDashboardHome = async () => {
+  if (route.name !== 'dashboard') {
+    await router.push({ name: 'dashboard' });
+  }
+};
+
+const navigateToDocumentCenterPage = async () => {
+  await router.push({ name: 'dashboard-documents' });
+};
+
+const navigateToGlobalSignaturePage = async () => {
+  await router.push({ name: 'dashboard-signatures' });
+};
+
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
+const workspaceRouteMode = computed(() => {
+  if (route.name === 'dashboard-documents') return 'documents';
+  if (route.name === 'dashboard-signatures') return 'signatures';
+  return 'default';
+});
+const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
+const isGlobalSignatureRoute = computed(() => workspaceRouteMode.value === 'signatures');
+
+const documentCenterFields = [
+  { name: 'document', label: 'Documento' },
+  { name: 'process', label: 'Proceso' },
+  { name: 'unit', label: 'Unidad' },
+  { name: 'period', label: 'Periodo' },
+  { name: 'status', label: 'Estado' }
+];
+
+const signatureCenterFields = [
+  { name: 'select', label: '' },
+  { name: 'document', label: 'Documento' },
+  { name: 'process', label: 'Proceso' },
+  { name: 'unit', label: 'Unidad' },
+  { name: 'period', label: 'Periodo' },
+  { name: 'requested', label: 'Solicitado' },
+  { name: 'step', label: 'Paso' }
+];
 
 const taskLaunchSystemTemplates = computed(() =>
   (selectedProcessPanel.value?.dependencies?.templates || [])
@@ -2805,6 +3174,45 @@ const taskFilterStatuses = computed(() => {
   return Array.from(statuses).sort((a, b) => a.localeCompare(b));
 });
 
+const getCenterFilterOptions = (items, key, transform = (value) => value) => {
+  const values = new Set();
+  (items || []).forEach((item) => {
+    const rawValue = transform(item?.[key], item);
+    const normalized = String(rawValue || '').trim();
+    if (normalized) values.add(normalized);
+  });
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+};
+
+const documentCenterFilterYears = computed(() =>
+  getCenterFilterOptions(documentCenterItems.value, 'term_year').sort((a, b) => Number(b) - Number(a))
+);
+const documentCenterFilterTermTypes = computed(() =>
+  getCenterFilterOptions(documentCenterItems.value, 'term_type_name')
+);
+const documentCenterFilterUnits = computed(() =>
+  getCenterFilterOptions(documentCenterItems.value, 'unit_label')
+);
+const documentCenterFilterProcesses = computed(() =>
+  getCenterFilterOptions(documentCenterItems.value, 'process_name')
+);
+const documentCenterFilterStatuses = computed(() =>
+  getCenterFilterOptions(documentCenterItems.value, 'document_version_status')
+);
+
+const signatureCenterFilterYears = computed(() =>
+  getCenterFilterOptions(signatureCenterItems.value, 'term_year').sort((a, b) => Number(b) - Number(a))
+);
+const signatureCenterFilterTermTypes = computed(() =>
+  getCenterFilterOptions(signatureCenterItems.value, 'term_type_name')
+);
+const signatureCenterFilterUnits = computed(() =>
+  getCenterFilterOptions(signatureCenterItems.value, 'unit_label')
+);
+const signatureCenterFilterProcesses = computed(() =>
+  getCenterFilterOptions(signatureCenterItems.value, 'process_name')
+);
+
 const filteredProcessTasks = computed(() => {
   const query = String(taskListFilters.value.query || '').trim().toLowerCase();
   return (selectedProcessPanel.value?.tasks || []).filter((task) => {
@@ -2876,6 +3284,53 @@ const deliverableRows = computed(() => {
   }
 
   return rows;
+});
+
+const filteredDocumentCenterItems = computed(() => {
+  const filters = documentCenterFilters.value;
+  const query = String(filters.query || '').trim().toLowerCase();
+  return documentCenterItems.value.filter((item) => {
+    const matchesQuery = !query || [
+      item.template_artifact_name,
+      item.definition_name,
+      item.process_name,
+      item.unit_label,
+      item.term_name,
+      item.term_type_name
+    ].filter(Boolean).join(' ').toLowerCase().includes(query);
+    const matchesYear = filters.year === 'all' || String(item.term_year || '') === String(filters.year);
+    const matchesTermType = filters.termType === 'all' || String(item.term_type_name || '') === filters.termType;
+    const matchesUnit = filters.unit === 'all' || String(item.unit_label || '') === filters.unit;
+    const matchesProcess = filters.process === 'all' || String(item.process_name || '') === filters.process;
+    const matchesStatus = filters.status === 'all' || String(item.document_version_status || '') === filters.status;
+    return matchesQuery && matchesYear && matchesTermType && matchesUnit && matchesProcess && matchesStatus;
+  });
+});
+
+const filteredSignatureCenterItems = computed(() => {
+  const filters = signatureCenterFilters.value;
+  const query = String(filters.query || '').trim().toLowerCase();
+  return signatureCenterItems.value.filter((item) => {
+    const matchesQuery = !query || [
+      item.template_artifact_name,
+      item.definition_name,
+      item.process_name,
+      item.unit_label,
+      item.term_name,
+      item.term_type_name,
+      item.step_name
+    ].filter(Boolean).join(' ').toLowerCase().includes(query);
+    const matchesYear = filters.year === 'all' || String(item.term_year || '') === String(filters.year);
+    const matchesTermType = filters.termType === 'all' || String(item.term_type_name || '') === filters.termType;
+    const matchesUnit = filters.unit === 'all' || String(item.unit_label || '') === filters.unit;
+    const matchesProcess = filters.process === 'all' || String(item.process_name || '') === filters.process;
+    return matchesQuery && matchesYear && matchesTermType && matchesUnit && matchesProcess;
+  });
+});
+
+const selectedSignatureCenterItems = computed(() => {
+  const selectedIds = new Set(globalSignatureSelection.value.map((value) => Number(value)));
+  return filteredSignatureCenterItems.value.filter((item) => selectedIds.has(Number(item.signature_request_id)));
 });
 
 const canAdvanceTaskLaunchStep = computed(() => {
@@ -3254,7 +3709,70 @@ const loadSelectedProcessPanel = async (process) => {
   }
 };
 
+const loadDocumentCenterPage = async () => {
+  const userId = currentUserId.value;
+  if (!userId) return;
+  documentCenterLoading.value = true;
+  documentCenterError.value = '';
+  try {
+    const response = await processPanelService.getDocumentCenter(userId);
+    documentCenterItems.value = Array.isArray(response?.documents) ? response.documents : [];
+  } catch (error) {
+    console.error('Error al cargar el centro documental:', error);
+    documentCenterItems.value = [];
+    documentCenterError.value = error?.response?.data?.message || 'No se pudo cargar el centro documental.';
+  } finally {
+    documentCenterLoading.value = false;
+  }
+};
+
+const loadGlobalSignatureCenterPage = async () => {
+  const userId = currentUserId.value;
+  if (!userId) return;
+  signatureCenterLoading.value = true;
+  signatureCenterError.value = '';
+  try {
+    const response = await processPanelService.getSignatureCenter(userId);
+    signatureCenterItems.value = Array.isArray(response?.signatures) ? response.signatures : [];
+    globalSignatureSelection.value = [];
+  } catch (error) {
+    console.error('Error al cargar la bandeja global de firmas:', error);
+    signatureCenterItems.value = [];
+    signatureCenterError.value = error?.response?.data?.message || 'No se pudo cargar la bandeja global de firmas.';
+  } finally {
+    signatureCenterLoading.value = false;
+  }
+};
+
+const buildWorkspacePayloadFromCenterItem = (item = {}) => ({
+  id: item.task_item_id,
+  itemId: item.task_item_id,
+  task_id: item.task_id,
+  process_definition_id: item.process_definition_id,
+  process_id: item.process_id,
+  process_label: item.process_name,
+  unit_label: item.unit_label,
+  period_label: item.term_name,
+  document_id: item.document_id,
+  document_version_id: item.document_version_id,
+  document_version: item.document_version,
+  document_status: item.document_status || item.document_version_status,
+  working_file_path: item.working_file_path,
+  final_file_path: item.final_file_path,
+  template_artifact_name: item.template_artifact_name || item.definition_name,
+  title: item.template_artifact_name || item.definition_name || `Documento #${item.document_id}`,
+  pending_signature_count: item.pending_signature_count || 0,
+  pending_fill_count: item.pending_fill_count || 0,
+  preloadFilePath: item.preloadFilePath || item.preload_file_path || item.final_file_path || item.working_file_path || '',
+  preloadPdfPath: item.preloadPdfPath || item.preload_pdf_path || '',
+  task_end_date: item.task_end_date || null,
+  item_end_date: item.item_end_date || null,
+});
+
 const handleProcessSelect = async (process) => {
+  if (workspaceRouteMode.value !== 'default') {
+    await router.push({ name: 'dashboard' });
+  }
   isSigningView.value = false;
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
@@ -3296,6 +3814,50 @@ const showSignatureQueueInfo = () => {
     'El acceso consolidado a la bandeja de firmas de esta definición todavía no está conectado desde este hero. Por ahora el ingreso operativo sigue ocurriendo desde cada entregable.',
     'error'
   );
+};
+
+const showFutureTaskCreationInfo = () => {
+  setProcessActionInfo(
+    'La creación manual de nuevas tareas desde este panel todavía está pendiente de implementación.',
+    'error'
+  );
+};
+
+const isSignatureCenterItemSelected = (item) =>
+  globalSignatureSelection.value.includes(Number(item.signature_request_id));
+
+const toggleSignatureCenterSelection = (item) => {
+  const next = new Set(globalSignatureSelection.value.map((value) => Number(value)));
+  const key = Number(item.signature_request_id);
+  if (!key) return;
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  globalSignatureSelection.value = Array.from(next);
+};
+
+const openGlobalSignatureBatch = async () => {
+  if (!selectedSignatureCenterItems.value.length) {
+    globalSignatureBatchError.value = 'Selecciona al menos un documento pendiente para abrir el multifirmador.';
+    return;
+  }
+  globalSignatureBatchError.value = '';
+  try {
+    const files = [];
+    for (const item of selectedSignatureCenterItems.value) {
+      const payload = buildWorkspacePayloadFromCenterItem(item);
+      const subject = getDeliverableSubject(payload);
+      const preferredKind = subject.finalFilePath ? 'final' : 'working';
+      const blob = await fetchDeliverableFileBlob(payload, preferredKind);
+      files.push(new File([blob], getFileNameFromPath(subject.preloadFilePath || `${item.template_artifact_name || item.definition_name || 'documento'}.pdf`), {
+        type: 'application/pdf'
+      }));
+    }
+    showGlobalSignatureBatch.value = true;
+    await nextTick();
+    globalSignatureSignerRef.value?.openMultiSignerWithFiles?.(files);
+  } catch (error) {
+    globalSignatureBatchError.value = error?.response?.data?.message || error?.message || 'No se pudieron preparar los documentos para la firma global.';
+  }
 };
 
 const goToNextTaskLaunchStep = () => {
@@ -3414,6 +3976,9 @@ onMounted(async () => {
       embeddedSignerRef.value?.resetToStart?.();
     });
   }
+  if (taskFiltersModal.value?.el) {
+    taskFiltersModalInstance = Modal.getOrCreateInstance(taskFiltersModal.value.el);
+  }
   if (fillWorkflowModal.value?.el) {
     fillWorkflowModalInstance = Modal.getOrCreateInstance(fillWorkflowModal.value.el);
     fillWorkflowModal.value.el.addEventListener('hidden.bs.modal', () => {
@@ -3477,6 +4042,11 @@ onMounted(async () => {
   }
   
   await loadUserMenu();
+  if (workspaceRouteMode.value === 'documents') {
+    await loadDocumentCenterPage();
+  } else if (workspaceRouteMode.value === 'signatures') {
+    await loadGlobalSignatureCenterPage();
+  }
 });
 
 watch(
@@ -3495,8 +4065,13 @@ watch(
 watch(
   () => route.fullPath,
   async () => {
-    if (route.path !== '/dashboard') return;
+    if (!String(route.path || '').startsWith('/dashboard')) return;
     await loadUserMenu();
+    if (workspaceRouteMode.value === 'documents') {
+      await loadDocumentCenterPage();
+    } else if (workspaceRouteMode.value === 'signatures') {
+      await loadGlobalSignatureCenterPage();
+    }
   }
 );
 
@@ -3515,6 +4090,12 @@ const navigateTo = (destination) => {
   switch (destination) {
     case 'dashboard':
       router.push('/dashboard');
+      break;
+    case 'dashboard-documents':
+      router.push('/dashboard/documentos');
+      break;
+    case 'dashboard-signatures':
+      router.push('/dashboard/firmas');
       break;
     case 'firmar':
       isSigningView.value = true;
@@ -3621,6 +4202,12 @@ const getDeliverableSubject = (payload = {}) => {
     id: payload?.id || documentPayload?.id || documentPayload?.task_item_id || null,
     itemId: payload?.id || payload?.itemId || documentPayload?.task_item_id || documentPayload?.itemId || null,
     taskId: payload?.task_id || payload?.taskId || documentPayload?.task_id || documentPayload?.taskId || null,
+    processDefinitionId:
+      payload?.process_definition_id
+      || payload?.processDefinitionId
+      || documentPayload?.process_definition_id
+      || documentPayload?.processDefinitionId
+      || null,
     documentId: documentPayload?.document_id || documentPayload?.documentId || payload?.documentId || null,
     documentVersionId: documentPayload?.document_version_id || documentPayload?.documentVersionId || payload?.documentVersionId || null,
     documentVersion: documentPayload?.document_version || documentPayload?.documentVersion || payload?.documentVersion || null,
@@ -4885,7 +5472,7 @@ const getUploadActionLabel = (payload) => {
 const fetchDeliverableFileBlob = async (payload, kind = 'best') => {
   const subject = getDeliverableSubject(payload);
   const userId = currentUserId.value;
-  const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
+  const definitionId = Number(subject.processDefinitionId || selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
   return processPanelService.downloadDeliverableFile(userId, definitionId, subject.itemId, kind, {
     documentId: subject.documentId || null,
   });

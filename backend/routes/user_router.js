@@ -4,6 +4,8 @@ import {
   getUsers,
   getUserMenu,
   getUserProcessDefinitionPanel,
+  getUserDocumentCenter,
+  getUserGlobalSignatureCenter,
   createUserProcessTask,
   createTaskItemDocumentInstance,
   getMyProfile,
@@ -79,6 +81,8 @@ router.post('/refresh-token', refreshToken)
 
 router.get('/:id/menu', getUserMenu);
 router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
+router.get('/:id/document-center', authMiddleware, getUserDocumentCenter);
+router.get('/:id/signature-center', authMiddleware, getUserGlobalSignatureCenter);
 router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
