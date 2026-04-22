@@ -436,30 +436,53 @@
 
                       <div class="flex h-full flex-col gap-3 pt-2">
                         <div class="flex min-w-0 flex-col gap-2">
-                          <div class="flex flex-wrap items-center justify-between gap-2">
-                            <span
-                              class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em]"
-                              :class="deliverable.item.document_id ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500'"
+                          <div class="flex items-center justify-between gap-3">
+                            <div
+                              class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-[1rem] border px-3.5 py-2.5 shadow-[0_10px_22px_rgba(15,23,42,0.05)]"
+                              :class="deliverable.item.document_id
+                                ? 'border-sky-200/90 bg-linear-to-br from-white via-sky-50/70 to-sky-100/55 text-sky-700'
+                                : 'border-slate-200 bg-linear-to-br from-white via-slate-50 to-slate-100/70 text-slate-500'"
                             >
-                              <IconSignature class="h-3.5 w-3.5" />
-                              {{ getDeliverableDocumentLabel(deliverable.item) }}
-                            </span>
-                            <AppButton
-                              variant="plain"
-                              :class-name="[
-                                'group inline-flex h-11 w-11 items-center justify-center rounded-[1rem] border bg-white/92 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
-                                shouldShowSign(deliverable.item) || hasSignatureWorkflowActivity(deliverable.item)
-                                  ? 'border-violet-100/95 text-violet-700 hover:border-violet-200 hover:bg-violet-50 focus:ring-violet-200/70'
-                                  : shouldShowUploadDeliverable(deliverable.item) || hasPendingFillWorkflow(deliverable.item)
-                                    ? 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70'
-                                    : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70'
-                              ].join(' ')"
-                              aria-label="Abrir detalle del entregable"
-                              title="Abrir detalle del entregable"
-                              @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
-                            >
-                              <IconEye class="h-5 w-5" />
-                            </AppButton>
+                              <div class="flex min-w-0 flex-1 items-center gap-2">
+                                <span
+                                  class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.85rem] border bg-white/90 shadow-sm"
+                                  :class="deliverable.item.document_id ? 'border-sky-100 text-sky-700' : 'border-slate-200 text-slate-500'"
+                                >
+                                  <IconSignature class="h-4 w-4" />
+                                </span>
+                                <span class="min-w-0 truncate text-[11px] font-bold uppercase tracking-[0.16em]">
+                                  {{ getDeliverableDocumentLabel(deliverable.item) }}
+                                </span>
+                              </div>
+                              <div class="flex shrink-0 items-center gap-1.5">
+                                <AppButton
+                                  variant="plain"
+                                  class-name="relative inline-flex h-9 w-9 items-center justify-center rounded-[0.9rem] border border-white/80 bg-white/88 text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                  :disabled="!deliverable.item.actions?.can_open_process_chat"
+                                  aria-label="Abrir chat"
+                                  title="Abrir chat"
+                                  @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
+                                >
+                                  <IconMessages class="h-4.5 w-4.5" />
+                                </AppButton>
+                                <AppButton
+                                  variant="plain"
+                                  :class-name="[
+                                    'group inline-flex h-9 w-9 items-center justify-center rounded-[0.9rem] border bg-white/88 shadow-sm transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                    shouldShowSign(deliverable.item) || hasSignatureWorkflowActivity(deliverable.item)
+                                      ? 'border-violet-100/95 text-violet-700 hover:border-violet-200 hover:bg-violet-50 focus:ring-violet-200/70'
+                                      : shouldShowUploadDeliverable(deliverable.item) || hasPendingFillWorkflow(deliverable.item)
+                                        ? 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70'
+                                        : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70'
+                                  ].join(' ')"
+                                  aria-label="Abrir detalle del entregable"
+                                  title="Abrir detalle del entregable"
+                                  @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                                >
+                                  <IconEye class="h-4.5 w-4.5" />
+                                </AppButton>
+                              </div>
+                            </div>
                           </div>
                           <div class="min-w-0">
                             <strong class="line-clamp-2 text-base font-semibold leading-tight text-slate-800">
@@ -470,27 +493,25 @@
 
                         <div
                           v-if="getDeliverableProgress(deliverable.item)"
-                          class="rounded-[1.15rem] border border-slate-200 bg-slate-50/70 px-4 py-3"
+                          class="rounded-[1.15rem] border px-4 py-3"
+                          :class="getDeliverableCardTone(deliverable.item).responsibility"
                         >
                           <div class="flex items-center justify-between gap-3">
-                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
                               {{ getDeliverableProgress(deliverable.item).label }}
                             </p>
                             <span class="text-xs font-semibold text-slate-600">
                               Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
                             </span>
                           </div>
-                          <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                          <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200/80">
                             <div
                               class="h-full rounded-full transition-all duration-300"
                               :class="getDeliverableCardTone(deliverable.item).accent"
                               :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
                             ></div>
                           </div>
-                        </div>
-
-                        <div class="rounded-[1.15rem] border px-4 py-3" :class="getDeliverableCardTone(deliverable.item).responsibility">
-                          <div class="flex flex-wrap items-center justify-between gap-2">
+                          <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/70 pt-3">
                             <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">Responsable actual</p>
                             <span class="text-xs font-semibold text-slate-500">{{ getDeliverablePrimaryActionLabel(deliverable.item) }}</span>
                           </div>
@@ -500,6 +521,27 @@
                         </div>
 
                         <div class="mt-auto border-t border-slate-100 pt-3">
+                          <div class="mb-3 min-w-0 flex-1 rounded-[1.1rem] border border-slate-200 bg-slate-50/80 px-3.5 py-3 shadow-sm">
+                            <div class="flex items-center justify-between gap-3">
+                              <div class="min-w-0">
+                                <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).label }}</p>
+                                <div class="mt-1">
+                                  <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
+                                    {{ getDeliverableComplianceState(deliverable.item).value }}
+                                  </AppTag>
+                                </div>
+                              </div>
+                              <div class="min-w-0 text-right">
+                                <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).dueLabel }}</p>
+                                <div class="mt-1">
+                                  <AppTag :variant="getDeliverableComplianceState(deliverable.item).dueVariant">
+                                    {{ getDeliverableComplianceState(deliverable.item).dueValue }}
+                                  </AppTag>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
                           <div class="grid grid-cols-2 gap-3">
                             <button
                               v-if="shouldShowStartDeliverable(deliverable.item)"
@@ -584,39 +626,6 @@
                             </button>
                           </div>
 
-                          <div class="mt-3 flex items-center justify-between gap-3">
-                            <div class="min-w-0 flex-1 rounded-[1.1rem] border border-slate-200 bg-slate-50/80 px-3.5 py-3 shadow-sm">
-                              <div class="flex items-center justify-between gap-3">
-                                <div class="min-w-0">
-                                  <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).label }}</p>
-                                  <div class="mt-1">
-                                    <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
-                                      {{ getDeliverableComplianceState(deliverable.item).value }}
-                                    </AppTag>
-                                  </div>
-                                </div>
-                                <div class="min-w-0 text-right">
-                                  <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).dueLabel }}</p>
-                                  <div class="mt-1">
-                                    <AppTag :variant="getDeliverableComplianceState(deliverable.item).dueVariant">
-                                      {{ getDeliverableComplianceState(deliverable.item).dueValue }}
-                                    </AppTag>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <AppButton
-                              variant="plain"
-                              class-name="relative inline-flex h-16 w-16 items-center justify-center rounded-full border border-sky-200/90 bg-gradient-to-br from-white via-sky-50 to-sky-100 text-sky-700 shadow-[0_18px_45px_rgba(2,132,199,0.22)] ring-1 ring-white/80 transition hover:-translate-y-1 hover:from-white hover:to-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
-                              :disabled="!deliverable.item.actions?.can_open_process_chat"
-                              aria-label="Abrir chat"
-                              title="Abrir chat"
-                              @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
-                            >
-                              <span class="absolute inset-1.25 rounded-full border border-white/70 bg-white/55" />
-                              <IconMessages class="relative z-10 h-7 w-7" />
-                            </AppButton>
-                          </div>
                         </div>
                       </div>
                     </article>
