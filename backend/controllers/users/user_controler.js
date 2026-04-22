@@ -152,7 +152,7 @@ const collectDeliverableTemplateResources = async (availableFormats) => {
           mode,
           format: normalizedFormat,
           objectName: cleanObjectName,
-          archiveName: path.posix.join(mode, normalizedFormat, relativeName.replace(/\\/g, "/"))
+          archiveName: relativeName.replace(/\\/g, "/")
         });
       }
     }
