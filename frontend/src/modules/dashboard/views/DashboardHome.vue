@@ -381,7 +381,7 @@
                         </label>
                       </div>
 
-                      <div v-if="showAdvancedTaskFilters" class="grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-4 md:grid-cols-3">
+                      <div v-if="showAdvancedTaskFilters" class="grid grid-cols-1 gap-3 border-t border-slate-200/80 pt-4 md:grid-cols-2 xl:grid-cols-5">
                         <label class="flex flex-col gap-2">
                           <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
                           <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
@@ -401,6 +401,18 @@
                           <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
                             <option value="all">Todos</option>
                             <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Participación</span>
+                          <select v-model="taskListFilters.participation" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option v-for="option in taskFilterParticipationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                          </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Acción</span>
+                          <select v-model="taskListFilters.actionState" class="block w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+                            <option v-for="option in taskFilterActionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                           </select>
                         </label>
                       </div>
@@ -2414,9 +2426,23 @@ const taskListFilters = ref({
   termType: 'all',
   unit: 'all',
   process: 'all',
-  status: 'all'
+  status: 'all',
+  participation: 'all',
+  actionState: 'all'
 });
 const showAdvancedTaskFilters = ref(false);
+const taskFilterParticipationOptions = [
+  { value: 'all', label: 'Todas' },
+  { value: 'current', label: 'Actual' },
+  { value: 'future', label: 'Futura' },
+  { value: 'past', label: 'Pasada' }
+];
+const taskFilterActionOptions = [
+  { value: 'all', label: 'Todas' },
+  { value: 'start', label: 'Iniciar' },
+  { value: 'sign', label: 'Firmar' },
+  { value: 'deliver', label: 'Entregar' }
+];
 
 const userFullName = computed(() => {
   if (!currentUser.value) return 'Usuario';
@@ -2671,7 +2697,9 @@ const resetTaskListFilters = () => {
     termType: 'all',
     unit: 'all',
     process: 'all',
-    status: 'all'
+    status: 'all',
+    participation: 'all',
+    actionState: 'all'
   };
   showAdvancedTaskFilters.value = false;
 };
@@ -2821,6 +2849,17 @@ const filteredProcessDeliverables = computed(() =>
       item
     }))
   )
+    .filter((deliverable) => !isDeliverableSignatureFlowCompleted(deliverable.item))
+    .filter((deliverable) => {
+      const participation = taskListFilters.value.participation;
+      if (participation === 'all') return true;
+      return getDeliverableParticipationFlags(deliverable.item)[participation] === true;
+    })
+    .filter((deliverable) => {
+      const actionState = taskListFilters.value.actionState;
+      if (actionState === 'all') return true;
+      return getDeliverableActionFilterState(deliverable.item) === actionState;
+    })
 );
 
 const deliverableRows = computed(() => {
@@ -4143,11 +4182,11 @@ const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
 const getDeliverableCardTone = (payload) => {
   if (shouldShowStartDeliverable(payload)) {
     return {
-      card: 'border-slate-300/80 hover:border-slate-400 hover:shadow-[0_12px_24px_rgba(71,85,105,0.08)]',
-      header: 'border-slate-200/90 bg-slate-50/70 text-slate-600',
-      accent: 'bg-slate-500',
-      responsibility: 'border-slate-200 bg-white shadow-[-10px_-10px_22px_rgba(148,163,184,0.10)]',
-      responsibilityLabel: 'text-slate-600'
+      card: 'border-[#f2edb8]/80 hover:border-[#e6de97] hover:shadow-[0_12px_24px_rgba(148,163,184,0.10)]',
+      header: 'border-[#f2edb8]/90 bg-[rgba(255,252,189,0.20)] text-[#8a7420] shadow-[-10px_-10px_22px_rgba(148,163,184,0.10)]',
+      accent: 'bg-[#e1d68a]',
+      responsibility: 'border-[#f3ecbf] bg-white shadow-[-10px_-10px_22px_rgba(148,163,184,0.10)]',
+      responsibilityLabel: 'text-[#8a7420]'
     };
   }
 
@@ -4203,6 +4242,131 @@ const getDeliverableHeaderActionTone = (payload) => {
     return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
   }
   return 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70';
+};
+
+const isCompletedSignatureRequestStatus = (value) =>
+  ['completado', 'completed'].includes(String(value || '').trim().toLowerCase());
+
+const isDeliverableSignatureFlowCompleted = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+  const steps = getSignatureStepsFromSubject(payload);
+  if (!requests.length && !steps.length) {
+    return false;
+  }
+
+  const hasPendingLikeRequests = requests.some((request) => {
+    const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
+    return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
+  });
+  if (hasPendingLikeRequests) {
+    return false;
+  }
+
+  const normalizedDocumentStatus = String(
+    subject.document_status
+    || subject.documentStatus
+    || subject.document_version_status
+    || subject.documentVersionStatus
+    || ''
+  ).trim().toLowerCase();
+
+  if (['firmado', 'firmado completo', 'completed', 'completado'].includes(normalizedDocumentStatus)) {
+    return true;
+  }
+
+  const stepOrders = [...new Set(
+    [
+      ...steps.map((step) => Number(step?.step_order || step?.stepOrder || 0)),
+      ...requests.map((request) => Number(request?.step_order || request?.stepOrder || 0))
+    ].filter((value) => value > 0)
+  )];
+
+  if (!stepOrders.length) {
+    return false;
+  }
+
+  return stepOrders.every((stepOrder) => {
+    const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
+    return relatedRequests.length > 0 && relatedRequests.every((request) =>
+      isCompletedSignatureRequestStatus(
+        request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status
+      )
+    );
+  });
+};
+
+const getDeliverableParticipationFlags = (payload) => {
+  const currentUser = Number(currentUserId.value || 0);
+  if (!currentUser) {
+    return { current: false, future: false, past: false };
+  }
+
+  const subject = getDeliverableSubject(payload);
+  const historicalParticipation = payload?.participation || subject?.participation || {};
+  const fillRequests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
+  const signatureRequests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+  const currentFillStepOrder = Number(
+    subject.workflow?.fill_flow?.current_step_order
+    || subject.workflow?.current_fill_step_order
+    || getCurrentFillWorkflowRequest(payload)?.step_order
+    || 0
+  );
+  const currentSignatureStepOrder = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0);
+
+  const current = Boolean(
+    shouldShowStartDeliverable(payload)
+    || shouldShowUploadDeliverable(payload)
+    || shouldShowSign(payload)
+    || canApproveFillRequestForPayload(payload)
+    || currentUserCanOperateFillStep(payload)
+    || currentUserCanOperateSignatureStep(payload)
+  );
+
+  const futureFill = fillRequests.some((request) =>
+    Number(request?.assigned_person_id || request?.assignedPersonId || 0) === currentUser
+    && !(request?.responded_at || request?.respondedAt)
+    && Number(request?.step_order || request?.stepOrder || 0) > currentFillStepOrder
+  );
+
+  const futureSignature = signatureRequests.some((request) => {
+    const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
+    return Number(request?.assigned_person_id || 0) === currentUser
+      && !request?.responded_at
+      && ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
+      && Number(request?.step_order || request?.stepOrder || 0) > currentSignatureStepOrder;
+  });
+
+  const pastFill = fillRequests.some((request) =>
+    Number(request?.assigned_person_id || request?.assignedPersonId || 0) === currentUser
+    && Boolean(request?.responded_at || request?.respondedAt)
+  );
+
+  const pastSignature = signatureRequests.some((request) =>
+    Number(request?.assigned_person_id || 0) === currentUser
+    && (
+      Boolean(request?.responded_at)
+      || isCompletedSignatureRequestStatus(
+        request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status
+      )
+    )
+  );
+
+  return {
+    current,
+    future: futureFill || futureSignature,
+    past: pastFill
+      || pastSignature
+      || Boolean(historicalParticipation?.has_past_fill)
+      || Boolean(historicalParticipation?.has_past_signature)
+  };
+};
+
+const getDeliverableActionFilterState = (payload) => {
+  if (shouldShowStartDeliverable(payload)) return 'start';
+  if (shouldShowSign(payload)) return 'sign';
+  if (shouldShowUploadDeliverable(payload) || canApproveFillRequestForPayload(payload)) return 'deliver';
+  return 'other';
 };
 
 const getWorkflowStateTagVariant = (value, fallback = 'neutral') => {

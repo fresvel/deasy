@@ -534,13 +534,6 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId) =
            FROM task_items ti
            INNER JOIN documents d ON d.task_item_id = ti.id
            INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
            INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
            INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
            WHERE ti.task_id = t.id
@@ -551,13 +544,6 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId) =
            FROM task_items ti
            INNER JOIN documents d ON d.task_item_id = ti.id
            INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
            INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
            INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
            WHERE ti.task_id = t.id
@@ -682,6 +668,47 @@ const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
   return rows;
 };
 
+const getUserTaskItemParticipationSummary = async (pool, userId, taskItemIds) => {
+  if (!taskItemIds.length) {
+    return [];
+  }
+  const placeholders = taskItemIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       participation.task_item_id,
+       MAX(participation.has_past_fill) AS has_past_fill,
+       MAX(participation.has_past_signature) AS has_past_signature
+     FROM (
+       SELECT
+         d.task_item_id,
+         CASE WHEN fr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_fill,
+         0 AS has_past_signature
+       FROM documents d
+       INNER JOIN document_versions dv ON dv.document_id = d.id
+       INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
+       INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+       WHERE d.task_item_id IN (${placeholders})
+         AND fr.assigned_person_id = ?
+
+       UNION ALL
+
+       SELECT
+         d.task_item_id,
+         0 AS has_past_fill,
+         CASE WHEN sr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_signature
+       FROM documents d
+       INNER JOIN document_versions dv ON dv.document_id = d.id
+       INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
+       INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+       WHERE d.task_item_id IN (${placeholders})
+         AND sr.assigned_person_id = ?
+     ) participation
+     GROUP BY participation.task_item_id`,
+    [...taskItemIds, userId, ...taskItemIds, userId]
+  );
+  return rows;
+};
+
 const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItemId) => {
   const [rows] = await pool.query(
     `SELECT
@@ -751,13 +778,6 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
            SELECT 1
            FROM documents d
            INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest
-             ON latest.document_id = dv.document_id
-            AND latest.max_version = dv.version
            INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
            INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
            WHERE d.task_item_id = ti.id
@@ -767,13 +787,6 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
            SELECT 1
            FROM documents d
            INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest
-             ON latest.document_id = dv.document_id
-            AND latest.max_version = dv.version
            INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
            INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
            WHERE d.task_item_id = ti.id
@@ -1180,6 +1193,13 @@ const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
        INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
        INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest_fill_dv
+         ON latest_fill_dv.document_id = dv.document_id
+        AND latest_fill_dv.max_version = dv.version
        INNER JOIN documents d ON d.id = dv.document_id
        INNER JOIN task_items ti ON ti.id = d.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
@@ -1203,8 +1223,6 @@ const getUserOperationalProcessRows = async (pool, userId) => {
        LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
        LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
        WHERE fr.assigned_person_id = ?
-         AND fr.responded_at IS NULL
-         AND LOWER(COALESCE(fr.status, '')) IN ('pending', 'in_progress')
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
@@ -1213,7 +1231,10 @@ const getUserOperationalProcessRows = async (pool, userId) => {
            'pendiente de llenado',
            'en llenado',
            'en revisión de llenado',
-           'observado'
+           'observado',
+           'listo para firma',
+           'pendiente de firma',
+           'firmado parcial'
          )
 
        UNION ALL
@@ -1232,6 +1253,13 @@ const getUserOperationalProcessRows = async (pool, userId) => {
        FROM signature_requests sr
        INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
        INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+       INNER JOIN (
+         SELECT document_id, MAX(version) AS max_version
+         FROM document_versions
+         GROUP BY document_id
+       ) latest_signature_dv
+         ON latest_signature_dv.document_id = dv.document_id
+        AND latest_signature_dv.max_version = dv.version
        INNER JOIN documents d ON d.id = dv.document_id
        INNER JOIN task_items ti ON ti.id = d.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
@@ -1257,8 +1285,6 @@ const getUserOperationalProcessRows = async (pool, userId) => {
        LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
        LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
        WHERE sr.assigned_person_id = ?
-         AND sr.responded_at IS NULL
-         AND LOWER(COALESCE(srs.code, srs.name, '')) IN ('pendiente', 'pending', 'en_progreso', 'in_progress')
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
@@ -1266,9 +1292,7 @@ const getUserOperationalProcessRows = async (pool, userId) => {
          AND LOWER(COALESCE(dv.status, '')) IN (
            'listo para firma',
            'pendiente de firma',
-           'firmado',
-           'firmado parcial',
-           'firmado completo'
+           'firmado parcial'
          )
      ) operational
      ORDER BY operational.process_name ASC, operational.process_definition_id ASC`,
@@ -1317,6 +1341,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
   const taskItems = await getTaskItemsForTaskIds(pool, taskIds);
   const taskItemIds = taskItems.map((item) => Number(item.id || 0)).filter((id) => id > 0);
   const taskItemDocuments = await getDocumentsForTaskItemIds(pool, taskItemIds);
+  const taskItemParticipation = await getUserTaskItemParticipationSummary(pool, userId, taskItemIds);
   const taskItemsByTask = new Map();
   taskItems.forEach((item) => {
     if (!taskItemsByTask.has(item.task_id)) {
@@ -1324,6 +1349,15 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     }
     taskItemsByTask.get(item.task_id).push(item);
   });
+  const participationByTaskItemId = new Map(
+    taskItemParticipation.map((item) => [
+      Number(item.task_item_id),
+      {
+        has_past_fill: Number(item.has_past_fill || 0) === 1,
+        has_past_signature: Number(item.has_past_signature || 0) === 1,
+      }
+    ])
+  );
   const documentsByTaskItemId = new Map();
   taskItemDocuments.forEach((document) => {
     const key = Number(document.task_item_id || 0);
@@ -1575,6 +1609,10 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
         instance_mode: item.instance_mode || "single_document",
         document_count: relatedDocuments.length,
         can_create_document_instance: isOwnerManyDocuments && Number(item.resolved_owner_person_id || 0) === Number(userId),
+        participation: participationByTaskItemId.get(Number(item.id)) || {
+          has_past_fill: false,
+          has_past_signature: false,
+        },
         pending_fill_count: relatedDocument?.pending_fill_count ?? relatedFillRequests.filter((request) => !request.responded_at).length,
         total_fill_count: relatedDocument?.total_fill_count ?? relatedFillRequests.length,
         workflow: relatedDocument?.workflow || {
