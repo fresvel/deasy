@@ -444,9 +444,22 @@
                               <IconSignature class="h-3.5 w-3.5" />
                               {{ getDeliverableDocumentLabel(deliverable.item) }}
                             </span>
-                            <AppTag :variant="getDeliverableStatusBadge(deliverable.item).variant">
-                              {{ getDeliverableStatusBadge(deliverable.item).label }}
-                            </AppTag>
+                            <AppButton
+                              variant="plain"
+                              :class-name="[
+                                'group inline-flex h-11 w-11 items-center justify-center rounded-[1rem] border bg-white/92 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                shouldShowSign(deliverable.item) || hasSignatureWorkflowActivity(deliverable.item)
+                                  ? 'border-violet-100/95 text-violet-700 hover:border-violet-200 hover:bg-violet-50 focus:ring-violet-200/70'
+                                  : shouldShowUploadDeliverable(deliverable.item) || hasPendingFillWorkflow(deliverable.item)
+                                    ? 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70'
+                                    : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 focus:ring-slate-200/70'
+                              ].join(' ')"
+                              aria-label="Abrir detalle del entregable"
+                              title="Abrir detalle del entregable"
+                              @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                            >
+                              <IconEye class="h-5 w-5" />
+                            </AppButton>
                           </div>
                           <div class="min-w-0">
                             <strong class="line-clamp-2 text-base font-semibold leading-tight text-slate-800">
@@ -495,12 +508,11 @@
                               :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
                               @click="startDeliverableFlow(deliverable.item)"
                             >
-                              <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                                <IconPlayerPlayFilled class="h-6 w-6" />
+                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconPlayerPlayFilled class="h-5 w-5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
                                 <span class="text-sm font-bold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span>
-                                <span class="text-xs font-medium text-slate-500">Habilita el flujo operativo.</span>
                               </div>
                             </button>
                             <PdfDropField
@@ -512,23 +524,22 @@
                               :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable"
                               :title="''"
                               :action-text="getUploadActionLabel(deliverable.item)"
-                              help-text="Arrastra o selecciona un PDF, Word o Excel."
+                              help-text=""
                               accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                               @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)"
                             />
                             <button
                               v-else-if="shouldShowSign(deliverable.item)"
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-fuchsia-200/90 bg-linear-to-br from-white via-fuchsia-50/35 to-rose-50/45 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-fuchsia-300 hover:from-white hover:to-fuchsia-50/70 hover:shadow-[0_18px_36px_rgba(217,70,239,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-violet-200/90 bg-linear-to-br from-white via-violet-50/35 to-fuchsia-50/35 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:from-white hover:to-violet-50/70 hover:shadow-[0_18px_36px_rgba(139,92,246,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
                               :disabled="!deliverable.item.actions?.implemented?.sign"
                               @click="openDocumentSignFlow(deliverable.item)"
                             >
-                              <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-fuchsia-100 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-600">
-                                <IconSignature class="h-6 w-6" />
+                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-violet-100/95 bg-white/92 text-violet-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-violet-200 group-hover:bg-violet-50">
+                                <IconSignature class="h-5 w-5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
                                 <span class="text-sm font-bold text-slate-800">Firmar</span>
-                                <span class="text-xs font-medium text-slate-500">Abre el firmador sobre el PDF listo.</span>
                               </div>
                             </button>
                             <button
@@ -537,31 +548,63 @@
                               class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
                               @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
                             >
-                              <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                                <IconChecklist class="h-6 w-6" />
+                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconChecklist class="h-5 w-5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
                                 <span class="text-sm font-bold text-slate-800">Abrir</span>
-                                <span class="text-xs font-medium text-slate-500">Consulta el detalle operativo.</span>
                               </div>
                             </button>
 
                             <button
+                              v-if="!shouldShowStartDeliverable(deliverable.item) && hasSignatureWorkflowActivity(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
                               type="button"
-                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
-                              @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-sky-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
+                              @click="downloadDeliverableFile(deliverable.item)"
                             >
-                              <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                                <IconChecklist class="h-6 w-6" />
+                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconDownload class="h-5 w-5" />
                               </div>
                               <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-bold text-slate-800">Gestionar</span>
-                                <span class="text-xs font-medium text-slate-500">Abre el modal de gestión.</span>
+                                <span class="text-sm font-bold text-slate-800">Descargar PDF</span>
+                              </div>
+                            </button>
+                            <button
+                              v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)"
+                              type="button"
+                              class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-sky-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
+                              @click="handleDeliverableFutureAction('download_template', deliverable.item)"
+                            >
+                              <div class="flex h-11 w-11 items-center justify-center rounded-[1rem] border border-sky-100/95 bg-white/92 text-sky-700 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                <IconFileDescription class="h-5 w-5" />
+                              </div>
+                              <div class="flex min-w-0 flex-col">
+                                <span class="text-sm font-bold text-slate-800">Descargar plantilla</span>
                               </div>
                             </button>
                           </div>
 
-                          <div class="mt-3 flex items-center justify-end">
+                          <div class="mt-3 flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1 rounded-[1.1rem] border border-slate-200 bg-slate-50/80 px-3.5 py-3 shadow-sm">
+                              <div class="flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                  <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).label }}</p>
+                                  <div class="mt-1">
+                                    <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
+                                      {{ getDeliverableComplianceState(deliverable.item).value }}
+                                    </AppTag>
+                                  </div>
+                                </div>
+                                <div class="min-w-0 text-right">
+                                  <p class="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ getDeliverableComplianceState(deliverable.item).dueLabel }}</p>
+                                  <div class="mt-1">
+                                    <AppTag :variant="getDeliverableComplianceState(deliverable.item).dueVariant">
+                                      {{ getDeliverableComplianceState(deliverable.item).dueValue }}
+                                    </AppTag>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                             <AppButton
                               variant="plain"
                               class-name="relative inline-flex h-16 w-16 items-center justify-center rounded-full border border-sky-200/90 bg-gradient-to-br from-white via-sky-50 to-sky-100 text-sky-700 shadow-[0_18px_45px_rgba(2,132,199,0.22)] ring-1 ring-white/80 transition hover:-translate-y-1 hover:from-white hover:to-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
@@ -950,7 +993,7 @@
             Resumen
           </button>
           <button
-            v-if="fillWorkflowState.subject && shouldShowManageFill(fillWorkflowState.subject)"
+            v-if="fillWorkflowState.subject && hasFillWorkflowActivity(fillWorkflowState.subject)"
             type="button"
             role="tab"
             :aria-selected="deliverableWorkspaceState.tab === 'fill'"
@@ -3266,6 +3309,14 @@ const getDeliverableSubject = (payload = {}) => {
     periodLabel: payload?.period_label || payload?.periodLabel || '',
     unitLabel: payload?.unit_label || payload?.unitLabel || '',
     processLabel: payload?.process_label || payload?.processLabel || '',
+    description:
+      payload?.template_artifact_description
+      || payload?.templateArtifactDescription
+      || payload?.description
+      || documentPayload?.template_artifact_description
+      || documentPayload?.templateArtifactDescription
+      || documentPayload?.description
+      || '',
     workingFilePath,
     finalFilePath,
     preloadFilePath,
@@ -3544,6 +3595,19 @@ const hasPendingFillWorkflow = (payload) => {
   return requests.some((request) => !request?.responded_at);
 };
 
+const hasFillWorkflowActivity = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
+  const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
+  return steps.length > 0
+    || requests.length > 0
+    || Number(
+      subject.workflow?.fill_flow?.current_step_order
+      || subject.workflow?.current_fill_step_order
+      || 0
+    ) > 0;
+};
+
 const hasSignatureWorkflowActivity = (payload) => {
   const subject = getDeliverableSubject(payload);
   const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
@@ -3551,7 +3615,12 @@ const hasSignatureWorkflowActivity = (payload) => {
     || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.current_signature_step_order || 0) > 0;
 };
 
-const resolveDeliverableWorkspaceTab = () => 'summary';
+const resolveDeliverableWorkspaceTab = (payload) => {
+  if (shouldShowStartDeliverable(payload)) return 'summary';
+  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload) || hasFillWorkflowActivity(payload) || shouldShowManageFill(payload)) return 'fill';
+  if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload) || shouldShowSignatureFlow(payload)) return 'signature';
+  return 'summary';
+};
 
 const getDeliverableWorkspaceTabClass = (tab) => {
   if (deliverableWorkspaceState.value.tab === tab) {
@@ -3637,12 +3706,21 @@ const shouldShowOpenWorkspacePrimary = (payload) => Boolean(
 );
 
 const getDeliverableCardTone = (payload) => {
+  if (shouldShowStartDeliverable(payload)) {
+    return {
+      card: 'border-slate-300/80 hover:border-slate-400 hover:shadow-[0_18px_36px_rgba(71,85,105,0.12)]',
+      accent: 'bg-slate-500',
+      responsibility: 'border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/80',
+      responsibilityLabel: 'text-slate-600'
+    };
+  }
+
   if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
     return {
-      card: 'border-fuchsia-200/80 hover:border-fuchsia-300 hover:shadow-[0_18px_36px_rgba(217,70,239,0.14)]',
-      accent: 'bg-fuchsia-400',
-      responsibility: 'border-fuchsia-100 bg-linear-to-br from-fuchsia-50 via-white to-rose-50/60',
-      responsibilityLabel: 'text-fuchsia-700'
+      card: 'border-violet-200/80 hover:border-violet-300 hover:shadow-[0_18px_36px_rgba(139,92,246,0.16)]',
+      accent: 'bg-violet-500',
+      responsibility: 'border-violet-100 bg-linear-to-br from-violet-50 via-white to-fuchsia-50/50',
+      responsibilityLabel: 'text-violet-700'
     };
   }
 
@@ -3896,6 +3974,47 @@ const getDeliverableWorkspacePayload = (deliverable) => ({
   task_start_date: deliverable?.task?.start_date || null,
   task_end_date: deliverable?.task?.end_date || null,
 });
+
+const getDeliverableComplianceState = (payload) => {
+  if (shouldShowSign(payload)) {
+    return {
+      label: 'Cumplimiento',
+      value: 'Listo para firma',
+      valueVariant: 'accent',
+      dueLabel: 'Vencimiento',
+      dueValue: 'Próximamente',
+      dueVariant: 'warning'
+    };
+  }
+  if (shouldShowStartDeliverable(payload)) {
+    return {
+      label: 'Cumplimiento',
+      value: 'Pendiente de inicio',
+      valueVariant: 'neutral',
+      dueLabel: 'Vencimiento',
+      dueValue: 'Sin definir',
+      dueVariant: 'muted'
+    };
+  }
+  if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
+    return {
+      label: 'Cumplimiento',
+      value: 'En preparación',
+      valueVariant: 'info',
+      dueLabel: 'Vencimiento',
+      dueValue: 'Próximamente',
+      dueVariant: 'warning'
+    };
+  }
+  return {
+    label: 'Cumplimiento',
+    value: 'En seguimiento',
+    valueVariant: 'success',
+    dueLabel: 'Vencimiento',
+    dueValue: 'Próximamente',
+    dueVariant: 'warning'
+  };
+};
 
 const isReviewFillStep = computed(() => {
   const resolver = String(fillWorkflowState.value.request?.resolver_type || '').trim().toLowerCase();
@@ -4756,32 +4875,38 @@ const toggleNavMenu = () => {
 
 .deliverable-inline-upload :deep(.deasy-dropzone__surface) {
   min-height: 100%;
-  border-width: 1px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  border-width: 2px;
   border-style: dashed;
-  border-color: rgb(226 232 240 / 0.9);
+  border-color: rgb(56 189 248);
   border-radius: 1.35rem;
-  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(248 250 252 / 0.7), rgb(240 249 255 / 0.4));
+  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255 / 0.82), rgb(224 242 254 / 0.58));
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
   padding: 0.75rem 1rem;
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__surface--clickable:hover) {
-  border-color: rgb(186 230 253);
-  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(248 250 252 / 0.7), rgb(224 242 254 / 0.7));
+  border-color: rgb(14 165 233);
+  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255 / 0.86), rgb(224 242 254 / 0.8));
   box-shadow: 0 18px 36px rgba(14, 165, 233, 0.14);
   transform: translateY(-2px);
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__surface--active) {
   border-color: rgb(14 165 233);
-  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255), rgb(224 242 254 / 0.8));
+  background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(240 249 255), rgb(224 242 254 / 0.85));
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__trigger),
 .deliverable-inline-upload :deep(.deasy-dropzone__trigger--compact) {
+  flex: 1 1 auto;
   align-items: flex-start;
   text-align: left;
+  justify-content: center;
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__action) {
@@ -4791,14 +4916,33 @@ const toggleNavMenu = () => {
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__help) {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: rgb(100 116 139);
+  display: none;
 }
 
 .deliverable-inline-upload :deep(.deasy-dropzone__icon) {
-  height: 1.5rem;
-  width: 1.5rem;
-  color: rgb(51 65 85);
+  display: inline-flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  padding: 0.7rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px solid rgb(224 242 254 / 0.98);
+  background: rgb(255 255 255 / 0.9);
+  color: rgb(2 132 199);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.deliverable-inline-upload :deep(.deasy-dropzone__icon--compact) {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.deliverable-inline-upload :deep(.deasy-dropzone__icon svg),
+.deliverable-inline-upload :deep(.deasy-dropzone__icon--compact svg) {
+  width: 1rem;
+  height: 1rem;
 }
 </style>

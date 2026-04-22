@@ -1,6 +1,9 @@
 import path from "path";
+import os from "os";
 import fs from "fs-extra";
 import { randomUUID } from "crypto";
+import { spawn } from "child_process";
+import { pipeline } from "stream/promises";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
@@ -9,6 +12,7 @@ import { sendEmailVerification } from "../../services/mail/sendEmailVerification
 import { generateUniqueToken } from "../../utils/tokenGenerator.js";
 import {
   ensureBucketExists,
+  minioClient,
   uploadFileToMinio,
   statMinioObject,
   getMinioObjectStream
@@ -23,6 +27,8 @@ const sqlAdminService = new SqlAdminService();
 const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
 const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
 const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
+const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+const TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS = new Set(["latex", "jinja2"]);
 
 const sanitizeStorageSegment = (value, fallback = "na") =>
   String(value ?? fallback)
@@ -89,6 +95,93 @@ const resolveStoredDocumentObject = (storedPath) => {
     relativePath: normalizedPath
   };
 };
+
+const parseAvailableFormats = (value) => {
+  if (!value) return {};
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  if (typeof value !== "string") return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const listMinioObjects = (bucket, prefix, recursive = true) =>
+  new Promise((resolve, reject) => {
+    const entries = [];
+    const stream = minioClient.listObjectsV2(bucket, String(prefix || "").replace(/^\/+/, ""), recursive);
+    stream.on("data", (item) => {
+      if (item?.name) {
+        entries.push(item.name);
+      }
+    });
+    stream.on("error", reject);
+    stream.on("end", () => resolve(entries));
+  });
+
+const collectDeliverableTemplateResources = async (availableFormats) => {
+  const resources = [];
+  for (const [mode, modeEntries] of Object.entries(availableFormats || {})) {
+    if (!modeEntries || typeof modeEntries !== "object" || Array.isArray(modeEntries)) {
+      continue;
+    }
+    for (const [format, formatEntry] of Object.entries(modeEntries)) {
+      const normalizedFormat = String(format || "").trim().toLowerCase();
+      if (!normalizedFormat || TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS.has(normalizedFormat)) {
+        continue;
+      }
+      const entryPrefix = String(formatEntry?.entry_object_key || "").trim().replace(/^\/+/, "");
+      if (!entryPrefix) {
+        continue;
+      }
+      const objectNames = await listMinioObjects(MINIO_TEMPLATES_BUCKET, entryPrefix, true);
+      for (const objectName of objectNames) {
+        const cleanObjectName = String(objectName || "").trim();
+        if (!cleanObjectName || cleanObjectName.endsWith("/")) {
+          continue;
+        }
+        const relativeName = cleanObjectName.startsWith(entryPrefix)
+          ? cleanObjectName.slice(entryPrefix.length).replace(/^\/+/, "")
+          : path.basename(cleanObjectName);
+        if (!relativeName || path.basename(relativeName).startsWith(".")) {
+          continue;
+        }
+        resources.push({
+          mode,
+          format: normalizedFormat,
+          objectName: cleanObjectName,
+          archiveName: path.posix.join(mode, normalizedFormat, relativeName.replace(/\\/g, "/"))
+        });
+      }
+    }
+  }
+  return resources;
+};
+
+const writeMinioObjectToFile = async (bucket, objectName, destinationPath) => {
+  const stream = await getMinioObjectStream(bucket, objectName);
+  await fs.ensureDir(path.dirname(destinationPath));
+  await pipeline(stream, fs.createWriteStream(destinationPath));
+};
+
+const createZipArchive = async (cwd, outputPath) =>
+  new Promise((resolve, reject) => {
+    const zipProcess = spawn("zip", ["-rq", outputPath, "."], { cwd, stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    zipProcess.stderr.on("data", (chunk) => {
+      stderr += String(chunk || "");
+    });
+    zipProcess.on("error", reject);
+    zipProcess.on("close", (code) => {
+      if (code === 0) {
+        resolve(true);
+        return;
+      }
+      reject(new Error(stderr.trim() || "No se pudo generar el ZIP de la plantilla."));
+    });
+  });
 
 const getNumericUserId = (req) => {
   const userIdRaw = req.params?.id ?? req.query?.user_id ?? req.query?.userId ?? req.body?.user_id ?? req.body?.userId;
@@ -1977,7 +2070,8 @@ export const downloadDeliverableTemplate = async (req, res) => {
       `SELECT
          ti.id AS task_item_id,
          tar.template_seed_id,
-         tar.display_name AS template_artifact_name
+         tar.display_name AS template_artifact_name,
+         tar.available_formats
        FROM task_items ti
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
@@ -2006,21 +2100,53 @@ export const downloadDeliverableTemplate = async (req, res) => {
     if (!target) {
       return res.status(404).json({ message: "No se encontró el entregable solicitado." });
     }
-    if (!target.template_seed_id) {
-      return res.status(404).json({ message: "El entregable no tiene un seed asociado para descargar la plantilla." });
+    const availableFormats = parseAvailableFormats(target.available_formats);
+    const resources = await collectDeliverableTemplateResources(availableFormats);
+
+    if (!resources.length) {
+      return res.status(404).json({
+        message: "El entregable no tiene recursos descargables publicados en MinIO para esta plantilla."
+      });
     }
 
-    const result = await sqlAdminService.getTemplateSeedPreview(target.template_seed_id);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=\"${result.fileName}\"`);
-    result.stream.on("error", (error) => {
-      if (!res.headersSent) {
-        res.status(404).json({ message: error.message });
-        return;
+    if (resources.length === 1) {
+      const selected = resources[0];
+      const fileName = path.posix.basename(selected.archiveName);
+      const stream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, selected.objectName);
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.setHeader("Content-Disposition", `attachment; filename=\"${fileName}\"`);
+      stream.on("error", (error) => {
+        if (!res.headersSent) {
+          res.status(404).json({ message: error.message });
+          return;
+        }
+        res.end();
+      });
+      stream.pipe(res);
+      return;
+    }
+
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), "deliverable-template-"));
+    const zipPath = path.join(
+      os.tmpdir(),
+      `${sanitizeStorageSegment(target.template_artifact_name || "plantilla", "plantilla")}-${randomUUID()}.zip`
+    );
+
+    try {
+      for (const resource of resources) {
+        const destinationPath = path.join(workspace, resource.archiveName);
+        await writeMinioObjectToFile(MINIO_TEMPLATES_BUCKET, resource.objectName, destinationPath);
       }
-      res.end();
-    });
-    result.stream.pipe(res);
+      await createZipArchive(workspace, zipPath);
+      return res.download(zipPath, path.basename(zipPath), async () => {
+        await fs.remove(zipPath).catch(() => {});
+        await fs.remove(workspace).catch(() => {});
+      });
+    } catch (zipError) {
+      await fs.remove(zipPath).catch(() => {});
+      await fs.remove(workspace).catch(() => {});
+      throw zipError;
+    }
   } catch (error) {
     console.error("Error al descargar la plantilla del entregable:", error);
     return res.status(404).json({
