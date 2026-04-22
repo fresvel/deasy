@@ -449,9 +449,7 @@
                             <div class="flex min-w-0 flex-col gap-3">
                               <div
                                 class="-mx-4 -mt-4 flex cursor-pointer items-center justify-between gap-3 border-b px-4 pb-2.5 pt-1.5"
-                                :class="deliverable.item.document_id
-                                  ? 'border-sky-200/90 bg-sky-50/45 text-sky-700'
-                                  : 'border-slate-200 bg-slate-50/70 text-slate-500'"
+                                :class="getDeliverableCardTone(deliverable.item).header"
                                 role="button"
                                 tabindex="0"
                                 :aria-expanded="String(!isDeliverableCollapsed(deliverable.item))"
@@ -460,12 +458,15 @@
                                 @keydown.space.prevent="toggleDeliverableCard(deliverable.item)"
                               >
                                 <div class="flex min-w-0 flex-1 items-center gap-3">
-                                  <div class="min-w-0 flex flex-1 items-center self-stretch py-1.5">
+                                  <div class="min-w-0 flex flex-1 flex-col self-stretch py-1.5">
                                     <p class="m-0 text-[1rem] font-semibold leading-[1.3]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
                                       {{ getDeliverableUnitLabel(deliverable.item) || deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
                                       <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap text-[0.95em] font-medium opacity-90" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
                                         v{{ deliverable.item.document_version }}
                                       </span>
+                                    </p>
+                                    <p class="m-0 mt-1.5 min-w-0 truncate text-sm font-medium leading-snug text-slate-500">
+                                      {{ getDeliverablePeriodLabel(deliverable.task) }}
                                     </p>
                                   </div>
                                 </div>
@@ -499,13 +500,25 @@
                                         {{ getDeliverableProgress(deliverable.item).label }}
                                       </p>
                                     </div>
-                                    <span class="text-xs font-semibold text-slate-600">
-                                      Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
-                                    </span>
+                                    <AppTag
+                                      :variant="getDeliverableDueState(deliverable.item).variant"
+                                      class-name="shrink-0"
+                                    >
+                                      {{ getDeliverableDueState(deliverable.item).value }}
+                                    </AppTag>
                                   </div>
-                                  <p class="m-0 mt-2.5 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
-                                    {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
-                                  </p>
+                                  <div class="mt-2.5 flex items-start justify-between gap-3">
+                                    <div class="min-w-0 flex-1">
+                                      <p class="m-0 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
+                                        {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
+                                      </p>
+                                      <div class="mt-1.5 flex items-center justify-between gap-3">
+                                        <span class="shrink-0 text-xs font-semibold text-slate-600">
+                                          Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
                                   <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
                                     <div
                                       class="h-full rounded-full transition-all duration-300"
@@ -515,45 +528,17 @@
                                   </div>
                                 </div>
 
-                                <div
-                                  class="grid grid-cols-2 gap-3"
-                                  :class="getDeliverableProgress(deliverable.item) ? 'mt-3 border-t border-white/70 pt-3' : ''"
-                                >
-                                  <div class="min-w-0">
-                                    <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                      {{ getDeliverableComplianceState(deliverable.item).label }}
-                                    </p>
-                                    <div class="mt-1.5">
-                                      <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
-                                        {{ getDeliverableComplianceState(deliverable.item).value }}
-                                      </AppTag>
-                                    </div>
-                                  </div>
-                                  <div class="min-w-0 text-right">
-                                    <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                      {{ getDeliverableComplianceState(deliverable.item).dueLabel }}
-                                    </p>
-                                    <div class="mt-1.5">
-                                      <AppTag
-                                        :variant="getDeliverableComplianceState(deliverable.item).dueVariant"
-                                        :class-name="getDeliverableComplianceState(deliverable.item).dueVariant === 'warning' ? 'deliverable-due-tag--salmon' : ''"
-                                      >
-                                        {{ getDeliverableComplianceState(deliverable.item).dueValue }}
-                                      </AppTag>
-                                    </div>
-                                  </div>
-                                </div>
                               </div>
 
                               <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
                                 <button
                                   v-if="shouldShowStartDeliverable(deliverable.item)"
                                   type="button"
-                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-[0_10px_20px_rgba(71,85,105,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
                                   :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
                                   @click="startDeliverableFlow(deliverable.item)"
                                 >
-                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-slate-200 bg-slate-50/70 text-slate-700 transition-all group-hover:border-slate-300 group-hover:bg-slate-100">
                                     <IconPlayerPlayFilled class="h-4.5 w-4.5" />
                                   </div>
                                   <div class="flex min-w-0 flex-col">
@@ -576,11 +561,11 @@
                                 <button
                                   v-else-if="shouldShowSign(deliverable.item)"
                                   type="button"
-                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-cyan-200/85 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50/45 hover:shadow-[0_10px_20px_rgba(6,182,212,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-[#4BF1A1]/75 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 hover:shadow-[0_10px_20px_rgba(75,241,161,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
                                   :disabled="!deliverable.item.actions?.implemented?.sign"
                                   @click="openDocumentSignFlow(deliverable.item)"
                                 >
-                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-cyan-100/95 bg-cyan-50/55 text-cyan-700 transition-all group-hover:border-cyan-200 group-hover:bg-cyan-50">
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-[#4BF1A1]/55 bg-[#4BF1A1]/10 text-[#118a57] transition-all group-hover:border-[#4BF1A1] group-hover:bg-[#4BF1A1]/14">
                                     <IconSignature class="h-4.5 w-4.5" />
                                   </div>
                                   <div class="flex min-w-0 flex-col">
@@ -1114,9 +1099,19 @@
                     <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Fechas</p>
                     <p class="m-0 mt-1 text-sm font-semibold text-slate-700">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</p>
                   </div>
-                  <div class="rounded-[1.2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-cyan-50/70 px-4 py-3">
+                  <div
+                    class="rounded-[1.2rem] border px-4 py-3"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject)
+                      ? 'border-[#4BF1A1]/55 bg-linear-to-br from-[#4BF1A1]/14 via-white to-[#4BF1A1]/08'
+                      : 'border-sky-100 bg-linear-to-br from-sky-50 via-white to-cyan-50/70'"
+                  >
                     <div class="flex flex-wrap items-center justify-between gap-2">
-                      <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-600">Responsable actual</p>
+                      <p
+                        class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]"
+                        :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-[#118a57]' : 'text-sky-600'"
+                      >
+                        Responsable actual
+                      </p>
                       <span class="text-xs font-semibold text-slate-500">
                         {{ getDeliverableProgress(deliverableWorkspaceSubject)?.label || 'Gestión actual' }}
                       </span>
@@ -2902,7 +2897,7 @@ const getSignatureStepAccentClass = (step, requests = [], currentStepOrder = nul
     case 'completed':
       return 'bg-linear-to-r from-emerald-300 via-emerald-400 to-green-300';
     case 'current':
-      return 'bg-linear-to-r from-sky-300 via-sky-400 to-cyan-300';
+      return 'bg-linear-to-r from-[#4BF1A1] via-[#3DE08F] to-[#2ec97d]';
     case 'rejected':
       return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
     case 'pending':
@@ -3850,26 +3845,29 @@ const getDeliverableCardTone = (payload) => {
   if (shouldShowStartDeliverable(payload)) {
     return {
       card: 'border-slate-300/80 hover:border-slate-400 hover:shadow-[0_12px_24px_rgba(71,85,105,0.08)]',
+      header: 'border-slate-200/90 bg-slate-50/70 text-slate-600',
       accent: 'bg-slate-500',
-      responsibility: 'border-slate-200 bg-slate-50/70',
+      responsibility: 'border-slate-200 bg-white shadow-[-10px_-10px_22px_rgba(148,163,184,0.10)]',
       responsibilityLabel: 'text-slate-600'
     };
   }
 
   if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
     return {
-      card: 'border-cyan-200/85 hover:border-cyan-300 hover:shadow-[0_12px_24px_rgba(6,182,212,0.1)]',
-      accent: 'bg-cyan-400',
-      responsibility: 'border-cyan-100 bg-cyan-50/50',
-      responsibilityLabel: 'text-cyan-700'
+      card: 'border-[#4BF1A1]/85 hover:border-[#4BF1A1] hover:shadow-[0_12px_24px_rgba(75,241,161,0.18)]',
+      header: 'border-[#4BF1A1]/85 bg-[#4BF1A1]/12 text-[#118a57]',
+      accent: 'bg-[#4BF1A1]',
+      responsibility: 'border-[#4BF1A1]/55 bg-white shadow-[-10px_-10px_22px_rgba(75,241,161,0.12)]',
+      responsibilityLabel: 'text-[#118a57]'
     };
   }
 
   if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
     return {
       card: 'border-sky-200/80 hover:border-sky-300 hover:shadow-[0_12px_24px_rgba(14,165,233,0.08)]',
+      header: 'border-sky-200/90 bg-sky-50/45 text-sky-700',
       accent: 'bg-sky-500',
-      responsibility: 'border-sky-100 bg-sky-50/55',
+      responsibility: 'border-sky-100 bg-white shadow-[-10px_-10px_22px_rgba(56,189,248,0.10)]',
       responsibilityLabel: 'text-sky-700'
     };
   }
@@ -3879,23 +3877,25 @@ const getDeliverableCardTone = (payload) => {
   if (variant === 'success') {
     return {
       card: 'border-emerald-200/80 hover:border-emerald-300 hover:shadow-[0_12px_24px_rgba(16,185,129,0.08)]',
+      header: 'border-emerald-200/90 bg-emerald-50/45 text-emerald-700',
       accent: 'bg-emerald-500',
-      responsibility: 'border-emerald-100 bg-emerald-50/60',
+      responsibility: 'border-emerald-100 bg-white shadow-[-10px_-10px_22px_rgba(52,211,153,0.10)]',
       responsibilityLabel: 'text-emerald-700'
     };
   }
 
   return {
     card: 'border-slate-200 hover:border-slate-300 hover:shadow-[0_12px_24px_rgba(15,23,42,0.06)]',
+    header: 'border-slate-200 bg-slate-50/70 text-slate-600',
     accent: 'bg-slate-300',
-    responsibility: 'border-slate-200 bg-slate-50/70',
+    responsibility: 'border-slate-200 bg-white shadow-[-10px_-10px_22px_rgba(148,163,184,0.10)]',
     responsibilityLabel: 'text-slate-600'
   };
 };
 
 const getDeliverableHeaderActionTone = (payload) => {
   if (shouldShowSign(payload) || hasSignatureWorkflowActivity(payload)) {
-    return 'border-cyan-100/95 text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50 focus:ring-cyan-200/70';
+    return 'border-[#4BF1A1]/65 text-[#118a57] hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 focus:ring-[#4BF1A1]/35';
   }
   if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
     return 'border-sky-100/95 text-sky-700 hover:border-sky-200 hover:bg-sky-50 focus:ring-sky-200/70';
@@ -4138,53 +4138,27 @@ const getDeliverableDueState = (payload) => {
   const subject = getDeliverableSubject(payload);
   const dueDateValue = subject.itemEndDate || subject.taskEndDate || null;
   if (!dueDateValue) {
-    return {
-      label: 'Vencimiento',
-      value: 'Sin definir',
-      variant: 'muted'
-    };
+    return { label: 'Vencimiento', value: 'Sin definir', variant: 'muted' };
   }
 
   const normalized = String(dueDateValue).slice(0, 10);
   const dueDate = new Date(`${normalized}T00:00:00`);
   if (Number.isNaN(dueDate.getTime())) {
-    return {
-      label: 'Vencimiento',
-      value: normalized,
-      variant: 'muted'
-    };
+    return { label: 'Vencimiento', value: normalized, variant: 'muted' };
   }
 
   const today = new Date();
-  const todayDate = new Date(`${today.toISOString().slice(0, 10)}T00:00:00`);
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const diffDays = Math.round((dueDate.getTime() - todayDate.getTime()) / 86400000);
+  const formattedDate = formatDate(normalized);
 
   if (diffDays < 0) {
-    return {
-      label: 'Vencimiento',
-      value: 'Vencido',
-      variant: 'danger'
-    };
+    return { label: 'Vencimiento', value: formattedDate, variant: 'danger' };
   }
-  if (diffDays === 0) {
-    return {
-      label: 'Vencimiento',
-      value: 'Vence hoy',
-      variant: 'warning'
-    };
+  if (diffDays <= 5) {
+    return { label: 'Vencimiento', value: formattedDate, variant: 'warning' };
   }
-  if (diffDays <= 7) {
-    return {
-      label: 'Vencimiento',
-      value: 'Próximamente',
-      variant: 'warning'
-    };
-  }
-  return {
-    label: 'Vencimiento',
-    value: formatDate(normalized),
-    variant: 'neutral'
-  };
+  return { label: 'Vencimiento', value: formattedDate, variant: 'success' };
 };
 
 const getDeliverableCollapseKey = (payload) => String(payload?.id || payload?.document_id || payload?.task_item_id || '');

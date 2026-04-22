@@ -948,57 +948,102 @@ const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureRequests }
 const getUserOperationalProcessRows = async (pool, userId) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT
-       p.id AS process_id,
-       p.name AS process_name,
-       p.slug AS process_slug,
-       pdv.id AS process_definition_id,
-       pdv.variation_key,
-       pdv.definition_version
-     FROM process_definition_versions pdv
-     INNER JOIN processes p ON p.id = pdv.process_id
-     WHERE pdv.status = 'active'
-       AND pdv.effective_from <= CURDATE()
-       AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-       AND p.is_active = 1
-       AND (
-         EXISTS (
-           SELECT 1
-           FROM tasks t
-           INNER JOIN task_items ti ON ti.task_id = t.id
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
-           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-           WHERE t.process_definition_id = pdv.id
-             AND fr.assigned_person_id = ?
+       operational.process_id,
+       operational.process_name,
+       operational.process_slug,
+       operational.process_definition_id,
+       operational.variation_key,
+       operational.definition_version,
+       operational.source_position_id,
+       operational.source_cargo_id,
+       operational.source_unit_id,
+       operational.source_unit_type_id
+     FROM (
+       SELECT
+         p.id AS process_id,
+         p.name AS process_name,
+         p.slug AS process_slug,
+         pdv.id AS process_definition_id,
+         pdv.variation_key,
+         pdv.definition_version,
+         COALESCE(ffs.position_id, ti.responsible_position_id, t.responsible_position_id) AS source_position_id,
+         COALESCE(fill_position.cargo_id, ffs.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(fill_position.unit_id, ffs.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(fill_unit.unit_type_id, ffs.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+       FROM fill_requests fr
+       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+       INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
+       INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+       INNER JOIN documents d ON d.id = dv.document_id
+       INNER JOIN task_items ti ON ti.id = d.task_item_id
+       INNER JOIN tasks t ON t.id = ti.task_id
+       INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN unit_positions fill_position ON fill_position.id = ffs.position_id
+       LEFT JOIN units fill_unit ON fill_unit.id = COALESCE(fill_position.unit_id, ffs.unit_id)
+       LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
+       LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
+       LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
+       LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
+       WHERE fr.assigned_person_id = ?
+         AND fr.responded_at IS NULL
+         AND LOWER(COALESCE(fr.status, '')) IN ('pending', 'in_progress')
+         AND pdv.status = 'active'
+         AND pdv.effective_from <= CURDATE()
+         AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
+         AND p.is_active = 1
+         AND LOWER(COALESCE(dv.status, '')) IN (
+           'pendiente de llenado',
+           'en llenado',
+           'en revisión de llenado',
+           'observado'
          )
-         OR EXISTS (
-           SELECT 1
-           FROM tasks t
-           INNER JOIN task_items ti ON ti.task_id = t.id
-           INNER JOIN documents d ON d.task_item_id = ti.id
-           INNER JOIN document_versions dv ON dv.document_id = d.id
-           INNER JOIN (
-             SELECT document_id, MAX(version) AS max_version
-             FROM document_versions
-             GROUP BY document_id
-           ) latest_dv
-             ON latest_dv.document_id = dv.document_id
-            AND latest_dv.max_version = dv.version
-           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-           WHERE t.process_definition_id = pdv.id
-             AND sr.assigned_person_id = ?
+
+       UNION ALL
+
+       SELECT
+         p.id AS process_id,
+         p.name AS process_name,
+         p.slug AS process_slug,
+         pdv.id AS process_definition_id,
+         pdv.variation_key,
+         pdv.definition_version,
+         COALESCE(sfs.position_id, ti.responsible_position_id, t.responsible_position_id) AS source_position_id,
+         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(signature_position.unit_id, sfs.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+       FROM signature_requests sr
+       INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+       INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+       INNER JOIN documents d ON d.id = dv.document_id
+       INNER JOIN task_items ti ON ti.id = d.task_item_id
+       INNER JOIN tasks t ON t.id = ti.task_id
+       INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
+       LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+       LEFT JOIN unit_positions signature_position ON signature_position.id = sfs.position_id
+       LEFT JOIN units signature_unit ON signature_unit.id = COALESCE(signature_position.unit_id, sfs.unit_id)
+       LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
+       LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
+       LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
+       LEFT JOIN units task_unit ON task_unit.id = task_position.unit_id
+       WHERE sr.assigned_person_id = ?
+         AND sr.responded_at IS NULL
+         AND LOWER(COALESCE(srs.code, srs.name, '')) IN ('pendiente', 'pending', 'en_progreso', 'in_progress')
+         AND pdv.status = 'active'
+         AND pdv.effective_from <= CURDATE()
+         AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
+         AND p.is_active = 1
+         AND LOWER(COALESCE(dv.status, '')) IN (
+           'listo para firma',
+           'pendiente de firma',
+           'firmado',
+           'firmado parcial',
+           'firmado completo'
          )
-       )
-     ORDER BY p.name ASC, pdv.id ASC`,
+     ) operational
+     ORDER BY operational.process_name ASC, operational.process_definition_id ASC`,
     [userId, userId]
   );
   return rows;
@@ -1664,6 +1709,31 @@ export const getUserMenu = async (req, res) => {
       }
     };
 
+    const operationalRowMatchesPosition = (position, row) => {
+      const sourcePositionId = Number(row?.source_position_id || 0);
+      const sourceCargoId = Number(row?.source_cargo_id || 0);
+      const sourceUnitId = Number(row?.source_unit_id || 0);
+      const sourceUnitTypeId = Number(row?.source_unit_type_id || 0);
+
+      if (sourcePositionId) {
+        return Number(position.position_id) === sourcePositionId;
+      }
+
+      if (sourceCargoId && Number(position.cargo_id) !== sourceCargoId) {
+        return false;
+      }
+
+      if (sourceUnitId) {
+        return Number(position.unit_id) === sourceUnitId;
+      }
+
+      if (sourceUnitTypeId) {
+        return Number(position.unit_type_id) === sourceUnitTypeId;
+      }
+
+      return Boolean(sourceCargoId);
+    };
+
     const seenByUnitCargo = new Map();
     const seenByCargo = new Map();
 
@@ -1724,11 +1794,15 @@ export const getUserMenu = async (req, res) => {
 
     positions.forEach((position) => {
       operationalProcessRows.forEach((row) => {
+        if (!operationalRowMatchesPosition(position, row)) {
+          return;
+        }
+
         const process = {
           id: row.process_id,
           name: row.process_name,
           slug: row.process_slug,
-          unit_id: position.unit_id,
+          unit_id: Number(row.source_unit_id || position.unit_id),
           process_definition_id: row.process_definition_id,
           variation_key: row.variation_key,
           definition_version: row.definition_version,
