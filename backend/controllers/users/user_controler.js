@@ -1172,10 +1172,10 @@ const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.id AS process_definition_id,
          pdv.variation_key,
          pdv.definition_version,
-         COALESCE(ffs.position_id, ti.responsible_position_id, t.responsible_position_id) AS source_position_id,
-         COALESCE(fill_position.cargo_id, ffs.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
-         COALESCE(fill_position.unit_id, ffs.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
-         COALESCE(fill_unit.unit_type_id, ffs.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+         COALESCE(ffs.position_id, fill_assignee_position.id) AS source_position_id,
+         COALESCE(fill_position.cargo_id, ffs.cargo_id, fill_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(fill_position.unit_id, ffs.unit_id, fill_assignee_position.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(fill_unit.unit_type_id, ffs.unit_type_id, fill_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
        FROM fill_requests fr
        INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
        INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
@@ -1185,8 +1185,19 @@ const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        INNER JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN (
+         SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
+         FROM position_assignments
+         WHERE is_current = 1
+         GROUP BY person_id
+       ) fill_assignee_ctx
+         ON fill_assignee_ctx.person_id = fr.assigned_person_id
        LEFT JOIN unit_positions fill_position ON fill_position.id = ffs.position_id
+       LEFT JOIN unit_positions fill_assignee_position
+         ON fill_assignee_position.id = fill_assignee_ctx.position_id
+        AND fill_assignee_ctx.total_positions = 1
        LEFT JOIN units fill_unit ON fill_unit.id = COALESCE(fill_position.unit_id, ffs.unit_id)
+       LEFT JOIN units fill_assignee_unit ON fill_assignee_unit.id = fill_assignee_position.unit_id
        LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
        LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
        LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
@@ -1214,10 +1225,10 @@ const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.id AS process_definition_id,
          pdv.variation_key,
          pdv.definition_version,
-         COALESCE(sfs.position_id, ti.responsible_position_id, t.responsible_position_id) AS source_position_id,
-         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
-         COALESCE(signature_position.unit_id, sfs.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
-         COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+         COALESCE(sfs.position_id, signature_assignee_position.id) AS source_position_id,
+         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id, task_position.cargo_id) AS source_cargo_id,
+         COALESCE(signature_position.unit_id, sfs.unit_id, signature_assignee_position.unit_id, item_position.unit_id, task_position.unit_id) AS source_unit_id,
+         COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, signature_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
        FROM signature_requests sr
        INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
        INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
@@ -1228,8 +1239,19 @@ const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN processes p ON p.id = pdv.process_id
        LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
        LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+       LEFT JOIN (
+         SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
+         FROM position_assignments
+         WHERE is_current = 1
+         GROUP BY person_id
+       ) signature_assignee_ctx
+         ON signature_assignee_ctx.person_id = sr.assigned_person_id
        LEFT JOIN unit_positions signature_position ON signature_position.id = sfs.position_id
+       LEFT JOIN unit_positions signature_assignee_position
+         ON signature_assignee_position.id = signature_assignee_ctx.position_id
+        AND signature_assignee_ctx.total_positions = 1
        LEFT JOIN units signature_unit ON signature_unit.id = COALESCE(signature_position.unit_id, sfs.unit_id)
+       LEFT JOIN units signature_assignee_unit ON signature_assignee_unit.id = signature_assignee_position.unit_id
        LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
        LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
        LEFT JOIN unit_positions task_position ON task_position.id = t.responsible_position_id
