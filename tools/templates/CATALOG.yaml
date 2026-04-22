@@ -135,9 +135,7 @@ templates:
     template_id: null
     modes:
       general:
-        docx: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/general/docx/src"
         latex: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/general/latex/src"
-        pdf: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/general/pdf/src"
         xlsx: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/general/xlsx/src"
       process:
         jinja2: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/process/jinja2/src"
@@ -149,9 +147,7 @@ templates:
     template_id: null
     modes:
       general:
-        docx: "templates/talento-humano/requerimiento/docente/1.0.0/modes/general/docx/src"
         latex: "templates/talento-humano/requerimiento/docente/1.0.0/modes/general/latex/src"
-        pdf: "templates/talento-humano/requerimiento/docente/1.0.0/modes/general/pdf/src"
         xlsx: "templates/talento-humano/requerimiento/docente/1.0.0/modes/general/xlsx/src"
       process:
         jinja2: "templates/talento-humano/requerimiento/docente/1.0.0/modes/process/jinja2/src"

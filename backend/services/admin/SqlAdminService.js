@@ -98,7 +98,7 @@ const CARGO_CODE_ALIASES = new Map([
   ["coordinador_carrera", "coordinador"],
   ["director_escuela", "director"],
   ["director_docencia", "director"],
-  ["responsable_aseguramiento_calidad", "responsable-de-calidad"],
+  ["responsable_aseguramiento_calidad", "responsable"],
   ["responsable_financiero", "responsable"],
   ["jefe_talento_humano", "jefe"]
 ]);
@@ -451,6 +451,41 @@ const normalizeSignatureSteps = (
     .filter((step) => step.stepTypeId)
     .filter((step) => step.resolverType !== "cargo_in_scope" || step.requiredCargoId)
     .sort((left, right) => left.stepOrder - right.stepOrder);
+};
+
+const collectSignatureWorkflowNormalizationIssues = (
+  workflow = {},
+  { cargoCodeMap = new Map(), signatureTypeCodeMap = new Map() } = {}
+) => {
+  const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
+  const issues = [];
+  for (const [index, step] of rawSteps.entries()) {
+    if (!step || typeof step !== "object") {
+      continue;
+    }
+
+    const stepOrder = Number(step.order) || index + 1;
+    const stepCode = String(step.code || "").trim() || `step_${stepOrder}`;
+    const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
+    const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
+    if (!signatureTypeCodeMap.get(normalizedTypeCode)) {
+      issues.push(`Paso ${stepOrder} (${stepCode}): tipo de firma no resuelto (${rawTypeCode || "vacío"}).`);
+    }
+
+    const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
+    if (resolverType === "cargo_in_scope") {
+      const rawCargoCode = String(
+        step?.resolver?.cargo_code
+        || step.required_cargo_code
+        || ""
+      ).trim().toLowerCase();
+      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+      if (!cargoCodeMap.get(normalizedCargoCode)) {
+        issues.push(`Paso ${stepOrder} (${stepCode}): cargo no resuelto (${rawCargoCode || "vacío"}).`);
+      }
+    }
+  }
+  return issues;
 };
 
 const buildArtifactSyncedFillDescription = ({ artifactId, templateCode, storageVersion }) =>
@@ -2666,17 +2701,6 @@ export default class SqlAdminService {
 
   async replaceSyncedFillFlowSteps(fillFlowTemplateId, steps, connection = this.pool) {
     await connection.query(
-      `DELETE fr
-       FROM fill_requests fr
-       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-       WHERE dff.fill_flow_template_id = ?`,
-      [fillFlowTemplateId]
-    );
-    await connection.query(
-      "DELETE FROM document_fill_flows WHERE fill_flow_template_id = ?",
-      [fillFlowTemplateId]
-    );
-    await connection.query(
       "DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?",
       [fillFlowTemplateId]
     );
@@ -2715,18 +2739,21 @@ export default class SqlAdminService {
     }
   }
 
+  async hasFillFlowTemplateRuntimeUsage(fillFlowTemplateId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT EXISTS(
+         SELECT 1
+         FROM document_fill_flows dff
+         LEFT JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+         WHERE dff.fill_flow_template_id = ?
+         LIMIT 1
+       ) AS has_usage`,
+      [fillFlowTemplateId]
+    );
+    return Boolean(Number(rows?.[0]?.has_usage || 0));
+  }
+
   async replaceSyncedSignatureFlowSteps(signatureFlowTemplateId, steps, connection = this.pool) {
-    await connection.query(
-      `DELETE sr
-       FROM signature_requests sr
-       INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-       WHERE sfi.template_id = ?`,
-      [signatureFlowTemplateId]
-    );
-    await connection.query(
-      "DELETE FROM signature_flow_instances WHERE template_id = ?",
-      [signatureFlowTemplateId]
-    );
     await connection.query(
       "DELETE FROM signature_flow_steps WHERE template_id = ?",
       [signatureFlowTemplateId]
@@ -2778,6 +2805,21 @@ export default class SqlAdminService {
         ]
       );
     }
+  }
+
+  async hasSignatureFlowTemplateRuntimeUsage(signatureFlowTemplateId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT EXISTS(
+         SELECT 1
+         FROM signature_flow_instances sfi
+         LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+         LEFT JOIN document_signatures ds ON ds.signature_request_id = sr.id
+         WHERE sfi.template_id = ?
+         LIMIT 1
+       ) AS has_usage`,
+      [signatureFlowTemplateId]
+    );
+    return Boolean(Number(rows?.[0]?.has_usage || 0));
   }
 
   async syncArtifactFillWorkflowForArtifact({
@@ -2835,8 +2877,11 @@ export default class SqlAdminService {
       }
 
       let fillFlowTemplateId = existingTemplate?.id ? Number(existingTemplate.id) : null;
+      const templateHasRuntimeUsage = fillFlowTemplateId
+        ? await this.hasFillFlowTemplateRuntimeUsage(fillFlowTemplateId, connection)
+        : false;
 
-      if (!fillFlowTemplateId) {
+      if (!fillFlowTemplateId || templateHasRuntimeUsage) {
         const [insertResult] = await connection.query(
           `INSERT INTO fill_flow_templates (
              process_definition_template_id,
@@ -2912,6 +2957,14 @@ export default class SqlAdminService {
     const cargoCodeMap = await this.getCargoCodeMap(connection);
     const signatureTypeCodeMap = await this.getSignatureTypeCodeMap(connection);
     const unitTypeNameMap = await this.getUnitTypeNameMap(connection);
+    const normalizationIssues = syncEnabled
+      ? collectSignatureWorkflowNormalizationIssues(workflow, { cargoCodeMap, signatureTypeCodeMap })
+      : [];
+    if (normalizationIssues.length) {
+      throw new Error(
+        `No se pudo sincronizar el flujo de firmas de ${templateCode}: ${normalizationIssues.join(" ")}`
+      );
+    }
     const normalizedSteps = syncEnabled
       ? normalizeSignatureSteps(workflow, { cargoCodeMap, signatureTypeCodeMap, unitTypeNameMap })
       : [];
@@ -2939,8 +2992,11 @@ export default class SqlAdminService {
       }
 
       let signatureFlowTemplateId = existingTemplate?.id ? Number(existingTemplate.id) : null;
+      const templateHasRuntimeUsage = signatureFlowTemplateId
+        ? await this.hasSignatureFlowTemplateRuntimeUsage(signatureFlowTemplateId, connection)
+        : false;
 
-      if (!signatureFlowTemplateId) {
+      if (!signatureFlowTemplateId || templateHasRuntimeUsage) {
         const [insertResult] = await connection.query(
           `INSERT INTO signature_flow_templates (
              process_definition_template_id,

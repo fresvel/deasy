@@ -944,6 +944,65 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
   return rows;
 };
 
+const getSignatureWorkflowStepsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT
+       dv_context.document_version_id,
+       sfs.id,
+       sfs.template_id,
+       sfs.step_order,
+       sfs.code,
+       sfs.name,
+       sfs.slot,
+       sfs.resolver_type,
+       sfs.selection_mode,
+       sfs.approval_mode,
+       sfs.required_signers_min,
+       sfs.required_signers_max,
+       sfs.is_required,
+       st.code AS step_type_code,
+       st.name AS step_type_name,
+       c.code AS cargo_code,
+       c.name AS cargo_name
+     FROM (
+       SELECT
+         dv.id AS document_version_id,
+         COALESCE(
+           (
+             SELECT sft.id
+             FROM documents d2
+             INNER JOIN task_items ti2 ON ti2.id = d2.task_item_id
+             INNER JOIN signature_flow_templates sft
+               ON sft.process_definition_template_id = ti2.process_definition_template_id
+              AND sft.is_active = 1
+             WHERE d2.id = dv.document_id
+             ORDER BY sft.id DESC
+             LIMIT 1
+           ),
+           (
+             SELECT sfi.template_id
+             FROM signature_flow_instances sfi
+             WHERE sfi.document_version_id = dv.id
+             ORDER BY sfi.id DESC
+             LIMIT 1
+           )
+         ) AS signature_template_id
+       FROM document_versions dv
+       WHERE dv.id IN (${placeholders})
+     ) dv_context
+     INNER JOIN signature_flow_steps sfs ON sfs.template_id = dv_context.signature_template_id
+     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
+     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
+     ORDER BY dv_context.document_version_id ASC, sfs.step_order ASC, sfs.id ASC`,
+    documentVersionIds
+  );
+  return rows;
+};
+
 const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
@@ -1262,6 +1321,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
     .map((item) => Number(item.document_version_id || 0))
     .filter((id) => id > 0);
   const signatureWorkflowRequests = await getSignatureWorkflowRequestsForDocumentVersions(pool, documentVersionIds);
+  const signatureWorkflowSteps = await getSignatureWorkflowStepsForDocumentVersions(pool, documentVersionIds);
   const fillRequestsByDocumentVersion = new Map();
   fillRequests.forEach((request) => {
     const key = Number(request.document_version_id);
@@ -1285,6 +1345,31 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       signatureWorkflowRequestsByDocumentVersion.set(key, []);
     }
     signatureWorkflowRequestsByDocumentVersion.get(key).push(request);
+  });
+  const signatureWorkflowStepsByDocumentVersion = new Map();
+  signatureWorkflowSteps.forEach((step) => {
+    const key = Number(step.document_version_id);
+    if (!signatureWorkflowStepsByDocumentVersion.has(key)) {
+      signatureWorkflowStepsByDocumentVersion.set(key, []);
+    }
+    signatureWorkflowStepsByDocumentVersion.get(key).push({
+      id: Number(step.id),
+      template_id: Number(step.template_id),
+      step_order: Number(step.step_order),
+      code: step.code || null,
+      name: step.name || null,
+      slot: step.slot || null,
+      resolver_type: step.resolver_type || null,
+      selection_mode: step.selection_mode || null,
+      approval_mode: step.approval_mode || null,
+      required_signers_min: step.required_signers_min !== null ? Number(step.required_signers_min) : null,
+      required_signers_max: step.required_signers_max !== null ? Number(step.required_signers_max) : null,
+      is_required: Boolean(step.is_required),
+      step_type_code: step.step_type_code || null,
+      step_type_name: step.step_type_name || null,
+      cargo_code: step.cargo_code || null,
+      cargo_name: step.cargo_name || null
+    });
   });
   const fillWorkflowByDocumentVersion = new Map();
   fillWorkflowSteps.forEach((step) => {
@@ -1337,6 +1422,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       const documentVersionId = Number(item.document_version_id || 0);
       const relatedFillRequests = fillRequestsByDocumentVersion.get(documentVersionId) || [];
       const relatedSignatureRequests = signatureWorkflowRequestsByDocumentVersion.get(documentVersionId) || [];
+      const relatedSignatureSteps = signatureWorkflowStepsByDocumentVersion.get(documentVersionId) || [];
       const relatedUserSignatures = userSignaturesByDocumentVersion.get(documentVersionId) || [];
       const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = fillWorkflowByDocumentVersion.get(documentVersionId) || {
@@ -1380,7 +1466,9 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           fill_requests: relatedFillRequests,
           fill_flow: fillWorkflow,
           fill_steps: fillWorkflow.steps,
+          signature_steps: relatedSignatureSteps,
           signature_requests: relatedSignatureRequests,
+          total_signature_steps: relatedSignatureSteps.length,
           current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
           current_signature_step_order: currentSignatureStepOrder
         },
@@ -1388,7 +1476,11 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           can_upload_deliverable: canUploadDeliverable,
           can_download_template: Boolean(taskItem?.template_artifact_id),
           can_manage_fill: canManageFill,
-          can_review_signature_flow: Boolean(Number(item.total_signature_count || 0) > 0 || relatedSignatureRequests.length),
+          can_review_signature_flow: Boolean(
+            relatedSignatureSteps.length
+            || Number(item.total_signature_count || 0) > 0
+            || relatedSignatureRequests.length
+          ),
           can_sign: canSign,
           can_reset_workflow: canResetWorkflow,
           can_open_process_chat: true,
@@ -1411,6 +1503,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       const documentVersionId = Number(relatedDocument?.document_version_id || 0);
       const relatedFillRequests = documentVersionId ? (fillRequestsByDocumentVersion.get(documentVersionId) || []) : [];
       const relatedSignatureRequests = documentVersionId ? (signatureWorkflowRequestsByDocumentVersion.get(documentVersionId) || []) : [];
+      const relatedSignatureSteps = documentVersionId ? (signatureWorkflowStepsByDocumentVersion.get(documentVersionId) || []) : [];
       const relatedUserSignatures = documentVersionId ? (userSignaturesByDocumentVersion.get(documentVersionId) || []) : [];
       const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = documentVersionId
@@ -1429,7 +1522,11 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
         can_upload_deliverable: canUploadDeliverable && !isOwnerManyDocuments,
         can_download_template: Boolean(item.template_artifact_id),
         can_manage_fill: canManageFill,
-        can_review_signature_flow: Boolean(Number(item.total_signature_count || 0) > 0 || relatedSignatureRequests.length),
+        can_review_signature_flow: Boolean(
+          relatedSignatureSteps.length
+          || Number(item.total_signature_count || 0) > 0
+          || relatedSignatureRequests.length
+        ),
         can_sign: canSign && !isOwnerManyDocuments,
         can_reset_workflow: canResetWorkflow,
         can_open_process_chat: true,
@@ -1462,7 +1559,9 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
           fill_requests: relatedFillRequests,
           fill_flow: fillWorkflow,
           fill_steps: fillWorkflow.steps,
+          signature_steps: relatedSignatureSteps,
           signature_requests: relatedSignatureRequests,
+          total_signature_steps: relatedSignatureSteps.length,
           current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
           current_signature_step_order: currentSignatureStepOrder
         },

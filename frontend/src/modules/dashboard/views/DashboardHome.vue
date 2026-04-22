@@ -3928,6 +3928,11 @@ const hasSignatureWorkflowActivity = (payload) => {
     || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.current_signature_step_order || 0) > 0;
 };
 
+const getSignatureStepsFromSubject = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  return Array.isArray(subject.workflow?.signature_steps) ? subject.workflow.signature_steps : [];
+};
+
 const resolveDeliverableWorkspaceTab = (payload) => {
   if (shouldShowStartDeliverable(payload)) return 'summary';
   if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload) || hasFillWorkflowActivity(payload) || shouldShowManageFill(payload)) return 'fill';
@@ -4235,12 +4240,19 @@ const getDeliverableProgress = (payload) => {
 
   if (hasSignatureWorkflowActivity(payload)) {
     const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
-    const stepOrders = [...new Set(
+    const signatureSteps = getSignatureStepsFromSubject(payload);
+    const templateStepOrders = [...new Set(
+      signatureSteps
+        .map((step) => Number(step?.step_order || step?.stepOrder || 0))
+        .filter((value) => value > 0)
+    )].sort((a, b) => a - b);
+    const requestStepOrders = [...new Set(
       requests
         .map((request) => Number(request?.step_order || request?.stepOrder || 0))
         .filter((value) => value > 0)
     )].sort((a, b) => a - b);
-    const total = stepOrders.length || Number(subject.pendingSignatureCount || 0) || 0;
+    const stepOrders = templateStepOrders.length ? templateStepOrders : requestStepOrders;
+    const total = Number(subject.workflow?.total_signature_steps || 0) || stepOrders.length || Number(subject.pendingSignatureCount || 0) || 0;
     if (!total) return null;
     const current = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0) || total;
     const completedSteps = stepOrders.filter((stepOrder) => {
