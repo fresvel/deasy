@@ -322,9 +322,12 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     if (!documentColumnNames.includes("owner_person_id")) {
       await connection.query("ALTER TABLE documents ADD COLUMN owner_person_id INT NULL AFTER task_item_id");
     }
+    if (!documentColumnNames.includes("origin_unit_id")) {
+      await connection.query("ALTER TABLE documents ADD COLUMN origin_unit_id INT NULL AFTER owner_person_id");
+    }
     if (!documentColumnNames.includes("origin_type")) {
       await connection.query(
-        "ALTER TABLE documents ADD COLUMN origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item' AFTER owner_person_id"
+        "ALTER TABLE documents ADD COLUMN origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item' AFTER origin_unit_id"
       );
     }
     if (!documentColumnNames.includes("title")) {
@@ -340,6 +343,13 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     } catch (error) {
       if (error?.code !== "ER_DUP_KEYNAME") {
         console.warn("⚠️  No se pudo crear índice de documents.owner_person_id:", error.message);
+      }
+    }
+    try {
+      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_origin_unit (origin_unit_id)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de documents.origin_unit_id:", error.message);
       }
     }
     try {
@@ -405,6 +415,38 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     } catch (error) {
       console.warn("⚠️  No se pudo crear FK de documents.owner_person_id:", error.message);
+    }
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents'
+           AND COLUMN_NAME = 'origin_unit_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE documents ADD CONSTRAINT fk_documents_origin_unit FOREIGN KEY (origin_unit_id) REFERENCES units(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de documents.origin_unit_id:", error.message);
+    }
+    try {
+      await connection.query(
+        `UPDATE documents d
+         LEFT JOIN persons owner_person ON owner_person.id = d.owner_person_id
+         LEFT JOIN position_assignments owner_pa
+           ON owner_pa.person_id = owner_person.id
+          AND owner_pa.is_current = 1
+         LEFT JOIN unit_positions owner_pos ON owner_pos.id = owner_pa.position_id
+         LEFT JOIN task_items ti ON ti.id = d.task_item_id
+         LEFT JOIN unit_positions item_pos ON item_pos.id = ti.responsible_position_id
+         LEFT JOIN tasks t ON t.id = ti.task_id
+         LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
+         SET d.origin_unit_id = COALESCE(d.origin_unit_id, owner_pos.unit_id, item_pos.unit_id, task_pos.unit_id)
+         WHERE d.origin_unit_id IS NULL`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo backfillear documents.origin_unit_id:", error.message);
     }
 
     try {

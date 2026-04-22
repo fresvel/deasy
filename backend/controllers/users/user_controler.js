@@ -577,6 +577,8 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        tar.display_name AS template_artifact_name,
        rp.title AS responsible_position_title,
        d.id AS document_id,
+       d.origin_unit_id,
+       COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
        d.status AS document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
@@ -588,6 +590,7 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
      LEFT JOIN documents d ON d.task_item_id = ti.id
+     LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
      LEFT JOIN (
        SELECT dv1.*
        FROM document_versions dv1
@@ -635,6 +638,7 @@ const getAccessibleTaskItemDocumentForUser = async (pool, userId, definitionId, 
        trm.term_type_id,
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
+       d.origin_unit_id,
        COALESCE(task_pos.unit_id, responsible_pos.unit_id, owner_pos.unit_id) AS scope_unit_id,
        d.id AS document_id,
        dv.id AS document_version_id,
@@ -1143,6 +1147,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
         document_id: item.document_id,
         task_id: item.task_id,
         task_item_id: item.id,
+        origin_unit_id: item.origin_unit_id,
+        unit_label: item.origin_unit_label || null,
         template_artifact_id: item.template_artifact_id,
         template_artifact_name: item.template_artifact_name,
         template_usage_role: item.template_usage_role,
@@ -1227,6 +1233,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
       };
       return {
         ...item,
+        origin_unit_id: relatedDocument?.origin_unit_id ?? item.origin_unit_id ?? null,
+        unit_label: relatedDocument?.unit_label ?? item.origin_unit_label ?? item.unit_label ?? null,
         pending_fill_count: relatedDocument?.pending_fill_count ?? relatedFillRequests.filter((request) => !request.responded_at).length,
         total_fill_count: relatedDocument?.total_fill_count ?? relatedFillRequests.length,
         workflow: relatedDocument?.workflow || {

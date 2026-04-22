@@ -12,7 +12,6 @@
           <div class="deasy-hero-copy sm:pt-1">
             <div class="deasy-hero-kicker">Perfil académico</div>
             <h1 class="deasy-hero-title">{{ displayName }}</h1>
-            <p class="deasy-hero-meta">{{ currentUser?.email || currentUser?.cedula || "Sin identificador" }}</p>
             <p class="deasy-hero-description">
               Selecciona una sección para continuar con la gestión de tu dossier académico y actualizar tu información profesional.
             </p>
@@ -25,7 +24,6 @@
                 <component :is="getIcon(card.icon)" class="h-5 w-5" />
               </span>
               <div class="deasy-hero-stat-card__body">
-                <span class="deasy-hero-stat-card__eyebrow">{{ card.label }}</span>
                 <span class="deasy-hero-stat-card__title">{{ card.title }}</span>
               </div>
             </div>

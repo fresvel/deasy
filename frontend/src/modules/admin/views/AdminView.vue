@@ -184,7 +184,6 @@
                           <component :is="resolveIcon(card.icon)" class="h-5 w-5" />
                         </span>
                         <div class="deasy-hero-stat-card__body">
-                          <span class="deasy-hero-stat-card__eyebrow">{{ card.label }}</span>
                           <span class="deasy-hero-stat-card__title">{{ card.meta }}</span>
                         </div>
                       </div>

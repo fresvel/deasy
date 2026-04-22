@@ -651,6 +651,7 @@ CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
   task_item_id INT NULL,
   owner_person_id INT NULL,
+  origin_unit_id INT NULL,
   origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item',
   title VARCHAR(180) NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
@@ -659,9 +660,11 @@ CREATE TABLE IF NOT EXISTS documents (
   updated_at DATETIME NULL,
   UNIQUE KEY uq_documents_task_item (task_item_id),
   INDEX idx_documents_owner_person (owner_person_id),
+  INDEX idx_documents_origin_unit (origin_unit_id),
   INDEX idx_documents_origin_type (origin_type),
   CONSTRAINT fk_documents_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
-  CONSTRAINT fk_documents_owner_person FOREIGN KEY (owner_person_id) REFERENCES persons(id)
+  CONSTRAINT fk_documents_owner_person FOREIGN KEY (owner_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_documents_origin_unit FOREIGN KEY (origin_unit_id) REFERENCES units(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS document_versions (

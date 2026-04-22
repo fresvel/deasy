@@ -982,8 +982,60 @@ const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
   return null;
 };
 
+const resolveOriginUnitIdForTaskItem = async (connection, taskItem, ownerPersonId = null) => {
+  const normalizedOwnerPersonId = Number(ownerPersonId || 0) || null;
+  if (normalizedOwnerPersonId) {
+    const [ownerRows] = await connection.query(
+      `SELECT up.unit_id
+       FROM position_assignments pa
+       INNER JOIN unit_positions up ON up.id = pa.position_id
+       WHERE pa.person_id = ?
+         AND pa.is_current = 1
+         AND up.unit_id IS NOT NULL
+       ORDER BY pa.id ASC, up.id ASC
+       LIMIT 1`,
+      [normalizedOwnerPersonId]
+    );
+    if (ownerRows?.[0]?.unit_id) {
+      return Number(ownerRows[0].unit_id);
+    }
+  }
+
+  if (taskItem?.responsible_position_id) {
+    const [rows] = await connection.query(
+      `SELECT unit_id
+       FROM unit_positions
+       WHERE id = ?
+         AND unit_id IS NOT NULL
+       LIMIT 1`,
+      [taskItem.responsible_position_id]
+    );
+    if (rows?.[0]?.unit_id) {
+      return Number(rows[0].unit_id);
+    }
+  }
+
+  if (taskItem?.task_id) {
+    const [rows] = await connection.query(
+      `SELECT up.unit_id
+       FROM tasks t
+       INNER JOIN unit_positions up ON up.id = t.responsible_position_id
+       WHERE t.id = ?
+         AND up.unit_id IS NOT NULL
+       LIMIT 1`,
+      [taskItem.task_id]
+    );
+    if (rows?.[0]?.unit_id) {
+      return Number(rows[0].unit_id);
+    }
+  }
+
+  return null;
+};
+
 export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   const ownerPersonId = await resolveOwnerPersonIdForTaskItem(connection, taskItem);
+  const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, ownerPersonId);
 
   const [existingRows] = await connection.query(
     `SELECT id
@@ -999,13 +1051,15 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
       `INSERT INTO documents (
          task_item_id,
          owner_person_id,
+         origin_unit_id,
          origin_type,
          title,
          status
-      ) VALUES (?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
       [
         taskItem.id,
         ownerPersonId,
+        originUnitId,
         "task_item",
         taskItem.template_artifact_name || `Documento ${taskItem.id}`,
         "Inicial"
@@ -1015,9 +1069,17 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   } else if (ownerPersonId) {
     await connection.query(
       `UPDATE documents
-       SET owner_person_id = COALESCE(owner_person_id, ?)
+       SET owner_person_id = COALESCE(owner_person_id, ?),
+           origin_unit_id = COALESCE(origin_unit_id, ?)
        WHERE id = ?`,
-      [ownerPersonId, documentId]
+      [ownerPersonId, originUnitId, documentId]
+    );
+  } else if (originUnitId) {
+    await connection.query(
+      `UPDATE documents
+       SET origin_unit_id = COALESCE(origin_unit_id, ?)
+       WHERE id = ?`,
+      [originUnitId, documentId]
     );
   }
 

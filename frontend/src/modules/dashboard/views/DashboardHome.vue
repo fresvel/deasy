@@ -218,11 +218,6 @@
                       <div class="deasy-hero-kicker">
                         {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
                       </div>
-                      <div class="flex flex-wrap gap-2">
-                        <AppTag variant="hero">Tareas {{ selectedProcessPanel?.summary?.tasks_total || 0 }}</AppTag>
-                        <AppTag variant="hero">Entregables {{ selectedProcessPanel?.summary?.task_items_pending || 0 }}</AppTag>
-                        <AppTag variant="hero">Llenado {{ selectedProcessPanel?.summary?.fill_requests_pending || 0 }}</AppTag>
-                      </div>
                     </div>
                     <div class="flex flex-col gap-3">
                       <h1 class="deasy-hero-title">
@@ -246,7 +241,6 @@
                         <IconFileDescription class="h-5 w-5" />
                       </span>
                       <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__eyebrow">Documentos</span>
                         <span class="deasy-hero-stat-card__title">Abrir centro</span>
                       </div>
                     </div>
@@ -262,7 +256,6 @@
                         <IconSignature class="h-5 w-5" />
                       </span>
                       <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__eyebrow">Firmas</span>
                         <span class="deasy-hero-stat-card__title">Ver flujo</span>
                       </div>
                     </div>
@@ -278,7 +271,6 @@
                         <IconArrowRight class="h-5 w-5 rotate-180" />
                       </span>
                       <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__eyebrow">Navegación</span>
                         <span class="deasy-hero-stat-card__title">Volver</span>
                       </div>
                     </div>
@@ -295,7 +287,6 @@
                         <IconPlus class="h-5 w-5" />
                       </span>
                       <div class="deasy-hero-stat-card__body">
-                        <span class="deasy-hero-stat-card__eyebrow">Tareas</span>
                         <span class="deasy-hero-stat-card__title">Nueva tarea</span>
                       </div>
                     </div>
@@ -451,7 +442,7 @@
                               <div class="flex min-w-0 flex-1 items-center gap-3">
                                 <div class="min-w-0 flex flex-1 items-center self-stretch py-1.5">
                                   <p class="m-0 text-[1rem] font-semibold leading-[1.3]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
-                                    {{ deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
+                                    {{ getDeliverableUnitLabel(deliverable.item) || deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
                                     <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap text-[0.95em] font-medium opacity-90" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
                                       v{{ deliverable.item.document_version }}
                                     </span>
@@ -473,59 +464,42 @@
                                 >
                                   <IconMessages class="h-6 w-6" />
                                 </AppButton>
-                                <AppButton
-                                  variant="plain"
-                                  :class-name="[
-                                    'group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
-                                    getDeliverableHeaderActionTone(deliverable.item)
-                                  ].join(' ')"
-                                  aria-label="Abrir detalle del entregable"
-                                  title="Abrir detalle del entregable"
-                                  @click.stop
-                                  @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
-                                >
-                                  <IconEye class="h-6 w-6" />
-                                </AppButton>
                               </div>
                           </div>
                         </div>
 
                         <div v-show="!isDeliverableCollapsed(deliverable.item)" class="mt-auto border-t border-slate-100 pt-3">
                           <div
-                            v-if="getDeliverableProgress(deliverable.item)"
                             class="rounded-[1.05rem] border px-4 py-3"
                             :class="getDeliverableCardTone(deliverable.item).responsibility"
                           >
-                            <div class="flex items-start justify-between gap-3">
-                              <div class="min-w-0">
-                                <p class="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.18em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
-                                  {{ getDeliverableProgress(deliverable.item).label }}
-                                </p>
+                            <div v-if="getDeliverableProgress(deliverable.item)">
+                              <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                  <p class="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.18em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                    {{ getDeliverableProgress(deliverable.item).label }}
+                                  </p>
+                                </div>
+                                <span class="text-xs font-semibold text-slate-600">
+                                  Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
+                                </span>
                               </div>
-                              <span class="text-xs font-semibold text-slate-600">
-                                Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
-                              </span>
+                              <p class="m-0 mt-2.5 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
+                                {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
+                              </p>
+                              <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
+                                <div
+                                  class="h-full rounded-full transition-all duration-300"
+                                  :class="getDeliverableCardTone(deliverable.item).accent"
+                                  :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
+                                ></div>
+                              </div>
                             </div>
-                            <p class="m-0 mt-2.5 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
-                              {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
-                            </p>
-                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
-                              <div
-                                class="h-full rounded-full transition-all duration-300"
-                                :class="getDeliverableCardTone(deliverable.item).accent"
-                                :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
-                              ></div>
-                            </div>
-                            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/70 pt-3">
-                              <span class="text-[0.72rem] font-medium tracking-[0.08em] text-slate-500">Acción</span>
-                              <span class="text-xs font-semibold text-slate-600">
-                                {{ getDeliverablePrimaryActionLabel(deliverable.item) }}
-                              </span>
-                            </div>
-                          </div>
 
-                          <div class="mt-3 rounded-[0.95rem] border border-slate-200 bg-slate-50/55 px-3.5 py-2.5">
-                            <div class="grid grid-cols-2 gap-3">
+                            <div
+                              class="grid grid-cols-2 gap-3"
+                              :class="getDeliverableProgress(deliverable.item) ? 'mt-3 border-t border-white/70 pt-3' : ''"
+                            >
                               <div class="min-w-0">
                                 <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                                   {{ getDeliverableComplianceState(deliverable.item).label }}
@@ -552,7 +526,7 @@
                             </div>
                           </div>
 
-                          <div class="mt-3 grid grid-cols-2 gap-3">
+                          <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
                             <button
                               v-if="shouldShowStartDeliverable(deliverable.item)"
                               type="button"
@@ -608,46 +582,51 @@
                               </div>
                             </button>
 
-                            <button
-                              v-if="!shouldShowStartDeliverable(deliverable.item) && canApproveFillRequestForPayload(deliverable.item)"
-                              type="button"
-                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-emerald-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/45 hover:shadow-[0_10px_20px_rgba(16,185,129,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
-                              :disabled="fillWorkflowSubmitting"
-                              @click="submitDeliverableCardFillAction(deliverable.item, 'approve')"
-                            >
-                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-emerald-100/95 bg-emerald-50/60 text-emerald-700 transition-all group-hover:border-emerald-200 group-hover:bg-emerald-50">
-                                <IconCircleCheck class="h-4.5 w-4.5" />
-                              </div>
-                              <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-semibold text-slate-800">{{ getFillApproveActionLabelForPayload(deliverable.item) }}</span>
-                              </div>
-                            </button>
-                            <button
-                              v-else-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
-                              type="button"
-                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-sky-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
-                              @click="downloadDeliverableFile(deliverable.item)"
-                            >
-                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconDownload class="h-4.5 w-4.5" />
-                              </div>
-                              <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-semibold text-slate-800">Descargar PDF</span>
-                              </div>
-                            </button>
-                            <button
-                              v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)"
-                              type="button"
-                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-sky-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
-                              @click="handleDeliverableFutureAction('download_template', deliverable.item)"
-                            >
-                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconFileDescription class="h-4.5 w-4.5" />
-                              </div>
-                              <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-semibold text-slate-800">Descargar plantilla</span>
-                              </div>
-                            </button>
+                            <div class="flex h-full items-center justify-end gap-2">
+                              <AppButton
+                                variant="plain"
+                                :class-name="[
+                                  'group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                  getDeliverableHeaderActionTone(deliverable.item)
+                                ].join(' ')"
+                                aria-label="Abrir detalle del entregable"
+                                title="Abrir detalle del entregable"
+                                @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                              >
+                                <IconEye class="h-6 w-6" />
+                              </AppButton>
+                              <AppButton
+                                v-if="!shouldShowStartDeliverable(deliverable.item) && canApproveFillRequestForPayload(deliverable.item)"
+                                variant="plain"
+                                class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-emerald-200/90 bg-white text-emerald-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60"
+                                :disabled="fillWorkflowSubmitting"
+                                :aria-label="getFillApproveActionLabelForPayload(deliverable.item)"
+                                :title="getFillApproveActionLabelForPayload(deliverable.item)"
+                                @click="submitDeliverableCardFillAction(deliverable.item, 'approve')"
+                              >
+                                <IconCircleCheck class="h-5 w-5" />
+                              </AppButton>
+                              <AppButton
+                                v-else-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
+                                variant="plain"
+                                class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                aria-label="Descargar PDF"
+                                title="Descargar PDF"
+                                @click="downloadDeliverableFile(deliverable.item)"
+                              >
+                                <IconDownload class="h-5 w-5" />
+                              </AppButton>
+                              <AppButton
+                                v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)"
+                                variant="plain"
+                                class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                aria-label="Descargar plantilla"
+                                title="Descargar plantilla"
+                                @click="handleDeliverableFutureAction('download_template', deliverable.item)"
+                              >
+                                <IconFileDescription class="h-5 w-5" />
+                              </AppButton>
+                            </div>
                           </div>
 
                         </div>
@@ -2602,7 +2581,8 @@ const taskFilterUnits = computed(() => {
     const taskUnitName = resolveUnitNameById(selectedProcessContext.value?.unit_id);
     if (taskUnitName) values.add(taskUnitName);
     (task.items || []).forEach((item) => {
-      const itemUnitName = resolveUnitNameById(item.scope_unit_id || selectedProcessContext.value?.unit_id);
+      const itemUnitName = item.unit_label
+        || resolveUnitNameById(item.origin_unit_id || item.originUnitId || item.scope_unit_id || selectedProcessContext.value?.unit_id);
       if (itemUnitName) values.add(itemUnitName);
     });
   });
@@ -2638,7 +2618,10 @@ const filteredProcessTasks = computed(() => {
     const matchesTermType = taskListFilters.value.termType === 'all' || String(task.term_type_name || '').trim() === taskListFilters.value.termType;
     const unitLabels = [
       resolveUnitNameById(selectedProcessContext.value?.unit_id),
-      ...(task.items || []).map((item) => resolveUnitNameById(item.scope_unit_id || selectedProcessContext.value?.unit_id))
+      ...(task.items || []).map((item) => (
+        item.unit_label
+        || resolveUnitNameById(item.origin_unit_id || item.originUnitId || item.scope_unit_id || selectedProcessContext.value?.unit_id)
+      ))
     ]
       .filter(Boolean)
       .map((value) => String(value).trim());
@@ -2911,7 +2894,15 @@ const getDeliverableProcessLabel = (_task = null, item = null) =>
   || 'Proceso';
 
 const getDeliverableUnitLabel = (item) =>
-  resolveUnitNameById(item?.scope_unit_id || item?.scopeUnitId || selectedProcessContext.value?.unit_id)
+  item?.unit_label
+  || item?.unitLabel
+  || resolveUnitNameById(
+    item?.origin_unit_id
+    || item?.originUnitId
+    || item?.scope_unit_id
+    || item?.scopeUnitId
+    || selectedProcessContext.value?.unit_id
+  )
   || selectedProcessContext.value?.label
   || selectedProcessContext.value?.name
   || 'Unidad no definida';
@@ -3330,6 +3321,12 @@ const getDeliverableSubject = (payload = {}) => {
       || documentPayload?.scopeUnitId
       || selectedProcessContext.value?.unit_id
       || null,
+    originUnitId:
+      payload?.origin_unit_id
+      || documentPayload?.origin_unit_id
+      || payload?.originUnitId
+      || documentPayload?.originUnitId
+      || null,
     title: payload?.title || payload?.template_artifact_name || documentPayload?.title || documentPayload?.template_artifact_name || `Entregable #${payload?.id || documentPayload?.document_id || 's/n'}`,
     templateArtifactName: payload?.template_artifact_name || payload?.templateArtifactName || documentPayload?.template_artifact_name || documentPayload?.templateArtifactName || '',
     actions: payload?.actions || documentPayload?.actions || {},
@@ -3341,7 +3338,16 @@ const getDeliverableSubject = (payload = {}) => {
     taskStartDate: payload?.task_start_date || payload?.taskStartDate || payload?.start_date || payload?.startDate || null,
     taskEndDate: payload?.task_end_date || payload?.taskEndDate || payload?.end_date || payload?.endDate || null,
     periodLabel: payload?.period_label || payload?.periodLabel || '',
-    unitLabel: payload?.unit_label || payload?.unitLabel || '',
+    unitLabel:
+      payload?.unit_label
+      || payload?.unitLabel
+      || payload?.origin_unit_label
+      || payload?.originUnitLabel
+      || documentPayload?.unit_label
+      || documentPayload?.unitLabel
+      || documentPayload?.origin_unit_label
+      || documentPayload?.originUnitLabel
+      || '',
     processLabel: payload?.process_label || payload?.processLabel || '',
     description:
       payload?.template_artifact_description

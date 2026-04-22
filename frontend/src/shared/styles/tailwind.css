@@ -392,39 +392,35 @@
     }
 
     .deasy-hero-side {
-        @apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:justify-items-end;
+        @apply ml-auto grid grid-cols-2 gap-2 self-start sm:gap-2.5 xl:max-w-[22rem];
     }
 
     .deasy-hero-side--compact {
-        @apply xl:w-[28rem];
+        @apply xl:w-[20rem];
     }
 
     .deasy-hero-stat-card {
-        @apply flex w-full items-center justify-between gap-4 rounded-[1.35rem] border border-[#d6e4f2]/55 bg-[linear-gradient(180deg,rgba(245,249,254,0.96)_0%,rgba(238,245,252,0.9)_100%)] px-4 py-3 text-left text-slate-800 shadow-[0_18px_36px_rgba(6,12,24,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:shadow-[0_22px_42px_rgba(70,110,150,0.18)];
+        @apply flex min-h-[3.85rem] w-full items-center justify-between gap-2.5 rounded-[0.95rem] border border-[#d6e4f2]/65 bg-white/92 px-3 py-2.25 text-left text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bfd7ee] hover:bg-white hover:shadow-[0_12px_24px_rgba(70,110,150,0.12)];
     }
 
     .deasy-hero-stat-card__lead {
-        @apply flex min-w-0 items-center gap-3;
+        @apply flex min-w-0 items-center gap-2.5;
     }
 
     .deasy-hero-stat-card__icon {
-        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.95rem] border border-[#d6e4f2] bg-white/90 text-[#4f6c84] shadow-[0_8px_18px_rgba(15,23,42,0.07)];
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.8rem] border border-[#d6e4f2] bg-[#f8fbfe] text-[#4f6c84];
     }
 
     .deasy-hero-stat-card__body {
-        @apply flex min-w-0 flex-col gap-0.5;
-    }
-
-    .deasy-hero-stat-card__eyebrow {
-        @apply text-[10px] font-bold uppercase tracking-[0.18em] text-[#6d8ba0];
+        @apply flex min-w-0 flex-col;
     }
 
     .deasy-hero-stat-card__title {
-        @apply text-sm font-bold leading-tight text-slate-800;
+        @apply text-[0.82rem] font-semibold leading-tight text-slate-700;
     }
 
     .deasy-hero-stat-card__value {
-        @apply text-xl font-extrabold leading-none text-[#21517a];
+        @apply shrink-0 text-base font-extrabold leading-none text-[#21517a] sm:text-lg;
     }
 
     .deasy-page-intro {
