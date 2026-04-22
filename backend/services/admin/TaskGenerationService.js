@@ -905,7 +905,7 @@ const getPositionsForRule = async (connection, rule) => {
 
 const getTaskById = async (connection, taskId) => {
   const [rows] = await connection.query(
-    `SELECT id, process_definition_id, term_id
+    `SELECT id, process_definition_id, term_id, start_date, end_date
      FROM tasks
      WHERE id = ?
      LIMIT 1`,
@@ -1144,14 +1144,18 @@ const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, e
         template_artifact_id,
         template_usage_role,
         sort_order,
+        start_date,
+        end_date,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         taskId,
         template.id,
         template.template_artifact_id,
         template.usage_role || "primary",
         template.sort_order ?? 1,
+        task.start_date,
+        task.end_date ?? null,
         "pendiente"
       ]
     );

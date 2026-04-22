@@ -615,11 +615,16 @@ CREATE TABLE IF NOT EXISTS task_items (
   sort_order INT NOT NULL DEFAULT 1,
   responsible_position_id INT NULL,
   assigned_person_id INT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  user_started_at DATETIME NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_task_items_task_template (task_id, process_definition_template_id),
   INDEX idx_task_items_task (task_id, sort_order),
   INDEX idx_task_items_artifact (template_artifact_id),
+  INDEX idx_task_items_dates (start_date, end_date),
+  INDEX idx_task_items_user_started (user_started_at),
   CONSTRAINT fk_task_items_task
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
   CONSTRAINT fk_task_items_process_definition_template

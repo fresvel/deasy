@@ -560,6 +560,52 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudo backfillear tasks.process_run_id:", error.message);
     }
 
+    const [taskItemColumns] = await connection.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'task_items'`
+    );
+    const taskItemColumnNames = taskItemColumns.map((col) => col.COLUMN_NAME);
+    if (!taskItemColumnNames.includes("start_date")) {
+      await connection.query("ALTER TABLE task_items ADD COLUMN start_date DATE NULL AFTER assigned_person_id");
+    }
+    if (!taskItemColumnNames.includes("end_date")) {
+      await connection.query("ALTER TABLE task_items ADD COLUMN end_date DATE NULL AFTER start_date");
+    }
+    if (!taskItemColumnNames.includes("user_started_at")) {
+      await connection.query("ALTER TABLE task_items ADD COLUMN user_started_at DATETIME NULL AFTER end_date");
+    }
+    try {
+      await connection.query("ALTER TABLE task_items ADD INDEX idx_task_items_dates (start_date, end_date)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de task_items.start_date/end_date:", error.message);
+      }
+    }
+    try {
+      await connection.query("ALTER TABLE task_items ADD INDEX idx_task_items_user_started (user_started_at)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de task_items.user_started_at:", error.message);
+      }
+    }
+    try {
+      await connection.query(
+        `UPDATE task_items ti
+         INNER JOIN tasks t ON t.id = ti.task_id
+         SET ti.start_date = COALESCE(ti.start_date, t.start_date),
+             ti.end_date = COALESCE(ti.end_date, t.end_date)
+         WHERE ti.start_date IS NULL
+            OR ti.end_date IS NULL`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo backfillear task_items.start_date/end_date desde tasks:", error.message);
+    }
+    try {
+      await connection.query("ALTER TABLE task_items MODIFY COLUMN start_date DATE NOT NULL");
+    } catch (error) {
+      console.warn("⚠️  No se pudo ajustar task_items.start_date a NOT NULL:", error.message);
+    }
+
     try {
       await connection.query(
         `INSERT INTO documents (

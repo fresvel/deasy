@@ -416,222 +416,244 @@
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
 
-                  <div v-else class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    <article
-                      v-for="deliverable in filteredProcessDeliverables"
-                      :key="deliverable.key"
-                      class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-white/60 transition"
-                      :class="getDeliverableCardTone(deliverable.item).card"
+                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-7">
+                    <section
+                      v-for="row in deliverableRows"
+                      :key="row.id"
+                      class="flex flex-col gap-3"
                     >
-                      <span class="absolute inset-x-0 top-0 h-1.5" :class="getDeliverableCardTone(deliverable.item).accent"></span>
+                      <div class="flex items-center gap-3 px-1">
+                        <div class="h-px flex-1 bg-slate-200/90"></div>
+                        <AppButton
+                          variant="plain"
+                          class-name="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                          :aria-label="isDeliverableRowCollapsed(row) ? `Expandir fila ${row.index + 1}` : `Colapsar fila ${row.index + 1}`"
+                          :title="isDeliverableRowCollapsed(row) ? `Expandir fila ${row.index + 1}` : `Colapsar fila ${row.index + 1}`"
+                          @click="toggleDeliverableRow(row)"
+                        >
+                          <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isDeliverableRowCollapsed(row) ? 'rotate-180' : ''" />
+                        </AppButton>
+                        <div class="h-px flex-1 bg-slate-200/90"></div>
+                      </div>
 
-                      <div class="flex h-full flex-col gap-3 pt-2">
-                        <div class="flex min-w-0 flex-col gap-3">
-                          <div
-                            class="-mx-4 -mt-4 flex cursor-pointer items-center justify-between gap-3 border-b px-4 pb-2.5 pt-1.5"
-                            :class="deliverable.item.document_id
-                              ? 'border-sky-200/90 bg-sky-50/45 text-sky-700'
-                              : 'border-slate-200 bg-slate-50/70 text-slate-500'"
-                            role="button"
-                            tabindex="0"
-                            :aria-expanded="String(!isDeliverableCollapsed(deliverable.item))"
-                            @click="toggleDeliverableCard(deliverable.item)"
-                            @keydown.enter.prevent="toggleDeliverableCard(deliverable.item)"
-                            @keydown.space.prevent="toggleDeliverableCard(deliverable.item)"
-                          >
-                              <div class="flex min-w-0 flex-1 items-center gap-3">
-                                <div class="min-w-0 flex flex-1 items-center self-stretch py-1.5">
-                                  <p class="m-0 text-[1rem] font-semibold leading-[1.3]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
-                                    {{ getDeliverableUnitLabel(deliverable.item) || deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
-                                    <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap text-[0.95em] font-medium opacity-90" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
-                                      v{{ deliverable.item.document_version }}
-                                    </span>
-                                  </p>
+                      <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
+                        <article
+                          v-for="deliverable in row.items"
+                          :key="deliverable.key"
+                          class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-white/60 transition"
+                          :class="getDeliverableCardTone(deliverable.item).card"
+                        >
+                          <span class="absolute inset-x-0 top-0 h-1.5" :class="getDeliverableCardTone(deliverable.item).accent"></span>
+
+                          <div class="flex h-full flex-col gap-3 pt-2">
+                            <div class="flex min-w-0 flex-col gap-3">
+                              <div
+                                class="-mx-4 -mt-4 flex cursor-pointer items-center justify-between gap-3 border-b px-4 pb-2.5 pt-1.5"
+                                :class="deliverable.item.document_id
+                                  ? 'border-sky-200/90 bg-sky-50/45 text-sky-700'
+                                  : 'border-slate-200 bg-slate-50/70 text-slate-500'"
+                                role="button"
+                                tabindex="0"
+                                :aria-expanded="String(!isDeliverableCollapsed(deliverable.item))"
+                                @click="toggleDeliverableCard(deliverable.item)"
+                                @keydown.enter.prevent="toggleDeliverableCard(deliverable.item)"
+                                @keydown.space.prevent="toggleDeliverableCard(deliverable.item)"
+                              >
+                                <div class="flex min-w-0 flex-1 items-center gap-3">
+                                  <div class="min-w-0 flex flex-1 items-center self-stretch py-1.5">
+                                    <p class="m-0 text-[1rem] font-semibold leading-[1.3]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                      {{ getDeliverableUnitLabel(deliverable.item) || deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
+                                      <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap text-[0.95em] font-medium opacity-90" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                        v{{ deliverable.item.document_version }}
+                                      </span>
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                              <div class="flex shrink-0 items-center gap-1.5">
-                                <AppButton
-                                  variant="plain"
+                                <div class="flex shrink-0 items-center gap-1.5">
+                                  <AppButton
+                                    variant="plain"
                                   :class-name="[
                                     'relative inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
                                     getDeliverableHeaderActionTone(deliverable.item)
                                   ].join(' ')"
-                                  :disabled="!deliverable.item.actions?.can_open_process_chat"
-                                  aria-label="Abrir chat"
-                                  title="Abrir chat"
+                                  aria-label="Abrir detalle del entregable"
+                                  title="Abrir detalle del entregable"
                                   @click.stop
-                                  @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
+                                  @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
                                 >
-                                  <IconMessages class="h-6 w-6" />
+                                  <IconEye class="h-6 w-6" />
                                 </AppButton>
                               </div>
-                          </div>
-                        </div>
+                              </div>
+                            </div>
 
-                        <div v-show="!isDeliverableCollapsed(deliverable.item)" class="mt-auto border-t border-slate-100 pt-3">
-                          <div
-                            class="rounded-[1.05rem] border px-4 py-3"
-                            :class="getDeliverableCardTone(deliverable.item).responsibility"
-                          >
-                            <div v-if="getDeliverableProgress(deliverable.item)">
-                              <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                  <p class="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.18em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
-                                    {{ getDeliverableProgress(deliverable.item).label }}
+                            <div v-show="!isDeliverableCollapsed(deliverable.item)" class="mt-auto border-t border-slate-100 pt-3">
+                              <div
+                                class="rounded-[1.05rem] border px-4 py-3"
+                                :class="getDeliverableCardTone(deliverable.item).responsibility"
+                              >
+                                <div v-if="getDeliverableProgress(deliverable.item)">
+                                  <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                      <p class="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.18em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                        {{ getDeliverableProgress(deliverable.item).label }}
+                                      </p>
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-600">
+                                      Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
+                                    </span>
+                                  </div>
+                                  <p class="m-0 mt-2.5 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
+                                    {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
                                   </p>
+                                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
+                                    <div
+                                      class="h-full rounded-full transition-all duration-300"
+                                      :class="getDeliverableCardTone(deliverable.item).accent"
+                                      :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
+                                    ></div>
+                                  </div>
                                 </div>
-                                <span class="text-xs font-semibold text-slate-600">
-                                  Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}
-                                </span>
-                              </div>
-                              <p class="m-0 mt-2.5 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">
-                                {{ getDeliverableCurrentResponsibility(deliverable.item).name }}
-                              </p>
-                              <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
+
                                 <div
-                                  class="h-full rounded-full transition-all duration-300"
-                                  :class="getDeliverableCardTone(deliverable.item).accent"
-                                  :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"
-                                ></div>
-                              </div>
-                            </div>
-
-                            <div
-                              class="grid grid-cols-2 gap-3"
-                              :class="getDeliverableProgress(deliverable.item) ? 'mt-3 border-t border-white/70 pt-3' : ''"
-                            >
-                              <div class="min-w-0">
-                                <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                  {{ getDeliverableComplianceState(deliverable.item).label }}
-                                </p>
-                                <div class="mt-1.5">
-                                  <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
-                                    {{ getDeliverableComplianceState(deliverable.item).value }}
-                                  </AppTag>
+                                  class="grid grid-cols-2 gap-3"
+                                  :class="getDeliverableProgress(deliverable.item) ? 'mt-3 border-t border-white/70 pt-3' : ''"
+                                >
+                                  <div class="min-w-0">
+                                    <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                      {{ getDeliverableComplianceState(deliverable.item).label }}
+                                    </p>
+                                    <div class="mt-1.5">
+                                      <AppTag :variant="getDeliverableComplianceState(deliverable.item).valueVariant">
+                                        {{ getDeliverableComplianceState(deliverable.item).value }}
+                                      </AppTag>
+                                    </div>
+                                  </div>
+                                  <div class="min-w-0 text-right">
+                                    <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                                      {{ getDeliverableComplianceState(deliverable.item).dueLabel }}
+                                    </p>
+                                    <div class="mt-1.5">
+                                      <AppTag
+                                        :variant="getDeliverableComplianceState(deliverable.item).dueVariant"
+                                        :class-name="getDeliverableComplianceState(deliverable.item).dueVariant === 'warning' ? 'deliverable-due-tag--salmon' : ''"
+                                      >
+                                        {{ getDeliverableComplianceState(deliverable.item).dueValue }}
+                                      </AppTag>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <div class="min-w-0 text-right">
-                                <p class="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                                  {{ getDeliverableComplianceState(deliverable.item).dueLabel }}
-                                </p>
-                                <div class="mt-1.5">
-                                  <AppTag
-                                    :variant="getDeliverableComplianceState(deliverable.item).dueVariant"
-                                    :class-name="getDeliverableComplianceState(deliverable.item).dueVariant === 'warning' ? 'deliverable-due-tag--salmon' : ''"
+
+                              <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+                                <button
+                                  v-if="shouldShowStartDeliverable(deliverable.item)"
+                                  type="button"
+                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                                  :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
+                                  @click="startDeliverableFlow(deliverable.item)"
+                                >
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                    <IconPlayerPlayFilled class="h-4.5 w-4.5" />
+                                  </div>
+                                  <div class="flex min-w-0 flex-col">
+                                    <span class="text-sm font-semibold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span>
+                                  </div>
+                                </button>
+                                <PdfDropField
+                                  v-else-if="shouldShowUploadDeliverable(deliverable.item)"
+                                  class="deliverable-inline-upload h-full"
+                                  :input-id="`deliverable-upload-${deliverable.item.id}`"
+                                  variant="compact"
+                                  :icon="IconUpload"
+                                  :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable"
+                                  :title="''"
+                                  :action-text="getUploadActionLabel(deliverable.item)"
+                                  help-text=""
+                                  accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                  @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)"
+                                />
+                                <button
+                                  v-else-if="shouldShowSign(deliverable.item)"
+                                  type="button"
+                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-cyan-200/85 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50/45 hover:shadow-[0_10px_20px_rgba(6,182,212,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+                                  :disabled="!deliverable.item.actions?.implemented?.sign"
+                                  @click="openDocumentSignFlow(deliverable.item)"
+                                >
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-cyan-100/95 bg-cyan-50/55 text-cyan-700 transition-all group-hover:border-cyan-200 group-hover:bg-cyan-50">
+                                    <IconSignature class="h-4.5 w-4.5" />
+                                  </div>
+                                  <div class="flex min-w-0 flex-col">
+                                    <span class="text-sm font-semibold text-slate-800">Firmar</span>
+                                  </div>
+                                </button>
+                                <button
+                                  v-else
+                                  type="button"
+                                  class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
+                                  @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                                >
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+                                    <IconChecklist class="h-4.5 w-4.5" />
+                                  </div>
+                                  <div class="flex min-w-0 flex-col">
+                                    <span class="text-sm font-semibold text-slate-800">Abrir</span>
+                                  </div>
+                                </button>
+
+                                <div class="flex h-full items-center justify-end gap-2">
+                                  <AppButton
+                                    v-if="!shouldShowStartDeliverable(deliverable.item) && canApproveFillRequestForPayload(deliverable.item)"
+                                    variant="plain"
+                                    class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-emerald-200/90 bg-white text-emerald-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60"
+                                    :disabled="fillWorkflowSubmitting"
+                                    :aria-label="getFillApproveActionLabelForPayload(deliverable.item)"
+                                    :title="getFillApproveActionLabelForPayload(deliverable.item)"
+                                    @click="submitDeliverableCardFillAction(deliverable.item, 'approve')"
                                   >
-                                    {{ getDeliverableComplianceState(deliverable.item).dueValue }}
-                                  </AppTag>
+                                    <IconCircleCheck class="h-5 w-5" />
+                                  </AppButton>
+                                  <AppButton
+                                    v-else-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
+                                    variant="plain"
+                                    class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                    aria-label="Descargar PDF"
+                                    title="Descargar PDF"
+                                    @click="downloadDeliverableFile(deliverable.item)"
+                                  >
+                                    <IconDownload class="h-5 w-5" />
+                                  </AppButton>
+                                  <AppButton
+                                    v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)"
+                                    variant="plain"
+                                    class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
+                                    aria-label="Descargar plantilla"
+                                    title="Descargar plantilla"
+                                    @click="handleDeliverableFutureAction('download_template', deliverable.item)"
+                                  >
+                                    <IconFileDescription class="h-5 w-5" />
+                                  </AppButton>
+                                  <AppButton
+                                    variant="plain"
+                                    :class-name="[
+                                      'group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
+                                      getDeliverableHeaderActionTone(deliverable.item)
+                                    ].join(' ')"
+                                    :disabled="!deliverable.item.actions?.can_open_process_chat"
+                                    aria-label="Abrir chat"
+                                    title="Abrir chat"
+                                    @click="handleDeliverableFutureAction('process_chat', deliverable.item)"
+                                  >
+                                    <IconMessages class="h-6 w-6" />
+                                  </AppButton>
                                 </div>
                               </div>
+
                             </div>
                           </div>
-
-                          <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
-                            <button
-                              v-if="shouldShowStartDeliverable(deliverable.item)"
-                              type="button"
-                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
-                              :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)"
-                              @click="startDeliverableFlow(deliverable.item)"
-                            >
-                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconPlayerPlayFilled class="h-4.5 w-4.5" />
-                              </div>
-                              <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-semibold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span>
-                              </div>
-                            </button>
-                            <PdfDropField
-                              v-else-if="shouldShowUploadDeliverable(deliverable.item)"
-                              class="deliverable-inline-upload h-full"
-                              :input-id="`deliverable-upload-${deliverable.item.id}`"
-                              variant="compact"
-                              :icon="IconUpload"
-                              :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable"
-                              :title="''"
-                              :action-text="getUploadActionLabel(deliverable.item)"
-                              help-text=""
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                              @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)"
-                            />
-                            <button
-                              v-else-if="shouldShowSign(deliverable.item)"
-                              type="button"
-                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-cyan-200/85 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50/45 hover:shadow-[0_10px_20px_rgba(6,182,212,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
-                              :disabled="!deliverable.item.actions?.implemented?.sign"
-                              @click="openDocumentSignFlow(deliverable.item)"
-                            >
-                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-cyan-100/95 bg-cyan-50/55 text-cyan-700 transition-all group-hover:border-cyan-200 group-hover:bg-cyan-50">
-                                <IconSignature class="h-4.5 w-4.5" />
-                              </div>
-                              <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-semibold text-slate-800">Firmar</span>
-                              </div>
-                            </button>
-                            <button
-                              v-else
-                              type="button"
-                              class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45 hover:shadow-[0_10px_20px_rgba(14,165,233,0.08)]"
-                              @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
-                            >
-                              <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-                                <IconChecklist class="h-4.5 w-4.5" />
-                              </div>
-                              <div class="flex min-w-0 flex-col">
-                                <span class="text-sm font-semibold text-slate-800">Abrir</span>
-                              </div>
-                            </button>
-
-                            <div class="flex h-full items-center justify-end gap-2">
-                              <AppButton
-                                variant="plain"
-                                :class-name="[
-                                  'group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4',
-                                  getDeliverableHeaderActionTone(deliverable.item)
-                                ].join(' ')"
-                                aria-label="Abrir detalle del entregable"
-                                title="Abrir detalle del entregable"
-                                @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
-                              >
-                                <IconEye class="h-6 w-6" />
-                              </AppButton>
-                              <AppButton
-                                v-if="!shouldShowStartDeliverable(deliverable.item) && canApproveFillRequestForPayload(deliverable.item)"
-                                variant="plain"
-                                class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-emerald-200/90 bg-white text-emerald-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60"
-                                :disabled="fillWorkflowSubmitting"
-                                :aria-label="getFillApproveActionLabelForPayload(deliverable.item)"
-                                :title="getFillApproveActionLabelForPayload(deliverable.item)"
-                                @click="submitDeliverableCardFillAction(deliverable.item, 'approve')"
-                              >
-                                <IconCircleCheck class="h-5 w-5" />
-                              </AppButton>
-                              <AppButton
-                                v-else-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath"
-                                variant="plain"
-                                class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
-                                aria-label="Descargar PDF"
-                                title="Descargar PDF"
-                                @click="downloadDeliverableFile(deliverable.item)"
-                              >
-                                <IconDownload class="h-5 w-5" />
-                              </AppButton>
-                              <AppButton
-                                v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)"
-                                variant="plain"
-                                class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70"
-                                aria-label="Descargar plantilla"
-                                title="Descargar plantilla"
-                                @click="handleDeliverableFutureAction('download_template', deliverable.item)"
-                              >
-                                <IconFileDescription class="h-5 w-5" />
-                              </AppButton>
-                            </div>
-                          </div>
-
-                        </div>
+                        </article>
                       </div>
-                    </article>
+                    </section>
                   </div>
                 </article>
 
@@ -2124,13 +2146,21 @@ const userPhoto = ref('/images/avatar.png');
 
 const isClient = typeof window !== 'undefined';
 let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true; // xl en Tailwind es 1280px
+const resolveDeliverableGridColumns = () => {
+  if (!isClient) return 3;
+  if (window.innerWidth >= 1280) return 3;
+  if (window.innerWidth >= 768) return 2;
+  return 1;
+};
 
 const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const showNotify = ref(false);
 const showNavMenu = ref(false);
+const deliverableGridColumns = ref(resolveDeliverableGridColumns());
 
 const handleResize = () => {
   if (!isClient) return;
+  deliverableGridColumns.value = resolveDeliverableGridColumns();
   const isNowDesktop = window.innerWidth >= 1280;
   if (isDesktopStatus !== isNowDesktop) {
     isDesktopStatus = isNowDesktop;
@@ -2652,6 +2682,22 @@ const filteredProcessDeliverables = computed(() =>
     }))
   )
 );
+
+const deliverableRows = computed(() => {
+  const columns = Math.max(1, Number(deliverableGridColumns.value || 1));
+  const items = filteredProcessDeliverables.value;
+  const rows = [];
+
+  for (let index = 0; index < items.length; index += columns) {
+    rows.push({
+      id: `deliverable-row-${columns}-${Math.floor(index / columns)}`,
+      index: Math.floor(index / columns),
+      items: items.slice(index, index + columns)
+    });
+  }
+
+  return rows;
+});
 
 const canAdvanceTaskLaunchStep = computed(() => {
   if (taskLaunchSubmitting.value) {
@@ -3335,8 +3381,34 @@ const getDeliverableSubject = (payload = {}) => {
     documentStatus: payload?.document_status || payload?.documentStatus || documentPayload?.document_status || documentPayload?.documentStatus || '',
     pendingFillCount: payload?.pending_fill_count || payload?.pendingFillCount || documentPayload?.pending_fill_count || documentPayload?.pendingFillCount || 0,
     pendingSignatureCount: payload?.pending_signature_count || payload?.pendingSignatureCount || documentPayload?.pending_signature_count || documentPayload?.pendingSignatureCount || 0,
-    taskStartDate: payload?.task_start_date || payload?.taskStartDate || payload?.start_date || payload?.startDate || null,
-    taskEndDate: payload?.task_end_date || payload?.taskEndDate || payload?.end_date || payload?.endDate || null,
+    itemStartDate:
+      payload?.item_start_date
+      || payload?.itemStartDate
+      || documentPayload?.item_start_date
+      || documentPayload?.itemStartDate
+      || payload?.start_date
+      || payload?.startDate
+      || documentPayload?.start_date
+      || documentPayload?.startDate
+      || null,
+    itemEndDate:
+      payload?.item_end_date
+      || payload?.itemEndDate
+      || documentPayload?.item_end_date
+      || documentPayload?.itemEndDate
+      || payload?.end_date
+      || payload?.endDate
+      || documentPayload?.end_date
+      || documentPayload?.endDate
+      || null,
+    userStartedAt:
+      payload?.user_started_at
+      || payload?.userStartedAt
+      || documentPayload?.user_started_at
+      || documentPayload?.userStartedAt
+      || null,
+    taskStartDate: payload?.task_start_date || payload?.taskStartDate || documentPayload?.task_start_date || documentPayload?.taskStartDate || null,
+    taskEndDate: payload?.task_end_date || payload?.taskEndDate || documentPayload?.task_end_date || documentPayload?.taskEndDate || null,
     periodLabel: payload?.period_label || payload?.periodLabel || '',
     unitLabel:
       payload?.unit_label
@@ -3579,6 +3651,7 @@ const currentUserCanOperateFillStep = (payload) => {
 const hasDeliverableBeenStarted = (payload) => {
   const subject = getDeliverableSubject(payload);
   if (subject.itemId && startedDeliverableIds.value.has(Number(subject.itemId))) return true;
+  if (subject.userStartedAt) return true;
   if (subjectHasWorkingArtifact(payload)) return true;
   const request = getCurrentFillWorkflowRequest(payload);
   const code = getFillRequestStatusCode(request);
@@ -4043,8 +4116,10 @@ const getDeliverablePeriodLabelFromSubject = (payload) => {
 
 const getDeliverableDateRangeLabel = (payload) => {
   const subject = getDeliverableSubject(payload);
-  if (!subject.taskStartDate && !subject.taskEndDate) return 'Fechas no resueltas';
-  return `${formatDate(subject.taskStartDate)}${subject.taskEndDate ? ` - ${formatDate(subject.taskEndDate)}` : ''}`;
+  const startDate = subject.itemStartDate || subject.taskStartDate || null;
+  const endDate = subject.itemEndDate || subject.taskEndDate || null;
+  if (!startDate && !endDate) return 'Fechas no resueltas';
+  return `${formatDate(startDate)}${endDate ? ` - ${formatDate(endDate)}` : ''}`;
 };
 
 const getDeliverableWorkspacePayload = (deliverable) => ({
@@ -4052,13 +4127,74 @@ const getDeliverableWorkspacePayload = (deliverable) => ({
   period_label: getDeliverablePeriodLabel(deliverable?.task),
   process_label: getDeliverableProcessLabel(deliverable?.task, deliverable?.item),
   unit_label: getDeliverableUnitLabel(deliverable?.item),
+  item_start_date: deliverable?.item?.start_date || null,
+  item_end_date: deliverable?.item?.end_date || null,
+  user_started_at: deliverable?.item?.user_started_at || null,
   task_start_date: deliverable?.task?.start_date || null,
   task_end_date: deliverable?.task?.end_date || null,
 });
 
+const getDeliverableDueState = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const dueDateValue = subject.itemEndDate || subject.taskEndDate || null;
+  if (!dueDateValue) {
+    return {
+      label: 'Vencimiento',
+      value: 'Sin definir',
+      variant: 'muted'
+    };
+  }
+
+  const normalized = String(dueDateValue).slice(0, 10);
+  const dueDate = new Date(`${normalized}T00:00:00`);
+  if (Number.isNaN(dueDate.getTime())) {
+    return {
+      label: 'Vencimiento',
+      value: normalized,
+      variant: 'muted'
+    };
+  }
+
+  const today = new Date();
+  const todayDate = new Date(`${today.toISOString().slice(0, 10)}T00:00:00`);
+  const diffDays = Math.round((dueDate.getTime() - todayDate.getTime()) / 86400000);
+
+  if (diffDays < 0) {
+    return {
+      label: 'Vencimiento',
+      value: 'Vencido',
+      variant: 'danger'
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      label: 'Vencimiento',
+      value: 'Vence hoy',
+      variant: 'warning'
+    };
+  }
+  if (diffDays <= 7) {
+    return {
+      label: 'Vencimiento',
+      value: 'Próximamente',
+      variant: 'warning'
+    };
+  }
+  return {
+    label: 'Vencimiento',
+    value: formatDate(normalized),
+    variant: 'neutral'
+  };
+};
+
 const getDeliverableCollapseKey = (payload) => String(payload?.id || payload?.document_id || payload?.task_item_id || '');
 
 const isDeliverableCollapsed = (payload) => collapsedDeliverableIds.value.has(getDeliverableCollapseKey(payload));
+
+const isDeliverableRowCollapsed = (row) => {
+  const items = Array.isArray(row?.items) ? row.items : [];
+  return items.length > 0 && items.every((deliverable) => isDeliverableCollapsed(deliverable?.item));
+};
 
 const toggleDeliverableCard = (payload) => {
   const key = getDeliverableCollapseKey(payload);
@@ -4069,15 +4205,33 @@ const toggleDeliverableCard = (payload) => {
   collapsedDeliverableIds.value = next;
 };
 
+const toggleDeliverableRow = (row) => {
+  const items = Array.isArray(row?.items) ? row.items : [];
+  if (!items.length) return;
+
+  const next = new Set(collapsedDeliverableIds.value);
+  const shouldExpand = isDeliverableRowCollapsed(row);
+
+  items.forEach((deliverable) => {
+    const key = getDeliverableCollapseKey(deliverable?.item);
+    if (!key) return;
+    if (shouldExpand) next.delete(key);
+    else next.add(key);
+  });
+
+  collapsedDeliverableIds.value = next;
+};
+
 const getDeliverableComplianceState = (payload) => {
+  const dueState = getDeliverableDueState(payload);
   if (shouldShowSign(payload)) {
     return {
       label: 'Cumplimiento',
       value: 'Listo para firma',
       valueVariant: 'accent',
-      dueLabel: 'Vencimiento',
-      dueValue: 'Próximamente',
-      dueVariant: 'warning'
+      dueLabel: dueState.label,
+      dueValue: dueState.value,
+      dueVariant: dueState.variant
     };
   }
   if (shouldShowStartDeliverable(payload)) {
@@ -4085,9 +4239,9 @@ const getDeliverableComplianceState = (payload) => {
       label: 'Cumplimiento',
       value: 'Pendiente de inicio',
       valueVariant: 'neutral',
-      dueLabel: 'Vencimiento',
-      dueValue: 'Sin definir',
-      dueVariant: 'muted'
+      dueLabel: dueState.label,
+      dueValue: dueState.value,
+      dueVariant: dueState.variant
     };
   }
   if (shouldShowUploadDeliverable(payload) || hasPendingFillWorkflow(payload)) {
@@ -4095,18 +4249,18 @@ const getDeliverableComplianceState = (payload) => {
       label: 'Cumplimiento',
       value: 'En preparación',
       valueVariant: 'info',
-      dueLabel: 'Vencimiento',
-      dueValue: 'Próximamente',
-      dueVariant: 'warning'
+      dueLabel: dueState.label,
+      dueValue: dueState.value,
+      dueVariant: dueState.variant
     };
   }
   return {
     label: 'Cumplimiento',
     value: 'En seguimiento',
     valueVariant: 'success',
-    dueLabel: 'Vencimiento',
-    dueValue: 'Próximamente',
-    dueVariant: 'warning'
+    dueLabel: dueState.label,
+    dueValue: dueState.value,
+    dueVariant: dueState.variant
   };
 };
 

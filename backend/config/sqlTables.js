@@ -314,6 +314,9 @@ export const SQL_TABLES = [
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "assigned_person_id", label: "Responsable", type: "number" },
+      { name: "start_date", label: "Inicio entregable", type: "date", required: true },
+      { name: "end_date", label: "Vencimiento entregable", type: "date" },
+      { name: "user_started_at", label: "Inicio usuario", type: "datetime", readOnly: true },
       {
         name: "status",
         label: "Estado",

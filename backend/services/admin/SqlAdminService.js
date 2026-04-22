@@ -756,6 +756,7 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.template_artifact_id) {
         throw new Error("Selecciona el paquete.");
       }
+      ensureDateOrder(candidate.start_date, candidate.end_date, "items de tarea");
       break;
     case "documents":
       if (!candidate.task_item_id && !candidate.owner_person_id) {
@@ -1220,7 +1221,7 @@ export default class SqlAdminService {
   async getTaskItem(taskItemId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, task_id, process_definition_template_id, template_artifact_id
+      `SELECT id, task_id, process_definition_template_id, template_artifact_id, start_date, end_date, user_started_at
        FROM task_items
        WHERE id = ?
        LIMIT 1`,
@@ -1706,6 +1707,12 @@ export default class SqlAdminService {
       }
       payload.template_artifact_id = template.template_artifact_id;
       payload.template_usage_role = template.usage_role;
+      if (!payload.start_date) {
+        payload.start_date = task.start_date;
+      }
+      if (payload.end_date === undefined || payload.end_date === "") {
+        payload.end_date = task.end_date ?? null;
+      }
       if (payload.sort_order === undefined || payload.sort_order === null || payload.sort_order === "") {
         payload.sort_order = template.sort_order;
       }
