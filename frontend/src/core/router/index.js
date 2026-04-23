@@ -16,7 +16,7 @@ const routes = [
   { path: "/dashboard", name: "dashboard", component: DashboardHome },
   { path: "/dashboard/documentos", name: "dashboard-documents", component: DashboardHome },
   { path: "/dashboard/firmas", name: "dashboard-signatures", component: DashboardHome },
-  { path: "/firmas/herramientas", name: "signature-tools", component: DashboardHome },
+  { path: "/firmas/herramientas", redirect: { name: "dashboard-signatures" } },
   { path: "/perfil", name: "perfil", component: IndexPage },
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },

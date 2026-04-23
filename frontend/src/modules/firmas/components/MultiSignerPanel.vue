@@ -1,23 +1,5 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
-    <div class="flex items-start gap-3">
-      <button
-        type="button"
-        class="group inline-flex shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
-        title="Regresar"
-        aria-label="Regresar"
-        @click="$emit('back')"
-      >
-        <IconArrowLeft class="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
-      </button>
-      <div class="flex flex-col pt-0.5">
-        <h2 class="m-0 text-xl font-black leading-tight tracking-tight text-slate-800">Multifirmador</h2>
-        <p class="mt-1 text-xs font-medium leading-snug text-slate-500">
-          Carga varios PDF y navega documento por documento antes de enviar la firma masiva.
-        </p>
-      </div>
-    </div>
-
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
@@ -47,7 +29,7 @@
             />
           </div>
 
-<div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <label class="mb-2 block text-sm font-bold text-slate-800">Modo de operación</label>
             <select
               v-model="batchMode"
@@ -57,10 +39,6 @@
               <option value="shared-coordinates">Misma ubicación</option>
               <option value="per-document">Por documento</option>
             </select>
-            <span class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs font-medium text-slate-500">
-              <IconInfoCircle class="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              Info
-            </span>
           </div>
 
           <div
@@ -134,7 +112,7 @@
                   >
                     <IconFileCheck v-if="doc.status === 'completed'" class="h-4 w-4 shrink-0 text-emerald-500" />
                     <IconAlertCircle v-else-if="doc.status === 'failed'" class="h-4 w-4 shrink-0 text-rose-500" />
-                    <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'">{{ doc.name }}</div>
+                    <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
                   </button>
                   <div class="shrink-0" @click.stop>
                     <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
@@ -168,13 +146,16 @@
               </div>
               <div class="min-w-0">
                 <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Previsualizando PDF</div>
-                <div class="truncate text-base font-bold text-slate-800" :title="currentDocument.name">{{ currentDocument.name }}</div>
+                <div class="truncate text-base font-bold text-slate-800" :title="currentDocument.name">{{ formatDisplayFileName(currentDocument.name) }}</div>
               </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
               <AppCounterNavigator
                 label="Documento"
+                v-model="documentInput"
+                editable
+                :min="1"
                 :current="currentDocumentIndex + 1"
                 :total="filteredDocuments.length"
                 :previous-disabled="!canPrevDocument"
@@ -183,13 +164,15 @@
                 next-title="Siguiente documento"
                 @previous="prevDocument"
                 @next="nextDocument"
+                @submit="goToDocument"
               />
 
               <AppCounterNavigator
-                v-model="pageInput"
                 label="Página"
+                v-model="pageInput"
                 editable
                 :min="1"
+                :current="currentPage"
                 :total="totalPages"
                 :previous-disabled="!canPrevPage"
                 :next-disabled="!canNextPage"
@@ -286,6 +269,9 @@
               </div>
               <AppCounterNavigator
                 label="Página"
+                v-model="pageInput"
+                editable
+                :min="1"
                 :current="currentPage"
                 :total="totalPages"
                 :previous-disabled="!canPrevPage"
@@ -294,6 +280,7 @@
                 next-title="Página siguiente"
                 @previous="prevPage"
                 @next="nextPage"
+                @submit="goToPage"
               />
             </div>
           </div>
@@ -439,7 +426,6 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
-  IconArrowLeft,
   IconCheck,
   IconFiles,
   IconTrash,
@@ -488,6 +474,7 @@ const documents = ref([]);
 const currentDocumentId = ref("");
 const currentPage = ref(1);
 const totalPages = ref(0);
+const documentInput = ref(1);
 const pageInput = ref(1);
 const batchMode = ref("token");
 const selectionMode = ref("preset");
@@ -504,6 +491,7 @@ let pageHeightPdf = 0;
 let pageWidthPdf = 0;
 const FIELD_WIDTH = 124;
 const FIELD_HEIGHT = 48;
+const DISPLAY_FILE_NAME_LIMIT = 20;
 const PDF_LOAD_OPTIONS = {
   enableXfa: true,
   stopAtErrors: false
@@ -522,6 +510,12 @@ const normalizeJobStatus = (status) => {
   if (status === "success") return "Firmado";
   if (status === "error") return "Fallido";
   return "Pendiente";
+};
+
+const formatDisplayFileName = (value = "") => {
+  const normalized = String(value || "");
+  if (normalized.length <= DISPLAY_FILE_NAME_LIMIT) return normalized;
+  return `${normalized.slice(0, DISPLAY_FILE_NAME_LIMIT)}...`;
 };
 
 const successCount = computed(() => documents.value.filter((doc) => doc.status === "Firmado").length);
@@ -671,6 +665,7 @@ const loadCurrentDocument = async () => {
     pdfDoc = null;
     totalPages.value = 0;
     currentPage.value = 1;
+    documentInput.value = 1;
     pageInput.value = 1;
     return;
   }
@@ -682,6 +677,7 @@ const loadCurrentDocument = async () => {
   }).promise;
   totalPages.value = pdfDoc.numPages;
   currentPage.value = 1;
+  documentInput.value = currentDocumentIndex.value + 1;
   pageInput.value = 1;
   await nextTick();
   await renderPage(1);
@@ -996,6 +992,16 @@ const nextPage = async () => {
   await renderPage(currentPage.value + 1);
 };
 
+const goToDocument = async () => {
+  const parsed = Number.parseInt(documentInput.value, 10);
+  if (Number.isNaN(parsed)) {
+    documentInput.value = currentDocumentIndex.value + 1;
+    return;
+  }
+  const target = Math.min(Math.max(parsed, 1), filteredDocuments.value.length || 1);
+  await selectDocument(target - 1);
+};
+
 const goToPage = async () => {
   const parsed = Number.parseInt(pageInput.value, 10);
   if (Number.isNaN(parsed)) {
@@ -1013,6 +1019,7 @@ const removeDocument = async (index) => {
     pdfDoc = null;
     totalPages.value = 0;
     currentPage.value = 1;
+    documentInput.value = 1;
     pageInput.value = 1;
     if (pdfCanvas.value) {
       const context = pdfCanvas.value.getContext("2d");
@@ -1035,6 +1042,7 @@ const clearQueue = () => {
   pdfDoc = null;
   totalPages.value = 0;
   currentPage.value = 1;
+  documentInput.value = 1;
   pageInput.value = 1;
   currentDocumentId.value = "";
   if (pdfCanvas.value) {
@@ -1143,6 +1151,7 @@ watch(
       pdfDoc = null;
       totalPages.value = 0;
       currentPage.value = 1;
+      documentInput.value = 1;
       pageInput.value = 1;
       return;
     }

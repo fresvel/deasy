@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="router.push({ name: 'signature-tools' })">
+    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="router.push({ name: 'dashboard-signatures' })">
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
@@ -211,26 +211,6 @@
                   </div>
                 </template>
               </AppDataTable>
-            </section>
-          </section>
-        </template>
-        <template v-else-if="isSignatureToolsRoute">
-          <section class="flex flex-col gap-6">
-            <AppPageIntro
-              variant="dashboard"
-              title="Herramientas de firma"
-              meta="Firma manual, solicitudes, validación y multifirmador general"
-              description="Gestiona las herramientas completas de firma electrónica sin salir del shell del dashboard."
-            >
-              <template #actions>
-                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToGlobalSignaturePage">
-                  Volver a firmas del dashboard
-                </AppButton>
-              </template>
-            </AppPageIntro>
-
-            <section class="rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
-              <FirmarPdf />
             </section>
           </section>
         </template>
@@ -2868,12 +2848,10 @@ const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?
 const workspaceRouteMode = computed(() => {
   if (route.name === 'dashboard-documents') return 'documents';
   if (route.name === 'dashboard-signatures') return 'signatures';
-  if (route.name === 'signature-tools') return 'signature-tools';
   return 'default';
 });
 const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
 const isGlobalSignatureRoute = computed(() => workspaceRouteMode.value === 'signatures');
-const isSignatureToolsRoute = computed(() => workspaceRouteMode.value === 'signature-tools');
 
 const documentCenterFields = [
   { name: 'document', label: 'Documento' },
@@ -3774,7 +3752,7 @@ const navigateTo = (destination) => {
       router.push('/dashboard/firmas');
       break;
     case 'firmar':
-      router.push({ name: 'signature-tools' });
+      router.push({ name: 'dashboard-signatures' });
       break;
     case 'perfil':
     default:

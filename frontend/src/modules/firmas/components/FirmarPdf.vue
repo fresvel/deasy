@@ -1,6 +1,6 @@
 <template>
   <div :class="rootClasses">
-    <div v-if="!multiOnly && workspaceMode !== 'multi'" class="flex flex-col gap-2">
+    <div v-if="!multiOnly && workspaceMode !== 'multi' && showStartHeading" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
@@ -163,8 +163,10 @@
     </div>
 
     <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
-      <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
+      <div
+        class="grid grid-cols-1 gap-6 lg:grid-cols-2"
+        :class="enableDashboardShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
+      >
 
         <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
@@ -180,15 +182,22 @@
 
         <button
           type="button"
-          class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
-          @click="router.push({ name: 'dashboard-signatures' })"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-2"
+          @click="handleDatabaseEntry"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
           <div class="flex flex-col items-center justify-center flex-grow">
             <span class="inline-flex w-full items-center justify-center rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-600">
-              Abrir bandeja del dashboard
+              {{ enableDashboardShortcuts ? 'Abrir multifirmador de pendientes' : 'Abrir bandeja del dashboard' }}
             </span>
-            <p class="text-slate-500 text-xs mt-3 text-left">Consulta las solicitudes pendientes y el multifirmador operativo ligado a los flujos del dashboard.</p>
+            <p class="text-slate-500 text-xs mt-3 text-left">
+              {{ enableDashboardShortcuts
+                ? 'Consulta y firma documentos pendientes desde base de datos en el multifirmador operativo.'
+                : 'Consulta las solicitudes pendientes y el multifirmador operativo ligado a los flujos del dashboard.' }}
+            </p>
+            <div class="mt-5 flex justify-center">
+              <CustomIconSearch />
+            </div>
           </div>
         </button>
 
@@ -216,7 +225,10 @@
           />
         </div>
 
-        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
+          :class="enableDashboardShortcuts ? 'xl:col-start-2' : ''"
+        >
           <PdfDropField
             title="Multifirmador"
             action-text="Seleccionar documentos"
@@ -228,6 +240,24 @@
             class="h-full"
           />
         </div>
+
+        <button
+          v-if="enableDashboardShortcuts"
+          type="button"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
+          @click="emit('open-dashboard-pending')"
+        >
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
+          <div class="flex flex-col items-center justify-center flex-grow">
+            <span class="inline-flex w-full items-center justify-center rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-600">
+              Abrir tabla de pendientes
+            </span>
+            <p class="text-slate-500 text-xs mt-3 text-left">Revisa la tabla, selecciona documentos y envía una selección puntual al multifirmador de pendientes.</p>
+            <div class="mt-5 flex justify-center">
+              <CustomIconPendingTray />
+            </div>
+          </div>
+        </button>
 
       </div>
       <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
@@ -956,7 +986,7 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey} from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconListCheck } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
   import AppTag from '@/shared/components/data/AppTag.vue';
   import AppDataTable from '@/shared/components/data/AppDataTable.vue';
@@ -978,9 +1008,17 @@
     multiOnly: {
       type: Boolean,
       default: false
+    },
+    enableDashboardShortcuts: {
+      type: Boolean,
+      default: false
+    },
+    showStartHeading: {
+      type: Boolean,
+      default: true
     }
   });
-  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi']);
+  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
@@ -996,6 +1034,7 @@
   const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
   const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
   const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
+  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-sky-50 border-sky-100 text-sky-600');
   const resolveUiErrorMessage = (error, fallback) => {
     const candidates = [
       error?.response?.data?.error,
@@ -1193,6 +1232,14 @@
       ? 'w-full h-full max-w-none mx-auto p-0 flex flex-col gap-6'
       : 'w-full h-full max-w-none mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
   );
+
+  const handleDatabaseEntry = () => {
+    if (props.enableDashboardShortcuts) {
+      emit('open-dashboard-multisigner');
+      return;
+    }
+    router.push({ name: 'dashboard-signatures' });
+  };
 
   const removeBox = () => {
     const signbox = document.getElementById('active-signbox');
@@ -1655,6 +1702,10 @@
         return;
       }
       if (mode === 'multi') {
+        if (props.enableDashboardShortcuts) {
+          emit('open-general-multisigner', { files: pdfFiles });
+          return;
+        }
         resetToStart();
         multiSignerSeedFiles.value = [...pdfFiles];
         multiSignerSeedDocuments.value = Array.isArray(options.documents) ? [...options.documents] : [];

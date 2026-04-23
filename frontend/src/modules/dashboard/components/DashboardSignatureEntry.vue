@@ -2,15 +2,12 @@
   <section class="flex flex-col gap-6">
     <AppPageIntro
       variant="dashboard"
-      title="Firmas del dashboard"
+      title="Firmas electrónicas"
       :meta="`${filteredItems.length} documento(s) pendiente(s)`"
-      description="Gestiona firmas pendientes vinculadas a tus tarjetas del dashboard. Las operaciones ejecutadas aquí actualizan el mismo flujo documental y sus estados."
+      description="Centraliza la firma manual, solicitudes, validación, multifirma general y la firma de pendientes vinculados al dashboard."
     >
       <template #actions>
         <div class="flex flex-wrap gap-2">
-          <AppButton variant="secondary" size="md" @click="router.push({ name: 'signature-tools' })">
-            Herramientas de firma
-          </AppButton>
           <AppButton variant="softNeutral" size="md" :disabled="loading" @click="loadSignatureCenter">
             Actualizar
           </AppButton>
@@ -18,85 +15,45 @@
       </template>
     </AppPageIntro>
 
-    <section class="flex flex-col gap-5 rounded-[1.6rem] border border-slate-100 bg-white px-4 py-4 shadow-sm md:px-5 md:py-5">
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <AppButton
-          variant="plain"
-          class-name="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40"
-          @click="openPendingModal"
-        >
-          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-            <IconListCheck class="h-5 w-5" />
-          </span>
-          <span class="flex min-w-0 flex-col">
-            <span class="text-sm font-bold text-slate-800">Bandeja de pendientes</span>
-            <span class="mt-1 text-xs font-medium text-slate-500">{{ selectedItems.length }} seleccionado(s)</span>
-          </span>
-        </AppButton>
-
-        <AppButton
-          variant="plain"
-          class-name="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40"
-          @click="openAllPendingInMultiSigner"
-        >
-          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
-            <IconFiles class="h-5 w-5" />
-          </span>
-          <span class="flex min-w-0 flex-col">
-            <span class="text-sm font-bold text-slate-800">Multifirmador de pendientes</span>
-            <span class="mt-1 text-xs font-medium text-slate-500">{{ items.length }} cargable(s)</span>
-          </span>
-        </AppButton>
-
-        <AppButton
-          variant="plain"
-          class-name="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70"
-          @click="router.push({ name: 'signature-tools' })"
-        >
-          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-slate-200 bg-slate-50/80 text-slate-600 transition-all group-hover:border-slate-300 group-hover:bg-slate-100">
-            <IconSignature class="h-5 w-5" />
-          </span>
-          <span class="flex min-w-0 flex-col">
-            <span class="text-sm font-bold text-slate-800">Herramientas de firma</span>
-            <span class="mt-1 text-xs font-medium text-slate-500">Vista completa</span>
-          </span>
-        </AppButton>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-3">
-        <div class="text-sm font-medium text-slate-500">
-          Tareas visibles: <span class="font-bold text-slate-700">{{ filteredItems.length }}</span>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <AppButton variant="softNeutral" size="sm" @click="resetTableFilters">Limpiar</AppButton>
-          <AppButton variant="softPrimary" size="sm" :disabled="loading" @click="loadSignatureCenter">Actualizar</AppButton>
-        </div>
-      </div>
-    </section>
-
-    <section v-if="loading" class="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-sm font-bold text-slate-600">
-      Cargando bandeja de firmas...
-    </section>
-    <section v-else-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
+    <section v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
       {{ error }}
     </section>
-    <section v-else class="grid grid-cols-1 gap-5 lg:grid-cols-3">
-      <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pendientes</div>
-        <div class="mt-2 text-3xl font-black text-slate-800">{{ items.length }}</div>
-        <p class="mt-2 text-sm font-medium text-slate-500">Solicitudes activas de firma asignadas a tu usuario.</p>
-      </article>
-      <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Visibles</div>
-        <div class="mt-2 text-3xl font-black text-slate-800">{{ filteredItems.length }}</div>
-        <p class="mt-2 text-sm font-medium text-slate-500">Resultados actuales con los criterios disponibles en el lote.</p>
-      </article>
-      <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Última actualización</div>
-        <div class="mt-2 text-lg font-black text-slate-800">{{ lastRefreshLabel }}</div>
-        <p class="mt-2 text-sm font-medium text-slate-500">Recarga inmediata al cerrar una firma completada.</p>
-      </article>
+
+    <section class="rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
+      <FirmarPdf
+        :show-start-heading="false"
+        :enable-dashboard-shortcuts="true"
+        @open-general-multisigner="openGeneralMultiSignerModal"
+        @open-dashboard-multisigner="openAllPendingInMultiSigner"
+        @open-dashboard-pending="openPendingModal"
+      />
     </section>
+
+    <AppModalShell
+      controlled
+      :open="generalMultiSignerOpen"
+      labelled-by="dashboard-signature-general-multisigner-modal"
+      size="xl"
+      dialog-class="max-w-[108rem]"
+      title="Multifirmador"
+      content-class="flex max-h-[calc(100vh-4rem)] flex-col"
+      body-class="flex-1 min-h-0 overflow-y-auto p-0"
+      footer-class="hidden"
+      @close="closeGeneralMultiSignerModal"
+    >
+      <div class="flex min-h-0 flex-col p-6">
+        <div class="flex min-h-0 flex-1 flex-col">
+          <FirmarPdf
+            v-if="generalMultiSignerOpen"
+            ref="generalMultiSignerRef"
+            embedded
+            multi-only
+            @close-multi="closeGeneralMultiSignerModal"
+            @batch-finished="handleGeneralBatchFinished"
+          />
+        </div>
+      </div>
+    </AppModalShell>
 
     <AppModalShell
       controlled
@@ -202,6 +159,7 @@
       :open="multiSignerOpen"
       labelled-by="dashboard-signature-multisigner-modal"
       size="xl"
+      dialog-class="max-w-[108rem]"
       title="Multifirmador de pendientes"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
       body-class="flex-1 min-h-0 overflow-y-auto p-0"
@@ -231,12 +189,6 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
-import {
-  IconFiles,
-  IconListCheck,
-  IconSignature,
-} from "@tabler/icons-vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
@@ -246,8 +198,6 @@ import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import ProcessDefinitionPanelService from "@/core/services/ProcessDefinitionPanelService.js";
 
 const emit = defineEmits(["refresh-dashboard"]);
-
-const router = useRouter();
 const processPanelService = new ProcessDefinitionPanelService();
 
 const currentUser = ref(null);
@@ -256,11 +206,12 @@ const error = ref("");
 const items = ref([]);
 const selectedIds = ref([]);
 const pendingModalOpen = ref(false);
+const generalMultiSignerOpen = ref(false);
 const multiSignerOpen = ref(false);
 const pendingPreparation = ref(false);
 const multiSignerError = ref("");
-const lastRefreshAt = ref(null);
 const rowActionLoading = ref({});
+const generalMultiSignerRef = ref(null);
 const multiSignerRef = ref(null);
 
 const tableFilters = ref({
@@ -311,17 +262,6 @@ const selectedItems = computed(() => {
   return filteredItems.value.filter((item) => selected.has(Number(item.signature_request_id)));
 });
 
-const lastRefreshLabel = computed(() => {
-  if (!lastRefreshAt.value) return "Sin refresco";
-  return lastRefreshAt.value.toLocaleString("es-EC", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-});
-
 const readCurrentUser = () => {
   try {
     currentUser.value = JSON.parse(localStorage.getItem("user") || "null");
@@ -370,7 +310,6 @@ const loadSignatureCenter = async () => {
     const response = await processPanelService.getSignatureCenter(userId);
     items.value = Array.isArray(response?.signatures) ? response.signatures : [];
     selectedIds.value = [];
-    lastRefreshAt.value = new Date();
   } catch (loadError) {
     items.value = [];
     error.value = loadError?.response?.data?.message || loadError?.message || "No se pudo cargar la bandeja de firmas.";
@@ -496,6 +435,19 @@ const closePendingModal = () => {
   pendingModalOpen.value = false;
 };
 
+const openGeneralMultiSignerModal = async (payload = {}) => {
+  generalMultiSignerOpen.value = true;
+  await nextTick();
+  const files = Array.isArray(payload?.files) ? payload.files : [];
+  if (files.length) {
+    generalMultiSignerRef.value?.openMultiSignerWithFiles?.(files);
+  }
+};
+
+const closeGeneralMultiSignerModal = () => {
+  generalMultiSignerOpen.value = false;
+};
+
 const closeMultiSignerModal = () => {
   multiSignerOpen.value = false;
   multiSignerError.value = "";
@@ -504,14 +456,18 @@ const closeMultiSignerModal = () => {
 };
 
 const openMultiSignerWithItems = async (targetItems) => {
+  multiSignerOpen.value = true;
+  pendingPreparation.value = false;
+  multiSignerError.value = "";
+
   if (!targetItems.length) {
-    multiSignerError.value = "Selecciona al menos un documento pendiente para abrir el multifirmador.";
+    await nextTick();
+    multiSignerRef.value?.resetToStart?.();
+    multiSignerError.value = "No hay documentos pendientes disponibles para cargar desde base de datos.";
     return;
   }
 
   pendingPreparation.value = true;
-  multiSignerError.value = "";
-  multiSignerOpen.value = true;
 
   try {
     const documents = [];
@@ -528,6 +484,8 @@ const openMultiSignerWithItems = async (targetItems) => {
   } catch (prepareError) {
     multiSignerError.value = prepareError?.response?.data?.message || prepareError?.message || "No se pudieron preparar los documentos del lote.";
     pendingPreparation.value = false;
+    await nextTick();
+    multiSignerRef.value?.resetToStart?.();
   }
 };
 
@@ -541,6 +499,11 @@ const openAllPendingInMultiSigner = async () => {
 };
 
 const handleBatchFinished = async () => {
+  await loadSignatureCenter();
+  emit("refresh-dashboard");
+};
+
+const handleGeneralBatchFinished = async () => {
   await loadSignatureCenter();
   emit("refresh-dashboard");
 };

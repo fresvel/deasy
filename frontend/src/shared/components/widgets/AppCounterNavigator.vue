@@ -12,20 +12,23 @@
 
     <div
       class="border-x border-slate-100 px-3 py-1 text-center"
-      :class="editable ? 'flex items-center gap-2 min-w-[10.5rem]' : 'min-w-[5rem]'"
+      :class="editable ? 'min-w-[7.5rem]' : 'min-w-[5rem]'"
     >
       <template v-if="editable">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ label }}</span>
-        <input
-          :value="modelValue"
-          class="w-12 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-center text-sm font-bold text-slate-800 outline-none transition focus:border-sky-500 focus:bg-white"
-          type="number"
-          :min="min"
-          :max="total"
-          @input="$emit('update:modelValue', $event.target.value)"
-          @keyup.enter="$emit('submit')"
-        />
-        <span class="text-sm font-semibold text-slate-500">de {{ total }}</span>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ label }}</div>
+        <div class="flex items-center justify-center gap-1 text-sm font-bold text-slate-700">
+          <input
+            :value="modelValue"
+            class="w-10 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1 text-center text-sm font-black text-slate-700 shadow-inner outline-none transition [appearance:textfield] focus:border-sky-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,233,0.12)] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            @input="$emit('update:modelValue', $event.target.value)"
+            @keyup.enter="$emit('submit')"
+            @blur="$emit('submit')"
+          />
+          <span>/ {{ total }}</span>
+        </div>
       </template>
 
       <template v-else>
