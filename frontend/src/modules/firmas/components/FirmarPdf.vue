@@ -1,6 +1,6 @@
 <template>
   <div :class="rootClasses">
-    <div v-if="workspaceMode !== 'multi'" class="flex flex-col gap-2">
+    <div v-if="!multiOnly && workspaceMode !== 'multi'" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div v-if="pdfReady" class="flex flex-col gap-4 mt-4 border-b border-slate-100 pb-4">
+    <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-slate-100 pb-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-wrap items-center gap-3">
           <button
@@ -97,13 +97,16 @@
         :is-batch-submitting="isStartingMultiBatch"
         :is-downloading-batch="isDownloadingMultiBatch"
         :initial-files="multiSignerSeedFiles"
+        :initial-documents="multiSignerSeedDocuments"
+        :allow-manual-upload="allowManualMultiSignerUpload"
+        :enable-document-filters="enableMultiSignerDocumentFilters"
         @back="closeMultiSigner"
         @download-batch="downloadMultiBatch"
         @start-batch="prepareMultiBatchStart"
       />
     </div>
 
-    <div v-else-if="!pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
           <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
@@ -159,7 +162,7 @@
       </div>
     </div>
 
-    <div v-else-if="!pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
       <h3 class="text-xl font-bold text-slate-800 mb-6 text-left">Selecciona el documento</h3>
       <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-6">
 
@@ -175,15 +178,19 @@
           />
         </div>
 
-        <div class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm opacity-70">
+        <button
+          type="button"
+          class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+          @click="router.push({ name: 'dashboard-signatures' })"
+        >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
           <div class="flex flex-col items-center justify-center flex-grow">
-            <button type="button" class="inline-flex w-full items-center justify-center px-4 py-3 rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-sm" disabled>
-              Próximamente
-            </button>
-            <p class="text-slate-500 text-xs mt-3 text-left">Se mostraran solicitudes pendientes con detalles del documento.</p>
+            <span class="inline-flex w-full items-center justify-center rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-600">
+              Abrir bandeja del dashboard
+            </span>
+            <p class="text-slate-500 text-xs mt-3 text-left">Consulta las solicitudes pendientes y el multifirmador operativo ligado a los flujos del dashboard.</p>
           </div>
-        </div>
+        </button>
 
         <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
@@ -231,7 +238,7 @@
       </div>
     </div>
 
-    <div v-else class="mt-4">
+    <div v-else-if="!multiOnly" class="mt-4">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
@@ -945,6 +952,7 @@
 </template>
   <script setup>
   import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h } from 'vue';
+  import { useRouter } from 'vue-router';
   import axios from 'axios';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
@@ -960,13 +968,19 @@
   import Loading from '@/shared/components/feedback/Loading.vue';
   import MultiSignerPanel from '@/modules/firmas/components/MultiSignerPanel.vue';
 
+  const router = useRouter();
+
   const props = defineProps({
     embedded: {
       type: Boolean,
       default: false
+    },
+    multiOnly: {
+      type: Boolean,
+      default: false
     }
   });
-  const emit = defineEmits(['workflow-signed']);
+  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
@@ -1140,6 +1154,9 @@
   });
   const activeMultiBatchJobId = ref('');
   const multiSignerSeedFiles = ref([]);
+  const multiSignerSeedDocuments = ref([]);
+  const allowManualMultiSignerUpload = ref(true);
+  const enableMultiSignerDocumentFilters = ref(false);
   const isStartingMultiBatch = ref(false);
   const isDownloadingMultiBatch = ref(false);
   const isLoadingCertificates = ref(false);
@@ -1613,8 +1630,17 @@
       }
     };
 
-    const onAddFiles = (files, mode = 'sign') => {
+    const onAddFiles = (files, mode = 'sign', options = {}) => {
       uploadError.value = '';
+      if (mode === 'multi' && Array.isArray(options.documents) && options.documents.length) {
+        resetToStart();
+        multiSignerSeedFiles.value = [];
+        multiSignerSeedDocuments.value = [...options.documents];
+        allowManualMultiSignerUpload.value = options.allowManualUpload !== false;
+        enableMultiSignerDocumentFilters.value = Boolean(options.enableDocumentFilters);
+        workspaceMode.value = 'multi';
+        return;
+      }
       const normalizedFiles = Array.from(files || []);
       if (!normalizedFiles.length) return;
       const pdfFiles = normalizedFiles.filter(
@@ -1629,8 +1655,11 @@
         return;
       }
       if (mode === 'multi') {
-        multiSignerSeedFiles.value = [...pdfFiles];
         resetToStart();
+        multiSignerSeedFiles.value = [...pdfFiles];
+        multiSignerSeedDocuments.value = Array.isArray(options.documents) ? [...options.documents] : [];
+        allowManualMultiSignerUpload.value = options.allowManualUpload !== false;
+        enableMultiSignerDocumentFilters.value = Boolean(options.enableDocumentFilters);
         workspaceMode.value = 'multi';
         return;
       }
@@ -1731,10 +1760,17 @@
     const openMultiSigner = () => {
       resetToStart();
       multiSignerSeedFiles.value = [];
+      multiSignerSeedDocuments.value = [];
+      allowManualMultiSignerUpload.value = true;
+      enableMultiSignerDocumentFilters.value = false;
       workspaceMode.value = 'multi';
     };
 
     const closeMultiSigner = () => {
+      if (props.multiOnly) {
+        emit('close-multi');
+        return;
+      }
       workspaceMode.value = 'single';
     };
 
@@ -2312,6 +2348,9 @@
           throw new Error(data?.error || data?.message || 'No se pudo consultar el lote.');
         }
         activeMultiBatchJob.value = data;
+        if (['completed', 'error'].includes(data.status)) {
+          emit('batch-finished', data);
+        }
         if (!['completed', 'error'].includes(data.status)) {
           multiBatchPollTimer = setTimeout(() => {
             pollMultiBatchStatus(jobId);
@@ -2637,6 +2676,9 @@
       isStartingMultiBatch.value = false;
       isDownloadingMultiBatch.value = false;
       multiBatchRequest.value = null;
+      multiSignerSeedDocuments.value = [];
+      allowManualMultiSignerUpload.value = true;
+      enableMultiSignerDocumentFilters.value = false;
       workflowSignContext.value = null;
       workflowPdfStatus.value = { type: 'info', message: '' };
       stopMultiBatchPolling();
@@ -2676,6 +2718,9 @@
         loadPdfFromRemotePath(payload.preloadPdfPath, 'sign');
       }
       multiSignerSeedFiles.value = [];
+      multiSignerSeedDocuments.value = [];
+      allowManualMultiSignerUpload.value = true;
+      enableMultiSignerDocumentFilters.value = false;
     };
 
     const retryWorkflowPdfLoad = () => {
@@ -2687,8 +2732,8 @@
       }
     };
 
-    const openMultiSignerWithFiles = (files = []) => {
-      onAddFiles(files, 'multi');
+    const openMultiSignerWithFiles = (files = [], options = {}) => {
+      onAddFiles(files, 'multi', options);
     };
 
     defineExpose({ resetToStart, initializeWorkflowSignatureSession, openMultiSignerWithFiles });

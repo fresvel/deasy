@@ -1,0 +1,552 @@
+<template>
+  <section class="flex flex-col gap-6">
+    <AppPageIntro
+      variant="dashboard"
+      title="Firmas del dashboard"
+      :meta="`${filteredItems.length} documento(s) pendiente(s)`"
+      description="Gestiona firmas pendientes vinculadas a tus tarjetas del dashboard. Las operaciones ejecutadas aquí actualizan el mismo flujo documental y sus estados."
+    >
+      <template #actions>
+        <div class="flex flex-wrap gap-2">
+          <AppButton variant="secondary" size="md" @click="router.push({ name: 'signature-tools' })">
+            Herramientas de firma
+          </AppButton>
+          <AppButton variant="softNeutral" size="md" :disabled="loading" @click="loadSignatureCenter">
+            Actualizar
+          </AppButton>
+        </div>
+      </template>
+    </AppPageIntro>
+
+    <section class="flex flex-col gap-5 rounded-[1.6rem] border border-slate-100 bg-white px-4 py-4 shadow-sm md:px-5 md:py-5">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <AppButton
+          variant="plain"
+          class-name="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40"
+          @click="openPendingModal"
+        >
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+            <IconListCheck class="h-5 w-5" />
+          </span>
+          <span class="flex min-w-0 flex-col">
+            <span class="text-sm font-bold text-slate-800">Bandeja de pendientes</span>
+            <span class="mt-1 text-xs font-medium text-slate-500">{{ selectedItems.length }} seleccionado(s)</span>
+          </span>
+        </AppButton>
+
+        <AppButton
+          variant="plain"
+          class-name="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40"
+          @click="openAllPendingInMultiSigner"
+        >
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-sky-100 bg-sky-50/70 text-sky-700 transition-all group-hover:border-sky-200 group-hover:bg-sky-50">
+            <IconFiles class="h-5 w-5" />
+          </span>
+          <span class="flex min-w-0 flex-col">
+            <span class="text-sm font-bold text-slate-800">Multifirmador de pendientes</span>
+            <span class="mt-1 text-xs font-medium text-slate-500">{{ items.length }} cargable(s)</span>
+          </span>
+        </AppButton>
+
+        <AppButton
+          variant="plain"
+          class-name="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70"
+          @click="router.push({ name: 'signature-tools' })"
+        >
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-slate-200 bg-slate-50/80 text-slate-600 transition-all group-hover:border-slate-300 group-hover:bg-slate-100">
+            <IconSignature class="h-5 w-5" />
+          </span>
+          <span class="flex min-w-0 flex-col">
+            <span class="text-sm font-bold text-slate-800">Herramientas de firma</span>
+            <span class="mt-1 text-xs font-medium text-slate-500">Vista completa</span>
+          </span>
+        </AppButton>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-3">
+        <div class="text-sm font-medium text-slate-500">
+          Tareas visibles: <span class="font-bold text-slate-700">{{ filteredItems.length }}</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <AppButton variant="softNeutral" size="sm" @click="resetTableFilters">Limpiar</AppButton>
+          <AppButton variant="softPrimary" size="sm" :disabled="loading" @click="loadSignatureCenter">Actualizar</AppButton>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="loading" class="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-sm font-bold text-slate-600">
+      Cargando bandeja de firmas...
+    </section>
+    <section v-else-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
+      {{ error }}
+    </section>
+    <section v-else class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pendientes</div>
+        <div class="mt-2 text-3xl font-black text-slate-800">{{ items.length }}</div>
+        <p class="mt-2 text-sm font-medium text-slate-500">Solicitudes activas de firma asignadas a tu usuario.</p>
+      </article>
+      <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Visibles</div>
+        <div class="mt-2 text-3xl font-black text-slate-800">{{ filteredItems.length }}</div>
+        <p class="mt-2 text-sm font-medium text-slate-500">Resultados actuales con los criterios disponibles en el lote.</p>
+      </article>
+      <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Última actualización</div>
+        <div class="mt-2 text-lg font-black text-slate-800">{{ lastRefreshLabel }}</div>
+        <p class="mt-2 text-sm font-medium text-slate-500">Recarga inmediata al cerrar una firma completada.</p>
+      </article>
+    </section>
+
+    <AppModalShell
+      controlled
+      :open="pendingModalOpen"
+      labelled-by="dashboard-signature-pending-modal"
+      size="xl"
+      title="Documentos pendientes por firma"
+      body-class="px-0 py-0"
+      @close="closePendingModal"
+    >
+      <div class="flex flex-col gap-5 p-6">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <label class="flex flex-col gap-2 xl:col-span-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+            <input
+              v-model="tableFilters.query"
+              type="text"
+              placeholder="Documento, proceso, unidad o paso"
+              class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+            />
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
+            <select v-model="tableFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
+            <select v-model="tableFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todas</option>
+              <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
+            <select v-model="tableFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+              <option value="all">Todos</option>
+              <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm font-medium text-slate-500">
+            Seleccionados: <span class="font-bold text-slate-700">{{ selectedItems.length }}</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <AppButton variant="softNeutral" size="sm" @click="resetTableFilters">Limpiar filtros</AppButton>
+            <AppButton variant="softPrimary" size="sm" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
+              {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
+            </AppButton>
+          </div>
+        </div>
+
+        <AppDataTable
+          :fields="tableFields"
+          :rows="filteredItems"
+          :row-key="(row) => `dashboard-signature-${row.signature_request_id}`"
+          empty-text="No hay documentos pendientes por firma."
+          actions-label="ACCIONES"
+        >
+          <template #cell="{ row, field }">
+            <template v-if="field.name === 'select'">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                :checked="isSelected(row)"
+                @change="toggleSelection(row)"
+              />
+            </template>
+            <template v-else-if="field.name === 'document'">
+              <div class="flex flex-col gap-1">
+                <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
+                <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : "Sin versión" }}</span>
+              </div>
+            </template>
+            <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>
+            <template v-else-if="field.name === 'unit'">{{ row.unit_label || "Sin unidad" }}</template>
+            <template v-else-if="field.name === 'period'">{{ row.term_name || "Sin periodo" }}</template>
+            <template v-else-if="field.name === 'requested'">{{ formatDateTime(row.requested_at) }}</template>
+            <template v-else-if="field.name === 'step'">
+              <AppTag variant="warning">{{ row.step_name || `Paso ${row.step_order || "s/n"}` }}</AppTag>
+            </template>
+          </template>
+          <template #actions="{ row }">
+            <div class="flex flex-wrap justify-end gap-2">
+              <AppButton variant="softNeutral" size="sm" :disabled="rowActionLoading[row.signature_request_id] === 'preview'" @click="previewItem(row)">
+                Ver PDF
+              </AppButton>
+              <AppButton variant="softPrimary" size="sm" :disabled="rowActionLoading[row.signature_request_id] === 'download'" @click="downloadItem(row)">
+                Descargar
+              </AppButton>
+            </div>
+          </template>
+        </AppDataTable>
+      </div>
+    </AppModalShell>
+
+    <AppModalShell
+      controlled
+      :open="multiSignerOpen"
+      labelled-by="dashboard-signature-multisigner-modal"
+      size="xl"
+      title="Multifirmador de pendientes"
+      content-class="flex max-h-[calc(100vh-4rem)] flex-col"
+      body-class="flex-1 min-h-0 overflow-y-auto p-0"
+      footer-class="hidden"
+      @close="closeMultiSignerModal"
+    >
+      <div class="flex min-h-0 flex-col p-6">
+        <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+          {{ multiSignerError }}
+        </div>
+        <div v-if="pendingPreparation" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
+          Preparando documentos del lote...
+        </div>
+        <div v-else class="flex min-h-0 flex-1 flex-col">
+          <FirmarPdf
+            ref="multiSignerRef"
+            embedded
+            multi-only
+            @close-multi="closeMultiSignerModal"
+            @batch-finished="handleBatchFinished"
+          />
+        </div>
+      </div>
+    </AppModalShell>
+  </section>
+</template>
+
+<script setup>
+import { computed, nextTick, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import {
+  IconFiles,
+  IconListCheck,
+  IconSignature,
+} from "@tabler/icons-vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import AppPageIntro from "@/shared/components/layout/AppPageIntro.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
+import ProcessDefinitionPanelService from "@/core/services/ProcessDefinitionPanelService.js";
+
+const emit = defineEmits(["refresh-dashboard"]);
+
+const router = useRouter();
+const processPanelService = new ProcessDefinitionPanelService();
+
+const currentUser = ref(null);
+const loading = ref(false);
+const error = ref("");
+const items = ref([]);
+const selectedIds = ref([]);
+const pendingModalOpen = ref(false);
+const multiSignerOpen = ref(false);
+const pendingPreparation = ref(false);
+const multiSignerError = ref("");
+const lastRefreshAt = ref(null);
+const rowActionLoading = ref({});
+const multiSignerRef = ref(null);
+
+const tableFilters = ref({
+  query: "",
+  year: "all",
+  unit: "all",
+  process: "all",
+});
+
+const tableFields = [
+  { name: "select", label: "" },
+  { name: "document", label: "Documento" },
+  { name: "process", label: "Proceso" },
+  { name: "unit", label: "Unidad" },
+  { name: "period", label: "Periodo" },
+  { name: "requested", label: "Solicitado" },
+  { name: "step", label: "Paso" },
+];
+
+const yearOptions = computed(() => uniqueOptions(items.value, "term_year").sort((a, b) => Number(b) - Number(a)));
+const unitOptions = computed(() => uniqueOptions(items.value, "unit_label"));
+const processOptions = computed(() => uniqueOptions(items.value, "process_name"));
+
+const filteredItems = computed(() => {
+  const filters = tableFilters.value;
+  const query = String(filters.query || "").trim().toLowerCase();
+  return items.value.filter((item) => {
+    if (filters.year !== "all" && String(item.term_year || "") !== String(filters.year)) return false;
+    if (filters.unit !== "all" && String(item.unit_label || "") !== String(filters.unit)) return false;
+    if (filters.process !== "all" && String(item.process_name || "") !== String(filters.process)) return false;
+    if (query) {
+      const haystack = [
+        item.template_artifact_name,
+        item.definition_name,
+        item.process_name,
+        item.unit_label,
+        item.term_name,
+        item.step_name,
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+});
+
+const selectedItems = computed(() => {
+  const selected = new Set(selectedIds.value.map((value) => Number(value)));
+  return filteredItems.value.filter((item) => selected.has(Number(item.signature_request_id)));
+});
+
+const lastRefreshLabel = computed(() => {
+  if (!lastRefreshAt.value) return "Sin refresco";
+  return lastRefreshAt.value.toLocaleString("es-EC", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+});
+
+const readCurrentUser = () => {
+  try {
+    currentUser.value = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    currentUser.value = null;
+  }
+};
+
+const currentUserId = computed(() => currentUser.value?.id || currentUser.value?._id || null);
+
+const uniqueOptions = (rows, key) => {
+  const values = new Set(
+    (rows || []).map((row) => String(row?.[key] || "").trim()).filter(Boolean)
+  );
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+};
+
+const resetTableFilters = () => {
+  tableFilters.value = {
+    query: "",
+    year: "all",
+    unit: "all",
+    process: "all",
+  };
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return String(value);
+  return parsed.toLocaleString("es-EC", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const loadSignatureCenter = async () => {
+  const userId = Number(currentUserId.value || 0);
+  if (!userId) return;
+  loading.value = true;
+  error.value = "";
+  try {
+    const response = await processPanelService.getSignatureCenter(userId);
+    items.value = Array.isArray(response?.signatures) ? response.signatures : [];
+    selectedIds.value = [];
+    lastRefreshAt.value = new Date();
+  } catch (loadError) {
+    items.value = [];
+    error.value = loadError?.response?.data?.message || loadError?.message || "No se pudo cargar la bandeja de firmas.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+const isSelected = (row) => selectedIds.value.includes(Number(row.signature_request_id));
+
+const toggleSelection = (row) => {
+  const next = new Set(selectedIds.value.map((value) => Number(value)));
+  const signatureRequestId = Number(row.signature_request_id);
+  if (!signatureRequestId) return;
+  if (next.has(signatureRequestId)) next.delete(signatureRequestId);
+  else next.add(signatureRequestId);
+  selectedIds.value = Array.from(next);
+};
+
+const buildDownloadContext = (item) => ({
+  processDefinitionId: Number(item.process_definition_id || 0),
+  taskItemId: Number(item.task_item_id || 0),
+  documentId: Number(item.document_id || 0) || null,
+  preloadFilePath: item.preloadFilePath || item.preload_file_path || item.final_file_path || item.working_file_path || "",
+  finalFilePath: item.final_file_path || "",
+  name: item.template_artifact_name || item.definition_name || `documento-${item.document_id || item.signature_request_id}`,
+});
+
+const getFileNameFromPath = (filePath = "", fallback = "documento.pdf") => {
+  const fileName = String(filePath || "").split("/").pop();
+  return fileName || fallback;
+};
+
+const fetchItemBlob = async (item) => {
+  const userId = Number(currentUserId.value || 0);
+  const context = buildDownloadContext(item);
+  return processPanelService.downloadDeliverableFile(
+    userId,
+    context.processDefinitionId,
+    context.taskItemId,
+    context.finalFilePath ? "final" : "working",
+    { documentId: context.documentId }
+  );
+};
+
+const downloadBlob = (blob, fileName) => {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(objectUrl);
+};
+
+const setRowActionLoading = (signatureRequestId, action) => {
+  rowActionLoading.value = {
+    ...rowActionLoading.value,
+    [signatureRequestId]: action,
+  };
+};
+
+const clearRowActionLoading = (signatureRequestId) => {
+  const next = { ...rowActionLoading.value };
+  delete next[signatureRequestId];
+  rowActionLoading.value = next;
+};
+
+const previewItem = async (item) => {
+  const key = Number(item.signature_request_id || 0);
+  try {
+    setRowActionLoading(key, "preview");
+    const blob = await fetchItemBlob(item);
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (previewError) {
+    error.value = previewError?.response?.data?.message || previewError?.message || "No se pudo abrir el PDF del documento.";
+  } finally {
+    clearRowActionLoading(key);
+  }
+};
+
+const downloadItem = async (item) => {
+  const key = Number(item.signature_request_id || 0);
+  const context = buildDownloadContext(item);
+  try {
+    setRowActionLoading(key, "download");
+    const blob = await fetchItemBlob(item);
+    downloadBlob(blob, getFileNameFromPath(context.preloadFilePath, `${context.name}.pdf`));
+  } catch (downloadError) {
+    error.value = downloadError?.response?.data?.message || downloadError?.message || "No se pudo descargar el documento.";
+  } finally {
+    clearRowActionLoading(key);
+  }
+};
+
+const buildMultiSignerDocument = async (item) => {
+  const blob = await fetchItemBlob(item);
+  const context = buildDownloadContext(item);
+  const fileName = getFileNameFromPath(context.preloadFilePath, `${context.name}.pdf`);
+  return {
+    file: new File([blob], fileName, { type: "application/pdf" }),
+    metadata: {
+      signatureRequestId: Number(item.signature_request_id || 0) || null,
+      documentId: Number(item.document_id || 0) || null,
+      documentVersionId: Number(item.document_version_id || 0) || null,
+      processName: item.process_name || "",
+      unitLabel: item.unit_label || "",
+      termName: item.term_name || "",
+      termYear: item.term_year ? String(item.term_year) : "",
+      termTypeName: item.term_type_name || "",
+      stepName: item.step_name || "",
+      requestedAt: item.requested_at || "",
+    },
+  };
+};
+
+const openPendingModal = () => {
+  pendingModalOpen.value = true;
+};
+
+const closePendingModal = () => {
+  pendingModalOpen.value = false;
+};
+
+const closeMultiSignerModal = () => {
+  multiSignerOpen.value = false;
+  multiSignerError.value = "";
+  pendingPreparation.value = false;
+  multiSignerRef.value?.resetToStart?.();
+};
+
+const openMultiSignerWithItems = async (targetItems) => {
+  if (!targetItems.length) {
+    multiSignerError.value = "Selecciona al menos un documento pendiente para abrir el multifirmador.";
+    return;
+  }
+
+  pendingPreparation.value = true;
+  multiSignerError.value = "";
+  multiSignerOpen.value = true;
+
+  try {
+    const documents = [];
+    for (const item of targetItems) {
+      documents.push(await buildMultiSignerDocument(item));
+    }
+    pendingPreparation.value = false;
+    await nextTick();
+    multiSignerRef.value?.openMultiSignerWithFiles?.([], {
+      documents,
+      allowManualUpload: false,
+      enableDocumentFilters: true,
+    });
+  } catch (prepareError) {
+    multiSignerError.value = prepareError?.response?.data?.message || prepareError?.message || "No se pudieron preparar los documentos del lote.";
+    pendingPreparation.value = false;
+  }
+};
+
+const openSelectedInMultiSigner = async () => {
+  closePendingModal();
+  await openMultiSignerWithItems(selectedItems.value);
+};
+
+const openAllPendingInMultiSigner = async () => {
+  await openMultiSignerWithItems(filteredItems.value);
+};
+
+const handleBatchFinished = async () => {
+  await loadSignatureCenter();
+  emit("refresh-dashboard");
+};
+
+onMounted(async () => {
+  readCurrentUser();
+  await loadSignatureCenter();
+});
+</script>

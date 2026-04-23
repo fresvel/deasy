@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
+    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="router.push({ name: 'signature-tools' })">
         <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
           Sin unidades
         </span>
@@ -214,134 +214,28 @@
             </section>
           </section>
         </template>
-        <template v-else-if="isGlobalSignatureRoute">
+        <template v-else-if="isSignatureToolsRoute">
           <section class="flex flex-col gap-6">
             <AppPageIntro
               variant="dashboard"
-              title="Firma global"
-              :meta="`${filteredSignatureCenterItems.length} documento(s) pendiente(s)`"
-              description="Revisa todos los PDF pendientes por firmar, filtra por contexto académico y envíalos al multifirmador con una sola preparación de lote."
+              title="Herramientas de firma"
+              meta="Firma manual, solicitudes, validación y multifirmador general"
+              description="Gestiona las herramientas completas de firma electrónica sin salir del shell del dashboard."
             >
               <template #actions>
-                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToDashboardHome">
-                  Volver al dashboard
+                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToGlobalSignaturePage">
+                  Volver a firmas del dashboard
                 </AppButton>
               </template>
             </AppPageIntro>
 
-            <section class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-              <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <label class="flex flex-col gap-2 xl:col-span-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
-                  <input v-model="signatureCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o paso" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10" />
-                </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-                  <select v-model="signatureCenterFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todos</option>
-                    <option v-for="option in signatureCenterFilterYears" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
-                  <select v-model="signatureCenterFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todos</option>
-                    <option v-for="option in signatureCenterFilterTermTypes" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-                  <select v-model="signatureCenterFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todas</option>
-                    <option v-for="option in signatureCenterFilterUnits" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-                  <select v-model="signatureCenterFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todos</option>
-                    <option v-for="option in signatureCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="text-sm font-medium text-slate-500">
-                  Seleccionados: <span class="font-bold text-slate-700">{{ selectedSignatureCenterItems.length }}</span>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <AppButton variant="softNeutral" size="sm" @click="resetSignatureCenterFilters">Limpiar filtros</AppButton>
-                  <AppButton variant="softNeutral" size="sm" @click="loadGlobalSignatureCenterPage">Actualizar</AppButton>
-                  <AppButton variant="primary" size="sm" :disabled="!selectedSignatureCenterItems.length" @click="openGlobalSignatureBatch">
-                    Abrir multifirmador
-                  </AppButton>
-                </div>
-              </div>
-
-              <section v-if="signatureCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
-                Cargando bandeja global de firmas...
-              </section>
-              <section v-else-if="signatureCenterError" class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-bold text-rose-700">
-                {{ signatureCenterError }}
-              </section>
-              <section v-else class="flex flex-col gap-4">
-                <div v-if="globalSignatureBatchError" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
-                  {{ globalSignatureBatchError }}
-                </div>
-                <AppDataTable
-                  :fields="signatureCenterFields"
-                  :rows="filteredSignatureCenterItems"
-                  :row-key="(row) => `signature-center-${row.signature_request_id}`"
-                  empty-text="No hay documentos pendientes de firma."
-                  actions-label="ACCIONES"
-                >
-                  <template #cell="{ row, field }">
-                    <template v-if="field.name === 'select'">
-                      <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" :checked="isSignatureCenterItemSelected(row)" @change="toggleSignatureCenterSelection(row)" />
-                    </template>
-                    <template v-else-if="field.name === 'document'">
-                      <div class="flex flex-col gap-1">
-                        <strong class="text-sm font-bold text-slate-800">{{ row.template_artifact_name || row.definition_name || `Documento #${row.document_id}` }}</strong>
-                        <span class="text-xs font-medium text-slate-500">{{ row.document_version ? `v${row.document_version}` : 'Sin versión' }}</span>
-                      </div>
-                    </template>
-                    <template v-else-if="field.name === 'process'">{{ row.process_name }}</template>
-                    <template v-else-if="field.name === 'unit'">{{ row.unit_label || 'Sin unidad' }}</template>
-                    <template v-else-if="field.name === 'period'">{{ row.term_name || 'Sin periodo' }}</template>
-                    <template v-else-if="field.name === 'requested'">{{ formatDateTime(row.requested_at) }}</template>
-                    <template v-else-if="field.name === 'step'">
-                      <AppTag variant="warning">{{ row.step_name || `Paso ${row.step_order || 's/n'}` }}</AppTag>
-                    </template>
-                  </template>
-                  <template #actions="{ row }">
-                    <div class="flex flex-wrap justify-end gap-2">
-                      <AppButton v-if="row.preloadPdfPath" variant="softNeutral" size="sm" @click="previewDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
-                        Ver PDF
-                      </AppButton>
-                      <AppButton v-if="row.preloadFilePath" variant="softPrimary" size="sm" @click="downloadDeliverableFile(buildWorkspacePayloadFromCenterItem(row))">
-                        Descargar
-                      </AppButton>
-                    </div>
-                  </template>
-                </AppDataTable>
-
-                <section v-if="showGlobalSignatureBatch" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div class="mb-4 flex items-center justify-between gap-3">
-                    <div>
-                      <h3 class="m-0 text-lg font-bold text-slate-800">Multifirmador global</h3>
-                      <p class="m-0 mt-1 text-sm font-medium text-slate-500">El lote se inicializa con los PDF seleccionados en la bandeja global.</p>
-                    </div>
-                  </div>
-                  <FirmarPdf ref="globalSignatureSignerRef" embedded />
-                </section>
-              </section>
+            <section class="rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
+              <FirmarPdf />
             </section>
           </section>
         </template>
-        <template v-else-if="isSigningView">
-        <section class="p-6">
-          <FirmarPdf />
-        </section>
+        <template v-else-if="isGlobalSignatureRoute">
+          <DashboardSignatureEntry @refresh-dashboard="loadUserMenu" />
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
         <AppPageIntro
@@ -2468,6 +2362,7 @@ import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
+import DashboardSignatureEntry from '@/modules/dashboard/components/DashboardSignatureEntry.vue';
 
 import {
   IconGlobe,
@@ -2562,7 +2457,6 @@ const deliverablePreviewModal = ref(null);
 const deliverableResetModal = ref(null);
 const embeddedSignerRef = ref(null);
 const signatureFlowSignerRef = ref(null);
-const globalSignatureSignerRef = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
 const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
@@ -2596,12 +2490,6 @@ const deliverableResetState = ref({
 const documentCenterLoading = ref(false);
 const documentCenterError = ref('');
 const documentCenterItems = ref([]);
-const signatureCenterLoading = ref(false);
-const signatureCenterError = ref('');
-const signatureCenterItems = ref([]);
-const globalSignatureSelection = ref([]);
-const showGlobalSignatureBatch = ref(false);
-const globalSignatureBatchError = ref('');
 const fillWorkflowState = ref({
   subject: null,
   request: null,
@@ -2662,13 +2550,6 @@ const documentCenterFilters = ref({
   process: 'all',
   status: 'all'
 });
-const signatureCenterFilters = ref({
-  query: '',
-  year: 'all',
-  termType: 'all',
-  unit: 'all',
-  process: 'all'
-});
 const taskFilterParticipationOptions = [
   { value: 'all', label: 'Todas' },
   { value: 'current', label: 'Actual' },
@@ -2716,8 +2597,6 @@ const deliverableUploadModalHelp = computed(() => {
   }
   return `Carga el archivo de trabajo para ${subject.title || subject.template_artifact_name || `#${subject.itemId || subject.id}`}.`;
 });
-
-const isSigningView = ref(false);
 
 const summaryTableFields = [
   { name: 'section', label: 'Sección' },
@@ -2795,7 +2674,6 @@ const applyMenuCargos = (cargos) => {
 };
 
 const selectConsolidated = () => {
-  isSigningView.value = false;
   selectedGroupId.value = null;
   showGroupDropdown.value = false;
   applyMenuCargos(consolidatedCargos.value);
@@ -2834,7 +2712,6 @@ const buildGroupCargos = (group) => {
 };
 
 const selectGroup = (group) => {
-  isSigningView.value = false;
   selectedGroupId.value = group?.id ?? null;
   showGroupDropdown.value = false;
   applyMenuCargos(buildGroupCargos(group));
@@ -2953,16 +2830,6 @@ const resetDocumentCenterFilters = () => {
   };
 };
 
-const resetSignatureCenterFilters = () => {
-  signatureCenterFilters.value = {
-    query: '',
-    year: 'all',
-    termType: 'all',
-    unit: 'all',
-    process: 'all'
-  };
-};
-
 const openTaskFiltersModal = () => {
   taskFiltersModalInstance = Modal.getOrCreateInstance(taskFiltersModal.value?.el);
   taskFiltersModalInstance?.show();
@@ -3001,10 +2868,12 @@ const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?
 const workspaceRouteMode = computed(() => {
   if (route.name === 'dashboard-documents') return 'documents';
   if (route.name === 'dashboard-signatures') return 'signatures';
+  if (route.name === 'signature-tools') return 'signature-tools';
   return 'default';
 });
 const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
 const isGlobalSignatureRoute = computed(() => workspaceRouteMode.value === 'signatures');
+const isSignatureToolsRoute = computed(() => workspaceRouteMode.value === 'signature-tools');
 
 const documentCenterFields = [
   { name: 'document', label: 'Documento' },
@@ -3012,16 +2881,6 @@ const documentCenterFields = [
   { name: 'unit', label: 'Unidad' },
   { name: 'period', label: 'Periodo' },
   { name: 'status', label: 'Estado' }
-];
-
-const signatureCenterFields = [
-  { name: 'select', label: '' },
-  { name: 'document', label: 'Documento' },
-  { name: 'process', label: 'Proceso' },
-  { name: 'unit', label: 'Unidad' },
-  { name: 'period', label: 'Periodo' },
-  { name: 'requested', label: 'Solicitado' },
-  { name: 'step', label: 'Paso' }
 ];
 
 const taskLaunchSystemTemplates = computed(() =>
@@ -3138,19 +2997,6 @@ const documentCenterFilterStatuses = computed(() =>
   getCenterFilterOptions(documentCenterItems.value, 'document_version_status')
 );
 
-const signatureCenterFilterYears = computed(() =>
-  getCenterFilterOptions(signatureCenterItems.value, 'term_year').sort((a, b) => Number(b) - Number(a))
-);
-const signatureCenterFilterTermTypes = computed(() =>
-  getCenterFilterOptions(signatureCenterItems.value, 'term_type_name')
-);
-const signatureCenterFilterUnits = computed(() =>
-  getCenterFilterOptions(signatureCenterItems.value, 'unit_label')
-);
-const signatureCenterFilterProcesses = computed(() =>
-  getCenterFilterOptions(signatureCenterItems.value, 'process_name')
-);
-
 const filteredProcessTasks = computed(() => {
   const query = String(taskListFilters.value.query || '').trim().toLowerCase();
   return (selectedProcessPanel.value?.tasks || []).filter((task) => {
@@ -3243,32 +3089,6 @@ const filteredDocumentCenterItems = computed(() => {
     const matchesStatus = filters.status === 'all' || String(item.document_version_status || '') === filters.status;
     return matchesQuery && matchesYear && matchesTermType && matchesUnit && matchesProcess && matchesStatus;
   });
-});
-
-const filteredSignatureCenterItems = computed(() => {
-  const filters = signatureCenterFilters.value;
-  const query = String(filters.query || '').trim().toLowerCase();
-  return signatureCenterItems.value.filter((item) => {
-    const matchesQuery = !query || [
-      item.template_artifact_name,
-      item.definition_name,
-      item.process_name,
-      item.unit_label,
-      item.term_name,
-      item.term_type_name,
-      item.step_name
-    ].filter(Boolean).join(' ').toLowerCase().includes(query);
-    const matchesYear = filters.year === 'all' || String(item.term_year || '') === String(filters.year);
-    const matchesTermType = filters.termType === 'all' || String(item.term_type_name || '') === filters.termType;
-    const matchesUnit = filters.unit === 'all' || String(item.unit_label || '') === filters.unit;
-    const matchesProcess = filters.process === 'all' || String(item.process_name || '') === filters.process;
-    return matchesQuery && matchesYear && matchesTermType && matchesUnit && matchesProcess;
-  });
-});
-
-const selectedSignatureCenterItems = computed(() => {
-  const selectedIds = new Set(globalSignatureSelection.value.map((value) => Number(value)));
-  return filteredSignatureCenterItems.value.filter((item) => selectedIds.has(Number(item.signature_request_id)));
 });
 
 const canAdvanceTaskLaunchStep = computed(() => {
@@ -3664,24 +3484,6 @@ const loadDocumentCenterPage = async () => {
   }
 };
 
-const loadGlobalSignatureCenterPage = async () => {
-  const userId = currentUserId.value;
-  if (!userId) return;
-  signatureCenterLoading.value = true;
-  signatureCenterError.value = '';
-  try {
-    const response = await processPanelService.getSignatureCenter(userId);
-    signatureCenterItems.value = Array.isArray(response?.signatures) ? response.signatures : [];
-    globalSignatureSelection.value = [];
-  } catch (error) {
-    console.error('Error al cargar la bandeja global de firmas:', error);
-    signatureCenterItems.value = [];
-    signatureCenterError.value = error?.response?.data?.message || 'No se pudo cargar la bandeja global de firmas.';
-  } finally {
-    signatureCenterLoading.value = false;
-  }
-};
-
 const buildWorkspacePayloadFromCenterItem = (item = {}) => ({
   id: item.task_item_id,
   itemId: item.task_item_id,
@@ -3711,7 +3513,6 @@ const handleProcessSelect = async (process) => {
   if (workspaceRouteMode.value !== 'default') {
     await router.push({ name: 'dashboard' });
   }
-  isSigningView.value = false;
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
   if (window.innerWidth < 1024) {
@@ -3737,43 +3538,6 @@ const showFutureTaskCreationInfo = () => {
     'La creación manual de nuevas tareas desde este panel todavía está pendiente de implementación.',
     'error'
   );
-};
-
-const isSignatureCenterItemSelected = (item) =>
-  globalSignatureSelection.value.includes(Number(item.signature_request_id));
-
-const toggleSignatureCenterSelection = (item) => {
-  const next = new Set(globalSignatureSelection.value.map((value) => Number(value)));
-  const key = Number(item.signature_request_id);
-  if (!key) return;
-  if (next.has(key)) next.delete(key);
-  else next.add(key);
-  globalSignatureSelection.value = Array.from(next);
-};
-
-const openGlobalSignatureBatch = async () => {
-  if (!selectedSignatureCenterItems.value.length) {
-    globalSignatureBatchError.value = 'Selecciona al menos un documento pendiente para abrir el multifirmador.';
-    return;
-  }
-  globalSignatureBatchError.value = '';
-  try {
-    const files = [];
-    for (const item of selectedSignatureCenterItems.value) {
-      const payload = buildWorkspacePayloadFromCenterItem(item);
-      const subject = getDeliverableSubject(payload);
-      const preferredKind = subject.finalFilePath ? 'final' : 'working';
-      const blob = await fetchDeliverableFileBlob(payload, preferredKind);
-      files.push(new File([blob], getFileNameFromPath(subject.preloadFilePath || `${item.template_artifact_name || item.definition_name || 'documento'}.pdf`), {
-        type: 'application/pdf'
-      }));
-    }
-    showGlobalSignatureBatch.value = true;
-    await nextTick();
-    globalSignatureSignerRef.value?.openMultiSignerWithFiles?.(files);
-  } catch (error) {
-    globalSignatureBatchError.value = error?.response?.data?.message || error?.message || 'No se pudieron preparar los documentos para la firma global.';
-  }
 };
 
 const goToNextTaskLaunchStep = () => {
@@ -3960,8 +3724,6 @@ onMounted(async () => {
   await loadUserMenu();
   if (workspaceRouteMode.value === 'documents') {
     await loadDocumentCenterPage();
-  } else if (workspaceRouteMode.value === 'signatures') {
-    await loadGlobalSignatureCenterPage();
   }
 });
 
@@ -3985,8 +3747,6 @@ watch(
     await loadUserMenu();
     if (workspaceRouteMode.value === 'documents') {
       await loadDocumentCenterPage();
-    } else if (workspaceRouteMode.value === 'signatures') {
-      await loadGlobalSignatureCenterPage();
     }
   }
 );
@@ -4014,7 +3774,7 @@ const navigateTo = (destination) => {
       router.push('/dashboard/firmas');
       break;
     case 'firmar':
-      isSigningView.value = true;
+      router.push({ name: 'signature-tools' });
       break;
     case 'perfil':
     default:

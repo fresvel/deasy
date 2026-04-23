@@ -18,10 +18,10 @@
       </div>
     </div>
 
-    <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_16rem] 2xl:grid-cols-[19rem_minmax(0,1fr)_17rem]">
+    <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div v-if="allowManualUpload" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
             <div class="mb-3 flex items-start justify-between gap-3">
               <div>
                 <div class="text-sm font-bold text-slate-800">Añadir PDFs</div>
@@ -105,7 +105,7 @@
             <div class="flex items-center justify-between">
               <div class="text-sm font-bold text-slate-800">
                 Archivos
-                <span class="ml-1 text-xs font-semibold text-slate-500">({{ currentDocumentIndex + 1 }} de {{ Math.max(documents.length, 1) }})</span>
+                <span class="ml-1 text-xs font-semibold text-slate-500">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
               </div>
             </div>
 
@@ -114,9 +114,14 @@
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
             </div>
 
+            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-slate-400">
+              <IconInfoCircle class="h-8 w-8 opacity-50" />
+              <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
+            </div>
+
             <div v-else class="max-h-72 space-y-2.5 overflow-y-auto pr-1 custom-scrollbar">
               <div
-                v-for="(doc, index) in documents"
+                v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
                 class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
                 :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
@@ -171,7 +176,7 @@
               <AppCounterNavigator
                 label="Documento"
                 :current="currentDocumentIndex + 1"
-                :total="documents.length"
+                :total="filteredDocuments.length"
                 :previous-disabled="!canPrevDocument"
                 :next-disabled="!canNextDocument"
                 previous-title="Documento anterior"
@@ -297,6 +302,68 @@
 
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
+          <div
+            v-if="showDocumentFilters"
+            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+          >
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-bold text-slate-800">Filtros de la cola</div>
+                <div class="mt-1 text-xs font-medium text-slate-500">Organiza los PDF pendientes por su contexto académico.</div>
+              </div>
+              <button
+                type="button"
+                class="text-xs font-semibold text-sky-700 transition hover:text-sky-900"
+                @click="resetFilters"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+              <label class="flex flex-col gap-1.5">
+                <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Buscar</span>
+                <input
+                  v-model="filters.query"
+                  type="text"
+                  placeholder="Documento, proceso, unidad o periodo"
+                  class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
+                />
+              </label>
+
+              <div class="grid grid-cols-1 gap-3">
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Unidad</span>
+                  <select v-model="filters.unit" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Todas</option>
+                    <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Proceso</span>
+                  <select v-model="filters.process" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Todos</option>
+                    <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Año</span>
+                  <select v-model="filters.year" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Todos</option>
+                    <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Periodo</span>
+                  <select v-model="filters.period" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Todos</option>
+                    <option v-for="option in periodOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div class="text-sm font-bold text-slate-800">Resultados</div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -400,13 +467,25 @@ const props = defineProps({
   isDownloadingBatch: {
     type: Boolean,
     default: false
+  },
+  initialDocuments: {
+    type: Array,
+    default: () => []
+  },
+  allowManualUpload: {
+    type: Boolean,
+    default: true
+  },
+  enableDocumentFilters: {
+    type: Boolean,
+    default: false
   }
 });
 const emit = defineEmits(["back", "start-batch", "download-batch"]);
 
 let inputSequence = 0;
 const documents = ref([]);
-const currentDocumentIndex = ref(0);
+const currentDocumentId = ref("");
 const currentPage = ref(1);
 const totalPages = ref(0);
 const pageInput = ref(1);
@@ -445,7 +524,6 @@ const normalizeJobStatus = (status) => {
   return "Pendiente";
 };
 
-const currentDocument = computed(() => documents.value[currentDocumentIndex.value] || null);
 const successCount = computed(() => documents.value.filter((doc) => doc.status === "Firmado").length);
 const failedCount = computed(() => documents.value.filter((doc) => doc.status === "Fallido").length);
 const pendingCount = computed(() =>
@@ -458,7 +536,7 @@ const progressPercent = computed(() => {
   return Math.max(0, Math.min(100, Math.round((processed / total) * 100)));
 });
 const canPrevDocument = computed(() => currentDocumentIndex.value > 0);
-const canNextDocument = computed(() => currentDocumentIndex.value < documents.value.length - 1);
+const canNextDocument = computed(() => currentDocumentIndex.value < filteredDocuments.value.length - 1);
 const canPrevPage = computed(() => currentPage.value > 1);
 const canNextPage = computed(() => currentPage.value < totalPages.value);
 const isBatchRunning = computed(() => ["queued", "processing"].includes(props.batchJob?.status || ""));
@@ -477,6 +555,13 @@ const batchModeHelp = computed(() => {
 const isMouseOverPdf = ref(false);
 const isHoveringField = ref(false);
 const previewBoxStyle = ref({ display: 'none' });
+const filters = ref({
+  query: "",
+  unit: "all",
+  process: "all",
+  year: "all",
+  period: "all"
+});
 
 const currentModeFields = computed(() => {
   if (batchMode.value === "shared-coordinates") return sharedFields.value;
@@ -503,6 +588,45 @@ const describeFieldPage = (field) => {
 const currentPageFields = computed(() =>
   currentModeFields.value.filter((field) => resolveFieldPage(field) === currentPage.value)
 );
+const unitOptions = computed(() => getUniqueMetadataValues("unitLabel"));
+const processOptions = computed(() => getUniqueMetadataValues("processName"));
+const yearOptions = computed(() => getUniqueMetadataValues("termYear").sort((a, b) => Number(b) - Number(a)));
+const periodOptions = computed(() => getUniqueMetadataValues("termName"));
+const showDocumentFilters = computed(() =>
+  props.enableDocumentFilters && documents.value.some((doc) => hasDocumentMetadata(doc))
+);
+const filteredDocuments = computed(() => {
+  if (!showDocumentFilters.value) return documents.value;
+
+  const query = String(filters.value.query || "").trim().toLowerCase();
+  return documents.value.filter((doc) => {
+    const metadata = doc.metadata || {};
+    if (filters.value.unit !== "all" && String(metadata.unitLabel || "") !== String(filters.value.unit)) return false;
+    if (filters.value.process !== "all" && String(metadata.processName || "") !== String(filters.value.process)) return false;
+    if (filters.value.year !== "all" && String(metadata.termYear || "") !== String(filters.value.year)) return false;
+    if (filters.value.period !== "all" && String(metadata.termName || "") !== String(filters.value.period)) return false;
+    if (query) {
+      const haystack = [
+        doc.name,
+        metadata.processName,
+        metadata.unitLabel,
+        metadata.termName,
+        metadata.stepName
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+});
+const currentDocument = computed(() =>
+  filteredDocuments.value.find((doc) => doc.id === currentDocumentId.value)
+  || filteredDocuments.value[0]
+  || null
+);
+const currentDocumentIndex = computed(() => {
+  const index = filteredDocuments.value.findIndex((doc) => doc.id === currentDocument.value?.id);
+  return index < 0 ? 0 : index;
+});
 const canRequestStart = computed(() =>
   documents.value.length &&
   !props.isBatchSubmitting &&
@@ -518,13 +642,27 @@ const canRequestStart = computed(() =>
   )
 );
 
-const buildDocumentItem = (file) => ({
+const normalizeMetadata = (metadata = {}) => ({
+  signatureRequestId: metadata.signatureRequestId || null,
+  documentId: metadata.documentId || null,
+  documentVersionId: metadata.documentVersionId || null,
+  processName: metadata.processName || "",
+  unitLabel: metadata.unitLabel || "",
+  termName: metadata.termName || "",
+  termYear: metadata.termYear ? String(metadata.termYear) : "",
+  termTypeName: metadata.termTypeName || "",
+  stepName: metadata.stepName || "",
+  requestedAt: metadata.requestedAt || ""
+});
+
+const buildDocumentItem = (file, metadata = {}) => ({
   id: `multi-doc-${inputSequence += 1}`,
   file,
   fingerprint: `${file.name}-${file.size}-${file.lastModified}`,
   name: file.name,
   status: "Pendiente",
-  progressLabel: "Sin procesar"
+  progressLabel: "Sin procesar",
+  metadata: normalizeMetadata(metadata)
 });
 
 const loadCurrentDocument = async () => {
@@ -755,14 +893,60 @@ const onFilesSelected = async (files) => {
 
   const existingFingerprints = new Set(documents.value.map((doc) => doc.fingerprint));
   const newDocuments = pdfFiles
-    .map(buildDocumentItem)
+    .map((file) => buildDocumentItem(file))
     .filter((doc) => !existingFingerprints.has(doc.fingerprint));
 
   if (!newDocuments.length) return;
   const shouldAutoload = !documents.value.length;
   documents.value = [...documents.value, ...newDocuments];
   if (shouldAutoload) {
-    currentDocumentIndex.value = 0;
+    currentDocumentId.value = newDocuments[0]?.id || "";
+    await loadCurrentDocument();
+  }
+};
+
+const hasDocumentMetadata = (doc) => Boolean(
+  doc?.metadata?.processName
+  || doc?.metadata?.unitLabel
+  || doc?.metadata?.termName
+  || doc?.metadata?.termYear
+  || doc?.metadata?.stepName
+);
+
+const getUniqueMetadataValues = (key) => {
+  const values = new Set(
+    documents.value
+      .map((doc) => String(doc?.metadata?.[key] || "").trim())
+      .filter(Boolean)
+  );
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+};
+
+const resetFilters = () => {
+  filters.value = {
+    query: "",
+    unit: "all",
+    process: "all",
+    year: "all",
+    period: "all"
+  };
+};
+
+const addInitialDocuments = async (seedDocuments = []) => {
+  const normalizedDocuments = Array.isArray(seedDocuments) ? seedDocuments : [];
+  if (!normalizedDocuments.length) return;
+
+  const existingFingerprints = new Set(documents.value.map((doc) => doc.fingerprint));
+  const newDocuments = normalizedDocuments
+    .filter((entry) => entry?.file instanceof File)
+    .map((entry) => buildDocumentItem(entry.file, entry.metadata))
+    .filter((doc) => !existingFingerprints.has(doc.fingerprint));
+
+  if (!newDocuments.length) return;
+  const shouldAutoload = !documents.value.length;
+  documents.value = [...documents.value, ...newDocuments];
+  if (shouldAutoload) {
+    currentDocumentId.value = newDocuments[0]?.id || "";
     await loadCurrentDocument();
   }
 };
@@ -777,9 +961,18 @@ watch(
   { immediate: true }
 );
 
+watch(
+  () => props.initialDocuments,
+  async (seedDocuments) => {
+    if (!Array.isArray(seedDocuments) || !seedDocuments.length) return;
+    await addInitialDocuments(seedDocuments);
+  },
+  { immediate: true }
+);
+
 const selectDocument = async (index) => {
-  if (index < 0 || index >= documents.value.length) return;
-  currentDocumentIndex.value = index;
+  if (index < 0 || index >= filteredDocuments.value.length) return;
+  currentDocumentId.value = filteredDocuments.value[index]?.id || "";
   await loadCurrentDocument();
 };
 
@@ -814,7 +1007,8 @@ const goToPage = async () => {
 };
 
 const removeDocument = async (index) => {
-  documents.value = documents.value.filter((_, currentIndex) => currentIndex !== index);
+  const target = filteredDocuments.value[index];
+  documents.value = documents.value.filter((doc) => doc.id !== target?.id);
   if (!documents.value.length) {
     pdfDoc = null;
     totalPages.value = 0;
@@ -824,14 +1018,14 @@ const removeDocument = async (index) => {
       const context = pdfCanvas.value.getContext("2d");
       context?.clearRect(0, 0, pdfCanvas.value.width, pdfCanvas.value.height);
     }
-    currentDocumentIndex.value = 0;
+    currentDocumentId.value = "";
     sharedFields.value = [];
     perDocumentFields.value = {};
     selectedFieldId.value = null;
     return;
   }
-  if (currentDocumentIndex.value >= documents.value.length) {
-    currentDocumentIndex.value = documents.value.length - 1;
+  if (!filteredDocuments.value.some((doc) => doc.id === currentDocumentId.value)) {
+    currentDocumentId.value = filteredDocuments.value[0]?.id || documents.value[0]?.id || "";
   }
   await loadCurrentDocument();
 };
@@ -842,7 +1036,7 @@ const clearQueue = () => {
   totalPages.value = 0;
   currentPage.value = 1;
   pageInput.value = 1;
-  currentDocumentIndex.value = 0;
+  currentDocumentId.value = "";
   if (pdfCanvas.value) {
     const context = pdfCanvas.value.getContext("2d");
     context?.clearRect(0, 0, pdfCanvas.value.width, pdfCanvas.value.height);
@@ -936,10 +1130,29 @@ watch(batchMode, () => {
 });
 
 watch(currentDocumentIndex, async () => {
-  if (documents.value.length) {
+  if (filteredDocuments.value.length) {
     await loadCurrentDocument();
   }
 });
+
+watch(
+  filteredDocuments,
+  async (nextDocuments) => {
+    if (!nextDocuments.length) {
+      currentDocumentId.value = "";
+      pdfDoc = null;
+      totalPages.value = 0;
+      currentPage.value = 1;
+      pageInput.value = 1;
+      return;
+    }
+    if (!nextDocuments.some((doc) => doc.id === currentDocumentId.value)) {
+      currentDocumentId.value = nextDocuments[0]?.id || "";
+      await loadCurrentDocument();
+    }
+  },
+  { deep: true }
+);
 
 onBeforeUnmount(() => {
   if (renderTask) {
