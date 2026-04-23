@@ -38,7 +38,7 @@
 
     <div
       v-if="!isPreview && $slots.navigation"
-      class="absolute bottom-0 left-1/2 z-30 flex -translate-x-1/2 translate-y-[calc(100%+0.5rem)] flex-col items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute bottom-0 left-0 right-0 z-30 flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <slot name="navigation"></slot>

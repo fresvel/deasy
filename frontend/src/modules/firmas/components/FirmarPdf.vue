@@ -39,54 +39,46 @@
         </div>
 
         <div class="flex items-center justify-center gap-3 flex-wrap xl:flex-nowrap">
-          <button @click="prevPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
-            <IconChevronLeft class="w-6 h-6" />
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Anterior</span>
-          </button>
-          <div class="page-selector flex items-center gap-2 bg-sky-50 text-slate-800 rounded-xl px-4 py-2 font-semibold">
-            <span class="text-sm text-slate-600">Página</span>
-            <input
-              v-model="pageInput"
-              class="page-selector-input w-16 px-2 py-1 rounded-lg bg-white border border-slate-300 text-center text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-              type="number"
-              min="1"
-              :max="totalPages"
-              @keyup.enter="goToPage"
-            />
-            <span class="text-sm">de {{ totalPages }}</span>
-          </div>
-          <button @click="nextPageBtn" class="text-sky-600 hover:text-sky-800 p-2 transition group relative">
-            <IconChevronRight class="w-6 h-6" />
-            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">Página Siguiente</span>
-          </button>
+          <AppCounterNavigator
+            label="Página"
+            editable
+            v-model="pageInput"
+            :min="1"
+            :current="currentPage"
+            :total="totalPages"
+            :previous-disabled="currentPage <= 1"
+            :next-disabled="currentPage >= totalPages"
+            previous-title="Página anterior"
+            next-title="Página siguiente"
+            @previous="prevPageBtn"
+            @next="nextPageBtn"
+            @submit="goToPage"
+          />
         </div>
 
         <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
-          <button
+          <AdminButton
             v-if="signMode !== 'token'"
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-red-600 text-red-600 hover:bg-red-50 transition font-semibold text-sm"
+            variant="outlineDanger"
             @click="openDeleteModal"
           >
             Eliminar
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             v-if="!requestMode"
-            type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-sky-300 text-sky-700 hover:bg-sky-50 transition font-semibold text-sm"
+            variant="outlinePrimary"
             @click="submitTokenAction"
           >
             Firmar por token
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-sky-700 text-white hover:bg-sky-800 transition font-semibold text-sm shadow-md"
+          </AdminButton>
+          <AdminButton
+            variant="primary"
             @click="submitAction"
           >
             <IconSignature v-if="!requestMode" class="w-5 h-5" stroke-width="2" />
             <IconSend v-else class="w-5 h-5" stroke-width="2" />
             {{ requestMode ? 'Enviar' : 'Firmar' }}
-          </button>
+          </AdminButton>
         </div>
       </div>
     </div>
@@ -170,7 +162,7 @@
         :class="enableDashboardShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -182,28 +174,7 @@
           />
         </div>
 
-        <button
-          type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-2"
-          @click="handleDatabaseEntry"
-        >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-col items-center justify-center flex-grow">
-            <span class="inline-flex w-full items-center justify-center rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-600">
-              {{ enableDashboardShortcuts ? 'Abrir multifirmador de pendientes' : 'Abrir bandeja del dashboard' }}
-            </span>
-            <p class="text-slate-500 text-xs mt-3 text-left">
-              {{ enableDashboardShortcuts
-                ? 'Consulta y firma documentos pendientes desde base de datos en el multifirmador operativo.'
-                : 'Consulta las solicitudes pendientes y el multifirmador operativo ligado a los flujos del dashboard.' }}
-            </p>
-            <div class="mt-5 flex justify-center">
-              <CustomIconSearch />
-            </div>
-          </div>
-        </button>
-
-        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -215,7 +186,7 @@
           />
         </div>
 
-        <div class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -228,8 +199,8 @@
         </div>
 
         <div
+          v-if="canShowLauncher('multi')"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
-          :class="enableDashboardShortcuts ? 'xl:col-start-2' : ''"
         >
           <PdfDropField
             title="Multifirmador"
@@ -244,19 +215,60 @@
         </div>
 
         <button
-          v-if="enableDashboardShortcuts"
+          v-if="enableDashboardShortcuts && canShowLauncher('pending')"
+          type="button"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
+          @click="emit('open-dashboard-pending')"
+        >
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
+          <div class="flex flex-1 items-center justify-center rounded-3xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
+            <div class="flex flex-col items-center justify-center">
+              <CustomIconReceivedRequests />
+              <span class="mt-5 text-base font-semibold text-slate-700">Ver solicitudes</span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+                Revisa solicitudes pendientes por atender.
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          v-if="canShowLauncher('database')"
+          type="button"
+          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+          :class="enableDashboardShortcuts ? 'xl:col-start-2' : ''"
+          @click="handleDatabaseEntry"
+        >
+          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
+          <div class="flex flex-1 items-center justify-center rounded-3xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+            <div class="flex flex-col items-center justify-center">
+              <CustomIconSearch />
+              <span class="mt-5 text-base font-semibold text-slate-700">
+                {{ enableDashboardShortcuts ? 'Procesos pendientes' : 'Bandeja del dashboard' }}
+              </span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+                {{ enableDashboardShortcuts
+                  ? 'Consulta procesos con firma pendiente.'
+                  : 'Consulta solicitudes pendientes del dashboard.' }}
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          v-if="enableDashboardShortcuts && canShowLauncher('pending')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
           @click="emit('open-dashboard-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-col items-center justify-center flex-grow">
-            <span class="inline-flex w-full items-center justify-center rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-600">
-              Abrir tabla de pendientes
-            </span>
-            <p class="text-slate-500 text-xs mt-3 text-left">Revisa la tabla, selecciona documentos y envía una selección puntual al multifirmador de pendientes.</p>
-            <div class="mt-5 flex justify-center">
+          <div class="flex flex-1 items-center justify-center rounded-3xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+            <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
+              <span class="mt-5 text-base font-semibold text-slate-700">Tabla de procesos</span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+                Revisa y selecciona procesos pendientes.
+              </p>
             </div>
           </div>
         </button>
@@ -988,10 +1000,11 @@
   import axios from 'axios';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconListCheck } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconListCheck, IconInbox } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
   import AppTag from '@/shared/components/data/AppTag.vue';
   import AppDataTable from '@/shared/components/data/AppDataTable.vue';
+  import AppCounterNavigator from '@/shared/components/widgets/AppCounterNavigator.vue';
   import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
   import SignatureBox from '@/modules/firmas/components/SignatureBox.vue';
   import UserCertificatesPanel from '@/modules/firmas/components/UserCertificatesPanel.vue';
@@ -1018,9 +1031,17 @@
     showStartHeading: {
       type: Boolean,
       default: true
+    },
+    launcherMode: {
+      type: String,
+      default: "all"
+    },
+    hiddenLauncherModes: {
+      type: Array,
+      default: () => []
     }
   });
-  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner', 'multi-header-update']);
+  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'request-close', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner', 'open-sign-modal', 'open-request-modal', 'multi-header-update']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
@@ -1037,6 +1058,17 @@
   const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
   const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
   const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-sky-50 border-sky-100 text-sky-600');
+  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'bg-emerald-50 border-emerald-100 text-emerald-600');
+  const normalizedLauncherMode = computed(() => String(props.launcherMode || "all").trim().toLowerCase());
+  const canShowLauncher = (mode) => {
+    const normalizedMode = String(mode || "").trim().toLowerCase();
+    if (!normalizedMode) return false;
+    if (props.hiddenLauncherModes.map((value) => String(value || "").trim().toLowerCase()).includes(normalizedMode)) {
+      return false;
+    }
+    if (normalizedLauncherMode.value === "all") return true;
+    return normalizedLauncherMode.value === normalizedMode;
+  };
   const resolveUiErrorMessage = (error, fallback) => {
     const candidates = [
       error?.response?.data?.error,
@@ -1603,21 +1635,17 @@
           data: new Uint8Array(fileBuffer),
           ...PDF_LOAD_OPTIONS
         });
-        loadingTask.promise.then(async (pdf) => {
-          pdfDoc = pdf;
-          totalPages.value = pdfDoc.numPages;
-          pdfReady.value = true;
-          await nextTick();
-          await renderPage(currentPage.value);
-        }).catch(err => {
-          uploadError.value = 'No se pudo cargar el PDF seleccionado.';
-          console.error('Error al cargar el PDF:', err);
-          resetPdfState();
-        });
+        const pdf = await loadingTask.promise;
+        pdfDoc = pdf;
+        totalPages.value = pdfDoc.numPages;
+        pdfReady.value = true;
+        await nextTick();
+        await renderPage(currentPage.value);
       } catch (err) {
-        uploadError.value = 'No se pudo leer el archivo PDF seleccionado.';
-        console.error('Error al leer el archivo PDF:', err);
+        uploadError.value = 'No se pudo cargar el PDF seleccionado.';
+        console.error('Error al cargar el archivo PDF:', err);
         resetPdfState();
+        throw err;
       }
     };
 
@@ -1680,7 +1708,7 @@
       }
     };
 
-    const onAddFiles = (files, mode = 'sign', options = {}) => {
+    const onAddFiles = async (files, mode = 'sign', options = {}) => {
       uploadError.value = '';
       if (mode === 'multi' && Array.isArray(options.documents) && options.documents.length) {
         resetToStart();
@@ -1718,13 +1746,17 @@
         return;
       }
       const file = pdfFiles[0];
+      if (props.enableDashboardShortcuts && !props.embedded && (mode === 'sign' || mode === 'request')) {
+        emit(mode === 'sign' ? 'open-sign-modal' : 'open-request-modal', { files: [file], mode });
+        return;
+      }
       if (mode === 'validate') {
         validationFile.value = file;
         validateDocument();
         return;
       }
       uploadedFiles.value = [{ content: file, isRenaming: false, name: file.name }];
-      loadPdfFromFile(file, mode);
+      return loadPdfFromFile(file, mode);
     };
 
     const onPdfDropFiles = (files, mode) => {
@@ -2127,6 +2159,14 @@
     };
 
     const goBackToStart = () => {
+      if (
+        props.embedded
+        && !isEmbeddedWorkflowMode.value
+        && ['sign', 'request'].includes(normalizedLauncherMode.value)
+      ) {
+        emit('request-close');
+        return;
+      }
       if (isEmbeddedWorkflowMode.value) {
         uploadedFiles.value = [];
         uploadError.value = '';
@@ -2787,7 +2827,11 @@
     };
 
     const openMultiSignerWithFiles = (files = [], options = {}) => {
-      onAddFiles(files, 'multi', options);
+      return onAddFiles(files, 'multi', options);
+    };
+
+    const openSingleFlowWithFiles = (files = [], mode = 'sign') => {
+      return onAddFiles(files, mode);
     };
 
     const multiPrevDocument = () => multiSignerPanelRef.value?.prevDocument?.();
@@ -2801,6 +2845,7 @@
       resetToStart,
       initializeWorkflowSignatureSession,
       openMultiSignerWithFiles,
+      openSingleFlowWithFiles,
       multiPrevDocument,
       multiNextDocument,
       multiPrevPage,

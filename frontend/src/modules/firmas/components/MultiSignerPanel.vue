@@ -4,24 +4,10 @@
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
           <div v-if="allowManualUpload" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-            <div class="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <div class="text-sm font-bold text-slate-800">Añadir PDFs</div>
-              </div>
-              <button
-                v-if="documents.length"
-                type="button"
-                class="inline-flex items-center justify-center rounded-lg p-1.5 text-rose-500 transition hover:bg-rose-50 hover:text-rose-700"
-                title="Limpiar cola completa"
-                @click="clearQueue"
-              >
-                <IconTrash class="h-4 w-4" />
-              </button>
-            </div>
             <PdfDropField
               title=""
               action-text="Seleccionar documentos"
-              help-text="Arrastra y suelta varios PDF."
+              help-text="Agrega nuevos archivos"
               input-id="multisigner-input-rail"
               multiple
               class="multisigner-upload-card"
@@ -29,73 +15,65 @@
             />
           </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <label class="block text-sm font-bold text-slate-800">Modo de operación</label>
-              <button
-                v-if="isCoordinateMode"
-                type="button"
-                class="inline-flex items-center justify-center rounded-xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                title="Limpiar firmas cargadas"
-                :disabled="!currentModeFields.length"
-                @click="clearCurrentModeFields"
-              >
-                <IconTrash class="h-4 w-4" stroke-width="2.5" />
-              </button>
-            </div>
-            <div class="flex flex-col gap-3">
-              <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
-                <button
-                  type="button"
-                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                  title="Modo anterior"
-                  @click="selectPreviousBatchMode"
-                >
-                  <IconChevronLeft class="h-5 w-5" />
-                </button>
-                <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
-                  <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modo</div>
-                  <div class="text-sm font-bold text-slate-800">{{ currentBatchModeOption.label }}</div>
-                </div>
-                <button
-                  type="button"
-                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                  title="Siguiente modo"
-                  @click="selectNextBatchMode"
-                >
-                  <IconChevronRight class="h-5 w-5" />
-                </button>
-              </div>
-
-              <div v-if="batchMode === 'shared-coordinates'" class="flex flex-col gap-2">
-                <label class="text-xs font-semibold text-slate-500">Referencia de página</label>
-                <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
-                  <button
-                    type="button"
-                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                    title="Referencia anterior"
-                    @click="selectPreviousPageReference"
+          <div
+            v-if="showDocumentFilters"
+            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+          >
+            <div class="grid grid-cols-1 gap-3">
+              <label class="flex flex-col gap-1.5">
+                <span class="sr-only">
+                  Buscar
+                </span>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model="filters.query"
+                    type="text"
+                    placeholder="Buscar por documento, proceso, unidad o periodo"
+                    class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
+                  />
+                  <AdminButton
+                    variant="secondary"
+                    size="sm"
+                    icon-only
+                    title="Limpiar filtros"
+                    aria-label="Limpiar filtros"
+                    class-name="shrink-0"
+                    @click="resetFilters"
                   >
-                    <IconChevronLeft class="h-5 w-5" />
-                  </button>
-                  <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referencia</div>
-                    <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceOption.label }}</div>
-                  </div>
-                  <button
-                    type="button"
-                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                    title="Siguiente referencia"
-                    @click="selectNextPageReference"
-                  >
-                    <IconChevronRight class="h-5 w-5" />
-                  </button>
+                    <IconX class="h-4 w-4" stroke-width="2.5" />
+                  </AdminButton>
                 </div>
-              </div>
+              </label>
 
-              <div v-if="currentModeFields.length" class="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-                <IconCheck class="h-4 w-4" />
-                {{ currentModeFields.length }} preparada(s)
+              <div class="grid grid-cols-1 gap-3">
+                <label class="flex flex-col gap-1.5">
+                  <span class="sr-only">Unidad</span>
+                  <select v-model="filters.unit" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Unidad: Todas</option>
+                    <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="sr-only">Proceso</span>
+                  <select v-model="filters.process" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Proceso: Todos</option>
+                    <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="sr-only">Año</span>
+                  <select v-model="filters.year" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Año: Todos</option>
+                    <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="sr-only">Periodo</span>
+                  <select v-model="filters.period" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                    <option value="all">Periodo: Todos</option>
+                    <option v-for="option in periodOptions" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
               </div>
             </div>
           </div>
@@ -106,6 +84,12 @@
                 Archivos
                 <span class="ml-1 text-xs font-semibold text-slate-500">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
               </div>
+              <BtnDelete
+                v-if="documents.length"
+                message="Limpiar cola completa"
+                class-name="mx-0 self-center hope-action-delete-strong"
+                @onpress="clearQueue"
+              />
             </div>
 
             <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-slate-400">
@@ -193,6 +177,7 @@
                 :field="field"
                 :is-active="field.id === selectedFieldId"
                 :pdf-scale="pdfScale"
+                :display-scale="displayScaleRef"
                 :page-height-pdf="pageHeightPdf"
                 :page-width-pdf="pageWidthPdf"
                 :label="currentUserLabel"
@@ -216,23 +201,23 @@
                 </template>
 
                 <template #navigation>
-                  <div class="flex items-center gap-1.5">
-                    <div class="inline-flex items-center overflow-hidden rounded-full border-2 border-white bg-white/95 shadow-md backdrop-blur-sm">
+                  <div class="grid w-full grid-cols-2 gap-1.5">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-lg border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
-                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Documento anterior"
                         :disabled="!canPrevDocument"
                         @click.stop="prevDocument"
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="border-x border-slate-200 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-600">
+                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
                         D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
                       </span>
                       <button
                         type="button"
-                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Siguiente documento"
                         :disabled="!canNextDocument"
                         @click.stop="nextDocument"
@@ -241,22 +226,22 @@
                       </button>
                     </div>
 
-                    <div class="inline-flex items-center overflow-hidden rounded-full border-2 border-white bg-white/95 shadow-md backdrop-blur-sm">
+                    <div class="flex min-w-0 items-center overflow-hidden rounded-lg border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
                       <button
                         type="button"
-                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Página anterior"
                         :disabled="!canPrevPage"
                         @click.stop="prevPage"
                       >
                         <IconChevronLeft class="h-3 w-3" />
                       </button>
-                      <span class="border-x border-slate-200 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-600">
+                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
                         P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
                       </span>
                       <button
                         type="button"
-                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Página siguiente"
                         :disabled="!canNextPage"
                         @click.stop="nextPage"
@@ -324,64 +309,69 @@
 
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div
-            v-if="showDocumentFilters"
-            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-          >
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div class="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <div class="text-sm font-bold text-slate-800">Filtros de la cola</div>
-                <div class="mt-1 text-xs font-medium text-slate-500">Organiza los PDF pendientes por su contexto académico.</div>
-              </div>
-              <button
-                type="button"
-                class="text-xs font-semibold text-sky-700 transition hover:text-sky-900"
-                @click="resetFilters"
-              >
-                Limpiar
-              </button>
+              <label class="block text-sm font-bold text-slate-800">Campos de Firma</label>
+              <BtnDelete
+                v-if="isCoordinateMode"
+                message="Limpiar firmas cargadas"
+                :disabled="!currentModeFields.length"
+                @onpress="clearCurrentModeFields"
+              />
             </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
+                <button
+                  type="button"
+                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                  title="Modo anterior"
+                  @click="selectPreviousBatchMode"
+                >
+                  <IconChevronLeft class="h-5 w-5" />
+                </button>
+                <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modo</div>
+                  <div class="text-sm font-bold text-slate-800">{{ currentBatchModeOption.label }}</div>
+                </div>
+                <button
+                  type="button"
+                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                  title="Siguiente modo"
+                  @click="selectNextBatchMode"
+                >
+                  <IconChevronRight class="h-5 w-5" />
+                </button>
+              </div>
 
-            <div class="grid grid-cols-1 gap-3">
-              <label class="flex flex-col gap-1.5">
-                <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Buscar</span>
-                <input
-                  v-model="filters.query"
-                  type="text"
-                  placeholder="Documento, proceso, unidad o periodo"
-                  class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
-                />
-              </label>
+              <div v-if="batchMode === 'shared-coordinates'" class="flex flex-col gap-2">
+                <label class="text-xs font-semibold text-slate-500">Referencia de página</label>
+                <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                    title="Referencia anterior"
+                    @click="selectPreviousPageReference"
+                  >
+                    <IconChevronLeft class="h-5 w-5" />
+                  </button>
+                  <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referencia</div>
+                    <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceOption.label }}</div>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                    title="Siguiente referencia"
+                    @click="selectNextPageReference"
+                  >
+                    <IconChevronRight class="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
 
-              <div class="grid grid-cols-1 gap-3">
-                <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Unidad</span>
-                  <select v-model="filters.unit" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
-                    <option value="all">Todas</option>
-                    <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Proceso</span>
-                  <select v-model="filters.process" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
-                    <option value="all">Todos</option>
-                    <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Año</span>
-                  <select v-model="filters.year" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
-                    <option value="all">Todos</option>
-                    <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
-                <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Periodo</span>
-                  <select v-model="filters.period" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
-                    <option value="all">Todos</option>
-                    <option v-for="option in periodOptions" :key="option" :value="option">{{ option }}</option>
-                  </select>
-                </label>
+              <div v-if="currentModeFields.length" class="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+                <IconCheck class="h-4 w-4" />
+                {{ currentModeFields.length }} preparada(s)
               </div>
             </div>
           </div>
@@ -465,11 +455,11 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconFiles,
-  IconTrash,
   IconFileCheck,
   IconAlertCircle,
   IconDragDrop,
   IconSignature,
+  IconX,
 } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
@@ -521,6 +511,7 @@ const pdfCanvas = ref(null);
 const canvasHost = ref(null);
 const viewerRef = ref(null);
 const batchError = ref("");
+const displayScaleRef = ref(1);
 
 let pdfDoc = null;
 let renderTask = null;
@@ -785,6 +776,10 @@ const renderPage = async (pageNum) => {
   const context = canvas.getContext("2d");
   canvas.width = viewport.width;
   canvas.height = viewport.height;
+  if (viewerRef.value) {
+    viewerRef.value.style.width = `${viewport.width}px`;
+    viewerRef.value.style.height = `${viewport.height}px`;
+  }
 
   if (renderTask) {
     try {
@@ -799,14 +794,21 @@ const renderPage = async (pageNum) => {
     viewport
   });
   await renderTask.promise;
+  displayScaleRef.value = getDisplayScale();
   currentPage.value = pageNum;
   pageInput.value = pageNum;
 };
 
 const getViewerRect = () => viewerRef.value?.getBoundingClientRect();
 
-const toPdfUnits = (cssValue) => cssValue / pdfScale;
-const toCssUnits = (pdfValue) => pdfValue * pdfScale;
+const getDisplayScale = () => {
+  const rect = getViewerRect();
+  if (!rect?.width) return 1;
+  return pdfCanvas.value?.width ? pdfCanvas.value.width / rect.width : 1;
+};
+
+const toPdfUnits = (cssValue) => (cssValue * getDisplayScale()) / pdfScale;
+const toCssUnits = (pdfValue) => (pdfValue * pdfScale) / getDisplayScale();
 
 const updateSharedSelection = (left, top, right, bottom, rectHeight) => {
   lastSelection.value = {

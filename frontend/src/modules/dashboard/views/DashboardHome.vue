@@ -21,7 +21,9 @@
                   @click="toggleGroupDropdown"
                 >
                   <span class="flex items-center gap-3.5 text-base font-semibold">
-                    <IconIdBadge class="w-6 h-6 shrink-0 opacity-90" />
+                    <span class="deasy-nav-glyph" :class="workspaceIconToneClass(selectedGroupIconMeta.tone, 'deasy-nav-glyph')">
+                      <component :is="selectedGroupIconMeta.icon" class="h-5 w-5 shrink-0" />
+                    </span>
                     <span class="truncate">{{ selectedGroupLabel }}</span>
                   </span>
                   <span class="inline-flex items-center text-[#486178]">
@@ -76,7 +78,9 @@
                 @click="toggleCargo(cargo)"
               >
                 <span class="flex items-center gap-3.5 text-base font-semibold">
-                  <component :is="iconForCargo(cargo.name)" class="w-6 h-6 shrink-0 opacity-90" />
+                  <span class="deasy-nav-glyph" :class="workspaceIconToneClass(cargoIconMeta(cargo).tone, 'deasy-nav-glyph')">
+                    <component :is="cargoIconMeta(cargo).icon" class="h-5 w-5 shrink-0" />
+                  </span>
                   <span class="truncate">{{ cargo.name }}</span>
                 </span>
               </AppButton>
@@ -94,9 +98,9 @@
                 >
                   <span
                     class="deasy-nav-item__icon"
-                    :class="process.access_source === 'flow' ? 'deasy-nav-item__icon--derived' : 'deasy-nav-item__icon--direct'"
+                    :class="workspaceIconToneClass(processIconMeta(process).tone)"
                   >
-                    <component :is="iconForProcessAccess(process)" class="h-4.5 w-4.5 shrink-0" />
+                    <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                   </span>
                   <span class="deasy-nav-item__label">{{ process.name }}</span>
                 </AppButton>
@@ -2343,23 +2347,21 @@ import AppButton from '@/shared/components/buttons/AppButton.vue';
 import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import DashboardSignatureEntry from '@/modules/dashboard/components/DashboardSignatureEntry.vue';
+import {
+  resolveWorkspaceCargoIcon,
+  resolveWorkspaceProcessIcon,
+  resolveWorkspaceUnitGroupIcon,
+  workspaceIconToneClass,
+} from '@/shared/utils/workspaceNavIcons.js';
 
 import {
   IconGlobe,
-  IconLock,
-  IconCertificate,
-  IconIdBadge,
-  IconMapPins,
-  IconUser,
-  IconCircleCheck,
   IconDownload,
   IconFileDescription,
   IconEye,
-  IconSquareCheck,
   IconSignature,
   IconUpload,
   IconArrowLeft,
-  IconArrowRight,
   IconBuildingMonument,
   IconChevronDown,
   IconMessages,
@@ -2723,36 +2725,14 @@ const toggleCargo = (cargo) => {
   cargo.open = !cargo.open;
 };
 
-const iconForCargo = (name = '') => {
-  const normalized = name.toLowerCase();
-  if (normalized.includes('docen')) return IconCertificate;
-  if (normalized.includes('coord')) return IconIdBadge;
-  if (normalized.includes('admin')) return IconLock;
-  return IconIdBadge;
-};
-
-const iconForProcess = (name = '') => {
-  const normalized = name.toLowerCase();
-  if (normalized.includes('firma')) return IconCircleCheck;
-  if (normalized.includes('perfil')) return IconUser;
-  if (normalized.includes('academ')) return IconCertificate;
-  if (normalized.includes('unidad')) return IconGlobe;
-  return IconSquareCheck;
-};
-
-const iconForProcessAccess = (process = {}) => {
-  if (process?.access_source === 'flow') return IconArrowRight;
-  return iconForProcess(process?.name || '');
-};
-
-const iconForUnitGroup = (group) => {
-  const label = `${group?.label ?? ''} ${group?.name ?? ''}`.toLowerCase();
-  if (label.includes('univers')) return IconGlobe;
-  if (label.includes('facult')) return IconMapPins;
-  if (label.includes('carrera')) return IconCertificate;
-  if (label.includes('depart')) return IconIdBadge;
-  return IconIdBadge;
-};
+const cargoIconMeta = (cargo = {}) => resolveWorkspaceCargoIcon(cargo?.name || '');
+const processIconMeta = (process = {}) => resolveWorkspaceProcessIcon(process);
+const unitGroupIconMeta = (group = {}) => resolveWorkspaceUnitGroupIcon(group);
+const selectedGroupIconMeta = computed(() => (
+  selectedGroupId.value
+    ? unitGroupIconMeta(unitGroups.value.find((group) => String(group.id) === String(selectedGroupId.value)) || {})
+    : unitGroupIconMeta({ label: 'Consolidado' })
+));
 
 const resolveUnitNameById = (unitId) => {
   const normalized = Number(unitId || 0);

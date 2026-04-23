@@ -26,8 +26,74 @@
         @open-general-multisigner="openGeneralMultiSignerModal"
         @open-dashboard-multisigner="openAllPendingInMultiSigner"
         @open-dashboard-pending="openPendingModal"
+        @open-sign-modal="handleOpenSignModal"
+        @open-request-modal="handleOpenRequestModal"
       />
     </section>
+
+    <AppModalShell
+      controlled
+      :open="signModalOpen"
+      labelled-by="dashboard-signature-sign-modal"
+      size="xl"
+      dialog-class="max-w-[108rem]"
+      content-class="flex max-h-[calc(100vh-4rem)] flex-col"
+      body-class="flex-1 min-h-0 overflow-y-auto p-0"
+      @close="closeSignModal"
+    >
+      <template #header>
+        <div id="dashboard-signature-sign-modal" class="flex min-w-0 flex-1 items-center gap-4">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21h-7a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v7"></path><path d="M14 19l2 2l4 -4"></path><path d="M9 7h4"></path><path d="M9 11h4"></path></svg>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Firmador singular</div>
+            <div class="truncate text-base font-bold text-slate-800">Firmar documento</div>
+          </div>
+        </div>
+      </template>
+      <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
+        <FirmarPdf
+          ref="signModalRef"
+          embedded
+          :show-start-heading="false"
+          launcher-mode="sign"
+          @request-close="closeSignModal"
+        />
+      </div>
+    </AppModalShell>
+
+    <AppModalShell
+      controlled
+      :open="requestModalOpen"
+      labelled-by="dashboard-signature-request-modal"
+      size="xl"
+      dialog-class="max-w-[108rem]"
+      content-class="flex max-h-[calc(100vh-4rem)] flex-col"
+      body-class="flex-1 min-h-0 overflow-y-auto p-0"
+      @close="closeRequestModal"
+    >
+      <template #header>
+        <div id="dashboard-signature-request-modal" class="flex min-w-0 flex-1 items-center gap-4">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l11 -11"></path><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7.5l-7.5 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"></path></svg>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Solicitud singular</div>
+            <div class="truncate text-base font-bold text-slate-800">Solicitar firmas</div>
+          </div>
+        </div>
+      </template>
+      <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
+        <FirmarPdf
+          ref="requestModalRef"
+          embedded
+          :show-start-heading="false"
+          launcher-mode="request"
+          @request-close="closeRequestModal"
+        />
+      </div>
+    </AppModalShell>
 
     <AppModalShell
       controlled
@@ -50,40 +116,6 @@
               <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Previsualizando PDF</div>
               <div class="truncate text-base font-bold text-slate-800" :title="generalMultiSignerHeader.documentName">{{ formatHeaderFileName(generalMultiSignerHeader.documentName) }}</div>
             </div>
-          </div>
-          <div class="flex flex-1 flex-wrap items-center justify-center gap-3">
-            <AppCounterNavigator
-              label="Documento"
-              editable
-              :model-value="generalMultiSignerHeader.documentInput"
-              :min="1"
-              :current="generalMultiSignerHeader.documentCurrent"
-              :total="generalMultiSignerHeader.documentTotal"
-              :previous-disabled="!generalMultiSignerHeader.canPrevDocument"
-              :next-disabled="!generalMultiSignerHeader.canNextDocument"
-              previous-title="Documento anterior"
-              next-title="Siguiente documento"
-              @update:modelValue="generalMultiSignerHeader.documentInput = $event"
-              @previous="generalMultiSignerRef?.multiPrevDocument?.()"
-              @next="generalMultiSignerRef?.multiNextDocument?.()"
-              @submit="generalMultiSignerRef?.multiGoToDocument?.(generalMultiSignerHeader.documentInput)"
-            />
-            <AppCounterNavigator
-              label="Página"
-              editable
-              :model-value="generalMultiSignerHeader.pageInput"
-              :min="1"
-              :current="generalMultiSignerHeader.pageCurrent"
-              :total="generalMultiSignerHeader.pageTotal"
-              :previous-disabled="!generalMultiSignerHeader.canPrevPage"
-              :next-disabled="!generalMultiSignerHeader.canNextPage"
-              previous-title="Página anterior"
-              next-title="Página siguiente"
-              @update:modelValue="generalMultiSignerHeader.pageInput = $event"
-              @previous="generalMultiSignerRef?.multiPrevPage?.()"
-              @next="generalMultiSignerRef?.multiNextPage?.()"
-              @submit="generalMultiSignerRef?.multiGoToPage?.(generalMultiSignerHeader.pageInput)"
-            />
           </div>
         </div>
       </template>
@@ -259,40 +291,6 @@
               <div class="truncate text-base font-bold text-slate-800" :title="pendingMultiSignerHeader.documentName">{{ formatHeaderFileName(pendingMultiSignerHeader.documentName) }}</div>
             </div>
           </div>
-          <div class="flex flex-1 flex-wrap items-center justify-center gap-3">
-            <AppCounterNavigator
-              label="Documento"
-              editable
-              :model-value="pendingMultiSignerHeader.documentInput"
-              :min="1"
-              :current="pendingMultiSignerHeader.documentCurrent"
-              :total="pendingMultiSignerHeader.documentTotal"
-              :previous-disabled="!pendingMultiSignerHeader.canPrevDocument"
-              :next-disabled="!pendingMultiSignerHeader.canNextDocument"
-              previous-title="Documento anterior"
-              next-title="Siguiente documento"
-              @update:modelValue="pendingMultiSignerHeader.documentInput = $event"
-              @previous="multiSignerRef?.multiPrevDocument?.()"
-              @next="multiSignerRef?.multiNextDocument?.()"
-              @submit="multiSignerRef?.multiGoToDocument?.(pendingMultiSignerHeader.documentInput)"
-            />
-            <AppCounterNavigator
-              label="Página"
-              editable
-              :model-value="pendingMultiSignerHeader.pageInput"
-              :min="1"
-              :current="pendingMultiSignerHeader.pageCurrent"
-              :total="pendingMultiSignerHeader.pageTotal"
-              :previous-disabled="!pendingMultiSignerHeader.canPrevPage"
-              :next-disabled="!pendingMultiSignerHeader.canNextPage"
-              previous-title="Página anterior"
-              next-title="Página siguiente"
-              @update:modelValue="pendingMultiSignerHeader.pageInput = $event"
-              @previous="multiSignerRef?.multiPrevPage?.()"
-              @next="multiSignerRef?.multiNextPage?.()"
-              @submit="multiSignerRef?.multiGoToPage?.(pendingMultiSignerHeader.pageInput)"
-            />
-          </div>
         </div>
       </template>
       <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
@@ -390,9 +388,13 @@ const selectedIds = ref([]);
 const pendingModalOpen = ref(false);
 const generalMultiSignerOpen = ref(false);
 const multiSignerOpen = ref(false);
+const signModalOpen = ref(false);
+const requestModalOpen = ref(false);
 const pendingPreparation = ref(false);
 const multiSignerError = ref("");
 const rowActionLoading = ref({});
+const signModalRef = ref(null);
+const requestModalRef = ref(null);
 const generalMultiSignerRef = ref(null);
 const multiSignerRef = ref(null);
 const generalMultiSignerHeader = ref(createEmptyMultiHeader());
@@ -623,6 +625,38 @@ const openPendingModal = () => {
 
 const closePendingModal = () => {
   pendingModalOpen.value = false;
+};
+
+const openSignModal = async (files = []) => {
+  if (!files.length) return;
+  await signModalRef.value?.resetToStart?.();
+  await signModalRef.value?.openSingleFlowWithFiles?.(files, "sign");
+  signModalOpen.value = true;
+};
+
+const closeSignModal = () => {
+  signModalOpen.value = false;
+  signModalRef.value?.resetToStart?.();
+};
+
+const openRequestModal = async (files = []) => {
+  if (!files.length) return;
+  await requestModalRef.value?.resetToStart?.();
+  await requestModalRef.value?.openSingleFlowWithFiles?.(files, "request");
+  requestModalOpen.value = true;
+};
+
+const closeRequestModal = () => {
+  requestModalOpen.value = false;
+  requestModalRef.value?.resetToStart?.();
+};
+
+const handleOpenSignModal = async (payload = {}) => {
+  await openSignModal(Array.isArray(payload?.files) ? payload.files : []);
+};
+
+const handleOpenRequestModal = async (payload = {}) => {
+  await openRequestModal(Array.isArray(payload?.files) ? payload.files : []);
 };
 
 const openGeneralMultiSignerModal = async (payload = {}) => {

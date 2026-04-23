@@ -33,7 +33,9 @@
                   @click="showCoordinacion = !showCoordinacion"
                 >
                     <span class="flex items-center gap-3.5 text-base font-semibold">
-                      <IconId class="w-6 h-6 shrink-0 opacity-90" />
+                      <span class="deasy-nav-glyph" :class="workspaceIconToneClass(coordinacionIconMeta.tone, 'deasy-nav-glyph')">
+                        <component :is="coordinacionIconMeta.icon" class="h-5 w-5 shrink-0" />
+                      </span>
                       <span class="truncate">Coordinación</span>
                     </span>
                 </button>
@@ -44,8 +46,8 @@
                       :class="item.active ? 'deasy-nav-item--active' : ''"
                       type="button"
                       @click="onmenuClick(item.label)">
-                      <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                        <component :is="getMenuIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(profileMenuIconMeta(item).tone)">
+                        <component :is="profileMenuIconMeta(item).icon" class="h-4.5 w-4.5 shrink-0" />
                       </span>
                       <span class="deasy-nav-item__label">{{ item.label }}</span>
                       <span v-if="item.key" class="ml-auto inline-flex items-center rounded-lg border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
@@ -63,7 +65,9 @@
                   @click="showDocencia = !showDocencia"
                 >
                   <span class="flex items-center gap-3.5 text-base font-semibold">
-                    <IconCertificate class="w-6 h-6 shrink-0 opacity-90" />
+                    <span class="deasy-nav-glyph" :class="workspaceIconToneClass(docenciaIconMeta.tone, 'deasy-nav-glyph')">
+                      <component :is="docenciaIconMeta.icon" class="h-5 w-5 shrink-0" />
+                    </span>
                     <span class="truncate">Docencia</span>
                   </span>
                 </button>
@@ -120,23 +124,12 @@ import axios from 'axios';
     import SBody from '@/layouts/core/SBody.vue';
     import AppWorkspaceHeader from '@/layouts/headers/AppWorkspaceHeader.vue';
     import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
-    import { 
-      IconUser, IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, 
-      IconInfoCircle, IconMenu2, IconHome
-    , IconBook, IconMicroscope, IconLink, IconWorld, IconAppWindow } from '@tabler/icons-vue';
-
-    const getMenuIcon = (iconName) => {
-      const map = {
-        'user': IconUser,
-        'certificate': IconCertificate,
-        'check-double': IconChecks,
-        'id-card': IconId,
-        'square-check': IconSquareCheck,
-        'check-circle': IconCircleCheck,
-        'info-circle': IconInfoCircle
-      };
-      return map[iconName] || IconCircleCheck;
-    };
+    import {
+      resolveWorkspaceAreaIcon,
+      resolveWorkspaceProfileMenuIcon,
+      resolveWorkspaceSectionIcon,
+      workspaceIconToneClass,
+    } from '@/shared/utils/workspaceNavIcons.js';
 import TitulosView from '@/modules/perfil/views/TitulosView.vue';
 import LaboralView from '@/modules/perfil/views/LaboralView.vue';
 import ReferenciasView from '@/modules/perfil/views/ReferenciasView.vue';
@@ -347,15 +340,12 @@ const goBackFromProfileHome = () => {
     
 const isClient = typeof window !== 'undefined';
 
+const coordinacionIconMeta = resolveWorkspaceSectionIcon('Coordinación');
+const docenciaIconMeta = resolveWorkspaceSectionIcon('Docencia');
+const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
+
 const resolveAreaIcon = (name) => {
-    switch(name) {
-        case 'Academia': return IconBook;
-        case 'Investigación': return IconMicroscope;
-        case 'Vinculación': return IconLink;
-        case 'Internacionalización': return IconWorld;
-        case 'Perfil': return IconUser;
-        default: return IconAppWindow;
-    }
+    return resolveWorkspaceAreaIcon(name).icon;
 };
 
     const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);

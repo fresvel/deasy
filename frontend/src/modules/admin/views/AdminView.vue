@@ -29,7 +29,9 @@
                 @click="onGroupTitleClick(group)"
               >
                 <div class="flex items-center gap-3.5">
-                  <component :is="resolveIcon(iconForGroup(group))" class="w-6 h-6 shrink-0 opacity-90" />
+                  <span class="deasy-nav-glyph" :class="workspaceIconToneClass(groupIconMeta(group).tone, 'deasy-nav-glyph')">
+                    <component :is="groupIconMeta(group).icon" class="h-5 w-5 shrink-0" />
+                  </span>
                   <span>{{ group.label }}</span>
                 </div>
                 <IconChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openCategories[group.label] }" />
@@ -45,8 +47,8 @@
                     type="button"
                     @click="openAcademyItem(item)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
+                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ item.label }}</span>
                   </button>
@@ -60,8 +62,8 @@
                     type="button"
                     @click="openGestionItem(item)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
+                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ item.label }}</span>
                   </button>
@@ -75,8 +77,8 @@
                     type="button"
                     @click="openUsersItem(item)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
+                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ item.label }}</span>
                   </button>
@@ -90,8 +92,8 @@
                     type="button"
                     @click="openContractsItem(item)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
+                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ item.label }}</span>
                   </button>
@@ -105,8 +107,8 @@
                     type="button"
                     @click="openSecurityItem(item)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(item.icon)" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(resolveIconMeta(item.icon, item.label).tone)">
+                      <component :is="resolveIconMeta(item.icon, item.label).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ item.label }}</span>
                   </button>
@@ -120,8 +122,8 @@
                     type="button"
                     @click="selectTable(table)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(iconForTable(table.table))" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(tableIconMeta(table.table).tone)">
+                      <component :is="tableIconMeta(table.table).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ table.label }}</span>
                   </button>
@@ -136,8 +138,8 @@
                     type="button"
                     @click="selectTable(table)"
                   >
-                    <span class="deasy-nav-item__icon deasy-nav-item__icon--direct">
-                      <component :is="resolveIcon(iconForTable(table.table))" class="h-4.5 w-4.5 shrink-0" />
+                    <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(tableIconMeta(table.table).tone)">
+                      <component :is="tableIconMeta(table.table).icon" class="h-4.5 w-4.5 shrink-0" />
                     </span>
                     <span>{{ table.label }}</span>
                   </button>
@@ -168,7 +170,7 @@
                   <div class="deasy-hero-main deasy-hero-main--with-media">
                     <div class="deasy-hero-media">
                       <div class="deasy-hero-media-card">
-                        <component :is="resolveIcon(adminHeroIcon)" class="h-10 w-10" />
+                      <component :is="adminHeroIcon" class="h-10 w-10" />
                       </div>
                     </div>
                     <div class="deasy-hero-copy sm:pt-0">
@@ -197,7 +199,7 @@
                       :title="table.label"
                       meta="Gestionar"
                       :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="resolveIcon(iconForTable(table.table))"
+                      :icon="tableIconMeta(table.table).icon"
                       show-arrow
                       class-name="min-h-[170px]"
                       @click="selectTable(table)"
@@ -212,7 +214,7 @@
                       layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIcon(item.icon)"
+                      :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
                       class-name="min-h-[140px]"
                       @click="openAcademyItem(item)"
@@ -227,7 +229,7 @@
                       :title="table.label"
                       meta="Gestionar"
                       :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="resolveIcon(iconForTable(table.table))"
+                      :icon="tableIconMeta(table.table).icon"
                       show-arrow
                       class-name="min-h-[170px]"
                       @click="selectTable(table)"
@@ -238,7 +240,7 @@
                       title="Nuevo artifact general"
                       meta=""
                       description="Crear desde seed o archivos"
-                      :icon="resolveIcon('plus')"
+                      :icon="IconPlus"
                       badge="Acción especial"
                       badge-variant="info"
                       class-name="min-h-[170px] bg-gradient-to-br from-sky-50 to-white border-sky-200 hover:border-sky-400"
@@ -256,7 +258,7 @@
                       layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIcon(item.icon)"
+                      :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
                       class-name="min-h-[140px]"
                       @click="openGestionItem(item)"
@@ -271,7 +273,7 @@
                       :title="table.label"
                       meta="Gestionar"
                       :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="resolveIcon(iconForTable(table.table))"
+                      :icon="tableIconMeta(table.table).icon"
                       show-arrow
                       class-name="min-h-[170px]"
                       @click="selectTable(table)"
@@ -286,7 +288,7 @@
                       layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIcon(item.icon)"
+                      :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
                       class-name="min-h-[140px]"
                       @click="openUsersItem(item)"
@@ -301,7 +303,7 @@
                       :title="table.label"
                       meta="Gestionar"
                       :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="resolveIcon(iconForTable(table.table))"
+                      :icon="tableIconMeta(table.table).icon"
                       show-arrow
                       class-name="min-h-[170px]"
                       @click="selectTable(table)"
@@ -316,7 +318,7 @@
                       layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIcon(item.icon)"
+                      :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
                       class-name="min-h-[140px]"
                       @click="openContractsItem(item)"
@@ -331,7 +333,7 @@
                       :title="table.label"
                       meta="Gestionar"
                       :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="resolveIcon(iconForTable(table.table))"
+                      :icon="tableIconMeta(table.table).icon"
                       show-arrow
                       class-name="min-h-[170px]"
                       @click="selectTable(table)"
@@ -346,7 +348,7 @@
                       layout="stacked"
                       :title="item.label"
                       :description="item.description || 'Administra y configura los datos de esta sección.'"
-                      :icon="resolveIcon(item.icon)"
+                      :icon="resolveIconMeta(item.icon, item.label).icon"
                       show-arrow
                       class-name="min-h-[140px]"
                       @click="openSecurityItem(item)"
@@ -361,7 +363,7 @@
                       :title="item.label"
                       :meta="item.bucket"
                       :description="item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="resolveIcon(iconForTable(item.table))"
+                      :icon="tableIconMeta(item.table).icon"
                       show-arrow
                       class-name="min-h-[170px]"
                       @click="selectTable(item)"
@@ -376,7 +378,7 @@
                       layout="stacked"
                       :title="group.label"
                       :description="descriptionForGroup(group)"
-                      :icon="resolveIcon(iconForGroup(group))"
+                      :icon="groupIconMeta(group).icon"
                       show-arrow
                       class-name="min-h-[140px]"
                       @click="openGroupFromHome(group)"
@@ -411,14 +413,8 @@
 import { computed, nextTick, onMounted, ref } from "vue";
 
 import { 
-  IconSchool, 
-  IconChecklist, 
-  IconUser, 
-  IconAddressBook, 
   IconLock,
   IconCircle,
-  IconCheckbox,
-  IconCertificate,
   IconInfoCircle,
   IconPlus,
   IconBell,
@@ -439,6 +435,12 @@ import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLaun
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import {
+  resolveWorkspaceAdminGroupIcon,
+  resolveWorkspaceAdminTableIcon,
+  resolveWorkspaceProfileMenuIcon,
+  workspaceIconToneClass,
+} from "@/shared/utils/workspaceNavIcons.js";
 
 const isClient = typeof window !== 'undefined';
 const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
@@ -862,18 +864,18 @@ const selectedGroupCrudTables = computed(() => {
 });
 
 const adminHeroIcon = computed(() =>
-  showAcademyCrudIndex.value ? (selectedAcademyCrudItem.value?.icon || 'map-marked-alt')
-  : showAcademiaIndex.value ? 'map-marked-alt'
-  : showGestionCrudIndex.value ? (selectedGestionCrudItem.value?.icon || 'check-double')
-  : showGestionesIndex.value ? 'check-double'
-  : showUsersCrudIndex.value ? (selectedUsersCrudItem.value?.icon || 'user')
-  : showUsersIndex.value ? 'user'
-  : showContractsCrudIndex.value ? (selectedContractsCrudItem.value?.icon || 'certificate')
-  : showContractsIndex.value ? 'certificate'
-  : showSecurityCrudIndex.value ? (selectedSecurityCrudItem.value?.icon || 'lock')
-  : showSecurityIndex.value ? 'lock'
-  : showGroupCrudIndex.value ? iconForGroup(selectedGroup.value)
-  : 'lock'
+  showAcademyCrudIndex.value ? resolveIconMeta(selectedAcademyCrudItem.value?.icon || 'map-marked-alt', selectedAcademyCrudItem.value?.label).icon
+  : showAcademiaIndex.value ? resolveIconMeta('map-marked-alt', 'Academia').icon
+  : showGestionCrudIndex.value ? resolveIconMeta(selectedGestionCrudItem.value?.icon || 'check-double', selectedGestionCrudItem.value?.label).icon
+  : showGestionesIndex.value ? resolveIconMeta('check-double', 'Gestiones').icon
+  : showUsersCrudIndex.value ? resolveIconMeta(selectedUsersCrudItem.value?.icon || 'user', selectedUsersCrudItem.value?.label).icon
+  : showUsersIndex.value ? resolveIconMeta('user', 'Usuarios').icon
+  : showContractsCrudIndex.value ? resolveIconMeta(selectedContractsCrudItem.value?.icon || 'certificate', selectedContractsCrudItem.value?.label).icon
+  : showContractsIndex.value ? resolveIconMeta('certificate', 'Contratos').icon
+  : showSecurityCrudIndex.value ? resolveIconMeta(selectedSecurityCrudItem.value?.icon || 'lock', selectedSecurityCrudItem.value?.label).icon
+  : showSecurityIndex.value ? resolveIconMeta('lock', 'Seguridad').icon
+  : showGroupCrudIndex.value ? groupIconMeta(selectedGroup.value).icon
+  : IconLock
 );
 
 const adminHeroTitle = computed(() =>
@@ -931,24 +933,34 @@ const groupIconMap = {
 };
 
 
-const resolveIcon = (iconName) => {
-  const map = {
-    'map-marked-alt': IconSchool,
-    'check-double': IconChecklist,
-    'user': IconUser,
-    'id-card': IconAddressBook,
-    'lock': IconLock,
-    'square-check': IconCheckbox,
-    'certificate': IconCertificate,
-    'info-circle': IconInfoCircle,
-    'plus': IconPlus,
-    'circle': IconCircle,
-    'bell': IconBell
+const resolveIconMeta = (iconName, label = "") => {
+  switch (iconName) {
+    case 'map-marked-alt':
+      return resolveWorkspaceAdminGroupIcon('estructura_academico');
+    case 'check-double':
+    case 'square-check':
+      return resolveWorkspaceAdminGroupIcon('procesos');
+    case 'user':
+      return resolveWorkspaceAdminGroupIcon('usuarios');
+    case 'id-card':
+    case 'certificate':
+      return resolveWorkspaceAdminGroupIcon('contratacion');
+    case 'lock':
+      return resolveWorkspaceAdminGroupIcon('seguridad');
+    case 'plus':
+      return { icon: IconPlus, tone: 'emerald' };
+    case 'bell':
+      return { icon: IconBell, tone: 'amber' };
+    case 'circle':
+      return { icon: IconCircle, tone: 'slate' };
+    case 'info-circle':
+      return { icon: IconInfoCircle, tone: 'slate' };
+    default:
+      return resolveWorkspaceProfileMenuIcon(iconName, label);
   }
-  return map[iconName] || IconCircle
-}
-
-const iconForGroup = (group) => groupIconMap[group?.key] || "circle";
+};
+const groupIconMeta = (group) => resolveWorkspaceAdminGroupIcon(group?.key || "");
+const tableIconMeta = (tableName = "") => resolveWorkspaceAdminTableIcon(tableName);
 
 const groupDescMap = {
   'estructura_academico': 'Administración de facultades, carreras, currículos y periodos académicos.',
@@ -959,16 +971,6 @@ const groupDescMap = {
 };
 const descriptionForGroup = (group) => groupDescMap[group?.key] || 'Gestión segura de módulos del sistema.';
 
-
-const iconForTable = (tableName = "") => {
-  const normalized = tableName.toLowerCase();
-  if (/person|user|role|permission/.test(normalized)) return "user";
-  if (/unit|cargo|position|term|relation/.test(normalized)) return "id-card";
-  if (/process|task|template|document|signature/.test(normalized)) return "square-check";
-  if (/contract|vacanc|offer|aplication/.test(normalized)) return "certificate";
-  if (/security|resource|action/.test(normalized)) return "lock";
-  return "info-circle";
-};
 
 
 const tablesCountForGroup = (group) => (group?.mainTables?.length ?? 0) + (group?.supportTables?.length ?? 0);

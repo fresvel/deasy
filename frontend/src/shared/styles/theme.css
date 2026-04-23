@@ -207,6 +207,18 @@ a:hover {
   border-color: rgba(192, 50, 33, 0.4);
 }
 
+.hope-action-delete-strong {
+  color: #b42318 !important;
+  background: rgba(228, 59, 44, 0.14);
+  border-color: rgba(228, 59, 44, 0.34);
+}
+
+.hope-action-delete-strong:hover {
+  color: #991b1b !important;
+  background: rgba(228, 59, 44, 0.18);
+  border-color: rgba(228, 59, 44, 0.46);
+}
+
 .hope-action-view {
   color: var(--brand-accent) !important;
   background: rgba(var(--brand-accent-rgb), 0.11);
