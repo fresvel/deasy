@@ -23,13 +23,25 @@
     <!-- Botón eliminar rápido en hover o seleccionado -->
     <div 
       v-if="!isPreview"
-      class="absolute -top-3 -right-3 z-30 flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" 
+      class="absolute right-0 top-0 z-30 flex translate-x-[calc(100%+0.5rem)] flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
-      <button v-if="allowDelete" @click.stop="$emit('delete')" class="bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95">
+      <button
+        v-if="allowDelete"
+        @click.stop="$emit('delete')"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-rose-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-rose-600/92 active:scale-95"
+      >
         <IconTrash class="w-3.5 h-3.5" />
       </button>
       <slot name="actions"></slot>
+    </div>
+
+    <div
+      v-if="!isPreview && $slots.navigation"
+      class="absolute bottom-0 left-1/2 z-30 flex -translate-x-1/2 translate-y-[calc(100%+0.5rem)] flex-col items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      :class="{ 'opacity-100': isActive }"
+    >
+      <slot name="navigation"></slot>
     </div>
   </div>
 </template>

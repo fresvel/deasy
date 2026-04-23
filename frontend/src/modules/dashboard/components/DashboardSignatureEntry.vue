@@ -35,13 +35,59 @@
       labelled-by="dashboard-signature-general-multisigner-modal"
       size="xl"
       dialog-class="max-w-[108rem]"
-      title="Multifirmador"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
       body-class="flex-1 min-h-0 overflow-y-auto p-0"
-      footer-class="hidden"
+      footer-class="justify-center"
       @close="closeGeneralMultiSignerModal"
     >
-      <div class="flex min-h-0 flex-col p-6">
+      <template #header>
+        <div id="dashboard-signature-general-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
+          <div class="flex min-w-0 max-w-[22rem] items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Previsualizando PDF</div>
+              <div class="truncate text-base font-bold text-slate-800" :title="generalMultiSignerHeader.documentName">{{ formatHeaderFileName(generalMultiSignerHeader.documentName) }}</div>
+            </div>
+          </div>
+          <div class="flex flex-1 flex-wrap items-center justify-center gap-3">
+            <AppCounterNavigator
+              label="Documento"
+              editable
+              :model-value="generalMultiSignerHeader.documentInput"
+              :min="1"
+              :current="generalMultiSignerHeader.documentCurrent"
+              :total="generalMultiSignerHeader.documentTotal"
+              :previous-disabled="!generalMultiSignerHeader.canPrevDocument"
+              :next-disabled="!generalMultiSignerHeader.canNextDocument"
+              previous-title="Documento anterior"
+              next-title="Siguiente documento"
+              @update:modelValue="generalMultiSignerHeader.documentInput = $event"
+              @previous="generalMultiSignerRef?.multiPrevDocument?.()"
+              @next="generalMultiSignerRef?.multiNextDocument?.()"
+              @submit="generalMultiSignerRef?.multiGoToDocument?.(generalMultiSignerHeader.documentInput)"
+            />
+            <AppCounterNavigator
+              label="Página"
+              editable
+              :model-value="generalMultiSignerHeader.pageInput"
+              :min="1"
+              :current="generalMultiSignerHeader.pageCurrent"
+              :total="generalMultiSignerHeader.pageTotal"
+              :previous-disabled="!generalMultiSignerHeader.canPrevPage"
+              :next-disabled="!generalMultiSignerHeader.canNextPage"
+              previous-title="Página anterior"
+              next-title="Página siguiente"
+              @update:modelValue="generalMultiSignerHeader.pageInput = $event"
+              @previous="generalMultiSignerRef?.multiPrevPage?.()"
+              @next="generalMultiSignerRef?.multiNextPage?.()"
+              @submit="generalMultiSignerRef?.multiGoToPage?.(generalMultiSignerHeader.pageInput)"
+            />
+          </div>
+        </div>
+      </template>
+      <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
         <div class="flex min-h-0 flex-1 flex-col">
           <FirmarPdf
             v-if="generalMultiSignerOpen"
@@ -50,9 +96,46 @@
             multi-only
             @close-multi="closeGeneralMultiSignerModal"
             @batch-finished="handleGeneralBatchFinished"
+            @multi-header-update="updateGeneralMultiSignerHeader"
           />
         </div>
       </div>
+      <template #footer>
+        <div class="flex w-full flex-wrap items-center justify-center gap-3">
+          <AppCounterNavigator
+            label="Documento"
+            editable
+            :model-value="generalMultiSignerHeader.documentInput"
+            :min="1"
+            :current="generalMultiSignerHeader.documentCurrent"
+            :total="generalMultiSignerHeader.documentTotal"
+            :previous-disabled="!generalMultiSignerHeader.canPrevDocument"
+            :next-disabled="!generalMultiSignerHeader.canNextDocument"
+            previous-title="Documento anterior"
+            next-title="Siguiente documento"
+            @update:modelValue="generalMultiSignerHeader.documentInput = $event"
+            @previous="generalMultiSignerRef?.multiPrevDocument?.()"
+            @next="generalMultiSignerRef?.multiNextDocument?.()"
+            @submit="generalMultiSignerRef?.multiGoToDocument?.(generalMultiSignerHeader.documentInput)"
+          />
+          <AppCounterNavigator
+            label="Página"
+            editable
+            :model-value="generalMultiSignerHeader.pageInput"
+            :min="1"
+            :current="generalMultiSignerHeader.pageCurrent"
+            :total="generalMultiSignerHeader.pageTotal"
+            :previous-disabled="!generalMultiSignerHeader.canPrevPage"
+            :next-disabled="!generalMultiSignerHeader.canNextPage"
+            previous-title="Página anterior"
+            next-title="Página siguiente"
+            @update:modelValue="generalMultiSignerHeader.pageInput = $event"
+            @previous="generalMultiSignerRef?.multiPrevPage?.()"
+            @next="generalMultiSignerRef?.multiNextPage?.()"
+            @submit="generalMultiSignerRef?.multiGoToPage?.(generalMultiSignerHeader.pageInput)"
+          />
+        </div>
+      </template>
     </AppModalShell>
 
     <AppModalShell
@@ -160,13 +243,59 @@
       labelled-by="dashboard-signature-multisigner-modal"
       size="xl"
       dialog-class="max-w-[108rem]"
-      title="Multifirmador de pendientes"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
       body-class="flex-1 min-h-0 overflow-y-auto p-0"
-      footer-class="hidden"
+      footer-class="justify-center"
       @close="closeMultiSignerModal"
     >
-      <div class="flex min-h-0 flex-col p-6">
+      <template #header>
+        <div id="dashboard-signature-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
+          <div class="flex min-w-0 max-w-[22rem] items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Previsualizando PDF</div>
+              <div class="truncate text-base font-bold text-slate-800" :title="pendingMultiSignerHeader.documentName">{{ formatHeaderFileName(pendingMultiSignerHeader.documentName) }}</div>
+            </div>
+          </div>
+          <div class="flex flex-1 flex-wrap items-center justify-center gap-3">
+            <AppCounterNavigator
+              label="Documento"
+              editable
+              :model-value="pendingMultiSignerHeader.documentInput"
+              :min="1"
+              :current="pendingMultiSignerHeader.documentCurrent"
+              :total="pendingMultiSignerHeader.documentTotal"
+              :previous-disabled="!pendingMultiSignerHeader.canPrevDocument"
+              :next-disabled="!pendingMultiSignerHeader.canNextDocument"
+              previous-title="Documento anterior"
+              next-title="Siguiente documento"
+              @update:modelValue="pendingMultiSignerHeader.documentInput = $event"
+              @previous="multiSignerRef?.multiPrevDocument?.()"
+              @next="multiSignerRef?.multiNextDocument?.()"
+              @submit="multiSignerRef?.multiGoToDocument?.(pendingMultiSignerHeader.documentInput)"
+            />
+            <AppCounterNavigator
+              label="Página"
+              editable
+              :model-value="pendingMultiSignerHeader.pageInput"
+              :min="1"
+              :current="pendingMultiSignerHeader.pageCurrent"
+              :total="pendingMultiSignerHeader.pageTotal"
+              :previous-disabled="!pendingMultiSignerHeader.canPrevPage"
+              :next-disabled="!pendingMultiSignerHeader.canNextPage"
+              previous-title="Página anterior"
+              next-title="Página siguiente"
+              @update:modelValue="pendingMultiSignerHeader.pageInput = $event"
+              @previous="multiSignerRef?.multiPrevPage?.()"
+              @next="multiSignerRef?.multiNextPage?.()"
+              @submit="multiSignerRef?.multiGoToPage?.(pendingMultiSignerHeader.pageInput)"
+            />
+          </div>
+        </div>
+      </template>
+      <div class="flex min-h-0 flex-col px-4 pb-4 pt-2">
         <div v-if="multiSignerError" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
           {{ multiSignerError }}
         </div>
@@ -180,9 +309,46 @@
             multi-only
             @close-multi="closeMultiSignerModal"
             @batch-finished="handleBatchFinished"
+            @multi-header-update="updatePendingMultiSignerHeader"
           />
         </div>
       </div>
+      <template #footer>
+        <div class="flex w-full flex-wrap items-center justify-center gap-3">
+          <AppCounterNavigator
+            label="Documento"
+            editable
+            :model-value="pendingMultiSignerHeader.documentInput"
+            :min="1"
+            :current="pendingMultiSignerHeader.documentCurrent"
+            :total="pendingMultiSignerHeader.documentTotal"
+            :previous-disabled="!pendingMultiSignerHeader.canPrevDocument"
+            :next-disabled="!pendingMultiSignerHeader.canNextDocument"
+            previous-title="Documento anterior"
+            next-title="Siguiente documento"
+            @update:modelValue="pendingMultiSignerHeader.documentInput = $event"
+            @previous="multiSignerRef?.multiPrevDocument?.()"
+            @next="multiSignerRef?.multiNextDocument?.()"
+            @submit="multiSignerRef?.multiGoToDocument?.(pendingMultiSignerHeader.documentInput)"
+          />
+          <AppCounterNavigator
+            label="Página"
+            editable
+            :model-value="pendingMultiSignerHeader.pageInput"
+            :min="1"
+            :current="pendingMultiSignerHeader.pageCurrent"
+            :total="pendingMultiSignerHeader.pageTotal"
+            :previous-disabled="!pendingMultiSignerHeader.canPrevPage"
+            :next-disabled="!pendingMultiSignerHeader.canNextPage"
+            previous-title="Página anterior"
+            next-title="Página siguiente"
+            @update:modelValue="pendingMultiSignerHeader.pageInput = $event"
+            @previous="multiSignerRef?.multiPrevPage?.()"
+            @next="multiSignerRef?.multiNextPage?.()"
+            @submit="multiSignerRef?.multiGoToPage?.(pendingMultiSignerHeader.pageInput)"
+          />
+        </div>
+      </template>
     </AppModalShell>
   </section>
 </template>
@@ -194,11 +360,27 @@ import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppPageIntro from "@/shared/components/layout/AppPageIntro.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import ProcessDefinitionPanelService from "@/core/services/ProcessDefinitionPanelService.js";
 
 const emit = defineEmits(["refresh-dashboard"]);
 const processPanelService = new ProcessDefinitionPanelService();
+const HEADER_FILE_NAME_LIMIT = 20;
+
+const createEmptyMultiHeader = () => ({
+  documentName: "",
+  documentInput: 1,
+  documentCurrent: 1,
+  documentTotal: 1,
+  canPrevDocument: false,
+  canNextDocument: false,
+  pageInput: 1,
+  pageCurrent: 1,
+  pageTotal: 1,
+  canPrevPage: false,
+  canNextPage: false
+});
 
 const currentUser = ref(null);
 const loading = ref(false);
@@ -213,6 +395,8 @@ const multiSignerError = ref("");
 const rowActionLoading = ref({});
 const generalMultiSignerRef = ref(null);
 const multiSignerRef = ref(null);
+const generalMultiSignerHeader = ref(createEmptyMultiHeader());
+const pendingMultiSignerHeader = ref(createEmptyMultiHeader());
 
 const tableFilters = ref({
   query: "",
@@ -299,6 +483,12 @@ const formatDateTime = (value) => {
     hour: "2-digit",
     minute: "2-digit",
   });
+};
+
+const formatHeaderFileName = (value = "") => {
+  const normalized = String(value || "");
+  if (normalized.length <= HEADER_FILE_NAME_LIMIT) return normalized;
+  return `${normalized.slice(0, HEADER_FILE_NAME_LIMIT)}...`;
 };
 
 const loadSignatureCenter = async () => {
@@ -437,6 +627,7 @@ const closePendingModal = () => {
 
 const openGeneralMultiSignerModal = async (payload = {}) => {
   generalMultiSignerOpen.value = true;
+  generalMultiSignerHeader.value = createEmptyMultiHeader();
   await nextTick();
   const files = Array.isArray(payload?.files) ? payload.files : [];
   if (files.length) {
@@ -446,19 +637,36 @@ const openGeneralMultiSignerModal = async (payload = {}) => {
 
 const closeGeneralMultiSignerModal = () => {
   generalMultiSignerOpen.value = false;
+  generalMultiSignerHeader.value = createEmptyMultiHeader();
 };
 
 const closeMultiSignerModal = () => {
   multiSignerOpen.value = false;
   multiSignerError.value = "";
   pendingPreparation.value = false;
+  pendingMultiSignerHeader.value = createEmptyMultiHeader();
   multiSignerRef.value?.resetToStart?.();
+};
+
+const updateGeneralMultiSignerHeader = (payload = {}) => {
+  generalMultiSignerHeader.value = {
+    ...createEmptyMultiHeader(),
+    ...payload
+  };
+};
+
+const updatePendingMultiSignerHeader = (payload = {}) => {
+  pendingMultiSignerHeader.value = {
+    ...createEmptyMultiHeader(),
+    ...payload
+  };
 };
 
 const openMultiSignerWithItems = async (targetItems) => {
   multiSignerOpen.value = true;
   pendingPreparation.value = false;
   multiSignerError.value = "";
+  pendingMultiSignerHeader.value = createEmptyMultiHeader();
 
   if (!targetItems.length) {
     await nextTick();

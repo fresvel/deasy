@@ -91,8 +91,9 @@
       </div>
     </div>
 
-    <div v-if="workspaceMode === 'multi'" class="mt-4">
+    <div v-if="workspaceMode === 'multi'">
       <MultiSignerPanel
+        ref="multiSignerPanelRef"
         :batch-job="activeMultiBatchJob"
         :is-batch-submitting="isStartingMultiBatch"
         :is-downloading-batch="isDownloadingMultiBatch"
@@ -102,6 +103,7 @@
         :enable-document-filters="enableMultiSignerDocumentFilters"
         @back="closeMultiSigner"
         @download-batch="downloadMultiBatch"
+        @header-update="emit('multi-header-update', $event)"
         @start-batch="prepareMultiBatchStart"
       />
     </div>
@@ -1018,7 +1020,7 @@
       default: true
     }
   });
-  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner']);
+  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner', 'multi-header-update']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
@@ -1183,6 +1185,7 @@
   const selectedCertificateAuthority = ref(null);
   const multiBatchRequest = ref(null);
   const activeMultiBatchJob = ref(null);
+  const multiSignerPanelRef = ref(null);
 
   watch(allowUntrustedSigner, (value) => {
     try {
@@ -2787,7 +2790,24 @@
       onAddFiles(files, 'multi', options);
     };
 
-    defineExpose({ resetToStart, initializeWorkflowSignatureSession, openMultiSignerWithFiles });
+    const multiPrevDocument = () => multiSignerPanelRef.value?.prevDocument?.();
+    const multiNextDocument = () => multiSignerPanelRef.value?.nextDocument?.();
+    const multiPrevPage = () => multiSignerPanelRef.value?.prevPage?.();
+    const multiNextPage = () => multiSignerPanelRef.value?.nextPage?.();
+    const multiGoToDocument = (value) => multiSignerPanelRef.value?.goToDocument?.(value);
+    const multiGoToPage = (value) => multiSignerPanelRef.value?.goToPage?.(value);
+
+    defineExpose({
+      resetToStart,
+      initializeWorkflowSignatureSession,
+      openMultiSignerWithFiles,
+      multiPrevDocument,
+      multiNextDocument,
+      multiPrevPage,
+      multiNextPage,
+      multiGoToDocument,
+      multiGoToPage
+    });
 
   </script>
 <style scoped>

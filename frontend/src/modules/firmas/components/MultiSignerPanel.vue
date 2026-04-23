@@ -30,30 +30,12 @@
           </div>
 
           <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <label class="mb-2 block text-sm font-bold text-slate-800">Modo de operación</label>
-            <select
-              v-model="batchMode"
-              class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
-            >
-              <option value="token">Firma por token</option>
-              <option value="shared-coordinates">Misma ubicación</option>
-              <option value="per-document">Por documento</option>
-            </select>
-          </div>
-
-          <div
-            v-if="batchMode === 'shared-coordinates' || batchMode === 'per-document'"
-            class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <div class="text-sm font-bold text-slate-800">
-                  {{ batchMode === 'shared-coordinates' ? 'Coordenadas compartidas' : 'Cajas por documento' }}
-                </div>
-              </div>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <label class="block text-sm font-bold text-slate-800">Modo de operación</label>
               <button
+                v-if="isCoordinateMode"
                 type="button"
-                class="inline-flex items-center justify-center rounded-xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                class="inline-flex items-center justify-center rounded-xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                 title="Limpiar firmas cargadas"
                 :disabled="!currentModeFields.length"
                 @click="clearCurrentModeFields"
@@ -61,21 +43,60 @@
                 <IconTrash class="h-4 w-4" stroke-width="2.5" />
               </button>
             </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
+                <button
+                  type="button"
+                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                  title="Modo anterior"
+                  @click="selectPreviousBatchMode"
+                >
+                  <IconChevronLeft class="h-5 w-5" />
+                </button>
+                <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modo</div>
+                  <div class="text-sm font-bold text-slate-800">{{ currentBatchModeOption.label }}</div>
+                </div>
+                <button
+                  type="button"
+                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                  title="Siguiente modo"
+                  @click="selectNextBatchMode"
+                >
+                  <IconChevronRight class="h-5 w-5" />
+                </button>
+              </div>
 
-            <div v-if="batchMode === 'shared-coordinates'" class="flex flex-col gap-2">
-              <label class="text-xs font-semibold text-slate-500">Referencia de página</label>
-              <select
-                v-model="sharedPageReference"
-                class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
-              >
-                <option value="start">Contar desde el inicio</option>
-                <option value="end">Contar desde el final</option>
-              </select>
-            </div>
+              <div v-if="batchMode === 'shared-coordinates'" class="flex flex-col gap-2">
+                <label class="text-xs font-semibold text-slate-500">Referencia de página</label>
+                <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                    title="Referencia anterior"
+                    @click="selectPreviousPageReference"
+                  >
+                    <IconChevronLeft class="h-5 w-5" />
+                  </button>
+                  <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referencia</div>
+                    <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceOption.label }}</div>
+                  </div>
+                  <button
+                    type="button"
+                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
+                    title="Siguiente referencia"
+                    @click="selectNextPageReference"
+                  >
+                    <IconChevronRight class="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
 
-            <div v-if="currentModeFields.length" class="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-              <IconCheck class="h-4 w-4" />
-              {{ currentModeFields.length }} preparada(s)
+              <div v-if="currentModeFields.length" class="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+                <IconCheck class="h-4 w-4" />
+                {{ currentModeFields.length }} preparada(s)
+              </div>
             </div>
           </div>
 
@@ -136,57 +157,6 @@
 
       <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div
-          v-if="currentDocument"
-          class="border-b border-slate-100 bg-slate-50/70 px-5 py-4"
-        >
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex min-w-0 items-center gap-3">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-                <IconFiles class="h-5 w-5" />
-              </div>
-              <div class="min-w-0">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Previsualizando PDF</div>
-                <div class="truncate text-base font-bold text-slate-800" :title="currentDocument.name">{{ formatDisplayFileName(currentDocument.name) }}</div>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3">
-              <AppCounterNavigator
-                label="Documento"
-                v-model="documentInput"
-                editable
-                :min="1"
-                :current="currentDocumentIndex + 1"
-                :total="filteredDocuments.length"
-                :previous-disabled="!canPrevDocument"
-                :next-disabled="!canNextDocument"
-                previous-title="Documento anterior"
-                next-title="Siguiente documento"
-                @previous="prevDocument"
-                @next="nextDocument"
-                @submit="goToDocument"
-              />
-
-              <AppCounterNavigator
-                label="Página"
-                v-model="pageInput"
-                editable
-                :min="1"
-                :current="currentPage"
-                :total="totalPages"
-                :previous-disabled="!canPrevPage"
-                :next-disabled="!canNextPage"
-                previous-title="Página anterior"
-                next-title="Página siguiente"
-                @previous="prevPage"
-                @next="nextPage"
-                @submit="goToPage"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div
           class="relative grow overflow-hidden bg-slate-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
         >
@@ -231,7 +201,72 @@
                 @update:position="updateFieldCoordinates"
                 @hover-enter="isHoveringField = true"
                 @hover-leave="isHoveringField = false"
-              />
+              >
+                <template #actions>
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Iniciar firma masiva"
+                    aria-label="Iniciar firma masiva"
+                    :disabled="!canRequestStart"
+                    @click.stop="requestBatchStart"
+                  >
+                    <IconSignature class="w-3.5 h-3.5" />
+                  </button>
+                </template>
+
+                <template #navigation>
+                  <div class="flex items-center gap-1.5">
+                    <div class="inline-flex items-center overflow-hidden rounded-full border-2 border-white bg-white/95 shadow-md backdrop-blur-sm">
+                      <button
+                        type="button"
+                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Documento anterior"
+                        :disabled="!canPrevDocument"
+                        @click.stop="prevDocument"
+                      >
+                        <IconChevronLeft class="h-3 w-3" />
+                      </button>
+                      <span class="border-x border-slate-200 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-600">
+                        D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
+                      </span>
+                      <button
+                        type="button"
+                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Siguiente documento"
+                        :disabled="!canNextDocument"
+                        @click.stop="nextDocument"
+                      >
+                        <IconChevronRight class="h-3 w-3" />
+                      </button>
+                    </div>
+
+                    <div class="inline-flex items-center overflow-hidden rounded-full border-2 border-white bg-white/95 shadow-md backdrop-blur-sm">
+                      <button
+                        type="button"
+                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Página anterior"
+                        :disabled="!canPrevPage"
+                        @click.stop="prevPage"
+                      >
+                        <IconChevronLeft class="h-3 w-3" />
+                      </button>
+                      <span class="border-x border-slate-200 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-600">
+                        P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
+                      </span>
+                      <button
+                        type="button"
+                        class="p-1 text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Página siguiente"
+                        :disabled="!canNextPage"
+                        @click.stop="nextPage"
+                      >
+                        <IconChevronRight class="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </template>
+              </SignatureBox>
 
               <div
                 v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
@@ -427,11 +462,14 @@ import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
   IconCheck,
+  IconChevronLeft,
+  IconChevronRight,
   IconFiles,
   IconTrash,
   IconFileCheck,
   IconAlertCircle,
   IconDragDrop,
+  IconSignature,
 } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
@@ -467,7 +505,7 @@ const props = defineProps({
     default: false
   }
 });
-const emit = defineEmits(["back", "start-batch", "download-batch"]);
+const emit = defineEmits(["back", "start-batch", "download-batch", "header-update"]);
 
 let inputSequence = 0;
 const documents = ref([]);
@@ -476,7 +514,7 @@ const currentPage = ref(1);
 const totalPages = ref(0);
 const documentInput = ref(1);
 const pageInput = ref(1);
-const batchMode = ref("token");
+const batchMode = ref("per-document");
 const selectionMode = ref("preset");
 const sharedPageReference = ref("start");
 const pdfCanvas = ref(null);
@@ -492,6 +530,15 @@ let pageWidthPdf = 0;
 const FIELD_WIDTH = 124;
 const FIELD_HEIGHT = 48;
 const DISPLAY_FILE_NAME_LIMIT = 20;
+const BATCH_MODE_OPTIONS = [
+  { value: "token", label: "Firma por token" },
+  { value: "shared-coordinates", label: "Misma ubicación" },
+  { value: "per-document", label: "Por documento" }
+];
+const PAGE_REFERENCE_OPTIONS = [
+  { value: "start", label: "Contar desde el inicio" },
+  { value: "end", label: "Contar desde el final" }
+];
 const PDF_LOAD_OPTIONS = {
   enableXfa: true,
   stopAtErrors: false
@@ -518,11 +565,40 @@ const formatDisplayFileName = (value = "") => {
   return `${normalized.slice(0, DISPLAY_FILE_NAME_LIMIT)}...`;
 };
 
+const selectPreviousBatchMode = () => {
+  const currentIndex = BATCH_MODE_OPTIONS.findIndex((option) => option.value === batchMode.value);
+  const safeIndex = currentIndex < 0 ? 0 : currentIndex;
+  const nextIndex = (safeIndex - 1 + BATCH_MODE_OPTIONS.length) % BATCH_MODE_OPTIONS.length;
+  batchMode.value = BATCH_MODE_OPTIONS[nextIndex].value;
+};
+
+const selectNextBatchMode = () => {
+  const currentIndex = BATCH_MODE_OPTIONS.findIndex((option) => option.value === batchMode.value);
+  const safeIndex = currentIndex < 0 ? 0 : currentIndex;
+  const nextIndex = (safeIndex + 1) % BATCH_MODE_OPTIONS.length;
+  batchMode.value = BATCH_MODE_OPTIONS[nextIndex].value;
+};
+
+const selectPreviousPageReference = () => {
+  const currentIndex = PAGE_REFERENCE_OPTIONS.findIndex((option) => option.value === sharedPageReference.value);
+  const safeIndex = currentIndex < 0 ? 0 : currentIndex;
+  const nextIndex = (safeIndex - 1 + PAGE_REFERENCE_OPTIONS.length) % PAGE_REFERENCE_OPTIONS.length;
+  sharedPageReference.value = PAGE_REFERENCE_OPTIONS[nextIndex].value;
+};
+
+const selectNextPageReference = () => {
+  const currentIndex = PAGE_REFERENCE_OPTIONS.findIndex((option) => option.value === sharedPageReference.value);
+  const safeIndex = currentIndex < 0 ? 0 : currentIndex;
+  const nextIndex = (safeIndex + 1) % PAGE_REFERENCE_OPTIONS.length;
+  sharedPageReference.value = PAGE_REFERENCE_OPTIONS[nextIndex].value;
+};
+
 const successCount = computed(() => documents.value.filter((doc) => doc.status === "Firmado").length);
 const failedCount = computed(() => documents.value.filter((doc) => doc.status === "Fallido").length);
 const pendingCount = computed(() =>
   documents.value.filter((doc) => ["Pendiente", "Procesando"].includes(doc.status)).length
 );
+const filteredDocumentCount = computed(() => Math.max(filteredDocuments.value.length, 1));
 const progressPercent = computed(() => {
   const total = Number(props.batchJob?.total || documents.value.length || 0);
   const processed = Number(props.batchJob?.processed || 0);
@@ -535,16 +611,13 @@ const canPrevPage = computed(() => currentPage.value > 1);
 const canNextPage = computed(() => currentPage.value < totalPages.value);
 const isBatchRunning = computed(() => ["queued", "processing"].includes(props.batchJob?.status || ""));
 const isCoordinateMode = computed(() => ["shared-coordinates", "per-document"].includes(batchMode.value));
+const currentBatchModeOption = computed(() =>
+  BATCH_MODE_OPTIONS.find((option) => option.value === batchMode.value) || BATCH_MODE_OPTIONS[0]
+);
+const currentPageReferenceOption = computed(() =>
+  PAGE_REFERENCE_OPTIONS.find((option) => option.value === sharedPageReference.value) || PAGE_REFERENCE_OPTIONS[0]
+);
 const currentUserLabel = computed(() => "Firma");
-const batchModeHelp = computed(() => {
-  if (batchMode.value === "token") {
-    return "Busca el marcador del usuario de forma automática en cada PDF.";
-  }
-  if (batchMode.value === "shared-coordinates") {
-    return "Dibuja una vez y reutiliza la misma ubicación en todos los documentos.";
-  }
-  return "Configura las cajas de firma manualmente para cada documento del lote.";
-});
 
 const isMouseOverPdf = ref(false);
 const isHoveringField = ref(false);
@@ -635,6 +708,22 @@ const canRequestStart = computed(() =>
     )
   )
 );
+
+const emitHeaderState = () => {
+  emit("header-update", {
+    documentName: currentDocument.value?.name || "",
+    documentInput: documentInput.value,
+    documentCurrent: currentDocument.value ? currentDocumentIndex.value + 1 : 1,
+    documentTotal: Math.max(filteredDocuments.value.length, 1),
+    canPrevDocument: canPrevDocument.value,
+    canNextDocument: canNextDocument.value,
+    pageInput: pageInput.value,
+    pageCurrent: currentPage.value,
+    pageTotal: Math.max(totalPages.value, 1),
+    canPrevPage: canPrevPage.value,
+    canNextPage: canNextPage.value
+  });
+};
 
 const normalizeMetadata = (metadata = {}) => ({
   signatureRequestId: metadata.signatureRequestId || null,
@@ -992,25 +1081,47 @@ const nextPage = async () => {
   await renderPage(currentPage.value + 1);
 };
 
-const goToDocument = async () => {
-  const parsed = Number.parseInt(documentInput.value, 10);
+const goToDocument = async (value = documentInput.value) => {
+  const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
     documentInput.value = currentDocumentIndex.value + 1;
     return;
   }
   const target = Math.min(Math.max(parsed, 1), filteredDocuments.value.length || 1);
+  documentInput.value = target;
   await selectDocument(target - 1);
 };
 
-const goToPage = async () => {
-  const parsed = Number.parseInt(pageInput.value, 10);
+const goToPage = async (value = pageInput.value) => {
+  const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
     pageInput.value = currentPage.value;
     return;
   }
   const target = Math.min(Math.max(parsed, 1), totalPages.value || 1);
+  pageInput.value = target;
   await renderPage(target);
 };
+
+watch(
+  [
+    currentDocument,
+    currentDocumentIndex,
+    filteredDocuments,
+    currentPage,
+    totalPages,
+    documentInput,
+    pageInput,
+    canPrevDocument,
+    canNextDocument,
+    canPrevPage,
+    canNextPage
+  ],
+  () => {
+    emitHeaderState();
+  },
+  { immediate: true, deep: true }
+);
 
 const removeDocument = async (index) => {
   const target = filteredDocuments.value[index];
@@ -1171,6 +1282,15 @@ onBeforeUnmount(() => {
       // noop
     }
   }
+});
+
+defineExpose({
+  prevDocument,
+  nextDocument,
+  prevPage,
+  nextPage,
+  goToDocument,
+  goToPage
 });
 </script>
 

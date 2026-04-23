@@ -17,9 +17,11 @@
           v-if="showHeader"
           class="deasy-dialog-header flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"
         >
-          <h5 class="deasy-dialog-title text-lg font-bold text-slate-900" :id="labelledBy">
-            <slot name="title">{{ title }}</slot>
-          </h5>
+          <slot name="header">
+            <h5 class="deasy-dialog-title text-lg font-bold text-slate-900" :id="labelledBy">
+              <slot name="title">{{ title }}</slot>
+            </h5>
+          </slot>
           <button
             v-if="showCloseButton"
             type="button"
