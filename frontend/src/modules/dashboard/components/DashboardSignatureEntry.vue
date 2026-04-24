@@ -742,12 +742,12 @@ const openAllPendingInMultiSigner = async () => {
 
 const handleBatchFinished = async () => {
   await loadSignatureCenter();
-  emit("refresh-dashboard");
+  emit("refresh-dashboard", { source: "pending-multisigner" });
 };
 
 const handleGeneralBatchFinished = async () => {
   await loadSignatureCenter();
-  emit("refresh-dashboard");
+  emit("refresh-dashboard", { source: "general-multisigner" });
 };
 
 onMounted(async () => {

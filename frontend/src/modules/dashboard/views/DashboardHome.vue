@@ -219,7 +219,7 @@
           </section>
         </template>
         <template v-else-if="isGlobalSignatureRoute">
-          <DashboardSignatureEntry @refresh-dashboard="loadUserMenu" />
+          <DashboardSignatureEntry @refresh-dashboard="handleSignatureCenterRefresh" />
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
         <AppPageIntro
@@ -3439,6 +3439,16 @@ const loadDocumentCenterPage = async () => {
     documentCenterError.value = error?.response?.data?.message || 'No se pudo cargar el centro documental.';
   } finally {
     documentCenterLoading.value = false;
+  }
+};
+
+const handleSignatureCenterRefresh = async () => {
+  await loadUserMenu();
+  if (selectedProcessContext.value) {
+    await loadSelectedProcessPanel(selectedProcessContext.value);
+  }
+  if (workspaceRouteMode.value === 'documents') {
+    await loadDocumentCenterPage();
   }
 };
 

@@ -1189,7 +1189,8 @@ const requestBatchStart = async () => {
     documents: documents.value.map((doc) => ({
       id: doc.id,
       name: doc.name,
-      file: doc.file
+      file: doc.file,
+      metadata: { ...(doc.metadata || {}) }
     })),
     sharedFields: sharedFields.value.map((field) => ({
       page: field.page,

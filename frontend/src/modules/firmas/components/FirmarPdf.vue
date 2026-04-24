@@ -2537,6 +2537,24 @@
               }))
             ));
           }
+          formData.append('document_contexts', JSON.stringify(
+            multiBatchRequest.value.documents.map((doc) => ({
+              id: doc.id,
+              name: doc.name,
+              metadata: {
+                signatureRequestId: Number(doc?.metadata?.signatureRequestId || 0) || null,
+                documentVersionId: Number(doc?.metadata?.documentVersionId || 0) || null,
+                documentId: Number(doc?.metadata?.documentId || 0) || null,
+                processName: doc?.metadata?.processName || '',
+                unitLabel: doc?.metadata?.unitLabel || '',
+                termName: doc?.metadata?.termName || '',
+                termYear: doc?.metadata?.termYear || '',
+                termTypeName: doc?.metadata?.termTypeName || '',
+                stepName: doc?.metadata?.stepName || '',
+                requestedAt: doc?.metadata?.requestedAt || ''
+              }
+            }))
+          ));
           formData.append('allow_untrusted_signer', allowUntrustedSigner.value ? 'true' : 'false');
 
           const response = await fetch(API_ROUTES.SIGN_BATCH_START, {

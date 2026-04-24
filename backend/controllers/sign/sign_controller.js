@@ -376,6 +376,33 @@ const parseBatchDocumentFields = (rawDocumentFields) => {
   }));
 };
 
+const parseBatchDocumentContexts = (rawDocumentContexts) => {
+  if (!rawDocumentContexts) return [];
+  const parsed = JSON.parse(rawDocumentContexts);
+  if (!Array.isArray(parsed)) {
+    throw new Error("La metadata por documento del lote es inválida.");
+  }
+  return parsed.map((entry) => {
+    const metadata = entry?.metadata || {};
+    return {
+      id: entry?.id || null,
+      name: entry?.name || null,
+      metadata: {
+        signatureRequestId: metadata?.signatureRequestId ? Number(metadata.signatureRequestId) : null,
+        documentVersionId: metadata?.documentVersionId ? Number(metadata.documentVersionId) : null,
+        documentId: metadata?.documentId ? Number(metadata.documentId) : null,
+        processName: String(metadata?.processName || "").trim(),
+        unitLabel: String(metadata?.unitLabel || "").trim(),
+        termName: String(metadata?.termName || "").trim(),
+        termYear: String(metadata?.termYear || "").trim(),
+        termTypeName: String(metadata?.termTypeName || "").trim(),
+        stepName: String(metadata?.stepName || "").trim(),
+        requestedAt: metadata?.requestedAt || null,
+      },
+    };
+  });
+};
+
 const asBoolean = (value) =>
   String(value ?? "").trim().toLowerCase() === "true" || String(value ?? "").trim() === "1";
 
@@ -588,6 +615,7 @@ export const requestSignBatchStart = async (req, res) => {
 
     const context = await buildSignContext(req);
     const batchDocumentFields = parseBatchDocumentFields(req.body.document_fields);
+    const batchDocumentContexts = parseBatchDocumentContexts(req.body.document_contexts);
     const job = createBatchJob({
       userId: context.user.id,
       fileNames: files.map((file) => file.originalname),
@@ -616,20 +644,38 @@ export const requestSignBatchStart = async (req, res) => {
             };
           });
           const documentFieldConfig = batchDocumentFields[index];
+          const documentContextConfig = batchDocumentContexts[index]?.metadata || {};
           const documentContext =
-            context.signMode === "coordinates" && documentFieldConfig?.fields?.length
-              ? {
-                  ...context,
-                  fields: documentFieldConfig.fields
-                }
-              : context;
+            {
+              ...context,
+              signatureRequestId: documentContextConfig.signatureRequestId || null,
+              documentVersionId: documentContextConfig.documentVersionId || null,
+              fields: context.signMode === "coordinates" && documentFieldConfig?.fields?.length
+                ? documentFieldConfig.fields
+                : context.fields
+            };
+          await assertSignContextBeforeSigning(documentContext);
           const result = await processSinglePdfSigning({ file, context: documentContext });
+          const workflow = await persistSignatureWorkflowResult({ context: documentContext, result });
           updateBatchJob(job.jobId, (current) => {
             const results = [...current.results];
             results[index] = {
               fileName: file.originalname,
               status: "success",
-              ...result
+              ...result,
+              workflow: workflow || null,
+              signatureRequestId: Number(
+                workflow?.signatureRequestId
+                || documentContext.signatureRequestId
+                || documentContextConfig.signatureRequestId
+                || 0
+              ) || null,
+              documentVersionId: Number(
+                workflow?.documentVersionId
+                || documentContext.documentVersionId
+                || documentContextConfig.documentVersionId
+                || 0
+              ) || null,
             };
             return {
               ...current,
@@ -649,7 +695,9 @@ export const requestSignBatchStart = async (req, res) => {
             results[index] = {
               fileName: file.originalname,
               status: "error",
-              error: error.message || "No se pudo firmar el documento."
+              error: error.message || "No se pudo firmar el documento.",
+              signatureRequestId: documentContextConfig.signatureRequestId || null,
+              documentVersionId: documentContextConfig.documentVersionId || null,
             };
             return {
               ...current,
