@@ -18,8 +18,11 @@ import area_router from "./routes/area_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
+import chat_router from "./routes/chat_router.js";
+import notification_router from "./routes/notification_router.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 
 const PORT = process.env.PORT || 3030
@@ -1126,27 +1129,84 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-const whitelist = [
+const whitelist = new Set([
   process.env.ORIGIN1,
   process.env.ORIGIN2,
   process.env.ORIGIN3,
   "http://localhost:8080",
-  "http://127.0.0.1:8080"
-].filter(Boolean)
+  "http://127.0.0.1:8080",
+  "https://localhost:8443",
+  "https://127.0.0.1:8443",
+  "https://localhost:9443",
+  "https://127.0.0.1:9443",
+  "https://localhost",
+  "https://127.0.0.1"
+].filter(Boolean))
 
-app.use(cors({
+const isPrivateOrLoopbackHost = (hostname = "") => {
+  const value = String(hostname || "").trim().toLowerCase();
+
+  if (!value) {
+    return false;
+  }
+
+  if (value === "localhost" || value === "127.0.0.1" || value === "::1") {
+    return true;
+  }
+
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
+    return true;
+  }
+
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(value)) {
+    return true;
+  }
+
+  const match172 = value.match(/^172\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+  if (match172) {
+    const secondOctet = Number(match172[1]);
+    return secondOctet >= 16 && secondOctet <= 31;
+  }
+
+  return false;
+};
+
+const parseUrl = (value) => {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+};
+
+const privateProxyPorts = new Set([
+  String(process.env.PROXY_HTTPS_PORT || "").trim(),
+  "8443",
+  "9443"
+].filter(Boolean));
+
+app.use((req, res, next) => cors({
   origin: (origin, callback) => {
     console.log(`Iniciando CORS`)
     console.log("Origin: " + origin);
-    if (!origin || whitelist.includes(origin)) {
-      return callback(null, origin);
+
+    const originUrl = parseUrl(origin);
+    const isPrivateProxyOrigin = Boolean(
+      process.env.DEASY_ENV !== "prod" &&
+      originUrl &&
+      originUrl.protocol === "https:" &&
+      privateProxyPorts.has(originUrl.port) &&
+      isPrivateOrLoopbackHost(originUrl.hostname)
+    );
+
+    if (!origin || whitelist.has(origin) || isPrivateProxyOrigin) {
+      return callback(null, true);
     }
+
     return callback("Error de cors: " + origin + " not authorized");
   },
   credentials: true // Permite el envío de cookies y credenciales
-}
-
-))
+})(req, res, next))
 
 
 app.use(express.json());
@@ -1189,6 +1249,8 @@ app.use(ROUTES.area, area_router)
 app.use(ROUTES.tarea, tarea_router)
 
 app.use(ROUTES.whatsapp, whatsapp_router)
+app.use(ROUTES.chat, chat_router)
+app.use(ROUTES.notifications, notification_router)
 
 app.use(ROUTES.dossier, dossier_router)
 

@@ -1,0 +1,309 @@
+pattern:
+  code: "six-stage-tthh"
+  name: "Firma TTHH en seis etapas"
+  description: "Patron reusable para documentos con seis firmas secuenciales del flujo de talento humano."
+  version: "1.0.0"
+  compiler_contract:
+    inject_runtime_values: true
+    token_source: "persons.token"
+    runtime_fields:
+      - slot: "coordinador"
+        token_field_ref: "signatures.coordinador.token"
+        name_field_ref: "signatures.coordinador.nombre"
+        role_field_ref: "signatures.coordinador.cargo"
+        date_field_ref: "signatures.coordinador.fecha"
+      - slot: "financiero"
+        token_field_ref: "signatures.financiero.token"
+        name_field_ref: "signatures.financiero.nombre"
+        role_field_ref: "signatures.financiero.cargo"
+        date_field_ref: "signatures.financiero.fecha"
+      - slot: "director_escuela"
+        token_field_ref: "signatures.director_escuela.token"
+        name_field_ref: "signatures.director_escuela.nombre"
+        role_field_ref: "signatures.director_escuela.cargo"
+        date_field_ref: "signatures.director_escuela.fecha"
+      - slot: "director_docencia"
+        token_field_ref: "signatures.director_docencia.token"
+        name_field_ref: "signatures.director_docencia.nombre"
+        role_field_ref: "signatures.director_docencia.cargo"
+        date_field_ref: "signatures.director_docencia.fecha"
+      - slot: "jefe_tthh"
+        token_field_ref: "signatures.jefe_tthh.token"
+        name_field_ref: "signatures.jefe_tthh.nombre"
+        role_field_ref: "signatures.jefe_tthh.cargo"
+        date_field_ref: "signatures.jefe_tthh.fecha"
+      - slot: "prorrector"
+        token_field_ref: "signatures.prorrector.token"
+        name_field_ref: "signatures.prorrector.nombre"
+        role_field_ref: "signatures.prorrector.cargo"
+        date_field_ref: "signatures.prorrector.fecha"
+  fields:
+    - code: "signatures.coordinador.token"
+      data_key: "firmaCoordinadorToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.coordinador.nombre"
+      data_key: "nombreCoordinador"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_coordinador"
+    - code: "signatures.coordinador.cargo"
+      data_key: "cargoCoordinador"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_coordinador"
+    - code: "signatures.coordinador.fecha"
+      data_key: "fechaCoordinador"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_coordinador"
+    - code: "signatures.financiero.token"
+      data_key: "firmaFinancieroToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.financiero.nombre"
+      data_key: "nombreFinanciero"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_financiero"
+    - code: "signatures.financiero.cargo"
+      data_key: "cargoFinanciero"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_financiero"
+    - code: "signatures.financiero.fecha"
+      data_key: "fechaFinanciero"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_financiero"
+    - code: "signatures.director_escuela.token"
+      data_key: "firmaDirectorEscuelaToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.director_escuela.nombre"
+      data_key: "nombreDirectorEscuela"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_director_escuela"
+    - code: "signatures.director_escuela.cargo"
+      data_key: "cargoDirectorEscuela"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_director_escuela"
+    - code: "signatures.director_escuela.fecha"
+      data_key: "fechaDirectorEscuela"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_director_escuela"
+    - code: "signatures.director_docencia.token"
+      data_key: "firmaDirectorDocenciaToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.director_docencia.nombre"
+      data_key: "nombreDirectorDocencia"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_director_docencia"
+    - code: "signatures.director_docencia.cargo"
+      data_key: "cargoDirectorDocencia"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_director_docencia"
+    - code: "signatures.director_docencia.fecha"
+      data_key: "fechaDirectorDocencia"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_director_docencia"
+    - code: "signatures.jefe_tthh.token"
+      data_key: "firmaJefeTthhToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.jefe_tthh.nombre"
+      data_key: "nombreJefeTthh"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_jefe_tthh"
+    - code: "signatures.jefe_tthh.cargo"
+      data_key: "cargoJefeTthh"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_jefe_tthh"
+    - code: "signatures.jefe_tthh.fecha"
+      data_key: "fechaJefeTthh"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_jefe_tthh"
+    - code: "signatures.prorrector.token"
+      data_key: "firmaProrrectorToken"
+      type: "string"
+      ui_component: "hidden"
+      ui_group: "signatures"
+    - code: "signatures.prorrector.nombre"
+      data_key: "nombreProrrector"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_prorrector"
+    - code: "signatures.prorrector.cargo"
+      data_key: "cargoProrrector"
+      type: "string"
+      ui_component: "text"
+      ui_group: "signatures_prorrector"
+    - code: "signatures.prorrector.fecha"
+      data_key: "fechaProrrector"
+      type: "string"
+      ui_component: "date_expression"
+      ui_group: "signatures_prorrector"
+  anchors:
+    - code: "firma_coordinador"
+      slot: "coordinador"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.coordinador.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_financiero"
+      slot: "financiero"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.financiero.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_director_escuela"
+      slot: "director_escuela"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.director_escuela.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_director_docencia"
+      slot: "director_docencia"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.director_docencia.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_jefe_tthh"
+      slot: "jefe_tthh"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.jefe_tthh.token"
+      size:
+        width: 124
+        height: 48
+    - code: "firma_prorrector"
+      slot: "prorrector"
+      placement:
+        strategy: "token"
+        token_field_ref: "signatures.prorrector.token"
+      size:
+        width: 124
+        height: 48
+  steps:
+    - order: 1
+      slot: "coordinador"
+      code: "firma_coordinador"
+      name: "Firma de coordinador de carrera"
+      step_type_code: "electronic"
+      resolver:
+        type: "document_owner"
+        selection_mode: "auto_one"
+      approval_mode: "and"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_coordinador"
+    - order: 2
+      slot: "financiero"
+      code: "firma_financiero"
+      name: "Firma de responsable financiero"
+      step_type_code: "electronic"
+      resolver:
+        type: "cargo_in_scope"
+        cargo_code: "responsable_financiero"
+        unit_scope_type: "unit_exact"
+        unit_id: 13
+        selection_mode: "auto_one"
+      approval_mode: "and"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_financiero"
+    - order: 3
+      slot: "director_escuela"
+      code: "firma_director_escuela"
+      name: "Firma de director de escuela"
+      step_type_code: "electronic"
+      resolver:
+        type: "cargo_in_scope"
+        cargo_code: "director_escuela"
+        unit_scope_type: "context_ancestor_type"
+        unit_type_name: "Escuela"
+        selection_mode: "auto_one"
+      approval_mode: "and"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_director_escuela"
+    - order: 4
+      slot: "director_docencia"
+      code: "firma_director_docencia"
+      name: "Firma de director de docencia"
+      step_type_code: "electronic"
+      resolver:
+        type: "cargo_in_scope"
+        cargo_code: "director_docencia"
+        unit_scope_type: "unit_exact"
+        unit_id: 6
+        selection_mode: "auto_one"
+      approval_mode: "and"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_director_docencia"
+    - order: 5
+      slot: "jefe_tthh"
+      code: "firma_jefe_tthh"
+      name: "Firma de jefatura de talento humano"
+      step_type_code: "electronic"
+      resolver:
+        type: "cargo_in_scope"
+        cargo_code: "jefe_talento_humano"
+        unit_scope_type: "unit_exact"
+        unit_id: 12
+        selection_mode: "auto_one"
+      approval_mode: "and"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_jefe_tthh"
+    - order: 6
+      slot: "prorrector"
+      code: "firma_prorrector"
+      name: "Firma de prorrector"
+      step_type_code: "electronic"
+      resolver:
+        type: "cargo_in_scope"
+        cargo_code: "prorrector"
+        unit_scope_type: "unit_type"
+        unit_type_name: "Prorrectorado"
+        selection_mode: "auto_one"
+      approval_mode: "and"
+      required_signers_min: 1
+      required_signers_max: 1
+      required: true
+      anchor_refs:
+        - "firma_prorrector"

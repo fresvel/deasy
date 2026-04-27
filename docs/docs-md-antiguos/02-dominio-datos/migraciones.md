@@ -20,7 +20,7 @@
 ## Recomendacion
 
 - Versionar cambios de schema y documentar scripts de migracion.
-- Usar `node scripts/drop_legacy_tables.mjs` solo cuando quieras eliminar tablas heredadas fuera del flujo normal de arranque/reset.
+- Usar `node backend/scripts/drop_legacy_tables.mjs` solo cuando quieras eliminar tablas heredadas fuera del flujo normal de arranque/reset.
 
 ## Cambios recientes de schema (2026-03-17)
 
@@ -60,31 +60,31 @@ La creacion de `chk_process_unit_program` ahora:
 ## Scripts operativos
 
 - Migrar una base existente al nombre y estructura nuevos (procesos, definiciones, templates de proceso):
-  - `node scripts/migrate_process_templates.mjs`
+  - `node backend/scripts/migrate_process_templates.mjs`
 - Consolidar `template_artifacts` a una fila por paquete y mover formatos a JSON:
-  - `node scripts/migrate_template_artifacts_to_json.mjs`
+  - `node backend/scripts/migrate_template_artifacts_to_json.mjs`
 - Agregar `artifact_origin` y normalizar origenes:
-  - `node scripts/migrate_template_artifact_origin.mjs`
+  - `node backend/scripts/migrate_template_artifact_origin.mjs`
 - Ampliar enum de `artifact_stage`:
-  - `node scripts/migrate_template_artifact_stage_enum.mjs`
+  - `node backend/scripts/migrate_template_artifact_stage_enum.mjs`
 - Migrar prefijos de templates en MinIO a `System/Users`:
-  - `node scripts/migrate_template_prefixes_to_system_users.mjs`
+  - `node backend/scripts/migrate_template_prefixes_to_system_users.mjs`
 - Agregar FK `owner_person_id` a `template_artifacts`:
-  - `node scripts/migrate_template_artifact_owner_fk.mjs`
+  - `node backend/scripts/migrate_template_artifact_owner_fk.mjs`
 - Sincronizar modelo de seeds y drafts de paquetes de usuario:
-  - `node scripts/migrate_template_seed_drafts.mjs`
+  - `node backend/scripts/migrate_template_seed_drafts.mjs`
 - Convertir series de definicion a catalogo global:
-  - `node scripts/migrate_process_definition_series.mjs`
+  - `node backend/scripts/migrate_process_definition_series.mjs`
 - Enforzar una sola definicion activa por serie y normalizar conflictos existentes:
-  - `node scripts/enforce_process_definition_active_series.mjs`
+  - `node backend/scripts/enforce_process_definition_active_series.mjs`
 - Enforzar que una definicion no pueda activarse sin disparadores/reglas y, si aplica, sin paquetes vinculados:
-  - `node scripts/enforce_process_definition_document_artifacts.mjs`
+  - `node backend/scripts/enforce_process_definition_document_artifacts.mjs`
 - Eliminar tablas heredadas ya fuera de uso:
-  - `node scripts/drop_legacy_tables.mjs`
+  - `node backend/scripts/drop_legacy_tables.mjs`
 - Resetear completamente el esquema MariaDB vigente:
-  - `node scripts/reset_mariadb.mjs`
+  - `node backend/scripts/reset_mariadb.mjs`
 - Aplicar la semilla PUCESA sobre un esquema limpio:
-  - `node scripts/seed_pucese.mjs`
+  - `node backend/scripts/seed_pucese.mjs`
 
 ## Migracion: procesos -> definiciones + reglas de alcance
 

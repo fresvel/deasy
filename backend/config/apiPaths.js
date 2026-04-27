@@ -11,6 +11,8 @@ export const PATHS = {
   area: "/area",
   tarea: "/tarea",
   vacancies: "/vacancies",
+  chat: "/chat",
+  notifications: "/notifications",
   whatsapp: "/whatsapp",
   dossier: "/dossier",
   email: "/email",

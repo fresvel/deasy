@@ -8,13 +8,11 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/informe-carrera/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/formativa/informe-carrera/1.0.0/modes/system/jinja2/src"
+      general:
+        docx: "templates/investigación/formativa/informe-carrera/1.0.0/modes/general/docx/src"
+        latex: "templates/investigación/formativa/informe-carrera/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/formativa/informe-carrera/1.0.0/modes/process/jinja2/src"
   - key: "investigación/formativa/informe-docente"
     export_id: "tpl_investigación_formativa_informe_docente"
     name: "Informe de Investigación Formativa por Docente"
@@ -22,13 +20,10 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/informe-docente/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/formativa/informe-docente/1.0.0/modes/system/jinja2/src"
+      general:
+        latex: "templates/investigación/formativa/informe-docente/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/formativa/informe-docente/1.0.0/modes/process/jinja2/src"
   - key: "investigación/formativa/informe-estudiantes"
     export_id: "tpl_investigación_formativa_informe_estudiantes"
     name: "Informes de Estudiantes"
@@ -36,13 +31,10 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/system/jinja2/src"
+      general:
+        latex: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/formativa/informe-estudiantes/1.0.0/modes/process/jinja2/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/GLOBAL/0000/Devs/pucese-libs/docs/Latex/Formato/Latex/Informes Estudiantes"
   - key: "investigación/formativa/plan-carrera"
@@ -52,13 +44,10 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/plan-carrera/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/formativa/plan-carrera/1.0.0/modes/system/jinja2/src"
+      general:
+        latex: "templates/investigación/formativa/plan-carrera/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/formativa/plan-carrera/1.0.0/modes/process/jinja2/src"
   - key: "investigación/formativa/plan-docente"
     export_id: "tpl_investigación_formativa_plan_docente"
     name: "Plan de Investigación Formativa por Docente"
@@ -66,13 +55,10 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/formativa/plan-docente/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/formativa/plan-docente/1.0.0/modes/system/jinja2/src"
+      general:
+        latex: "templates/investigación/formativa/plan-docente/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/formativa/plan-docente/1.0.0/modes/process/jinja2/src"
   - key: "investigación/integración/artículos-académicos/planes/trabajo-uic"
     export_id: "tpl_investigación_integración_artículos_académicos_planes_trabajo_uic"
     name: "Trabajo UIC PUCE"
@@ -80,13 +66,10 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/system/jinja2/src"
+      general:
+        latex: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/integración/artículos-académicos/planes/trabajo-uic/1.0.0/modes/process/jinja2/src"
   - key: "investigación/integración/artículos-académicos/revistas/ieee"
     export_id: "tpl_investigación_integración_artículos_académicos_revistas_ieee"
     name: "IEEE Template"
@@ -94,11 +77,8 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/user/xlsx/src"
+      general:
+        latex: "templates/investigación/integración/artículos-académicos/revistas/ieee/1.0.0/modes/general/latex/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2026/PPO2026/Investigación/Integración/Artículos Académicos/Estudiantes/Estudiante Demo Uno"
   - key: "investigación/integración/artículos-académicos/revistas/mdpi"
@@ -108,11 +88,8 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/user/xlsx/src"
+      general:
+        latex: "templates/investigación/integración/artículos-académicos/revistas/mdpi/1.0.0/modes/general/latex/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2026/PPO2026/Investigación/Productiva/Resultados/Docente Demo Principal/A0X/mdpi"
   - key: "investigación/integración/artículos-académicos/revistas/springer"
@@ -122,11 +99,8 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/user/xlsx/src"
+      general:
+        latex: "templates/investigación/integración/artículos-académicos/revistas/springer/1.0.0/modes/general/latex/src"
     origins:
     - "Sharepoint/EQUIPO EIS - Documentos/DCC/ITI/2023/PPO2023/Investigación/Formativa/Formatos/03_artículo/Springer.zip"
   - key: "investigación/productiva/informe-carrera"
@@ -136,13 +110,11 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/productiva/informe-carrera/1.0.0/modes/system/jinja2/src"
+      general:
+        docx: "templates/investigación/productiva/informe-carrera/1.0.0/modes/general/docx/src"
+        latex: "templates/investigación/productiva/informe-carrera/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/productiva/informe-carrera/1.0.0/modes/process/jinja2/src"
   - key: "investigación/productiva/informe-docente"
     export_id: "tpl_investigación_productiva_informe_docente"
     name: "Informe de Investigación Productiva por Docente"
@@ -150,10 +122,32 @@ templates:
     storage_version: "v0001"
     template_id: null
     modes:
-      user:
-        docx: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/docx/src"
-        latex: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/latex/src"
-        pdf: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/pdf/src"
-        xlsx: "templates/investigación/productiva/informe-docente/1.0.0/modes/user/xlsx/src"
-      system:
-        jinja2: "templates/investigación/productiva/informe-docente/1.0.0/modes/system/jinja2/src"
+      general:
+        docx: "templates/investigación/productiva/informe-docente/1.0.0/modes/general/docx/src"
+        latex: "templates/investigación/productiva/informe-docente/1.0.0/modes/general/latex/src"
+      process:
+        jinja2: "templates/investigación/productiva/informe-docente/1.0.0/modes/process/jinja2/src"
+  - key: "talento-humano/requerimiento/administrativo"
+    export_id: "tpl_talento_humano_requerimiento_administrativo"
+    name: "Requerimiento Administrativo"
+    version: "1.0.0"
+    storage_version: "v0001"
+    template_id: null
+    modes:
+      general:
+        latex: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/general/latex/src"
+        xlsx: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/general/xlsx/src"
+      process:
+        jinja2: "templates/talento-humano/requerimiento/administrativo/1.0.0/modes/process/jinja2/src"
+  - key: "talento-humano/requerimiento/docente"
+    export_id: "tpl_talento_humano_requerimiento_docente"
+    name: "Requerimiento Docente"
+    version: "1.0.0"
+    storage_version: "v0001"
+    template_id: null
+    modes:
+      general:
+        latex: "templates/talento-humano/requerimiento/docente/1.0.0/modes/general/latex/src"
+        xlsx: "templates/talento-humano/requerimiento/docente/1.0.0/modes/general/xlsx/src"
+      process:
+        jinja2: "templates/talento-humano/requerimiento/docente/1.0.0/modes/process/jinja2/src"

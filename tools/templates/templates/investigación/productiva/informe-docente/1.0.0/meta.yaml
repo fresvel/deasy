@@ -8,18 +8,18 @@ repository_stage: published
 version: 1.0.0
 storage_version: v0001
 modes:
-  system:
+  process:
     jinja2:
-      path: "modes/system/jinja2/src"
-  user:
+      path: "modes/process/jinja2/src"
+  general:
     docx:
-      path: "modes/user/docx/src"
+      path: "modes/general/docx/src"
     latex:
-      path: "modes/user/latex/src"
+      path: "modes/general/latex/src"
     pdf:
-      path: "modes/user/pdf/src"
+      path: "modes/general/pdf/src"
     xlsx:
-      path: "modes/user/xlsx/src"
+      path: "modes/general/xlsx/src"
 origins: []
 workflows:
   fill:
@@ -43,34 +43,6 @@ workflows:
           - "signatures.elaborado.nombre"
           - "signatures.elaborado.cargo"
           - "signatures.elaborado.fecha"
-        required: true
-        can_reject: true
-      - order: 2
-        code: "calidad_review"
-        name: "Revision de calidad"
-        resolver:
-          type: "cargo_in_scope"
-          cargo_code: "responsable_aseguramiento_calidad"
-          unit_scope_type: "unit_exact"
-          selection_mode: "auto_one"
-        field_refs:
-          - "signatures.revisado.nombre"
-          - "signatures.revisado.cargo"
-          - "signatures.revisado.fecha"
-        required: true
-        can_reject: true
-      - order: 3
-        code: "direccion_review"
-        name: "Revision de direccion"
-        resolver:
-          type: "cargo_in_scope"
-          cargo_code: "director_escuela"
-          unit_scope_type: "unit_exact"
-          selection_mode: "auto_one"
-        field_refs:
-          - "signatures.aprobado.nombre"
-          - "signatures.aprobado.cargo"
-          - "signatures.aprobado.fecha"
         required: true
         can_reject: true
   signatures:

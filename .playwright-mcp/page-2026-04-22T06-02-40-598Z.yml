@@ -1,0 +1,139 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - button "Abrir menú" [ref=e6]:
+        - img [ref=e7]
+      - generic [ref=e9]:
+        - link "Ir a perfil" [ref=e10] [cursor=pointer]:
+          - /url: /perfil
+          - img [ref=e11]
+        - link "Ir a administración" [ref=e14] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e15]
+        - button "Firmar documentos" [ref=e19]:
+          - img [ref=e20]
+        - button "Notificaciones" [ref=e22]:
+          - img [ref=e23]
+        - link "Cerrar sesión" [ref=e26] [cursor=pointer]:
+          - /url: /logout
+          - img [ref=e27]
+  - generic [ref=e31]:
+    - complementary [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e36]:
+          - img "User Avatar" [ref=e39]
+          - generic [ref=e40]:
+            - heading "Persona Demo Uno" [level=3] [ref=e41]
+            - paragraph [ref=e42]: Cuenta institucional
+        - generic [ref=e43]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: Cargos asignados
+            - button "Seleccionar grupo de cargos" [ref=e48]:
+              - generic [ref=e49]:
+                - img [ref=e50]
+                - generic [ref=e53]: Consolidado
+              - img [ref=e55]
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - button "Coordinador" [ref=e60]:
+                - generic [ref=e61]:
+                  - img [ref=e62]
+                  - generic [ref=e65]: Coordinador
+              - generic [ref=e66]:
+                - button "Investigación Formativa" [ref=e67]:
+                  - img [ref=e69]
+                  - generic [ref=e72]: Investigación Formativa
+                - button "Investigación Productiva" [ref=e73]:
+                  - img [ref=e75]
+                  - generic [ref=e78]: Investigación Productiva
+                - button "Requerimiento Docente" [ref=e79]:
+                  - img [ref=e81]
+                  - generic [ref=e84]: Requerimiento Docente
+            - generic [ref=e85]:
+              - button "Docente" [active] [ref=e86]:
+                - generic [ref=e87]:
+                  - img [ref=e88]
+                  - generic [ref=e92]: Docente
+              - generic [ref=e180]:
+                - button "Investigación Formativa" [ref=e181]:
+                  - img [ref=e183]
+                  - generic [ref=e186]: Investigación Formativa
+                - button "Investigación Productiva" [ref=e187]:
+                  - img [ref=e189]
+                  - generic [ref=e192]: Investigación Productiva
+                - button "Requerimiento Docente" [ref=e193]:
+                  - img [ref=e195]
+                  - generic [ref=e198]: Requerimiento Docente
+    - generic [ref=e94]:
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - heading "Persona Demo Uno" [level=1] [ref=e98]
+          - paragraph [ref=e99]: persona.demo1@pucese.edu.ec
+          - paragraph [ref=e100]: Selecciona una sección para continuar con la gestión de tu dossier académico, revisar el estado de tus módulos y completar tu información profesional.
+        - button "Ir a mi perfil" [ref=e102]
+      - generic [ref=e103]:
+        - article [ref=e104]:
+          - generic [ref=e105]:
+            - heading "Perfil profesional" [level=3] [ref=e106]
+            - generic [ref=e107]: En progreso
+          - paragraph [ref=e108]: Completa la información de formación y experiencia para habilitar todos los módulos.
+          - generic [ref=e109]:
+            - generic [ref=e110]: 60%
+            - button "Completar perfil" [ref=e111]:
+              - text: Completar perfil
+              - img [ref=e112]
+        - article [ref=e115]:
+          - generic [ref=e116]:
+            - heading "Documentos por firmar" [level=3] [ref=e117]
+            - generic [ref=e118]: Pendiente
+          - paragraph [ref=e119]: Tienes documentos pendientes en la bandeja de firmas electrónicas.
+          - generic [ref=e120]:
+            - generic [ref=e121]: "0"
+            - button "Ir a firmas" [ref=e122]:
+              - text: Ir a firmas
+              - img [ref=e123]
+        - article [ref=e126]:
+          - generic [ref=e127]:
+            - heading "Tutorías y seguimiento" [level=3] [ref=e128]
+            - generic [ref=e129]: Al día
+          - paragraph [ref=e130]: Consulta tutorías, reuniones y actividades asignadas.
+          - generic [ref=e131]:
+            - generic [ref=e132]: "0"
+            - button "Ver tutorías" [ref=e133]:
+              - text: Ver tutorías
+              - img [ref=e134]
+      - generic [ref=e137]:
+        - generic [ref=e138]:
+          - heading "Resumen rápido" [level=2] [ref=e139]
+          - button "Gestionar perfil" [ref=e140]
+        - table [ref=e143]:
+          - rowgroup [ref=e144]:
+            - row "Sección Registros Estado ACCIÓN" [ref=e145]:
+              - columnheader "Sección" [ref=e146]
+              - columnheader "Registros" [ref=e147]
+              - columnheader "Estado" [ref=e148]
+              - columnheader "ACCIÓN" [ref=e149]
+          - rowgroup [ref=e150]:
+            - row "Formación 0 Incompleto Gestionar" [ref=e151]:
+              - cell "Formación" [ref=e152]
+              - cell "0" [ref=e153]
+              - cell "Incompleto" [ref=e154]:
+                - generic [ref=e155]: Incompleto
+              - cell "Gestionar" [ref=e156]:
+                - button "Gestionar" [ref=e158]
+            - row "Experiencia 0 Pendiente Gestionar" [ref=e159]:
+              - cell "Experiencia" [ref=e160]
+              - cell "0" [ref=e161]
+              - cell "Pendiente" [ref=e162]:
+                - generic [ref=e163]: Pendiente
+              - cell "Gestionar" [ref=e164]:
+                - button "Gestionar" [ref=e166]
+            - row "Firmas electrónicas 0 Acción requerida Gestionar" [ref=e167]:
+              - cell "Firmas electrónicas" [ref=e168]
+              - cell "0" [ref=e169]
+              - cell "Acción requerida" [ref=e170]:
+                - generic [ref=e171]: Acción requerida
+              - cell "Gestionar" [ref=e172]:
+                - button "Gestionar" [ref=e174]
+  - button "Abrir chat" [ref=e175]:
+    - img [ref=e177]

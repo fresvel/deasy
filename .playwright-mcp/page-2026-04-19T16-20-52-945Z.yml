@@ -1,0 +1,128 @@
+- generic [ref=e42]:
+  - banner [ref=e43]:
+    - generic [ref=e44]:
+      - button "Abrir menú" [ref=e45]:
+        - img [ref=e46]
+      - generic [ref=e48]:
+        - link "Ir a perfil" [ref=e49] [cursor=pointer]:
+          - /url: /perfil
+          - img [ref=e50]
+        - link "Ir a administración" [ref=e53] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e54]
+        - button "Firmar documentos" [ref=e58]:
+          - img [ref=e59]
+        - button "Notificaciones" [ref=e61]:
+          - img [ref=e62]
+        - link "Cerrar sesión" [ref=e65] [cursor=pointer]:
+          - /url: /logout
+          - img [ref=e66]
+  - generic [ref=e70]:
+    - complementary [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e75]:
+          - img "User Avatar" [ref=e78]
+          - generic [ref=e79]:
+            - heading "Persona Demo Uno" [level=3] [ref=e80]
+            - paragraph [ref=e81]: Cuenta institucional
+        - generic [ref=e82]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Cargos asignados
+            - button "Seleccionar grupo de cargos" [ref=e87]:
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e92]: Consolidado
+              - img [ref=e94]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - button "Coordinador" [ref=e99]:
+                - generic [ref=e100]:
+                  - img [ref=e101]
+                  - generic [ref=e104]: Coordinador
+              - generic [ref=e105]:
+                - button "Investigación Formativa" [ref=e106]:
+                  - img [ref=e108]
+                  - generic [ref=e111]: Investigación Formativa
+                - button "Investigación Productiva" [ref=e112]:
+                  - img [ref=e114]
+                  - generic [ref=e117]: Investigación Productiva
+                - button "Requerimiento Docente" [ref=e118]:
+                  - img [ref=e120]
+                  - generic [ref=e123]: Requerimiento Docente
+            - button "Docente" [ref=e125]:
+              - generic [ref=e126]:
+                - img [ref=e127]
+                - generic [ref=e131]: Docente
+    - generic [ref=e133]:
+      - generic [ref=e135]:
+        - generic [ref=e136]:
+          - heading "Persona Demo Uno" [level=1] [ref=e137]
+          - paragraph [ref=e138]: persona.demo1@pucese.edu.ec
+          - paragraph [ref=e139]: Selecciona una sección para continuar con la gestión de tu dossier académico, revisar el estado de tus módulos y completar tu información profesional.
+        - button "Ir a mi perfil" [ref=e141]
+      - generic [ref=e142]:
+        - article [ref=e143]:
+          - generic [ref=e144]:
+            - heading "Perfil profesional" [level=3] [ref=e145]
+            - generic [ref=e146]: En progreso
+          - paragraph [ref=e147]: Completa la información de formación y experiencia para habilitar todos los módulos.
+          - generic [ref=e148]:
+            - generic [ref=e149]: 60%
+            - button "Completar perfil" [ref=e150]:
+              - text: Completar perfil
+              - img [ref=e151]
+        - article [ref=e154]:
+          - generic [ref=e155]:
+            - heading "Documentos por firmar" [level=3] [ref=e156]
+            - generic [ref=e157]: Pendiente
+          - paragraph [ref=e158]: Tienes documentos pendientes en la bandeja de firmas electrónicas.
+          - generic [ref=e159]:
+            - generic [ref=e160]: "0"
+            - button "Ir a firmas" [ref=e161]:
+              - text: Ir a firmas
+              - img [ref=e162]
+        - article [ref=e165]:
+          - generic [ref=e166]:
+            - heading "Tutorías y seguimiento" [level=3] [ref=e167]
+            - generic [ref=e168]: Al día
+          - paragraph [ref=e169]: Consulta tutorías, reuniones y actividades asignadas.
+          - generic [ref=e170]:
+            - generic [ref=e171]: "0"
+            - button "Ver tutorías" [ref=e172]:
+              - text: Ver tutorías
+              - img [ref=e173]
+      - generic [ref=e176]:
+        - generic [ref=e177]:
+          - heading "Resumen rápido" [level=2] [ref=e178]
+          - button "Gestionar perfil" [ref=e179]
+        - table [ref=e182]:
+          - rowgroup [ref=e183]:
+            - row "Sección Registros Estado ACCIÓN" [ref=e184]:
+              - columnheader "Sección" [ref=e185]
+              - columnheader "Registros" [ref=e186]
+              - columnheader "Estado" [ref=e187]
+              - columnheader "ACCIÓN" [ref=e188]
+          - rowgroup [ref=e189]:
+            - row "Formación 0 Incompleto Gestionar" [ref=e190]:
+              - cell "Formación" [ref=e191]
+              - cell "0" [ref=e192]
+              - cell "Incompleto" [ref=e193]:
+                - generic [ref=e194]: Incompleto
+              - cell "Gestionar" [ref=e195]:
+                - button "Gestionar" [ref=e197]
+            - row "Experiencia 0 Pendiente Gestionar" [ref=e198]:
+              - cell "Experiencia" [ref=e199]
+              - cell "0" [ref=e200]
+              - cell "Pendiente" [ref=e201]:
+                - generic [ref=e202]: Pendiente
+              - cell "Gestionar" [ref=e203]:
+                - button "Gestionar" [ref=e205]
+            - row "Firmas electrónicas 0 Acción requerida Gestionar" [ref=e206]:
+              - cell "Firmas electrónicas" [ref=e207]
+              - cell "0" [ref=e208]
+              - cell "Acción requerida" [ref=e209]:
+                - generic [ref=e210]: Acción requerida
+              - cell "Gestionar" [ref=e211]:
+                - button "Gestionar" [ref=e213]
+  - button "Abrir chat" [ref=e214]:
+    - img [ref=e216]

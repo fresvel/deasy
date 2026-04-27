@@ -1,0 +1,12 @@
+[     612ms] [WARNING] [Vue Router warn]: No match found for location with path "/login" @ http://127.0.0.1:8080/node_modules/.vite/deps/vue-router.js?v=a2f87469:3934
+[     658ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://127.0.0.1:8080/:0
+[   19880ms] [WARNING] [Vue warn]: Failed to resolve component: font-awesome-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <SNavMenu show=false is-admin=false onClose=fn > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://127.0.0.1:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[   20030ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://127.0.0.1:8080/dashboard:0
+[   33201ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://127.0.0.1:8080/dashboard:0
+[   44084ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://127.0.0.1:3030/easym/v1/sign/documents/23/signature-flow:0
+[  240527ms] [WARNING] Warning: TT: undefined function: 21 @ http://127.0.0.1:8080/node_modules/.vite/deps/pdfjs-dist_build_pdf__worker__min__mjs.js?v=a2f87469:101

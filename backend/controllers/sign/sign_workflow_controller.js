@@ -31,7 +31,9 @@ const getFillRequestContext = async (connection, fillRequestId) => {
        dff.document_version_id,
        ffs.step_order,
        dv.working_file_path,
-       ti.process_definition_template_id
+       ti.id AS task_item_id,
+       ti.process_definition_template_id,
+       ti.user_started_at
      FROM fill_requests fr
      INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
      INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
@@ -194,6 +196,16 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
 
     if (action === "return") {
       await reactivatePreviousFillStepIfNeeded(connection, context);
+    }
+
+    if (action === "start" && context.task_item_id && !context.user_started_at) {
+      await connection.query(
+        `UPDATE task_items
+         SET user_started_at = CURRENT_TIMESTAMP
+         WHERE id = ?
+           AND user_started_at IS NULL`,
+        [Number(context.task_item_id)]
+      );
     }
 
     const progress = await syncDocumentProgressFromFillRequest(connection, fillRequestId);

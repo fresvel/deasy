@@ -35,8 +35,8 @@ Templates are stored under `templates/<template_key>/<version>/` and include:
 - `schema.json`
 - `data.yaml`
 - `data.json` (read-only example generated from `data.yaml`)
-- `modes/system/jinja2/src` (seed source)
-- `modes/user/latex/src` (rendered output)
+- `modes/process/jinja2/src` (seed source)
+- `modes/general/latex/src` (rendered output)
 
 Seeds are stored under `seeds/latex/<seed_name>/` and include:
 
@@ -104,9 +104,9 @@ deasy_tpl json
 
 1) Start from a seed (choose one of the default seeds or create a new one).
 2) Create a template with `deasy_tpl new`.
-3) Edit `data.yaml` and/or `modes/system/jinja2/src`.
+3) Edit `data.yaml` and/or `modes/process/jinja2/src`.
 4) Re-render with `deasy_tpl render`.
-5) Compile from `modes/user/latex/src` with `./make.sh`.
+5) Compile from `modes/general/latex/src` with `./make.sh`.
 
 ## Notes
 
@@ -125,11 +125,11 @@ Common issues and fixes:
 - `meta.yaml not found` with `deasy_tpl render --here`:
   - Ensure you are inside a template version folder `templates/<key>/<version>`.
 
-- `system/jinja2 seed not found` during render:
-  - The template was created without a seed. Recreate it using `deasy_tpl new --seed ...` or add the `modes/system/jinja2/src` folder.
+- `process/jinja2 seed not found` during render:
+  - The template was created without a seed. Recreate it using `deasy_tpl new --seed ...` or add the `modes/process/jinja2/src` folder.
 
 - `make.sh not found` or not executable:
-  - Check `modes/user/latex/src/make.sh`.
+  - Check `modes/general/latex/src/make.sh`.
   - If you edited a seed, re-render the template with `deasy_tpl render --here`.
 
 - Bibliography not appearing:

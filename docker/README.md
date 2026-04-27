@@ -65,15 +65,15 @@ Cada ambiente expone puertos distintos y una red propia:
 
 Puertos de referencia:
 
-- `dev`: backend `3030`, frontend `8080`, MariaDB `3306`, MongoDB `27017`,
-  RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX UI `18083`,
-  MinIO API `9000`, MinIO Console `9001`, signer `4000`
-- `qa`: backend `3130`, frontend `8180`, MariaDB `13306`, MongoDB `12717`,
-  RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, EMQX MQTT `11883`, EMQX UI
-  `18084`, MinIO API `9100`, MinIO Console `9101`, signer `14000`
-- `prod`: backend `3230`, frontend `8280`, MariaDB `23306`, MongoDB `22717`,
-  RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, EMQX MQTT `21883`, EMQX UI
-  `28084`, MinIO API `9200`, MinIO Console `9201`, signer `24000`
+- `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, MariaDB `3306`, MongoDB
+  `27017`, RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX
+  UI `18083`, MinIO API `9000`, MinIO Console `9001`, signer `4000`
+- `qa`: proxy HTTP `9088`, proxy HTTPS `9443`, MariaDB `13306`, MongoDB
+  `12717`, RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, EMQX MQTT `11883`, EMQX
+  UI `18084`, MinIO API `9100`, MinIO Console `9101`, signer `14000`
+- `prod`: proxy HTTP `80`, proxy HTTPS `443`, MariaDB `23306`, MongoDB
+  `22717`, RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, EMQX MQTT `21883`, EMQX
+  UI `28084`, MinIO API `9200`, MinIO Console `9201`, signer `24000`
 
 ## Uso previsto por ambiente
 
@@ -235,6 +235,93 @@ El flujo de CD queda asi:
 `qa` y `prod` ya no dependen de `build` local en Compose. Ahora consumen
 imagenes versionadas desde GHCR mediante variables de entorno por servicio.
 
+El job de deploy por SSH desde GitHub Actions queda condicionado por la variable
+de GitHub:
+
+- `DEPLOY_DELIVERY_MODE=gh-actions`
+
+Si esa variable no existe o tiene otro valor, el workflow mantiene CI y
+publicacion de imagenes, pero no intenta entrar al host remoto.
+
+## Estrategia dual de despliegue
+
+La estrategia operativa deja dos modos compatibles:
+
+- `gh-actions`: GitHub publica imagenes, entra por SSH al host y ejecuta el
+  despliegue remoto.
+- `server-pull`: el propio servidor actualiza codigo o artefactos y luego
+  ejecuta el despliegue localmente.
+
+La logica comun del stack queda centralizada en `scripts/apply-env.sh`.
+
+Wrappers actuales:
+
+- `scripts/deploy-env.sh`: compatibilidad para el flujo iniciado por GitHub
+  Actions.
+- `scripts/docker-env.sh`: interfaz comun para ejecutar compose por ambiente.
+- `scripts/seed-db.sh`: ejecuta `seed_pucese.mjs` dentro del contenedor
+  `backend` por ambiente.
+- `scripts/reset-db.sh`: ejecuta `reset_mariadb.mjs` dentro del contenedor
+  `backend` por ambiente.
+- `scripts/migrate-db.sh`: ejecuta migraciones SQL de `backend/scripts/`
+  dentro del contenedor `backend`.
+
+Esta separacion evita duplicar logica de despliegue entre CI/CD y operacion
+manual o programada desde el servidor.
+
+Ejemplos:
+
+```bash
+bash scripts/seed-db.sh dev capture
+bash scripts/reset-db.sh qa
+bash scripts/migrate-db.sh dev --list
+```
+
+Politica de prod para operaciones DB:
+
+- `prod` no se ejecuta por defecto.
+- requiere `DEASY_PROD_DB_APPROVAL_FILE`
+- el archivo debe existir dentro del repo y estar ignorado por git
+
+## Modo server-pull
+
+Para hosts sin IP publica estatica, el servidor puede iniciar su propia
+actualizacion usando:
+
+- `scripts/server-pull-deploy.sh`
+- o unidades `systemd` basadas en `deploy/systemd/`
+
+Ejemplos manuales:
+
+```bash
+bash scripts/server-pull-deploy.sh qa git
+bash scripts/server-pull-deploy.sh prod git
+bash scripts/server-pull-deploy.sh qa skip-git sha-abc123
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh qa skip-git qa
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh prod skip-git prod
+```
+
+Reglas del modo `git`:
+
+- `qa` espera checkout en rama `qa`
+- `prod` espera checkout en rama `main`
+- falla si el repo tiene cambios locales
+- usa `git pull --ff-only` para evitar merges implicitos
+
+Base `systemd` incluida:
+
+- `deploy/systemd/deasy-server-pull@.service`
+- `deploy/systemd/deasy-server-pull@.timer`
+
+La ruta por SSH se conserva lista para reactivarse mas adelante definiendo
+`DEPLOY_DELIVERY_MODE=gh-actions`.
+
+Estado practico actual:
+
+- operativo hoy para CI y publicacion de imagenes
+- operativo hoy para despliegue `server-pull`
+- pendiente de infraestructura para despliegue `gh-actions` por SSH
+
 Secrets requeridos en GitHub Environments:
 
 - `DEPLOY_HOST`
@@ -269,3 +356,23 @@ Se aplican medidas iniciales de endurecimiento en `compose.prod.yml`:
 
 Estas medidas no agotan el hardening, pero dejan a `prod` en un estado
 operativamente mas serio y verificable.
+
+## Proxy reverso Nginx
+
+La entrada pública cliente queda centralizada en `nginx-proxy`, que termina TLS
+y enruta internamente hacia:
+
+- `/` -> `frontend:8080`
+- `/api/` -> `backend:3030`
+
+Matriz pública del proxy:
+
+- `dev`: HTTP `8088`, HTTPS `8443`
+- `qa`: HTTP `9088`, HTTPS `9443`
+- `prod`: HTTP `80`, HTTPS `443`
+
+La validación base sigue siendo:
+
+```bash
+bash scripts/docker-env.sh dev up -d --build
+```

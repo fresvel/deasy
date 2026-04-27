@@ -1,0 +1,8 @@
+  - asistente.docencia.demo@pucese.edu.ec -> 9000000004
+  - asistente.tthh.demo@pucese.edu.ec -> 9000000005
+  - responsable.financiero.demo@pucese.edu.ec -> 9000000006
+  - director.escuela.demo@pucese.edu.ec -> 9000000007
+  - director.docencia.demo@pucese.edu.ec -> 9000000008
+  - jefa.talento.demo@pucese.edu.ec -> 9000000009
+  - prorrector.demo@pucese.edu.ec -> 9000000010
+  - persona.demo1@pucese.edu.ec conserva 1234567891

@@ -1,11 +1,9 @@
 import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
-import FontAwesomeCompat from './components/FontAwesomeCompat.vue';
+import App from '@/App.vue'
+import router from '@/core/router'
 
-import './styles/tailwind.css'
-import './styles/theme.css'
+import '@/shared/styles/tailwind.css'
+import '@/shared/styles/theme.css'
 
 const app = createApp(App)
-app.component('font-awesome-icon', FontAwesomeCompat);
 app.use(router).mount('#app')

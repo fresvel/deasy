@@ -6,6 +6,7 @@ import {
   ensureBucketExists,
   getMinioObjectStream,
   removeMinioObject,
+  statMinioObject,
   uploadFileToMinio
 } from "../../services/storage/minio_service.js";
 
@@ -32,13 +33,34 @@ const getCurrentUser = async (req) => {
   return user;
 };
 
+const filterExistingCertificates = async (rows) => {
+  const settled = await Promise.all(
+    (rows || []).map(async (row) => {
+      try {
+        await statMinioObject(row.bucket, row.object_name);
+        return row;
+      } catch (error) {
+        console.warn(
+          "Certificado omitido por objeto faltante en MinIO:",
+          row?.id,
+          row?.object_name,
+          error?.code || error?.message || error
+        );
+        return null;
+      }
+    })
+  );
+  return settled.filter(Boolean);
+};
+
 export const listMyCertificates = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     const rows = await certificateRepository.listByPersonId(user.id);
+    const existingRows = await filterExistingCertificates(rows);
     res.json({
       result: "ok",
-      certificates: rows.map((row) => certificateRepository.toPublic(row))
+      certificates: existingRows.map((row) => certificateRepository.toPublic(row))
     });
   } catch (error) {
     console.error("Error listando certificados:", error);

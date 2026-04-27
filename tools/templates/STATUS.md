@@ -2,7 +2,7 @@
 
 ## Resumen
 
-- Se reorganizaron las semillas LaTeX y se definió un flujo seed → system/jinja2 → user/latex.
+- Se reorganizaron las semillas LaTeX y se definió un flujo seed → process/jinja2 → general/latex.
 - Se corrigió la lógica de layout (evita errores en `\SetDefaultLayout`).
 - Se añadió el render de semillas a carpeta `render/` y comandos unificados `deasy_tpl`.
 - Se creó documentación de comandos y troubleshooting.
@@ -60,13 +60,13 @@ deasy_tpl json
 
 - `new_template.sh` soporta `--seed <name|path>` y usa `informe-docente` por defecto.
 - `render_seed_preview.sh` autodetecta seed si se ejecuta dentro de ella y, desde la raíz, usa `informe-docente`.
-- `render_template.sh` regenera `modes/user/latex/src` a partir de `system/jinja2/src` y `data.yaml`.
+- `render_template.sh` regenera `modes/general/latex/src` a partir de `process/jinja2/src` y `data.yaml`.
 - `data.json` se genera desde `data.yaml` y queda read-only.
 - `make.sh` detecta bibliografía con `Referencias/references.bib` y genera `Preambulo/bibflag.tex`.
 
 ## Estado de migración
 
-- Migrados al flujo `seed -> system/jinja2 -> user/latex`: `investigación/formativa/informe-docente`, `investigación/formativa/informe-carrera`, `investigación/formativa/plan-docente`, `investigación/formativa/plan-carrera`, `investigación/formativa/informe-estudiantes`, `investigación/integración/artículos-académicos/planes/trabajo-uic`, `investigación/productiva/testing`.
+- Migrados al flujo `seed -> process/jinja2 -> general/latex`: `investigación/formativa/informe-docente`, `investigación/formativa/informe-carrera`, `investigación/formativa/plan-docente`, `investigación/formativa/plan-carrera`, `investigación/formativa/informe-estudiantes`, `investigación/integración/artículos-académicos/planes/trabajo-uic`, `investigación/productiva/testing`.
 - Externos `user-only` (fuera del pipeline de migración): `investigación/integración/artículos-académicos/revistas/ieee`, `investigación/integración/artículos-académicos/revistas/mdpi`, `investigación/integración/artículos-académicos/revistas/springer`.
 
 ## Rutas clave

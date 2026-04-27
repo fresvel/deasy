@@ -18,7 +18,7 @@ Este modulo reemplaza al repo externo `pucese-templates` como fuente integrada d
 - `node tools/templates/cli.mjs render --key investigacion/formativa/informe-docente --version 1.0.0`
 - `node tools/templates/cli.mjs prepare-runtime --key investigacion/formativa/informe-docente --version 1.0.0 --runtime /tmp/runtime.json`
 - `node tools/templates/cli.mjs package`
-- `node tools/templates/cli.mjs publish`
+- `node tools/templates/cli.mjs publish --env dev`
 - `node tools/templates/tui.mjs`
 
 ## Publicacion
@@ -26,11 +26,11 @@ Este modulo reemplaza al repo externo `pucese-templates` como fuente integrada d
 La CLI sigue siendo útil para automatización y scripts. La TUI se agrega como una capa interactiva
 para navegar templates, versiones, seeds y operaciones comunes sin recordar todas las banderas.
 
-`publish` empaqueta (salvo que uses `--skip-package`) y sube directo a MinIO usando el servicio Docker `minio-publish`, sin pasar por `docker/minio/import/`. La publicacion de templates va al bucket `deasy-templates`, bajo `System/`.
+`publish` empaqueta (salvo que uses `--skip-package`) y sube directo a MinIO usando el servicio Docker `minio-publish`, sin pasar por `docker/minio/import/`. La publicacion de templates va al bucket `deasy-templates`, bajo `System/`. Si no indicas `--env`, la CLI usa `dev` por defecto.
 
 Para publicar seeds locales a MinIO, usa:
 
-- `node tools/templates/cli.mjs publish-seeds`
+- `node tools/templates/cli.mjs publish-seeds --env dev`
 
 Eso copia `tools/templates/seeds/` a `deasy-templates/Seeds/`.
 
@@ -47,7 +47,7 @@ definicion de proceso:
    - Construye el paquete publicable en `tools/templates/dist/Plantillas/`.
    - Aqui se genera la estructura canonica que luego se publica a storage.
 
-3. Ejecuta `node tools/templates/cli.mjs publish`.
+3. Ejecuta `node tools/templates/cli.mjs publish --env <dev|qa|prod>`.
    - Publica el contenido de `tools/templates/dist/Plantillas/` directo a MinIO en `deasy-templates/System/`.
    - Este paso mueve archivos a storage, pero todavia no registra filas en `template_artifacts`.
 
