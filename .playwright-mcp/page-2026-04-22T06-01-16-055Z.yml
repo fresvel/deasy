@@ -1,0 +1,204 @@
+- generic [ref=e42]:
+  - banner [ref=e43]:
+    - generic [ref=e44]:
+      - button "Abrir menú" [ref=e45]:
+        - img [ref=e46]
+      - generic [ref=e48]:
+        - link "Ir a perfil" [ref=e49] [cursor=pointer]:
+          - /url: /perfil
+          - img [ref=e50]
+        - link "Ir a administración" [ref=e53] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e54]
+        - button "Firmar documentos" [ref=e58]:
+          - img [ref=e59]
+        - button "Notificaciones" [ref=e61]:
+          - img [ref=e62]
+        - link "Cerrar sesión" [ref=e65] [cursor=pointer]:
+          - /url: /logout
+          - img [ref=e66]
+  - generic [ref=e70]:
+    - complementary [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e75]:
+          - img "User Avatar" [ref=e78]
+          - generic [ref=e79]:
+            - heading "Persona Demo Uno" [level=3] [ref=e80]
+            - paragraph [ref=e81]: Cuenta institucional
+        - generic [ref=e82]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Cargos asignados
+            - button "Seleccionar grupo de cargos" [ref=e87]:
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e92]: Consolidado
+              - img [ref=e94]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - button "Coordinador" [ref=e99]:
+                - generic [ref=e100]:
+                  - img [ref=e101]
+                  - generic [ref=e104]: Coordinador
+              - generic [ref=e105]:
+                - button "Investigación Formativa" [ref=e106]:
+                  - img [ref=e108]
+                  - generic [ref=e111]: Investigación Formativa
+                - button "Investigación Productiva" [ref=e112]:
+                  - img [ref=e114]
+                  - generic [ref=e117]: Investigación Productiva
+                - button "Requerimiento Docente" [ref=e118]:
+                  - img [ref=e120]
+                  - generic [ref=e123]: Requerimiento Docente
+            - generic [ref=e124]:
+              - button "Docente" [ref=e125]:
+                - generic [ref=e126]:
+                  - img [ref=e127]
+                  - generic [ref=e131]: Docente
+              - generic [ref=e219]:
+                - button "Investigación Formativa" [ref=e220]:
+                  - img [ref=e222]
+                  - generic [ref=e225]: Investigación Formativa
+                - button "Investigación Productiva" [ref=e226]:
+                  - img [ref=e228]
+                  - generic [ref=e231]: Investigación Productiva
+                - button "Requerimiento Docente" [active] [ref=e232]:
+                  - img [ref=e234]
+                  - generic [ref=e237]: Requerimiento Docente
+    - generic [ref=e238]:
+      - generic [ref=e240]:
+        - generic [ref=e241]:
+          - img [ref=e244]
+          - generic [ref=e247]:
+            - generic [ref=e248]:
+              - generic [ref=e249]: Requerimiento Docente
+              - generic [ref=e250]:
+                - generic [ref=e251]: Tareas 1
+                - generic [ref=e252]: Entregables 1
+                - generic [ref=e253]: Llenado 0
+            - generic [ref=e254]:
+              - heading "Requerimiento Docente" [level=1] [ref=e255]
+              - paragraph [ref=e256]: Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias, documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
+        - generic [ref=e257]:
+          - button "Documentos Abrir centro 1" [ref=e258]:
+            - generic [ref=e259]:
+              - img [ref=e261]
+              - generic [ref=e264]:
+                - generic [ref=e265]: Documentos
+                - generic [ref=e266]: Abrir centro
+            - generic [ref=e267]: "1"
+          - button "Firmas Ver flujo 0" [ref=e268]:
+            - generic [ref=e269]:
+              - img [ref=e271]
+              - generic [ref=e273]:
+                - generic [ref=e274]: Firmas
+                - generic [ref=e275]: Ver flujo
+            - generic [ref=e276]: "0"
+          - button "Navegación Volver ←" [ref=e277]:
+            - generic [ref=e278]:
+              - img [ref=e280]
+              - generic [ref=e283]:
+                - generic [ref=e284]: Navegación
+                - generic [ref=e285]: Volver
+            - generic [ref=e286]: ←
+          - button "Tareas Nueva tarea +" [disabled] [ref=e287]:
+            - generic [ref=e288]:
+              - img [ref=e290]
+              - generic [ref=e291]:
+                - generic [ref=e292]: Tareas
+                - generic [ref=e293]: Nueva tarea
+            - generic [ref=e294]: +
+      - generic [ref=e295]:
+        - article [ref=e296]:
+          - generic [ref=e298]:
+            - heading "Tareas asignadas" [level=2] [ref=e299]
+            - paragraph [ref=e300]: Solo se muestran las tareas donde participas o que creaste manualmente.
+          - generic [ref=e303]:
+            - generic [ref=e304]:
+              - generic [ref=e306]:
+                - img
+                - textbox [ref=e307]:
+                  - /placeholder: Buscar entregables, periodos o unidades
+              - generic [ref=e308]:
+                - button "Más filtros" [ref=e309]:
+                  - img [ref=e310]
+                  - text: Más filtros
+                - button "Limpiar filtros" [ref=e311]
+            - generic [ref=e312]:
+              - generic [ref=e313]:
+                - generic [ref=e314]: Año
+                - combobox "Año" [ref=e315]:
+                  - option "Todos" [selected]
+                  - option "2021"
+              - generic [ref=e316]:
+                - generic [ref=e317]: Tipo de periodo
+                - combobox "Tipo de periodo" [ref=e318]:
+                  - option "Todos" [selected]
+                  - option "Segundo Periodo Ordinario"
+              - generic [ref=e319]:
+                - generic [ref=e320]: Unidad
+                - combobox "Unidad" [ref=e321]:
+                  - option "Todas" [selected]
+                  - option "Sistemas de Información"
+          - article [ref=e323]:
+            - generic [ref=e325]:
+              - button "Requerimiento Docente v0.4 Abrir chat Abrir detalle del entregable" [expanded] [ref=e327] [cursor=pointer]:
+                - paragraph [ref=e330]: Requerimiento Docente v0.4
+                - generic [ref=e331]:
+                  - button "Abrir chat" [ref=e332]:
+                    - img [ref=e333]
+                  - button "Abrir detalle del entregable" [ref=e336]:
+                    - img [ref=e337]
+              - generic [ref=e340]:
+                - generic [ref=e341]:
+                  - generic [ref=e342]:
+                    - paragraph [ref=e344]: Entrega
+                    - generic [ref=e345]: Paso 2 de 4
+                  - paragraph [ref=e346]: no resuelto
+                  - generic [ref=e349]:
+                    - generic [ref=e350]: Acción
+                    - generic [ref=e351]: Abrir
+                - generic [ref=e353]:
+                  - generic [ref=e354]:
+                    - paragraph [ref=e355]: Cumplimiento
+                    - generic [ref=e357]: En seguimiento
+                  - generic [ref=e358]:
+                    - paragraph [ref=e359]: Vencimiento
+                    - generic [ref=e361]: Próximamente
+                - generic [ref=e362]:
+                  - button "Abrir" [ref=e363]:
+                    - img [ref=e365]
+                    - generic [ref=e369]: Abrir
+                  - button "Descargar plantilla" [ref=e370]:
+                    - img [ref=e372]
+                    - generic [ref=e376]: Descargar plantilla
+        - article [ref=e377]:
+          - generic [ref=e378]:
+            - heading "Dependencias de la definición" [level=2] [ref=e379]
+            - paragraph [ref=e380]: Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta definición.
+          - generic [ref=e381]:
+            - generic [ref=e382]:
+              - heading "Reglas" [level=3] [ref=e383]:
+                - img [ref=e384]
+                - text: Reglas
+              - list [ref=e387]:
+                - listitem [ref=e388]: "Tipo: Carrera | Cargo: Coordinador"
+                - listitem [ref=e390]: "Tipo: Tecnología | Cargo: Coordinador"
+            - generic [ref=e392]:
+              - heading "Disparadores" [level=3] [ref=e393]:
+                - img [ref=e394]
+                - text: Disparadores
+              - list [ref=e397]:
+                - listitem [ref=e398]: Automatico por Primer Periodo Ordinario
+                - listitem [ref=e400]: Automatico por Segundo Periodo Ordinario
+            - generic [ref=e402]:
+              - heading "Paquetes" [level=3] [ref=e403]:
+                - img [ref=e404]
+                - text: Paquetes
+              - list [ref=e407]:
+                - listitem [ref=e408]:
+                  - generic [ref=e409]: Requerimiento Docente
+                  - generic [ref=e410]:
+                    - generic [ref=e411]: Principal
+                    - generic [ref=e412]: Genera tarea
+  - button "Abrir chat" [ref=e214]:
+    - img [ref=e216]

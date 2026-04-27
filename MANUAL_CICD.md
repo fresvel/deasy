@@ -35,12 +35,12 @@ En este repositorio, CI verifica principalmente:
 
 - lint del frontend,
 - validez del `docker compose` de `dev`, `qa` y `prod`,
-- construccion de imagenes Docker.
+- construcción de imágenes Docker.
 
 ### CD
 
 `CD` significa `Continuous Delivery` o `Continuous Deployment`, segun el nivel de
-automatizacion.
+automatización.
 
 En este caso, CD significa:
 
@@ -57,15 +57,15 @@ Contiene:
 
 - sistema base,
 - dependencias,
-- codigo,
+- código,
 - comando de arranque.
 
-Piensa en una imagen como una "foto congelada" de la aplicacion lista para
+Piensa en una imagen como una "foto congelada" de la aplicación lista para
 correr.
 
 ### Contenedor
 
-Un contenedor es una instancia en ejecucion de una imagen.
+Un contenedor es una instancia en ejecución de una imagen.
 
 Ejemplo:
 
@@ -74,12 +74,12 @@ Ejemplo:
 
 ### Registry
 
-Un `registry` es un almacen de imagenes Docker.
+Un `registry` es un almacén de imágenes Docker.
 
 Es el equivalente a:
 
 - `npm registry` para paquetes Node,
-- pero aplicado a imagenes Docker.
+- pero aplicado a imágenes Docker.
 
 ### GHCR
 
@@ -87,7 +87,7 @@ Es el equivalente a:
 
 Es el registry de contenedores de GitHub.
 
-En este proyecto se usa para publicar imagenes como:
+En este proyecto se usa para publicar imágenes como:
 
 - `ghcr.io/fresvel/deasy-backend:dev`
 - `ghcr.io/fresvel/deasy-backend:qa`
@@ -98,11 +98,11 @@ Eso significa:
 - `ghcr.io`: el servidor del registry,
 - `fresvel`: el owner,
 - `deasy-backend`: el nombre de la imagen,
-- `qa` o `prod`: el tag o version.
+- `qa` o `prod`: el tag o versión.
 
 ### Tag de imagen
 
-Un `tag` es una etiqueta de version de una imagen.
+Un `tag` es una etiqueta de versión de una imagen.
 
 Ejemplos:
 
@@ -118,13 +118,13 @@ En este repo:
 
 ### GitHub Actions
 
-Es el sistema de automatizacion de GitHub.
+Es el sistema de automatización de GitHub.
 
 Ejecuta workflows definidos en `.github/workflows/*.yml`.
 
 ### GitHub Environments
 
-Son entornos lógicos de GitHub para separar configuracion sensible por ambiente.
+Son entornos lógicos de GitHub para separar configuración sensible por ambiente.
 
 En este caso necesitas al menos:
 
@@ -134,7 +134,7 @@ En este caso necesitas al menos:
 Cada environment puede tener:
 
 - secrets,
-- reglas de aprobacion,
+- reglas de aprobación,
 - restricciones,
 - variables propias.
 
@@ -154,15 +154,15 @@ Ejemplos:
 El repositorio ya tiene implementados:
 
 - workflow de CI/CD,
-- build y publicacion de imagenes,
+- build y publicación de imágenes,
 - despliegue remoto de `qa` y `prod`,
-- separacion de compose por ambiente,
-- consumo de imagenes versionadas desde GHCR,
-- wrappers de operacion local y remota,
+- separación de compose por ambiente,
+- consumo de imágenes versionadas desde GHCR,
+- wrappers de operación local y remota,
 - ramas `develop`, `qa` y `main` alineadas.
 
 Lo que aun falta para dejar el sistema completamente operativo es la
-configuracion manual en GitHub:
+configuración manual en GitHub:
 
 - crear/verificar `GitHub Environments`,
 - cargar sus `secrets`.
@@ -180,15 +180,15 @@ La estrategia actual es:
 
 Comportamiento:
 
-- push a `develop`: valida y publica imagenes `dev`, pero no despliega.
-- push a `qa`: valida, publica imagenes `qa` y despliega `qa`.
-- push a `main`: valida, publica imagenes `prod` y despliega `prod`.
+- push a `develop`: valida y publica imágenes `dev`, pero no despliega.
+- push a `qa`: valida, publica imágenes `qa` y despliega `qa`.
+- push a `main`: valida, publica imágenes `prod` y despliega `prod`.
 
 Esto permite:
 
-- usar `develop` como canal de integracion,
-- usar `qa` como canal de validacion,
-- usar `main` como canal de produccion.
+- usar `develop` como canal de integración,
+- usar `qa` como canal de validación,
+- usar `main` como canal de producción.
 
 ## 5. Archivos principales
 
@@ -198,7 +198,7 @@ Archivo:
 
 - [`.github/workflows/cd-multienv.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/.github/workflows/cd-multienv.yml)
 
-Este archivo define toda la automatizacion de CI/CD.
+Este archivo define toda la automatización de CI/CD.
 
 ### Wrapper de compose por ambiente
 
@@ -206,7 +206,7 @@ Archivo:
 
 - [`scripts/docker-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/docker-env.sh)
 
-Este script simplifica la ejecucion de Docker Compose por ambiente.
+Este script simplifica la ejecución de Docker Compose por ambiente.
 
 En lugar de escribir un comando largo, usas:
 
@@ -216,18 +216,39 @@ bash scripts/docker-env.sh qa up -d
 bash scripts/docker-env.sh prod down
 ```
 
-### Wrapper de despliegue remoto
+### Wrapper de despliegue comun
+
+Archivo:
+
+- [`scripts/apply-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/apply-env.sh)
+
+Este script concentra la logica comun de despliegue para `qa` y `prod`.
+
+Su objetivo es evitar que existan dos implementaciones distintas:
+
+- una para GitHub Actions,
+- otra para el servidor.
+
+Recibe:
+
+- ambiente,
+- modo de origen del despliegue,
+- tag opcional de imagen.
+
+Modos actuales previstos:
+
+- `gh-actions`
+- `server-pull`
+
+### Wrapper de despliegue remoto por GitHub Actions
 
 Archivo:
 
 - [`scripts/deploy-env.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/deploy-env.sh)
 
-Este script:
-
-- carga el archivo runtime del ambiente si existe,
-- sobreescribe tags si se indica uno,
-- hace `pull` de imagenes,
-- levanta el stack con compose.
+Este script ya no contiene la logica principal; ahora actua como wrapper de
+compatibilidad para el flujo iniciado desde GitHub Actions y delega en
+`scripts/apply-env.sh`.
 
 ### Compose base
 
@@ -248,8 +269,8 @@ Archivos:
 Diferencias principales:
 
 - `dev` construye localmente y usa mounts.
-- `qa` consume imagenes desde GHCR.
-- `prod` consume imagenes desde GHCR y agrega hardening.
+- `qa` consume imágenes desde GHCR.
+- `prod` consume imágenes desde GHCR y agrega hardening.
 
 ### Variables por ambiente
 
@@ -275,7 +296,7 @@ El job `prepare` decide:
 
 - que ambiente corresponde,
 - si ese ambiente se despliega o no,
-- que tag de imagen se va a usar,
+- que tag de imágen se va a usar,
 - que `VITE_API_PORT` se necesita para build del frontend.
 
 Reglas actuales:
@@ -294,7 +315,7 @@ pnpm run lint
 
 Si esto falla, no sigue.
 
-### Paso 4. Validacion compose
+### Paso 4. Validación compose
 
 El job `compose-validate` ejecuta:
 
@@ -306,9 +327,9 @@ bash scripts/docker-env.sh prod config
 
 Eso verifica que los archivos compose resuelvan correctamente.
 
-### Paso 5. Build y publicacion
+### Paso 5. Build y publicación
 
-El job `publish-images` construye y publica imagenes a GHCR.
+El job `publish-images` construye y publica imágenes a GHCR.
 
 Servicios incluidos:
 
@@ -334,6 +355,19 @@ El job `deploy` solo corre en:
 - push a `qa`
 - push a `main`
 - o `workflow_dispatch`
+
+Ademas, el despliegue remoto por GitHub Actions solo se activa si la variable
+de GitHub `DEPLOY_DELIVERY_MODE` existe y vale:
+
+```text
+gh-actions
+```
+
+Si esa variable no existe o tiene otro valor, el workflow:
+
+- sigue validando,
+- sigue publicando imagenes,
+- pero no intenta conectarse al servidor por SSH.
 
 Lo que hace:
 
@@ -370,9 +404,190 @@ bash scripts/docker-env.sh <ambiente> --profile workers up -d --remove-orphans
 
 Eso significa:
 
-- baja imagenes nuevas,
+- baja imágenes nuevas,
 - recrea contenedores si hace falta,
 - elimina contenedores huérfanos.
+
+## 7.1 Estrategia dual de despliegue
+
+El proyecto queda preparado para dos formas de despliegue:
+
+### Modo 1. Push remoto desde GitHub Actions
+
+GitHub:
+
+- construye,
+- publica imagenes,
+- entra por SSH al servidor,
+- y ejecuta el despliegue.
+
+Este modo es util cuando:
+
+- tienes IP o DNS accesible,
+- el runner puede entrar al host,
+- quieres mayor automatizacion extremo a extremo.
+
+Para activarlo en GitHub, define:
+
+```text
+DEPLOY_DELIVERY_MODE=gh-actions
+```
+
+Si no la defines, el camino por SSH queda preparado pero desactivado.
+
+### Modo 2. Pull iniciado desde el servidor
+
+El servidor:
+
+- hace `git pull` o actualiza archivos localmente,
+- y luego ejecuta el mismo despliegue usando scripts del repo.
+
+Este modo es util cuando:
+
+- no tienes IP publica estatica,
+- no quieres abrir entrada SSH desde GitHub,
+- el servidor puede operar de forma autonomica o programada.
+
+Este modo pasa a ser el predeterminado recomendado cuando no existe conectividad
+entrante estable desde GitHub hacia el host.
+
+### Regla de diseño adoptada
+
+La logica de despliegue del stack no debe duplicarse.
+
+Por eso:
+
+- `scripts/apply-env.sh` contiene la logica comun,
+- `scripts/deploy-env.sh` queda como wrapper del modo `gh-actions`,
+- los futuros flujos de `server-pull` reutilizaran `scripts/apply-env.sh`.
+
+## 7.2 Flujo manual desde servidor
+
+Archivo principal:
+
+- [`scripts/server-pull-deploy.sh`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/scripts/server-pull-deploy.sh)
+
+Este script agrega la parte que GitHub Actions no necesita:
+
+- verificar rama local,
+- verificar limpieza del repo,
+- hacer `git fetch`,
+- hacer `git pull --ff-only`,
+- y luego ejecutar el despliegue del ambiente.
+
+Sintaxis:
+
+```bash
+bash scripts/server-pull-deploy.sh <qa|prod> <git|skip-git> [image-tag]
+```
+
+Ejemplos:
+
+```bash
+bash scripts/server-pull-deploy.sh qa git
+bash scripts/server-pull-deploy.sh prod git
+bash scripts/server-pull-deploy.sh qa skip-git sha-abc123
+```
+
+Validacion sin cambios reales:
+
+```bash
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh qa skip-git qa
+DEASY_DRY_RUN=1 bash scripts/server-pull-deploy.sh prod skip-git prod
+```
+
+Significado:
+
+- `git`: actualiza el repo desde `origin` antes de desplegar.
+- `skip-git`: no toca git y solo aplica el stack.
+
+Mapeo actual:
+
+- `qa` espera estar en rama `qa`
+- `prod` espera estar en rama `main`
+
+El modo `git` falla si:
+
+- el repo tiene cambios locales,
+- o la rama activa no coincide con el ambiente esperado.
+
+Eso evita despliegues ambiguos desde un checkout desalineado.
+
+Los scripts `apply-env.sh` y `server-pull-deploy.sh` aceptan:
+
+```text
+DEASY_DRY_RUN=1
+```
+
+para mostrar los comandos que ejecutarian sin tocar contenedores ni git.
+
+## 7.3 Opcion con systemd
+
+Se dejaron ejemplos listos en:
+
+- [`deploy/systemd/deasy-server-pull@.service`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.service)
+- [`deploy/systemd/deasy-server-pull@.timer`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/deploy/systemd/deasy-server-pull@.timer)
+
+La idea sigue la buena practica de Context7 para `systemd`:
+
+- un `service` `oneshot` hace el trabajo,
+- un `timer` lo programa,
+- y no se mezcla logica de scheduling dentro del servicio.
+
+### Que hace el service
+
+El servicio ejecuta:
+
+```bash
+/bin/bash /opt/deasy/scripts/server-pull-deploy.sh %i git
+```
+
+Donde `%i` es el ambiente:
+
+- `qa`
+- `prod`
+
+### Que hace el timer
+
+El timer dispara ese servicio periodicamente.
+
+Configuracion actual de ejemplo:
+
+- primer disparo: `5m` despues de boot
+- recurrencia: cada `15m`
+
+Eso es solo una base y puede ajustarse.
+
+### Instalacion ejemplo en servidor
+
+Asumiendo que el repo vive en `/opt/deasy`:
+
+```bash
+sudo cp deploy/systemd/deasy-server-pull@.service /etc/systemd/system/
+sudo cp deploy/systemd/deasy-server-pull@.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now deasy-server-pull@qa.timer
+```
+
+Para `prod`:
+
+```bash
+sudo systemctl enable --now deasy-server-pull@prod.timer
+```
+
+### Ejecucion manual via systemd
+
+```bash
+sudo systemctl start deasy-server-pull@qa.service
+sudo systemctl status deasy-server-pull@qa.service
+```
+
+### Consideraciones
+
+- el `WorkingDirectory` del ejemplo esta en `/opt/deasy`
+- si tu ruta real es otra, debes ajustar la unidad
+- el host debe tener `git`, `docker` y `docker compose`
+- el repo del servidor debe tener acceso al remoto si vas a usar modo `git`
 
 ## 8. Diferencia entre dev, qa y prod
 
@@ -495,13 +710,13 @@ Dentro de esa ruta, el workflow crea:
 
 Usuario que tiene permiso para hacer `docker login` en GHCR desde el servidor.
 
-Normalmente es tu usuario de GitHub o una cuenta tecnica.
+Normalmente es tu usuario de GitHub o una cuenta técnica.
 
 #### GHCR_TOKEN
 
 Token con permisos para leer paquetes del registry.
 
-Como minimo debe permitir descargar imagenes privadas si aplica.
+Como mínimo debe permitir descargar imagenes privadas si aplica.
 
 #### RUNTIME_ENV_FILE
 
@@ -678,17 +893,47 @@ Lo que todavia debes hacer fuera del repo es:
 
 Tecnologicamente, la base ya esta implementada.
 
-Para considerarlo completamente operativo faltan estas acciones manuales:
+### Operativo hoy mismo
 
-1. crear `qa` y `prod` en `GitHub Environments`,
-2. cargar todos los `secrets`,
-3. verificar que el servidor remoto tenga:
+Sin cambios extra de infraestructura, hoy ya queda operativo:
+
+1. CI para `develop`, `qa` y `main`
+2. publicacion de imagenes a GHCR
+3. despliegue iniciado desde el servidor con:
+   - `scripts/server-pull-deploy.sh`
+   - `scripts/apply-env.sh`
+   - opcion de `systemd`
+4. validacion segura con `DEASY_DRY_RUN=1`
+
+### Pendiente de infraestructura futura
+
+Para habilitar completamente el modo `gh-actions` por SSH faltan estas acciones:
+
+1. crear `qa` y `prod` en `GitHub Environments`
+2. cargar todos los `secrets`
+3. definir `DEPLOY_DELIVERY_MODE=gh-actions`
+4. verificar que el servidor remoto tenga:
    - `docker`
    - `docker compose`
    - `rsync`
    - acceso SSH correcto
-4. probar un deploy real a `qa`,
-5. probar un deploy real a `prod` cuando corresponda.
+   - conectividad adecuada para ese modelo
+5. probar un deploy real a `qa`
+6. probar un deploy real a `prod` cuando corresponda
+
+### Tradeoff entre ambos modos
+
+`gh-actions`:
+
+- mas automatizado
+- mas comodo para promover cambios desde GitHub
+- depende de conectividad entrante y secretos completos
+
+`server-pull`:
+
+- mas simple para hosts cerrados o sin IP publica estatica
+- evita entrada SSH desde GitHub
+- exige que el propio servidor tenga acceso al repo y al registry
 
 ## 18. Como saber si todo esta bien
 

@@ -6,7 +6,7 @@ DOCKER_DIR="$ROOT_DIR/docker"
 DOCKER_ENV_FILE="$DOCKER_DIR/.env"
 DOCKER_ENV_EXAMPLE_FILE="$DOCKER_DIR/.env.example"
 BACKEND_DIR="$ROOT_DIR/backend"
-DEFAULT_SEED_FILE="$ROOT_DIR/scripts/seeds/pucese.seed.json"
+DEFAULT_SEED_FILE="$ROOT_DIR/backend/scripts/seeds/pucese.seed.json"
 
 RUN_DB_SEED=1
 RUN_STORAGE_SEEDS=1
@@ -115,7 +115,7 @@ resolve_mariadb_host_port() {
   fi
 
   # Fallback al puerto publicado actual en docker-compose.yml.
-  echo "3308"
+  echo "3306"
 }
 
 run_db_seed() {
@@ -128,7 +128,7 @@ run_db_seed() {
   MARIADB_USER="$MARIADB_USER" \
   MARIADB_PASSWORD="$MARIADB_PASSWORD" \
   MARIADB_DATABASE="$MARIADB_DATABASE" \
-  node "$ROOT_DIR/scripts/seed_pucese.mjs" apply --file "$SEED_FILE"
+  node "$ROOT_DIR/backend/scripts/seed_pucese.mjs" apply --file "$SEED_FILE"
 }
 
 run_storage_seeds() {

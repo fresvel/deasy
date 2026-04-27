@@ -1,0 +1,40 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: PUCE
+        - generic [ref=e9]: ESMERALDAS
+      - heading "Excelencia académica con sentido humano" [level=2] [ref=e10]:
+        - text: Excelencia académica
+        - text: con sentido humano
+      - paragraph [ref=e11]: Sistema DEASY
+    - generic [ref=e12]: © 2026 DEASY. Todos los derechos reservados.
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Iniciar Sesión" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Ingresa tus credenciales para acceder a tu cuenta.
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Usuario
+        - generic [ref=e20]:
+          - generic:
+            - img
+          - textbox "Usuario" [ref=e21]:
+            - /placeholder: Cédula o correo electrónico
+      - generic [ref=e22]:
+        - generic [ref=e23]: Contraseña
+        - generic [ref=e24]:
+          - generic:
+            - img
+          - textbox "Contraseña" [ref=e25]:
+            - /placeholder: ••••••••••••
+          - button [ref=e26]:
+            - img [ref=e27]
+      - link "¿Olvidaste tu contraseña?" [ref=e31] [cursor=pointer]:
+        - /url: /recover-password
+      - button "Ingresar" [ref=e32]:
+        - text: Ingresar
+        - img [ref=e33]
+      - generic [ref=e40]: ¿No tienes una cuenta?
+      - link "Crear usuario" [ref=e41] [cursor=pointer]:
+        - /url: /register

@@ -71,6 +71,24 @@ const FILL_RESOLVER_TYPES = new Set([
 const FILL_UNIT_SCOPE_TYPES = new Set(["unit_exact", "unit_subtree", "unit_type", "all_units"]);
 const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
+const SIGNATURE_RESOLVER_TYPES = new Set([
+  "task_assignee",
+  "document_owner",
+  "specific_person",
+  "position",
+  "cargo_in_scope",
+  "manual_pick"
+]);
+const SIGNATURE_UNIT_SCOPE_TYPES = new Set([
+  "unit_exact",
+  "unit_subtree",
+  "unit_type",
+  "all_units",
+  "context_exact",
+  "context_subtree",
+  "context_ancestor_type"
+]);
+const SIGNATURE_APPROVAL_MODES = new Set(["and", "or", "at_least"]);
 const SIGNATURE_TYPE_CODE_ALIASES = new Map([
   ["electronic", "electronic"],
   ["firma_electronica", "electronic"],
@@ -79,7 +97,10 @@ const SIGNATURE_TYPE_CODE_ALIASES = new Map([
 const CARGO_CODE_ALIASES = new Map([
   ["coordinador_carrera", "coordinador"],
   ["director_escuela", "director"],
-  ["responsable_aseguramiento_calidad", "responsable-de-calidad"]
+  ["director_docencia", "director"],
+  ["responsable_aseguramiento_calidad", "responsable"],
+  ["responsable_financiero", "responsable"],
+  ["jefe_talento_humano", "jefe"]
 ]);
 const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
 const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
@@ -201,6 +222,12 @@ const streamToBuffer = (stream) => new Promise((resolve, reject) => {
   stream.on("end", () => resolve(Buffer.concat(chunks)));
 });
 
+const readMinioObjectAsText = async (bucket, objectName) => {
+  const dataStream = await getMinioObjectStream(bucket, objectName);
+  const buffer = await streamToBuffer(dataStream);
+  return buffer.toString("utf8");
+};
+
 const copyMinioObjectToFile = async (bucket, objectName, targetFile) => {
   const dataStream = await getMinioObjectStream(bucket, objectName);
   fs.mkdirSync(path.dirname(targetFile), { recursive: true });
@@ -296,7 +323,10 @@ const parseAvailableFormats = (value) => {
   }
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
   } catch {
     return {};
   }
@@ -330,6 +360,15 @@ const normalizeBooleanFlag = (value, defaultValue = false) => {
   return defaultValue;
 };
 
+const normalizeSignatureStepAnchorRefs = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+};
+
 const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) => {
   const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
   return rawSteps
@@ -355,6 +394,98 @@ const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) =>
       };
     })
     .sort((left, right) => left.stepOrder - right.stepOrder);
+};
+
+const normalizeSignatureSteps = (
+  workflow = {},
+  { cargoCodeMap = new Map(), signatureTypeCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
+) => {
+  const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
+  return rawSteps
+    .filter((step) => step && typeof step === "object")
+    .map((step, index) => {
+      const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
+      const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
+      const rawCargoCode = String(
+        step?.resolver?.cargo_code
+        || step.required_cargo_code
+        || ""
+      ).trim().toLowerCase();
+      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+      const normalizedSlot = String(step.slot || "").trim() || null;
+      const stepCode = String(step.code || "").trim() || null;
+      const stepName = String(step.name || "").trim() || null;
+      const anchorRefs = normalizeSignatureStepAnchorRefs(step.anchor_refs);
+      const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
+      const unitScopeType = String(step?.resolver?.unit_scope_type || "context_exact").trim();
+      const selectionMode = String(step?.resolver?.selection_mode || step.selection_mode || "auto_all").trim();
+      const approvalMode = String(step.approval_mode || "and").trim().toLowerCase();
+      const rawUnitTypeName = String(step?.resolver?.unit_type_name || "").trim().toLowerCase();
+      return {
+        stepOrder: Number(step.order) || index + 1,
+        code: stepCode,
+        name: stepName,
+        slot: normalizedSlot,
+        stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
+        resolverType: SIGNATURE_RESOLVER_TYPES.has(resolverType) ? resolverType : "cargo_in_scope",
+        assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
+        unitScopeType: SIGNATURE_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "context_exact",
+        unitId: normalizeNumericId(step?.resolver?.unit_id),
+        unitTypeId:
+          normalizeNumericId(step?.resolver?.unit_type_id)
+          || unitTypeNameMap.get(rawUnitTypeName)
+          || null,
+        positionId: normalizeNumericId(step?.resolver?.position_id),
+        requiredCargoId:
+          normalizeNumericId(step?.resolver?.cargo_id)
+          || cargoCodeMap.get(normalizedCargoCode)
+          || null,
+        selectionMode: SIGNATURE_SELECTION_MODES.has(selectionMode) ? selectionMode : "auto_all",
+        approvalMode: SIGNATURE_APPROVAL_MODES.has(approvalMode) ? approvalMode : "and",
+        requiredSignersMin: normalizeNumericId(step.required_signers_min),
+        requiredSignersMax: normalizeNumericId(step.required_signers_max),
+        isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0,
+        anchorRefs
+      };
+    })
+    .filter((step) => step.stepTypeId)
+    .filter((step) => step.resolverType !== "cargo_in_scope" || step.requiredCargoId)
+    .sort((left, right) => left.stepOrder - right.stepOrder);
+};
+
+const collectSignatureWorkflowNormalizationIssues = (
+  workflow = {},
+  { cargoCodeMap = new Map(), signatureTypeCodeMap = new Map() } = {}
+) => {
+  const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
+  const issues = [];
+  for (const [index, step] of rawSteps.entries()) {
+    if (!step || typeof step !== "object") {
+      continue;
+    }
+
+    const stepOrder = Number(step.order) || index + 1;
+    const stepCode = String(step.code || "").trim() || `step_${stepOrder}`;
+    const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
+    const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
+    if (!signatureTypeCodeMap.get(normalizedTypeCode)) {
+      issues.push(`Paso ${stepOrder} (${stepCode}): tipo de firma no resuelto (${rawTypeCode || "vacío"}).`);
+    }
+
+    const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
+    if (resolverType === "cargo_in_scope") {
+      const rawCargoCode = String(
+        step?.resolver?.cargo_code
+        || step.required_cargo_code
+        || ""
+      ).trim().toLowerCase();
+      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+      if (!cargoCodeMap.get(normalizedCargoCode)) {
+        issues.push(`Paso ${stepOrder} (${stepCode}): cargo no resuelto (${rawCargoCode || "vacío"}).`);
+      }
+    }
+  }
+  return issues;
 };
 
 const buildArtifactSyncedFillDescription = ({ artifactId, templateCode, storageVersion }) =>
@@ -660,6 +791,7 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.template_artifact_id) {
         throw new Error("Selecciona el paquete.");
       }
+      ensureDateOrder(candidate.start_date, candidate.end_date, "items de tarea");
       break;
     case "documents":
       if (!candidate.task_item_id && !candidate.owner_person_id) {
@@ -747,7 +879,7 @@ const validateTableRules = (tableName, candidate) => {
           throw new Error("Debes registrar al menos un formato disponible en available_formats.");
         }
         if (!candidate.artifact_origin) {
-          candidate.artifact_origin = candidate.owner_ref ? "user" : "system";
+          candidate.artifact_origin = candidate.owner_ref ? "general" : "process";
         }
       }
       break;
@@ -933,12 +1065,11 @@ export default class SqlAdminService {
 
     if (tableName === "processes") {
       joinClause = `LEFT JOIN (
-        SELECT process_id, definition_version, execution_mode, status
+        SELECT process_id, definition_version, status
         FROM (
           SELECT
             process_id,
             definition_version,
-            execution_mode,
             status,
             ROW_NUMBER() OVER (
               PARTITION BY process_id
@@ -955,9 +1086,6 @@ export default class SqlAdminService {
         selectFields.push("pd_main.definition_version AS active_definition_version");
         orderableFields.push("active_definition_version");
       }
-      if (availableFields.includes("active_execution_mode")) {
-        selectFields.push("pd_main.execution_mode AS active_execution_mode");
-      }
       if (availableFields.includes("active_definition_status")) {
         selectFields.push("pd_main.status AS active_definition_status");
       }
@@ -971,23 +1099,13 @@ export default class SqlAdminService {
       selectClause = `SELECT ${selectFields.join(", ")}`;
 
       const definitionStatus = normalizedFilters.definition_status;
-      const definitionExecutionMode = normalizedFilters.definition_execution_mode;
       delete normalizedFilters.definition_status;
-      delete normalizedFilters.definition_execution_mode;
 
       if (definitionStatus !== undefined && definitionStatus !== null && definitionStatus !== "") {
         conditions.push("pd_rule.status = ?");
         params.push(definitionStatus);
       }
 
-      if (
-        definitionExecutionMode !== undefined
-        && definitionExecutionMode !== null
-        && definitionExecutionMode !== ""
-      ) {
-        conditions.push("pd_rule.execution_mode = ?");
-        params.push(definitionExecutionMode);
-      }
     }
 
     if (tableName === "template_artifacts") {
@@ -1064,7 +1182,7 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, template_artifact_id, usage_role, sort_order, creates_task
+      `SELECT id, process_definition_id, template_artifact_id, usage_role, instance_mode, sort_order, creates_task
        FROM process_definition_templates
        WHERE id = ?
        LIMIT 1`,
@@ -1073,10 +1191,72 @@ export default class SqlAdminService {
     return rows?.[0] ?? null;
   }
 
+  async getTemplateArtifact(artifactId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT
+         id,
+         template_code,
+         display_name,
+         storage_version,
+         bucket,
+         meta_object_key
+       FROM template_artifacts
+       WHERE id = ?
+       LIMIT 1`,
+      [artifactId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+  async loadTemplateArtifactMetaDocument(artifact, connection = this.pool) {
+    if (!artifact?.bucket || !artifact?.meta_object_key) {
+      return null;
+    }
+    const content = await readMinioObjectAsText(
+      artifact.bucket,
+      String(artifact.meta_object_key || "").trim()
+    );
+    return parseYamlDocument(content, {
+      filePath: `${artifact.bucket}/${artifact.meta_object_key}`
+    });
+  }
+
+  async syncArtifactWorkflowsForTemplateArtifactId(artifactId, connection = this.pool) {
+    const artifact = await this.getTemplateArtifact(artifactId, connection);
+    if (!artifact?.id) {
+      return null;
+    }
+
+    const metaDocument = await this.loadTemplateArtifactMetaDocument(artifact, connection);
+    const fillSyncSummary = await this.syncArtifactFillWorkflowForArtifact({
+      connection,
+      artifactId: Number(artifact.id),
+      templateCode: artifact.template_code,
+      storageVersion: artifact.storage_version,
+      displayName: artifact.display_name,
+      metaDocument
+    });
+
+    const signatureSyncSummary = await this.syncArtifactSignatureWorkflowForArtifact({
+      connection,
+      artifactId: Number(artifact.id),
+      templateCode: artifact.template_code,
+      storageVersion: artifact.storage_version,
+      displayName: artifact.display_name,
+      metaDocument
+    });
+
+    return {
+      fill: fillSyncSummary,
+      signatures: signatureSyncSummary
+    };
+  }
+
   async getTaskItem(taskItemId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, task_id, process_definition_template_id, template_artifact_id
+      `SELECT id, task_id, process_definition_template_id, template_artifact_id, start_date, end_date, user_started_at
        FROM task_items
        WHERE id = ?
        LIMIT 1`,
@@ -1172,7 +1352,7 @@ export default class SqlAdminService {
     }
 
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, usage_role, creates_task, is_required, sort_order
+      `SELECT template_artifact_id, usage_role, instance_mode, creates_task, is_required, sort_order
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -1185,19 +1365,25 @@ export default class SqlAdminService {
           process_definition_id,
           template_artifact_id,
           usage_role,
+          instance_mode,
           creates_task,
           is_required,
           sort_order
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.template_artifact_id,
           row.usage_role,
+          row.instance_mode || "single_document",
           row.creates_task,
           row.is_required,
           row.sort_order
         ]
       );
+
+      if (row.template_artifact_id) {
+        await this.syncArtifactWorkflowsForTemplateArtifactId(Number(row.template_artifact_id), connection);
+      }
     }
 
     const [ruleRows] = await connection.query(
@@ -1558,6 +1744,12 @@ export default class SqlAdminService {
       }
       payload.template_artifact_id = template.template_artifact_id;
       payload.template_usage_role = template.usage_role;
+      if (!payload.start_date) {
+        payload.start_date = task.start_date;
+      }
+      if (payload.end_date === undefined || payload.end_date === "") {
+        payload.end_date = task.end_date ?? null;
+      }
       if (payload.sort_order === undefined || payload.sort_order === null || payload.sort_order === "") {
         payload.sort_order = template.sort_order;
       }
@@ -1631,7 +1823,7 @@ export default class SqlAdminService {
     }
 
     if (tableName === "template_artifacts") {
-      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de artifact de usuario.");
+      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de artifact general.");
     }
 
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
@@ -1749,6 +1941,25 @@ export default class SqlAdminService {
             await ensureDocumentForTaskItem(connection, taskItem);
           } else {
             await ensureDocumentsForTask(connection, Number(payload.task_id));
+          }
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "process_definition_templates") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [insertResult] = await connection.query(
+            `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders})`,
+            values
+          );
+          result = insertResult;
+          if (payload.template_artifact_id) {
+            await this.syncArtifactWorkflowsForTemplateArtifactId(Number(payload.template_artifact_id), connection);
           }
           await connection.commit();
         } catch (error) {
@@ -2073,8 +2284,8 @@ export default class SqlAdminService {
       updates.code = code;
     }
     if (tableName === "template_artifacts") {
-      if (String(existing.artifact_origin || "system") === "system") {
-        throw new Error("Los artifacts del sistema se sincronizan desde MinIO y no se pueden editar manualmente.");
+      if (String(existing.artifact_origin || "process") === "process") {
+        throw new Error("Los artifacts de proceso se sincronizan desde MinIO y no se pueden editar manualmente.");
       }
       if (Object.prototype.hasOwnProperty.call(updates, "artifact_origin")) {
         if (String(updates.artifact_origin || "") !== String(existing.artifact_origin || "")) {
@@ -2172,7 +2383,6 @@ export default class SqlAdminService {
           "name",
           "description",
           "has_document",
-          "execution_mode",
           "status",
           "effective_from",
           "effective_to"
@@ -2252,8 +2462,14 @@ export default class SqlAdminService {
           );
           if (Object.prototype.hasOwnProperty.call(updates, "status")) {
             const nextStatus = String(updates.status || "").trim().toLowerCase();
-            if (nextStatus === "listo para firma" || nextStatus === "pendiente de firma") {
-              await ensureSignatureFlowForDocumentVersion(connection, Number(existing.id ?? keyPayload.id));
+            if (nextStatus === "listo para firma") {
+              const documentVersionId = Number(existing.id ?? keyPayload.id);
+              const signatureFlowResult = await ensureSignatureFlowForDocumentVersion(connection, documentVersionId);
+              if (signatureFlowResult && !signatureFlowResult.ok) {
+                console.warn(
+                  `[SqlAdminService] DocumentVersion ${documentVersionId} cannot enter signature: ${signatureFlowResult.reason}`
+                );
+              }
             }
           }
           await connection.commit();
@@ -2304,6 +2520,30 @@ export default class SqlAdminService {
             [...values, ...params]
           );
           await syncDocumentProgressFromDocumentSignature(connection, Number(existing.id ?? keyPayload.id));
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      } else if (tableName === "process_definition_templates") {
+        const connection = await this.pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          await connection.query(
+            `UPDATE ${tableName} SET ${setClause} WHERE ${where}`,
+            [...values, ...params]
+          );
+          const rawArtifactId =
+            updates.template_artifact_id
+            ?? existing.template_artifact_id
+            ?? keyPayload.template_artifact_id
+            ?? 0;
+          const artifactId = Number(rawArtifactId);
+          if (artifactId) {
+            await this.syncArtifactWorkflowsForTemplateArtifactId(artifactId, connection);
+          }
           await connection.commit();
         } catch (error) {
           await connection.rollback();
@@ -2429,6 +2669,23 @@ export default class SqlAdminService {
     return map;
   }
 
+  async getUnitTypeNameMap(connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT id, name
+       FROM unit_types
+       WHERE is_active = 1
+       ORDER BY id ASC`
+    );
+    const map = new Map();
+    for (const row of rows) {
+      const normalizedName = String(row.name || "").trim().toLowerCase();
+      if (normalizedName && !map.has(normalizedName)) {
+        map.set(normalizedName, Number(row.id));
+      }
+    }
+    return map;
+  }
+
   async ensureSignatureTypeCatalog(connection = this.pool) {
     await connection.query(
       `INSERT INTO signature_types (code, name, description, is_active)
@@ -2443,17 +2700,6 @@ export default class SqlAdminService {
   }
 
   async replaceSyncedFillFlowSteps(fillFlowTemplateId, steps, connection = this.pool) {
-    await connection.query(
-      `DELETE fr
-       FROM fill_requests fr
-       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-       WHERE dff.fill_flow_template_id = ?`,
-      [fillFlowTemplateId]
-    );
-    await connection.query(
-      "DELETE FROM document_fill_flows WHERE fill_flow_template_id = ?",
-      [fillFlowTemplateId]
-    );
     await connection.query(
       "DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?",
       [fillFlowTemplateId]
@@ -2493,18 +2739,21 @@ export default class SqlAdminService {
     }
   }
 
+  async hasFillFlowTemplateRuntimeUsage(fillFlowTemplateId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT EXISTS(
+         SELECT 1
+         FROM document_fill_flows dff
+         LEFT JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+         WHERE dff.fill_flow_template_id = ?
+         LIMIT 1
+       ) AS has_usage`,
+      [fillFlowTemplateId]
+    );
+    return Boolean(Number(rows?.[0]?.has_usage || 0));
+  }
+
   async replaceSyncedSignatureFlowSteps(signatureFlowTemplateId, steps, connection = this.pool) {
-    await connection.query(
-      `DELETE sr
-       FROM signature_requests sr
-       INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-       WHERE sfi.template_id = ?`,
-      [signatureFlowTemplateId]
-    );
-    await connection.query(
-      "DELETE FROM signature_flow_instances WHERE template_id = ?",
-      [signatureFlowTemplateId]
-    );
     await connection.query(
       "DELETE FROM signature_flow_steps WHERE template_id = ?",
       [signatureFlowTemplateId]
@@ -2515,25 +2764,62 @@ export default class SqlAdminService {
         `INSERT INTO signature_flow_steps (
            template_id,
            step_order,
+           code,
+           name,
+           slot,
            step_type_id,
+           resolver_type,
+           assigned_person_id,
+           unit_scope_type,
+           unit_id,
+           unit_type_id,
+           position_id,
            required_cargo_id,
            selection_mode,
-           required_signers_min,
-           required_signers_max,
-           is_required
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           approval_mode,
+         required_signers_min,
+         required_signers_max,
+         is_required,
+         anchor_refs
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           signatureFlowTemplateId,
           step.stepOrder,
+          step.code,
+          step.name,
+          step.slot,
           step.stepTypeId,
+          step.resolverType,
+          step.assignedPersonId,
+          step.unitScopeType,
+          step.unitId,
+          step.unitTypeId,
+          step.positionId,
           step.requiredCargoId,
           step.selectionMode,
+          step.approvalMode,
           step.requiredSignersMin,
           step.requiredSignersMax,
-          step.isRequired
+          step.isRequired,
+          JSON.stringify(Array.isArray(step.anchorRefs) ? step.anchorRefs : [])
         ]
       );
     }
+  }
+
+  async hasSignatureFlowTemplateRuntimeUsage(signatureFlowTemplateId, connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT EXISTS(
+         SELECT 1
+         FROM signature_flow_instances sfi
+         LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+         LEFT JOIN document_signatures ds ON ds.signature_request_id = sr.id
+         WHERE sfi.template_id = ?
+         LIMIT 1
+       ) AS has_usage`,
+      [signatureFlowTemplateId]
+    );
+    return Boolean(Number(rows?.[0]?.has_usage || 0));
   }
 
   async syncArtifactFillWorkflowForArtifact({
@@ -2591,8 +2877,11 @@ export default class SqlAdminService {
       }
 
       let fillFlowTemplateId = existingTemplate?.id ? Number(existingTemplate.id) : null;
+      const templateHasRuntimeUsage = fillFlowTemplateId
+        ? await this.hasFillFlowTemplateRuntimeUsage(fillFlowTemplateId, connection)
+        : false;
 
-      if (!fillFlowTemplateId) {
+      if (!fillFlowTemplateId || templateHasRuntimeUsage) {
         const [insertResult] = await connection.query(
           `INSERT INTO fill_flow_templates (
              process_definition_template_id,
@@ -2667,28 +2956,17 @@ export default class SqlAdminService {
 
     const cargoCodeMap = await this.getCargoCodeMap(connection);
     const signatureTypeCodeMap = await this.getSignatureTypeCodeMap(connection);
+    const unitTypeNameMap = await this.getUnitTypeNameMap(connection);
+    const normalizationIssues = syncEnabled
+      ? collectSignatureWorkflowNormalizationIssues(workflow, { cargoCodeMap, signatureTypeCodeMap })
+      : [];
+    if (normalizationIssues.length) {
+      throw new Error(
+        `No se pudo sincronizar el flujo de firmas de ${templateCode}: ${normalizationIssues.join(" ")}`
+      );
+    }
     const normalizedSteps = syncEnabled
-      ? (Array.isArray(workflow?.steps) ? workflow.steps : [])
-        .filter((step) => step && typeof step === "object")
-        .map((step, index) => {
-          const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
-          const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
-          const rawCargoCode = String(step.required_cargo_code || "").trim().toLowerCase();
-          const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
-          return {
-            stepOrder: Number(step.order) || index + 1,
-            stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
-            requiredCargoId: cargoCodeMap.get(normalizedCargoCode) || null,
-            selectionMode: SIGNATURE_SELECTION_MODES.has(String(step.selection_mode || "auto_all"))
-              ? String(step.selection_mode || "auto_all")
-              : "auto_all",
-            requiredSignersMin: normalizeNumericId(step.required_signers_min),
-            requiredSignersMax: normalizeNumericId(step.required_signers_max),
-            isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0
-          };
-        })
-        .filter((step) => step.stepTypeId && step.requiredCargoId)
-        .sort((left, right) => left.stepOrder - right.stepOrder)
+      ? normalizeSignatureSteps(workflow, { cargoCodeMap, signatureTypeCodeMap, unitTypeNameMap })
       : [];
 
     let syncedTemplates = 0;
@@ -2714,8 +2992,11 @@ export default class SqlAdminService {
       }
 
       let signatureFlowTemplateId = existingTemplate?.id ? Number(existingTemplate.id) : null;
+      const templateHasRuntimeUsage = signatureFlowTemplateId
+        ? await this.hasSignatureFlowTemplateRuntimeUsage(signatureFlowTemplateId, connection)
+        : false;
 
-      if (!signatureFlowTemplateId) {
+      if (!signatureFlowTemplateId || templateHasRuntimeUsage) {
         const [insertResult] = await connection.query(
           `INSERT INTO signature_flow_templates (
              process_definition_template_id,
@@ -2845,29 +3126,29 @@ export default class SqlAdminService {
 
         const candidates = [
           {
-            mode: "system",
+            mode: "process",
             format: "jinja2",
-            dirPath: path.join(packagedTemplateDir, "modes", "system", "jinja2", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "process", "jinja2", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "docx",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "docx", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "docx", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "latex",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "latex", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "latex", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "pdf",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "pdf", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "pdf", "src")
           },
           {
-            mode: "user",
+            mode: "general",
             format: "xlsx",
-            dirPath: path.join(packagedTemplateDir, "modes", "user", "xlsx", "src")
+            dirPath: path.join(packagedTemplateDir, "modes", "general", "xlsx", "src")
           }
         ];
 
@@ -2916,7 +3197,7 @@ export default class SqlAdminService {
                    description = COALESCE(description, NULL),
                    owner_ref = NULL,
                    owner_person_id = NULL,
-                   artifact_origin = 'system',
+                   artifact_origin = 'process',
                    source_version = ?,
                    artifact_stage = ?,
                    template_seed_id = ?,
@@ -2971,7 +3252,7 @@ export default class SqlAdminService {
                 displayName,
                 null,
                 null,
-                "system",
+                "process",
                 sourceVersion,
                 storageVersion,
                 repositoryStage,
@@ -3255,8 +3536,8 @@ export default class SqlAdminService {
       if (!existingArtifact) {
         throw new Error("El artifact seleccionado no existe.");
       }
-      if (String(existingArtifact.artifact_origin || "system") !== "user") {
-        throw new Error("Solo se pueden editar artifacts de usuario con este flujo.");
+      if (String(existingArtifact.artifact_origin || "process") !== "general") {
+        throw new Error("Solo se pueden editar artifacts generales con este flujo.");
       }
     }
 
@@ -3339,9 +3620,9 @@ export default class SqlAdminService {
       await downloadMinioPrefixToDirectory(
         MINIO_TEMPLATES_BUCKET,
         `${seedRow.source_path}src/`,
-        buildArtifactModeDir(draftDir, "system", "jinja2")
+        buildArtifactModeDir(draftDir, "process", "jinja2")
       );
-      setAvailableFormatEntry(availableFormats, "system", "jinja2", baseObjectPrefix);
+      setAvailableFormatEntry(availableFormats, "process", "jinja2", baseObjectPrefix);
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
         await copyMinioObjectToFile(
@@ -3356,15 +3637,15 @@ export default class SqlAdminService {
         await downloadMinioPrefixToDirectory(
           MINIO_TEMPLATES_BUCKET,
           `${seedRow.source_path}render/`,
-          buildArtifactModeDir(draftDir, "user", "latex")
+          buildArtifactModeDir(draftDir, "general", "latex")
         );
-        setAvailableFormatEntry(availableFormats, "user", "latex", baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, "general", "latex", baseObjectPrefix);
       }
     }
 
     if (!seedRow) {
-      await preserveExistingFormat("system", "jinja2");
-      await preserveExistingFormat("user", "latex");
+      await preserveExistingFormat("process", "jinja2");
+      await preserveExistingFormat("general", "latex");
     }
 
     const fileFieldMap = {
@@ -3375,9 +3656,9 @@ export default class SqlAdminService {
     };
 
     for (const [format, file] of Object.entries(uploadedFiles)) {
-      const relativeDir = path.join("template", "modes", "user", fileFieldMap[format], "src");
+      const relativeDir = path.join("template", "modes", "general", fileFieldMap[format], "src");
       const targetDir = path.join(draftDir, relativeDir);
-      const existingEntry = existingAvailableFormats?.user?.[fileFieldMap[format]];
+      const existingEntry = existingAvailableFormats?.general?.[fileFieldMap[format]];
 
       if (file) {
         const safeName = slugify(path.parse(file.originalname || format).name) || format;
@@ -3388,7 +3669,7 @@ export default class SqlAdminService {
           : fallbackFileName;
         fs.mkdirSync(targetDir, { recursive: true });
         fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
-        setAvailableFormatEntry(availableFormats, "user", fileFieldMap[format], baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, "general", fileFieldMap[format], baseObjectPrefix);
         continue;
       }
 
@@ -3400,7 +3681,7 @@ export default class SqlAdminService {
         } else {
           await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
         }
-        setAvailableFormatEntry(availableFormats, "user", fileFieldMap[format], baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, "general", fileFieldMap[format], baseObjectPrefix);
       }
     }
 
@@ -3445,7 +3726,7 @@ export default class SqlAdminService {
                display_name = ?,
                description = ?,
                owner_ref = ?,
-               artifact_origin = 'user',
+               artifact_origin = 'general',
                source_version = ?,
                artifact_stage = ?,
                bucket = ?,
@@ -3501,7 +3782,7 @@ export default class SqlAdminService {
             displayName,
             description,
             ownerRef,
-            "user",
+            "general",
             sourceVersion,
             storageVersion,
             bucket,
@@ -3523,7 +3804,7 @@ export default class SqlAdminService {
         display_name: displayName,
         description,
         owner_ref: ownerRef,
-        artifact_origin: "user",
+        artifact_origin: "general",
         source_version: sourceVersion,
         storage_version: storageVersion,
         artifact_stage: artifactStage,
@@ -3535,8 +3816,8 @@ export default class SqlAdminService {
         content_hash: contentHash,
         is_active: 1,
         __notice: isEdit
-          ? "El artifact de usuario fue actualizado y cargado correctamente en MinIO."
-          : "El artifact de usuario fue cargado correctamente en MinIO y registrado en el sistema."
+          ? "El artifact general fue actualizado y cargado correctamente en MinIO."
+          : "El artifact general fue cargado correctamente en MinIO y registrado en el sistema."
       };
     } catch (error) {
       if (createdId && !isEdit) {

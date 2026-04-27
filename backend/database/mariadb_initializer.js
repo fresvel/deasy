@@ -322,10 +322,16 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     if (!documentColumnNames.includes("owner_person_id")) {
       await connection.query("ALTER TABLE documents ADD COLUMN owner_person_id INT NULL AFTER task_item_id");
     }
+    if (!documentColumnNames.includes("origin_unit_id")) {
+      await connection.query("ALTER TABLE documents ADD COLUMN origin_unit_id INT NULL AFTER owner_person_id");
+    }
     if (!documentColumnNames.includes("origin_type")) {
       await connection.query(
-        "ALTER TABLE documents ADD COLUMN origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item' AFTER owner_person_id"
+        "ALTER TABLE documents ADD COLUMN origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item' AFTER origin_unit_id"
       );
+    }
+    if (!documentColumnNames.includes("instance_no")) {
+      await connection.query("ALTER TABLE documents ADD COLUMN instance_no INT NULL AFTER task_item_id");
     }
     if (!documentColumnNames.includes("title")) {
       await connection.query("ALTER TABLE documents ADD COLUMN title VARCHAR(180) NULL AFTER origin_type");
@@ -343,11 +349,68 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     }
     try {
+      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_origin_unit (origin_unit_id)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de documents.origin_unit_id:", error.message);
+      }
+    }
+    try {
       await connection.query("ALTER TABLE documents ADD INDEX idx_documents_origin_type (origin_type)");
     } catch (error) {
       if (error?.code !== "ER_DUP_KEYNAME") {
         console.warn("⚠️  No se pudo crear índice de documents.origin_type:", error.message);
       }
+    }
+    try {
+      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_task_item (task_item_id)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de documents.task_item_id:", error.message);
+      }
+    }
+    try {
+      await connection.query(
+        `UPDATE documents d
+         INNER JOIN (
+           SELECT id,
+                  ROW_NUMBER() OVER (PARTITION BY task_item_id ORDER BY created_at ASC, id ASC) AS row_no
+           FROM documents
+           WHERE task_item_id IS NOT NULL
+         ) seq ON seq.id = d.id
+         SET d.instance_no = seq.row_no
+         WHERE d.task_item_id IS NOT NULL
+           AND d.instance_no IS NULL`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo poblar documents.instance_no:", error.message);
+    }
+    try {
+      await connection.query("ALTER TABLE documents DROP INDEX uq_documents_task_item");
+    } catch (error) {
+      if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY" && error?.code !== "ER_DROP_INDEX_FK") {
+        console.warn("⚠️  No se pudo eliminar índice único legacy de documents.task_item_id:", error.message);
+      }
+    }
+    try {
+      await connection.query(
+        "ALTER TABLE documents ADD CONSTRAINT uq_documents_task_item_instance UNIQUE (task_item_id, instance_no)"
+      );
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice único compuesto de documents:", error.message);
+      }
+    }
+
+    const [processDefinitionTemplateColumns] = await connection.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_definition_templates'`
+    );
+    const processDefinitionTemplateColumnNames = processDefinitionTemplateColumns.map((col) => col.COLUMN_NAME);
+    if (!processDefinitionTemplateColumnNames.includes("instance_mode")) {
+      await connection.query(
+        "ALTER TABLE process_definition_templates ADD COLUMN instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document' AFTER usage_role"
+      );
     }
 
     const [cargoColumns] = await connection.query(
@@ -405,6 +468,38 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     } catch (error) {
       console.warn("⚠️  No se pudo crear FK de documents.owner_person_id:", error.message);
+    }
+    try {
+      const [fkRows] = await connection.query(
+        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents'
+           AND COLUMN_NAME = 'origin_unit_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
+      );
+      if (!fkRows.length) {
+        await connection.query(
+          "ALTER TABLE documents ADD CONSTRAINT fk_documents_origin_unit FOREIGN KEY (origin_unit_id) REFERENCES units(id)"
+        );
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo crear FK de documents.origin_unit_id:", error.message);
+    }
+    try {
+      await connection.query(
+        `UPDATE documents d
+         LEFT JOIN persons owner_person ON owner_person.id = d.owner_person_id
+         LEFT JOIN position_assignments owner_pa
+           ON owner_pa.person_id = owner_person.id
+          AND owner_pa.is_current = 1
+         LEFT JOIN unit_positions owner_pos ON owner_pos.id = owner_pa.position_id
+         LEFT JOIN task_items ti ON ti.id = d.task_item_id
+         LEFT JOIN unit_positions item_pos ON item_pos.id = ti.responsible_position_id
+         LEFT JOIN tasks t ON t.id = ti.task_id
+         LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
+         SET d.origin_unit_id = COALESCE(d.origin_unit_id, owner_pos.unit_id, item_pos.unit_id, task_pos.unit_id)
+         WHERE d.origin_unit_id IS NULL`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo backfillear documents.origin_unit_id:", error.message);
     }
 
     try {
@@ -516,6 +611,52 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       );
     } catch (error) {
       console.warn("⚠️  No se pudo backfillear tasks.process_run_id:", error.message);
+    }
+
+    const [taskItemColumns] = await connection.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'task_items'`
+    );
+    const taskItemColumnNames = taskItemColumns.map((col) => col.COLUMN_NAME);
+    if (!taskItemColumnNames.includes("start_date")) {
+      await connection.query("ALTER TABLE task_items ADD COLUMN start_date DATE NULL AFTER assigned_person_id");
+    }
+    if (!taskItemColumnNames.includes("end_date")) {
+      await connection.query("ALTER TABLE task_items ADD COLUMN end_date DATE NULL AFTER start_date");
+    }
+    if (!taskItemColumnNames.includes("user_started_at")) {
+      await connection.query("ALTER TABLE task_items ADD COLUMN user_started_at DATETIME NULL AFTER end_date");
+    }
+    try {
+      await connection.query("ALTER TABLE task_items ADD INDEX idx_task_items_dates (start_date, end_date)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de task_items.start_date/end_date:", error.message);
+      }
+    }
+    try {
+      await connection.query("ALTER TABLE task_items ADD INDEX idx_task_items_user_started (user_started_at)");
+    } catch (error) {
+      if (error?.code !== "ER_DUP_KEYNAME") {
+        console.warn("⚠️  No se pudo crear índice de task_items.user_started_at:", error.message);
+      }
+    }
+    try {
+      await connection.query(
+        `UPDATE task_items ti
+         INNER JOIN tasks t ON t.id = ti.task_id
+         SET ti.start_date = COALESCE(ti.start_date, t.start_date),
+             ti.end_date = COALESCE(ti.end_date, t.end_date)
+         WHERE ti.start_date IS NULL
+            OR ti.end_date IS NULL`
+      );
+    } catch (error) {
+      console.warn("⚠️  No se pudo backfillear task_items.start_date/end_date desde tasks:", error.message);
+    }
+    try {
+      await connection.query("ALTER TABLE task_items MODIFY COLUMN start_date DATE NOT NULL");
+    } catch (error) {
+      console.warn("⚠️  No se pudo ajustar task_items.start_date a NOT NULL:", error.message);
     }
 
     try {

@@ -10,7 +10,7 @@ payload runtime que luego sí entra al renderizador Jinja.
 Cuando el compilador documental exista como pieza operativa completa, su entrada debería quedar
 separada en cuatro bloques:
 
-- la ruta del template fuente, normalmente `modes/system/jinja2/src`
+- la ruta del template fuente, normalmente `modes/process/jinja2/src`
 - la metadata del template, es decir `meta.yaml`
 - el schema del documento, es decir `schema.json`
 - el payload de datos con el que se renderiza el documento

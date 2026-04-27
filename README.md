@@ -9,6 +9,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - frontend/: interfaz web (Vue).
 - docker/: definiciones de contenedores y servicios.
 - scripts/: utilidades de arranque.
+- backend/scripts/: scripts de datos, seeds, reset y migraciones del backend.
 - tools/: herramientas integradas del proyecto (incluye authoring de templates).
 - docs/: documentacion tecnica, arquitectura y modelos.
 - Deploy/: notas de despliegue y contexto de cambios.
@@ -32,6 +33,12 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 3) Iniciar backend y frontend segun sus README internos:
    - backend/README.md
    - frontend/README.md
+
+Operaciones DB con Docker por ambiente:
+
+- `bash scripts/seed-db.sh dev capture`
+- `bash scripts/reset-db.sh qa`
+- `bash scripts/migrate-db.sh dev --list`
 
 ## Documentacion
 

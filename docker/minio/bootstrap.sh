@@ -12,6 +12,8 @@ CHAT_BUCKET="${MINIO_CHAT_BUCKET:-deasy-chat}"
 CHAT_PREFIX="${MINIO_CHAT_PREFIX:-Chat}"
 SPOOL_BUCKET="${MINIO_SPOOL_BUCKET:-deasy-spool}"
 SPOOL_PREFIX="${MINIO_SIGNATURES_PREFIX:-Firmas}"
+USERS_BUCKET="${MINIO_USERS_BUCKET:-deasy-users}"
+USERS_PREFIX="${MINIO_USERS_PREFIX:-Users}"
 DOSSIER_BUCKET="${MINIO_DOSSIER_BUCKET:-deasy-dossier}"
 DOSSIER_PREFIX="${MINIO_DOSSIER_PREFIX:-Dosier}"
 
@@ -41,6 +43,7 @@ ensure_bucket "$TEMPLATES_BUCKET"
 ensure_bucket "$DOCUMENTS_BUCKET"
 ensure_bucket "$CHAT_BUCKET"
 ensure_bucket "$SPOOL_BUCKET"
+ensure_bucket "$USERS_BUCKET"
 ensure_bucket "$DOSSIER_BUCKET"
 
 SYNC_COUNT=0
@@ -50,10 +53,11 @@ sync_path "/import/Seeds" "$TEMPLATES_BUCKET" "$TEMPLATE_SEEDS_PREFIX"
 sync_path "/import/Unidades" "$DOCUMENTS_BUCKET" "$DOCUMENTS_PREFIX"
 sync_path "/import/Chat" "$CHAT_BUCKET" "$CHAT_PREFIX"
 sync_path "/import/Firmas" "$SPOOL_BUCKET" "$SPOOL_PREFIX"
+sync_path "/import/Users" "$USERS_BUCKET" "$USERS_PREFIX"
 sync_path "/import/Dosier" "$DOSSIER_BUCKET" "$DOSSIER_PREFIX"
 
 if [ "$SYNC_COUNT" -eq 0 ]; then
-  echo "No se detectaron carpetas importables. Usa /import/{Plantillas,Seeds,Unidades,Chat,Firmas,Dosier}."
+  echo "No se detectaron carpetas importables. Usa /import/{Plantillas,Seeds,Unidades,Chat,Firmas,Users,Dosier}."
 else
   echo "Sincronizacion completada."
 fi

@@ -6,7 +6,7 @@ $DockerDir = Join-Path $RootDir 'docker'
 $DockerEnvFile = Join-Path $DockerDir '.env'
 $DockerEnvExampleFile = Join-Path $DockerDir '.env.example'
 $BackendDir = Join-Path $RootDir 'backend'
-$DefaultSeedFile = Join-Path $RootDir 'scripts/seeds/pucese.seed.json'
+$DefaultSeedFile = Join-Path $RootDir 'backend/scripts/seeds/pucese.seed.json'
 
 $RunDbSeed = $true
 $RunStorageSeeds = $true
@@ -134,7 +134,7 @@ function Resolve-MariaDbHostPort($ComposeEnv) {
     }
 
     # Fallback al puerto publicado actual en docker-compose.yml.
-    return '3308'
+    return '3306'
 }
 
 function Run-DbSeed($ComposeEnv) {
@@ -144,7 +144,7 @@ function Run-DbSeed($ComposeEnv) {
     $previous = @{}
     $seedEnv = @{
         MARIADB_HOST     = '127.0.0.1'
-        MARIADB_PORT     = '3308'
+        MARIADB_PORT     = $mariadbPort
         MARIADB_USER     = $ComposeEnv['MARIADB_USER']
         MARIADB_PASSWORD = $ComposeEnv['MARIADB_PASSWORD']
         MARIADB_DATABASE = $ComposeEnv['MARIADB_DATABASE']
@@ -156,7 +156,7 @@ function Run-DbSeed($ComposeEnv) {
     }
 
     try {
-        node (Join-Path $RootDir 'scripts/seed_pucese.mjs') apply --file $SeedFile
+        node (Join-Path $RootDir 'backend/scripts/seed_pucese.mjs') apply --file $SeedFile
     } finally {
         foreach ($entry in $seedEnv.GetEnumerator()) {
             [Environment]::SetEnvironmentVariable($entry.Key, $previous[$entry.Key])

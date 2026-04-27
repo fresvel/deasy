@@ -76,7 +76,6 @@ export const SQL_TABLES = [
       { name: "parent_id", label: "Proceso padre", type: "number" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "active_definition_version", label: "Definicion activa", type: "text", readOnly: true, virtual: true },
-      { name: "active_execution_mode", label: "Modo activo", type: "text", readOnly: true, virtual: true },
       { name: "active_definition_status", label: "Estado definicion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
@@ -96,13 +95,6 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
-      {
-        name: "execution_mode",
-        label: "Modo",
-        type: "select",
-        options: ["manual", "system", "hybrid"],
-        defaultValue: "manual"
-      },
       {
         name: "status",
         label: "Estado",
@@ -314,14 +306,17 @@ export const SQL_TABLES = [
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
         name: "template_usage_role",
-        label: "Uso",
+        label: "Rol",
         type: "select",
-        options: ["system_render", "manual_fill", "attachment", "support"],
-        defaultValue: "manual_fill"
+        options: ["primary", "attachment", "support"],
+        defaultValue: "primary"
       },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "assigned_person_id", label: "Responsable", type: "number" },
+      { name: "start_date", label: "Inicio entregable", type: "date", required: true },
+      { name: "end_date", label: "Vencimiento entregable", type: "date" },
+      { name: "user_started_at", label: "Inicio usuario", type: "datetime", readOnly: true },
       {
         name: "status",
         label: "Estado",
@@ -390,10 +385,10 @@ export const SQL_TABLES = [
       { name: "storage_version", label: "Version storage", type: "text", required: true },
       {
         name: "artifact_origin",
-        label: "Origen",
+        label: "Catalogo",
         type: "select",
-        options: ["system", "user"],
-        defaultValue: "system"
+        options: ["process", "general"],
+        defaultValue: "process"
       },
       {
         name: "artifact_stage",
@@ -425,10 +420,17 @@ export const SQL_TABLES = [
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
         name: "usage_role",
-        label: "Uso",
+        label: "Rol",
         type: "select",
-        options: ["system_render", "manual_fill", "attachment", "support"],
-        defaultValue: "manual_fill"
+        options: ["primary", "attachment", "support"],
+        defaultValue: "primary"
+      },
+      {
+        name: "instance_mode",
+        label: "Modo de instancia",
+        type: "select",
+        options: ["single_document", "owner_many_documents"],
+        defaultValue: "single_document"
       },
       { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
       { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
@@ -874,18 +876,52 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "template_id", label: "Plantilla", type: "number", required: true },
       { name: "step_order", label: "Orden", type: "number", required: true },
+      { name: "code", label: "Código", type: "text" },
+      { name: "name", label: "Nombre", type: "text" },
+      { name: "slot", label: "Slot", type: "text" },
       { name: "step_type_id", label: "Tipo", type: "number", required: true },
-      { name: "required_cargo_id", label: "Cargo", type: "number", required: true },
+      {
+        name: "resolver_type",
+        label: "Resolver",
+        type: "select",
+        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
+        defaultValue: "cargo_in_scope"
+      },
+      { name: "assigned_person_id", label: "Persona asignada", type: "number" },
+      {
+        name: "unit_scope_type",
+        label: "Alcance unidad",
+        type: "select",
+        options: ["unit_exact", "unit_subtree", "unit_type", "all_units", "context_exact", "context_subtree", "context_ancestor_type"],
+        defaultValue: "context_exact"
+      },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
+      { name: "position_id", label: "Puesto", type: "number" },
+      { name: "required_cargo_id", label: "Cargo", type: "number" },
       {
         name: "selection_mode",
         label: "Seleccion",
         type: "select",
-        options: ["auto_all", "select", "auto_quorum"],
+        options: ["auto_one", "auto_all", "manual"],
         defaultValue: "auto_all"
+      },
+      {
+        name: "approval_mode",
+        label: "Resolucion",
+        type: "select",
+        options: ["and", "or", "at_least"],
+        defaultValue: "and"
       },
       { name: "required_signers_min", label: "Min firmantes", type: "number" },
       { name: "required_signers_max", label: "Max firmantes", type: "number" },
       { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
+      {
+        name: "anchor_refs",
+        label: "Anchor refs",
+        type: "textarea",
+        description: "JSON array de códigos de anchor enlazados al paso"
+      },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: []

@@ -1,0 +1,7 @@
+Fixes:
+
+Revisar la lógica que va desde la creación de variantes de procesos por cargo y unidad y aterriza el las reglas de disparo. Es decir en el primero creo variantes de una definición de un proceso que luego deberían, dependiendo del tipo, controlar alguna información en la definición del proceso o alguna parte de su flujo (chekclist, por ejemplo reglas de disparo).
+
+Veo que es necesario dar una descripción a la variante de proceso, porque luego no se va a saber para que se creó.
+
+Valorar la posibilidad de both

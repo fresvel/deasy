@@ -8,6 +8,8 @@ passfile
 *.pem
 *.p12
 passfile
+!nginx/certs/dev/*.pem
+!nginx/certs/qa/*.pem
 tools/templates/dist/Plantillas/
 tools/templates/dist/DOCUMENTOS/
 backend/templates_legacy/_runtime/
@@ -15,3 +17,13 @@ backend/templates_legacy/_runtime/
 __pycache__/
 *.pyc
 codex_refac.md
+signer/trust/roots/*
+signer/trust/extra/*
+!signer/trust/roots/.gitkeep
+!signer/trust/extra/.gitkeep
+!signer/trust/roots/security-data-root-ca-2.pem
+!signer/trust/extra/security-data-subca-2.pem
+!signer/trust/roots/icert-ec-root.pem
+!signer/trust/extra/icert-ec-subordinate.pem
+!signer/trust/roots/firmasegura-root-ca-1.pem
+!signer/trust/extra/firmasegura-subca-1.pem

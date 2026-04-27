@@ -1,0 +1,182 @@
+- generic [ref=e42]:
+  - banner [ref=e43]:
+    - generic [ref=e44]:
+      - button "Abrir menú" [ref=e45]:
+        - img [ref=e46]
+      - generic [ref=e48]:
+        - link "Ir a perfil" [ref=e49] [cursor=pointer]:
+          - /url: /perfil
+          - img [ref=e50]
+        - link "Ir a administración" [ref=e53] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e54]
+        - button "Firmar documentos" [ref=e58]:
+          - img [ref=e59]
+        - button "Notificaciones" [ref=e61]:
+          - img [ref=e62]
+        - link "Cerrar sesión" [ref=e65] [cursor=pointer]:
+          - /url: /logout
+          - img [ref=e66]
+  - generic [ref=e70]:
+    - complementary [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e75]:
+          - img "User Avatar" [ref=e78]
+          - generic [ref=e79]:
+            - heading "Jefa Talento Demo" [level=3] [ref=e80]
+            - paragraph [ref=e81]: Cuenta institucional
+        - generic [ref=e82]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: Cargos asignados
+            - button "Seleccionar grupo de cargos" [ref=e87]:
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e92]: Consolidado
+              - img [ref=e94]
+          - generic [ref=e98]:
+            - button "Jefe" [ref=e99]:
+              - generic [ref=e100]:
+                - img [ref=e101]
+                - generic [ref=e104]: Jefe
+            - button "Requerimiento Docente" [ref=e106]:
+              - img [ref=e108]
+              - generic [ref=e111]: Requerimiento Docente
+    - generic [ref=e254]:
+      - generic [ref=e256]:
+        - generic [ref=e257]:
+          - generic [ref=e258]:
+            - generic [ref=e259]: Requerimiento Docente
+            - generic [ref=e260]:
+              - generic [ref=e261]: Tareas 1
+              - generic [ref=e262]: Entregables 1
+              - generic [ref=e263]: Llenado 0
+          - heading "Requerimiento Docente" [level=1] [ref=e264]
+          - paragraph [ref=e265]: Gestiona solo tus tareas y entregables de esta definición activa. Desde aquí puedes revisar dependencias, documentos, firmas y lanzar tareas manuales cuando el flujo lo permita.
+        - generic [ref=e267]:
+          - button "Documentos Centro documental de la definición 1" [ref=e268]:
+            - generic [ref=e269]:
+              - generic [ref=e270]: Documentos
+              - generic [ref=e271]: Centro documental de la definición
+            - generic [ref=e272]: "1"
+          - button "Firmas Solicitudes activas y trazabilidad 0" [ref=e518]:
+            - generic [ref=e274]:
+              - generic [ref=e275]: Firmas
+              - generic [ref=e276]: Solicitudes activas y trazabilidad
+            - generic [ref=e277]: "0"
+          - button "Navegación Volver al panel general ←" [ref=e278]:
+            - generic [ref=e279]:
+              - generic [ref=e280]: Navegación
+              - generic [ref=e281]: Volver al panel general
+            - generic [ref=e282]: ←
+          - button "Tareas Crear tarea manual +" [disabled] [ref=e283]:
+            - generic [ref=e284]:
+              - generic [ref=e285]: Tareas
+              - generic [ref=e286]: Crear tarea manual
+            - generic [ref=e287]: +
+      - generic [ref=e519]: "El documento fue firmado correctamente con 1 campo(s). Advertencia: Signer info ----------- Certificate subject: \"Serial Number: 9000000009, Email Address: jefa.talento.demo@pucese.edu.ec, Common Name: Jefa Talento Demo, Organizational Unit: DEASY DEMO, Organization: PUCESE, Country: EC\" Certificate SHA1 fingerprint: 12aa72f89daf8070061118a426ba1463c5c2b30b Certificate SHA256 fingerprint: 777c6a1011a419e12e8decf5fcfd4578375e88921aa1202f431a0f07f50beb1d Trust anchor: \"No path to trust anchor found.\" The signer's certificate is untrusted. Integrity --------- The signature is cryptographically sound. The digest algorithm used was 'sha256'. The signature mechanism used was 'sha256_rsa'. Signing time ------------ Signing time as reported by signer: 2026-04-19T17:22:48+00:00 Modifications ------------- The signature covers the entire file. Bottom line ----------- The signature is judged INVALID."
+      - generic [ref=e520]:
+        - article [ref=e521]:
+          - generic [ref=e523]:
+            - heading "Tareas asignadas" [level=2] [ref=e524]
+            - paragraph [ref=e525]: Solo se muestran las tareas donde participas o que creaste manualmente.
+          - generic [ref=e528]:
+            - generic [ref=e529]:
+              - generic [ref=e531]:
+                - img
+                - textbox [ref=e532]:
+                  - /placeholder: Buscar entregables, periodos o unidades
+              - generic [ref=e533]:
+                - button "Más filtros" [ref=e534]:
+                  - img [ref=e535]
+                  - text: Más filtros
+                - button "Limpiar filtros" [ref=e536]
+            - generic [ref=e537]:
+              - generic [ref=e538]:
+                - generic [ref=e539]: Año
+                - combobox "Año" [ref=e540]:
+                  - option "Todos" [selected]
+                  - option "2021"
+              - generic [ref=e541]:
+                - generic [ref=e542]: Tipo de periodo
+                - combobox "Tipo de periodo" [ref=e543]:
+                  - option "Todos" [selected]
+                  - option "Segundo Periodo Ordinario"
+              - generic [ref=e544]:
+                - generic [ref=e545]: Unidad
+                - combobox "Unidad" [ref=e546]:
+                  - option "Todas" [selected]
+                  - option "Talento Humano"
+          - article [ref=e548]:
+            - generic [ref=e549]:
+              - generic [ref=e550]:
+                - generic [ref=e551]:
+                  - generic [ref=e552]:
+                    - img [ref=e553]
+                    - text: Doc v0.2
+                  - strong [ref=e555]: Requerimiento Docente
+                - generic [ref=e556]:
+                  - generic [ref=e557]:
+                    - generic [ref=e558]: "Acceso: Derivado"
+                    - generic [ref=e559]: "Entregable: Pendiente"
+                    - generic [ref=e560]: "Documento: sin generar"
+                    - generic [ref=e561]: "Firma: paso 6"
+                  - button "Contraer entregable" [expanded] [ref=e562]:
+                    - img [ref=e563]
+              - generic [ref=e565]:
+                - generic [ref=e566]:
+                  - generic [ref=e567]:
+                    - paragraph [ref=e568]: Proceso
+                    - paragraph [ref=e569]: Requerimiento Docente
+                  - generic [ref=e570]:
+                    - paragraph [ref=e571]: Unidad
+                    - paragraph [ref=e572]: Talento Humano
+                  - generic [ref=e573]:
+                    - paragraph [ref=e574]: Periodo
+                    - paragraph [ref=e575]: Segundo Periodo Ordinario 2021
+                  - generic [ref=e576]:
+                    - paragraph [ref=e577]: Fechas
+                    - paragraph [ref=e578]: 4 abr 2026 - 10 may 2026
+                - generic [ref=e579]:
+                  - button "Abrir" [ref=e581]:
+                    - img [ref=e583]
+                    - generic [ref=e587]: Abrir
+                  - generic [ref=e588]:
+                    - button [ref=e589]:
+                      - img [ref=e590]
+                    - button [ref=e593]:
+                      - img [ref=e594]
+                    - button [ref=e598]:
+                      - img [ref=e599]
+                    - button [ref=e602]:
+                      - img [ref=e603]
+                    - button [ref=e606]:
+                      - img [ref=e607]
+        - article [ref=e610]:
+          - generic [ref=e611]:
+            - heading "Dependencias de la definición" [level=2] [ref=e612]
+            - paragraph [ref=e613]: Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta definición.
+          - generic [ref=e614]:
+            - generic [ref=e615]:
+              - heading "Reglas" [level=3] [ref=e616]:
+                - img [ref=e617]
+                - text: Reglas
+              - generic [ref=e620]: Sin reglas activas para tu alcance.
+            - generic [ref=e621]:
+              - heading "Disparadores" [level=3] [ref=e622]:
+                - img [ref=e623]
+                - text: Disparadores
+              - list [ref=e626]:
+                - listitem [ref=e627]: Automatico por Primer Periodo Ordinario
+                - listitem [ref=e629]: Automatico por Segundo Periodo Ordinario
+            - generic [ref=e631]:
+              - heading "Paquetes" [level=3] [ref=e632]:
+                - img [ref=e633]
+                - text: Paquetes
+              - list [ref=e636]:
+                - listitem [ref=e637]:
+                  - generic [ref=e638]: Requerimiento Docente
+                  - generic [ref=e639]:
+                    - generic [ref=e640]: Principal
+                    - generic [ref=e641]: Genera tarea
+  - button "Abrir chat" [ref=e194]:
+    - img [ref=e196]

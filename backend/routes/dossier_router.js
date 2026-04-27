@@ -37,18 +37,22 @@ router.delete('/:cedula/titulos/:tituloId', dossierController.deleteTitulo);
 
 // Rutas para experiencia
 router.post('/:cedula/experiencia', dossierController.addExperiencia);
+router.put('/:cedula/experiencia/:experienciaId', dossierController.updateExperiencia);
 router.delete('/:cedula/experiencia/:experienciaId', dossierController.deleteExperiencia);
 
 // Rutas para referencias
 router.post('/:cedula/referencias', dossierController.addReferencia);
+router.put('/:cedula/referencias/:referenciaId', dossierController.updateReferencia);
 router.delete('/:cedula/referencias/:referenciaId', dossierController.deleteReferencia);
 
 // Rutas para formacion (capacitación)
 router.post('/:cedula/formacion', dossierController.addFormacion);
+router.put('/:cedula/formacion/:formacionId', dossierController.updateFormacion);
 router.delete('/:cedula/formacion/:formacionId', dossierController.deleteFormacion);
 
 // Rutas para certificaciones
 router.post('/:cedula/certificaciones', dossierController.addCertificacion);
+router.put('/:cedula/certificaciones/:certificacionId', dossierController.updateCertificacion);
 router.delete('/:cedula/certificaciones/:certificacionId', dossierController.deleteCertificacion);
 
 // Rutas para investigación
@@ -61,5 +65,8 @@ router.post('/:cedula/documentos/:tipoDocumento/:registroId', upload.single('arc
 
 // Ruta para obtener URL temporal del documento
 router.get('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.getDossierDocumentUrl);
+
+// Ruta para eliminar documento PDF del dossier (sin eliminar el registro)
+router.delete('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.deleteDossierDocumentOnly);
 
 export default router;

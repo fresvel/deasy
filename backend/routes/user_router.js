@@ -4,12 +4,16 @@ import {
   getUsers,
   getUserMenu,
   getUserProcessDefinitionPanel,
+  getUserDocumentCenter,
+  getUserGlobalSignatureCenter,
   createUserProcessTask,
+  createTaskItemDocumentInstance,
   getMyProfile,
   updateMyProfile,
   uploadDeliverablePdf,
   downloadDeliverableTemplate,
-  downloadDeliverableFile
+  downloadDeliverableFile,
+  resetDeliverableWorkflow
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -77,7 +81,14 @@ router.post('/refresh-token', refreshToken)
 
 router.get('/:id/menu', getUserMenu);
 router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
+router.get('/:id/document-center', authMiddleware, getUserDocumentCenter);
+router.get('/:id/signature-center', authMiddleware, getUserGlobalSignatureCenter);
 router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
+  authMiddleware,
+  createTaskItemDocumentInstance
+);
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',
   authMiddleware,
@@ -93,6 +104,11 @@ router.get(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/file',
   authMiddleware,
   downloadDeliverableFile
+);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/reset-workflow',
+  authMiddleware,
+  resetDeliverableWorkflow
 );
 
 //perfil 

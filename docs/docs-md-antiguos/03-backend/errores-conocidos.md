@@ -15,9 +15,9 @@
 ## Sugerencias
 
 1. Rehacer el esquema vigente:
-   - `node scripts/reset_mariadb.mjs`
+   - `node backend/scripts/reset_mariadb.mjs`
 2. Reaplicar la semilla:
-   - `node scripts/seed_pucese.mjs`
+   - `node backend/scripts/seed_pucese.mjs`
 3. Si se usa Docker, recrear backend:
    - `cd docker`
    - `docker compose up -d --force-recreate backend`

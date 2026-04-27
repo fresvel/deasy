@@ -4,6 +4,7 @@ import {
   transitionDocumentVersionState,
 } from "../documents/DocumentStateService.js";
 import { SIGNATURE_REQUEST_STATUS } from "../documents/DocumentWorkflowCatalog.js";
+import { ensureSignatureFlowForDocumentVersion as ensureDocumentSignatureWorkflowForDocumentVersion } from "../documents/DocumentSignatureWorkflowService.js";
 
 const getTermById = async (connection, termId) => {
   const [rows] = await connection.query(
@@ -76,17 +77,31 @@ const getTargetRulesMap = async (connection, termStart, termEnd) => {
   return map;
 };
 
-const getExecutableTemplatesMap = async (connection) => {
+const getExecutableTemplatesMap = async (connection, options = {}) => {
+  const artifactOrigin = String(options.artifactOrigin || "").trim().toLowerCase();
+  const params = [];
+  const artifactJoin = artifactOrigin
+    ? "\n     INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id"
+    : "";
+  const artifactWhere = artifactOrigin
+    ? "\n       AND LOWER(ta.artifact_origin) = ?"
+    : "";
+
+  if (artifactOrigin) {
+    params.push(artifactOrigin);
+  }
+
   const [rows] = await connection.query(
     `SELECT
-       id,
-       process_definition_id,
-       template_artifact_id,
-       usage_role,
-       sort_order
-     FROM process_definition_templates
-     WHERE creates_task = 1
-     ORDER BY process_definition_id ASC, sort_order ASC, id ASC`
+       pdt.id,
+       pdt.process_definition_id,
+       pdt.template_artifact_id,
+       pdt.usage_role,
+       pdt.sort_order
+     FROM process_definition_templates pdt${artifactJoin}
+     WHERE pdt.creates_task = 1${artifactWhere}
+     ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`,
+    params
   );
   const map = new Map();
   rows.forEach((row) => {
@@ -229,7 +244,6 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
-       pdv.execution_mode,
        tar.artifact_origin,
        COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
@@ -308,9 +322,16 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
     `SELECT
        id,
        step_order,
+       resolver_type,
+       assigned_person_id,
+       unit_scope_type,
+       unit_id,
+       unit_type_id,
+       position_id,
        step_type_id,
        required_cargo_id,
        selection_mode,
+       approval_mode,
        required_signers_min,
        required_signers_max,
        is_required
@@ -351,13 +372,17 @@ const resolveCurrentPersonsForPosition = async (connection, positionId) => {
 };
 
 const resolveScopeForStep = (step, context) => {
-  const unitScopeType = String(step?.unit_scope_type || "unit_exact");
+  const unitScopeType = String(step?.unit_scope_type || "context_exact");
   return {
     unitScopeType,
-    unitId: step?.unit_id ? Number(step.unit_id) : (context?.scope_unit_id ? Number(context.scope_unit_id) : null),
-    unitTypeId: step?.unit_type_id
-      ? Number(step.unit_type_id)
-      : (context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null)
+    unitId:
+      (step?.unit_id ? Number(step.unit_id) : null)
+      || (unitScopeType === "context_exact" || unitScopeType === "context_subtree" || unitScopeType === "context_ancestor_type"
+        ? (context?.scope_unit_id ? Number(context.scope_unit_id) : null)
+        : null),
+    unitTypeId:
+      (step?.unit_type_id ? Number(step.unit_type_id) : null)
+      || (unitScopeType === "unit_type" ? (context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null) : null)
   };
 };
 
@@ -411,6 +436,58 @@ const resolvePersonsForCargoInScope = async (connection, step, context = null) =
     }
     query += "\n      AND u.unit_type_id = ?";
     params.push(scope.unitTypeId);
+  } else if (scope.unitScopeType === "context_subtree") {
+    if (!scope.unitId) {
+      return [];
+    }
+    query = `
+      WITH RECURSIVE scoped_units AS (
+        SELECT id
+        FROM units
+        WHERE id = ?
+        UNION ALL
+        SELECT ur.child_unit_id
+        FROM unit_relations ur
+        INNER JOIN relation_unit_types rt
+          ON rt.id = ur.relation_type_id
+         AND rt.code = 'org'
+        INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
+      )
+      ${query}
+        AND up.unit_id IN (SELECT id FROM scoped_units)`;
+    params.unshift(scope.unitId);
+  } else if (scope.unitScopeType === "context_ancestor_type") {
+    if (!scope.unitId || !scope.unitTypeId) {
+      return [];
+    }
+    query = `
+      WITH RECURSIVE ancestor_units AS (
+        SELECT id, unit_type_id
+        FROM units
+        WHERE id = ?
+        UNION ALL
+        SELECT parent_u.id, parent_u.unit_type_id
+        FROM unit_relations ur
+        INNER JOIN relation_unit_types rt
+          ON rt.id = ur.relation_type_id
+         AND rt.code = 'org'
+        INNER JOIN ancestor_units au ON au.id = ur.child_unit_id
+        INNER JOIN units parent_u ON parent_u.id = ur.parent_unit_id
+      )
+      ${query}
+        AND up.unit_id IN (
+          SELECT id
+          FROM ancestor_units
+          WHERE unit_type_id = ?
+        )`;
+    params.unshift(scope.unitTypeId);
+    params.unshift(scope.unitId);
+  } else if (scope.unitScopeType === "context_exact") {
+    if (!scope.unitId) {
+      return [];
+    }
+    query += "\n      AND up.unit_id = ?";
+    params.push(scope.unitId);
   }
 
   query += "\n    ORDER BY pa.person_id ASC";
@@ -454,13 +531,13 @@ const shouldInferSignatureFlowForContext = (context) => {
     return false;
   }
 
-  const usageRole = String(context.template_usage_role || "manual_fill");
+  const usageRole = String(context.template_usage_role || "primary");
   if (usageRole === "attachment" || usageRole === "support") {
     return false;
   }
 
   const artifactOrigin = String(context.artifact_origin || "");
-  if (artifactOrigin !== "system") {
+  if (artifactOrigin !== "process") {
     return false;
   }
 
@@ -468,7 +545,7 @@ const shouldInferSignatureFlowForContext = (context) => {
 };
 
 const resolveSignatureStepAssignees = async (connection, step, context) => {
-  if (!step?.required_cargo_id || !context?.task_id) {
+  if (!step || !context?.task_id) {
     return [];
   }
 
@@ -476,103 +553,45 @@ const resolveSignatureStepAssignees = async (connection, step, context) => {
     return [];
   }
 
-  const assignees = await resolvePersonsForCargoInScope(
-    connection,
-    {
-      cargo_id: step.required_cargo_id,
-      unit_scope_type: "unit_exact",
-      unit_id: context.scope_unit_id,
-      unit_type_id: context.scope_unit_type_id,
-      selection_mode: step.selection_mode
-    },
-    context
-  );
-  if (String(step.selection_mode || "auto_all") === "auto_one") {
-    return assignees.slice(0, 1);
+  switch (String(step.resolver_type || "cargo_in_scope")) {
+    case "specific_person":
+      return step.assigned_person_id ? [Number(step.assigned_person_id)] : [];
+    case "document_owner":
+      return context.owner_person_id ? [Number(context.owner_person_id)] : [];
+    case "task_assignee": {
+      const assignee = context.task_item_assigned_person_id || context.task_created_by_user_id;
+      return assignee ? [Number(assignee)] : [];
+    }
+    case "position": {
+      const people = await resolveCurrentPersonsForPosition(connection, step.position_id);
+      return String(step.selection_mode || "auto_all") === "auto_one" ? people.slice(0, 1) : people;
+    }
+    case "cargo_in_scope":
+    default: {
+      if (!step.required_cargo_id) {
+        return [];
+      }
+      const assignees = await resolvePersonsForCargoInScope(
+        connection,
+        {
+          cargo_id: step.required_cargo_id,
+          unit_scope_type: step.unit_scope_type,
+          unit_id: step.unit_id,
+          unit_type_id: step.unit_type_id,
+          selection_mode: step.selection_mode
+        },
+        context
+      );
+      if (String(step.selection_mode || "auto_all") === "auto_one") {
+        return assignees.slice(0, 1);
+      }
+      return assignees;
+    }
   }
-  return assignees;
 };
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
-  const context = await getDocumentVersionSignatureContext(connection, documentVersionId);
-  if (!shouldInferSignatureFlowForContext(context)) {
-    return null;
-  }
-
-  const [existingRows] = await connection.query(
-    `SELECT id
-     FROM signature_flow_instances
-     WHERE document_version_id = ?
-     LIMIT 1`,
-    [documentVersionId]
-  );
-  if (existingRows?.length) {
-    return Number(existingRows[0].id);
-  }
-
-  const signatureFlowTemplate = await getActiveSignatureFlowTemplateForDefinitionTemplate(
-    connection,
-    context.process_definition_template_id
-  );
-  if (!signatureFlowTemplate?.id) {
-    return null;
-  }
-
-  const pendingStatusId = await getSignaturePendingStatusId(connection);
-  if (!pendingStatusId) {
-    throw new Error("No existe el estado Pendiente en signature_request_statuses.");
-  }
-
-  const steps = await getSignatureFlowSteps(connection, signatureFlowTemplate.id);
-  if (!steps.length) {
-    return null;
-  }
-
-  const [insertInstanceResult] = await connection.query(
-    `INSERT INTO signature_flow_instances (
-       template_id,
-       document_version_id,
-       status_id
-     ) VALUES (?, ?, ?)`,
-    [signatureFlowTemplate.id, documentVersionId, pendingStatusId]
-  );
-  const signatureFlowInstanceId = Number(insertInstanceResult.insertId);
-
-  for (const step of steps) {
-    const assignees = await resolveSignatureStepAssignees(connection, step, context);
-    if (!assignees.length) {
-      await connection.query(
-        `INSERT INTO signature_requests (
-           instance_id,
-           step_id,
-           assigned_person_id,
-           status_id,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, null, pendingStatusId, 1]
-      );
-      continue;
-    }
-
-    for (const assignedPersonId of assignees) {
-      await connection.query(
-        `INSERT INTO signature_requests (
-           instance_id,
-           step_id,
-           assigned_person_id,
-           status_id,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, assignedPersonId, pendingStatusId, 0]
-      );
-    }
-  }
-
-  if (String(context.document_version_status || "").trim().toLowerCase() === "listo para firma") {
-    await transitionDocumentVersionState(connection, Number(documentVersionId), "Pendiente de firma");
-  }
-
-  return signatureFlowInstanceId;
+  return ensureDocumentSignatureWorkflowForDocumentVersion(connection, documentVersionId);
 };
 
 const repairFillRequestsForFlow = async (connection, documentFillFlowId, steps, context) => {
@@ -886,7 +905,7 @@ const getPositionsForRule = async (connection, rule) => {
 
 const getTaskById = async (connection, taskId) => {
   const [rows] = await connection.query(
-    `SELECT id, process_definition_id, term_id
+    `SELECT id, process_definition_id, term_id, start_date, end_date
      FROM tasks
      WHERE id = ?
      LIMIT 1`,
@@ -910,12 +929,15 @@ const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
     `SELECT
        ti.id,
        ti.task_id,
+       ti.process_definition_template_id,
        ti.template_artifact_id,
        ti.assigned_person_id,
        t.responsible_position_id,
-       tar.display_name AS template_artifact_name
+       tar.display_name AS template_artifact_name,
+       pdt.instance_mode
      FROM task_items ti
      LEFT JOIN tasks t ON t.id = ti.task_id
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      WHERE ti.task_id = ?
      ORDER BY ti.sort_order ASC, ti.id ASC`,
@@ -924,7 +946,7 @@ const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
   return rows;
 };
 
-const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
+export const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
   if (taskItem?.assigned_person_id) {
     return Number(taskItem.assigned_person_id);
   }
@@ -963,8 +985,60 @@ const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
   return null;
 };
 
+export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, ownerPersonId = null) => {
+  const normalizedOwnerPersonId = Number(ownerPersonId || 0) || null;
+  if (normalizedOwnerPersonId) {
+    const [ownerRows] = await connection.query(
+      `SELECT up.unit_id
+       FROM position_assignments pa
+       INNER JOIN unit_positions up ON up.id = pa.position_id
+       WHERE pa.person_id = ?
+         AND pa.is_current = 1
+         AND up.unit_id IS NOT NULL
+       ORDER BY pa.id ASC, up.id ASC
+       LIMIT 1`,
+      [normalizedOwnerPersonId]
+    );
+    if (ownerRows?.[0]?.unit_id) {
+      return Number(ownerRows[0].unit_id);
+    }
+  }
+
+  if (taskItem?.responsible_position_id) {
+    const [rows] = await connection.query(
+      `SELECT unit_id
+       FROM unit_positions
+       WHERE id = ?
+         AND unit_id IS NOT NULL
+       LIMIT 1`,
+      [taskItem.responsible_position_id]
+    );
+    if (rows?.[0]?.unit_id) {
+      return Number(rows[0].unit_id);
+    }
+  }
+
+  if (taskItem?.task_id) {
+    const [rows] = await connection.query(
+      `SELECT up.unit_id
+       FROM tasks t
+       INNER JOIN unit_positions up ON up.id = t.responsible_position_id
+       WHERE t.id = ?
+         AND up.unit_id IS NOT NULL
+       LIMIT 1`,
+      [taskItem.task_id]
+    );
+    if (rows?.[0]?.unit_id) {
+      return Number(rows[0].unit_id);
+    }
+  }
+
+  return null;
+};
+
 export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   const ownerPersonId = await resolveOwnerPersonIdForTaskItem(connection, taskItem);
+  const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, ownerPersonId);
 
   const [existingRows] = await connection.query(
     `SELECT id
@@ -980,13 +1054,15 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
       `INSERT INTO documents (
          task_item_id,
          owner_person_id,
+         origin_unit_id,
          origin_type,
          title,
          status
-      ) VALUES (?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
       [
         taskItem.id,
         ownerPersonId,
+        originUnitId,
         "task_item",
         taskItem.template_artifact_name || `Documento ${taskItem.id}`,
         "Inicial"
@@ -996,9 +1072,17 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   } else if (ownerPersonId) {
     await connection.query(
       `UPDATE documents
-       SET owner_person_id = COALESCE(owner_person_id, ?)
+       SET owner_person_id = COALESCE(owner_person_id, ?),
+           origin_unit_id = COALESCE(origin_unit_id, ?)
        WHERE id = ?`,
-      [ownerPersonId, documentId]
+      [ownerPersonId, originUnitId, documentId]
+    );
+  } else if (originUnitId) {
+    await connection.query(
+      `UPDATE documents
+       SET origin_unit_id = COALESCE(origin_unit_id, ?)
+       WHERE id = ?`,
+      [originUnitId, documentId]
     );
   }
 
@@ -1034,10 +1118,89 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   return documentId;
 };
 
+const getNextTaskItemDocumentInstanceNo = async (connection, taskItemId) => {
+  const [rows] = await connection.query(
+    `SELECT COALESCE(MAX(instance_no), 0) AS max_instance_no
+     FROM documents
+     WHERE task_item_id = ?`,
+    [taskItemId]
+  );
+  return Number(rows?.[0]?.max_instance_no || 0) + 1;
+};
+
+export const createDocumentInstanceForTaskItem = async (
+  connection,
+  taskItem,
+  {
+    title = null,
+    forceOwnerPersonId = null,
+  } = {}
+) => {
+  if (!taskItem?.id) {
+    throw new Error("Se requiere un task_item válido para crear la instancia documental.");
+  }
+
+  const ownerPersonId = Number(forceOwnerPersonId || 0) || await resolveOwnerPersonIdForTaskItem(connection, taskItem);
+  const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, ownerPersonId);
+  const instanceNo = await getNextTaskItemDocumentInstanceNo(connection, taskItem.id);
+  const normalizedTitle = String(title || taskItem.template_artifact_name || `Documento ${taskItem.id}`).trim();
+
+  const [insertResult] = await connection.query(
+    `INSERT INTO documents (
+       task_item_id,
+       instance_no,
+       owner_person_id,
+       origin_unit_id,
+       origin_type,
+       title,
+       status
+     ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      taskItem.id,
+      instanceNo,
+      ownerPersonId || null,
+      originUnitId || null,
+      "task_item",
+      normalizedTitle,
+      "Inicial"
+    ]
+  );
+  const documentId = Number(insertResult.insertId);
+
+  const [versionInsertResult] = await connection.query(
+    `INSERT INTO document_versions (
+       document_id,
+       version,
+       template_artifact_id,
+       status
+     ) VALUES (?, ?, ?, ?)`,
+    [
+      documentId,
+      0.1,
+      taskItem.template_artifact_id ?? null,
+      "Borrador"
+    ]
+  );
+  const documentVersionId = Number(versionInsertResult.insertId);
+  await ensureFillFlowForDocumentVersion(connection, documentVersionId);
+
+  return {
+    document_id: documentId,
+    document_version_id: documentVersionId,
+    instance_no: instanceNo,
+    owner_person_id: ownerPersonId || null,
+    origin_unit_id: originUnitId || null,
+    title: normalizedTitle,
+  };
+};
+
 export const ensureDocumentsForTask = async (connection, taskId) => {
   const taskItems = await getTaskItemsForDocumentMaterialization(connection, taskId);
   let createdOrEnsured = 0;
   for (const taskItem of taskItems) {
+    if (String(taskItem.instance_mode || "single_document") === "owner_many_documents") {
+      continue;
+    }
     await ensureDocumentForTaskItem(connection, taskItem);
     createdOrEnsured += 1;
   }
@@ -1063,14 +1226,18 @@ const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, e
         template_artifact_id,
         template_usage_role,
         sort_order,
+        start_date,
+        end_date,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         taskId,
         template.id,
         template.template_artifact_id,
-        template.usage_role || "manual_fill",
+        template.usage_role || "primary",
         template.sort_order ?? 1,
+        task.start_date,
+        task.end_date ?? null,
         "pendiente"
       ]
     );
@@ -1153,8 +1320,8 @@ export const hydrateTaskFromDefinition = async ({
   const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
 
   const taskItems = await ensureTaskItemsForTask(connection, taskId, processDefinitionId, templatesMap);
-  await ensureDocumentsForTask(connection, taskId);
   const assignments = await ensureTaskAssignmentsForDefinition(connection, taskId, processDefinitionId, rulesMap);
+  await ensureDocumentsForTask(connection, taskId);
 
   return {
     task_items_inserted: taskItems.inserted,
@@ -1183,7 +1350,9 @@ export const generateTasksForTerm = async (termId) => {
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
-    const executableTemplatesMap = await getExecutableTemplatesMap(connection);
+    const executableTemplatesMap = await getExecutableTemplatesMap(connection, {
+      artifactOrigin: "process"
+    });
     const existingTasksMap = await getExistingAutomaticTasksMap(connection, term.id);
 
     const createdTaskIds = [];
@@ -1194,6 +1363,12 @@ export const generateTasksForTerm = async (termId) => {
     const definitionsWithoutAssignees = [];
 
     for (const definition of activeDefinitions) {
+      const definitionTemplates = executableTemplatesMap.get(definition.id) || [];
+      if (!definitionTemplates.length) {
+        definitionsWithoutTaskItems.push(definition.id);
+        continue;
+      }
+
       const processRunId = await ensureProcessRun({
         connection,
         processDefinitionId: definition.id,
@@ -1217,7 +1392,7 @@ export const generateTasksForTerm = async (termId) => {
              end_date,
              status
           )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             definition.id,
             processRunId,

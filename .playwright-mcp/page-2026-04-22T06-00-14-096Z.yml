@@ -1,0 +1,26 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - heading "La conexión no es privada" [level=1] [ref=e6]
+      - paragraph [ref=e7]:
+        - text: Es posible que un atacante esté intentando robarte la información de
+        - strong [ref=e8]: 127.0.0.1
+        - text: (por ejemplo, contraseñas, mensajes o tarjetas de crédito).
+        - link "Obtén más información sobre esta advertencia" [ref=e9] [cursor=pointer]:
+          - /url: "#"
+      - button "net::ERR_CERT_AUTHORITY_INVALID" [ref=e11]
+    - generic [ref=e15]:
+      - link "Activa la protección mejorada" [ref=e16] [cursor=pointer]:
+        - /url: "#"
+      - text: para obtener el nivel más alto de seguridad de Chrome
+  - generic [ref=e17]:
+    - button "Volver a un sitio seguro" [ref=e18] [cursor=pointer]
+    - button "Ocultar detalles avanzados" [expanded] [active] [ref=e20] [cursor=pointer]
+  - generic [ref=e21]:
+    - paragraph [ref=e22]:
+      - text: Este servidor no pudo probar que su dominio es
+      - strong [ref=e23]: 127.0.0.1
+      - text: ; el sistema operativo de la computadora no confía en el certificado de seguridad. Es posible que esto se deba a una configuración incorrecta o a que un atacante interceptó la conexión.
+    - paragraph [ref=e24]:
+      - link "Continuar a 127.0.0.1 (no seguro)" [ref=e25] [cursor=pointer]:
+        - /url: "#"

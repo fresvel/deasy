@@ -1,8 +1,8 @@
 # Seed LaTeX (slides)
 
 Seed Jinja2 para generar:
-- `modes/system/jinja2/src` (plantilla fuente)
-- `modes/user/latex/src` (renderizado con defaults)
+- `modes/process/jinja2/src` (plantilla fuente)
+- `modes/general/latex/src` (renderizado con defaults)
 
 Archivo de configuración:
 - `defaults.yaml` (se copia como `data.yaml` al crear un template)

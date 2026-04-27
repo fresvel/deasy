@@ -6,9 +6,11 @@ import {
   downloadSignBatch,
   downloadSigned,
   getSignBatchStatus,
+  getSignatureFlow,
   requestSign,
   requestSignBatch,
-  requestSignBatchStart
+  requestSignBatchStart,
+  validateSignedDocument
 } from "../controllers/sign/sign_controller.js";
 import {
   approveFillRequest,
@@ -39,6 +41,13 @@ router.post(
 );
 
 router.post(
+  "/validate",
+  authMiddleware,
+  upload.fields([{ name: "pdf", maxCount: 1 }]),
+  validateSignedDocument
+);
+
+router.post(
   "/batch",
   authMiddleware,
   upload.fields([{ name: "pdf", maxCount: 30 }]),
@@ -62,5 +71,6 @@ router.post("/fill-requests/:requestId/reject", authMiddleware, express.json(), 
 router.post("/fill-requests/:requestId/cancel", authMiddleware, express.json(), cancelFillRequest);
 
 router.get("/download", authMiddleware, downloadSigned);
+router.get("/documents/:documentVersionId/signature-flow", authMiddleware, getSignatureFlow);
 
 export default router;

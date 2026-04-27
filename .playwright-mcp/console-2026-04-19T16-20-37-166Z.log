@@ -1,0 +1,59 @@
+[     797ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/:0
+[   13838ms] [WARNING] [Vue warn]: Failed to resolve component: font-awesome-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <SNavMenu show=false is-admin=false onClose=fn > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[   13961ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[   38612ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3030/easym/v1/sign:0
+[   60707ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3030/easym/v1/sign:0
+[  108437ms] [WARNING] [Vue warn]: Failed to resolve component: font-awesome-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <SNavMenu show=false is-admin=false onClose=fn > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[  108493ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  122664ms] [WARNING] [Vue warn]: Failed to resolve component: font-awesome-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <SNavMenu show=false is-admin=false onClose=fn > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[  122704ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  122936ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  140679ms] [WARNING] [Vue warn]: Failed to resolve component: font-awesome-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <SNavMenu show=false is-admin=false onClose=fn > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[  140718ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  140951ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  143446ms] [WARNING] [Vue warn]: Property "fieldsJson" was accessed during render but is not defined on instance. 
+  at <FirmarPdf> 
+  at <SBody showmenu=true shownotify=false > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[  160422ms] [WARNING] [Vue warn]: Failed to resolve component: font-awesome-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+  at <SNavMenu show=false is-admin=false onClose=fn > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< undefined > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[  160455ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  160674ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8080/dashboard:0
+[  163655ms] [WARNING] [Vue warn]: Property "fieldsJson" was accessed during render but is not defined on instance. 
+  at <FirmarPdf> 
+  at <SBody showmenu=true shownotify=false > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
+[  166354ms] [WARNING] [Vue warn]: Property "fieldsJson" was accessed during render but is not defined on instance. 
+  at <FirmarPdf> 
+  at <SBody showmenu=true shownotify=false > 
+  at <DashboardHome onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView key="/dashboard" > 
+  at <App> @ http://localhost:8080/node_modules/.vite/deps/vue.runtime.esm-bundler-BZUeEERx.js?v=a2f87469:1735
