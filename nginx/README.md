@@ -5,11 +5,16 @@ Esta carpeta contiene la configuración del proxy reverso de Deasy.
 ## Estructura
 
 - `nginx.conf`: configuración base y utilidades globales.
-- `conf.d/default.conf.template`: plantilla renderizada por la imagen oficial
-  de Nginx usando variables de entorno del contenedor.
+- `app-conf.d/default.conf.template`: plantilla del proxy de aplicación usada
+  por `dev`.
+- `ingress-conf.d/default.conf.template`: plantilla del proxy público
+  compartido que enruta por subdominio hacia `qa` y `prod`.
 - `certs/dev` y `certs/qa`: certificados autofirmados versionados para
   ambientes no productivos.
-- `certs/prod`: ubicación reservada para certificados reales en despliegue.
+- `certs/prod`: ubicación reservada para certificados reales del proxy de
+  aplicación local de `prod` si se llegara a usar.
+- `certs/public`: ubicación esperada para el certificado SAN o wildcard que
+  cubra `fresvel.com`, `www.fresvel.com` y `qa.fresvel.com`.
 - `acme/`: webroot preparado para futuros desafíos HTTP-01 con Certbot.
 - `scripts/generate-self-signed.sh`: utilidad para regenerar certificados por
   ambiente.
@@ -30,8 +35,9 @@ Los archivos generados siguen la convención:
 
 ## Preparado para Let's Encrypt
 
-El proxy expone `/.well-known/acme-challenge/` desde `nginx/acme`.
+El proxy de aplicación y el ingress público exponen
+`/.well-known/acme-challenge/` desde `nginx/acme`.
 
-Cuando se incorpore Certbot, `prod` puede reemplazar sus certificados en
-`nginx/certs/prod/` sin cambiar la estructura de Compose ni la convención de
-rutas del proxy.
+Cuando se incorpore Certbot, el certificado público puede mantenerse en
+`nginx/certs/public/` sin cambiar la estructura de Compose ni la convención de
+rutas del ingress.

@@ -47,9 +47,12 @@ case "$SOURCE_MODE" in
 esac
 
 RUNTIME_ENV_FILE="$DOCKER_DIR/.env.$ENVIRONMENT.runtime"
-if [ -f "$RUNTIME_ENV_FILE" ]; then
-  export DEASY_ENV_FILE="$RUNTIME_ENV_FILE"
+if [ ! -f "$RUNTIME_ENV_FILE" ]; then
+  echo "Falta el archivo runtime requerido para $ENVIRONMENT: $RUNTIME_ENV_FILE"
+  exit 1
 fi
+export DEASY_ENV_FILE="$RUNTIME_ENV_FILE"
+export DEASY_CONTAINER_ENV_FILE="$(basename "$RUNTIME_ENV_FILE")"
 
 if [ -n "$IMAGE_TAG" ]; then
   export BACKEND_IMAGE_TAG="$IMAGE_TAG"
@@ -57,6 +60,8 @@ if [ -n "$IMAGE_TAG" ]; then
   export SIGNER_IMAGE_TAG="$IMAGE_TAG"
   export ANALYTICS_IMAGE_TAG="$IMAGE_TAG"
 fi
+
+PUBLIC_INGRESS_NETWORK="${PUBLIC_INGRESS_NETWORK:-deasy_public_ingress}"
 
 run_step() {
   if [ "$DRY_RUN" = "1" ]; then
@@ -73,5 +78,13 @@ run_step() {
 }
 
 echo "Aplicando ambiente '$ENVIRONMENT' via '$SOURCE_MODE'"
+if [ "$DRY_RUN" = "1" ]; then
+  printf '[dry-run] docker network inspect %q\n' "$PUBLIC_INGRESS_NETWORK"
+  printf '[dry-run] docker network create %q\n' "$PUBLIC_INGRESS_NETWORK"
+elif ! docker network inspect "$PUBLIC_INGRESS_NETWORK" >/dev/null 2>&1; then
+  docker network create "$PUBLIC_INGRESS_NETWORK"
+fi
 run_step bash "$ROOT_DIR/scripts/docker-env.sh" "$ENVIRONMENT" pull
 run_step bash "$ROOT_DIR/scripts/docker-env.sh" "$ENVIRONMENT" --profile workers up -d --remove-orphans
+run_step bash "$ROOT_DIR/scripts/docker-env.sh" ingress pull
+run_step bash "$ROOT_DIR/scripts/docker-env.sh" ingress up -d --remove-orphans

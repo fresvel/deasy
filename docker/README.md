@@ -18,8 +18,9 @@ Mientras se completa la migracion multiambiente:
 
 - `docker/docker-compose.yml` se toma como baseline de `dev`,
 - `docker/.env` se mantiene como compatibilidad temporal del stack actual,
-- `docker/.env.dev`, `docker/.env.qa` y `docker/.env.prod` pasan a ser la base
-  de configuracion por ambiente,
+- `docker/.env.dev` se mantiene versionado para `dev`,
+- `docker/.env.qa` y `docker/.env.prod` quedan versionados como base saneada
+  para `qa` y `prod`,
 - los siguientes pasos moveran la ejecucion a `compose.base.yml` y overrides por
   ambiente siguiendo buenas practicas validadas con Context7 para Docker
   Compose.
@@ -32,6 +33,7 @@ La nueva ruta de ejecucion de `dev` queda asi:
 docker compose \
   --env-file .env.dev \
   -f compose.base.yml \
+  -f compose.proxy.yml \
   -f compose.dev.yml \
   up -d
 ```
@@ -57,23 +59,26 @@ aislados por stack aunque los ambientes convivan en el mismo host.
 
 ## Matriz de puertos y redes
 
-Cada ambiente expone puertos distintos y una red propia:
+Cada ambiente mantiene una red propia y `qa`/`prod` comparten una red externa
+adicional para la entrada pública:
 
 - `dev` usa red `deasy_dev_network`
 - `qa` usa red `deasy_qa_network`
 - `prod` usa red `deasy_prod_network`
+- `ingress` usa red externa `deasy_public_ingress`
 
 Puertos de referencia:
 
 - `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, MariaDB `3306`, MongoDB
   `27017`, RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX
   UI `18083`, MinIO API `9000`, MinIO Console `9001`, signer `4000`
-- `qa`: proxy HTTP `9088`, proxy HTTPS `9443`, MariaDB `13306`, MongoDB
-  `12717`, RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, EMQX MQTT `11883`, EMQX
-  UI `18084`, MinIO API `9100`, MinIO Console `9101`, signer `14000`
-- `prod`: proxy HTTP `80`, proxy HTTPS `443`, MariaDB `23306`, MongoDB
-  `22717`, RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, EMQX MQTT `21883`, EMQX
-  UI `28084`, MinIO API `9200`, MinIO Console `9201`, signer `24000`
+- `qa`: MariaDB `13306`, MongoDB `12717`, RabbitMQ AMQP `15672`, RabbitMQ UI
+  `15673`, EMQX MQTT `11883`, EMQX UI `18084`, MinIO API `9100`, MinIO Console
+  `9101`, signer `14000`
+- `prod`: MariaDB `23306`, MongoDB `22717`, RabbitMQ AMQP `25672`, RabbitMQ UI
+  `25673`, EMQX MQTT `21883`, EMQX UI `28084`, MinIO API `9200`, MinIO Console
+  `9201`, signer `24000`
+- `ingress`: HTTP `80`, HTTPS `443`
 
 ## Uso previsto por ambiente
 
@@ -104,6 +109,15 @@ docker compose \
   --env-file .env.prod \
   -f compose.base.yml \
   -f compose.prod.yml \
+  up -d
+```
+
+`ingress`:
+
+```bash
+docker compose \
+  --env-file .env.ingress \
+  -f compose.ingress.yml \
   up -d
 ```
 
@@ -334,10 +348,22 @@ Secrets requeridos en GitHub Environments:
 
 Notas operativas:
 
-- `RUNTIME_ENV_FILE` debe contener las variables reales del ambiente, fuera del
-  repositorio.
-- `DEPLOY_PATH` es el directorio remoto donde se sincronizan `docker/` y
-  `scripts/`.
+- `RUNTIME_ENV_FILE` debe contener el archivo completo del ambiente, fuera del
+  repositorio, incluyendo como minimo `ORIGIN1`, `ORIGIN2`, `JWT_SECRET`,
+  `JWT_REFRESH`, usuarios reales y passwords reales de MariaDB y MinIO.
+- `DEPLOY_PATH` debe ser distinto por environment en GitHub:
+  - `qa` -> `/srv/deasy-qa`
+  - `prod` -> `/srv/deasy-prod`
+- `qa` usa como origen publico esperado `https://qa.fresvel.com`.
+- `prod` usa como origen publico esperado `https://fresvel.com` y
+  `https://www.fresvel.com`.
+- `compose.qa.yml` y `compose.prod.yml` consumen ahora el mismo runtime file
+  tanto para interpolacion de Compose como para variables reales dentro del
+  contenedor.
+- `ingress` publica `80/443` y enruta por `Host` hacia aliases Docker
+  compartidos de `qa` y `prod`.
+- `docker/.env.qa` y `docker/.env.prod` ya no contienen secretos reales;
+  funcionan como base saneada y versionada.
 - el runner hace login en GHCR sobre el host remoto y ejecuta
   `scripts/deploy-env.sh`.
 
@@ -359,17 +385,19 @@ operativamente mas serio y verificable.
 
 ## Proxy reverso Nginx
 
-La entrada pública cliente queda centralizada en `nginx-proxy`, que termina TLS
-y enruta internamente hacia:
+La entrada pública cliente queda centralizada en un `ingress` compartido, que
+termina TLS en `80/443` y enruta por subdominio hacia los stacks aislados:
 
-- `/` -> `frontend:8080`
-- `/api/` -> `backend:3030`
+- `fresvel.com` y `www.fresvel.com` -> `prod`
+- `qa.fresvel.com` -> `qa`
 
-Matriz pública del proxy:
+Internamente el ingress usa la red externa `deasy_public_ingress` y reenvia:
 
-- `dev`: HTTP `8088`, HTTPS `8443`
-- `qa`: HTTP `9088`, HTTPS `9443`
-- `prod`: HTTP `80`, HTTPS `443`
+- `/` -> `frontend:8080` del ambiente correspondiente
+- `/api/` -> `backend:3030` del ambiente correspondiente
+
+`dev` conserva su proxy propio en `compose.proxy.yml` para seguir expuesto en
+`8088/8443` sin interferir con la entrada pública compartida.
 
 La validación base sigue siendo:
 
