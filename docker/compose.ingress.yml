@@ -1,0 +1,37 @@
+name: deasy-ingress
+
+services:
+  nginx-ingress:
+    image: nginx:1.28-alpine
+    container_name: deasy-public-ingress
+    restart: unless-stopped
+    environment:
+      PROD_SERVER_NAMES: ${PROD_SERVER_NAMES}
+      QA_SERVER_NAME: ${QA_SERVER_NAME}
+      PROD_FRONTEND_UPSTREAM: ${PROD_FRONTEND_UPSTREAM}
+      PROD_BACKEND_UPSTREAM: ${PROD_BACKEND_UPSTREAM}
+      QA_FRONTEND_UPSTREAM: ${QA_FRONTEND_UPSTREAM}
+      QA_BACKEND_UPSTREAM: ${QA_BACKEND_UPSTREAM}
+      TLS_CERT_PATH: /etc/nginx/certs/${NGINX_TLS_CERT_DIR}/fullchain.pem
+      TLS_KEY_PATH: /etc/nginx/certs/${NGINX_TLS_CERT_DIR}/privkey.pem
+    ports:
+      - "${PROXY_HTTP_PORT}:80"
+      - "${PROXY_HTTPS_PORT}:443"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/ingress-conf.d:/etc/nginx/templates:ro
+      - ../nginx/certs:/etc/nginx/certs:ro
+      - ../nginx/acme:/var/www/certbot:ro
+    networks:
+      - public-ingress
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  public-ingress:
+    name: ${PUBLIC_INGRESS_NETWORK:-deasy_public_ingress}
+    external: true

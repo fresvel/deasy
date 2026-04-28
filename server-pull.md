@@ -229,6 +229,8 @@ Variables reales del ambiente, por ejemplo:
 - endpoints reales
 - URLs internas o externas
 - cualquier override sensible
+- `JWT_SECRET`
+- `JWT_REFRESH`
 
 No pongas esos valores en archivos versionados del repo.
 
@@ -471,7 +473,22 @@ Entonces si tendras que configurar:
 - `DEPLOY_DELIVERY_MODE=gh-actions`
 - `GitHub Environments`
 - `secrets` de SSH
+- `DEPLOY_PATH` separado por environment:
+  - `qa` -> `/srv/deasy-qa`
+  - `prod` -> `/srv/deasy-prod`
 - `RUNTIME_ENV_FILE`
+
+Y ese `RUNTIME_ENV_FILE` debe incluir al menos:
+
+- `ORIGIN1`
+- `ORIGIN2`
+- `JWT_SECRET`
+- `JWT_REFRESH`
+
+Orígenes públicos esperados:
+
+- `qa` -> `https://qa.fresvel.com`
+- `prod` -> `https://fresvel.com`
 
 ## 16. Flujo recomendado en tu caso
 

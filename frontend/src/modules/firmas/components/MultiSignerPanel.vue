@@ -308,141 +308,73 @@
       </section>
 
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-        <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <label class="block text-sm font-bold text-slate-800">Campos de Firma</label>
-              <BtnDelete
-                v-if="isCoordinateMode"
-                message="Limpiar firmas cargadas"
-                :disabled="!currentModeFields.length"
-                @onpress="clearCurrentModeFields"
-              />
-            </div>
-            <div class="flex flex-col gap-3">
-              <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
-                <button
-                  type="button"
-                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                  title="Modo anterior"
-                  @click="selectPreviousBatchMode"
-                >
-                  <IconChevronLeft class="h-5 w-5" />
-                </button>
-                <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
-                  <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modo</div>
-                  <div class="text-sm font-bold text-slate-800">{{ currentBatchModeOption.label }}</div>
-                </div>
-                <button
-                  type="button"
-                  class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                  title="Siguiente modo"
-                  @click="selectNextBatchMode"
-                >
-                  <IconChevronRight class="h-5 w-5" />
-                </button>
-              </div>
-
-              <div v-if="batchMode === 'shared-coordinates'" class="flex flex-col gap-2">
-                <label class="text-xs font-semibold text-slate-500">Referencia de página</label>
-                <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-sm">
-                  <button
-                    type="button"
-                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                    title="Referencia anterior"
-                    @click="selectPreviousPageReference"
-                  >
-                    <IconChevronLeft class="h-5 w-5" />
-                  </button>
-                  <div class="flex min-w-0 flex-1 flex-col items-center justify-center border-x border-slate-200 px-3 py-1 text-center">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referencia</div>
-                    <div class="text-sm font-bold text-slate-800">{{ currentPageReferenceOption.label }}</div>
-                  </div>
-                  <button
-                    type="button"
-                    class="rounded-lg p-2 text-slate-500 transition hover:bg-white hover:text-sky-600"
-                    title="Siguiente referencia"
-                    @click="selectNextPageReference"
-                  >
-                    <IconChevronRight class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="currentModeFields.length" class="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-                <IconCheck class="h-4 w-4" />
-                {{ currentModeFields.length }} preparada(s)
-              </div>
-            </div>
-          </div>
-
-          <div class="text-sm font-bold text-slate-800">Resultados</div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-center">
-              <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Documentos</div>
-              <div class="text-2xl font-black leading-none text-slate-800">{{ documents.length }}</div>
-            </div>
-            <div class="flex flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-center">
-              <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">Éxitos</div>
-              <div class="text-2xl font-black leading-none text-emerald-700">{{ successCount }}</div>
-            </div>
-            <div class="flex flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-center">
-              <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-amber-600">Pendientes</div>
-              <div class="text-2xl font-black leading-none text-amber-700">{{ pendingCount }}</div>
-            </div>
-            <div class="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-center">
-              <div class="mb-1 text-[10px] font-bold uppercase tracking-wider text-rose-600">Fallos</div>
-              <div class="text-2xl font-black leading-none text-rose-700">{{ failedCount }}</div>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <div class="text-sm font-bold text-slate-800">Progreso del lote</div>
-                <div class="mt-0.5 text-[11px] font-medium text-slate-500">
-                  {{ batchJob
-                    ? `${batchJob.processed || 0} de ${batchJob.total || documents.length} procesados`
-                    : `${documents.length} documento(s) en cola` }}
-                </div>
-              </div>
-              <div class="rounded-lg bg-sky-100 px-2.5 py-1 text-sm font-black text-sky-600">
-                {{ progressPercent }}%
-              </div>
-            </div>
-            <div class="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-200/70">
-              <div class="h-full rounded-full bg-sky-500 transition-all duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
-            </div>
-
-            <div v-if="batchJob" class="mt-4 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex flex-col">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Estado</span>
-                  <span class="text-sm font-semibold text-slate-800">
-                    {{ batchJob.status === 'completed' ? 'Completado' : batchJob.status === 'processing' ? 'Procesando' : 'En cola' }}
-                  </span>
-                </div>
-                <AdminButton
-                  v-if="batchJob.status === 'completed' && successCount > 0"
-                  variant="outlinePrimary"
-                  size="sm"
-                  :disabled="isDownloadingBatch"
-                  @click="emit('download-batch')"
-                >
-                  {{ isDownloadingBatch ? 'Descargando...' : 'Descargar' }}
-                </AdminButton>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="batchError" class="mt-auto flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
-            <IconAlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
-            <span class="font-medium">{{ batchError }}</span>
-          </div>
-        </div>
+        <MultiSignerBatchStatusPanel
+          :batch-error="batchError"
+          :batch-job="batchJob"
+          :can-clear-current-mode-fields="isCoordinateMode && currentModeFields.length > 0"
+          :current-batch-mode-label="currentBatchModeOption.label"
+          :current-mode-fields-count="currentModeFields.length"
+          :current-page-reference-label="currentPageReferenceOption.label"
+          :documents-count="documents.length"
+          :failed-count="failedCount"
+          :is-downloading-batch="isDownloadingBatch"
+          :pending-count="pendingCount"
+          :progress-percent="progressPercent"
+          :show-field-controls="true"
+          :show-page-reference="batchMode === 'shared-coordinates'"
+          :success-count="successCount"
+          @clear-fields="clearCurrentModeFields"
+          @download-batch="emit('download-batch')"
+          @next-batch-mode="selectNextBatchMode"
+          @next-page-reference="selectNextPageReference"
+          @previous-batch-mode="selectPreviousBatchMode"
+          @previous-page-reference="selectPreviousPageReference"
+        />
       </aside>
     </div>
+
+    <AdminModalShell
+      :open="showBatchProgressModal"
+      body-class="p-0"
+      content-class="max-h-[calc(100vh-4rem)]"
+      controlled
+      labelled-by="multi-signer-progress-modal-title"
+      size="md"
+      title="Progreso del lote"
+      @close="closeBatchProgressModal"
+    >
+      <template #header>
+        <div id="multi-signer-progress-modal-title" class="flex min-w-0 flex-1 items-center gap-4">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+            <IconSignature class="h-5 w-5" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Multifirmador</div>
+            <div class="truncate text-base font-bold text-slate-800">
+              {{ batchProgressModalTitle }}
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <MultiSignerBatchStatusPanel
+        :batch-error="batchError"
+        :batch-job="batchJob"
+        :can-clear-current-mode-fields="false"
+        :current-batch-mode-label="currentBatchModeOption.label"
+        :current-mode-fields-count="currentModeFields.length"
+        :current-page-reference-label="currentPageReferenceOption.label"
+        :documents-count="documents.length"
+        :failed-count="failedCount"
+        :is-downloading-batch="isDownloadingBatch"
+        :pending-count="pendingCount"
+        :progress-percent="progressPercent"
+        :show-field-controls="false"
+        :show-page-reference="batchMode === 'shared-coordinates'"
+        :success-count="successCount"
+        @download-batch="emit('download-batch')"
+      />
+    </AdminModalShell>
   </div>
 </template>
 
@@ -465,6 +397,8 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
+import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import MultiSignerBatchStatusPanel from "@/modules/firmas/components/MultiSignerBatchStatusPanel.vue";
 const props = defineProps({
   batchJob: {
     type: Object,
@@ -620,6 +554,7 @@ const filters = ref({
   year: "all",
   period: "all"
 });
+const showBatchProgressModal = ref(false);
 
 const currentModeFields = computed(() => {
   if (batchMode.value === "shared-coordinates") return sharedFields.value;
@@ -699,6 +634,16 @@ const canRequestStart = computed(() =>
     )
   )
 );
+const batchProgressModalTitle = computed(() => {
+  if (props.isDownloadingBatch) return "Descargando documentos firmados";
+  if (props.batchJob?.status === "completed") return "Firma masiva completada";
+  if (props.isBatchSubmitting || isBatchRunning.value) return "Firma masiva en progreso";
+  return "Resumen del lote";
+});
+
+const closeBatchProgressModal = () => {
+  showBatchProgressModal.value = false;
+};
 
 const emitHeaderState = () => {
   emit("header-update", {
@@ -1184,6 +1129,7 @@ const removeField = (fieldId) => {
 const requestBatchStart = async () => {
   if (!canRequestStart.value) return;
   batchError.value = "";
+  showBatchProgressModal.value = true;
   emit("start-batch", {
     mode: batchMode.value,
     documents: documents.value.map((doc) => ({
@@ -1239,6 +1185,24 @@ watch(
     });
   },
   { deep: true }
+);
+
+watch(
+  () => props.isBatchSubmitting,
+  (value) => {
+    if (value) {
+      showBatchProgressModal.value = true;
+    }
+  }
+);
+
+watch(
+  () => props.batchJob?.status,
+  (status) => {
+    if (["queued", "processing", "completed"].includes(status || "")) {
+      showBatchProgressModal.value = true;
+    }
+  }
 );
 
 watch(batchMode, () => {

@@ -1,69 +1,55 @@
 name: deasy-prod
 
-services:
-  nginx-proxy:
-    restart: always
-    security_opt:
-      - no-new-privileges:true
-    ports:
-      - "${PROXY_HTTP_PORT}:80"
-      - "${PROXY_HTTPS_PORT}:443"
+x-runtime-env-file: &prod_runtime_env_file
+  - ${DEASY_CONTAINER_ENV_FILE:-.env.prod}
 
+services:
   mariadb:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     ports:
       - "23306:3306"
 
   mongodb:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     ports:
       - "22717:27017"
 
   rabbitmq:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     ports:
       - "25672:5672"
       - "25673:15672"
 
   emqx:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     ports:
       - "21883:1883"
       - "28084:18083"
 
   minio:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     ports:
       - "${MINIO_API_PORT}:9000"
       - "${MINIO_CONSOLE_PORT}:9001"
 
   minio-bootstrap:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
 
   minio-publish-seeds:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
 
   minio-publish:
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
 
   backend:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     security_opt:
       - no-new-privileges:true
@@ -73,12 +59,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+    networks:
+      default: {}
+      public-ingress:
+        aliases:
+          - deasy-prod-backend
 
   storage-uploader:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     security_opt:
       - no-new-privileges:true
@@ -86,8 +76,7 @@ services:
   frontend:
     image: ${IMAGE_REGISTRY}/${FRONTEND_IMAGE_REPOSITORY}:${FRONTEND_IMAGE_TAG}
     pull_policy: always
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     read_only: true
     tmpfs:
@@ -102,12 +91,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    networks:
+      default: {}
+      public-ingress:
+        aliases:
+          - deasy-prod-frontend
 
   signer:
     image: ${IMAGE_REGISTRY}/${SIGNER_IMAGE_REPOSITORY}:${SIGNER_IMAGE_TAG}
     pull_policy: always
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     security_opt:
       - no-new-privileges:true
@@ -125,8 +118,7 @@ services:
   analytics:
     image: ${IMAGE_REGISTRY}/${ANALYTICS_IMAGE_REPOSITORY}:${ANALYTICS_IMAGE_TAG}
     pull_policy: always
-    env_file:
-      - .env.prod
+    env_file: *prod_runtime_env_file
     restart: always
     security_opt:
       - no-new-privileges:true
@@ -156,3 +148,6 @@ volumes:
 networks:
   default:
     name: deasy_prod_network
+  public-ingress:
+    name: ${PUBLIC_INGRESS_NETWORK:-deasy_public_ingress}
+    external: true
