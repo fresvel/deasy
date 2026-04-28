@@ -6,7 +6,7 @@ DOCKER_DIR="$ROOT_DIR/docker"
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   cat <<'EOF'
-Uso: bash scripts/apply-env.sh <qa|prod> <source-mode> [image-tag]
+Uso: bash scripts/apply-env.sh <qa|prod|ingress> <source-mode> [image-tag]
 
 Source modes:
   gh-actions     Despliegue iniciado por GitHub Actions sobre un host remoto.
@@ -16,6 +16,7 @@ Ejemplos:
   bash scripts/apply-env.sh qa gh-actions qa
   bash scripts/apply-env.sh prod gh-actions sha-<commit>
   bash scripts/apply-env.sh qa server-pull qa
+  bash scripts/apply-env.sh ingress gh-actions
 
 Variables utiles:
   DEASY_DRY_RUN=1   Muestra lo que ejecutaria sin aplicar cambios.
@@ -29,10 +30,10 @@ IMAGE_TAG="${3:-}"
 DRY_RUN="${DEASY_DRY_RUN:-0}"
 
 case "$ENVIRONMENT" in
-  qa|prod)
+  qa|prod|ingress)
     ;;
   *)
-    echo "Este script solo despliega qa o prod."
+    echo "Este script solo despliega qa, prod o ingress."
     exit 1
     ;;
 esac
@@ -46,13 +47,15 @@ case "$SOURCE_MODE" in
     ;;
 esac
 
-RUNTIME_ENV_FILE="$DOCKER_DIR/.env.$ENVIRONMENT.runtime"
-if [ ! -f "$RUNTIME_ENV_FILE" ]; then
-  echo "Falta el archivo runtime requerido para $ENVIRONMENT: $RUNTIME_ENV_FILE"
-  exit 1
+if [[ "$ENVIRONMENT" =~ ^(qa|prod)$ ]]; then
+  RUNTIME_ENV_FILE="$DOCKER_DIR/.env.$ENVIRONMENT.runtime"
+  if [ ! -f "$RUNTIME_ENV_FILE" ]; then
+    echo "Falta el archivo runtime requerido para $ENVIRONMENT: $RUNTIME_ENV_FILE"
+    exit 1
+  fi
+  export DEASY_ENV_FILE="$RUNTIME_ENV_FILE"
+  export DEASY_CONTAINER_ENV_FILE="$(basename "$RUNTIME_ENV_FILE")"
 fi
-export DEASY_ENV_FILE="$RUNTIME_ENV_FILE"
-export DEASY_CONTAINER_ENV_FILE="$(basename "$RUNTIME_ENV_FILE")"
 
 if [ -n "$IMAGE_TAG" ]; then
   export BACKEND_IMAGE_TAG="$IMAGE_TAG"
@@ -77,6 +80,22 @@ run_step() {
   "$@"
 }
 
+cleanup_legacy_public_proxies() {
+  local legacy_names=(
+    "deasy-public-ingress"
+    "deasy-nginx-proxy"
+    "deasy-prod-nginx-proxy-1"
+    "deasy-qa-nginx-proxy-1"
+  )
+
+  local name
+  for name in "${legacy_names[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -Fxq "$name"; then
+      run_step docker rm -f "$name"
+    fi
+  done
+}
+
 echo "Aplicando ambiente '$ENVIRONMENT' via '$SOURCE_MODE'"
 if [ "$DRY_RUN" = "1" ]; then
   printf '[dry-run] docker network inspect %q\n' "$PUBLIC_INGRESS_NETWORK"
@@ -84,7 +103,13 @@ if [ "$DRY_RUN" = "1" ]; then
 elif ! docker network inspect "$PUBLIC_INGRESS_NETWORK" >/dev/null 2>&1; then
   docker network create "$PUBLIC_INGRESS_NETWORK"
 fi
-run_step bash "$ROOT_DIR/scripts/docker-env.sh" "$ENVIRONMENT" pull
-run_step bash "$ROOT_DIR/scripts/docker-env.sh" "$ENVIRONMENT" --profile workers up -d --remove-orphans
-run_step bash "$ROOT_DIR/scripts/docker-env.sh" ingress pull
-run_step bash "$ROOT_DIR/scripts/docker-env.sh" ingress up -d --remove-orphans
+case "$ENVIRONMENT" in
+  ingress)
+    cleanup_legacy_public_proxies
+    run_step bash "$ROOT_DIR/scripts/docker-env.sh" ingress up -d --remove-orphans
+    ;;
+  qa|prod)
+    run_step bash "$ROOT_DIR/scripts/docker-env.sh" "$ENVIRONMENT" pull
+    run_step bash "$ROOT_DIR/scripts/docker-env.sh" "$ENVIRONMENT" --profile workers up -d --remove-orphans
+    ;;
+esac

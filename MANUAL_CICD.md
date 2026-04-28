@@ -126,8 +126,9 @@ Ejecuta workflows definidos en `.github/workflows/*.yml`.
 
 Son entornos lógicos de GitHub para separar configuración sensible por ambiente.
 
-En este caso necesitas al menos:
+En este caso necesitas:
 
+- `ingress`
 - `qa`
 - `prod`
 
@@ -378,8 +379,8 @@ Lo que hace:
 
 1. prepara SSH en el runner,
 2. sincroniza `docker/` y `scripts/` al host remoto,
-3. sube el archivo de variables runtime del ambiente,
-4. hace login a GHCR en el servidor remoto,
+3. si aplica, sube el archivo de variables runtime del ambiente,
+4. si aplica, hace login a GHCR en el servidor remoto,
 5. ejecuta `scripts/deploy-env.sh`.
 
 ## 7. Como funciona el deploy remoto
@@ -387,7 +388,7 @@ Lo que hace:
 En el servidor remoto, el flujo es este:
 
 1. se recibe `docker/` y `scripts/`,
-2. se crea o actualiza `docker/.env.qa.runtime` o `docker/.env.prod.runtime`,
+2. si aplica, se crea o actualiza `docker/.env.qa.runtime` o `docker/.env.prod.runtime`,
 3. el servidor ejecuta:
 
 ```bash
@@ -398,6 +399,12 @@ o:
 
 ```bash
 bash scripts/deploy-env.sh prod prod
+```
+
+o:
+
+```bash
+bash scripts/deploy-env.sh ingress
 ```
 
 Ese script internamente hace:
@@ -935,7 +942,7 @@ Sin cambios extra de infraestructura, hoy ya queda operativo:
 
 Para habilitar completamente el modo `gh-actions` por SSH faltan estas acciones:
 
-1. crear `qa` y `prod` en `GitHub Environments`
+1. crear `ingress`, `qa` y `prod` en `GitHub Environments`
 2. cargar todos los `secrets`
 3. definir `DEPLOY_DELIVERY_MODE=gh-actions`
 4. verificar que el servidor remoto tenga:
