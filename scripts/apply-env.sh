@@ -83,6 +83,7 @@ run_step() {
 cleanup_legacy_public_proxies() {
   local legacy_names=(
     "deasy-public-ingress"
+    "deasy-public-ingress-bootstrap"
     "deasy-nginx-proxy"
     "deasy-prod-nginx-proxy-1"
     "deasy-qa-nginx-proxy-1"
