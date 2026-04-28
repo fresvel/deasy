@@ -18,6 +18,7 @@ on:
         required: true
         type: choice
         options:
+          - ingress
           - qa
           - prod
       image_tag:
@@ -83,6 +84,9 @@ jobs:
           case "$DEPLOY_ENV" in
             dev)
               CHANNEL_TAG="dev"
+              ;;
+            ingress)
+              CHANNEL_TAG="infra"
               ;;
             qa)
               CHANNEL_TAG="qa"
@@ -181,10 +185,11 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ needs.prepare.outputs.channel_tag }}
 
-  deploy:
+  deploy-app-push:
     if: |
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.event_name == 'push' &&
       needs.prepare.outputs.deploy_enabled == 'true' &&
+      needs.prepare.outputs.deploy_env != 'ingress' &&
       vars.DEPLOY_DELIVERY_MODE == 'gh-actions'
     needs:
       - prepare
@@ -212,7 +217,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx/app-conf.d' '$DEPLOY_PATH/nginx/ingress-conf.d' '$DEPLOY_PATH/nginx/scripts' '$DEPLOY_PATH/nginx/acme' '$DEPLOY_PATH/nginx/certs/$DEPLOY_ENV' '$DEPLOY_PATH/nginx/certs/public'"
           rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
           rsync -az --delete --exclude 'certs/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
-          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
       - name: Upload runtime environment file
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -235,7 +240,112 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -euo pipefail
             cd '$DEPLOY_PATH'
-            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh
             printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
             bash scripts/deploy-env.sh '$DEPLOY_ENV' '$DEPLOY_IMAGE_TAG'
+          "
+
+  deploy-app-manual:
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      needs.prepare.outputs.deploy_enabled == 'true' &&
+      needs.prepare.outputs.deploy_env != 'ingress' &&
+      vars.DEPLOY_DELIVERY_MODE == 'gh-actions'
+    needs:
+      - prepare
+      - compose-validate
+    runs-on: ubuntu-latest
+    environment: ${{ needs.prepare.outputs.deploy_env }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
+      - name: Sync deployment bundle
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV: ${{ needs.prepare.outputs.deploy_env }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx/app-conf.d' '$DEPLOY_PATH/nginx/ingress-conf.d' '$DEPLOY_PATH/nginx/scripts' '$DEPLOY_PATH/nginx/acme' '$DEPLOY_PATH/nginx/certs/$DEPLOY_ENV' '$DEPLOY_PATH/nginx/certs/public'"
+          rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
+          rsync -az --delete --exclude 'certs/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+      - name: Upload runtime environment file
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV: ${{ needs.prepare.outputs.deploy_env }}
+          RUNTIME_ENV_FILE: ${{ secrets.RUNTIME_ENV_FILE }}
+        run: |
+          printf '%s' "$RUNTIME_ENV_FILE" | ssh "$DEPLOY_USER@$DEPLOY_HOST" "cat > '$DEPLOY_PATH/docker/.env.$DEPLOY_ENV.runtime'"
+      - name: Deploy environment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV: ${{ needs.prepare.outputs.deploy_env }}
+          DEPLOY_IMAGE_TAG: ${{ needs.prepare.outputs.deploy_image_tag }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            set -euo pipefail
+            cd '$DEPLOY_PATH'
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh
+            printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
+            bash scripts/deploy-env.sh '$DEPLOY_ENV' '$DEPLOY_IMAGE_TAG'
+          "
+
+  deploy-ingress:
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      needs.prepare.outputs.deploy_enabled == 'true' &&
+      needs.prepare.outputs.deploy_env == 'ingress' &&
+      vars.DEPLOY_DELIVERY_MODE == 'gh-actions'
+    needs:
+      - prepare
+      - compose-validate
+    runs-on: ubuntu-latest
+    environment: ingress
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
+      - name: Sync deployment bundle
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx/app-conf.d' '$DEPLOY_PATH/nginx/ingress-conf.d' '$DEPLOY_PATH/nginx/scripts' '$DEPLOY_PATH/nginx/acme' '$DEPLOY_PATH/nginx/certs/public'"
+          rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
+          rsync -az --delete --exclude 'certs/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+      - name: Deploy ingress
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            set -euo pipefail
+            cd '$DEPLOY_PATH'
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh
+            bash scripts/deploy-env.sh ingress
           "

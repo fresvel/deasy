@@ -53,6 +53,7 @@ Mapa actual:
 - `dev` -> proyecto `deasy-dev`
 - `qa` -> proyecto `deasy-qa`
 - `prod` -> proyecto `deasy-prod`
+- `ingress` -> proyecto `deasy-ingress`
 
 Con esto, MariaDB, MongoDB, RabbitMQ, EMQX, MinIO, uploads y storage quedan
 aislados por stack aunque los ambientes convivan en el mismo host.
@@ -60,7 +61,7 @@ aislados por stack aunque los ambientes convivan en el mismo host.
 ## Matriz de puertos y redes
 
 Cada ambiente mantiene una red propia y `qa`/`prod` comparten una red externa
-adicional para la entrada pública:
+adicional administrada por `ingress` para la entrada pública:
 
 - `dev` usa red `deasy_dev_network`
 - `qa` usa red `deasy_qa_network`
@@ -120,6 +121,23 @@ docker compose \
   -f compose.ingress.yml \
   up -d
 ```
+
+`ingress-bootstrap`:
+
+```bash
+docker compose \
+  --env-file .env.ingress \
+  -f compose.ingress.bootstrap.yml \
+  up -d
+```
+
+Recomendacion operativa:
+
+- `ingress` debe vivir en un checkout y GitHub Environment propios.
+- `qa` y `prod` no deben volver a levantar ni reiniciar `ingress`.
+- `ingress` es el unico stack autorizado a publicar `80/443`.
+- en un servidor limpio, primero se levanta `ingress-bootstrap` en `80`
+  para emitir certificados y luego `ingress`.
 
 Nota temporal:
 
@@ -216,7 +234,7 @@ Se agrega una base inicial para automatizacion:
   `signer` y `analytics`
 - script operativo `scripts/docker-env.sh` para estandarizar comandos por
   ambiente y reutilizar la misma interfaz en CI y operacion manual
-- script `scripts/deploy-env.sh` para despliegue remoto de `qa` y `prod`
+- script `scripts/deploy-env.sh` para despliegue remoto de `qa`, `prod` e `ingress`
 
 Comandos ejemplo:
 
@@ -243,7 +261,7 @@ El flujo de CD queda asi:
   - publica imagenes con tag `prod` en GHCR
   - despliega el ambiente `prod`
 - `workflow_dispatch`:
-  - permite redeploy manual a `qa` o `prod`
+  - permite redeploy manual a `ingress`, `qa` o `prod`
   - permite indicar un `image_tag` especifico
 
 `qa` y `prod` ya no dependen de `build` local en Compose. Ahora consumen
@@ -354,6 +372,7 @@ Notas operativas:
 - `DEPLOY_PATH` debe ser distinto por environment en GitHub:
   - `qa` -> `/srv/deasy-qa`
   - `prod` -> `/srv/deasy-prod`
+  - `ingress` -> `/srv/deasy-ingress`
 - `qa` usa como origen publico esperado `https://qa.fresvel.com`.
 - `prod` usa como origen publico esperado `https://fresvel.com` y
   `https://www.fresvel.com`.
@@ -366,6 +385,8 @@ Notas operativas:
   funcionan como base saneada y versionada.
 - el runner hace login en GHCR sobre el host remoto y ejecuta
   `scripts/deploy-env.sh`.
+- `ingress` no requiere `RUNTIME_ENV_FILE` si opera con `docker/.env.ingress`
+  y certificados ya cargados en `nginx/certs/public`.
 
 ## Endurecimiento inicial de prod
 
@@ -398,6 +419,50 @@ Internamente el ingress usa la red externa `deasy_public_ingress` y reenvia:
 
 `dev` conserva su proxy propio en `compose.proxy.yml` para seguir expuesto en
 `8088/8443` sin interferir con la entrada pública compartida.
+
+## Despliegue recomendado
+
+- `qa`: checkout `/srv/deasy-qa`, runtime `docker/.env.qa.runtime`
+- `prod`: checkout `/srv/deasy-prod`, runtime `docker/.env.prod.runtime`
+- `ingress`: checkout `/srv/deasy-ingress`, sin runtime secreto obligatorio
+
+El workflow de GitHub Actions debe usar tres GitHub Environments:
+
+- `qa`
+- `prod`
+- `ingress`
+
+`ingress` se recomienda como despliegue manual o solo cuando cambien archivos de:
+
+- `nginx/**`
+- `docker/compose.ingress.yml`
+- `docker/.env.ingress`
+- `scripts/docker-env.sh`
+- `scripts/apply-env.sh`
+
+## Bootstrap TLS
+
+Para un servidor desde cero:
+
+1. levantar `ingress-bootstrap`
+2. emitir certificados con `scripts/bootstrap-ingress-cert.sh`
+3. apagar `ingress-bootstrap`
+4. levantar `ingress`
+
+Ejemplo:
+
+```bash
+cd /srv/deasy-ingress
+CERTBOT_EMAIL=admin@fresvel.com bash scripts/bootstrap-ingress-cert.sh
+```
+
+El script:
+
+- levanta `ingress-bootstrap` en `80`
+- ejecuta `certbot/certbot` con `webroot`
+- copia `fullchain.pem` y `privkey.pem` a `nginx/certs/public`
+- apaga `ingress-bootstrap`
+- levanta `ingress` final en `80/443`
 
 La validación base sigue siendo:
 
