@@ -262,15 +262,20 @@ Contiene lo comun a todos los ambientes.
 
 Archivos:
 
+- [`docker/compose.proxy.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.proxy.yml)
+- [`docker/compose.ingress.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.ingress.yml)
 - [`docker/compose.dev.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.dev.yml)
 - [`docker/compose.qa.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.qa.yml)
 - [`docker/compose.prod.yml`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/compose.prod.yml)
 
 Diferencias principales:
 
+- `compose.proxy.yml` mantiene el proxy local de `dev`.
+- `compose.ingress.yml` concentra la entrada pública compartida en `80/443`.
 - `dev` construye localmente y usa mounts.
-- `qa` consume imágenes desde GHCR.
-- `prod` consume imágenes desde GHCR y agrega hardening.
+- `qa` consume imágenes desde GHCR y publica aliases internos para ingress.
+- `prod` consume imágenes desde GHCR, publica aliases internos para ingress y
+  agrega hardening.
 
 ### Variables por ambiente
 
@@ -764,6 +769,7 @@ Valores esperados de origen publico:
 
 - `qa` -> `https://qa.fresvel.com`
 - `prod` -> `https://fresvel.com`
+- `prod` -> `https://www.fresvel.com`
 
 ## 11. Como crear los Environments en GitHub
 
