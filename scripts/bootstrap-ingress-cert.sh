@@ -82,19 +82,28 @@ if [ -z "$PRIMARY_DOMAIN" ]; then
   PRIMARY_DOMAIN="${QA_SERVER_NAME:-}"
 fi
 
-LIVE_DIR="$NGINX_DIR/certs/live/$PRIMARY_DOMAIN"
-if [ ! -f "$LIVE_DIR/fullchain.pem" ] || [ ! -f "$LIVE_DIR/privkey.pem" ]; then
-  ALT_LIVE_DIR="$(find "$NGINX_DIR/certs/live" -maxdepth 1 -mindepth 1 -type d -name "${PRIMARY_DOMAIN}*" | head -n 1)"
-  if [ -n "$ALT_LIVE_DIR" ] && [ -f "$ALT_LIVE_DIR/fullchain.pem" ] && [ -f "$ALT_LIVE_DIR/privkey.pem" ]; then
-    LIVE_DIR="$ALT_LIVE_DIR"
-  else
-    echo "Certbot no dejó certificados utilizables en $NGINX_DIR/certs/live"
-    exit 1
-  fi
-fi
+echo "Copiando certificados emitidos a nginx/certs/public..."
+docker run --rm \
+  -v "$NGINX_DIR/certs:/etc/letsencrypt" \
+  -v "$NGINX_DIR/certs/public:/public" \
+  alpine:3.22 \
+  sh -eu -c '
+    primary_domain="$1"
+    live_dir="/etc/letsencrypt/live/$primary_domain"
 
-cp "$LIVE_DIR/fullchain.pem" "$NGINX_DIR/certs/public/fullchain.pem"
-cp "$LIVE_DIR/privkey.pem" "$NGINX_DIR/certs/public/privkey.pem"
+    if [ ! -f "$live_dir/fullchain.pem" ] || [ ! -f "$live_dir/privkey.pem" ]; then
+      alt_live_dir="$(find /etc/letsencrypt/live -maxdepth 1 -mindepth 1 -type d -name "${primary_domain}*" | head -n 1)"
+      if [ -n "$alt_live_dir" ] && [ -f "$alt_live_dir/fullchain.pem" ] && [ -f "$alt_live_dir/privkey.pem" ]; then
+        live_dir="$alt_live_dir"
+      else
+        echo "Certbot no dejo certificados utilizables en /etc/letsencrypt/live" >&2
+        exit 1
+      fi
+    fi
+
+    cp -L "$live_dir/fullchain.pem" /public/fullchain.pem
+    cp -L "$live_dir/privkey.pem" /public/privkey.pem
+  ' sh "$PRIMARY_DOMAIN"
 
 echo "Apagando bootstrap y levantando ingress final..."
 bash "$ROOT_DIR/scripts/docker-env.sh" ingress-bootstrap down
