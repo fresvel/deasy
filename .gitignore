@@ -1,5 +1,6 @@
 node_modules
 .env
+docker/.env.*.runtime
 testing
 borrador
 output
