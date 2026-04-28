@@ -58,6 +58,8 @@ CERTBOT_ARGS=(
   --email "$EMAIL"
   --agree-tos
   --no-eff-email
+  --non-interactive
+  --keep-until-expiring
   "${DOMAINS[@]}"
 )
 
@@ -82,8 +84,13 @@ fi
 
 LIVE_DIR="$NGINX_DIR/certs/live/$PRIMARY_DOMAIN"
 if [ ! -f "$LIVE_DIR/fullchain.pem" ] || [ ! -f "$LIVE_DIR/privkey.pem" ]; then
-  echo "Certbot no dejó certificados en $LIVE_DIR"
-  exit 1
+  ALT_LIVE_DIR="$(find "$NGINX_DIR/certs/live" -maxdepth 1 -mindepth 1 -type d -name "${PRIMARY_DOMAIN}*" | head -n 1)"
+  if [ -n "$ALT_LIVE_DIR" ] && [ -f "$ALT_LIVE_DIR/fullchain.pem" ] && [ -f "$ALT_LIVE_DIR/privkey.pem" ]; then
+    LIVE_DIR="$ALT_LIVE_DIR"
+  else
+    echo "Certbot no dejó certificados utilizables en $NGINX_DIR/certs/live"
+    exit 1
+  fi
 fi
 
 cp "$LIVE_DIR/fullchain.pem" "$NGINX_DIR/certs/public/fullchain.pem"
