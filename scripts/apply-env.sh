@@ -47,9 +47,12 @@ case "$SOURCE_MODE" in
 esac
 
 RUNTIME_ENV_FILE="$DOCKER_DIR/.env.$ENVIRONMENT.runtime"
-if [ -f "$RUNTIME_ENV_FILE" ]; then
-  export DEASY_ENV_FILE="$RUNTIME_ENV_FILE"
+if [ ! -f "$RUNTIME_ENV_FILE" ]; then
+  echo "Falta el archivo runtime requerido para $ENVIRONMENT: $RUNTIME_ENV_FILE"
+  exit 1
 fi
+export DEASY_ENV_FILE="$RUNTIME_ENV_FILE"
+export DEASY_CONTAINER_ENV_FILE="$(basename "$RUNTIME_ENV_FILE")"
 
 if [ -n "$IMAGE_TAG" ]; then
   export BACKEND_IMAGE_TAG="$IMAGE_TAG"

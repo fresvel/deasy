@@ -5,7 +5,7 @@
 Este documento explica como quedo implementado el CI/CD del proyecto, que
 conceptos intervienen, que hace cada archivo y como se opera el flujo.
 
-La idea es que sirva incluso si no manejas todavia conceptos como:
+La idea es que sirva incluso si no manejas todavía conceptos como:
 
 - `CI`
 - `CD`
@@ -277,8 +277,8 @@ Diferencias principales:
 Archivos:
 
 - [`docker/.env.dev`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/.env.dev)
-- [`docker/.env.qa`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/.env.qa)
-- [`docker/.env.prod`](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docker/.env.prod)
+- [`docker/.env.qa`](/home/fresvel/Documentos/Pucese/deasy/docker/.env.qa)
+- [`docker/.env.prod`](/home/fresvel/Documentos/Pucese/deasy/docker/.env.prod)
 
 ## 6. Como funciona el workflow
 
@@ -519,7 +519,7 @@ Los scripts `apply-env.sh` y `server-pull-deploy.sh` aceptan:
 DEASY_DRY_RUN=1
 ```
 
-para mostrar los comandos que ejecutarian sin tocar contenedores ni git.
+para mostrar los comandos que ejecutarían sin tocar contenedores ni git.
 
 ## 7.3 Opcion con systemd
 
@@ -698,13 +698,21 @@ Ruta del proyecto en el servidor.
 Ejemplo:
 
 ```text
-/opt/deasy
+/srv/deasy-qa
 ```
 
-Dentro de esa ruta, el workflow crea:
+No debe ser una sola ruta compartida entre `qa` y `prod`.
 
-- `/opt/deasy/docker`
-- `/opt/deasy/scripts`
+Configuracion recomendada por environment:
+
+- `qa` -> `/srv/deasy-qa`
+- `prod` -> `/srv/deasy-prod`
+
+Dentro de cada ruta, el workflow crea:
+
+- `docker/`
+- `scripts/`
+- `nginx/`
 
 #### GHCR_USERNAME
 
@@ -743,7 +751,19 @@ Ese archivo debe contener las variables reales, por ejemplo:
 - passwords reales,
 - endpoints reales,
 - credenciales reales,
-- cualquier override sensible.
+- cualquier override sensible,
+- `ORIGIN1` y `ORIGIN2`,
+- `JWT_SECRET` y `JWT_REFRESH`.
+
+Los archivos versionados de referencia quedan en:
+
+- `docker/.env.qa`
+- `docker/.env.prod`
+
+Valores esperados de origen publico:
+
+- `qa` -> `https://qa.fresvel.com`
+- `prod` -> `https://fresvel.com`
 
 ## 11. Como crear los Environments en GitHub
 
@@ -760,7 +780,7 @@ Ruta general:
 
 Si quieres endurecer mas el flujo, puedes ademas:
 
-- pedir aprobacion manual para `prod`,
+- pedir aprobación manual para `prod`,
 - limitar que ramas pueden desplegar,
 - exigir revisores.
 
@@ -874,9 +894,9 @@ En general, en produccion suele ser preferible:
 
 ## 16. Incidente de secreto ya remediado
 
-El repositorio tuvo una fuga historica de una key de Groq en commits viejos.
+El repositorio tuvo una fuga histórica de una key de Groq en commits viejos.
 
-Se hizo esta remediacion:
+Se hizo esta remediación:
 
 - registro del incidente,
 - purga del valor del historial accesible,
@@ -891,7 +911,7 @@ Lo que todavia debes hacer fuera del repo es:
 
 ## 17. Que falta para considerar CI/CD completamente operativo
 
-Tecnologicamente, la base ya esta implementada.
+Tecnológicamente, la base ya esta implementada.
 
 ### Operativo hoy mismo
 
@@ -926,7 +946,7 @@ Para habilitar completamente el modo `gh-actions` por SSH faltan estas acciones:
 `gh-actions`:
 
 - mas automatizado
-- mas comodo para promover cambios desde GitHub
+- mas cómodo para promover cambios desde GitHub
 - depende de conectividad entrante y secretos completos
 
 `server-pull`:

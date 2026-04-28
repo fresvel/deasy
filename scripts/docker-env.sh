@@ -29,9 +29,28 @@ case "$ENVIRONMENT" in
     ;;
 esac
 
-ENV_FILE="${DEASY_ENV_FILE:-$DOCKER_DIR/.env.$ENVIRONMENT}"
 COMPOSE_BASE="$DOCKER_DIR/compose.base.yml"
 COMPOSE_ENV="$DOCKER_DIR/compose.$ENVIRONMENT.yml"
+
+resolve_env_file() {
+  local environment="$1"
+  local explicit_file="${DEASY_ENV_FILE:-}"
+
+  if [ -n "$explicit_file" ]; then
+    printf '%s\n' "$explicit_file"
+    return 0
+  fi
+
+  if [ "$environment" = "dev" ]; then
+    printf '%s/.env.dev\n' "$DOCKER_DIR"
+    return 0
+  fi
+
+  printf '%s/.env.%s\n' "$DOCKER_DIR" "$environment"
+}
+
+ENV_FILE="$(resolve_env_file "$ENVIRONMENT")"
+CONTAINER_ENV_FILE="${DEASY_CONTAINER_ENV_FILE:-$(basename "$ENV_FILE")}"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "No existe el archivo de entorno: $ENV_FILE"
@@ -43,5 +62,11 @@ if [ ! -f "$COMPOSE_BASE" ] || [ ! -f "$COMPOSE_ENV" ]; then
   exit 1
 fi
 
+if [ "$ENVIRONMENT" != "dev" ] && [ ! -f "$DOCKER_DIR/$CONTAINER_ENV_FILE" ]; then
+  echo "No existe el archivo de runtime para contenedores: $DOCKER_DIR/$CONTAINER_ENV_FILE"
+  exit 1
+fi
+
 cd "$DOCKER_DIR"
+export DEASY_CONTAINER_ENV_FILE="$CONTAINER_ENV_FILE"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_BASE" -f "$COMPOSE_ENV" "$@"

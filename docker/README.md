@@ -18,8 +18,9 @@ Mientras se completa la migracion multiambiente:
 
 - `docker/docker-compose.yml` se toma como baseline de `dev`,
 - `docker/.env` se mantiene como compatibilidad temporal del stack actual,
-- `docker/.env.dev`, `docker/.env.qa` y `docker/.env.prod` pasan a ser la base
-  de configuracion por ambiente,
+- `docker/.env.dev` se mantiene versionado para `dev`,
+- `docker/.env.qa` y `docker/.env.prod` quedan versionados como base saneada
+  para `qa` y `prod`,
 - los siguientes pasos moveran la ejecucion a `compose.base.yml` y overrides por
   ambiente siguiendo buenas practicas validadas con Context7 para Docker
   Compose.
@@ -90,7 +91,7 @@ docker compose \
 `qa`:
 
 ```bash
-docker compose \
+  docker compose \
   --env-file .env.qa \
   -f compose.base.yml \
   -f compose.qa.yml \
@@ -100,7 +101,7 @@ docker compose \
 `prod`:
 
 ```bash
-docker compose \
+  docker compose \
   --env-file .env.prod \
   -f compose.base.yml \
   -f compose.prod.yml \
@@ -334,10 +335,19 @@ Secrets requeridos en GitHub Environments:
 
 Notas operativas:
 
-- `RUNTIME_ENV_FILE` debe contener las variables reales del ambiente, fuera del
-  repositorio.
-- `DEPLOY_PATH` es el directorio remoto donde se sincronizan `docker/` y
-  `scripts/`.
+- `RUNTIME_ENV_FILE` debe contener el archivo completo del ambiente, fuera del
+  repositorio, incluyendo como minimo `ORIGIN1`, `ORIGIN2`, `JWT_SECRET`,
+  `JWT_REFRESH`, usuarios reales y passwords reales de MariaDB y MinIO.
+- `DEPLOY_PATH` debe ser distinto por environment en GitHub:
+  - `qa` -> `/srv/deasy-qa`
+  - `prod` -> `/srv/deasy-prod`
+- `qa` usa como origen publico esperado `https://qa.fresvel.com`.
+- `prod` usa como origen publico esperado `https://fresvel.com`.
+- `compose.qa.yml` y `compose.prod.yml` consumen ahora el mismo runtime file
+  tanto para interpolacion de Compose como para variables reales dentro del
+  contenedor.
+- `docker/.env.qa` y `docker/.env.prod` ya no contienen secretos reales;
+  funcionan como base saneada y versionada.
 - el runner hace login en GHCR sobre el host remoto y ejecuta
   `scripts/deploy-env.sh`.
 
