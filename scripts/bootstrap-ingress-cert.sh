@@ -18,9 +18,20 @@ if [ -z "$EMAIL" ]; then
   exit 1
 fi
 
-set -a
-source "$ENV_FILE"
-set +a
+read_env_value() {
+  local key="$1"
+  awk -F= -v search_key="$key" '
+    $0 ~ "^[[:space:]]*" search_key "=" {
+      sub(/^[^=]*=/, "", $0)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+      print $0
+      exit
+    }
+  ' "$ENV_FILE"
+}
+
+PROD_SERVER_NAMES="$(read_env_value "PROD_SERVER_NAMES")"
+QA_SERVER_NAME="$(read_env_value "QA_SERVER_NAME")"
 
 DOMAINS=()
 for domain in ${PROD_SERVER_NAMES:-}; do
