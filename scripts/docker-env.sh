@@ -6,7 +6,7 @@ DOCKER_DIR="$ROOT_DIR/docker"
 
 if [ "$#" -lt 2 ]; then
   cat <<'EOF'
-Uso: bash scripts/docker-env.sh <dev|qa|prod|ingress> [compose args...]
+Uso: bash scripts/docker-env.sh <dev|qa|prod|ingress|ingress-bootstrap> [compose args...]
 
 Ejemplos:
   bash scripts/docker-env.sh dev config
@@ -14,6 +14,7 @@ Ejemplos:
   bash scripts/docker-env.sh qa up -d
   bash scripts/docker-env.sh prod down
   bash scripts/docker-env.sh ingress up -d
+  bash scripts/docker-env.sh ingress-bootstrap up -d
 EOF
   exit 1
 fi
@@ -22,7 +23,7 @@ ENVIRONMENT="$1"
 shift
 
 case "$ENVIRONMENT" in
-  dev|qa|prod|ingress)
+  dev|qa|prod|ingress|ingress-bootstrap)
     ;;
   *)
     echo "Ambiente no soportado: $ENVIRONMENT"
@@ -44,7 +45,7 @@ resolve_env_file() {
     return 0
   fi
 
-  if [ "$environment" = "ingress" ]; then
+  if [ "$environment" = "ingress" ] || [ "$environment" = "ingress-bootstrap" ]; then
     printf '%s/.env.ingress\n' "$DOCKER_DIR"
     return 0
   fi
@@ -58,6 +59,9 @@ resolve_compose_files() {
   case "$environment" in
     ingress)
       printf '%s/compose.ingress.yml\n' "$DOCKER_DIR"
+      ;;
+    ingress-bootstrap)
+      printf '%s/compose.ingress.bootstrap.yml\n' "$DOCKER_DIR"
       ;;
     dev)
       printf '%s/compose.base.yml\n' "$DOCKER_DIR"

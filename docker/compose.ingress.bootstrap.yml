@@ -1,0 +1,28 @@
+name: deasy-ingress-bootstrap
+
+services:
+  nginx-ingress-bootstrap:
+    image: nginx:1.28-alpine
+    container_name: deasy-public-ingress-bootstrap
+    restart: unless-stopped
+    environment:
+      BOOTSTRAP_SERVER_NAMES: ${BOOTSTRAP_SERVER_NAMES}
+    ports:
+      - "${PROXY_HTTP_PORT}:80"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/ingress-bootstrap-conf.d:/etc/nginx/templates:ro
+      - ../nginx/acme:/var/www/certbot:rw
+    networks:
+      - public-ingress
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  public-ingress:
+    name: ${PUBLIC_INGRESS_NETWORK:-deasy_public_ingress}
+    external: true

@@ -7,6 +7,8 @@ Esta carpeta contiene la configuración del proxy reverso de Deasy.
 - `nginx.conf`: configuración base y utilidades globales.
 - `app-conf.d/default.conf.template`: plantilla del proxy de aplicación usada
   por `dev`.
+- `ingress-bootstrap-conf.d/default.conf.template`: plantilla HTTP-only para
+  bootstrap de certificados ACME.
 - `ingress-conf.d/default.conf.template`: plantilla del proxy público
   compartido que enruta por subdominio hacia `qa` y `prod`.
 - `certs/dev` y `certs/qa`: certificados autofirmados versionados para
@@ -18,6 +20,19 @@ Esta carpeta contiene la configuración del proxy reverso de Deasy.
 - `acme/`: webroot preparado para futuros desafíos HTTP-01 con Certbot.
 - `scripts/generate-self-signed.sh`: utilidad para regenerar certificados por
   ambiente.
+
+## Bootstrap con Certbot
+
+Para un host limpio, no arranques primero el ingress TLS final.
+
+Usa:
+
+```bash
+CERTBOT_EMAIL=admin@fresvel.com bash scripts/bootstrap-ingress-cert.sh
+```
+
+Ese script levanta temporalmente un ingress HTTP-only para responder desafíos
+`HTTP-01`, obtiene el certificado y luego cambia al ingress final con TLS.
 
 ## Generar certificados
 
