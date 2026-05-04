@@ -1,6 +1,6 @@
 <template>
   <section class="space-y-4">
-    <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div class="admin-surface-frame">
       <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
             <div :class="searchColumnClass">
               <AdminInputField

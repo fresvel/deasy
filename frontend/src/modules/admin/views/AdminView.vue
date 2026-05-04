@@ -389,7 +389,7 @@
           </div>
         </div>
 
-        <div v-else class="w-full flex-1 bg-white border border-slate-200 p-0 sm:p-2 rounded-4xl shadow-xl shadow-slate-200/50 overflow-hidden relative flex flex-col min-h-0">
+        <div v-else class="admin-workspace-frame w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
           <div class="admin-page admin-typography w-full h-full relative overflow-y-auto">
              <AdminTableManager
                ref="adminManager"

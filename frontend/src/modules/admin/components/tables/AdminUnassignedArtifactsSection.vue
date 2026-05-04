@@ -14,7 +14,7 @@
           <AppTag variant="neutral">{{ rows.length }}</AppTag>
         </div>
       </div>
-      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div class="admin-surface-frame">
           <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
             <div class="md:col-span-4 lg:col-span-3">
               <AdminInputField :model-value="searchTerm" placeholder="Buscar artifacts sin definicion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />

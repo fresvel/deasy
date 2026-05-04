@@ -6,10 +6,11 @@ DOCKER_DIR="$ROOT_DIR/docker"
 
 if [ "$#" -lt 2 ]; then
   cat <<'EOF'
-Uso: bash scripts/docker-env.sh <dev|qa|prod|ingress|ingress-bootstrap> [compose args...]
+Uso: bash scripts/docker-env.sh <dev|qa-local|qa|prod|ingress|ingress-bootstrap> [compose args...]
 
 Ejemplos:
   bash scripts/docker-env.sh dev config
+  bash scripts/docker-env.sh qa-local up -d --build
   bash scripts/docker-env.sh qa pull
   bash scripts/docker-env.sh qa up -d
   bash scripts/docker-env.sh prod down
@@ -23,7 +24,7 @@ ENVIRONMENT="$1"
 shift
 
 case "$ENVIRONMENT" in
-  dev|qa|prod|ingress|ingress-bootstrap)
+  dev|qa-local|qa|prod|ingress|ingress-bootstrap)
     ;;
   *)
     echo "Ambiente no soportado: $ENVIRONMENT"
@@ -42,6 +43,11 @@ resolve_env_file() {
 
   if [ "$environment" = "dev" ]; then
     printf '%s/.env.dev\n' "$DOCKER_DIR"
+    return 0
+  fi
+
+  if [ "$environment" = "qa-local" ]; then
+    printf '%s/.env.qa\n' "$DOCKER_DIR"
     return 0
   fi
 
@@ -67,6 +73,11 @@ resolve_compose_files() {
       printf '%s/compose.base.yml\n' "$DOCKER_DIR"
       printf '%s/compose.proxy.yml\n' "$DOCKER_DIR"
       printf '%s/compose.dev.yml\n' "$DOCKER_DIR"
+      ;;
+    qa-local)
+      printf '%s/compose.base.yml\n' "$DOCKER_DIR"
+      printf '%s/compose.proxy.yml\n' "$DOCKER_DIR"
+      printf '%s/compose.qa.local.yml\n' "$DOCKER_DIR"
       ;;
     qa|prod)
       printf '%s/compose.base.yml\n' "$DOCKER_DIR"
