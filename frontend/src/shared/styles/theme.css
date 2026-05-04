@@ -1,35 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --color-puce: #003ba3;
-  --color-puce-rgb: 0, 59, 163;
-  --color-puce-light: #4a8cff;
-  --color-puce-light-rgb: 74, 140, 255;
-  --color-puce-logo: #e2f2fa;
-  --color-puce-logo-rgb: 226, 242, 250;
-  --color-puce-soft: #f1f5f9;
-  --color-puce-dark: #0f172a;
-  --color-puce-gray: #64748b;
-  --color-puce-gray-rgb: 100, 116, 139;
-
-  --brand-primary: #0284c7;
-  --brand-accent: #0ea5e9;
+  --brand-primary: #2563eb;
+  --brand-primary-strong: #1d4ed8;
+  --brand-accent: #0891b2;
+  --brand-accent-strong: #0e7490;
+  --brand-highlight: #4f46e5;
+  --brand-highlight-rgb: 79, 70, 229;
   --brand-secondary: #64748b;
-  --brand-navy: #0f172a;
-  --brand-ink: #1e293b;
+  --brand-navy: #111827;
+  --brand-ink: #1f2937;
   --brand-surface: #ffffff;
   --brand-surface-alt: #f8fafc;
-  --brand-info-soft: rgba(2, 132, 199, 0.12);
+  --brand-surface-muted: #eef2f7;
+  --brand-info-soft: rgba(37, 99, 235, 0.1);
   --brand-white: #ffffff;
-  --brand-border: #e2e8f0;
+  --brand-border: #dbe3ef;
   --brand-muted: #94a3b8;
-  --brand-shadow-strong: 0 20px 40px rgba(15, 23, 42, 0.15);
-  --brand-shadow: 0 4px 17.8px rgba(15, 23, 42, 0.1);
-  --brand-shadow-soft: 0 3px 10px rgba(15, 23, 42, 0.05);
-  --brand-gradient: linear-gradient(90deg, #0369a1 0%, #0ea5e9 100%);
-  --brand-gradient-angled: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
-  --brand-primary-rgb: 2, 132, 199;
-  --brand-accent-rgb: 14, 165, 233;
+  --brand-shadow-strong: 0 24px 60px rgba(15, 23, 42, 0.16);
+  --brand-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  --brand-shadow-soft: 0 8px 18px rgba(15, 23, 42, 0.05);
+  --brand-gradient: linear-gradient(90deg, #2563eb 0%, #0891b2 100%);
+  --brand-gradient-angled: linear-gradient(135deg, #1d4ed8 0%, #0891b2 100%);
+  --brand-workspace-gradient: linear-gradient(180deg, #111827 0%, #1e293b 46%, #164e63 100%);
+  --brand-primary-rgb: 37, 99, 235;
+  --brand-accent-rgb: 8, 145, 178;
   --brand-secondary-rgb: 100, 116, 139;
 
   --state-success: #28a745;
@@ -38,10 +33,10 @@
   --state-info: #17a2b8;
   --state-gold: #d4af37;
 
-  --radius-lg: 34px;
+  --radius-lg: 18px;
   --radius-md: 16px;
-  --radius-sm: 12px;
-  --radius-button: 14px;
+  --radius-sm: 10px;
+  --radius-button: 10px;
 
   --input-height: 52px;
   --font-base: 'Inter', sans-serif;
@@ -244,15 +239,15 @@ a:hover {
 }
 
 .hope-action-upload {
-  color: var(--color-puce-light) !important;
-  background: rgba(var(--color-puce-light-rgb), 0.14);
-  border-color: rgba(var(--color-puce-light-rgb), 0.34);
+  color: var(--brand-highlight) !important;
+  background: rgba(var(--brand-highlight-rgb), 0.12);
+  border-color: rgba(var(--brand-highlight-rgb), 0.28);
 }
 
 .hope-action-upload:hover {
-  color: #2f73f1 !important;
-  background: rgba(var(--color-puce-light-rgb), 0.2);
-  border-color: rgba(var(--color-puce-light-rgb), 0.46);
+  color: #3730a3 !important;
+  background: rgba(var(--brand-highlight-rgb), 0.18);
+  border-color: rgba(var(--brand-highlight-rgb), 0.42);
 }
 
 .hope-action-delete-pdf {
@@ -653,8 +648,8 @@ a:hover {
 }
 
 .menu-section-title.is-open .menu-title-icon {
-  background: rgba(var(--color-puce-light-rgb), 0.1);
-  color: var(--color-puce-light);
+  background: rgba(var(--brand-highlight-rgb), 0.1);
+  color: var(--brand-highlight);
 }
 
 .admin-menu {
@@ -842,8 +837,8 @@ a:hover {
 }
 
 .admin-menu .menu-section-body .list-group-item.active .menu-item-icon {
-  background: rgba(var(--color-puce-light-rgb), 0.1);
-  color: var(--color-puce-light);
+  background: rgba(var(--brand-highlight-rgb), 0.1);
+  color: var(--brand-highlight);
 }
 
 .admin-menu .menu-section-body .list-group-item.active .menu-indicator {

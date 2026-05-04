@@ -12,20 +12,20 @@
     @click.self="handleBackdropClick"
   >
     <div class="deasy-dialog-shell mx-auto flex min-h-full w-full justify-center" :class="shellClass">
-      <div class="deasy-dialog-panel relative w-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl" :class="contentClass">
+      <div class="deasy-dialog-panel relative w-full overflow-hidden" :class="contentClass">
         <div
           v-if="showHeader"
-          class="deasy-dialog-header flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"
+          class="deasy-dialog-header flex items-center justify-between gap-4"
         >
           <slot name="header">
-            <h5 class="deasy-dialog-title text-lg font-bold text-slate-900" :id="labelledBy">
+            <h5 class="deasy-dialog-title" :id="labelledBy">
               <slot name="title">{{ title }}</slot>
             </h5>
           </slot>
           <button
             v-if="showCloseButton"
             type="button"
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+            class="deasy-btn--close flex h-9 w-9 items-center justify-center transition-colors"
             :aria-label="closeLabel"
             :title="closeLabel"
             v-bind="closeButtonAttrs"
@@ -34,12 +34,12 @@
             <IconX class="h-4 w-4" stroke-width="2.5" />
           </button>
         </div>
-        <div class="deasy-dialog-body px-6 py-5" :class="bodyClass">
+        <div class="deasy-dialog-body" :class="bodyClass">
           <slot />
         </div>
         <div
           v-if="$slots.footer"
-          class="deasy-dialog-footer flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-6 py-4"
+          class="deasy-dialog-footer flex flex-wrap items-center justify-end gap-3"
           :class="footerClass"
         >
           <slot name="footer" />
@@ -51,7 +51,6 @@
 
 <script setup>
 import { computed, ref, useAttrs } from "vue";
-import AppButton from "@/shared/components/buttons/AppButton.vue";
 import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({

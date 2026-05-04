@@ -1,46 +1,46 @@
 <template>
   <s-header :menu-open="menuOpen" @onclick="emit('menu-toggle')">
-    <div class="flex items-center gap-3 overflow-hidden flex-1">
+    <div class="flex flex-1 items-center gap-3 overflow-hidden">
       <slot />
     </div>
 
-    <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+    <div class="flex shrink-0 items-center gap-1 sm:gap-2">
       <router-link
         v-for="item in navItems"
         :key="item.key"
         :to="item.to"
-        class="flex shrink-0 items-center justify-center rounded-lg sm:rounded-xl h-9 w-9 sm:h-11 sm:w-11 transition-all focus:outline-none focus:ring-2 focus:ring-white/30 border border-white/10 bg-white/5 !text-white hover:bg-white/10"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/15 sm:h-11 sm:w-11"
         :title="item.title"
       >
-        <component :is="item.icon" class="w-4 h-4 sm:w-5 sm:h-5" />
+        <component :is="item.icon" class="h-4 w-4 sm:h-5 sm:w-5" />
       </router-link>
 
-      <div class="w-px h-5 sm:h-7 bg-white/20 mx-0.5 sm:mx-1 rounded-full"></div>
+      <div class="mx-0.5 h-5 w-px rounded-full bg-slate-200 sm:mx-1 sm:h-7"></div>
 
       <button
-        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white hover:bg-white/20"
+        class="deasy-nav-action h-9 w-9 sm:h-11 sm:w-11"
         type="button"
         title="Firmar documentos"
         @click="emit('sign')"
       >
-        <IconSignature class="w-4 h-4 sm:w-5 sm:h-5" />
+        <IconSignature class="h-4 w-4 sm:h-5 sm:w-5" />
       </button>
 
       <button
-        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white hover:bg-white/20"
+        class="deasy-nav-action h-9 w-9 sm:h-11 sm:w-11"
         type="button"
         title="Notificaciones"
         @click="emit('notify')"
       >
-        <IconBell class="w-4 h-4 sm:w-5 sm:h-5" />
+        <IconBell class="h-4 w-4 sm:h-5 sm:w-5" />
       </button>
 
       <router-link
         to="/logout"
-        class="deasy-nav-action h-9 w-9 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl !text-white hover:bg-white/20"
+        class="deasy-nav-action h-9 w-9 sm:h-11 sm:w-11"
         title="Cerrar sesión"
       >
-        <IconLogout class="w-4 h-4 sm:w-5 sm:h-5" />
+        <IconLogout class="h-4 w-4 sm:h-5 sm:w-5" />
       </router-link>
     </div>
   </s-header>

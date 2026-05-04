@@ -1,345 +1,430 @@
 <template>
-  <div class="min-h-screen bg-slate-100 py-8 md:py-12 px-4 sm:px-6 flex justify-center font-sans">
-    <div class="max-w-3xl w-full h-fit bg-white rounded-4xl shadow-2xl shadow-slate-300/50 flex flex-col border border-slate-200">
-      
-      <!-- Form Container -->
-      <div class="w-full p-8 sm:p-10 lg:p-12 relative">
-        <!-- Header -->
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Crear Cuenta</h1>
-          <p class="text-slate-500 mt-2 font-medium text-sm">Completa tus datos para registrarte en el sistema.</p>
+  <div class="deasy-auth-page">
+    <div class="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl items-start justify-center py-2 sm:py-6">
+      <div class="deasy-auth-card w-full">
+        <div class="border-b border-slate-200 bg-white px-6 py-7 sm:px-9 lg:px-11">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="min-w-0">
+              <AppLogo size="lg" class-name="mb-6" />
+              <h1 class="deasy-auth-title">Crear cuenta</h1>
+              <p class="deasy-auth-copy max-w-2xl">
+                Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
+              </p>
+            </div>
+            <router-link to="/" class="deasy-auth-button deasy-auth-button--secondary w-full lg:w-auto">
+              Volver al login
+            </router-link>
+          </div>
         </div>
 
-        <form @submit.prevent="createnewUser" class="space-y-8">
-          
-          <!-- Datos Personales -->
-          <div>
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <IconUser class="w-5 h-5 text-sky-600" /> Datos Personales
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nombres</label>
-                <div class="relative">
-                  <input type="text" v-model="newuser.first_name" required
-                    class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                    placeholder="Nombres completos" />
-                </div>
+        <div class="bg-slate-50/60 px-4 py-5 sm:px-6 lg:px-8">
+          <form @submit.prevent="createnewUser" class="mx-auto max-w-4xl">
+            <section class="deasy-form-section">
+              <div class="deasy-form-section__header">
+                <span class="deasy-form-section__icon">
+                  <IconUser class="h-5 w-5" />
+                </span>
+                <h2 class="deasy-form-section__title">Datos personales</h2>
               </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Apellidos</label>
-                <div class="relative">
-                  <input type="text" v-model="newuser.last_name" required
-                    class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                    placeholder="Apellidos completos" />
+
+              <div class="deasy-form-grid">
+                <div>
+                  <label class="deasy-form-label">Nombres</label>
+                  <input
+                    v-model="newuser.first_name"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Nombres completos"
+                  />
                 </div>
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Cédula o Pasaporte</label>
-                <div class="relative">
-                  <input type="text" v-model="newuser.cedula" required maxlength="10"
-                    class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                    :class="{'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/10': cedulaError}"
-                    placeholder="Número de identificación" />
+
+                <div>
+                  <label class="deasy-form-label">Apellidos</label>
+                  <input
+                    v-model="newuser.last_name"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Apellidos completos"
+                  />
                 </div>
-                <span v-if="cedulaError" class="text-xs text-red-500 mt-1 font-medium">{{ cedulaError }}</span>
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Correo Electrónico</label>
-                <div class="relative">
-                  <input type="email" v-model="newuser.email" required
-                    class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                    placeholder="correo@ejemplo.com" />
+
+                <div>
+                  <label class="deasy-form-label">Cédula o Pasaporte</label>
+                  <input
+                    v-model="newuser.cedula"
+                    type="text"
+                    required
+                    maxlength="10"
+                    class="deasy-auth-field"
+                    :class="{ 'deasy-field-input--error': cedulaError }"
+                    placeholder="Número de identificación"
+                  />
+                  <span v-if="cedulaError" class="deasy-field-message deasy-field-message--error">{{ cedulaError }}</span>
                 </div>
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Número de Teléfono</label>
-                <div class="flex gap-2">
-                  <div class="w-1/3 md:w-1/4">
-                    <select v-model="selectedCountryCode" @change="updatePhonePrefix"
-                      class="block w-full px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm">
+
+                <div>
+                  <label class="deasy-form-label">Correo electrónico</label>
+                  <input
+                    v-model="newuser.email"
+                    type="email"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="correo@ejemplo.com"
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="deasy-form-label">Número de teléfono</label>
+                  <div class="grid grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(9rem,0.32fr)_minmax(0,1fr)]">
+                    <select
+                      v-model="selectedCountryCode"
+                      class="deasy-auth-field px-3"
+                      @change="updatePhonePrefix"
+                    >
                       <option v-for="c in countriesData" :key="c.es_name" :value="c">{{ c.es_name }}</option>
                     </select>
+                    <div class="relative">
+                      <span class="pointer-events-none absolute inset-y-0 left-3 z-10 flex items-center text-sm font-semibold text-slate-500">
+                        {{ phonePrefix }}
+                      </span>
+                      <input
+                        v-model="phoneNumber"
+                        type="tel"
+                        maxlength="10"
+                        class="deasy-auth-field pl-14"
+                        :class="{ 'deasy-field-input--error': whatsappError }"
+                        placeholder="991234567"
+                      />
+                    </div>
                   </div>
-                  <div class="flex-1 flex relative items-center">
-                    <span class="absolute left-3 text-slate-500 text-sm font-medium z-10">{{ phonePrefix }}</span>
-                    <input type="tel" v-model="phoneNumber" maxlength="10"
-                      class="block w-full pl-14 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                      :class="{'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/10': whatsappError}"
-                      placeholder="991234567" />
+                  <span v-if="whatsappError" class="deasy-field-message deasy-field-message--error">{{ whatsappError }}</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="deasy-form-section">
+              <div class="deasy-form-section__header">
+                <span class="deasy-form-section__icon">
+                  <IconMapPin class="h-5 w-5" />
+                </span>
+                <h2 class="deasy-form-section__title">Dirección de residencia</h2>
+              </div>
+
+              <div class="deasy-form-grid--three">
+                <div>
+                  <label class="deasy-form-label">País</label>
+                  <select v-model="newuser.pais_residencia" required class="deasy-auth-field">
+                    <option value="" disabled>Selecciona un país</option>
+                    <option v-for="c in countriesData" :key="c.es_name" :value="c.es_name">{{ c.es_name }}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="deasy-form-label">Provincia / Estado</label>
+                  <input
+                    v-model="newuser.provincia_residencia"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Ej. Pichincha"
+                  />
+                </div>
+
+                <div>
+                  <label class="deasy-form-label">Ciudad</label>
+                  <input
+                    v-model="newuser.ciudad_residencia"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Ej. Quito"
+                  />
+                </div>
+
+                <div>
+                  <label class="deasy-form-label">Calle primaria</label>
+                  <input
+                    v-model="newuser.calle_primaria"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Av. Principal"
+                  />
+                </div>
+
+                <div>
+                  <label class="deasy-form-label">Calle secundaria</label>
+                  <input
+                    v-model="newuser.calle_secundaria"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Intersección"
+                  />
+                </div>
+
+                <div>
+                  <label class="deasy-form-label">Código postal</label>
+                  <input
+                    v-model="newuser.codigo_postal"
+                    type="text"
+                    required
+                    class="deasy-auth-field"
+                    placeholder="Ej. 080150"
+                  />
+                </div>
+              </div>
+
+              <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <label class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  Ubicación exacta
+                  <span class="group relative inline-flex">
+                    <IconHelp class="h-4 w-4 cursor-help text-blue-600" />
+                    <span class="invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg bg-slate-950 p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                      Marca tu ubicación exacta para completar la información geográfica de tu registro.
+                    </span>
+                  </span>
+                </label>
+
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    class="deasy-btn deasy-btn--secondary deasy-btn--md w-full sm:w-auto"
+                    :class="!newuser.direccion ? 'border-red-300 text-red-700 hover:bg-red-50' : ''"
+                    @click="toggleMap"
+                  >
+                    <IconMap class="h-4 w-4" :class="!newuser.direccion ? 'text-red-500' : 'text-blue-600'" />
+                    {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
+                  </button>
+
+                  <AppTag v-if="newuser.direccion" variant="success">
+                    <template #icon>
+                      <IconCheck class="deasy-tag__icon" />
+                    </template>
+                    Coordenadas: {{ newuser.direccion }}
+                  </AppTag>
+                  <AppTag v-else variant="danger">
+                    <template #icon>
+                      <IconAlertCircle class="deasy-tag__icon" />
+                    </template>
+                    Requerido
+                  </AppTag>
+                </div>
+
+                <div v-show="showMap" class="mt-4">
+                  <div ref="mapElement" class="z-10 h-75 w-full rounded-xl border border-slate-200 shadow-inner"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="deasy-form-section">
+              <div class="deasy-form-section__header">
+                <span class="deasy-form-section__icon">
+                  <IconLock class="h-5 w-5" />
+                </span>
+                <h2 class="deasy-form-section__title">Seguridad</h2>
+              </div>
+
+              <div class="deasy-form-grid">
+                <div>
+                  <label class="deasy-form-label">Contraseña</label>
+                  <div class="relative">
+                    <input
+                      v-model="newuser.password"
+                      :type="showPassword ? 'text' : 'password'"
+                      required
+                      class="deasy-auth-field pr-11"
+                      placeholder="Ingresa tu contraseña"
+                      @input="validatePassword(newuser.password)"
+                    />
+                    <button
+                      type="button"
+                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto h-9 w-9"
+                      aria-label="Mostrar u ocultar contraseña"
+                      @click="showPassword = !showPassword"
+                    >
+                      <IconEye v-if="!showPassword" class="h-5 w-5" />
+                      <IconEyeOff v-else class="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div v-if="newuser.password" class="mt-2">
+                    <div class="mb-1 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        class="h-full transition-all duration-300"
+                        :class="passwordStrengthColors[passwordStrengthScore]"
+                        :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
+                      ></div>
+                    </div>
+                    <p class="text-[11px] font-medium" :class="passwordTextColors[passwordStrengthScore]">{{ passwordStrengthText }}</p>
                   </div>
                 </div>
-                <span v-if="whatsappError" class="text-xs text-red-500 mt-1 font-medium">{{ whatsappError }}</span>
-              </div>
-            </div>
-          </div>
 
-          <hr class="border-slate-100" />
-
-          <!-- Dirección de Residencia -->
-          <div>
-            <div class="flex items-center gap-2 mb-4">
-              <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <IconMapPin class="w-5 h-5 text-sky-600" /> Dirección de Residencia
-              </h3>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">País</label>
-                <select v-model="newuser.pais_residencia" required
-                  class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm">
-                  <option value="" disabled>Selecciona un país</option>
-                  <option v-for="c in countriesData" :key="c.es_name" :value="c.es_name">{{ c.es_name }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Provincia / Estado</label>
-                <input type="text" v-model="newuser.provincia_residencia" required
-                  class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                  placeholder="Ej. Esmeraldas" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ciudad</label>
-                <input type="text" v-model="newuser.ciudad_residencia" required
-                  class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                  placeholder="Ej. Esmeraldas" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Calle Primaria</label>
-                <input type="text" v-model="newuser.calle_primaria" required
-                  class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                  placeholder="Av. Principal" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Calle Secundaria</label>
-                <input type="text" v-model="newuser.calle_secundaria" required
-                  class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                  placeholder="Intersección" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Código Postal</label>
-                <input type="text" v-model="newuser.codigo_postal" required
-                  class="block w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                  placeholder="Ej. 080150" />
-              </div>
-            </div>
-
-            <div class="mt-6">
-              <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                Ubicación Exacta
-                <div class="relative group">
-                  <IconHelp class="w-4 h-4 text-sky-600 cursor-help" />
-                  <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-800 text-white text-xs leading-relaxed rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 shadow-xl pointer-events-none">
-                    Sé sincero a la hora de marcar tu ubicación exacta, esto ayudará a ver si eres de una zona vulnerable y poder llevarte ayuda allá donde estés.
-                    <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-6 border-x-transparent border-t-6 border-t-slate-800"></div>
+                <div>
+                  <label class="deasy-form-label">Confirmar contraseña</label>
+                  <div class="relative">
+                    <input
+                      v-model="newuser.repassword"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      required
+                      class="deasy-auth-field pr-11"
+                      placeholder="Repite tu contraseña"
+                      @input="validatePasswordMatch()"
+                    />
+                    <button
+                      type="button"
+                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto h-9 w-9"
+                      aria-label="Mostrar u ocultar confirmación"
+                      @click="showConfirmPassword = !showConfirmPassword"
+                    >
+                      <IconEye v-if="!showConfirmPassword" class="h-5 w-5" />
+                      <IconEyeOff v-else class="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div
+                    v-if="newuser.repassword"
+                    class="mt-1 flex items-center gap-1 text-[11px] font-medium"
+                    :class="passwordsMatch ? 'text-green-600' : 'text-red-500'"
+                  >
+                    <IconCheck v-if="passwordsMatch" class="h-3.5 w-3.5" />
+                    <IconX v-else class="h-3.5 w-3.5" />
+                    {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
                   </div>
                 </div>
+              </div>
+            </section>
+
+            <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+              <label class="flex items-start gap-3 text-sm font-medium text-slate-600">
+                <input
+                  v-model="termsAccepted"
+                  type="checkbox"
+                  required
+                  class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>
+                  Acepto los
+                  <router-link to="/terminos" class="font-semibold text-blue-700 hover:underline">términos y condiciones</router-link>
+                  de la plataforma.
+                </span>
               </label>
-              
-              <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                <button type="button" @click="toggleMap" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 border text-slate-700 rounded-xl font-semibold transition-all text-sm focus:ring-4 focus:ring-slate-200" :class="!newuser.direccion ? 'border-red-300 hover:bg-red-50' : 'border-slate-200 hover:bg-slate-100 hover:border-slate-300'">
-                  <IconMap class="w-4 h-4" :class="!newuser.direccion ? 'text-red-500' : 'text-sky-600'" />
-                  {{ showMap ? 'Ocultar mapa interactivo' : 'Seleccionar ubicación en el mapa' }}
+            </div>
+
+            <Transition
+              enter-active-class="transition duration-300 ease-out"
+              enter-from-class="-translate-y-2 opacity-0"
+              enter-to-class="translate-y-0 opacity-100"
+              leave-active-class="transition duration-200 ease-in"
+              leave-from-class="translate-y-0 opacity-100"
+              leave-to-class="-translate-y-2 opacity-0"
+            >
+              <div v-if="errorMessage" class="mt-5 flex rounded-xl border border-red-100 bg-red-50 p-4 text-red-600">
+                <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
+                <button
+                  type="button"
+                  class="deasy-inline-icon-button ml-3 h-8 w-8 text-red-400 hover:bg-red-100 hover:text-red-600"
+                  aria-label="Cerrar alerta"
+                  @click="errorMessage = ''"
+                >
+                  <IconX class="h-5 w-5" />
                 </button>
-                
-                <AppTag v-if="newuser.direccion" variant="success">
-                  <template #icon>
-                    <IconCheck class="deasy-tag__icon" />
-                  </template>
-                  Coordenadas: {{ newuser.direccion }}
-                </AppTag>
-                <AppTag v-else variant="danger">
-                  <template #icon>
-                    <IconAlertCircle class="deasy-tag__icon" />
-                  </template>
-                  Requerido (*Haz click en el mapa*)
-                </AppTag>
               </div>
-              
-              <div v-show="showMap" class="mt-4 relative">
-                <div ref="mapElement" class="h-75 w-full rounded-xl border border-slate-200 z-10 shadow-inner"></div>
-              </div>
+            </Transition>
+
+            <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur sm:flex-row">
+              <router-link to="/" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2">
+                Cancelar
+              </router-link>
+              <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg w-full sm:w-1/2">
+                Crear cuenta
+                <IconArrowRight class="h-5 w-5" />
+              </button>
             </div>
-          </div>
-
-          <hr class="border-slate-100" />
-
-          <!-- Seguridad -->
-          <div>
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <IconLock class="w-5 h-5 text-sky-600" /> Seguridad
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Contraseña</label>
-                <div class="relative">
-                  <input :type="showPassword ? 'text' : 'password'" v-model="newuser.password" required
-                    class="block w-full pl-4 pr-11 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                    placeholder="••••••••" @input="validatePassword(newuser.password)" />
-                  <button type="button" @click="showPassword = !showPassword"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-sky-600 transition-colors">
-                    <IconEye v-if="!showPassword" class="w-5 h-5" />
-                    <IconEyeOff v-else class="w-5 h-5" />
-                  </button>
-                </div>
-                <!-- Medidor de contraseña -->
-                <div v-if="newuser.password" class="mt-2 pl-1">
-                  <div class="flex h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-1">
-                    <div class="h-full transition-all duration-300" :class="passwordStrengthColors[passwordStrengthScore]" :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"></div>
-                  </div>
-                  <p class="text-[11px] font-medium" :class="passwordTextColors[passwordStrengthScore]">{{ passwordStrengthText }}</p>
-                </div>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Confirmar Contraseña</label>
-                <div class="relative">
-                  <input :type="showConfirmPassword ? 'text' : 'password'" v-model="newuser.repassword" required
-                    class="block w-full pl-4 pr-11 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none text-sm placeholder-slate-400"
-                    placeholder="••••••••" @input="validatePasswordMatch()" />
-                  <button type="button" @click="showConfirmPassword = !showConfirmPassword"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-sky-600 transition-colors">
-                    <IconEye v-if="!showConfirmPassword" class="w-5 h-5" />
-                    <IconEyeOff v-else class="w-5 h-5" />
-                  </button>
-                </div>
-                <div v-if="newuser.repassword" class="mt-1 flex items-center gap-1 text-[11px] font-medium" :class="passwordsMatch ? 'text-green-600' : 'text-red-500'">
-                  <IconCheck v-if="passwordsMatch" class="w-3.5 h-3.5" />
-                  <IconX v-else class="w-3.5 h-3.5" />
-                  {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-start mb-6">
-            <div class="flex items-center h-5">
-              <input type="checkbox" v-model="termsAccepted" required
-                class="w-4 h-4 rounded-md border-slate-300 text-sky-600 focus:ring-sky-600 focus:ring-offset-0 bg-slate-50" />
-            </div>
-            <div class="ml-3 text-sm">
-              <label class="font-medium text-slate-600">
-                Acepto los <router-link to="/terminos" class="text-sky-600 hover:underline">términos y condiciones</router-link> de la plataforma.
-              </label>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-4">
-            <router-link to="/" 
-              class="w-full sm:w-1/2 flex justify-center py-3 px-4 rounded-xl text-slate-700 text-sm font-semibold bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-[0.98]">
-              Cancelar
-            </router-link>
-            <button type="submit" 
-              class="w-full sm:w-1/2 flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-white text-sm font-semibold bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500/30 transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98]">
-              Crear Cuenta
-              <IconArrowRight class="w-5 h-5" />
-            </button>
-          </div>
-
-        </form>
-
-        <Transition
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="transform -translate-y-2 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="transform translate-y-0 opacity-100"
-          leave-to-class="transform -translate-y-2 opacity-0"
-        >
-          <div v-if="errorMessage" class="mt-6 flex bg-red-50 p-4 rounded-xl border border-red-100 text-red-600">
-            <IconAlertCircle class="h-5 w-5 shrink-0 mr-3 mt-0.5 text-red-500" />
-            <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
-            <button @click="errorMessage = ''" class="ml-3 text-red-400 hover:text-red-600 transition-colors">
-              <IconX class="h-5 w-5" />
-            </button>
-          </div>
-        </Transition>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Success Modal nativo -->
   <AppModalShell
     controlled
     :open="showSuccessModal"
     labelled-by="register-success-modal-title"
-    title="¡Registro Exitoso!"
+    title="Registro exitoso"
     size="md"
     content-class="text-center"
     body-class="pt-8"
     footer-class="justify-center"
     @close="goToLogin"
   >
-    <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-      <IconCheck class="h-10 w-10 text-green-500" />
+    <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-green-200 bg-green-50">
+      <IconCheck class="h-9 w-9 text-green-600" />
     </div>
     <p class="mb-0 text-sm text-slate-500">
       Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
     </p>
     <template #footer>
       <AppButton class-name="w-full" @click="goToLogin">
-        Ir al Login
+        Ir al login
       </AppButton>
     </template>
   </AppModalShell>
-
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import AuthService from '@/modules/auth/services/AuthService';
-import AppButton from '@/shared/components/buttons/AppButton.vue';
-import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
-import AppTag from '@/shared/components/data/AppTag.vue';
-import { countries, getPhoneCodeByCountry } from '@/core/constants/countries';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { 
-  IconUser, 
-  IconLock, 
-  IconEye, 
-  IconEyeOff, 
-  IconAlertCircle, 
-  IconX, 
-  IconArrowRight, 
+import { ref, watch, onMounted, onUnmounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import AuthService from "@/modules/auth/services/AuthService";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppLogo from "@/shared/components/layout/AppLogo.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { countries, getPhoneCodeByCountry } from "@/core/constants/countries";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import {
+  IconUser,
+  IconLock,
+  IconEye,
+  IconEyeOff,
+  IconAlertCircle,
+  IconX,
+  IconArrowRight,
   IconCheck,
   IconMapPin,
   IconHelp,
   IconMap
-} from '@tabler/icons-vue';
+} from "@tabler/icons-vue";
 
-// Fix para iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png"
 });
 
 const router = useRouter();
 const route = useRoute();
 
-// Datos del formulario
 const newuser = ref({
-    cedula: "",
-    password: "",
-    repassword: "",
-    first_name: "",
-    last_name: "",
-    email: "",
-    whatsapp: "",
-    pais_residencia: "Ecuador",
-    provincia_residencia: "",
-    ciudad_residencia: "",
-    calle_primaria: "",
-    calle_secundaria: "",
-    codigo_postal: "",
-    direccion: ""
+  cedula: "",
+  password: "",
+  repassword: "",
+  first_name: "",
+  last_name: "",
+  email: "",
+  whatsapp: "",
+  pais_residencia: "Ecuador",
+  provincia_residencia: "",
+  ciudad_residencia: "",
+  calle_primaria: "",
+  calle_secundaria: "",
+  codigo_postal: "",
+  direccion: ""
 });
 
-// UI states
 const errorMessage = ref("");
 const showSuccessModal = ref(false);
 const termsAccepted = ref(false);
@@ -347,118 +432,103 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const passwordsMatch = ref(false);
 
-// Teléfono y País
 const countriesData = ref(countries);
-const selectedCountryCode = ref(countries.find(c => c.es_name === 'Ecuador') || countries[0]);
+const selectedCountryCode = ref(countries.find(c => c.es_name === "Ecuador") || countries[0]);
 const phonePrefix = ref("+593");
 const phoneNumber = ref("");
 const whatsappError = ref("");
 const cedulaError = ref("");
 
-// Fuerza de contraseña
 const passwordStrengthScore = ref(0);
 const passwordStrengthText = ref("No segura");
 const passwordStrengthColors = {
-  0: 'bg-slate-200',
-  1: 'bg-red-500 w-1/5',
-  2: 'bg-orange-500 w-2/5',
-  3: 'bg-amber-400 w-3/5',
-  4: 'bg-lime-500 w-4/5',
-  5: 'bg-green-500 w-full'
+  0: "bg-slate-200",
+  1: "bg-red-500 w-1/5",
+  2: "bg-orange-500 w-2/5",
+  3: "bg-amber-400 w-3/5",
+  4: "bg-lime-500 w-4/5",
+  5: "bg-green-500 w-full"
 };
 const passwordTextColors = {
-  0: 'text-slate-400',
-  1: 'text-red-500',
-  2: 'text-orange-500',
-  3: 'text-amber-500',
-  4: 'text-lime-600',
-  5: 'text-green-600'
+  0: "text-slate-400",
+  1: "text-red-500",
+  2: "text-orange-500",
+  3: "text-amber-500",
+  4: "text-lime-600",
+  5: "text-green-600"
 };
 
-// Control del mapa
 const showMap = ref(false);
 const mapElement = ref(null);
 let mapInstance = null;
 let marker = null;
 
-// Función para toggle del mapa
 const toggleMap = async () => {
   showMap.value = !showMap.value;
-  
+
   if (showMap.value) {
-    // Pequeño timeout para asegurar que el DOM actualice el v-show antes de inyectar el mapa
     setTimeout(() => {
       initMap();
     }, 100);
-  } else {
-    if (mapInstance) {
-      mapInstance.remove();
-      mapInstance = null;
-    }
+  } else if (mapInstance) {
+    mapInstance.remove();
+    mapInstance = null;
   }
 };
 
-// Función para inicializar el mapa
 const initMap = () => {
   if (!mapElement.value || mapInstance) return;
-  
-  // Coordenadas por defecto (Ecuador - Esmeraldas aprox. o Quito)
-  // Dejaremos Quito como en el código original: -0.1807, -78.4678
+
   const defaultLat = -0.1807;
   const defaultLng = -78.4678;
-  
-  // Crear mapa
+
   mapInstance = L.map(mapElement.value).setView([defaultLat, defaultLng], 13);
-  
-  // Agregar capa de tiles
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19
   }).addTo(mapInstance);
 
-  // Si ya había coordenadas guardadas en el draft, colocamos el marker
   if (newuser.value.direccion) {
-    const coords = newuser.value.direccion.split(',');
-    if(coords.length === 2) {
+    const coords = newuser.value.direccion.split(",");
+    if (coords.length === 2) {
       const lat = parseFloat(coords[0].trim());
       const lng = parseFloat(coords[1].trim());
       marker = L.marker([lat, lng]).addTo(mapInstance);
       mapInstance.setView([lat, lng], 15);
     }
   }
-  
-  // Agregar evento de click en el mapa
-  mapInstance.on('click', (e) => {
+
+  mapInstance.on("click", (e) => {
     const { lat, lng } = e.latlng;
-    
+
     if (marker) {
       mapInstance.removeLayer(marker);
     }
-    
+
     marker = L.marker([lat, lng]).addTo(mapInstance);
     newuser.value.direccion = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   });
-  
-  // Intentar obtener la ubicación actual del usuario si no hay marker previo
+
   if (navigator.geolocation && !newuser.value.direccion) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         mapInstance.setView([lat, lng], 15);
-        
+
         marker = L.marker([lat, lng]).addTo(mapInstance);
         newuser.value.direccion = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       },
       (error) => {
-        console.log('Error obteniendo ubicación:', error);
+        console.log("Error obteniendo ubicación:", error);
       }
     );
   }
 };
 
 const updatePhonePrefix = () => {
-  if(selectedCountryCode.value) {
+  if (selectedCountryCode.value) {
     phonePrefix.value = getPhoneCodeByCountry(selectedCountryCode.value.es_name);
     updateWhatsappField();
   }
@@ -488,28 +558,40 @@ watch(phoneNumber, (value) => {
 });
 
 const validatePassword = (password) => {
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(password)) score++;
-    
-    passwordStrengthScore.value = score;
-    
-    switch(score) {
-      case 0: passwordStrengthText.value = ""; break;
-      case 1: passwordStrengthText.value = "Muy débil"; break;
-      case 2: passwordStrengthText.value = "Débil"; break;
-      case 3: passwordStrengthText.value = "Regular"; break;
-      case 4: passwordStrengthText.value = "Fuerte"; break;
-      case 5: passwordStrengthText.value = "Muy fuerte"; break;
-    }
-    validatePasswordMatch();
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score++;
+
+  passwordStrengthScore.value = score;
+
+  switch (score) {
+    case 0:
+      passwordStrengthText.value = "";
+      break;
+    case 1:
+      passwordStrengthText.value = "Muy débil";
+      break;
+    case 2:
+      passwordStrengthText.value = "Débil";
+      break;
+    case 3:
+      passwordStrengthText.value = "Regular";
+      break;
+    case 4:
+      passwordStrengthText.value = "Fuerte";
+      break;
+    case 5:
+      passwordStrengthText.value = "Muy fuerte";
+      break;
+  }
+  validatePasswordMatch();
 };
 
 const validatePasswordMatch = () => {
-    passwordsMatch.value = Boolean(newuser.value.password && newuser.value.repassword && newuser.value.password === newuser.value.repassword);
+  passwordsMatch.value = Boolean(newuser.value.password && newuser.value.repassword && newuser.value.password === newuser.value.repassword);
 };
 
 const saveDraft = () => {
@@ -518,62 +600,62 @@ const saveDraft = () => {
     phoneNumber: phoneNumber.value,
     selectedCountryCode: selectedCountryCode.value
   };
-  sessionStorage.setItem('register_draft', JSON.stringify(draft));
+  sessionStorage.setItem("register_draft", JSON.stringify(draft));
 };
 
 watch(() => newuser.value, saveDraft, { deep: true });
 watch(phoneNumber, saveDraft);
 watch(selectedCountryCode, saveDraft);
 
-const createnewUser = async() => {
-    errorMessage.value = "";
-    
-    if (newuser.value.password !== newuser.value.repassword) {
-        errorMessage.value = "Las contraseñas no coinciden.";
-        return;
-    }
-    if (!termsAccepted.value) {
-        errorMessage.value = "Debe aceptar los términos y condiciones.";
-        return;
-    }
-    if (newuser.value.cedula.length !== 10) {
-        errorMessage.value = "La cédula debe tener 10 dígitos.";
-        return;
-    }
-    if (phoneNumber.value.length !== 10) {
-        errorMessage.value = "El número telefónico debe tener 10 dígitos.";
-        return;
-    }
-    if (!newuser.value.direccion) {
-        errorMessage.value = "La ubicación exacta es obligatoria. Da click en 'Seleccionar ubicación en el mapa' para poner un punto que te identifique geográficamente.";
-        return;
-    }
-    if (passwordStrengthScore.value < 3) {
-        errorMessage.value = "La contraseña es muy débil. Asegúrate de incluir mayúsculas, minúsculas, números y al menos 8 caracteres.";
-        return;
-    }
-    
-    try {
-      const payload = {
-        ...newuser.value,
-        pais: newuser.value.pais_residencia
-      };
+const createnewUser = async () => {
+  errorMessage.value = "";
 
-      await AuthService.register(payload);
-      sessionStorage.removeItem('register_draft');
-      showSuccessModal.value = true;
-    } catch (error) {
-        errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario. Por favor intenta de nuevo.";
-    }
+  if (newuser.value.password !== newuser.value.repassword) {
+    errorMessage.value = "Las contraseñas no coinciden.";
+    return;
+  }
+  if (!termsAccepted.value) {
+    errorMessage.value = "Debe aceptar los términos y condiciones.";
+    return;
+  }
+  if (newuser.value.cedula.length !== 10) {
+    errorMessage.value = "La cédula debe tener 10 dígitos.";
+    return;
+  }
+  if (phoneNumber.value.length !== 10) {
+    errorMessage.value = "El número telefónico debe tener 10 dígitos.";
+    return;
+  }
+  if (!newuser.value.direccion) {
+    errorMessage.value = "La ubicación exacta es obligatoria. Da click en 'Seleccionar ubicación en el mapa' para poner un punto que te identifique geográficamente.";
+    return;
+  }
+  if (passwordStrengthScore.value < 3) {
+    errorMessage.value = "La contraseña es muy débil. Asegúrate de incluir mayúsculas, minúsculas, números y al menos 8 caracteres.";
+    return;
+  }
+
+  try {
+    const payload = {
+      ...newuser.value,
+      pais: newuser.value.pais_residencia
+    };
+
+    await AuthService.register(payload);
+    sessionStorage.removeItem("register_draft");
+    showSuccessModal.value = true;
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || error.message || "Error al crear el usuario. Por favor intenta de nuevo.";
+  }
 };
 
 const goToLogin = () => {
-    showSuccessModal.value = false;
-    router.push('/');
+  showSuccessModal.value = false;
+  router.push("/");
 };
 
 onMounted(() => {
-  const draftVal = sessionStorage.getItem('register_draft');
+  const draftVal = sessionStorage.getItem("register_draft");
   if (draftVal) {
     try {
       const draft = JSON.parse(draftVal);
@@ -583,15 +665,16 @@ onMounted(() => {
         const found = countriesData.value.find(c => c.es_name === draft.selectedCountryCode.es_name);
         if (found) selectedCountryCode.value = found;
       }
-      
+
       if (newuser.value.password) validatePassword(newuser.value.password);
-    } catch (e) {
+    } catch {
+      // Ignore malformed drafts and continue with an empty form.
     }
   }
 
   updatePhonePrefix();
-  
-  if (route.query.terms === 'accepted') {
+
+  if (route.query.terms === "accepted") {
     termsAccepted.value = true;
   }
 });

@@ -54,7 +54,7 @@ watch(() => route.path, (newPath) => {
 <style lang="postcss">
 
   #app{
-      height: 100vh;
+      min-height: 100vh;
   }
 
   .large{

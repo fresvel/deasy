@@ -1,9 +1,11 @@
 <template>
-  <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-md w-full bg-white rounded-4xl shadow-xl shadow-slate-300/50 p-5 sm:p-12 border border-slate-200 relative overflow-hidden">
+  <div class="deasy-auth-page">
+    <div class="deasy-auth-center">
+    <div class="deasy-auth-card max-w-md p-5 sm:p-12 relative overflow-hidden">
+      <AppLogo size="lg" class-name="mb-8" />
       
       <!-- Go back button -->
-      <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-sky-500/40 rounded-lg pr-2">
+      <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-blue-500/20 rounded-lg pr-2">
         <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
         Volver al login
       </router-link>
@@ -12,8 +14,8 @@
         <div class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mb-6">
           <IconMailCheck class="h-7 w-7" />
         </div>
-        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Verificar correo</h1>
-        <p class="text-slate-500 mt-2.5 font-medium text-sm">
+        <h1 class="deasy-auth-title text-2xl">Verificar correo</h1>
+        <p class="deasy-auth-copy">
           Hemos enviado un código a <br class="hidden sm:block" />
           <strong class="text-slate-800">{{ email || 'tu correo' }}</strong>
         </p>
@@ -50,7 +52,7 @@
 
       <button
         type="button"
-        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/30 flex items-center justify-center gap-2 shadow-md shadow-sky-600/20 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-sky-600/30 active:scale-[0.98]"
+        class="deasy-auth-button"
         :disabled="loading || !isCodeComplete"
         @click="submit"
       >
@@ -58,6 +60,7 @@
         <span>{{ loading ? 'Verificando...' : 'Verificar correo' }}</span>
       </button>
 
+    </div>
     </div>
   </div>
 </template>
@@ -67,6 +70,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { API_ROUTES } from '@/core/config/apiConfig'
+import AppLogo from '@/shared/components/layout/AppLogo.vue'
 import { 
   IconArrowLeft, 
   IconMailCheck, 

@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
     <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="router.push({ name: 'dashboard-signatures' })">
-        <span v-if="!userUnits.length && !menuLoading" class="text-white/50 text-sm font-medium">
+        <span v-if="!userUnits.length && !menuLoading" class="text-sm font-medium text-slate-500">
           Sin unidades
         </span>
     </app-workspace-header>
@@ -11,7 +11,7 @@
         <div class="deasy-nav-group">
           <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="unitGroups.length">
             <label class="flex flex-col gap-1.5 relative">
-              <span class="text-xs font-bold uppercase tracking-wider text-white/50">Cargos asignados</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Cargos asignados</span>
               <div class="relative">
                 <button
                   type="button"
@@ -130,7 +130,7 @@
               </template>
             </AppPageIntro>
 
-            <section class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+            <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
               <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
                 <label class="flex flex-col gap-2 xl:col-span-2">
                   <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
@@ -237,7 +237,7 @@
         </AppPageIntro>
 
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-          <article class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-40" v-for="card in summaryCards" :key="card.title">
+          <article class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-40" v-for="card in summaryCards" :key="card.title">
             <header class="flex justify-between items-start gap-4">
               <h3 class="text-base font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
               <AppTag :variant="getStatusTagVariant(card.statusClass)" class-name="whitespace-nowrap shrink-0">{{ card.status }}</AppTag>
@@ -252,7 +252,7 @@
           </article>
         </section>
 
-        <section class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
+        <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
           <header class="flex items-center justify-between gap-4 mb-5">
             <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Resumen rápido</h2>
             <AppButton variant="secondary" size="md" class-name="hidden sm:inline-flex" @click="navigateTo('perfil')">
@@ -364,7 +364,7 @@
 
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Tareas -->
-                <article class="lg:col-span-12 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <section class="overflow-hidden rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 via-white to-slate-50 shadow-inner shadow-sky-100/40">
                     <div class="flex flex-col gap-5 px-4 py-4 md:px-5 md:py-5">
                       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -422,11 +422,11 @@
                     </div>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta definición.
                   </div>
 
-                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
 
@@ -667,7 +667,7 @@
                 </article>
 
                 <!-- Dependencies (Full width) -->
-                <article class="lg:col-span-12 bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
                     <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
                     <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta definición.</p>
@@ -760,7 +760,7 @@
         </div>
 
         <section v-if="taskLaunchStep === 1" class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-          <div class="md:col-span-2 rounded-3xl border border-slate-200 bg-slate-50/60 p-5">
+          <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50/60 p-5">
             <div class="flex flex-wrap gap-2">
               <AppTag variant="info">Tarea ligada a proceso</AppTag>
               <AppTag variant="muted">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
@@ -817,7 +817,7 @@
         </section>
 
         <section v-else-if="taskLaunchStep === 2" class="flex flex-col gap-5">
-          <div class="rounded-3xl border border-sky-200 bg-sky-50/70 p-5">
+          <div class="rounded-xl border border-sky-200 bg-sky-50/70 p-5">
             <h3 class="m-0 text-base font-bold text-sky-900">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-sky-800/80">
               Esta tarea se creará usando los templates activos de la definición. En este corte, el dashboard informa el alcance documental real antes de confirmar la creación.
@@ -825,7 +825,7 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-slate-800">Templates operativos</h3>
@@ -853,7 +853,7 @@
               </div>
             </article>
 
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="m-0 text-base font-bold text-slate-800">Artifacts generales</h3>
@@ -878,7 +878,7 @@
         </section>
 
         <section v-else class="flex flex-col gap-5">
-          <div class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5">
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-5">
             <h3 class="m-0 text-base font-bold text-emerald-900">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-emerald-800/80">
               Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
@@ -886,7 +886,7 @@
           </div>
 
           <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-slate-800">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
@@ -904,7 +904,7 @@
               </div>
             </article>
 
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
+            <article class="rounded-xl border border-slate-200 bg-white p-5 flex flex-col gap-4">
               <h3 class="m-0 text-base font-bold text-slate-800">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>

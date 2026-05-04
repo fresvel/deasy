@@ -1,9 +1,11 @@
 <template>
-  <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-md w-full bg-white rounded-4xl shadow-xl shadow-slate-300/50 p-8 sm:p-12 border border-slate-200 relative overflow-hidden">
+  <div class="deasy-auth-page">
+    <div class="deasy-auth-center">
+    <div class="deasy-auth-card max-w-md p-8 sm:p-12 relative overflow-hidden">
+      <AppLogo size="lg" class-name="mb-8" />
       
       <!-- Go back button -->
-      <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group">
+      <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group">
         <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
         Volver al login
       </router-link>
@@ -31,7 +33,7 @@
               id="email"
               type="email"
               v-model="email"
-              class="block w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-slate-900 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 focus:bg-white transition-all outline-none font-medium placeholder-slate-400 text-sm"
+              class="deasy-auth-field deasy-auth-field--icon-left"
               placeholder="correo@ejemplo.com"
               required
             />
@@ -41,7 +43,7 @@
         <button 
           type="submit" 
           :disabled="isLoading"
-          class="w-full flex justify-center items-center py-3 px-4 rounded-xl text-white text-sm font-semibold bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500/30 transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+          class="deasy-auth-button"
         >
           <template v-if="!isLoading">
             Enviar enlace
@@ -72,13 +74,15 @@
       </Transition>
 
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import AuthService from '@/modules/auth/services/AuthService';
-import { IconArrowLeft, IconKey, IconMail, IconSend, IconLoader2, IconAlertCircle, IconCheck } from '@tabler/icons-vue';
+import AppLogo from '@/shared/components/layout/AppLogo.vue';
+import { IconArrowLeft, IconKey, IconMail, IconLoader2, IconAlertCircle, IconCheck } from '@tabler/icons-vue';
 
 const email = ref('');
 const isLoading = ref(false);

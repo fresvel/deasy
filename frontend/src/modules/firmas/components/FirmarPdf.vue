@@ -100,7 +100,7 @@
       />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div class="flex flex-col gap-5">
         <div class="flex flex-col gap-2">
           <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
@@ -156,7 +156,7 @@
       </div>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
         :class="enableDashboardShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
@@ -221,7 +221,7 @@
           @click="emit('open-dashboard-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
-          <div class="flex flex-1 items-center justify-center rounded-3xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
               <span class="mt-5 text-base font-semibold text-slate-700">Ver solicitudes</span>
@@ -240,7 +240,7 @@
           @click="handleDatabaseEntry"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-1 items-center justify-center rounded-3xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
               <span class="mt-5 text-base font-semibold text-slate-700">
@@ -262,7 +262,7 @@
           @click="emit('open-dashboard-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-1 items-center justify-center rounded-3xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
               <span class="mt-5 text-base font-semibold text-slate-700">Tabla de procesos</span>
@@ -786,7 +786,7 @@
     title="Validar documento"
     size="xl"
     :show-close-button="false"
-    content-class="rounded-3xl shadow-xl border-0 overflow-hidden"
+    content-class="rounded-xl shadow-xl border-0 overflow-hidden"
     header-class="bg-slate-50 border-b border-slate-100"
     body-class="p-0 bg-slate-50 relative"
   >

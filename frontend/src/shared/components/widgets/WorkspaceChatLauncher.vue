@@ -2,12 +2,11 @@
   <div>
     <AppButton
       variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-16 w-16 items-center justify-center rounded-full border border-sky-200/90 bg-gradient-to-br from-white via-sky-50 to-sky-100 text-sky-700 shadow-[0_18px_45px_rgba(2,132,199,0.22)] ring-1 ring-white/80 transition hover:-translate-y-1 hover:from-white hover:to-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70 sm:right-6 sm:h-[4.5rem] sm:w-[4.5rem]"
+      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-14 w-14 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_14px_34px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-500/15 sm:right-6 sm:h-16 sm:w-16"
       aria-label="Abrir chat"
       title="Abrir chat"
       @click="openLauncher"
     >
-      <span class="absolute inset-1.25 rounded-full border border-white/70 bg-white/55" />
       <IconMessages class="relative z-10 h-7 w-7 sm:h-8 sm:w-8" />
     </AppButton>
 
@@ -19,13 +18,13 @@
 
     <aside
       v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
       <header class="border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Chat</p>
+            <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Chat</p>
             <h3 class="m-0 mt-1 truncate text-base font-bold text-slate-900">
               {{ view === 'conversation' ? (thread?.title || 'Chat del proceso') : 'Bandeja de chats' }}
             </h3>
@@ -36,7 +35,7 @@
 
           <AppButton
             variant="plain"
-            class-name="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            class-name="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
             aria-label="Cerrar chat"
             title="Cerrar chat"
             @click="closePanel"
@@ -49,7 +48,7 @@
           <AppButton
             v-if="view === 'conversation'"
             variant="plain"
-            class-name="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+            class-name="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
@@ -61,8 +60,8 @@
               v-for="mode in modeOptions"
               :key="mode"
               type="button"
-              class="rounded-2xl border px-3 py-2 text-xs font-bold transition"
-              :class="activeMode === mode ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'"
+              class="rounded-lg border px-3 py-2 text-xs font-bold transition"
+              :class="activeMode === mode ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'"
               @click="switchMode(mode)"
             >
               {{ modeLabels[mode] }}
@@ -70,7 +69,7 @@
           </div>
         </div>
 
-        <label class="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+        <label class="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
           <IconSearch class="h-4 w-4 text-slate-400" />
           <input
             v-model="searchQuery"
@@ -87,7 +86,7 @@
           <p class="m-0 text-sm font-semibold">Cargando chat...</p>
         </div>
 
-        <div v-else-if="error" class="m-4 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-700">
+        <div v-else-if="error" class="m-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-700">
           {{ error }}
         </div>
 
@@ -118,7 +117,7 @@
                 v-for="item in filteredThreadItems"
                 :key="item.id"
                 type="button"
-                class="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
                 @click="openThreadItem(item)"
               >
                 <div class="flex items-start justify-between gap-3">
@@ -132,7 +131,7 @@
                     </span>
                     <span
                       v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white"
                     >
                       {{ item.unreadCount }}
                     </span>
@@ -152,9 +151,9 @@
               <article
                 v-for="message in messages"
                 :key="message.id"
-                class="max-w-[88%] rounded-3xl px-4 py-3 shadow-sm"
+                class="max-w-[88%] rounded-xl px-4 py-3 shadow-sm"
                 :class="Number(message.sender_person_id) === Number(currentPersonId)
-                  ? 'ml-auto bg-sky-700 text-white'
+                  ? 'ml-auto bg-blue-700 text-white'
                   : 'mr-auto border border-slate-200 bg-white text-slate-800'"
               >
                 <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
@@ -167,7 +166,7 @@
                     type="button"
                     class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
                     :class="Number(message.sender_person_id) === Number(currentPersonId)
-                      ? 'border-white/20 bg-white/10 text-white hover:bg-white/15'
+                      ? 'border-blue-500 bg-blue-600 text-white hover:bg-blue-800'
                       : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'"
                     @click="downloadAttachment(message, attachmentIndex)"
                   >
@@ -204,7 +203,7 @@
               <input ref="attachmentInputRef" type="file" class="hidden" multiple @change="handleAttachmentSelection">
               <AppButton
                 variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[18px] border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
                 aria-label="Adjuntar archivos"
                 title="Adjuntar archivos"
                 @click="attachmentInputRef?.click?.()"
@@ -215,7 +214,7 @@
                 ref="composerRef"
                 v-model="draft"
                 rows="1"
-                class="max-h-40 min-h-13 flex-1 resize-none rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                class="max-h-40 min-h-13 flex-1 resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                 placeholder="Escribe un mensaje"
                 @input="resizeComposer"
                 @keydown.enter.exact.prevent="sendMessage"
@@ -223,7 +222,7 @@
               <AppButton
                 variant="primary"
                 size="sm"
-                class-name="h-[52px] shrink-0 rounded-[18px] px-4"
+                class-name="h-[52px] shrink-0 rounded-lg px-4"
                 :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
                 @click="sendMessage"
               >

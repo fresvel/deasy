@@ -4,29 +4,38 @@
 @layer base {
     :root {
         --deasy-shell-max-width: 2560px;
-        --deasy-radius-xs: 0.75rem;
-        --deasy-radius-sm: 1rem;
-        --deasy-radius-md: 1.25rem;
-        --deasy-radius-lg: 1.5rem;
-        --deasy-radius-xl: 2rem;
-        --deasy-surface-page: #f1f5f9;
+        --deasy-radius-xs: 0.5rem;
+        --deasy-radius-sm: 0.75rem;
+        --deasy-radius-md: 1rem;
+        --deasy-radius-lg: 1.25rem;
+        --deasy-radius-xl: 1.5rem;
+        --deasy-surface-page: #f4f7fb;
         --deasy-surface-card: #ffffff;
         --deasy-surface-muted: #f8fafc;
-        --deasy-surface-soft: rgba(248, 250, 252, 0.72);
-        --deasy-border-soft: #e2e8f0;
-        --deasy-border-strong: #cbd5e1;
-        --deasy-text-strong: #1e293b;
+        --deasy-surface-soft: rgba(248, 250, 252, 0.86);
+        --deasy-border-soft: #dbe3ef;
+        --deasy-border-strong: #b8c4d6;
+        --deasy-text-strong: #111827;
         --deasy-text-body: #334155;
         --deasy-text-muted: #64748b;
-        --deasy-primary: #0369a1;
-        --deasy-primary-strong: #075985;
-        --deasy-primary-soft: #e0f2fe;
-        --deasy-puce-logo: #e2f2fa;
-        --deasy-puce-gray: #64748b;
+        --deasy-primary: #2563eb;
+        --deasy-primary-strong: #1d4ed8;
+        --deasy-primary-soft: #dbeafe;
+        --deasy-accent: #0891b2;
+        --deasy-accent-soft: #cffafe;
+        --deasy-sidebar: #111827;
+    }
+
+    html {
+        @apply bg-[#f4f7fb];
     }
 
     body {
-        @apply bg-slate-100 text-slate-800 antialiased;
+        @apply bg-[#f4f7fb] text-slate-800 antialiased;
+    }
+
+    #app {
+        @apply min-h-screen bg-[#f4f7fb];
     }
 }
 
@@ -40,15 +49,15 @@
     }
 
     .deasy-card {
-        @apply rounded-3xl border border-slate-200 bg-white shadow-sm;
+        @apply rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)];
     }
 
     .deasy-card-muted {
-        @apply rounded-3xl border border-slate-200 bg-slate-50 shadow-sm;
+        @apply rounded-2xl border border-slate-200 bg-slate-50 shadow-sm;
     }
 
     .deasy-card-soft {
-        @apply rounded-3xl border border-slate-100 bg-slate-50/70 shadow-sm;
+        @apply rounded-2xl border border-slate-100 bg-slate-50/80 shadow-sm;
     }
 
     .deasy-card-padding {
@@ -56,11 +65,11 @@
     }
 
     .deasy-panel {
-        @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm;
+        @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
     }
 
     .deasy-panel-muted {
-        @apply rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm;
+        @apply rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm;
     }
 
     .deasy-section-shell {
@@ -68,7 +77,7 @@
     }
 
     .deasy-section-card {
-        @apply rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:p-8;
+        @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-6 lg:p-8;
     }
 
     .deasy-section-header {
@@ -178,7 +187,7 @@
     .deasy-field-input,
     .deasy-field-select,
     .deasy-field-textarea {
-        @apply block w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition-all placeholder:text-sm placeholder:text-slate-400;
+        @apply block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition-all placeholder:text-sm placeholder:text-slate-400;
     }
 
     .deasy-field-input:focus,
@@ -260,11 +269,11 @@
     }
 
     .deasy-btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-xl border font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60;
     }
 
     .deasy-btn--primary {
-        @apply border-sky-700 bg-sky-700 text-white hover:border-sky-800 hover:bg-sky-800;
+        @apply border-blue-600 bg-blue-600 text-white shadow-sm hover:border-blue-700 hover:bg-blue-700;
     }
 
     .deasy-btn--secondary {
@@ -276,7 +285,7 @@
     }
 
     .deasy-btn--outline-primary {
-        @apply border-sky-700 bg-white text-sky-700 hover:bg-sky-50;
+        @apply border-blue-600 bg-white text-blue-700 hover:bg-blue-50;
     }
 
     .deasy-btn--outline-danger {
@@ -284,7 +293,7 @@
     }
 
     .deasy-btn--soft-primary {
-        @apply border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-600 hover:bg-sky-600 hover:text-white;
+        @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-600 hover:bg-blue-600 hover:text-white;
     }
 
     .deasy-btn--soft-neutral {
@@ -340,7 +349,7 @@
     }
 
     .deasy-hero-shell {
-        @apply overflow-hidden rounded-[1.6rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-4 text-white shadow-[0_18px_40px_rgba(6,12,24,0.18)] md:p-5;
+        @apply overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e293b_48%,#164e63_100%)] p-4 text-white shadow-[0_18px_40px_rgba(6,12,24,0.18)] md:p-5;
     }
 
     .deasy-hero-layout {
@@ -364,7 +373,7 @@
     }
 
     .deasy-hero-media-card {
-        @apply flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)] sm:h-[4.5rem] sm:w-[4.5rem];
+        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-white/16 bg-white/12 text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)] sm:h-[4.5rem] sm:w-[4.5rem];
     }
 
     .deasy-hero-media-card--avatar {
@@ -372,11 +381,11 @@
     }
 
     .deasy-hero-kicker {
-        @apply inline-flex w-fit items-center gap-2 rounded-[1rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)];
+        @apply inline-flex w-fit items-center gap-2 rounded-lg border border-white/16 bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_14px_28px_rgba(6,12,24,0.18)];
     }
 
     .deasy-hero-kicker--ghost {
-        @apply border-white/12 bg-white/10 text-sky-100 shadow-none;
+        @apply border-slate-200 bg-slate-50 text-blue-700 shadow-none;
     }
 
     .deasy-hero-title {
@@ -400,7 +409,7 @@
     }
 
     .deasy-hero-back-button {
-        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-[0.95rem] border border-white/18 bg-white/10 px-3.5 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(6,12,24,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/14 focus:outline-none focus:ring-4 focus:ring-white/15;
+        @apply inline-flex min-h-[2.85rem] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-blue-500/10;
     }
 
     .deasy-hero-back-button__icon {
@@ -432,7 +441,7 @@
     }
 
     .deasy-page-intro {
-        @apply overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8;
+        @apply overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e293b_48%,#164e63_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.18)] md:p-8;
     }
 
     .deasy-page-intro__layout {
@@ -456,7 +465,7 @@
     }
 
     .deasy-page-intro--dashboard {
-        @apply overflow-hidden rounded-[1.9rem] border border-[rgba(226,242,250,0.08)] bg-[linear-gradient(180deg,#2b4854_0%,#3b5c69_36%,#4c6f7d_74%,#5a7a88_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.22)] md:p-8;
+        @apply overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(135deg,#111827_0%,#1e293b_48%,#164e63_100%)] p-6 text-white shadow-[0_24px_54px_rgba(6,12,24,0.18)] md:p-8;
     }
 
     .deasy-table-shell {
@@ -500,7 +509,7 @@
     }
 
     .deasy-nav-shell {
-        @apply flex flex-col gap-2.5 rounded-[2rem] border border-[#d6e4f2] bg-[linear-gradient(180deg,#f5f9fe_0%,#eef5fc_100%)] p-3.5 shadow-[0_18px_34px_rgba(6,12,24,0.16)];
+        @apply flex flex-col gap-2.5 rounded-2xl border border-white/10 bg-white/8 p-3 shadow-[0_18px_34px_rgba(6,12,24,0.18)] backdrop-blur;
     }
 
     .deasy-nav-group {
@@ -516,11 +525,11 @@
     }
 
     .deasy-nav-group-title {
-        @apply flex w-full items-center justify-between rounded-[1.1rem] border border-transparent px-4 py-3.5 text-left text-base font-semibold text-slate-800 transition-all hover:bg-white hover:border-[#d7e4f1] hover:text-slate-900 hover:shadow-[0_8px_18px_rgba(15,23,42,0.07)];
+        @apply flex w-full items-center justify-between rounded-lg border border-transparent px-4 py-3 text-left text-sm font-semibold text-slate-700 transition-all hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950;
     }
 
     .deasy-nav-item {
-        @apply flex w-full items-start gap-2.5 rounded-[1rem] px-4 py-2.5 text-left text-[15px] font-medium text-slate-700 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_8px_18px_rgba(15,23,42,0.08)];
+        @apply flex w-full items-start gap-2.5 rounded-lg px-4 py-2.5 text-left text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-950;
     }
 
     .deasy-nav-item__label {
@@ -573,21 +582,15 @@
     }
 
     .deasy-nav-item--active {
-        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(136, 176, 213, 0.5);
-        background: linear-gradient(90deg, rgba(120, 171, 214, 0.34) 0%, rgba(226, 242, 250, 0.98) 100%);
+        @apply border border-white/80 bg-white text-slate-950 shadow-[0_10px_20px_rgba(6,12,24,0.18)];
     }
 
     .deasy-nav-item--subtle-active {
-        @apply border font-bold text-slate-900;
-        border-color: rgba(160, 194, 222, 0.68);
-        background: linear-gradient(90deg, rgba(150, 192, 226, 0.48) 0%, rgba(226, 242, 250, 0.9) 100%);
+        @apply border border-white/20 bg-white/12 font-bold text-white;
     }
 
     .deasy-nav-item.router-link-active {
-        @apply border text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(136, 176, 213, 0.5);
-        background: linear-gradient(90deg, rgba(120, 171, 214, 0.34) 0%, rgba(226, 242, 250, 0.98) 100%);
+        @apply border border-white/80 bg-white text-slate-950 shadow-[0_10px_20px_rgba(6,12,24,0.18)];
     }
 
     .deasy-nav-meta {
@@ -776,5 +779,423 @@
 
     .deasy-dropzone__file-name {
         @apply break-words text-sm font-semibold text-slate-900;
+    }
+
+    .deasy-auth-page {
+        @apply min-h-screen bg-[#f4f7fb] px-4 py-6 font-sans text-slate-900 sm:px-6 lg:px-8;
+        background-image:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(244, 247, 251, 0.96) 45%, #eef4fb 100%),
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 32rem),
+            radial-gradient(circle at bottom right, rgba(8, 145, 178, 0.08), transparent 28rem);
+    }
+
+    .deasy-auth-center {
+        @apply flex min-h-[calc(100vh-3rem)] items-center justify-center;
+    }
+
+    .deasy-auth-card {
+        @apply w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.12)];
+    }
+
+    .deasy-auth-panel {
+        @apply flex flex-col justify-center p-7 sm:p-10 lg:p-12;
+    }
+
+    .deasy-auth-visual {
+        @apply relative hidden overflow-hidden bg-[linear-gradient(135deg,#111827_0%,#1e293b_52%,#164e63_100%)] p-10 text-white md:flex md:flex-col md:justify-between;
+    }
+
+    .deasy-auth-visual::before {
+        content: "";
+        @apply absolute inset-0 opacity-70;
+        background:
+            linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 28%),
+            radial-gradient(circle at 18% 18%, rgba(96, 165, 250, 0.24), transparent 18rem),
+            radial-gradient(circle at 90% 82%, rgba(45, 212, 191, 0.18), transparent 20rem);
+    }
+
+    .deasy-auth-brand {
+        @apply relative z-10 inline-flex w-fit items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold uppercase tracking-[0.16em] text-slate-900;
+    }
+
+    .deasy-auth-brand-mark {
+        @apply inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-950 shadow-sm;
+    }
+
+    .deasy-auth-title {
+        @apply text-3xl font-bold tracking-tight text-slate-950;
+    }
+
+    .deasy-auth-copy {
+        @apply mt-2 text-sm font-medium leading-6 text-slate-500;
+    }
+
+    .deasy-auth-field {
+        @apply block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10;
+    }
+
+    .deasy-auth-field--icon-left {
+        @apply pl-11;
+    }
+
+    .deasy-auth-button {
+        @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-600 bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.18)] transition-all hover:border-blue-700 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70;
+    }
+
+    .deasy-auth-button--secondary {
+        @apply border-slate-200 bg-white text-slate-700 shadow-sm hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
+    }
+
+    .deasy-auth-link {
+        @apply text-sm font-semibold text-blue-700 transition-colors hover:text-blue-800 hover:underline;
+    }
+}
+
+@layer components {
+    .deasy-ui-surface {
+        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.05)];
+    }
+
+    .deasy-ui-subtle-surface {
+        @apply rounded-xl border border-slate-200 bg-slate-50/70 shadow-none;
+    }
+
+    .deasy-form-section {
+        @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5;
+    }
+
+    .deasy-form-section + .deasy-form-section {
+        @apply mt-5;
+    }
+
+    .deasy-form-section__header {
+        @apply mb-4 flex items-center gap-3 border-b border-slate-100 pb-3;
+    }
+
+    .deasy-form-section__icon {
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600;
+    }
+
+    .deasy-form-section__title {
+        @apply m-0 text-base font-semibold tracking-tight text-slate-950;
+    }
+
+    .deasy-form-grid {
+        @apply grid grid-cols-1 gap-4 md:grid-cols-2;
+    }
+
+    .deasy-form-grid--three {
+        @apply grid grid-cols-1 gap-4 md:grid-cols-3;
+    }
+
+    .deasy-form-label {
+        @apply mb-1.5 block text-sm font-semibold text-slate-700;
+    }
+
+    .deasy-form-help {
+        @apply mt-1 text-xs font-medium text-slate-500;
+    }
+
+    .deasy-inline-icon-button {
+        @apply inline-flex items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/15;
+    }
+
+    .deasy-card {
+        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_rgba(15,23,42,0.04)];
+    }
+
+    .deasy-card-muted,
+    .deasy-card-soft,
+    .deasy-panel,
+    .deasy-panel-muted {
+        @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    }
+
+    .deasy-section-card,
+    .deasy-table-shell {
+        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)];
+    }
+
+    .deasy-field-input,
+    .deasy-field-select,
+    .deasy-field-textarea,
+    .deasy-auth-field {
+        @apply rounded-lg border-slate-200 bg-white shadow-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10;
+    }
+
+    .deasy-btn,
+    .deasy-auth-button {
+        @apply min-h-10 rounded-lg shadow-none focus:outline-none focus:ring-4 focus:ring-blue-500/15;
+    }
+
+    .deasy-btn--primary,
+    .admin-btn--primary {
+        @apply border-blue-600 bg-blue-600 text-white hover:border-blue-700 hover:bg-blue-700;
+    }
+
+    .deasy-btn--secondary,
+    .admin-btn--secondary {
+        @apply border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-btn--cancel,
+    .admin-btn--cancel {
+        @apply border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-btn--outline-primary,
+    .admin-btn--outline-primary {
+        @apply border-blue-600 bg-white text-blue-700 hover:border-blue-700 hover:bg-blue-50 hover:text-blue-800;
+    }
+
+    .deasy-btn--outline-danger,
+    .admin-btn--outline-danger {
+        @apply border-red-600 bg-white text-red-700 hover:border-red-700 hover:bg-red-50 hover:text-red-800;
+    }
+
+    .deasy-btn--soft-primary {
+        @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800;
+    }
+
+    .deasy-btn--soft-neutral {
+        @apply border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950;
+    }
+
+    .deasy-btn--soft-success {
+        @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800;
+    }
+
+    .deasy-btn--soft-warning {
+        @apply border-amber-200 bg-amber-50 text-amber-800 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900;
+    }
+
+    .deasy-btn--soft-danger {
+        @apply border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 hover:text-red-800;
+    }
+
+    .deasy-btn--success,
+    .admin-btn--success {
+        @apply border-emerald-600 bg-emerald-600 text-white hover:border-emerald-700 hover:bg-emerald-700;
+    }
+
+    .deasy-btn--danger,
+    .admin-btn--danger {
+        @apply border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700;
+    }
+
+    .deasy-btn--close,
+    .admin-btn--close {
+        @apply h-9 w-9 rounded-lg border border-slate-200 bg-white p-0 text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+    }
+
+    .deasy-hero-shell,
+    .deasy-page-intro,
+    .deasy-page-intro--dashboard {
+        @apply rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:p-6;
+        background-image: none;
+    }
+
+    .deasy-hero-media-card,
+    .deasy-hero-kicker,
+    .deasy-hero-back-button,
+    .deasy-hero-back-button__icon {
+        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none;
+    }
+
+    .deasy-hero-kicker--ghost {
+        @apply border-slate-200 bg-slate-50 text-blue-700;
+    }
+
+    .deasy-hero-title,
+    .deasy-page-intro__title {
+        @apply text-slate-950;
+    }
+
+    .deasy-hero-meta,
+    .deasy-page-intro__meta {
+        @apply text-slate-500;
+    }
+
+    .deasy-hero-description,
+    .deasy-page-intro__description {
+        @apply text-slate-600;
+    }
+
+    .deasy-tag--contrast,
+    .deasy-tag--hero {
+        @apply border-slate-200 bg-slate-50 text-slate-700 shadow-none;
+        background-image: none;
+    }
+
+    .deasy-nav-shell {
+        @apply flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-none;
+    }
+
+    .deasy-nav-section + .deasy-nav-section {
+        @apply border-t border-slate-200 pt-2.5;
+    }
+
+    .deasy-nav-group-title {
+        @apply rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-nav-item {
+        @apply rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-nav-glyph,
+    .deasy-nav-item__icon {
+        @apply rounded-lg shadow-none;
+    }
+
+    .deasy-nav-glyph--sky,
+    .deasy-nav-item__icon--sky,
+    .deasy-nav-item__icon--direct {
+        @apply border-blue-100 bg-blue-50 text-blue-600;
+        box-shadow: none;
+    }
+
+    .deasy-nav-glyph--emerald,
+    .deasy-nav-item__icon--emerald {
+        @apply border-emerald-100 bg-emerald-50 text-emerald-600;
+        box-shadow: none;
+    }
+
+    .deasy-nav-glyph--amber,
+    .deasy-nav-item__icon--amber {
+        @apply border-amber-100 bg-amber-50 text-amber-600;
+        box-shadow: none;
+    }
+
+    .deasy-nav-glyph--violet,
+    .deasy-nav-item__icon--violet,
+    .deasy-nav-item__icon--derived {
+        @apply border-violet-100 bg-violet-50 text-violet-600;
+        box-shadow: none;
+    }
+
+    .deasy-nav-glyph--slate,
+    .deasy-nav-item__icon--slate {
+        @apply border-slate-200 bg-slate-50 text-slate-500;
+        box-shadow: none;
+    }
+
+    .deasy-nav-item--active,
+    .deasy-nav-item--subtle-active,
+    .deasy-nav-item.router-link-active {
+        @apply border border-slate-950 bg-slate-950 font-semibold text-white shadow-none;
+    }
+
+    .deasy-nav-meta {
+        @apply px-2 text-sm font-semibold text-slate-500;
+    }
+
+    .deasy-nav-chip {
+        @apply rounded-lg px-2 py-2 text-slate-600 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-nav-chip--active {
+        @apply border border-slate-950 bg-slate-950 text-white shadow-none;
+        background: #020617;
+    }
+
+    .deasy-nav-chip--idle {
+        @apply bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-nav-action {
+        @apply rounded-lg border border-slate-200 bg-white text-slate-600 shadow-none hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:ring-2 focus:ring-blue-500/15;
+    }
+
+    .deasy-nav-action--active {
+        @apply border-slate-950 bg-slate-950 text-white shadow-none;
+        background: #020617;
+    }
+
+    .deasy-auth-page {
+        @apply min-h-screen bg-[#f7f8fa] px-4 py-6 font-sans text-slate-900 sm:px-6 lg:px-8;
+        background-image:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 248, 250, 0.98) 42%, #f7f8fa 100%);
+    }
+
+    .deasy-auth-card {
+        @apply overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_18px_48px_rgba(15,23,42,0.08)];
+    }
+
+    .deasy-auth-panel {
+        @apply flex flex-col justify-center p-6 sm:p-9 lg:p-11;
+    }
+
+    .deasy-auth-visual {
+        @apply relative hidden overflow-hidden border-r border-slate-200 bg-slate-50 p-10 text-slate-900 md:flex md:flex-col md:justify-between;
+        background-image: none;
+    }
+
+    .deasy-auth-visual::before {
+        opacity: 0;
+    }
+
+    .deasy-auth-brand {
+        @apply relative z-10 inline-flex w-fit items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold uppercase tracking-[0.16em] text-slate-900 shadow-sm;
+    }
+
+    .deasy-auth-brand-mark {
+        @apply inline-flex h-8 w-8 items-center justify-center rounded-md bg-slate-950 text-white shadow-none;
+    }
+
+    .deasy-auth-title {
+        @apply text-3xl font-semibold tracking-tight text-slate-950;
+    }
+
+    .deasy-auth-copy {
+        @apply mt-2 text-sm font-medium leading-6 text-slate-500;
+    }
+
+    .deasy-auth-button {
+        @apply border-blue-600 bg-blue-600 text-white hover:border-blue-700 hover:bg-blue-700 focus:ring-blue-500/20;
+    }
+
+    .deasy-auth-button--secondary {
+        @apply border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950;
+    }
+
+    .deasy-dialog-root,
+    .admin-dialog-root {
+        @apply bg-slate-950/45 backdrop-blur-[2px];
+    }
+
+    .deasy-dialog-panel,
+    .admin-dialog-panel {
+        @apply rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)];
+    }
+
+    .deasy-dialog-header,
+    .admin-dialog-header {
+        @apply border-b border-slate-200 bg-white px-5 py-4 sm:px-6;
+    }
+
+    .deasy-dialog-title,
+    .admin-dialog-title {
+        @apply text-base font-semibold tracking-tight text-slate-950 sm:text-lg;
+    }
+
+    .deasy-dialog-body,
+    .admin-dialog-body {
+        @apply px-5 py-5 text-slate-700 sm:px-6;
+    }
+
+    .deasy-dialog-footer,
+    .admin-dialog-footer {
+        @apply border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6;
+    }
+}
+
+@layer utilities {
+    .rounded-4xl {
+        border-radius: 1.25rem !important;
+    }
+
+    .shadow-xl {
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06) !important;
     }
 }

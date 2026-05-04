@@ -117,7 +117,6 @@ const errorMessage = ref("");
 const selectedFile = ref(null);
 
 const instituciones = [
-  "Pontificia Universidad Católica del Ecuador",
   "Ministerio de Educación",
   "Escuela Politécnica Nacional",
   "Universidad de las Américas",

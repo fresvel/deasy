@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
           <div v-if="allowManualUpload" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
             <PdfDropField
@@ -139,7 +139,7 @@
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
         <div
           class="relative grow overflow-hidden bg-slate-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
@@ -307,7 +307,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"

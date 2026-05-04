@@ -15,11 +15,11 @@
       </template>
     </AppPageIntro>
 
-    <section v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
+    <section v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
       {{ error }}
     </section>
 
-    <section class="rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
+    <section class="rounded-xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
       <FirmarPdf
         :show-start-heading="false"
         :enable-dashboard-shortcuts="true"

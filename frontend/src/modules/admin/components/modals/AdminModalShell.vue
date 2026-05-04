@@ -8,15 +8,15 @@
     aria-hidden="true"
   >
     <div class="deasy-dialog-shell admin-dialog-shell mx-auto flex min-h-full items-center justify-center" :class="sizeClass">
-      <div class="deasy-dialog-panel admin-dialog-panel relative w-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl" :class="contentClass">
-        <div class="deasy-dialog-header admin-dialog-header flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5">
-          <h5 class="deasy-dialog-title admin-dialog-title text-lg font-bold text-slate-900" :id="labelledBy">
+      <div class="deasy-dialog-panel admin-dialog-panel relative w-full overflow-hidden" :class="contentClass">
+        <div class="deasy-dialog-header admin-dialog-header flex items-center justify-between gap-4">
+          <h5 class="deasy-dialog-title admin-dialog-title" :id="labelledBy">
             <slot name="title">{{ title }}</slot>
           </h5>
           <button
             v-if="showCloseButton"
             type="button"
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+            class="deasy-btn--close admin-btn--close flex h-9 w-9 items-center justify-center transition-colors"
             :aria-label="closeLabel"
             :title="closeLabel"
             v-bind="closeButtonAttrs"
@@ -25,10 +25,10 @@
             <IconX class="h-4 w-4" stroke-width="2.5" />
           </button>
         </div>
-        <div class="deasy-dialog-body admin-dialog-body px-6 py-5" :class="bodyClass">
+        <div class="deasy-dialog-body admin-dialog-body" :class="bodyClass">
           <slot />
         </div>
-        <div v-if="$slots.footer" class="deasy-dialog-footer admin-dialog-footer flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-6 py-4" :class="footerClass">
+        <div v-if="$slots.footer" class="deasy-dialog-footer admin-dialog-footer flex flex-wrap items-center justify-end gap-3" :class="footerClass">
           <slot name="footer" />
         </div>
       </div>
@@ -38,7 +38,6 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { IconX } from "@tabler/icons-vue";
 
 const props = defineProps({

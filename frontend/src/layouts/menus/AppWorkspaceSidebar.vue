@@ -1,6 +1,9 @@
 <template>
   <s-menu :show="show" @close-mobile="$emit('close-mobile')">
     <div :class="containerClass">
+      <div class="mb-5 flex px-2">
+        <AppLogo to="/dashboard" size="md" class-name="max-w-full" />
+      </div>
       <UserProfile
         :photo="photo"
         :username="username"
@@ -15,6 +18,7 @@
 
 <script setup>
 import SMenu from "@/layouts/menus/SMenu.vue";
+import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import UserProfile from "@/shared/components/widgets/UserProfile.vue";
 
 defineProps({

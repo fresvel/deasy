@@ -113,15 +113,15 @@ defineEmits(["click"]);
 
 const rootClasses = computed(() => [
   props.layout === "inline"
-    ? "group bg-white rounded-xl border border-slate-200 p-5 text-left flex items-start gap-4 transition-all hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 hover:-translate-y-1"
-    : "group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between",
+    ? "group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
+    : "group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/15",
   props.className
 ]);
 
 const iconWrapperClasses = computed(() => [
   props.layout === "inline"
-    ? "w-12 h-12 flex-shrink-0 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors"
-    : "w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm",
+    ? "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 transition-colors group-hover:bg-slate-950 group-hover:text-white"
+    : "flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 transition-colors group-hover:bg-slate-950 group-hover:text-white",
   props.iconWrapperClass
 ]);
 
@@ -129,12 +129,12 @@ const iconClasses = computed(() => props.iconClass);
 
 const titleClasses = computed(() => [
   props.layout === "inline"
-    ? "text-slate-800 font-bold text-base block truncate group-hover:text-sky-700 transition-colors"
-    : "font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors",
+    ? "block truncate text-base font-semibold text-slate-950 transition-colors"
+    : "text-lg font-semibold leading-tight text-slate-950 transition-colors",
   props.titleClass
 ]);
 
 const arrowWrapperClasses = computed(() => [
-  "w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0"
+  "flex h-8 w-8 translate-x-2 items-center justify-center rounded-full text-slate-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:bg-white group-hover:text-slate-700 group-hover:opacity-100"
 ]);
 </script>

@@ -1,40 +1,42 @@
-# Términos y Condiciones
+# Terminos y Condiciones
 
-Última actualización: 11 de Marzo de 2026
+Ultima actualizacion: 11 de marzo de 2026
 
-## 1. Introducción
+## 1. Introduccion
 
-Bienvenido al Sistema **DEASY** de la Pontificia Universidad Católica del Ecuador Sede Esmeraldas (PUCESE). Al utilizar nuestro sistema y servicios, usted acepta estos términos y condiciones en su totalidad. Si no está de acuerdo con estos términos, le rogamos que no utilice nuestros servicios.
+Bienvenido a **DEASY**, una plataforma digital para gestionar informacion de usuarios, documentos, procesos, tareas y firmas electronicas. Al utilizar el sistema, aceptas estos terminos y condiciones. Si no estas de acuerdo, no debes usar la plataforma.
 
 ## 2. Definiciones
 
 - **Sistema**: Plataforma digital DEASY.
-- **Usuario**: Cualquier estudiante, docente o personal administrativo que acceda al Sistema.
-- **Cuenta**: Credenciales de acceso personales e intransferibles asignadas o registradas por el usuario.
+- **Usuario**: Persona autorizada que accede al sistema.
+- **Cuenta**: Credenciales personales e intransferibles usadas para ingresar a la plataforma.
 
 ## 3. Uso del Sistema
 
-El acceso al sistema está restringido a usuarios autorizados de la universidad. Usted se compromete a:
+El acceso esta reservado a usuarios autorizados. Como usuario te comprometes a:
 
-1. Proporcionar información veraz y actualizada.
-2. Mantener la confidencialidad de sus contraseñas.
-3. No utilizar el sistema para fines ilícitos o ajenos al entorno académico.
+1. Proporcionar informacion veraz y actualizada.
+2. Mantener la confidencialidad de tus credenciales.
+3. Usar la plataforma solo para fines permitidos por tu organizacion.
+4. No intentar acceder, alterar o descargar informacion que no te corresponda.
 
 ## 4. Privacidad y Datos Personales
 
-Su privacidad es muy importante para nosotros. Todos los datos personales recopilados a través del registro y uso del Sistema serán tratados de acuerdo con las normativas legales de protección de datos vigentes en Ecuador, y serán utilizados exclusivamente con fines académicos, administrativos y de mejora del servicio.
+Los datos personales registrados en DEASY se utilizan para operar los flujos funcionales de la plataforma: autenticacion, gestion documental, asignacion de tareas, trazabilidad, notificaciones y firma de documentos.
 
-- No compartiremos su información con agentes externos sin su consentimiento previo.
-- Usted podrá solicitar la corrección de errores en sus datos personales contactando al soporte técnico.
+- La informacion se procesa de acuerdo con la normativa aplicable de proteccion de datos.
+- El usuario puede solicitar correccion de informacion cuando detecte errores.
+- El sistema puede conservar registros tecnicos y operativos necesarios para auditoria, seguridad y trazabilidad.
 
 ## 5. Responsabilidad
 
-La PUCESE se esfuerza por mantener la disponibilidad y seguridad del Sistema; sin embargo, no garantiza que el acceso será ininterrumpido o libre de errores. La universidad no se hace responsable de las pérdidas de datos o interrupciones causadas por mantenimientos técnicos programados, problemas de conectividad o de fuerza mayor.
+DEASY se opera con medidas razonables de disponibilidad, seguridad e integridad. Aun asi, pueden existir interrupciones por mantenimiento, conectividad, dependencias externas o eventos de fuerza mayor.
 
 ## 6. Modificaciones
 
-Nos reservamos el derecho de modificar o reemplazar estos Términos y Condiciones en cualquier momento. Las actualizaciones se publicarán en esta página y se indicará la fecha de revisión al inicio del documento. Su uso continuado del servicio confirmará la aceptación de dichos cambios.
+Estos terminos pueden actualizarse cuando cambien las condiciones de uso, seguridad, privacidad o funcionamiento del sistema. La version vigente se publicara en esta pagina.
 
 ## 7. Contacto
 
-Si tiene alguna pregunta sobre estos Términos y Condiciones, por favor comuníquese al área de Soporte Técnico Informático de PUCESE o envíe un correo electrónico mediante los canales institucionales.
+Para preguntas sobre estos terminos o el uso de la plataforma, contacta al equipo responsable de soporte o administracion del sistema.

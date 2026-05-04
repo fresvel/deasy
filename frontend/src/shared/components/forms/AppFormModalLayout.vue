@@ -5,14 +5,14 @@
       variant="close"
       class-name="absolute right-4 top-4 z-10"
       data-modal-dismiss
-      aria-label="Close"
+      aria-label="Cerrar"
       @click="$emit('close')"
     >
       <span class="text-xl leading-none">&times;</span>
     </AppButton>
 
     <header class="mx-auto mt-2 mb-5 w-full max-w-xl text-center">
-      <h2 class="mb-1 text-xl font-bold tracking-tight text-slate-800">{{ title }}</h2>
+      <h2 class="mb-1 text-xl font-semibold tracking-tight text-slate-950">{{ title }}</h2>
       <p class="mb-0 text-sm font-medium text-slate-500">{{ description }}</p>
     </header>
 
@@ -27,7 +27,7 @@
     <form class="mx-auto flex w-full max-w-xl flex-col gap-4 text-sm" @submit.prevent="$emit('submit')">
       <slot />
 
-      <div class="mt-5 flex w-full justify-end gap-3 border-t border-slate-100 pt-4">
+      <div class="mt-5 flex w-full flex-col-reverse justify-end gap-3 border-t border-slate-200 pt-4 sm:flex-row">
         <AppButton
           type="button"
           variant="secondary"

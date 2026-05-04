@@ -148,7 +148,7 @@ const carreras = [
 ];
 
 const universidades = [
-  "Pontificia Universidad Católica del Ecuador", "Escuela Politécnica Nacional", "Universidad de Guayaquil",
+  "Escuela Politécnica Nacional", "Universidad de Guayaquil",
   "Universidad Central del Ecuador", "Escuela Superior Politécnica del Litoral", "Universidad San Francisco de Quito",
   "Universidad Técnica Particular de Loja", "Universidad de las Américas", "Universidad de Cuenca", "Otra"
 ];
