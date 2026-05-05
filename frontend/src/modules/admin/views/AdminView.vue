@@ -235,7 +235,7 @@
                       @click="selectTable(table)"
                     />
                     <AppNavCard
-                      v-if="selectedGestionCrudItem?.key === 'plantillas'"
+                      v-if="selectedGestionCrudItem?.key === 'plantillas' && canCreateAdminTable('template_artifacts', currentUser)"
                       layout="stacked"
                       title="Nuevo artifact general"
                       meta=""
@@ -441,7 +441,7 @@ import {
   resolveWorkspaceProfileMenuIcon,
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
-import { canReadAdminTable } from "@/core/utils/accessControl.js";
+import { canCreateAdminTable, canReadAdminTable } from "@/core/utils/accessControl.js";
 
 const isClient = typeof window !== 'undefined';
 const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);

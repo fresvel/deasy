@@ -36,7 +36,7 @@
           Buscar
         </AdminButton>
         <AdminButton
-          v-if="isTemplateSeedsTable"
+          v-if="isTemplateSeedsTable && canUpdate"
           variant="secondary"
           size="lg"
           :disabled="!table || loading"
@@ -46,7 +46,7 @@
           Sincronizar seeds
         </AdminButton>
         <AdminButton
-          v-if="isTemplateArtifactsTable"
+          v-if="isTemplateArtifactsTable && canUpdate"
           variant="secondary"
           size="lg"
           :disabled="!table || loading"
@@ -56,6 +56,7 @@
           Sincronizar dist
         </AdminButton>
         <AdminButton
+          v-if="canCreate"
           variant="primary"
           size="lg"
           class-name="profile-add-btn"
@@ -101,6 +102,14 @@ defineProps({
   isTemplateArtifactsTable: {
     type: Boolean,
     default: false
+  },
+  canCreate: {
+    type: Boolean,
+    default: true
+  },
+  canUpdate: {
+    type: Boolean,
+    default: true
   }
 });
 

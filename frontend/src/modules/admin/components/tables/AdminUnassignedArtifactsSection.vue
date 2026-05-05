@@ -69,7 +69,7 @@
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-view" title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
+                <AdminButton v-if="canLink" variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
                   <font-awesome-icon icon="link" />
                 </AdminButton>
               </div>
@@ -95,7 +95,8 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true }
+  getAvailableFormatBadgeStyle: { type: Function, required: true },
+  canLink: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(["update:search-term", "update:filters", "debounced-search", "clear-filters", "load", "view", "link"]);

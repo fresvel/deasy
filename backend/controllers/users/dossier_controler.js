@@ -176,7 +176,7 @@ async function removeDossierDocumentFromUrl(fileUrl) {
         await removeMinioObject(MINIO_DOSSIER_BUCKET, objectName);
         return true;
     } catch (error) {
-        if (["NoSuchKey", "NotFound", "NoSuchObject"].includes(error?.code)) {
+        if (["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"].includes(error?.code)) {
             return false;
         }
         throw error;
@@ -196,7 +196,7 @@ async function removeDossierDocument({ cedula, tipoDocumento, registroId, fileUr
         await removeMinioObject(MINIO_DOSSIER_BUCKET, objectName);
         return true;
     } catch (error) {
-        if (["NoSuchKey", "NotFound", "NoSuchObject"].includes(error?.code)) {
+        if (["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"].includes(error?.code)) {
             const fallbackObjectName = resolveDossierObjectNameFromUrl(fileUrl);
             if (!fallbackObjectName || fallbackObjectName === objectName) {
                 return false;
@@ -215,7 +215,7 @@ async function objectExists(bucket, objectName) {
         await statMinioObject(bucket, objectName);
         return true;
     } catch (error) {
-        if (["NotFound", "NoSuchKey", "NoSuchObject"].includes(error?.code)) {
+        if (["NoSuchBucket", "NotFound", "NoSuchKey", "NoSuchObject"].includes(error?.code)) {
             return false;
         }
         throw error;

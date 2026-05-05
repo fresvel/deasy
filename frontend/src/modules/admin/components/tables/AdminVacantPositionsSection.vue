@@ -77,7 +77,7 @@
                 {{ row[field.name] ?? "—" }}
               </template>
             </template>
-            <template #actions="{ row }">
+            <template v-if="canUpdate" #actions="{ row }">
               <div class="inline-flex items-center gap-1">
                 <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-delete" title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
@@ -114,7 +114,8 @@ const props = defineProps({
   formatFkOptionLabel: { type: Function, required: true },
   formatFkListCell: { type: Function, required: true },
   formatCell: { type: Function, required: true },
-  formatPositionType: { type: Function, required: true }
+  formatPositionType: { type: Function, required: true },
+  canUpdate: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(["update:search-term", "update:filters", "debounced-search", "handle-type-change", "handle-unit-change", "handle-cargo-change", "handle-position-type-filter-change", "clear-filters", "load", "deactivate", "assign"]);

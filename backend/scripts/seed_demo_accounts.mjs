@@ -49,6 +49,16 @@ const demoUsers = [
     cargo: { code: "DEMO-AUDITOR", name: "Auditor demo" },
     token: "DMAUDIT001",
     whatsapp: "0999900003"
+  },
+  {
+    cedula: "0999900004",
+    email: "usuario.demo@deasy.local",
+    first_name: "Usuario",
+    last_name: "Demo",
+    role: "Usuario",
+    cargo: { code: "DEMO-USUARIO", name: "Usuario demo" },
+    token: "DMUSER001",
+    whatsapp: "0999900004"
   }
 ];
 

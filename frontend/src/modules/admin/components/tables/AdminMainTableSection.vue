@@ -171,10 +171,17 @@
               </template>
             </template>
             <template #actions="{ row }">
-              <AdminTableActions delete-message="Eliminar" @view="$emit('open-record-viewer', row)" @edit="$emit('open-edit', row)" @delete="$emit('open-delete', row)">
+              <AdminTableActions
+                delete-message="Eliminar"
+                :show-edit="canUpdate"
+                :show-delete="canDelete"
+                @view="$emit('open-record-viewer', row)"
+                @edit="$emit('open-edit', row)"
+                @delete="$emit('open-delete', row)"
+              >
                 <template #between>
                   <AdminButton
-                    v-if="table?.table === 'process_definition_versions'"
+                    v-if="canUpdate && table?.table === 'process_definition_versions'"
                     variant="secondary"
                     size="sm"
                     icon-only
@@ -186,7 +193,7 @@
                     <font-awesome-icon icon="rotate-right" />
                   </AdminButton>
                   <AdminButton
-                    v-if="table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
+                    v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'draft'"
                     variant="secondary"
                     size="sm"
                     icon-only
@@ -198,7 +205,7 @@
                     <font-awesome-icon icon="check" />
                   </AdminButton>
                   <AdminButton
-                    v-if="isPersonTable"
+                    v-if="canUpdate && isPersonTable"
                     variant="secondary"
                     size="sm"
                     icon-only
@@ -212,6 +219,7 @@
                 </template>
                 <template v-if="isTemplateArtifactsTable" #edit>
                   <AdminButton
+                    v-if="canUpdate"
                     variant="secondary"
                     size="sm"
                     icon-only
@@ -273,7 +281,9 @@ const props = defineProps({
   formatFkOptionLabel: { type: Function, required: true },
   formatCell: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true }
+  getAvailableFormatBadgeStyle: { type: Function, required: true },
+  canUpdate: { type: Boolean, default: true },
+  canDelete: { type: Boolean, default: true }
 });
 
 const emit = defineEmits([

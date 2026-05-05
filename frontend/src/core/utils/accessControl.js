@@ -108,6 +108,15 @@ export const resolveAdminTableResource = (tableName = "") =>
 export const canReadAdminTable = (tableName, user = getStoredUser()) =>
   canAccessResource(resolveAdminTableResource(tableName), "read", user);
 
+export const canCreateAdminTable = (tableName, user = getStoredUser()) =>
+  canAccessResource(resolveAdminTableResource(tableName), "create", user);
+
+export const canUpdateAdminTable = (tableName, user = getStoredUser()) =>
+  canAccessResource(resolveAdminTableResource(tableName), "update", user);
+
+export const canDeleteAdminTable = (tableName, user = getStoredUser()) =>
+  canAccessResource(resolveAdminTableResource(tableName), "delete", user);
+
 export const canAccessAdmin = (user = getStoredUser()) =>
   hasAnyRole(["Admin", "Gestor", "Auditor"], user) ||
   ["roles", "users", "processes", "documents"].some((resource) =>

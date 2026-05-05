@@ -16,6 +16,8 @@
       :loading="loading"
       :is-template-seeds-table="isTemplateSeedsTable"
       :is-template-artifacts-table="isTemplateArtifactsTable"
+      :can-create="canCreateCurrentTable"
+      :can-update="canUpdateCurrentTable"
       @go-back="handleGoBack"
       @search="handleSearchAction"
       @sync-template-seeds="syncTemplateSeedsFromSource"
@@ -66,6 +68,8 @@
       :format-cell="formatCell"
       :get-available-format-sections="getAvailableFormatSections"
       :get-available-format-badge-style="getAvailableFormatBadgeStyle"
+      :can-update="canUpdateCurrentTable"
+      :can-delete="canDeleteCurrentTable"
       @update:search-term="searchTerm = $event"
       @update:unit-position-filters="unitPositionFilters = $event"
       @update:process-definition-inline-filters="processDefinitionInlineFilters = $event"
@@ -105,6 +109,7 @@
       :format-fk-list-cell="formatFkListCell"
       :format-cell="formatCell"
       :format-position-type="formatPositionType"
+      :can-update="canUpdateCurrentTable"
       @update:search-term="vacantSearchTerm = $event"
       @update:filters="vacantPositionFilters = $event"
       @debounced-search="debouncedVacantSearch"
@@ -129,6 +134,7 @@
       :table-fields="unassignedTemplateArtifactTableFields"
       :get-available-format-sections="getAvailableFormatSections"
       :get-available-format-badge-style="getAvailableFormatBadgeStyle"
+      :can-link="canCreateCurrentTable || canUpdateCurrentTable"
       @update:search-term="unassignedTemplateArtifactSearch = $event"
       @update:filters="unassignedTemplateArtifactFilters = $event"
       @debounced-search="debouncedUnassignedTemplateArtifactSearch"
@@ -668,6 +674,11 @@ import { useProcessDefinitionActivationFlow } from "@/modules/admin/composables/
 import { useProcessDefinitionManager } from "@/modules/admin/composables/processes/useProcessDefinitionManager";
 import { useAdminSubmitFlow } from "@/modules/admin/composables/forms/useAdminSubmitFlow";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import {
+  canCreateAdminTable,
+  canDeleteAdminTable,
+  canUpdateAdminTable
+} from "@/core/utils/accessControl.js";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
 import {
@@ -1407,6 +1418,10 @@ const hasUnassignedTemplateArtifactFilters = computed(() =>
   )
 );
 const table = computed(() => props.table);
+const currentTableName = computed(() => props.table?.table || "");
+const canCreateCurrentTable = computed(() => canCreateAdminTable(currentTableName.value));
+const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value));
+const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value));
 const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
 const tableHeaderSubtitle = computed(() => {
   if (!props.table) {
