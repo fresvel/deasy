@@ -6,6 +6,7 @@
       </div>
       <div class="nav-menu-body deasy-nav-group">
         <router-link 
+          v-if="!isAdmin"
           to="/dashboard" 
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
@@ -14,6 +15,7 @@
           <span>Dashboard</span>
         </router-link>
         <router-link 
+          v-if="!isAdmin"
           to="/perfil" 
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
@@ -22,6 +24,7 @@
           <span>Perfil</span>
         </router-link>
         <router-link
+          v-if="!isAdmin"
           :to="{ path: '/dashboard', query: { view: 'firmar' } }"
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"

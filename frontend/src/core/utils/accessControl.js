@@ -122,3 +122,9 @@ export const canAccessAdmin = (user = getStoredUser()) =>
   ["roles", "users", "processes", "documents"].some((resource) =>
     canAccessResource(resource, "read", user)
   );
+
+export const isAdminUser = (user = getStoredUser()) =>
+  hasAnyRole(["Admin"], user);
+
+export const getDefaultAuthenticatedRoute = (user = getStoredUser()) =>
+  isAdminUser(user) ? "/admin" : "/dashboard";

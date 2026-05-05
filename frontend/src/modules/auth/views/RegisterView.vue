@@ -11,9 +11,9 @@
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>
             </div>
-            <router-link to="/" class="deasy-auth-button deasy-auth-button--secondary w-full lg:w-auto">
+            <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-full lg:w-auto" @click="goToLogin">
               Volver al login
-            </router-link>
+            </button>
           </div>
         </div>
 
@@ -334,9 +334,9 @@
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur sm:flex-row">
-              <router-link to="/" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2">
+              <button type="button" class="deasy-btn deasy-btn--secondary deasy-btn--lg w-full sm:w-1/2" @click="goToLogin">
                 Cancelar
-              </router-link>
+              </button>
               <button type="submit" class="deasy-btn deasy-btn--primary deasy-btn--lg w-full sm:w-1/2">
                 Crear cuenta
                 <IconArrowRight class="h-5 w-5" />
@@ -651,6 +651,8 @@ const createnewUser = async () => {
 
 const goToLogin = () => {
   showSuccessModal.value = false;
+  AuthService.clearSession();
+  sessionStorage.removeItem("register_draft");
   router.push("/");
 };
 

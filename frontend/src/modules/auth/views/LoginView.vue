@@ -138,6 +138,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
+import { getDefaultAuthenticatedRoute } from "@/core/utils/accessControl.js";
 import { IconUser, IconLock, IconEye, IconEyeOff, IconAlertCircle, IconX, IconArrowRight } from "@tabler/icons-vue";
 
 const identifier = ref("");
@@ -149,8 +150,8 @@ const showPassword = ref(false);
 const loginFunction = async () => {
   try {
     errorMessage.value = "";
-    await AuthService.login(identifier.value, password.value);
-    router.push("/dashboard");
+    const authData = await AuthService.login(identifier.value, password.value);
+    router.push(getDefaultAuthenticatedRoute(authData?.user));
   } catch (error) {
     const statusCode = error.response?.status;
     const backendMessage = error.response?.data?.message;

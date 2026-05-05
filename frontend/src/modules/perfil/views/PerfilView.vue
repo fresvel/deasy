@@ -28,19 +28,19 @@
               <div class="deasy-nav-section">
                 <button
                   class="deasy-nav-group-title"
-                  :class="{ 'deasy-nav-item--subtle-active': showCoordinacion }"
+                  :class="{ 'deasy-nav-item--subtle-active': showDossierMenu }"
                   type="button"
-                  @click="showCoordinacion = !showCoordinacion"
+                  @click="showDossierMenu = !showDossierMenu"
                 >
                     <span class="flex items-center gap-3.5 text-base font-semibold">
-                      <span class="deasy-nav-glyph" :class="workspaceIconToneClass(coordinacionIconMeta.tone, 'deasy-nav-glyph')">
-                        <component :is="coordinacionIconMeta.icon" class="h-5 w-5 shrink-0" />
+                      <span class="deasy-nav-glyph" :class="workspaceIconToneClass(dossierIconMeta.tone, 'deasy-nav-glyph')">
+                        <component :is="dossierIconMeta.icon" class="h-5 w-5 shrink-0" />
                       </span>
-                      <span class="truncate">Coordinación</span>
+                      <span class="truncate">Dossier profesional</span>
                     </span>
                 </button>
 
-                <div v-show="showCoordinacion" class="deasy-nav-tree">
+                <div v-show="showDossierMenu" class="deasy-nav-tree">
                     <button v-for="(item, index) of mainmenu" :key="index"
                       class="deasy-nav-item"
                       :class="item.active ? 'deasy-nav-item--active' : ''"
@@ -54,24 +54,6 @@
                         {{ dossierCounts[item.key] ?? 0 }}
                       </span>
                     </button>
-                </div>
-              </div>
-
-              <div class="deasy-nav-section">
-                <button
-                  class="deasy-nav-group-title"
-                  :class="{ 'deasy-nav-item--subtle-active': showDocencia }"
-                  type="button"
-                  @click="showDocencia = !showDocencia"
-                >
-                  <span class="flex items-center gap-3.5 text-base font-semibold">
-                    <span class="deasy-nav-glyph" :class="workspaceIconToneClass(docenciaIconMeta.tone, 'deasy-nav-glyph')">
-                      <component :is="docenciaIconMeta.icon" class="h-5 w-5 shrink-0" />
-                    </span>
-                    <span class="truncate">Docencia</span>
-                  </span>
-                </button>
-                <div v-show="showDocencia" class="deasy-nav-tree">
                 </div>
               </div>
               </div>
@@ -340,8 +322,7 @@ const goBackFromProfileHome = () => {
     
 const isClient = typeof window !== 'undefined';
 
-const coordinacionIconMeta = resolveWorkspaceSectionIcon('Coordinación');
-const docenciaIconMeta = resolveWorkspaceSectionIcon('Docencia');
+const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');
 const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
 
 const resolveAreaIcon = (name) => {
@@ -364,12 +345,7 @@ const resolveAreaIcon = (name) => {
     };
 
     const area= ref("Perfil")
-    const showCoordinacion = ref(true);
-    const showDocencia = ref(false);
-    const menuSectionIcons = {
-        coordinacion: 'id-card',
-        docencia: 'certificate'
-    };
+    const showDossierMenu = ref(true);
     
     
     const toggleVmenu = () => {
