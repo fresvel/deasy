@@ -10,11 +10,12 @@ DEFAULT_SEED_FILE="/app/backend/scripts/seeds/pucese.seed.json"
 usage() {
   cat <<'EOF'
 Uso:
-  bash scripts/seed-db.sh <dev|qa-local|qa|prod> <capture|apply> [--file <ruta-en-contenedor>]
+  bash scripts/seed-db.sh <dev|qa-local|qa|prod> <capture|apply|rbac> [--file <ruta-en-contenedor>]
 
 Ejemplos:
   bash scripts/seed-db.sh dev capture
   bash scripts/seed-db.sh qa-local apply
+  bash scripts/seed-db.sh qa-local rbac
   bash scripts/seed-db.sh qa apply
   bash scripts/seed-db.sh qa apply --file /app/backend/scripts/seeds/pucese.seed.json
 
@@ -69,6 +70,14 @@ case "$MODE" in
       exit 1
     fi
     run_in_backend "$ENVIRONMENT" node /app/backend/scripts/seed_pucese.mjs apply --file "$2"
+    ;;
+  rbac)
+    if [ "$#" -gt 0 ]; then
+      echo "El modo rbac no recibe parametros."
+      usage
+      exit 1
+    fi
+    run_in_backend "$ENVIRONMENT" node /app/backend/scripts/apply_rbac_patch.mjs
     ;;
   *)
     echo "Modo no soportado: $MODE"

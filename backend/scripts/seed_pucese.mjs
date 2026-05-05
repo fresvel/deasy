@@ -265,6 +265,43 @@ const injectPersonTokens = (tables) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+const applyForwardCompatibilityDefaults = (tableData, tableMap) => {
+  if (!tableData || tableData.table !== "task_items") {
+    return;
+  }
+
+  const columns = Array.isArray(tableData.columns) ? tableData.columns : [];
+  const rows = Array.isArray(tableData.rows) ? tableData.rows : [];
+  if (!rows.length || columns.includes("start_date")) {
+    return;
+  }
+
+  const tasksTable = tableMap.get("tasks");
+  const taskRows = Array.isArray(tasksTable?.rows) ? tasksTable.rows : [];
+  const tasksById = new Map(taskRows.map((row) => [String(row.id), row]));
+
+  columns.push("start_date");
+  tableData.column_types = {
+    ...(tableData.column_types || {}),
+    start_date: "date"
+  };
+
+  if (!columns.includes("end_date")) {
+    columns.push("end_date");
+    tableData.column_types.end_date = "date";
+  }
+
+  for (const row of rows) {
+    const task = tasksById.get(String(row.task_id));
+    row.start_date = row.start_date || task?.start_date || "2026-01-01";
+    row.end_date = row.end_date ?? task?.end_date ?? null;
+  }
+
+  console.warn("[seed_pucese] task_items.start_date agregado desde tasks.start_date por compatibilidad de esquema.");
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const captureSeed = async (connection, config, filePath) => {
   const tables = getTableOrder(await getDatabaseTables(connection, config.database));
   const snapshot = {
@@ -304,6 +341,7 @@ const applySeed = async (connection, filePath) => {
   injectPersonTokens(originalTables);
 
   const tableMap = new Map(originalTables.map((table) => [table.table, table]));
+  originalTables.forEach((tableData) => applyForwardCompatibilityDefaults(tableData, tableMap));
   const orderedTables = getTableOrder(originalTables.map((table) => table.table))
     .map((tableName) => tableMap.get(tableName))
     .filter(Boolean);

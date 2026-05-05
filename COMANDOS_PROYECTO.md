@@ -295,6 +295,14 @@ bash scripts/seed-db.sh qa-local capture
 bash scripts/seed-db.sh qa-local apply
 ```
 
+Si se debe usar una semilla base compartida y solo agregar permisos/roles sin
+reemplazar usuarios existentes, aplica primero la semilla y luego el patch RBAC:
+
+```bash
+bash scripts/seed-db.sh qa-local apply
+bash scripts/seed-db.sh qa-local rbac
+```
+
 Aplicar seed especifico dentro del contenedor backend:
 
 ```bash
@@ -305,6 +313,7 @@ Notas importantes:
 
 - `capture` lee la MariaDB actual y escribe el JSON de semilla.
 - `apply` borra y reinserta las tablas incluidas en el JSON; no lo uses sobre datos que quieras conservar.
+- `rbac` crea/actualiza roles, recursos, acciones, permisos, permisos por rol y asignaciones derivadas desde cargos existentes.
 - Si solo levantaste QA local con `bash scripts/docker-env.sh qa-local up -d --build`, el comando `bash scripts/seed-db.sh dev apply` no encuentra el backend de `dev`.
 - Para QA local el comando correcto es `bash scripts/seed-db.sh qa-local apply`.
 - Estos comandos no suben archivos de plantillas a MinIO.
