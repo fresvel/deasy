@@ -84,7 +84,7 @@
       @clear-process-target-rule-inline-filters="clearProcessTargetRuleInlineFilters"
       @clear-template-artifact-inline-filters="clearTemplateArtifactInlineFilters"
       @fetch-rows="fetchRows"
-      @open-record-viewer="openRecordViewer"
+      @open-record-viewer="openRecordViewer($event, table)"
       @open-edit="openEdit"
       @open-delete="openDelete"
       @start-process-definition-versioning="startProcessDefinitionVersioning"

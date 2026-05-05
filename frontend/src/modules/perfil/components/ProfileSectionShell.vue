@@ -16,6 +16,9 @@
           size="md"
           class-name="w-full sm:w-auto shrink-0"
           type="button"
+          :disabled="addDisabled"
+          :title="addDisabled ? addDisabledTitle : addLabel"
+          :aria-label="addDisabled ? addDisabledTitle : addLabel"
           @click="$emit('add')"
         >
           <IconPlus class="w-4 h-4 stroke-[2.5]" />
@@ -52,6 +55,14 @@ defineProps({
   showAdd: {
     type: Boolean,
     default: true
+  },
+  addDisabled: {
+    type: Boolean,
+    default: false
+  },
+  addDisabledTitle: {
+    type: String,
+    default: 'No tienes permiso para agregar registros.'
   }
 });
 

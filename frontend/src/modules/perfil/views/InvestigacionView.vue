@@ -3,6 +3,8 @@
     <ProfileSectionShell
       title="Investigación y producción académica"
       subtitle="Gestiona artículos, libros, ponencias, tesis y proyectos."
+      :add-disabled="!canCreateDossier"
+      add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openAddModal"
     >
       <!-- Artículos -->
@@ -38,6 +40,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(item.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarItem('articulos', item)"
                     @preview="previewDocument(item, 'articulo')"
                     @download="openDocument(item, 'articulo')"
@@ -83,6 +89,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(item.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarItem('libros', item)"
                     @preview="previewDocument(item, 'libro')"
                     @download="openDocument(item, 'libro')"
@@ -124,6 +134,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(item.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarItem('ponencias', item)"
                     @preview="previewDocument(item, 'ponencia')"
                     @download="openDocument(item, 'ponencia')"
@@ -169,6 +183,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(item.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarItem('tesis', item)"
                     @preview="previewDocument(item, 'tesis')"
                     @download="openDocument(item, 'tesis')"
@@ -216,6 +234,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(item.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarItem('proyectos', item)"
                     @preview="previewDocument(item, 'proyecto')"
                     @download="openDocument(item, 'proyecto')"
@@ -283,6 +305,7 @@ import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPrevie
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import DossierService from "@/modules/dossier/services/DossierService";
+import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
 const deleteModal = ref(null);
@@ -294,6 +317,7 @@ const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingType = ref("articulos");
 const pendingDelete = ref(null);
+const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -323,6 +347,7 @@ const loadDossier = async () => {
 };
 
 const openAddModal = () => {
+  if (!canCreateDossier.value) return;
   pendingEdit.value = null;
   pendingType.value = "articulos";
   if (!modal.value) return;
@@ -331,6 +356,7 @@ const openAddModal = () => {
 };
 
 const editarItem = (tipo, item) => {
+  if (!canUpdateDossier.value) return;
   pendingEdit.value = { ...item };
   pendingType.value = tipo;
   if (!modal.value) return;
@@ -344,6 +370,7 @@ const handleInvestigacionUpdated = () => {
 };
 
 const openDelete = (tipo, item) => {
+  if (!canDeleteDossier.value) return;
   pendingDelete.value = { tipo, item };
   if (!deleteModal.value) return;
   deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
@@ -362,6 +389,7 @@ const confirmDelete = async () => {
 };
 
 const eliminarSoloPDF = async (tipo, item) => {
+  if (!canDeleteDossier.value) return;
   if (!confirm("¿Estás seguro de eliminar solo el documento PDF?")) return;
   try {
     const tipoMap = { 'articulos': 'articulo', 'libros': 'libro', 'ponencias': 'ponencia', 'tesis': 'tesis', 'proyectos': 'proyecto' };
@@ -403,6 +431,7 @@ const openDocument = async (item, tipo) => {
 };
 
 const triggerFileUpload = (itemId, tipo) => {
+  if (!canUpdateDossier.value) return;
   selectedItemId.value = itemId;
   selectedItemType.value = tipo;
   fileInput.value.click();

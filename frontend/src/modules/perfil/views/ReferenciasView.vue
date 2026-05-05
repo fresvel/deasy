@@ -3,6 +3,8 @@
     <ProfileSectionShell
       title="Referencias"
       subtitle="Agrega referencias laborales, familiares y personales."
+      :add-disabled="!canCreateDossier"
+      add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
       <!-- Referencias Laborales -->
@@ -34,6 +36,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(ref.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarReferencia(ref)"
                     @preview="previewDocument(ref)"
                     @download="openDocument(ref)"
@@ -75,6 +81,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(ref.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarReferencia(ref)"
                     @preview="previewDocument(ref)"
                     @download="openDocument(ref)"
@@ -114,6 +124,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(ref.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarReferencia(ref)"
                     @preview="previewDocument(ref)"
                     @download="openDocument(ref)"
@@ -181,6 +195,7 @@ import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPrevie
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import DossierService from "@/modules/dossier/services/DossierService";
+import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
 const deleteModal = ref(null);
@@ -190,6 +205,7 @@ const selectedItemId = ref(null);
 const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -221,6 +237,7 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
+    if (!canCreateDossier.value) return;
     pendingEdit.value = null;
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
@@ -228,6 +245,7 @@ const openModal = () => {
 };
 
 const editarReferencia = (ref) => {
+    if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...ref };
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
@@ -240,6 +258,7 @@ const handleReferenciaUpdated = () => {
 };
 
 const openDelete = (ref) => {
+    if (!canDeleteDossier.value) return;
     pendingDelete.value = ref;
     if (!deleteModal.value) return;
     deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
@@ -258,6 +277,7 @@ const confirmDelete = async () => {
 };
 
 const eliminarSoloPDF = async (ref) => {
+    if (!canDeleteDossier.value) return;
     if (!confirm('¿Estás seguro de eliminar solo el documento PDF?')) return;
     try {
         await DossierService.deleteDocument("referencia", ref._id);
@@ -298,6 +318,7 @@ const openDocument = async (ref) => {
 };
 
 const triggerFileUpload = (itemId) => {
+    if (!canUpdateDossier.value) return;
     selectedItemId.value = itemId;
     fileInput.value.click();
 };

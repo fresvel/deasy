@@ -56,11 +56,12 @@
           Sincronizar dist
         </AdminButton>
         <AdminButton
-          v-if="canCreate"
           variant="primary"
           size="lg"
           class-name="profile-add-btn"
-          :disabled="!table"
+          :disabled="!table || !canCreate"
+          :title="canCreate ? 'Agregar' : 'No tienes permiso para agregar registros en esta tabla'"
+          :aria-label="canCreate ? 'Agregar' : 'Agregar bloqueado por permisos'"
           @click="$emit('create')"
         >
           <font-awesome-icon icon="plus" class="mr-2" />

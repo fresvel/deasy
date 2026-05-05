@@ -3,6 +3,8 @@
     <ProfileSectionShell
       title="Formación continua y conferencias"
       subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."
+      :add-disabled="!canCreateDossier"
+      add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
 
@@ -40,6 +42,10 @@
               <td class="px-4 py-3">
                 <DossierDocumentActions
                   :has-document="Boolean(capacitacion.url_documento)"
+                  :can-edit="canUpdateDossier"
+                  :can-upload="canUpdateDossier"
+                  :can-delete-document="canDeleteDossier"
+                  :can-delete="canDeleteDossier"
                   @edit="editarCapacitacion(capacitacion)"
                   @preview="previewDocument(capacitacion)"
                   @download="openDocument(capacitacion)"
@@ -88,6 +94,10 @@
               <td class="px-4 py-3">
                 <DossierDocumentActions
                   :has-document="Boolean(capacitacion.url_documento)"
+                  :can-edit="canUpdateDossier"
+                  :can-upload="canUpdateDossier"
+                  :can-delete-document="canDeleteDossier"
+                  :can-delete="canDeleteDossier"
                   @edit="editarCapacitacion(capacitacion)"
                   @preview="previewDocument(capacitacion)"
                   @download="openDocument(capacitacion)"
@@ -175,6 +185,7 @@ import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentA
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
+import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
 const editModal = ref(null);
@@ -190,6 +201,7 @@ let modalInstance = null;
 let editModalInstance = null;
 let deleteInstance = null;
 const pendingDelete = ref(null);
+const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
 // Computed properties para agrupar capacitaciones por tipo
 const capacitacionesDocentes = computed(() => {
@@ -231,12 +243,14 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
+    if (!canCreateDossier.value) return;
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
     modalInstance.show();
 };
 
 const openDelete = (capacitacion) => {
+    if (!canDeleteDossier.value) return;
     pendingDelete.value = capacitacion;
     if (!deleteModal.value) return;
     deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
@@ -248,6 +262,7 @@ const handleCapacitacionAdded = () => {
 };
 
 const eliminarCapacitacion = async (capacitacion) => {
+    if (!canDeleteDossier.value) return;
     try {
         await DossierService.deleteCapacitacion(capacitacion._id);
         await loadDossier();
@@ -259,6 +274,7 @@ const eliminarCapacitacion = async (capacitacion) => {
 };
 
 const eliminarSoloPDF = async (capacitacion) => {
+    if (!canDeleteDossier.value) return;
     if (!confirm('¿Estás seguro de eliminar solo el documento PDF? El registro se mantendrá.')) return;
     try {
         await DossierService.deleteDocument("formacion", capacitacion._id);
@@ -278,6 +294,7 @@ const confirmDelete = async () => {
 };
 
 const editarCapacitacion = (registro) => {
+    if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...registro };
     if (!editModal.value) return;
     editModalInstance = Modal.getOrCreateInstance(editModal.value);
@@ -322,6 +339,7 @@ const openDocument = async (capacitacion) => {
 };
 
 const triggerFileUpload = (itemId) => {
+    if (!canUpdateDossier.value) return;
     selectedItemId.value = itemId;
     fileInput.value.click();
 };

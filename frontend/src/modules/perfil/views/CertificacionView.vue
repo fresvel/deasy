@@ -3,6 +3,8 @@
     <ProfileSectionShell
       title="Certificaciones y reconocimientos"
       subtitle="Registra los certificados o reconocimientos relevantes para tu carrera."
+      :add-disabled="!canCreateDossier"
+      add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
 
@@ -38,6 +40,10 @@
               <td class="px-4 py-3">
                 <DossierDocumentActions
                   :has-document="Boolean(certificacion.url_documento)"
+                  :can-edit="canUpdateDossier"
+                  :can-upload="canUpdateDossier"
+                  :can-delete-document="canDeleteDossier"
+                  :can-delete="canDeleteDossier"
                   @edit="editarCertificacion(certificacion)"
                   @preview="previewDocument(certificacion)"
                   @download="openDocument(certificacion)"
@@ -106,6 +112,7 @@ import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPrevie
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import DossierService from "@/modules/dossier/services/DossierService";
+import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
 const deleteModal = ref(null);
@@ -116,6 +123,7 @@ const dossier = ref(null);
 const loading = ref(true);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -148,6 +156,7 @@ const loadDossier = async () => {
 };
 
 const openModal = () => {
+    if (!canCreateDossier.value) return;
     pendingEdit.value = null;
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
@@ -155,6 +164,7 @@ const openModal = () => {
 };
 
 const editarCertificacion = (certificacion) => {
+    if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...certificacion };
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
@@ -167,6 +177,7 @@ const handleCertificacionUpdated = () => {
 };
 
 const openDelete = (certificacion) => {
+    if (!canDeleteDossier.value) return;
     pendingDelete.value = certificacion;
     if (!deleteModal.value) return;
     deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
@@ -186,6 +197,7 @@ const confirmDelete = async () => {
 };
 
 const eliminarSoloPDF = async (certificacion) => {
+    if (!canDeleteDossier.value) return;
     if (!confirm('¿Estás seguro de eliminar solo el documento PDF?')) return;
     try {
         await DossierService.deleteDocument("certificacion", certificacion._id);
@@ -227,6 +239,7 @@ const openDocument = async (certificacion) => {
 };
 
 const triggerFileUpload = (itemId) => {
+    if (!canUpdateDossier.value) return;
     selectedItemId.value = itemId;
     fileInput.value.click();
 };

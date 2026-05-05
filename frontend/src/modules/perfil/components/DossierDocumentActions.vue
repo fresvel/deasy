@@ -1,6 +1,13 @@
 <template>
   <div class="d-inline-flex align-items-center gap-1">
-    <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Editar"
+    <AdminButton
+      variant="secondary"
+      size="sm"
+      icon-only
+      class-name="hope-action-btn hope-action-edit"
+      :title="canEdit ? 'Editar' : 'No tienes permiso para editar este registro'"
+      :aria-label="canEdit ? 'Editar' : 'Edicion bloqueada por permisos'"
+      :disabled="!canEdit"
       @click="$emit('edit')">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -32,7 +39,10 @@
       </svg>
     </AdminButton>
     <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-upload"
-      :title="hasDocument ? 'Actualizar PDF' : 'Subir PDF'" @click="$emit('upload')">
+      :title="canUpload ? (hasDocument ? 'Actualizar PDF' : 'Subir PDF') : 'No tienes permiso para subir o actualizar PDFs'"
+      :aria-label="canUpload ? (hasDocument ? 'Actualizar PDF' : 'Subir PDF') : 'Subida bloqueada por permisos'"
+      :disabled="!canUpload"
+      @click="$emit('upload')">
       <svg v-if="hasDocument" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true"
         viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -51,7 +61,11 @@
       </svg>
     </AdminButton>
     <AdminButton v-if="hasDocument" variant="secondary" size="sm" icon-only
-      class-name="hope-action-btn hope-action-delete-pdf" title="Eliminar solo PDF" @click="$emit('delete-document')">
+      class-name="hope-action-btn hope-action-delete-pdf"
+      :title="canDeleteDocument ? 'Eliminar solo PDF' : 'No tienes permiso para eliminar PDFs'"
+      :aria-label="canDeleteDocument ? 'Eliminar solo PDF' : 'Eliminacion de PDF bloqueada por permisos'"
+      :disabled="!canDeleteDocument"
+      @click="$emit('delete-document')">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
           d="M9 17.25H7.5A2.25 2.25 0 0 1 5.25 15V6.75A2.25 2.25 0 0 1 7.5 4.5h6A2.25 2.25 0 0 1 15.75 6.75V9" />
@@ -62,7 +76,10 @@
       </svg>
     </AdminButton>
     <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-delete"
-      title="Eliminar registro completo" @click="$emit('delete')">
+      :title="canDelete ? 'Eliminar registro completo' : 'No tienes permiso para eliminar registros'"
+      :aria-label="canDelete ? 'Eliminar registro completo' : 'Eliminacion bloqueada por permisos'"
+      :disabled="!canDelete"
+      @click="$emit('delete')">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" aria-hidden="true" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
           d="M19.325 9.468s-.543 6.735-.858 9.572c-.15 1.355-.987 2.15-2.358 2.174-2.61.047-5.221.05-7.83-.005-1.318-.027-2.141-.83-2.288-2.162-.317-2.862-.857-9.579-.857-9.579M20.708 6.24H3.75m13.69 0a1.65 1.65 0 0 1-1.614-1.324L15.583 3.7a1.28 1.28 0 0 0-1.237-.95h-4.233a1.28 1.28 0 0 0-1.237.95l-.243 1.216A1.65 1.65 0 0 1 7.018 6.24" />
@@ -78,6 +95,22 @@ defineProps({
   hasDocument: {
     type: Boolean,
     default: false
+  },
+  canEdit: {
+    type: Boolean,
+    default: true
+  },
+  canUpload: {
+    type: Boolean,
+    default: true
+  },
+  canDeleteDocument: {
+    type: Boolean,
+    default: true
+  },
+  canDelete: {
+    type: Boolean,
+    default: true
   }
 });
 

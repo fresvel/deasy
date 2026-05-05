@@ -3,6 +3,8 @@
     <ProfileSectionShell
       title="Formación Profesional"
       subtitle="Registra tu formación académica y títulos obtenidos."
+      :add-disabled="!canCreateDossier"
+      add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
       <!-- Títulos de Cuarto Nivel -->
@@ -36,6 +38,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(titulo.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarTitulo(titulo)"
                     @preview="previewDocument(titulo)"
                     @download="openDocument(titulo)"
@@ -81,6 +87,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(titulo.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarTitulo(titulo)"
                     @preview="previewDocument(titulo)"
                     @download="openDocument(titulo)"
@@ -126,6 +136,10 @@
                 <td class="px-4 py-3">
                   <DossierDocumentActions
                     :has-document="Boolean(titulo.url_documento)"
+                    :can-edit="canUpdateDossier"
+                    :can-upload="canUpdateDossier"
+                    :can-delete-document="canDeleteDossier"
+                    :can-delete="canDeleteDossier"
                     @edit="editarTitulo(titulo)"
                     @preview="previewDocument(titulo)"
                     @download="openDocument(titulo)"
@@ -193,6 +207,7 @@ import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import { Modal } from "@/shared/utils/modalController";
 import DossierService from "@/modules/dossier/services/DossierService";
+import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
 const deleteModal = ref(null);
@@ -202,6 +217,7 @@ const selectedTituloId = ref(null);
 const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -234,6 +250,7 @@ const loadDossier = async () => {
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 const openModal = () => {
+    if (!canCreateDossier.value) return;
     pendingEdit.value = null;
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
@@ -241,6 +258,7 @@ const openModal = () => {
 };
 
 const editarTitulo = (titulo) => {
+    if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...titulo };
     if (!modal.value) return;
     modalInstance = Modal.getOrCreateInstance(modal.value);
@@ -253,6 +271,7 @@ const handleTituloUpdated = () => {
 };
 
 const openDelete = (titulo) => {
+    if (!canDeleteDossier.value) return;
     pendingDelete.value = titulo;
     if (!deleteModal.value) return;
     deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
@@ -271,6 +290,7 @@ const confirmDelete = async () => {
 };
 
 const eliminarSoloPDF = async (titulo) => {
+    if (!canDeleteDossier.value) return;
     if (!confirm('¿Estás seguro de eliminar solo el documento PDF?')) return;
     try {
         await DossierService.deleteDocument("titulo", titulo._id);
@@ -311,6 +331,7 @@ const openDocument = async (titulo) => {
 };
 
 const triggerFileUpload = (tituloId) => {
+    if (!canUpdateDossier.value) return;
     selectedTituloId.value = tituloId;
     fileInput.value.click();
 };
