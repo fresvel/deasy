@@ -1,6 +1,6 @@
 # Comandos clave del proyecto Deasy
 
-Ultima revision local: 2026-05-04
+Ultima revision local: 2026-05-05
 
 Este archivo resume el analisis operativo del repositorio y los comandos mas
 importantes para levantar, validar y administrar el proyecto. La fuente principal
@@ -270,23 +270,44 @@ Variables importantes del signer:
 
 ## Seeds, reset y migraciones
 
-Capturar seed desde el ambiente:
+### Seed SQL de MariaDB
+
+Estos comandos trabajan con datos SQL, no con archivos de plantillas en MinIO.
+Sirven para capturar o aplicar el snapshot `backend/scripts/seeds/pucese.seed.json`
+contra la base MariaDB del ambiente indicado.
+
+Capturar seed desde `dev`:
 
 ```bash
 bash scripts/seed-db.sh dev capture
 ```
 
-Aplicar seed:
+Aplicar seed en `dev`:
 
 ```bash
 bash scripts/seed-db.sh dev apply
 ```
 
-Aplicar seed especifico:
+Si estas trabajando en QA local, usa `qa-local`, no `dev`:
+
+```bash
+bash scripts/seed-db.sh qa-local capture
+bash scripts/seed-db.sh qa-local apply
+```
+
+Aplicar seed especifico dentro del contenedor backend:
 
 ```bash
 bash scripts/seed-db.sh dev apply --file /app/backend/scripts/seeds/pucese.seed.json
 ```
+
+Notas importantes:
+
+- `capture` lee la MariaDB actual y escribe el JSON de semilla.
+- `apply` borra y reinserta las tablas incluidas en el JSON; no lo uses sobre datos que quieras conservar.
+- Si solo levantaste QA local con `bash scripts/docker-env.sh qa-local up -d --build`, el comando `bash scripts/seed-db.sh dev apply` no encuentra el backend de `dev`.
+- Para QA local el comando correcto es `bash scripts/seed-db.sh qa-local apply`.
+- Estos comandos no suben archivos de plantillas a MinIO.
 
 Aplicar semilla demo de cuentas, roles, workflow y dossier en QA local:
 
@@ -323,25 +344,46 @@ Notas de seguridad:
 
 ## Seeds de storage en MinIO
 
-Inicializar buckets y estructura de MinIO:
+Estos comandos son los que publican archivos de plantillas en MinIO. Son
+distintos a `seed-db.sh`.
+
+Inicializar buckets y estructura de MinIO en `dev`:
 
 ```bash
 bash scripts/docker-env.sh dev --profile storage-init run --rm minio-bootstrap
 ```
 
-Publicar seeds de plantillas:
+Publicar seeds de plantillas en `dev`:
 
 ```bash
 bash scripts/docker-env.sh dev --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
 ```
 
-Publicar plantillas generadas:
+Publicar plantillas generadas en `dev`:
 
 ```bash
 bash scripts/docker-env.sh dev --profile storage-publish run --rm --no-deps minio-publish
 ```
 
+Equivalentes para QA local:
+
+```bash
+bash scripts/docker-env.sh qa-local --profile storage-init run --rm minio-bootstrap
+bash scripts/docker-env.sh qa-local --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
+bash scripts/docker-env.sh qa-local --profile storage-publish run --rm --no-deps minio-publish
+```
+
+El comando `storage-publish-seeds` toma los archivos desde
+`tools/templates/seeds/` y los sube al bucket configurado en
+`MINIO_TEMPLATES_BUCKET`, bajo el prefijo `MINIO_TEMPLATES_SEEDS_PREFIX`.
+El comando `storage-publish` toma archivos desde `tools/templates/dist/Plantillas`;
+si esa carpeta no existe o esta vacia, primero hay que generar las plantillas.
+
 Existe tambien un wrapper legacy para seeds locales:
+
+Nota: `run-seeds.ps1` y `run-seeds.sh` usan el compose legacy
+`docker/docker-compose.yml`. Para el entorno multiambiente actual es mas claro
+usar `scripts/docker-env.sh` con `dev` o `qa-local`.
 
 ```powershell
 .\scripts\run-seeds.ps1

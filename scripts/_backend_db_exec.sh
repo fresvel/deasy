@@ -49,7 +49,7 @@ ensure_prod_approval_file() {
 ensure_environment() {
   local environment="$1"
   case "$environment" in
-    dev|qa|prod)
+    dev|qa-local|qa|prod)
       ;;
     *)
       echo "Ambiente no soportado: $environment"

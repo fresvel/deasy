@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
-  "source_database": "deasy",
-  "captured_at": "2026-05-04T18:09:22.233Z",
+  "source_database": "deasy_qa",
+  "captured_at": "2026-05-05T22:11:31.854Z",
   "tables": [
     {
       "table": "persons",
@@ -55,7 +55,133 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 2,
+          "cedula": "0999900001",
+          "first_name": "Admin",
+          "last_name": "Demo",
+          "email": "admin.demo@deasy.local",
+          "whatsapp": "0999900001",
+          "direccion": "Av. Demo y Calle QA",
+          "pais": "Ecuador",
+          "pais_residencia": "Ecuador",
+          "provincia_residencia": "Esmeraldas",
+          "ciudad_residencia": "Esmeraldas",
+          "calle_primaria": "Av. Demo",
+          "calle_secundaria": "Calle QA",
+          "codigo_postal": "080150",
+          "password_hash": "$2b$10$3o/U1Ua9XQYbJbgZTk6B.eKSxaUTEmiR.l40BISfLw6dx/cttNie6",
+          "status": "Activo",
+          "verify_email": 1,
+          "verify_whatsapp": 1,
+          "photo_url": null,
+          "is_active": 1,
+          "token": "DMADMIN001",
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 3,
+          "cedula": "0999900002",
+          "first_name": "Gestor",
+          "last_name": "Demo",
+          "email": "gestor.demo@deasy.local",
+          "whatsapp": "0999900002",
+          "direccion": "Av. Demo y Calle QA",
+          "pais": "Ecuador",
+          "pais_residencia": "Ecuador",
+          "provincia_residencia": "Esmeraldas",
+          "ciudad_residencia": "Esmeraldas",
+          "calle_primaria": "Av. Demo",
+          "calle_secundaria": "Calle QA",
+          "codigo_postal": "080150",
+          "password_hash": "$2b$10$3o/U1Ua9XQYbJbgZTk6B.eKSxaUTEmiR.l40BISfLw6dx/cttNie6",
+          "status": "Activo",
+          "verify_email": 1,
+          "verify_whatsapp": 1,
+          "photo_url": null,
+          "is_active": 1,
+          "token": "DMGESTR001",
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 4,
+          "cedula": "0999900003",
+          "first_name": "Auditor",
+          "last_name": "Demo",
+          "email": "auditor.demo@deasy.local",
+          "whatsapp": "0999900003",
+          "direccion": "Av. Demo y Calle QA",
+          "pais": "Ecuador",
+          "pais_residencia": "Ecuador",
+          "provincia_residencia": "Esmeraldas",
+          "ciudad_residencia": "Esmeraldas",
+          "calle_primaria": "Av. Demo",
+          "calle_secundaria": "Calle QA",
+          "codigo_postal": "080150",
+          "password_hash": "$2b$10$3o/U1Ua9XQYbJbgZTk6B.eKSxaUTEmiR.l40BISfLw6dx/cttNie6",
+          "status": "Activo",
+          "verify_email": 1,
+          "verify_whatsapp": 1,
+          "photo_url": null,
+          "is_active": 1,
+          "token": "DMAUDIT001",
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 20,
+          "cedula": "0999900004",
+          "first_name": "Usuario",
+          "last_name": "Demo",
+          "email": "usuario.demo@deasy.local",
+          "whatsapp": "0999900004",
+          "direccion": "Av. Demo y Calle QA",
+          "pais": "Ecuador",
+          "pais_residencia": "Ecuador",
+          "provincia_residencia": "Esmeraldas",
+          "ciudad_residencia": "Esmeraldas",
+          "calle_primaria": "Av. Demo",
+          "calle_secundaria": "Calle QA",
+          "codigo_postal": "080150",
+          "password_hash": "$2b$10$3o/U1Ua9XQYbJbgZTk6B.eKSxaUTEmiR.l40BISfLw6dx/cttNie6",
+          "status": "Activo",
+          "verify_email": 1,
+          "verify_whatsapp": 1,
+          "photo_url": null,
+          "is_active": 1,
+          "token": "DMUSER001",
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 21,
+          "cedula": "0000000000",
+          "first_name": "demo3",
+          "last_name": "demo3",
+          "email": "demo3@deasy.com",
+          "whatsapp": "+5930000000000",
+          "direccion": "-0.360000, -78.440000",
+          "pais": "Ecuador",
+          "pais_residencia": "Ecuador",
+          "provincia_residencia": "demo3",
+          "ciudad_residencia": "demo3",
+          "calle_primaria": "demo3",
+          "calle_secundaria": "demo3",
+          "codigo_postal": "0000",
+          "password_hash": "$2b$10$W2VJ9zvDqaTJiCEqavfOzuf5Yo1hFwxYsGE0b6ESwzKAKlOVb80JW",
+          "status": "Inactivo",
+          "verify_email": 0,
+          "verify_whatsapp": 0,
+          "photo_url": null,
+          "is_active": 1,
+          "token": "jR1jYDi3fS",
+          "created_at": "2026-05-05 21:55:35",
+          "updated_at": "2026-05-05 21:55:35"
+        }
+      ]
     },
     {
       "table": "unit_types",
@@ -71,7 +197,14 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "Demo QA",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "relation_unit_types",
@@ -101,7 +234,7 @@
           "description": "Relacion jerarquica organizacional",
           "is_inheritance_allowed": 1,
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:06"
+          "created_at": "2026-05-04 22:24:03"
         }
       ]
     },
@@ -127,7 +260,18 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 4,
+          "name": "Unidad QA Demo",
+          "label": "QA Demo",
+          "slug": "deasy-qa-demo",
+          "unit_type_id": 1,
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "unit_relations",
@@ -167,7 +311,53 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "001",
+          "name": "Director",
+          "description": "Director de Departamentos",
+          "is_active": 1,
+          "created_at": "2026-05-04 22:46:35",
+          "updated_at": "2026-05-04 22:46:35"
+        },
+        {
+          "id": 2,
+          "code": "DEMO-ADMIN",
+          "name": "Administrador demo",
+          "description": "Cargo demo para Administrador demo.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 3,
+          "code": "DEMO-GESTOR",
+          "name": "Gestor demo",
+          "description": "Cargo demo para Gestor demo.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 4,
+          "code": "DEMO-AUDITOR",
+          "name": "Auditor demo",
+          "description": "Cargo demo para Auditor demo.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 20,
+          "code": "DEMO-USUARIO",
+          "name": "Usuario demo",
+          "description": "Cargo demo para Usuario demo.",
+          "is_active": 1,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": "2026-05-05 04:45:20"
+        }
+      ]
     },
     {
       "table": "roles",
@@ -183,7 +373,32 @@
         "description": "varchar(255)",
         "is_active": "tinyint(1)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "Gestor",
+          "description": "Crea, gestiona y elimina procesos operativos.",
+          "is_active": 1
+        },
+        {
+          "id": 2,
+          "name": "Admin",
+          "description": "Acceso completo sobre administracion, usuarios, roles y procesos.",
+          "is_active": 1
+        },
+        {
+          "id": 3,
+          "name": "Usuario",
+          "description": "Acceso a funcionalidades generales de usuario.",
+          "is_active": 1
+        },
+        {
+          "id": 4,
+          "name": "Auditor",
+          "description": "Solo lectura sobre datos y procesos.",
+          "is_active": 1
+        }
+      ]
     },
     {
       "table": "resources",
@@ -205,7 +420,62 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "account",
+          "name": "Cuenta",
+          "description": "Datos de cuenta y sesion.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 2,
+          "code": "dossier",
+          "name": "Dossier",
+          "description": "Perfil profesional y evidencias.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 3,
+          "code": "documents",
+          "name": "Documentos",
+          "description": "Centro documental del usuario.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 4,
+          "code": "processes",
+          "name": "Procesos",
+          "description": "Procesos, tareas y definiciones.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 5,
+          "code": "roles",
+          "name": "Roles",
+          "description": "Roles, permisos y asignaciones.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 6,
+          "code": "users",
+          "name": "Usuarios",
+          "description": "Administracion de usuarios.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "actions",
@@ -227,7 +497,53 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "read",
+          "name": "Leer",
+          "description": "Consultar registros.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 2,
+          "code": "create",
+          "name": "Crear",
+          "description": "Crear registros.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 3,
+          "code": "update",
+          "name": "Actualizar",
+          "description": "Modificar registros.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 4,
+          "code": "delete",
+          "name": "Eliminar",
+          "description": "Eliminar registros.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 5,
+          "code": "manage",
+          "name": "Administrar",
+          "description": "Administracion completa del modulo.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "permissions",
@@ -251,7 +567,308 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "resource_id": 1,
+          "action_id": 1,
+          "code": "account.read",
+          "description": "Leer Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 2,
+          "resource_id": 1,
+          "action_id": 2,
+          "code": "account.create",
+          "description": "Crear Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 3,
+          "resource_id": 1,
+          "action_id": 3,
+          "code": "account.update",
+          "description": "Actualizar Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 4,
+          "resource_id": 1,
+          "action_id": 4,
+          "code": "account.delete",
+          "description": "Eliminar Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 5,
+          "resource_id": 1,
+          "action_id": 5,
+          "code": "account.manage",
+          "description": "Administrar Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 6,
+          "resource_id": 2,
+          "action_id": 1,
+          "code": "dossier.read",
+          "description": "Leer Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 7,
+          "resource_id": 2,
+          "action_id": 2,
+          "code": "dossier.create",
+          "description": "Crear Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 8,
+          "resource_id": 2,
+          "action_id": 3,
+          "code": "dossier.update",
+          "description": "Actualizar Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 9,
+          "resource_id": 2,
+          "action_id": 4,
+          "code": "dossier.delete",
+          "description": "Eliminar Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 10,
+          "resource_id": 2,
+          "action_id": 5,
+          "code": "dossier.manage",
+          "description": "Administrar Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 11,
+          "resource_id": 3,
+          "action_id": 1,
+          "code": "documents.read",
+          "description": "Leer Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 12,
+          "resource_id": 3,
+          "action_id": 2,
+          "code": "documents.create",
+          "description": "Crear Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 13,
+          "resource_id": 3,
+          "action_id": 3,
+          "code": "documents.update",
+          "description": "Actualizar Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 14,
+          "resource_id": 3,
+          "action_id": 4,
+          "code": "documents.delete",
+          "description": "Eliminar Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 15,
+          "resource_id": 3,
+          "action_id": 5,
+          "code": "documents.manage",
+          "description": "Administrar Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 16,
+          "resource_id": 4,
+          "action_id": 1,
+          "code": "processes.read",
+          "description": "Leer Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 17,
+          "resource_id": 4,
+          "action_id": 2,
+          "code": "processes.create",
+          "description": "Crear Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 18,
+          "resource_id": 4,
+          "action_id": 3,
+          "code": "processes.update",
+          "description": "Actualizar Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 19,
+          "resource_id": 4,
+          "action_id": 4,
+          "code": "processes.delete",
+          "description": "Eliminar Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 20,
+          "resource_id": 4,
+          "action_id": 5,
+          "code": "processes.manage",
+          "description": "Administrar Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 21,
+          "resource_id": 5,
+          "action_id": 1,
+          "code": "roles.read",
+          "description": "Leer Roles",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 22,
+          "resource_id": 5,
+          "action_id": 2,
+          "code": "roles.create",
+          "description": "Crear Roles",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 23,
+          "resource_id": 5,
+          "action_id": 3,
+          "code": "roles.update",
+          "description": "Actualizar Roles",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 24,
+          "resource_id": 5,
+          "action_id": 4,
+          "code": "roles.delete",
+          "description": "Eliminar Roles",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 25,
+          "resource_id": 5,
+          "action_id": 5,
+          "code": "roles.manage",
+          "description": "Administrar Roles",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 26,
+          "resource_id": 6,
+          "action_id": 1,
+          "code": "users.read",
+          "description": "Leer Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 27,
+          "resource_id": 6,
+          "action_id": 2,
+          "code": "users.create",
+          "description": "Crear Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 28,
+          "resource_id": 6,
+          "action_id": 3,
+          "code": "users.update",
+          "description": "Actualizar Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 29,
+          "resource_id": 6,
+          "action_id": 4,
+          "code": "users.delete",
+          "description": "Eliminar Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 30,
+          "resource_id": 6,
+          "action_id": 5,
+          "code": "users.manage",
+          "description": "Administrar Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "role_permissions",
@@ -265,7 +882,298 @@
         "role_id": "int(11)",
         "permission_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 31,
+          "role_id": 1,
+          "permission_id": 1
+        },
+        {
+          "id": 32,
+          "role_id": 1,
+          "permission_id": 3
+        },
+        {
+          "id": 33,
+          "role_id": 1,
+          "permission_id": 6
+        },
+        {
+          "id": 34,
+          "role_id": 1,
+          "permission_id": 8
+        },
+        {
+          "id": 35,
+          "role_id": 1,
+          "permission_id": 11
+        },
+        {
+          "id": 36,
+          "role_id": 1,
+          "permission_id": 12
+        },
+        {
+          "id": 37,
+          "role_id": 1,
+          "permission_id": 13
+        },
+        {
+          "id": 38,
+          "role_id": 1,
+          "permission_id": 16
+        },
+        {
+          "id": 39,
+          "role_id": 1,
+          "permission_id": 17
+        },
+        {
+          "id": 40,
+          "role_id": 1,
+          "permission_id": 18
+        },
+        {
+          "id": 41,
+          "role_id": 1,
+          "permission_id": 19
+        },
+        {
+          "id": 42,
+          "role_id": 1,
+          "permission_id": 21
+        },
+        {
+          "id": 43,
+          "role_id": 1,
+          "permission_id": 26
+        },
+        {
+          "id": 1,
+          "role_id": 2,
+          "permission_id": 1
+        },
+        {
+          "id": 2,
+          "role_id": 2,
+          "permission_id": 2
+        },
+        {
+          "id": 3,
+          "role_id": 2,
+          "permission_id": 3
+        },
+        {
+          "id": 4,
+          "role_id": 2,
+          "permission_id": 4
+        },
+        {
+          "id": 5,
+          "role_id": 2,
+          "permission_id": 5
+        },
+        {
+          "id": 6,
+          "role_id": 2,
+          "permission_id": 6
+        },
+        {
+          "id": 7,
+          "role_id": 2,
+          "permission_id": 7
+        },
+        {
+          "id": 8,
+          "role_id": 2,
+          "permission_id": 8
+        },
+        {
+          "id": 9,
+          "role_id": 2,
+          "permission_id": 9
+        },
+        {
+          "id": 10,
+          "role_id": 2,
+          "permission_id": 10
+        },
+        {
+          "id": 11,
+          "role_id": 2,
+          "permission_id": 11
+        },
+        {
+          "id": 12,
+          "role_id": 2,
+          "permission_id": 12
+        },
+        {
+          "id": 13,
+          "role_id": 2,
+          "permission_id": 13
+        },
+        {
+          "id": 14,
+          "role_id": 2,
+          "permission_id": 14
+        },
+        {
+          "id": 15,
+          "role_id": 2,
+          "permission_id": 15
+        },
+        {
+          "id": 16,
+          "role_id": 2,
+          "permission_id": 16
+        },
+        {
+          "id": 17,
+          "role_id": 2,
+          "permission_id": 17
+        },
+        {
+          "id": 18,
+          "role_id": 2,
+          "permission_id": 18
+        },
+        {
+          "id": 19,
+          "role_id": 2,
+          "permission_id": 19
+        },
+        {
+          "id": 20,
+          "role_id": 2,
+          "permission_id": 20
+        },
+        {
+          "id": 21,
+          "role_id": 2,
+          "permission_id": 21
+        },
+        {
+          "id": 22,
+          "role_id": 2,
+          "permission_id": 22
+        },
+        {
+          "id": 23,
+          "role_id": 2,
+          "permission_id": 23
+        },
+        {
+          "id": 24,
+          "role_id": 2,
+          "permission_id": 24
+        },
+        {
+          "id": 25,
+          "role_id": 2,
+          "permission_id": 25
+        },
+        {
+          "id": 26,
+          "role_id": 2,
+          "permission_id": 26
+        },
+        {
+          "id": 27,
+          "role_id": 2,
+          "permission_id": 27
+        },
+        {
+          "id": 28,
+          "role_id": 2,
+          "permission_id": 28
+        },
+        {
+          "id": 29,
+          "role_id": 2,
+          "permission_id": 29
+        },
+        {
+          "id": 30,
+          "role_id": 2,
+          "permission_id": 30
+        },
+        {
+          "id": 50,
+          "role_id": 3,
+          "permission_id": 1
+        },
+        {
+          "id": 51,
+          "role_id": 3,
+          "permission_id": 3
+        },
+        {
+          "id": 52,
+          "role_id": 3,
+          "permission_id": 6
+        },
+        {
+          "id": 53,
+          "role_id": 3,
+          "permission_id": 7
+        },
+        {
+          "id": 54,
+          "role_id": 3,
+          "permission_id": 8
+        },
+        {
+          "id": 55,
+          "role_id": 3,
+          "permission_id": 11
+        },
+        {
+          "id": 284,
+          "role_id": 3,
+          "permission_id": 12
+        },
+        {
+          "id": 56,
+          "role_id": 3,
+          "permission_id": 13
+        },
+        {
+          "id": 57,
+          "role_id": 3,
+          "permission_id": 16
+        },
+        {
+          "id": 44,
+          "role_id": 4,
+          "permission_id": 1
+        },
+        {
+          "id": 45,
+          "role_id": 4,
+          "permission_id": 6
+        },
+        {
+          "id": 46,
+          "role_id": 4,
+          "permission_id": 11
+        },
+        {
+          "id": 47,
+          "role_id": 4,
+          "permission_id": 16
+        },
+        {
+          "id": 48,
+          "role_id": 4,
+          "permission_id": 21
+        },
+        {
+          "id": 49,
+          "role_id": 4,
+          "permission_id": 26
+        }
+      ]
     },
     {
       "table": "role_assignments",
@@ -301,7 +1209,72 @@
         "revoked_at": "datetime",
         "revoked_reason": "varchar(255)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "role_id": 2,
+          "unit_id": 4,
+          "derived_from_assignment_id": 1,
+          "source": "derived",
+          "person_id": 2,
+          "max_depth": 0,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-05 03:43:34",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 3,
+          "role_id": 1,
+          "unit_id": 4,
+          "derived_from_assignment_id": 2,
+          "source": "derived",
+          "person_id": 3,
+          "max_depth": 0,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-05 03:43:34",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 5,
+          "role_id": 4,
+          "unit_id": 4,
+          "derived_from_assignment_id": 3,
+          "source": "derived",
+          "person_id": 4,
+          "max_depth": 0,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-05 03:43:34",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 7,
+          "role_id": 3,
+          "unit_id": 4,
+          "derived_from_assignment_id": 19,
+          "source": "derived",
+          "person_id": 20,
+          "max_depth": 0,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-05 04:45:20",
+          "revoked_at": null,
+          "revoked_reason": null
+        }
+      ]
     },
     {
       "table": "role_assignment_relation_types",
@@ -329,7 +1302,93 @@
         "role_id": "int(11)",
         "cargo_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "role_id": 3,
+          "cargo_id": 1
+        },
+        {
+          "id": 6,
+          "role_id": 1,
+          "cargo_id": 2
+        },
+        {
+          "id": 2,
+          "role_id": 2,
+          "cargo_id": 2
+        },
+        {
+          "id": 7,
+          "role_id": 3,
+          "cargo_id": 2
+        },
+        {
+          "id": 5,
+          "role_id": 4,
+          "cargo_id": 2
+        },
+        {
+          "id": 3,
+          "role_id": 1,
+          "cargo_id": 3
+        },
+        {
+          "id": 8,
+          "role_id": 2,
+          "cargo_id": 3
+        },
+        {
+          "id": 10,
+          "role_id": 3,
+          "cargo_id": 3
+        },
+        {
+          "id": 9,
+          "role_id": 4,
+          "cargo_id": 3
+        },
+        {
+          "id": 12,
+          "role_id": 1,
+          "cargo_id": 4
+        },
+        {
+          "id": 11,
+          "role_id": 2,
+          "cargo_id": 4
+        },
+        {
+          "id": 13,
+          "role_id": 3,
+          "cargo_id": 4
+        },
+        {
+          "id": 4,
+          "role_id": 4,
+          "cargo_id": 4
+        },
+        {
+          "id": 44,
+          "role_id": 1,
+          "cargo_id": 20
+        },
+        {
+          "id": 42,
+          "role_id": 2,
+          "cargo_id": 20
+        },
+        {
+          "id": 38,
+          "role_id": 3,
+          "cargo_id": 20
+        },
+        {
+          "id": 43,
+          "role_id": 4,
+          "cargo_id": 20
+        }
+      ]
     },
     {
       "table": "unit_positions",
@@ -359,7 +1418,60 @@
         "updated_at": "datetime",
         "cargo_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Administrador demo",
+          "profile_ref": "demo",
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34",
+          "cargo_id": 2
+        },
+        {
+          "id": 2,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Gestor demo",
+          "profile_ref": "demo",
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34",
+          "cargo_id": 3
+        },
+        {
+          "id": 3,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Auditor demo",
+          "profile_ref": "demo",
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34",
+          "cargo_id": 4
+        },
+        {
+          "id": 19,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Usuario demo",
+          "profile_ref": "demo",
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": "2026-05-05 04:45:20",
+          "cargo_id": 20
+        }
+      ]
     },
     {
       "table": "position_assignments",
@@ -385,7 +1497,52 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "position_id": 1,
+          "person_id": 2,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 2,
+          "position_id": 2,
+          "person_id": 3,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 3,
+          "position_id": 3,
+          "person_id": 4,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "updated_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 19,
+          "position_id": 19,
+          "person_id": 20,
+          "start_date": "2026-01-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": "2026-05-05 04:45:20"
+        }
+      ]
     },
     {
       "table": "processes",
@@ -413,7 +1570,20 @@
         "person_id": "int(11)",
         "term_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "Flujo demo de cuenta",
+          "slug": "flujo-demo-cuenta",
+          "parent_id": null,
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34",
+          "unit_id": null,
+          "program_id": null,
+          "person_id": null,
+          "term_id": null
+        }
+      ]
     },
     {
       "table": "process_definition_series",
@@ -435,7 +1605,17 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "source_type": "legacy",
+          "unit_type_id": null,
+          "cargo_id": null,
+          "code": "demo-account-flow",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "process_definition_versions",
@@ -469,7 +1649,23 @@
         "effective_to": "date",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_id": 1,
+          "series_id": 1,
+          "variation_key": "general",
+          "definition_version": "1.0.0",
+          "name": "Flujo demo de cuenta",
+          "description": "Proceso de prueba para revisar dashboard, documentos, llenado y firma.",
+          "has_document": 1,
+          "status": "active",
+          "active_series_flag": 1,
+          "effective_from": "2026-01-01",
+          "effective_to": null,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "process_definition_triggers",
@@ -491,7 +1687,17 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 1,
+          "trigger_mode": "manual_only",
+          "term_type_id": null,
+          "normalized_term_type_id": 0,
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "process_target_rules",
@@ -527,7 +1733,24 @@
         "effective_to": "date",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 1,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": null,
+          "include_descendants": 0,
+          "cargo_id": null,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-01-01",
+          "effective_to": null,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "term_types",
@@ -556,8 +1779,8 @@
           "name": "Semestre",
           "description": "Periodo academico semestral",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:07",
-          "updated_at": "2026-05-04 18:07:07"
+          "created_at": "2026-05-04 22:24:04",
+          "updated_at": "2026-05-04 22:24:04"
         },
         {
           "id": 2,
@@ -565,8 +1788,8 @@
           "name": "Trimestre",
           "description": "Periodo academico trimestral",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:07",
-          "updated_at": "2026-05-04 18:07:07"
+          "created_at": "2026-05-04 22:24:04",
+          "updated_at": "2026-05-04 22:24:04"
         },
         {
           "id": 3,
@@ -574,8 +1797,8 @@
           "name": "Intensivo",
           "description": "Periodo academico intensivo",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:07",
-          "updated_at": "2026-05-04 18:07:07"
+          "created_at": "2026-05-04 22:24:04",
+          "updated_at": "2026-05-04 22:24:04"
         },
         {
           "id": 4,
@@ -583,8 +1806,8 @@
           "name": "Custom",
           "description": "Periodo operativo personalizado",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:07",
-          "updated_at": "2026-05-04 18:07:07"
+          "created_at": "2026-05-04 22:24:04",
+          "updated_at": "2026-05-04 22:24:04"
         }
       ]
     },
@@ -606,7 +1829,16 @@
         "end_date": "date",
         "is_active": "tinyint(1)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "QA Demo 2026",
+          "term_type_id": 4,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "is_active": 1
+        }
+      ]
     },
     {
       "table": "template_artifacts",
@@ -652,7 +1884,29 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "template_seed_id": null,
+          "owner_person_id": null,
+          "template_code": "tpl-demo-workflow-report",
+          "display_name": "Documento demo de flujo",
+          "description": "Plantilla demo para probar documentos y firmas.",
+          "owner_ref": "demo",
+          "source_version": "1.0.0",
+          "storage_version": "1.0.0",
+          "artifact_origin": "process",
+          "artifact_stage": "published",
+          "bucket": "deasy-qa-templates",
+          "base_object_prefix": "Seeds/demo-workflow",
+          "available_formats": "[\"pdf\",\"docx\"]",
+          "schema_object_key": "Seeds/demo-workflow/schema.json",
+          "meta_object_key": "Seeds/demo-workflow/meta.yaml",
+          "content_hash": "demo-workflow",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "process_definition_templates",
@@ -678,7 +1932,19 @@
         "sort_order": "int(11)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 1,
+          "template_artifact_id": 1,
+          "usage_role": "primary",
+          "instance_mode": "owner_many_documents",
+          "creates_task": 1,
+          "is_required": 1,
+          "sort_order": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "tasks",
@@ -718,7 +1984,80 @@
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_id": 1,
+          "process_run_id": null,
+          "term_id": 1,
+          "launch_mode": "manual",
+          "created_by_user_id": 2,
+          "automatic_flag": null,
+          "manual_user_flag": 2,
+          "parent_task_id": null,
+          "responsible_position_id": 1,
+          "description": "Tarea demo para Admin Demo",
+          "comments_thread_ref": null,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "status": "pendiente",
+          "created_at": "2026-05-05 03:43:34"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 1,
+          "process_run_id": null,
+          "term_id": 1,
+          "launch_mode": "manual",
+          "created_by_user_id": 3,
+          "automatic_flag": null,
+          "manual_user_flag": 3,
+          "parent_task_id": null,
+          "responsible_position_id": 2,
+          "description": "Tarea demo para Gestor Demo",
+          "comments_thread_ref": null,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "status": "pendiente",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 1,
+          "process_run_id": null,
+          "term_id": 1,
+          "launch_mode": "manual",
+          "created_by_user_id": 4,
+          "automatic_flag": null,
+          "manual_user_flag": 4,
+          "parent_task_id": null,
+          "responsible_position_id": 3,
+          "description": "Tarea demo para Auditor Demo",
+          "comments_thread_ref": null,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "status": "pendiente",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 16,
+          "process_definition_id": 1,
+          "process_run_id": null,
+          "term_id": 1,
+          "launch_mode": "manual",
+          "created_by_user_id": 20,
+          "automatic_flag": null,
+          "manual_user_flag": 20,
+          "parent_task_id": null,
+          "responsible_position_id": 19,
+          "description": "Tarea demo para Usuario Demo",
+          "comments_thread_ref": null,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "status": "pendiente",
+          "created_at": "2026-05-05 04:45:20"
+        }
+      ]
     },
     {
       "table": "task_items",
@@ -752,7 +2091,68 @@
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "task_id": 1,
+          "process_definition_template_id": 1,
+          "template_artifact_id": 1,
+          "template_usage_role": "primary",
+          "sort_order": 1,
+          "responsible_position_id": 1,
+          "assigned_person_id": 2,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "user_started_at": null,
+          "status": "pendiente",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 2,
+          "task_id": 2,
+          "process_definition_template_id": 1,
+          "template_artifact_id": 1,
+          "template_usage_role": "primary",
+          "sort_order": 1,
+          "responsible_position_id": 2,
+          "assigned_person_id": 3,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "user_started_at": null,
+          "status": "pendiente",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 3,
+          "task_id": 3,
+          "process_definition_template_id": 1,
+          "template_artifact_id": 1,
+          "template_usage_role": "primary",
+          "sort_order": 1,
+          "responsible_position_id": 3,
+          "assigned_person_id": 4,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "user_started_at": null,
+          "status": "pendiente",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 16,
+          "task_id": 16,
+          "process_definition_template_id": 1,
+          "template_artifact_id": 1,
+          "template_usage_role": "primary",
+          "sort_order": 1,
+          "responsible_position_id": 19,
+          "assigned_person_id": 20,
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "user_started_at": null,
+          "status": "pendiente",
+          "created_at": "2026-05-05 04:45:20"
+        }
+      ]
     },
     {
       "table": "task_assignments",
@@ -774,7 +2174,44 @@
         "assigned_at": "datetime",
         "unassigned_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "task_id": 1,
+          "position_id": 1,
+          "assigned_person_id": 2,
+          "status": "pendiente",
+          "assigned_at": "2026-05-05 03:43:35",
+          "unassigned_at": null
+        },
+        {
+          "id": 2,
+          "task_id": 2,
+          "position_id": 2,
+          "assigned_person_id": 3,
+          "status": "pendiente",
+          "assigned_at": "2026-05-05 03:43:35",
+          "unassigned_at": null
+        },
+        {
+          "id": 3,
+          "task_id": 3,
+          "position_id": 3,
+          "assigned_person_id": 4,
+          "status": "pendiente",
+          "assigned_at": "2026-05-05 03:43:35",
+          "unassigned_at": null
+        },
+        {
+          "id": 16,
+          "task_id": 16,
+          "position_id": 19,
+          "assigned_person_id": 20,
+          "status": "pendiente",
+          "assigned_at": "2026-05-05 04:45:20",
+          "unassigned_at": null
+        }
+      ]
     },
     {
       "table": "documents",
@@ -804,7 +2241,164 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "task_item_id": 1,
+          "instance_no": 1,
+          "owner_person_id": 2,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Ficha de informacion - Admin",
+          "status": "Pendiente",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 2,
+          "task_item_id": 1,
+          "instance_no": 2,
+          "owner_person_id": 2,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Solicitud de firma - Admin",
+          "status": "En revision",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 3,
+          "task_item_id": 1,
+          "instance_no": 3,
+          "owner_person_id": 2,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Documento completado - Admin",
+          "status": "Completado",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 4,
+          "task_item_id": 2,
+          "instance_no": 1,
+          "owner_person_id": 3,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Ficha de informacion - Gestor",
+          "status": "Pendiente",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 5,
+          "task_item_id": 2,
+          "instance_no": 2,
+          "owner_person_id": 3,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Solicitud de firma - Gestor",
+          "status": "En revision",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 6,
+          "task_item_id": 2,
+          "instance_no": 3,
+          "owner_person_id": 3,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Documento completado - Gestor",
+          "status": "Completado",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 7,
+          "task_item_id": 3,
+          "instance_no": 1,
+          "owner_person_id": 4,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Ficha de informacion - Auditor",
+          "status": "Pendiente",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 8,
+          "task_item_id": 3,
+          "instance_no": 2,
+          "owner_person_id": 4,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Solicitud de firma - Auditor",
+          "status": "En revision",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 9,
+          "task_item_id": 3,
+          "instance_no": 3,
+          "owner_person_id": 4,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Documento completado - Auditor",
+          "status": "Completado",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": null
+        },
+        {
+          "id": 46,
+          "task_item_id": 16,
+          "instance_no": 1,
+          "owner_person_id": 20,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Ficha de informacion - Usuario",
+          "status": "Pendiente",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": null
+        },
+        {
+          "id": 47,
+          "task_item_id": 16,
+          "instance_no": 2,
+          "owner_person_id": 20,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Solicitud de firma - Usuario",
+          "status": "En revision",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": null
+        },
+        {
+          "id": 48,
+          "task_item_id": 16,
+          "instance_no": 3,
+          "owner_person_id": 20,
+          "origin_unit_id": 4,
+          "origin_type": "task_item",
+          "title": "Documento completado - Usuario",
+          "status": "Completado",
+          "comments_thread_ref": null,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": null
+        }
+      ]
     },
     {
       "table": "document_versions",
@@ -838,7 +2432,188 @@
         "status": "varchar(30)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "document_id": 1,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "docx",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 2,
+          "document_id": 2,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de firma",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 3,
+          "document_id": 3,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 4,
+          "document_id": 4,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "docx",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 5,
+          "document_id": 5,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de firma",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 6,
+          "document_id": 6,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 7,
+          "document_id": 7,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "docx",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 8,
+          "document_id": 8,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de firma",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 9,
+          "document_id": 9,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 46,
+          "document_id": 46,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "docx",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 47,
+          "document_id": 47,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de firma",
+          "created_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 48,
+          "document_id": 48,
+          "version": "1.0",
+          "template_artifact_id": 1,
+          "payload_mongo_id": null,
+          "payload_hash": null,
+          "payload_object_path": null,
+          "working_file_path": null,
+          "final_file_path": null,
+          "format": "pdf",
+          "render_engine": "demo",
+          "status": "Pendiente de llenado",
+          "created_at": "2026-05-05 04:45:20"
+        }
+      ]
     },
     {
       "table": "signature_types",
@@ -858,7 +2633,16 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "electronica",
+          "name": "Electronica",
+          "description": "Firma electronica demo.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "signature_statuses",
@@ -885,7 +2669,7 @@
           "name": "Firmado",
           "description": "La firma se generó y validó correctamente.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 2,
@@ -893,7 +2677,7 @@
           "name": "Fallido",
           "description": "La firma no se pudo generar por error operativo.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 3,
@@ -901,7 +2685,7 @@
           "name": "Inválido",
           "description": "La firma se generó pero no validó correctamente.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 4,
@@ -909,7 +2693,7 @@
           "name": "Cancelado",
           "description": "La firma fue cancelada o descartada.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         }
       ]
     },
@@ -938,7 +2722,7 @@
           "name": "Pendiente",
           "description": "Solicitud de firma pendiente de atención.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 2,
@@ -946,7 +2730,7 @@
           "name": "En progreso",
           "description": "Solicitud de firma en ejecución.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 3,
@@ -954,7 +2738,7 @@
           "name": "Completado",
           "description": "Solicitud de firma completada con evidencia válida.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 4,
@@ -962,7 +2746,7 @@
           "name": "Rechazado",
           "description": "Solicitud de firma rechazada o con resultado no válido.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         },
         {
           "id": 5,
@@ -970,7 +2754,7 @@
           "name": "Cancelado",
           "description": "Solicitud de firma cancelada.",
           "is_active": 1,
-          "created_at": "2026-05-04 18:07:08"
+          "created_at": "2026-05-04 22:24:04"
         }
       ]
     },
@@ -992,7 +2776,16 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_template_id": 1,
+          "name": "Firma demo",
+          "description": "Paso demo para firma pendiente.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "signature_flow_steps",
@@ -1042,7 +2835,31 @@
         "anchor_refs": "longtext",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "template_id": 1,
+          "step_order": 1,
+          "code": "firma-demo",
+          "name": "Firma demo",
+          "slot": "principal",
+          "step_type_id": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": null,
+          "position_id": null,
+          "required_cargo_id": null,
+          "selection_mode": "auto_all",
+          "approval_mode": "and",
+          "required_signers_min": 1,
+          "required_signers_max": 1,
+          "is_required": 1,
+          "anchor_refs": "[]",
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "signature_flow_instances",
@@ -1060,7 +2877,36 @@
         "status_id": "int(11)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "template_id": 1,
+          "document_version_id": 2,
+          "status_id": 1,
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 2,
+          "template_id": 1,
+          "document_version_id": 5,
+          "status_id": 1,
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 3,
+          "template_id": 1,
+          "document_version_id": 8,
+          "status_id": 1,
+          "created_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 16,
+          "template_id": 1,
+          "document_version_id": 47,
+          "status_id": 1,
+          "created_at": "2026-05-05 04:45:20"
+        }
+      ]
     },
     {
       "table": "signature_requests",
@@ -1086,7 +2932,52 @@
         "notified_at": "datetime",
         "responded_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "instance_id": 1,
+          "step_id": 1,
+          "assigned_person_id": 2,
+          "status_id": 1,
+          "is_manual": 1,
+          "requested_at": "2026-05-05 03:43:35",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 2,
+          "instance_id": 2,
+          "step_id": 1,
+          "assigned_person_id": 3,
+          "status_id": 1,
+          "is_manual": 1,
+          "requested_at": "2026-05-05 03:43:35",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 3,
+          "instance_id": 3,
+          "step_id": 1,
+          "assigned_person_id": 4,
+          "status_id": 1,
+          "is_manual": 1,
+          "requested_at": "2026-05-05 03:43:35",
+          "notified_at": null,
+          "responded_at": null
+        },
+        {
+          "id": 16,
+          "instance_id": 16,
+          "step_id": 1,
+          "assigned_person_id": 20,
+          "status_id": 1,
+          "is_manual": 1,
+          "requested_at": "2026-05-05 04:45:20",
+          "notified_at": null,
+          "responded_at": null
+        }
+      ]
     },
     {
       "table": "document_signatures",
@@ -1362,7 +3253,16 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "process_definition_template_id": 1,
+          "name": "Llenado demo",
+          "description": "Paso demo de llenado del documento.",
+          "is_active": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "fill_flow_steps",
@@ -1398,7 +3298,24 @@
         "can_reject": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "fill_flow_template_id": 1,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "all_units",
+          "unit_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-05-05 03:43:34"
+        }
+      ]
     },
     {
       "table": "document_fill_flows",
@@ -1420,7 +3337,116 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "fill_flow_template_id": 1,
+          "document_version_id": 1,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 2,
+          "fill_flow_template_id": 1,
+          "document_version_id": 4,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 3,
+          "fill_flow_template_id": 1,
+          "document_version_id": 7,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:43:35",
+          "updated_at": "2026-05-05 03:43:35"
+        },
+        {
+          "id": 10,
+          "fill_flow_template_id": 1,
+          "document_version_id": 2,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:50:34",
+          "updated_at": "2026-05-05 03:50:34"
+        },
+        {
+          "id": 11,
+          "fill_flow_template_id": 1,
+          "document_version_id": 3,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:50:34",
+          "updated_at": "2026-05-05 03:50:34"
+        },
+        {
+          "id": 12,
+          "fill_flow_template_id": 1,
+          "document_version_id": 5,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:50:34",
+          "updated_at": "2026-05-05 03:50:34"
+        },
+        {
+          "id": 13,
+          "fill_flow_template_id": 1,
+          "document_version_id": 6,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:50:34",
+          "updated_at": "2026-05-05 03:50:34"
+        },
+        {
+          "id": 14,
+          "fill_flow_template_id": 1,
+          "document_version_id": 8,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:50:34",
+          "updated_at": "2026-05-05 03:50:34"
+        },
+        {
+          "id": 15,
+          "fill_flow_template_id": 1,
+          "document_version_id": 9,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 03:50:34",
+          "updated_at": "2026-05-05 03:50:34"
+        },
+        {
+          "id": 23,
+          "fill_flow_template_id": 1,
+          "document_version_id": 46,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 04:45:20",
+          "updated_at": "2026-05-05 04:45:20"
+        },
+        {
+          "id": 24,
+          "fill_flow_template_id": 1,
+          "document_version_id": 47,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 04:46:18",
+          "updated_at": "2026-05-05 04:46:18"
+        },
+        {
+          "id": 25,
+          "fill_flow_template_id": 1,
+          "document_version_id": 48,
+          "status": "pending",
+          "current_step_order": 1,
+          "created_at": "2026-05-05 04:46:18",
+          "updated_at": "2026-05-05 04:46:18"
+        }
+      ]
     },
     {
       "table": "fill_requests",
@@ -1446,7 +3472,140 @@
         "responded_at": "datetime",
         "response_note": "varchar(255)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "document_fill_flow_id": 1,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 1,
+          "requested_at": "2026-05-05 03:43:35",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 2,
+          "document_fill_flow_id": 2,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 1,
+          "requested_at": "2026-05-05 03:43:35",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 3,
+          "document_fill_flow_id": 3,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 4,
+          "status": "pending",
+          "is_manual": 1,
+          "requested_at": "2026-05-05 03:43:35",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 10,
+          "document_fill_flow_id": 10,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 03:50:34",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 11,
+          "document_fill_flow_id": 11,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 2,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 03:50:34",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 12,
+          "document_fill_flow_id": 12,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 03:50:34",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 13,
+          "document_fill_flow_id": 13,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 3,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 03:50:34",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 14,
+          "document_fill_flow_id": 14,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 4,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 03:50:34",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 15,
+          "document_fill_flow_id": 15,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 4,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 03:50:34",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 23,
+          "document_fill_flow_id": 23,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 20,
+          "status": "pending",
+          "is_manual": 1,
+          "requested_at": "2026-05-05 04:45:20",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 24,
+          "document_fill_flow_id": 24,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 20,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 04:46:18",
+          "responded_at": null,
+          "response_note": null
+        },
+        {
+          "id": 25,
+          "document_fill_flow_id": 25,
+          "fill_flow_step_id": 1,
+          "assigned_person_id": 20,
+          "status": "pending",
+          "is_manual": 0,
+          "requested_at": "2026-05-05 04:46:18",
+          "responded_at": null,
+          "response_note": null
+        }
+      ]
     },
     {
       "table": "email_verification_codes",

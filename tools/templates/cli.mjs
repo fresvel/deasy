@@ -17,7 +17,7 @@ export const PYTHON_DIR = path.join(ROOT_DIR, "python");
 export const DOCKER_DIR = path.join(REPO_ROOT, "docker");
 export const DOCKER_ENV_SCRIPT = path.join(REPO_ROOT, "scripts", "docker-env.sh");
 export const DEFAULT_SEED = "informe-docente";
-const SUPPORTED_DOCKER_ENVS = new Set(["dev", "qa", "prod"]);
+const SUPPORTED_DOCKER_ENVS = new Set(["dev", "qa-local", "qa", "prod"]);
 const GENERATED_FILES = new Set([
   "main.aux",
   "main.bbl",
@@ -78,9 +78,9 @@ export function usage() {
     Recalcula y sincroniza el CATALOG.yaml a partir de los templates fuente existentes.
   node tools/templates/cli.mjs package
     Empaqueta todos los templates fuente y genera tools/templates/dist/Plantillas listo para publicacion.
-  node tools/templates/cli.mjs publish [--skip-package] [--env dev|qa|prod]
+  node tools/templates/cli.mjs publish [--skip-package] [--env dev|qa-local|qa|prod]
     Publica los templates oficiales a MinIO bajo deasy-templates/System. Con --skip-package reutiliza el dist actual.
-  node tools/templates/cli.mjs publish-seeds [--env dev|qa|prod]
+  node tools/templates/cli.mjs publish-seeds [--env dev|qa-local|qa|prod]
     Publica las semillas LaTeX a MinIO bajo deasy-templates/Seeds.
   node tools/templates/cli.mjs tui
     Abre una interfaz interactiva en terminal para navegar las operaciones principales.
