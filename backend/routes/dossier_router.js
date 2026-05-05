@@ -2,6 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import os from 'os';
 import * as dossierController from '../controllers/users/dossier_controler.js';
+import { authMiddleware } from '../middlewares/auth.js';
+import { loadAccessContext, requireDossierAccess } from '../middlewares/rbac.js';
 
 const router = express.Router();
 
@@ -27,46 +29,48 @@ const upload = multer({
     }
 });
 
+router.use(authMiddleware, loadAccessContext);
+
 // Obtener dossier completo del usuario
-router.get('/:cedula', dossierController.getDossierByUser);
+router.get('/:cedula', requireDossierAccess('read'), dossierController.getDossierByUser);
 
 // Rutas para títulos
-router.post('/:cedula/titulos', dossierController.addTitulo);
-router.put('/:cedula/titulos/:tituloId', dossierController.updateTitulo);
-router.delete('/:cedula/titulos/:tituloId', dossierController.deleteTitulo);
+router.post('/:cedula/titulos', requireDossierAccess('create'), dossierController.addTitulo);
+router.put('/:cedula/titulos/:tituloId', requireDossierAccess('update'), dossierController.updateTitulo);
+router.delete('/:cedula/titulos/:tituloId', requireDossierAccess('delete'), dossierController.deleteTitulo);
 
 // Rutas para experiencia
-router.post('/:cedula/experiencia', dossierController.addExperiencia);
-router.put('/:cedula/experiencia/:experienciaId', dossierController.updateExperiencia);
-router.delete('/:cedula/experiencia/:experienciaId', dossierController.deleteExperiencia);
+router.post('/:cedula/experiencia', requireDossierAccess('create'), dossierController.addExperiencia);
+router.put('/:cedula/experiencia/:experienciaId', requireDossierAccess('update'), dossierController.updateExperiencia);
+router.delete('/:cedula/experiencia/:experienciaId', requireDossierAccess('delete'), dossierController.deleteExperiencia);
 
 // Rutas para referencias
-router.post('/:cedula/referencias', dossierController.addReferencia);
-router.put('/:cedula/referencias/:referenciaId', dossierController.updateReferencia);
-router.delete('/:cedula/referencias/:referenciaId', dossierController.deleteReferencia);
+router.post('/:cedula/referencias', requireDossierAccess('create'), dossierController.addReferencia);
+router.put('/:cedula/referencias/:referenciaId', requireDossierAccess('update'), dossierController.updateReferencia);
+router.delete('/:cedula/referencias/:referenciaId', requireDossierAccess('delete'), dossierController.deleteReferencia);
 
 // Rutas para formacion (capacitación)
-router.post('/:cedula/formacion', dossierController.addFormacion);
-router.put('/:cedula/formacion/:formacionId', dossierController.updateFormacion);
-router.delete('/:cedula/formacion/:formacionId', dossierController.deleteFormacion);
+router.post('/:cedula/formacion', requireDossierAccess('create'), dossierController.addFormacion);
+router.put('/:cedula/formacion/:formacionId', requireDossierAccess('update'), dossierController.updateFormacion);
+router.delete('/:cedula/formacion/:formacionId', requireDossierAccess('delete'), dossierController.deleteFormacion);
 
 // Rutas para certificaciones
-router.post('/:cedula/certificaciones', dossierController.addCertificacion);
-router.put('/:cedula/certificaciones/:certificacionId', dossierController.updateCertificacion);
-router.delete('/:cedula/certificaciones/:certificacionId', dossierController.deleteCertificacion);
+router.post('/:cedula/certificaciones', requireDossierAccess('create'), dossierController.addCertificacion);
+router.put('/:cedula/certificaciones/:certificacionId', requireDossierAccess('update'), dossierController.updateCertificacion);
+router.delete('/:cedula/certificaciones/:certificacionId', requireDossierAccess('delete'), dossierController.deleteCertificacion);
 
 // Rutas para investigación
-router.post('/:cedula/investigacion/:tipo', dossierController.addInvestigacionItem);
-router.put('/:cedula/investigacion/:tipo/:itemId', dossierController.updateInvestigacionItem);
-router.delete('/:cedula/investigacion/:tipo/:itemId', dossierController.deleteInvestigacionItem);
+router.post('/:cedula/investigacion/:tipo', requireDossierAccess('create'), dossierController.addInvestigacionItem);
+router.put('/:cedula/investigacion/:tipo/:itemId', requireDossierAccess('update'), dossierController.updateInvestigacionItem);
+router.delete('/:cedula/investigacion/:tipo/:itemId', requireDossierAccess('delete'), dossierController.deleteInvestigacionItem);
 
 // Ruta para subir documento PDF al dossier
-router.post('/:cedula/documentos/:tipoDocumento/:registroId', upload.single('archivo'), dossierController.uploadDossierDocument);
+router.post('/:cedula/documentos/:tipoDocumento/:registroId', requireDossierAccess('update'), upload.single('archivo'), dossierController.uploadDossierDocument);
 
 // Ruta para obtener URL temporal del documento
-router.get('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.getDossierDocumentUrl);
+router.get('/:cedula/documentos/:tipoDocumento/:registroId', requireDossierAccess('read'), dossierController.getDossierDocumentUrl);
 
 // Ruta para eliminar documento PDF del dossier (sin eliminar el registro)
-router.delete('/:cedula/documentos/:tipoDocumento/:registroId', dossierController.deleteDossierDocumentOnly);
+router.delete('/:cedula/documentos/:tipoDocumento/:registroId', requireDossierAccess('delete'), dossierController.deleteDossierDocumentOnly);
 
 export default router;

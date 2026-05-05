@@ -441,6 +441,7 @@ import {
   resolveWorkspaceProfileMenuIcon,
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
+import { canReadAdminTable } from "@/core/utils/accessControl.js";
 
 const isClient = typeof window !== 'undefined';
 const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
@@ -675,7 +676,11 @@ const SECURITY_INDEX_ITEMS = [
 ];
 
 const hiddenTables = new Set([]);
-const visibleTables = computed(() => tables.value.filter((table) => !hiddenTables.has(table.table)));
+const visibleTables = computed(() =>
+  tables.value.filter((table) =>
+    !hiddenTables.has(table.table) && canReadAdminTable(table.table, currentUser.value)
+  )
+);
 const tableMap = computed(() =>
   Object.fromEntries(visibleTables.value.map((table) => [table.table, table]))
 );

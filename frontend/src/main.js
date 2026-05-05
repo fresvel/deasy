@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import App from '@/App.vue'
 import router from '@/core/router'
 import FontAwesomeIcon from '@/shared/components/icons/FontAwesomeIcon.vue'
+import '@/core/services/httpClient'
 
 import '@/shared/styles/tailwind.css'
 import '@/shared/styles/theme.css'

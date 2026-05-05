@@ -50,6 +50,7 @@
 import { computed } from "vue";
 import { IconBell, IconHome, IconLogout, IconSettings, IconSignature, IconUser } from "@tabler/icons-vue";
 import SHeader from "@/layouts/headers/SHeader.vue";
+import { canAccessAdmin } from "@/core/utils/accessControl.js";
 
 const props = defineProps({
   menuOpen: {
@@ -86,10 +87,11 @@ const navItems = computed(() => {
       title: "Ir a administración",
       to: "/admin",
       icon: IconSettings,
-      showAlways: true
+      requiresAdminAccess: true
     }
   ].filter(item => {
     if (item.key === props.currentSection) return false;
+    if (item.requiresAdminAccess && !canAccessAdmin()) return false;
     if (item.showOnlyIn && !item.showOnlyIn.includes(props.currentSection)) return false;
     return true;
   });

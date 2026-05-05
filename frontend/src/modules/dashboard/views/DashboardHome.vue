@@ -222,90 +222,178 @@
           <DashboardSignatureEntry @refresh-dashboard="handleSignatureCenterRefresh" />
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
-        <AppPageIntro
-          variant="dashboard"
-          :title="userFullName"
-          :meta="currentUser?.email || currentUser?.cedula || 'Sin identificador'"
-          description="Selecciona una sección para continuar con la gestión de tu dossier académico, revisar el estado de tus módulos y completar tu información profesional."
-          class="mb-6"
-        >
-          <template #actions>
-            <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateTo('perfil')">
-              Ir a mi perfil
-            </AppButton>
-          </template>
-        </AppPageIntro>
-
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-          <article class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-3 min-h-40" v-for="card in summaryCards" :key="card.title">
-            <header class="flex justify-between items-start gap-4">
-              <h3 class="text-base font-bold text-slate-800 leading-tight">{{ card.title }}</h3>
-              <AppTag :variant="getStatusTagVariant(card.statusClass)" class-name="whitespace-nowrap shrink-0">{{ card.status }}</AppTag>
-            </header>
-            <p class="text-slate-500 text-xs md:text-sm font-medium flex-1 m-0">{{ card.description }}</p>
-            <footer class="flex justify-between items-center mt-1">
-              <span class="font-extrabold text-slate-800 leading-none">{{ card.count }}</span>
-              <AppButton variant="softPrimary" size="sm" class-name="group border-0 bg-transparent p-0 shadow-none hover:bg-transparent" @click="navigateTo(card.route)">
-                {{ card.action }} <IconArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </AppButton>
-            </footer>
-          </article>
-        </section>
-
-        <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 overflow-hidden mb-6">
-          <header class="flex items-center justify-between gap-4 mb-5">
-            <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Resumen rápido</h2>
-            <AppButton variant="secondary" size="md" class-name="hidden sm:inline-flex" @click="navigateTo('perfil')">
-              Gestionar perfil
-            </AppButton>
-          </header>
-
-          <!-- Vista móvil: Tarjetas -->
-          <div class="flex flex-col gap-3 sm:hidden">
-            <div v-for="row in summaryRows" :key="'mob-' + row.section" class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
-              <div class="flex justify-between items-start gap-2">
-                <div class="flex flex-col gap-0.5">
-                  <span class="font-bold text-slate-800 text-sm leading-tight">{{ row.section }}</span>
-                  <span class="text-slate-500 font-medium text-xs">{{ row.count }} registros</span>
+          <section class="dashboard-account-shell">
+            <section class="dashboard-account-hero">
+              <div class="dashboard-account-hero__copy">
+                <span class="dashboard-account-kicker">Cuenta activa</span>
+                <h1>{{ userFullName }}</h1>
+                <p>
+                  Vista consolidada de tu cuenta: cargos asignados, procesos disponibles, documentos, firmas y dossier profesional.
+                </p>
+                <div class="dashboard-account-meta">
+                  <span>
+                    <IconId class="h-4 w-4" />
+                    {{ dashboardIdentityLabel }}
+                  </span>
+                  <span>
+                    <IconBuildingMonument class="h-4 w-4" />
+                    {{ selectedGroupLabel }}
+                  </span>
                 </div>
-                <AppTag :variant="getStatusTagVariant(row.statusClass)" class-name="shrink-0">{{ row.status }}</AppTag>
               </div>
-              <AppButton variant="softPrimary" size="sm" class-name="mt-1 w-full" @click="navigateTo(row.route)">
-                Gestionar sección
-              </AppButton>
-            </div>
-            <AppButton variant="secondary" size="md" class-name="mt-2 w-full" @click="navigateTo('perfil')">
-              Gestionar perfil completo
-            </AppButton>
-          </div>
 
-          <!-- Vista desktop: Tabla -->
-          <AppDataTable
-            class="hidden sm:block"
-            responsive-class="deasy-table-responsive hidden sm:block"
-            :fields="summaryTableFields"
-            :rows="summaryRows"
-            :row-key="(row) => `desk-${row.section}`"
-            empty-text="No hay secciones disponibles."
-            actions-label="ACCIÓN"
-          >
-            <template #cell="{ row, field }">
-              <template v-if="field.name === 'status'">
-                <AppTag :variant="getStatusTagVariant(row.statusClass)">{{ row.status }}</AppTag>
-              </template>
-              <template v-else>
-                {{ row[field.name] }}
-              </template>
-            </template>
-            <template #actions="{ row }">
-              <div class="text-right">
-                <AppButton variant="softPrimary" size="sm" @click="navigateTo(row.route)">
-                  Gestionar
+              <aside class="dashboard-account-focus">
+                <span class="dashboard-account-focus__label">Prioridad</span>
+                <strong>{{ dashboardFocus.title }}</strong>
+                <p>{{ dashboardFocus.description }}</p>
+                <AppButton variant="primary" size="md" class-name="w-full justify-center" @click="runDashboardAction(dashboardFocus)">
+                  {{ dashboardFocus.actionLabel }}
+                  <IconArrowRight class="h-4 w-4" />
                 </AppButton>
+              </aside>
+            </section>
+
+            <section v-if="dashboardErrorMessage" class="dashboard-account-alert">
+              <IconAlertTriangle class="h-5 w-5 shrink-0" />
+              <span>{{ dashboardErrorMessage }}</span>
+            </section>
+
+            <section class="dashboard-stats-grid">
+              <article
+                v-for="stat in dashboardStats"
+                :key="stat.label"
+                class="dashboard-stat-card"
+                :class="`dashboard-stat-card--${stat.tone}`"
+              >
+                <span class="dashboard-stat-card__icon">
+                  <component :is="stat.icon" class="h-5 w-5" />
+                </span>
+                <span class="dashboard-stat-card__label">{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+                <p>{{ stat.detail }}</p>
+              </article>
+            </section>
+
+            <section class="dashboard-account-grid">
+              <article class="dashboard-panel dashboard-panel--wide">
+                <header class="dashboard-panel__header">
+                  <div>
+                    <span class="dashboard-panel__kicker">Siguiente paso</span>
+                    <h2>Acciones recomendadas</h2>
+                  </div>
+                  <AppButton
+                    variant="softNeutral"
+                    size="sm"
+                    :disabled="dashboardLoading"
+                    class-name="shrink-0"
+                    @click="loadDashboardHomeData"
+                  >
+                    <IconRefresh class="h-4 w-4" />
+                    Actualizar
+                  </AppButton>
+                </header>
+
+                <div v-if="dashboardLoading" class="dashboard-loading-card">
+                  Actualizando informacion de la cuenta...
+                </div>
+                <div v-else class="dashboard-action-list">
+                  <button
+                    v-for="action in dashboardActions"
+                    :key="action.key"
+                    type="button"
+                    class="dashboard-action-card"
+                    :class="`dashboard-action-card--${action.tone}`"
+                    @click="runDashboardAction(action)"
+                  >
+                    <span class="dashboard-action-card__icon">
+                      <component :is="action.icon" class="h-5 w-5" />
+                    </span>
+                    <span class="dashboard-action-card__body">
+                      <strong>{{ action.title }}</strong>
+                      <small>{{ action.description }}</small>
+                    </span>
+                    <AppTag :variant="action.tagVariant">{{ action.meta }}</AppTag>
+                  </button>
+                </div>
+              </article>
+
+              <article class="dashboard-panel">
+                <header class="dashboard-panel__header">
+                  <div>
+                    <span class="dashboard-panel__kicker">Dossier</span>
+                    <h2>Perfil profesional</h2>
+                  </div>
+                  <span class="dashboard-dossier-score">{{ dashboardDossierCompletion }}%</span>
+                </header>
+
+                <div class="dashboard-dossier-progress" aria-hidden="true">
+                  <span :style="{ width: `${dashboardDossierCompletion}%` }"></span>
+                </div>
+
+                <div v-if="dashboardDossierLoading" class="dashboard-loading-card">
+                  Cargando dossier...
+                </div>
+                <div v-else class="dashboard-dossier-list">
+                  <div v-for="row in dashboardDossierRows" :key="row.key" class="dashboard-dossier-row">
+                    <span class="dashboard-dossier-row__icon">
+                      <component :is="row.icon" class="h-4 w-4" />
+                    </span>
+                    <span class="dashboard-dossier-row__label">{{ row.label }}</span>
+                    <AppTag :variant="row.variant">{{ row.count }}</AppTag>
+                  </div>
+                </div>
+
+                <AppButton variant="secondary" size="md" class-name="w-full justify-center" @click="navigateTo('perfil')">
+                  Gestionar perfil
+                </AppButton>
+              </article>
+            </section>
+
+            <section class="dashboard-panel">
+              <header class="dashboard-panel__header">
+                <div>
+                  <span class="dashboard-panel__kicker">Operativo</span>
+                  <h2>Tus cargos y procesos</h2>
+                </div>
+                <span class="dashboard-panel__meta">{{ dashboardProcesses.length }} proceso(s)</span>
+              </header>
+
+              <div v-if="menuLoading" class="dashboard-loading-card">
+                Cargando cargos asignados...
               </div>
-            </template>
-          </AppDataTable>
-        </section>
+              <div v-else-if="!dashboardProcessCards.length" class="dashboard-empty-card">
+                <IconBriefcase class="h-5 w-5" />
+                <span>No hay cargos o procesos asignados para esta cuenta.</span>
+              </div>
+              <div v-else class="dashboard-process-grid">
+                <article v-for="cargo in dashboardProcessCards" :key="cargo.key" class="dashboard-process-card">
+                  <div class="dashboard-process-card__header">
+                    <span class="dashboard-process-card__icon">
+                      <component :is="cargo.icon" class="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h3>{{ cargo.name }}</h3>
+                      <p>{{ cargo.processes.length }} proceso(s) disponible(s)</p>
+                    </div>
+                  </div>
+                  <div class="dashboard-process-card__list">
+                    <button
+                      v-for="process in cargo.previewProcesses"
+                      :key="`${cargo.key}-${process.process_definition_id || process.id || process.name}`"
+                      type="button"
+                      @click="handleProcessSelect(process)"
+                    >
+                      <span>{{ process.name }}</span>
+                      <IconArrowRight class="h-4 w-4" />
+                    </button>
+                    <span v-if="cargo.remainingCount" class="dashboard-process-card__more">
+                      +{{ cargo.remainingCount }} mas
+                    </span>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </section>
         </template>
 
         <template v-else>
@@ -2340,6 +2428,7 @@ import FirmarPdf from '@/modules/firmas/components/FirmarPdf.vue';
 import UserMenuService from '@/core/services/UserMenuService.js';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
 import SignatureFlowService from '@/modules/firmas/services/SignatureFlowService.js';
+import DossierService from '@/modules/dossier/services/DossierService.js';
 import { API_ROUTES } from '@/core/config/apiConfig';
 import { Modal } from '@/shared/utils/modalController';
 import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
@@ -2361,15 +2450,24 @@ import {
   IconEye,
   IconSignature,
   IconUpload,
+  IconAlertTriangle,
   IconArrowLeft,
+  IconArrowRight,
   IconBuildingMonument,
+  IconBriefcase,
   IconChevronDown,
+  IconCircleCheck,
+  IconFileCheck,
+  IconFiles,
   IconMessages,
   IconMinus,
   IconPlayerPlayFilled,
   IconPlus,
+  IconRefresh,
   IconChecklist,
+  IconId,
   IconSearch,
+  IconUserCheck,
   IconX
 } from '@tabler/icons-vue';
 
@@ -2472,6 +2570,12 @@ const deliverableResetState = ref({
 const documentCenterLoading = ref(false);
 const documentCenterError = ref('');
 const documentCenterItems = ref([]);
+const dashboardDossierLoading = ref(false);
+const dashboardDossierError = ref('');
+const dashboardDossier = ref(null);
+const dashboardSignatureLoading = ref(false);
+const dashboardSignatureError = ref('');
+const dashboardSignatureItems = ref([]);
 const fillWorkflowState = ref({
   subject: null,
   request: null,
@@ -2580,62 +2684,274 @@ const deliverableUploadModalHelp = computed(() => {
   return `Carga el archivo de trabajo para ${subject.title || subject.template_artifact_name || `#${subject.itemId || subject.id}`}.`;
 });
 
-const summaryTableFields = [
-  { name: 'section', label: 'Sección' },
-  { name: 'count', label: 'Registros' },
-  { name: 'status', label: 'Estado' }
-];
+const dashboardPlural = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+const asDashboardArray = (value) => (Array.isArray(value) ? value : []);
+const countDashboardArray = (value) => asDashboardArray(value).length;
 
-const quickStats = ref([
-  { label: 'Formación', count: 0, route: 'perfil' },
-  { label: 'Experiencia', count: 0, route: 'perfil' },
-  { label: 'Referencias', count: 0, route: 'perfil' },
-  { label: 'Capacitación', count: 0, route: 'perfil' },
-  { label: 'Certificación', count: 0, route: 'perfil' }
-]);
+const dashboardIdentityLabel = computed(() => (
+  currentUser.value?.email
+  || currentUser.value?.cedula
+  || 'Sin identificador'
+));
 
-const summaryCards = ref([
+const dashboardCargoSource = computed(() => (
+  consolidatedCargos.value.length ? consolidatedCargos.value : menuCargos.value
+));
+
+const dashboardCargos = computed(() => {
+  const cargoMap = new Map();
+  dashboardCargoSource.value.forEach((cargo) => {
+    const key = String(cargo?.id || cargo?.name || cargoMap.size);
+    if (!cargoMap.has(key)) {
+      cargoMap.set(key, {
+        ...cargo,
+        id: cargo?.id ?? key,
+        name: cargo?.name || 'Cargo sin nombre',
+        processes: []
+      });
+    }
+    const target = cargoMap.get(key);
+    asDashboardArray(cargo?.processes).forEach((process) => {
+      const processKey = String(process?.process_definition_id || process?.id || process?.name || target.processes.length);
+      if (!target.processes.some((item) => String(item?.process_definition_id || item?.id || item?.name) === processKey)) {
+        target.processes.push(process);
+      }
+    });
+  });
+  return Array.from(cargoMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const dashboardCargoCount = computed(() => dashboardCargos.value.length);
+
+const dashboardUnitCount = computed(() => {
+  const unitMap = new Map();
+  const addUnit = (unit = {}) => {
+    const key = String(unit?.id || unit?.label || unit?.name || '');
+    if (key) unitMap.set(key, unit);
+  };
+  userUnits.value.forEach(addUnit);
+  unitGroups.value.forEach((group) => asDashboardArray(group?.units).forEach(addUnit));
+  return unitMap.size;
+});
+
+const dashboardProcesses = computed(() => {
+  const processMap = new Map();
+  dashboardCargos.value.forEach((cargo) => {
+    asDashboardArray(cargo?.processes).forEach((process) => {
+      const key = String(process?.process_definition_id || process?.id || process?.name || processMap.size);
+      if (!processMap.has(key)) {
+        processMap.set(key, {
+          ...process,
+          cargoName: cargo.name
+        });
+      }
+    });
+  });
+  return Array.from(processMap.values()).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+});
+
+const dashboardPrimaryProcess = computed(() => (
+  dashboardProcesses.value.find((process) => process?.access_source === 'process')
+  || dashboardProcesses.value[0]
+  || null
+));
+
+const dashboardProcessCards = computed(() => dashboardCargos.value.map((cargo) => {
+  const iconMeta = cargoIconMeta(cargo);
+  const processes = asDashboardArray(cargo?.processes).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  return {
+    key: String(cargo?.id || cargo?.name),
+    name: cargo?.name || 'Cargo sin nombre',
+    icon: iconMeta.icon,
+    processes,
+    previewProcesses: processes.slice(0, 4),
+    remainingCount: Math.max(0, processes.length - 4)
+  };
+}));
+
+const dashboardDossierCounts = computed(() => {
+  const dossier = dashboardDossier.value || {};
+  const investigacion = dossier.investigacion || {};
+  return {
+    titulos: countDashboardArray(dossier.titulos),
+    experiencia: countDashboardArray(dossier.experiencia),
+    referencias: countDashboardArray(dossier.referencias),
+    formacion: countDashboardArray(dossier.formacion),
+    certificaciones: countDashboardArray(dossier.certificaciones),
+    investigacion: countDashboardArray(investigacion.articulos)
+      + countDashboardArray(investigacion.libros)
+      + countDashboardArray(investigacion.ponencias)
+      + countDashboardArray(investigacion.tesis)
+      + countDashboardArray(investigacion.proyectos)
+  };
+});
+
+const dashboardDossierRows = computed(() => [
+  { key: 'titulos', label: 'Titulos', count: dashboardDossierCounts.value.titulos, icon: IconFileCheck },
+  { key: 'experiencia', label: 'Experiencia', count: dashboardDossierCounts.value.experiencia, icon: IconBriefcase },
+  { key: 'formacion', label: 'Formacion', count: dashboardDossierCounts.value.formacion, icon: IconChecklist },
+  { key: 'certificaciones', label: 'Certificaciones', count: dashboardDossierCounts.value.certificaciones, icon: IconCircleCheck },
+  { key: 'investigacion', label: 'Investigacion', count: dashboardDossierCounts.value.investigacion, icon: IconFiles },
+  { key: 'referencias', label: 'Referencias', count: dashboardDossierCounts.value.referencias, icon: IconUserCheck }
+].map((row) => ({
+  ...row,
+  variant: row.count > 0 ? 'success' : 'muted'
+})));
+
+const dashboardDossierTotal = computed(() =>
+  dashboardDossierRows.value.reduce((total, row) => total + Number(row.count || 0), 0)
+);
+
+const dashboardDossierCompletion = computed(() => {
+  const totalSections = dashboardDossierRows.value.length;
+  if (!totalSections) return 0;
+  const completedSections = dashboardDossierRows.value.filter((row) => Number(row.count || 0) > 0).length;
+  return Math.round((completedSections / totalSections) * 100);
+});
+
+const dashboardDocumentCount = computed(() => documentCenterItems.value.length);
+const dashboardPendingFillCount = computed(() =>
+  documentCenterItems.value.reduce((total, item) => total + Number(item?.pending_fill_count || 0), 0)
+);
+const dashboardSignatureCount = computed(() => dashboardSignatureItems.value.length);
+
+const dashboardLoading = computed(() =>
+  menuLoading.value
+  || documentCenterLoading.value
+  || dashboardDossierLoading.value
+  || dashboardSignatureLoading.value
+);
+
+const dashboardErrorMessage = computed(() =>
+  dashboardDossierError.value
+  || dashboardSignatureError.value
+  || (workspaceRouteMode.value === 'default' ? documentCenterError.value : '')
+  || menuError.value
+);
+
+const dashboardStats = computed(() => [
   {
-    title: 'Perfil profesional',
-    description: 'Completa la información de formación y experiencia para habilitar todos los módulos.',
-    status: 'En progreso',
-    statusClass: 'status--warning',
-    count: '60%',
-    action: 'Completar perfil',
-    route: 'perfil'
+    label: 'Unidades',
+    value: dashboardUnitCount.value,
+    detail: dashboardPlural(dashboardCargoCount.value, 'cargo', 'cargos'),
+    icon: IconBuildingMonument,
+    tone: 'sky'
   },
   {
-    title: 'Documentos por firmar',
-    description: 'Tienes documentos pendientes en la bandeja de firmas electrónicas.',
-    status: 'Pendiente',
-    statusClass: 'status--danger',
-    count: quickStats.value[0].count,
-    action: 'Ir a firmas',
-    route: 'firmar'
+    label: 'Procesos',
+    value: dashboardProcesses.value.length,
+    detail: dashboardPrimaryProcess.value?.name || 'Sin procesos activos',
+    icon: IconChecklist,
+    tone: 'emerald'
   },
   {
-    title: 'Tutorías y seguimiento',
-    description: 'Consulta tutorías, reuniones y actividades asignadas.',
-    status: 'Al día',
-    statusClass: 'status--success',
-    count: 0,
-    action: 'Ver tutorías',
-    route: 'perfil'
+    label: 'Documentos',
+    value: dashboardDocumentCount.value,
+    detail: dashboardPendingFillCount.value ? `${dashboardPendingFillCount.value} pendiente(s) de llenado` : 'Centro documental al dia',
+    icon: IconFileDescription,
+    tone: 'indigo'
+  },
+  {
+    label: 'Firmas',
+    value: dashboardSignatureCount.value,
+    detail: dashboardSignatureCount.value ? 'Accion requerida' : 'Sin pendientes',
+    icon: IconSignature,
+    tone: 'amber'
+  },
+  {
+    label: 'Dossier',
+    value: `${dashboardDossierCompletion.value}%`,
+    detail: dashboardPlural(dashboardDossierTotal.value, 'registro', 'registros'),
+    icon: IconUserCheck,
+    tone: 'slate'
   }
 ]);
 
-const summaryRows = ref([
-  { section: 'Formación', count: 0, status: 'Incompleto', statusClass: 'status--warning', route: 'perfil' },
-  { section: 'Experiencia', count: 0, status: 'Pendiente', statusClass: 'status--danger', route: 'perfil' },
-  { section: 'Firmas electrónicas', count: 0, status: 'Acción requerida', statusClass: 'status--warning', route: 'firmar' }
-]);
+const dashboardActions = computed(() => {
+  const actions = [];
+  if (dashboardSignatureCount.value) {
+    actions.push({
+      key: 'signatures',
+      action: 'signatures',
+      title: 'Firmas pendientes',
+      description: `${dashboardSignatureCount.value} documento(s) esperan tu firma.`,
+      meta: 'Pendiente',
+      tagVariant: 'warning',
+      icon: IconSignature,
+      tone: 'warning',
+      actionLabel: 'Ir a firmas'
+    });
+  }
+  if (dashboardPendingFillCount.value) {
+    actions.push({
+      key: 'documents-fill',
+      action: 'documents',
+      title: 'Llenados pendientes',
+      description: `${dashboardPendingFillCount.value} entregable(s) requieren completar informacion.`,
+      meta: 'Completar',
+      tagVariant: 'info',
+      icon: IconFileDescription,
+      tone: 'info',
+      actionLabel: 'Abrir documentos'
+    });
+  }
+  if (dashboardPrimaryProcess.value) {
+    actions.push({
+      key: `process-${dashboardPrimaryProcess.value.process_definition_id || dashboardPrimaryProcess.value.id}`,
+      action: 'process',
+      payload: dashboardPrimaryProcess.value,
+      title: 'Continuar proceso',
+      description: dashboardPrimaryProcess.value.name || 'Proceso disponible para tu cargo.',
+      meta: dashboardPrimaryProcess.value.cargoName || 'Proceso',
+      tagVariant: 'success',
+      icon: IconChecklist,
+      tone: 'success',
+      actionLabel: 'Abrir proceso'
+    });
+  }
+  if (dashboardDocumentCount.value) {
+    actions.push({
+      key: 'documents',
+      action: 'documents',
+      title: 'Centro documental',
+      description: `${dashboardDocumentCount.value} documento(s) disponibles en tu cuenta.`,
+      meta: 'Disponible',
+      tagVariant: 'neutral',
+      icon: IconFiles,
+      tone: 'neutral',
+      actionLabel: 'Ver documentos'
+    });
+  }
+  if (dashboardDossierCompletion.value < 100) {
+    actions.push({
+      key: 'profile',
+      action: 'profile',
+      title: 'Completar dossier',
+      description: `Tu perfil profesional registra ${dashboardDossierCompletion.value}% de secciones con datos.`,
+      meta: `${dashboardDossierTotal.value} registro(s)`,
+      tagVariant: 'warning',
+      icon: IconUserCheck,
+      tone: 'warning',
+      actionLabel: 'Ir al perfil'
+    });
+  }
+  if (!actions.length) {
+    actions.push({
+      key: 'profile-default',
+      action: 'profile',
+      title: 'Cuenta al dia',
+      description: 'No hay pendientes operativos detectados para esta cuenta.',
+      meta: 'Listo',
+      tagVariant: 'success',
+      icon: IconCircleCheck,
+      tone: 'success',
+      actionLabel: 'Ver perfil'
+    });
+  }
+  return actions.slice(0, 4);
+});
 
-const getStatusTagVariant = (statusClass) => {
-  if (statusClass === 'status--warning') return 'warning';
-  if (statusClass === 'status--danger') return 'danger';
-  if (statusClass === 'status--success') return 'success';
-  return 'neutral';
-};
+const dashboardFocus = computed(() => dashboardActions.value[0]);
 
 const resolvePhotoUrl = (value) => {
   if (!value) {
@@ -3442,6 +3758,74 @@ const loadDocumentCenterPage = async () => {
   }
 };
 
+const loadDashboardDossier = async () => {
+  dashboardDossierLoading.value = true;
+  dashboardDossierError.value = '';
+  try {
+    const response = await DossierService.getDossier();
+    dashboardDossier.value = response?.data || null;
+  } catch (error) {
+    console.error('Error al cargar el dossier del dashboard:', error);
+    dashboardDossier.value = null;
+    dashboardDossierError.value = error?.response?.data?.message || error?.message || 'No se pudo cargar el dossier.';
+  } finally {
+    dashboardDossierLoading.value = false;
+  }
+};
+
+const loadDashboardSignatureCenter = async () => {
+  const userId = currentUserId.value;
+  if (!userId) return;
+  dashboardSignatureLoading.value = true;
+  dashboardSignatureError.value = '';
+  try {
+    const response = await processPanelService.getSignatureCenter(userId);
+    dashboardSignatureItems.value = Array.isArray(response?.signatures) ? response.signatures : [];
+  } catch (error) {
+    console.error('Error al cargar firmas pendientes del dashboard:', error);
+    dashboardSignatureItems.value = [];
+    dashboardSignatureError.value = error?.response?.data?.message || error?.message || 'No se pudo cargar la bandeja de firmas.';
+  } finally {
+    dashboardSignatureLoading.value = false;
+  }
+};
+
+const loadDashboardHomeData = async () => {
+  await Promise.all([
+    loadDocumentCenterPage(),
+    loadDashboardSignatureCenter(),
+    loadDashboardDossier()
+  ]);
+};
+
+const runDashboardAction = async (target) => {
+  const action = typeof target === 'string' ? target : target?.action;
+  if (action === 'signatures') {
+    await navigateToGlobalSignaturePage();
+    return;
+  }
+  if (action === 'documents') {
+    await navigateToDocumentCenterPage();
+    return;
+  }
+  if (action === 'process') {
+    const process = target?.payload || dashboardPrimaryProcess.value;
+    if (process) {
+      await handleProcessSelect(process);
+    }
+    return;
+  }
+  if (action === 'profile') {
+    navigateTo('perfil');
+  }
+};
+
+const handleDashboardDossierUpdated = () => {
+  if (workspaceRouteMode.value === 'default') {
+    loadDashboardDossier();
+  }
+};
+
 const handleSignatureCenterRefresh = async () => {
   await loadUserMenu();
   if (selectedProcessContext.value) {
@@ -3449,6 +3833,9 @@ const handleSignatureCenterRefresh = async () => {
   }
   if (workspaceRouteMode.value === 'documents') {
     await loadDocumentCenterPage();
+  }
+  if (workspaceRouteMode.value === 'default') {
+    await loadDashboardHomeData();
   }
 };
 
@@ -3615,6 +4002,7 @@ onMounted(async () => {
   
   if (isClient) {
     window.addEventListener('resize', handleResize);
+    window.addEventListener('dossier-updated', handleDashboardDossierUpdated);
     document.addEventListener('click', handleGroupDropdownOutsideClick);
   }
 
@@ -3693,6 +4081,9 @@ onMounted(async () => {
   if (workspaceRouteMode.value === 'documents') {
     await loadDocumentCenterPage();
   }
+  if (workspaceRouteMode.value === 'default') {
+    await loadDashboardHomeData();
+  }
 });
 
 watch(
@@ -3716,12 +4107,16 @@ watch(
     if (workspaceRouteMode.value === 'documents') {
       await loadDocumentCenterPage();
     }
+    if (workspaceRouteMode.value === 'default') {
+      await loadDashboardHomeData();
+    }
   }
 );
 
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener('resize', handleResize);
+    window.removeEventListener('dossier-updated', handleDashboardDossierUpdated);
     document.removeEventListener('click', handleGroupDropdownOutsideClick);
   }
   if (deliverablePreviewUrl.value) {

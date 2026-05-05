@@ -202,7 +202,7 @@ export default class UserRepository {
     };
   }
 
-  toPublicUser(userRow) {
+  toPublicUser(userRow, access = null) {
     if (!userRow) return null;
 
     const toNumericArray = (value) => {
@@ -225,7 +225,7 @@ export default class UserRepository {
     const unitNames = toStringArray(userRow.unit_names);
     const cargoNames = toStringArray(userRow.cargo_names);
 
-    return {
+    const publicUser = {
       id: userRow.id ?? userRow._id,
       _id: (userRow.id ?? userRow._id)?.toString(),
       cedula: userRow.cedula,
@@ -263,6 +263,15 @@ export default class UserRepository {
       createdAt: userRow.created_at ?? userRow.createdAt ?? null,
       updatedAt: userRow.updated_at ?? userRow.updatedAt ?? null
     };
+
+    if (access) {
+      publicUser.access = access;
+      publicUser.roles = access.roleNames || [];
+      publicUser.permissions = access.permissions || [];
+      publicUser.role = access.primaryRole || null;
+    }
+
+    return publicUser;
   }
 
   async updatePhotoByCedula(cedula, photoUrl) {

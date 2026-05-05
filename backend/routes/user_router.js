@@ -23,6 +23,12 @@ import { verifyCedulaEc, verifyWhatsappEc } from "../controllers/users/validatio
 import { validatePassword } from "../middlewares/val_password.js";
 import { uploadProfilePhoto } from "../middlewares/uploadProfilePhoto.js";
 import { authMiddleware } from "../middlewares/auth.js";
+import {
+  loadAccessContext,
+  requireCedulaAccess,
+  requirePermissions,
+  requireRouteUserAccess
+} from "../middlewares/rbac.js";
 import multer from "multer";
 import os from "os";
 import {
@@ -73,55 +79,98 @@ const uploadDeliverable = multer({
 });
 
 router.post('/', validatePassword, createUser)
-router.get('/', getUsers)
+router.get('/', authMiddleware, loadAccessContext, requirePermissions("users.read"), getUsers)
 
 router.post('/login', loginUser)
 router.post('/logout', logoutUser)
 router.post('/refresh-token', refreshToken)
 
-router.get('/:id/menu', getUserMenu);
-router.get('/:id/process-definitions/:definitionId/panel', getUserProcessDefinitionPanel);
-router.get('/:id/document-center', authMiddleware, getUserDocumentCenter);
-router.get('/:id/signature-center', authMiddleware, getUserGlobalSignatureCenter);
-router.post('/:id/process-definitions/:definitionId/tasks', createUserProcessTask);
+router.get(
+  '/:id/menu',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "account", action: "read" }),
+  getUserMenu
+);
+router.get(
+  '/:id/process-definitions/:definitionId/panel',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "processes", action: "read" }),
+  getUserProcessDefinitionPanel
+);
+router.get(
+  '/:id/document-center',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read" }),
+  getUserDocumentCenter
+);
+router.get(
+  '/:id/signature-center',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read" }),
+  getUserGlobalSignatureCenter
+);
+router.post(
+  '/:id/process-definitions/:definitionId/tasks',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "processes", action: "create" }),
+  createUserProcessTask
+);
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
   authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "create", elevatedRoles: ["Admin", "Gestor"] }),
   createTaskItemDocumentInstance
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',
   authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["Admin", "Gestor"] }),
   uploadDeliverable.single('file'),
   uploadDeliverablePdf
 );
 router.get(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/template-download',
   authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read" }),
   downloadDeliverableTemplate
 );
 router.get(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/file',
   authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read" }),
   downloadDeliverableFile
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/reset-workflow',
   authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["Admin", "Gestor"] }),
   resetDeliverableWorkflow
 );
 
 //perfil 
-router.get('/me', authMiddleware, getMyProfile);
-router.patch('/me', authMiddleware, updateMyProfile);
-router.get('/me/certificates', authMiddleware, listMyCertificates);
-router.post('/me/certificates', authMiddleware, uploadCertificate.single('certificate'), uploadMyCertificate);
-router.put('/me/certificates/:certificateId/default', authMiddleware, setMyDefaultCertificate);
-router.get('/me/certificates/:certificateId/download', authMiddleware, downloadMyCertificate);
-router.delete('/me/certificates/:certificateId', authMiddleware, deleteMyCertificate);
+router.get('/me', authMiddleware, loadAccessContext, getMyProfile);
+router.patch('/me', authMiddleware, loadAccessContext, requirePermissions("account.update"), updateMyProfile);
+router.get('/me/certificates', authMiddleware, loadAccessContext, requirePermissions("documents.read"), listMyCertificates);
+router.post('/me/certificates', authMiddleware, loadAccessContext, requirePermissions("documents.update"), uploadCertificate.single('certificate'), uploadMyCertificate);
+router.put('/me/certificates/:certificateId/default', authMiddleware, loadAccessContext, requirePermissions("documents.update"), setMyDefaultCertificate);
+router.get('/me/certificates/:certificateId/download', authMiddleware, loadAccessContext, requirePermissions("documents.read"), downloadMyCertificate);
+router.delete('/me/certificates/:certificateId', authMiddleware, loadAccessContext, requirePermissions("documents.delete"), deleteMyCertificate);
 
 router.put(
   '/:cedula/photo',
+  authMiddleware,
+  loadAccessContext,
+  requireCedulaAccess({ resource: "account", action: "update", elevatedRoles: ["Admin"] }),
   (req, res, next) => {
     uploadProfilePhoto.single('photo')(req, res, (err) => {
       if (err) {

@@ -288,6 +288,16 @@ Aplicar seed especifico:
 bash scripts/seed-db.sh dev apply --file /app/backend/scripts/seeds/pucese.seed.json
 ```
 
+Aplicar semilla demo de cuentas, roles, workflow y dossier en QA local:
+
+```powershell
+cd docker
+docker compose --env-file .env.qa -f compose.base.yml -f compose.proxy.yml -f compose.qa.local.yml exec -T backend node /app/backend/scripts/seed_demo_accounts.mjs
+```
+
+La clave por defecto de los usuarios demo es `Deasy1234!`. Para cambiarla en una
+ejecucion puntual, definir `DEASY_DEMO_PASSWORD` antes de correr el comando.
+
 Listar migraciones disponibles:
 
 ```bash

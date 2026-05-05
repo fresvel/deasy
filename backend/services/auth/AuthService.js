@@ -2,16 +2,19 @@ import AuthenticationError from "../../errors/AuthenticationError.js";
 import UserRepository from "./UserRepository.js";
 import PasswordService from "./PasswordService.js";
 import TokenService from "./TokenService.js";
+import RbacService from "./RbacService.js";
 
 export default class AuthService {
   constructor({
     userRepository = new UserRepository(),
     passwordService = new PasswordService(),
-    tokenService = new TokenService()
+    tokenService = new TokenService(),
+    rbacService = new RbacService()
   } = {}) {
     this.userRepository = userRepository;
     this.passwordService = passwordService;
     this.tokenService = tokenService;
+    this.rbacService = rbacService;
   }
 
   async login(credentials = {}, res) {
@@ -38,11 +41,12 @@ export default class AuthService {
 
     this.tokenService.attachRefreshToken(userId, res);
     const { token, expiresIn } = this.tokenService.createAccessToken(userId);
+    const access = await this.rbacService.getUserAccess(userId);
 
     return {
       token,
       expiresIn,
-      user: this.userRepository.toPublicUser(user)
+      user: this.userRepository.toPublicUser(user, access)
     };
   }
 }

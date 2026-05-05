@@ -6,6 +6,7 @@ import { spawn } from "child_process";
 import { pipeline } from "stream/promises";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import UserRepository from "../../services/auth/UserRepository.js";
+import RbacService from "../../services/auth/RbacService.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   createDocumentInstanceForTaskItem,
@@ -28,6 +29,7 @@ import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 
 const userRepository = new UserRepository();
+const rbacService = new RbacService();
 const sqlAdminService = new SqlAdminService();
 const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
 const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
@@ -3114,10 +3116,17 @@ export const updateMyProfile = async (req, res) => {
     };
 
     const updatedUser = await userRepository.update(userId, payload);
+    const access = await rbacService.getUserAccess(userId);
 
     res.json({
       result: "ok",
-      user: updatedUser
+      user: {
+        ...updatedUser,
+        access,
+        roles: access.roleNames,
+        permissions: access.permissions,
+        role: access.primaryRole
+      }
     });
 
   } catch (error) {
@@ -3142,9 +3151,11 @@ export const getMyProfile = async (req, res) => {
       });
     }
 
+    const access = await rbacService.getUserAccess(userId);
+
     res.json({
       result: "ok",
-      user: userRepository.toPublicUser(user)
+      user: userRepository.toPublicUser(user, access)
     });
 
   } catch (error) {

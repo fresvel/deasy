@@ -8,6 +8,7 @@ import DashboardHome from "@/modules/dashboard/views/DashboardHome.vue";
 import IndexPage from "@/modules/perfil/views/PerfilView.vue";
 import AdminView from "@/modules/admin/views/AdminView.vue";
 import { isTokenValid, clearAuthData } from "@/core/utils/tokenUtils.js";
+import { canAccessAdmin } from "@/core/utils/accessControl.js";
 import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
@@ -21,7 +22,7 @@ const routes = [
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },
   { path: "/terminos", name: "terminos", component: TermsView },
-  { path: "/admin", name: "admin", component: AdminView },
+  { path: "/admin", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
   {
     path: "/logout",
@@ -60,6 +61,10 @@ router.beforeEach((to) => {
   if (!token || !isTokenValid(token)) {
     if (token) clearAuthData();
     return '/';
+  }
+
+  if (to.meta?.requiresAdminAccess && !canAccessAdmin()) {
+    return '/dashboard';
   }
 });
 
