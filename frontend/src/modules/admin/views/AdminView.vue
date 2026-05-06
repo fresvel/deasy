@@ -1,9 +1,18 @@
 <template>
-  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="admin" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView" />
+  <AppWorkspaceShell
+    :menu-open="vmenu"
+    :show-notify="vnotify"
+    current-section="admin"
+    :photo="userPhoto"
+    :username="userFullName"
+    @menu-toggle="handleHeaderToggle"
+    @close-mobile="vmenu = false"
+    @notify="toggleNotify"
+    @notify-close="vnotify = false"
+    @sign="isSigningView = !isSigningView"
+  >
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
-      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" @close-mobile="vmenu = false">
+      <template #sidebar>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
             <div class="deasy-nav-shell">
@@ -148,9 +157,8 @@
             </div>
             </div>
           </div>
-      </app-workspace-sidebar>
+      </template>
 
-      <s-body class="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8" :showmenu="vmenu" :shownotify="vnotify" :shownavmenu="showNavMenu">
         <template v-if="isSigningView">
           <FirmarPdf />
         </template>
@@ -400,12 +408,9 @@
           </div>
         </div>
         </template>
-      </s-body>
+  </AppWorkspaceShell>
 
-      <s-message :show="vnotify" />
-      <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
-    </div>
-  </div>
+  <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
 </template>
 
 <script setup>
@@ -427,10 +432,7 @@ import axios from "axios";
 import { useRouter } from "vue-router";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
-import AppWorkspaceSidebar from "@/layouts/menus/AppWorkspaceSidebar.vue";
-import SMessage from "@/layouts/core/SNotify.vue";
-import SBody from "@/layouts/core/SBody.vue";
-import AppWorkspaceHeader from "@/layouts/headers/AppWorkspaceHeader.vue";
+import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";

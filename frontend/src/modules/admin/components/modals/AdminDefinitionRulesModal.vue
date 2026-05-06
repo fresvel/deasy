@@ -156,6 +156,8 @@
         <AdminTableActions
           edit-tooltip="Editar regla"
           delete-message="Eliminar regla"
+          :show-edit="canManage"
+          :show-delete="canManage"
           @view="$emit('view-row', row)"
           @edit="$emit('edit-row', row)"
           @delete="$emit('delete-row', row)"

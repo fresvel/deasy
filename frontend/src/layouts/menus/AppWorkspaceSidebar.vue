@@ -1,7 +1,7 @@
 <template>
   <s-menu :show="show" @close-mobile="$emit('close-mobile')">
     <div :class="containerClass">
-      <div class="mb-5 flex px-2">
+      <div v-if="showLogo" class="mb-5 flex px-2">
         <AppLogo to="/dashboard" size="md" class-name="max-w-full" />
       </div>
       <UserProfile
@@ -41,6 +41,10 @@ defineProps({
   editable: {
     type: Boolean,
     default: false
+  },
+  showLogo: {
+    type: Boolean,
+    default: true
   },
   containerClass: {
     type: [String, Array, Object],

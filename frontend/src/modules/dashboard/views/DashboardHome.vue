@@ -1,14 +1,24 @@
 <template>
-  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="showMenu" current-section="dashboard" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="router.push({ name: 'dashboard-signatures' })">
+  <AppWorkspaceShell
+    :menu-open="showMenu"
+    :show-notify="showNotify"
+    current-section="dashboard"
+    :photo="userPhoto"
+    :username="userFullName"
+    @menu-toggle="handleHeaderToggle"
+    @close-mobile="showMenu = false"
+    @notify="toggleNotify"
+    @notify-close="showNotify = false"
+    @sign="router.push({ name: 'dashboard-signatures' })"
+  >
+    <template #header>
         <span v-if="!userUnits.length && !menuLoading" class="text-sm font-medium text-slate-500">
           Sin unidades
         </span>
-    </app-workspace-header>
+    </template>
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
-      <app-workspace-sidebar :show="showMenu" :photo="userPhoto" :username="userFullName" @close-mobile="showMenu = false">
-        <div class="deasy-nav-group">
+    <template #sidebar>
+        <div id="procesos" class="deasy-nav-group scroll-mt-24">
           <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="unitGroups.length">
             <label class="flex flex-col gap-1.5 relative">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Cargos asignados</span>
@@ -112,9 +122,8 @@
             </div>
           </div>
         </div>
-      </app-workspace-sidebar>
+    </template>
 
-      <s-body :showmenu="showMenu" :shownotify="showNotify">
         <template v-if="isDocumentCenterRoute">
           <section class="flex flex-col gap-6">
             <AppPageIntro
@@ -804,12 +813,7 @@
             </template>
           </section>
         </template>
-      </s-body>
-
-      <s-message :show="showNotify" @close="showNotify = false" />
-      
-      <s-nav-menu :show="showNavMenu" :is-admin="false" @close="showNavMenu = false" />
-    </div>
+  </AppWorkspaceShell>
 
     <AdminModalShell
       controlled
@@ -2409,18 +2413,12 @@
     </AdminModalShell>
 
     <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
-
-  </div>
 </template>
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import AppWorkspaceHeader from '@/layouts/headers/AppWorkspaceHeader.vue';
-import AppWorkspaceSidebar from '@/layouts/menus/AppWorkspaceSidebar.vue';
-import SBody from '@/layouts/core/SBody.vue';
-import SMessage from '@/layouts/core/SNotify.vue';
-import SNavMenu from '@/layouts/menus/SNavMenu.vue';
+import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
 import AppDataTable from '@/shared/components/data/AppDataTable.vue';
 import AppPageIntro from '@/shared/components/layout/AppPageIntro.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';

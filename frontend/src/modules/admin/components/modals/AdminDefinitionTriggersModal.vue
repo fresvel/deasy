@@ -90,6 +90,8 @@
         <AdminTableActions
           edit-tooltip="Editar disparador"
           delete-message="Eliminar disparador"
+          :show-edit="canManage"
+          :show-delete="canManage"
           @view="$emit('view-row', row)"
           @edit="$emit('edit-row', row)"
           @delete="$emit('delete-row', row)"
