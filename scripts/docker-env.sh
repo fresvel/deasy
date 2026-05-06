@@ -109,8 +109,21 @@ fi
 
 cd "$DOCKER_DIR"
 export DEASY_CONTAINER_ENV_FILE="$CONTAINER_ENV_FILE"
+
+# On MSYS/Git Bash, pre-convert host paths to Windows-native format
+# so MSYS_NO_PATHCONV can safely disable automatic path conversion
+# without breaking --env-file and -f arguments.
+# Container-internal paths passed via $@ (e.g. /app/backend/...) stay untouched.
+if command -v cygpath >/dev/null 2>&1; then
+  ENV_FILE="$(cygpath -w "$ENV_FILE")"
+  for i in "${!COMPOSE_FILES[@]}"; do
+    COMPOSE_FILES[$i]="$(cygpath -w "${COMPOSE_FILES[$i]}")"
+  done
+fi
+
 COMPOSE_ARGS=()
 for compose_file in "${COMPOSE_FILES[@]}"; do
   COMPOSE_ARGS+=(-f "$compose_file")
 done
-docker compose --env-file "$ENV_FILE" "${COMPOSE_ARGS[@]}" "$@"
+MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL="*" \
+  docker compose --env-file "$ENV_FILE" "${COMPOSE_ARGS[@]}" "$@"
