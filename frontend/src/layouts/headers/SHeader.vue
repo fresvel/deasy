@@ -6,12 +6,17 @@
       <button
         class="deasy-nav-action h-9 w-9 sm:h-11 sm:w-11"
         type="button"
+        aria-label="Abrir menu"
         @click="onClick('User')"
-        aria-label="Abrir menú"
       >
         <IconMenu2 class="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
-      <AppLogo to="/dashboard" size="sm" class-name="hidden shrink-0 sm:inline-flex" />
+      <AppLogo
+        to="/dashboard"
+        size="sm"
+        class-name="shrink-0"
+        image-class="max-w-[7rem] sm:max-w-[8.5rem]"
+      />
       <div class="flex w-full items-center justify-between gap-2 overflow-x-auto [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
         <slot></slot>
       </div>
@@ -20,7 +25,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from "vue";
+import { defineEmits, defineProps } from "vue";
 import { IconMenu2 } from "@tabler/icons-vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 

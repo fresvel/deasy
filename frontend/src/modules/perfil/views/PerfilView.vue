@@ -1,12 +1,27 @@
 <template>  
-  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="perfil" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
+  <AppWorkspaceShell
+    :menu-open="vmenu"
+    :show-notify="vnotify"
+    current-section="perfil"
+    :photo="userPhoto"
+    :username="userFullName"
+    :signature-marker="signatureMarker"
+    editable
+    @menu-toggle="handleHeaderToggle"
+    @close-mobile="vmenu = false"
+    @notify="toggleNotify"
+    @notify-close="vnotify = false"
+    @sign="router.push({ name: 'dashboard-signatures' })"
+    @photo-selected="handlePhotoSelected"
+  >
+    <template #header>
         <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
           <button
             v-for="(item, index) in areas"
             :key="index"
-            class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-11 sm:min-w-25 lg:min-w-35 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-px" :title="item.name"
-            :class="item.active ? 'border border-slate-950 bg-slate-950 text-white shadow-none' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950'"
+            class="deasy-secondary-tab"
+            :title="item.name"
+            :class="item.active ? 'deasy-secondary-tab--active' : ''"
             type="button"
             @click="onheadClick(item)"
           >
@@ -14,10 +29,9 @@
             <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
           </button>
         </div>
-    </app-workspace-header>
+    </template>
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
-      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :signature-marker="signatureMarker" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
+    <template #sidebar>
         <div class="flex flex-col">
             <div class="deasy-nav-meta mt-3 mb-2">
                 Secciones
@@ -59,9 +73,8 @@
               </div>
             </div>
         </div>
-      </app-workspace-sidebar>
+    </template>
 
-      <s-body :showmenu="vmenu" :shownotify="vnotify">
         <div v-if="area=='Perfil'" id="validar" class="w-full">
             <ProfileHomePanel
               v-if="process==='Inicio'"
@@ -87,12 +100,9 @@
             <!-- <FirmarPdf v-if="area=='Firmar'"></FirmarPdf> -->
              <div class="p-6 text-center text-slate-500 bg-white rounded-2xl m-4">Módulo de firma en migración (no disponible temporalmente)</div>
         </div>
-      </s-body>
-        
-      <s-message :show="vnotify" @close="vnotify = false" />
-      <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
-    </div>
-  </div>
+  </AppWorkspaceShell>
+
+  <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
 </template>
           
     <script setup>  
@@ -101,10 +111,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-    import AppWorkspaceSidebar from '@/layouts/menus/AppWorkspaceSidebar.vue';
-    import SMessage from '@/layouts/core/SNotify.vue';
-    import SBody from '@/layouts/core/SBody.vue';
-    import AppWorkspaceHeader from '@/layouts/headers/AppWorkspaceHeader.vue';
+    import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
     import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
     import {
       resolveWorkspaceAreaIcon,

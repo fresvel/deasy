@@ -102,6 +102,14 @@ export const canAccessResource = (resource, action = "read", user = getStoredUse
     hasPermission(`${resource}.manage`, user);
 };
 
+export const canReadResource = (resource, user = getStoredUser()) =>
+  canAccessResource(resource, "read", user);
+
+export const canWriteResource = (resource, user = getStoredUser()) =>
+  ["create", "update", "delete", "manage"].some((action) =>
+    canAccessResource(resource, action, user)
+  );
+
 export const resolveAdminTableResource = (tableName = "") =>
   ADMIN_TABLE_RESOURCE_MAP[String(tableName || "").trim()] || DEFAULT_ADMIN_RESOURCE;
 

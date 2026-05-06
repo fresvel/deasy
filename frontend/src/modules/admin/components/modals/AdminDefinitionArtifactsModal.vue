@@ -104,6 +104,8 @@
         <AdminTableActions
           edit-tooltip="Editar artifact"
           delete-message="Eliminar artifact"
+          :show-edit="canManage"
+          :show-delete="canManage"
           @view="$emit('view-row', row)"
           @edit="$emit('edit-row', row)"
           @delete="$emit('delete-row', row)"
