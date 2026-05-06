@@ -252,7 +252,7 @@
                       badge="Acción especial"
                       badge-variant="info"
                       class-name="min-h-[170px] bg-gradient-to-br from-sky-50 to-white border-sky-200 hover:border-sky-400"
-                      icon-wrapper-class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:bg-sky-500 group-hover:text-white transition-colors"
+                      icon-wrapper-class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:border-sky-300 group-hover:bg-sky-50 group-hover:text-sky-700 transition-colors"
                       title-class="text-sky-900 group-hover:text-sky-700"
                       @click="openTemplateArtifactDraftFromHome"
                     />

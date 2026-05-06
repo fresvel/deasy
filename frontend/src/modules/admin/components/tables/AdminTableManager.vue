@@ -19,7 +19,6 @@
       :can-create="canCreateCurrentTable"
       :can-update="canUpdateCurrentTable"
       @go-back="handleGoBack"
-      @search="handleSearchAction"
       @sync-template-seeds="syncTemplateSeedsFromSource"
       @sync-template-artifacts="syncTemplateArtifactsFromDist"
       @create="handlePrimaryCreateAction"
@@ -1929,8 +1928,7 @@ const {
   debouncedFkSearch,
   debouncedSearch,
   debouncedVacantSearch,
-  debouncedUnassignedTemplateArtifactSearch,
-  handleSearchAction
+  debouncedUnassignedTemplateArtifactSearch
 } = useAdminShellSearchActions({
   props,
   searchInput,

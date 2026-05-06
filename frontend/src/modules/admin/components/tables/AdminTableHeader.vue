@@ -28,14 +28,6 @@
           <font-awesome-icon icon="backward" />
         </AdminButton>
         <AdminButton
-          variant="secondary"
-          size="lg"
-          :disabled="!table"
-          @click="$emit('search')"
-        >
-          Buscar
-        </AdminButton>
-        <AdminButton
           v-if="isTemplateSeedsTable && canUpdate"
           variant="secondary"
           size="lg"
@@ -117,7 +109,6 @@ defineProps({
 
 defineEmits([
   "go-back",
-  "search",
   "sync-template-seeds",
   "sync-template-artifacts",
   "create"
