@@ -14,6 +14,11 @@ flujo demo confiable:
 - `Auditor`: solo lectura.
 - `Usuario`: operaciones propias de cuenta, dossier, documentos y firmas.
 
+Para el demo QA, `Admin` se asigna a una cuenta dedicada
+`admin.demo@pucese.edu.ec`. Los usuarios con cargo de director se mantienen como
+roles operativos derivados de su cargo y no deben usarse como administradores
+globales.
+
 ## Modelo usado
 
 Se reutiliza el modelo SQL existente:
@@ -66,9 +71,10 @@ Frontend:
 
 ## Verificacion esperada
 
-Con la semilla demo:
+Con la semilla demo y el patch RBAC:
 
-- `Admin` puede entrar a `/admin` y operar tablas.
+- `admin.demo@pucese.edu.ec` puede entrar a `/admin` y operar tablas.
+- `director.demo@pucese.edu.ec` no conserva `Admin` manual por defecto.
 - `Gestor` puede leer usuarios/roles y operar procesos, pero no crear roles.
 - `Auditor` puede leer tablas permitidas, pero recibe `403` si intenta crear,
   editar o eliminar.

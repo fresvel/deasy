@@ -24,6 +24,11 @@ Deasy1234!
 | 8 | `director.docencia.demo@pucese.edu.ec` | `9000000008` | Director Docencia Demo | Activo | Si | Si |
 | 9 | `jefa.talento.demo@pucese.edu.ec` | `9000000009` | Jefa Talento Demo | Activo | Si | Si |
 | 10 | `prorrector.demo@pucese.edu.ec` | `9000000010` | Prorrector Demo | Activo | Si | Si |
+| RBAC | `admin.demo@pucese.edu.ec` | `9000000001` | Administrador Demo | Activo | Si | Si |
+
+La cuenta `admin.demo@pucese.edu.ec` se crea o actualiza al ejecutar el patch
+RBAC. Los usuarios con cargo de director conservan su rol operativo derivado del
+cargo, pero no reciben el rol `Admin` por defecto.
 
 ## Recarga del seed en dev
 

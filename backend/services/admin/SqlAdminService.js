@@ -28,6 +28,7 @@ import {
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
+const PERSON_TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
 const ARTIFACT_STAGE_VALUES = new Set(["draft", "review", "approved", "published", "archived"]);
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -912,6 +913,20 @@ const hashPassword = async (password) => {
   return bcrypt.hash(password, salt);
 };
 
+const generatePersonToken = () => {
+  const bytes = crypto.randomBytes(10);
+  return Array.from(bytes, (byte) => PERSON_TOKEN_CHARS[byte % PERSON_TOKEN_CHARS.length]).join("");
+};
+
+const resolveUniquePersonToken = async (pool) => {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const token = generatePersonToken();
+    const [rows] = await pool.query("SELECT id FROM persons WHERE token = ? LIMIT 1", [token]);
+    if (!rows?.length) return token;
+  }
+  throw new Error("No se pudo generar un token unico para el usuario.");
+};
+
 const sanitizePersonRow = (tableName, row) => {
   if (tableName !== "persons" || !row || typeof row !== "object") {
     return row;
@@ -1656,6 +1671,8 @@ export default class SqlAdminService {
 
     if (tableName === "persons") {
       const rawPassword = typeof data?.password === "string" ? data.password : "";
+      const rawToken = typeof data?.token === "string" ? data.token.trim() : "";
+      payload.token = rawToken || await resolveUniquePersonToken(this.pool);
       if (rawPassword) {
         payload.password_hash = await hashPassword(rawPassword);
       } else if (typeof payload.password_hash === "string" && payload.password_hash) {

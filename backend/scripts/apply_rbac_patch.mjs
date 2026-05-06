@@ -1,4 +1,5 @@
 import { closeMariaDBPool, getMariaDBPool } from "../config/mariadb.js";
+import bcrypt from "bcrypt";
 
 const roles = [
   { name: "Admin", description: "Acceso completo sobre administracion, usuarios, roles y procesos." },
@@ -66,6 +67,16 @@ const cargoRoleMap = {
   docente: ["Usuario"]
 };
 
+const demoAdmin = {
+  cedula: process.env.DEASY_RBAC_DEMO_ADMIN_CEDULA || "9000000001",
+  email: process.env.DEASY_RBAC_DEMO_ADMIN_EMAIL || "admin.demo@pucese.edu.ec",
+  firstName: process.env.DEASY_RBAC_DEMO_ADMIN_FIRST_NAME || "Administrador",
+  lastName: process.env.DEASY_RBAC_DEMO_ADMIN_LAST_NAME || "Demo",
+  whatsapp: process.env.DEASY_RBAC_DEMO_ADMIN_WHATSAPP || "0990000001",
+  token: process.env.DEASY_RBAC_DEMO_ADMIN_TOKEN || "ADEMO0101A",
+  password: process.env.DEASY_DEMO_PASSWORD || "Deasy1234!"
+};
+
 const splitEnvList = (key, fallback = []) => {
   const raw = process.env[key];
   if (!raw) return fallback;
@@ -76,11 +87,15 @@ const splitEnvList = (key, fallback = []) => {
 };
 
 const adminEmails = splitEnvList("DEASY_RBAC_ADMIN_EMAILS", [
-  "director.demo@pucese.edu.ec"
+  demoAdmin.email
 ]);
 
 const auditorEmails = splitEnvList("DEASY_RBAC_AUDITOR_EMAILS", [
   "asistente.docencia.demo@pucese.edu.ec"
+]);
+
+const legacyAdminEmails = splitEnvList("DEASY_RBAC_LEGACY_ADMIN_EMAILS", [
+  "director.demo@pucese.edu.ec"
 ]);
 
 const fetchOne = async (connection, sql, params = []) => {
@@ -201,6 +216,62 @@ const seedCargoRoleMap = async (connection, roleIds) => {
   return inserted;
 };
 
+const ensureDemoAdminPerson = async (connection) => {
+  const passwordHash = await bcrypt.hash(demoAdmin.password, 10);
+
+  await connection.query(
+    `INSERT INTO persons (
+       cedula,
+       first_name,
+       last_name,
+       email,
+       whatsapp,
+       direccion,
+       pais,
+       pais_residencia,
+       provincia_residencia,
+       ciudad_residencia,
+       password_hash,
+       status,
+       verify_email,
+       verify_whatsapp,
+       is_active,
+       token
+     )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo', 1, 1, 1, ?)
+     ON DUPLICATE KEY UPDATE
+       first_name = VALUES(first_name),
+       last_name = VALUES(last_name),
+       email = VALUES(email),
+       whatsapp = VALUES(whatsapp),
+       direccion = VALUES(direccion),
+       pais = VALUES(pais),
+       pais_residencia = VALUES(pais_residencia),
+       provincia_residencia = VALUES(provincia_residencia),
+       ciudad_residencia = VALUES(ciudad_residencia),
+       password_hash = VALUES(password_hash),
+       status = 'Activo',
+       verify_email = 1,
+       verify_whatsapp = 1,
+       is_active = 1,
+       token = VALUES(token)`,
+    [
+      demoAdmin.cedula,
+      demoAdmin.firstName,
+      demoAdmin.lastName,
+      demoAdmin.email,
+      demoAdmin.whatsapp,
+      "Av. Demo y Calle QA",
+      "Ecuador",
+      "Ecuador",
+      "Esmeraldas",
+      "Esmeraldas",
+      passwordHash,
+      demoAdmin.token
+    ]
+  );
+};
+
 const backfillDerivedRoleAssignments = async (connection) => {
   const [result] = await connection.query(
     `INSERT IGNORE INTO role_assignments (
@@ -293,6 +364,40 @@ const assignManualRoleByEmail = async (connection, { email, roleName, roleIds, f
   return Number(result.affectedRows || 0);
 };
 
+const revokeManualRoleByEmail = async (connection, { email, roleName, roleIds }) => {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return 0;
+
+  const stillAdmin = adminEmails.some(
+    (adminEmail) => String(adminEmail || "").trim().toLowerCase() === normalizedEmail
+  );
+  if (stillAdmin) return 0;
+
+  const person = await fetchOne(
+    connection,
+    "SELECT id, email FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
+    [email]
+  );
+  if (!person) return 0;
+
+  const roleId = roleIds.get(roleName);
+  if (!roleId) return 0;
+
+  const [result] = await connection.query(
+    `UPDATE role_assignments
+     SET is_current = 0,
+         end_date = COALESCE(end_date, CURDATE()),
+         revoked_at = NOW(),
+         revoked_reason = 'Reasignacion de admin demo dedicado'
+     WHERE person_id = ?
+       AND role_id = ?
+       AND source = 'manual'
+       AND is_current = 1`,
+    [person.id, roleId]
+  );
+  return Number(result.affectedRows || 0);
+};
+
 const applyPatch = async () => {
   const pool = getMariaDBPool();
   if (!pool) {
@@ -308,10 +413,20 @@ const applyPatch = async () => {
       roleIds.set(role.name, await upsertRole(connection, role));
     }
 
+    await ensureDemoAdminPerson(connection);
     await seedPermissions(connection, roleIds);
     const cargoMappings = await seedCargoRoleMap(connection, roleIds);
     const derivedAssignments = await backfillDerivedRoleAssignments(connection);
     const fallbackUnitId = await resolveDefaultUnitId(connection);
+
+    let revokedAssignments = 0;
+    for (const email of legacyAdminEmails) {
+      revokedAssignments += await revokeManualRoleByEmail(connection, {
+        email,
+        roleName: "Admin",
+        roleIds
+      });
+    }
 
     let manualAssignments = 0;
     for (const email of adminEmails) {
@@ -337,6 +452,7 @@ const applyPatch = async () => {
     console.log(`Mapeos cargo-rol nuevos: ${cargoMappings}`);
     console.log(`Asignaciones derivadas nuevas: ${derivedAssignments}`);
     console.log(`Asignaciones manuales nuevas: ${manualAssignments}`);
+    console.log(`Asignaciones admin heredadas revocadas: ${revokedAssignments}`);
   } catch (error) {
     await connection.rollback();
     throw error;
