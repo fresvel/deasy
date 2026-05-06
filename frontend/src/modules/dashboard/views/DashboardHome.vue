@@ -2467,6 +2467,7 @@ import {
   IconChecklist,
   IconId,
   IconSearch,
+  IconSquareCheck,
   IconUserCheck,
   IconX
 } from '@tabler/icons-vue';
