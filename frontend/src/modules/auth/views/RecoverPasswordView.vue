@@ -16,11 +16,11 @@
         </div>
         <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Recuperar contraseña</h1>
         <p class="text-slate-500 mt-2.5 font-medium text-sm">
-          Ingresa la dirección de correo electrónico asociada a tu cuenta y te enviaremos un enlace para restablecer tu contraseña.
+          Solicita un código de recuperación y luego define una nueva contraseña para tu cuenta.
         </p>
       </div>
 
-      <form @submit.prevent="recoverPassword" class="space-y-6">
+      <form v-if="step === 'request'" @submit.prevent="recoverPassword" class="space-y-6">
         <div>
           <label for="email" class="block text-sm font-semibold text-slate-700 mb-2">
             Correo Electrónico
@@ -46,13 +46,94 @@
           class="deasy-auth-button"
         >
           <template v-if="!isLoading">
-            Enviar enlace
+            Enviar código
           </template>
           <template v-else>
             <IconLoader2 class="h-5 w-5 animate-spin" />
             <span class="ml-2">Enviando...</span>
           </template>
         </button>
+      </form>
+
+      <form v-else @submit.prevent="submitReset" class="space-y-6">
+        <div>
+          <label for="email-confirmed" class="block text-sm font-semibold text-slate-700 mb-2">
+            Correo Electrónico
+          </label>
+          <input
+            id="email-confirmed"
+            type="email"
+            v-model="email"
+            class="deasy-auth-field bg-slate-50"
+            readonly
+          />
+        </div>
+
+        <div>
+          <label for="code" class="block text-sm font-semibold text-slate-700 mb-2">
+            Código de recuperación
+          </label>
+          <input
+            id="code"
+            type="text"
+            v-model="code"
+            class="deasy-auth-field"
+            placeholder="Ingresa el código recibido"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-semibold text-slate-700 mb-2">
+            Nueva contraseña
+          </label>
+          <input
+            id="password"
+            type="password"
+            v-model="password"
+            class="deasy-auth-field"
+            placeholder="Nueva contraseña"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="repassword" class="block text-sm font-semibold text-slate-700 mb-2">
+            Confirmar contraseña
+          </label>
+          <input
+            id="repassword"
+            type="password"
+            v-model="repassword"
+            class="deasy-auth-field"
+            placeholder="Repite la nueva contraseña"
+            required
+          />
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            class="deasy-auth-button deasy-auth-button--secondary"
+            :disabled="isLoading"
+            @click="step = 'request'"
+          >
+            Cambiar correo
+          </button>
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="deasy-auth-button"
+          >
+            <template v-if="!isLoading">
+              Actualizar contraseña
+            </template>
+            <template v-else>
+              <IconLoader2 class="h-5 w-5 animate-spin" />
+              <span class="ml-2">Actualizando...</span>
+            </template>
+          </button>
+        </div>
       </form>
 
       <Transition
@@ -85,9 +166,13 @@ import AppLogo from '@/shared/components/layout/AppLogo.vue';
 import { IconArrowLeft, IconKey, IconMail, IconLoader2, IconAlertCircle, IconCheck } from '@tabler/icons-vue';
 
 const email = ref('');
+const code = ref('');
+const password = ref('');
+const repassword = ref('');
 const isLoading = ref(false);
 const statusMessage = ref('');
 const isError = ref(false);
+const step = ref('request');
 
 const recoverPassword = async () => {
   if (!email.value) return;
@@ -99,11 +184,40 @@ const recoverPassword = async () => {
   try {
     await AuthService.recoverPassword(email.value.trim());
     
-    statusMessage.value = 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.';
+    statusMessage.value = 'Si el correo está registrado, recibirás un código de recuperación para restablecer tu contraseña.';
     isError.value = false;
-    email.value = '';
+    step.value = 'reset';
   } catch (error) {
     statusMessage.value = error.response?.data?.message || 'Error al intentar recuperar la contraseña.';
+    isError.value = true;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const submitReset = async () => {
+  if (!email.value || !code.value || !password.value || !repassword.value) return;
+
+  isLoading.value = true;
+  statusMessage.value = '';
+  isError.value = false;
+
+  try {
+    await AuthService.resetPassword(
+      email.value.trim(),
+      code.value.trim(),
+      password.value,
+      repassword.value
+    );
+
+    statusMessage.value = 'La contraseña se actualizó correctamente. Ya puedes volver al login.';
+    isError.value = false;
+    code.value = '';
+    password.value = '';
+    repassword.value = '';
+    step.value = 'request';
+  } catch (error) {
+    statusMessage.value = error.response?.data?.error || error.response?.data?.message || 'No se pudo actualizar la contraseña.';
     isError.value = true;
   } finally {
     isLoading.value = false;

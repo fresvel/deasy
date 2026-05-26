@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/modules/auth/views/LoginView.vue";
 import Register from "@/modules/auth/views/RegisterView.vue";
 import RecoverPassword from "@/modules/auth/views/RecoverPasswordView.vue";
+import SystemBootstrapView from "@/modules/auth/views/SystemBootstrapView.vue";
 import TermsView from "@/modules/auth/views/TermsView.vue";
 import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
 import DashboardHome from "@/modules/dashboard/views/DashboardHome.vue";
@@ -11,6 +12,7 @@ import { isTokenValid, clearAuthData } from "@/core/utils/tokenUtils.js";
 import { canAccessAdmin, getDefaultAuthenticatedRoute, isAdminUser } from "@/core/utils/accessControl.js";
 import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import SystemBootstrapService from "@/modules/auth/services/SystemBootstrapService";
 
 const routes = [
   { path: "/", name: "login", component: Login },
@@ -21,6 +23,7 @@ const routes = [
   { path: "/perfil", name: "perfil", component: IndexPage },
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },
+  { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
   { path: "/terminos", name: "terminos", component: TermsView },
   { path: "/admin", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
@@ -51,9 +54,33 @@ const adminBlockedRouteNames = new Set([
   "perfil"
 ]);
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const token = localStorage.getItem('token');
-  const publicRoutes = ['/', '/register', '/recover-password', '/terminos'];
+  const publicRoutes = ['/', '/register', '/recover-password', '/terminos', '/setup'];
+  let bootstrapStatus = null;
+
+  try {
+    bootstrapStatus = await SystemBootstrapService.getStatus();
+  } catch (error) {
+    console.warn("No se pudo obtener el estado de bootstrap:", error?.message || error);
+  }
+
+  if (bootstrapStatus?.installationMode && bootstrapStatus.installationMode !== "normal") {
+    if (token) {
+      clearAuthData();
+    }
+    if (to.name !== "system-bootstrap") {
+      return { name: "system-bootstrap" };
+    }
+    return;
+  }
+
+  if (bootstrapStatus?.installationMode === "normal" && to.name === "system-bootstrap") {
+    if (token && isTokenValid(token)) {
+      return getDefaultAuthenticatedRoute();
+    }
+    return "/";
+  }
 
   if (publicRoutes.includes(to.path)) {
     if (token && isTokenValid(token) && to.path === '/') {

@@ -20,6 +20,7 @@ import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
 import chat_router from "./routes/chat_router.js";
 import notification_router from "./routes/notification_router.js";
+import system_router from "./routes/system_router.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -1255,6 +1256,7 @@ app.use(ROUTES.notifications, notification_router)
 app.use(ROUTES.dossier, dossier_router)
 
 app.use(ROUTES.sign, sign_router)
+app.use(ROUTES.system, system_router)
 
 app.use(express.static("public"));
 

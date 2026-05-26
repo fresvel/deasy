@@ -12,7 +12,7 @@ export const sendResetCodeService = async (email) => {
   const pool = getMariaDBPool();
 
   const [[user]] = await pool.query(
-    "SELECT id FROM users WHERE email = ?",
+    "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
     [email]
   );
 
@@ -23,13 +23,13 @@ export const sendResetCodeService = async (email) => {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await pool.query(
-    "DELETE FROM password_reset_codes WHERE user_id = ? AND used = 0",
+    "DELETE FROM password_reset_codes WHERE person_id = ? AND used = 0",
     [user.id]
   );
 
 
   await pool.query(
-    `INSERT INTO password_reset_codes (user_id, code_hash, expires_at)
+    `INSERT INTO password_reset_codes (person_id, code_hash, expires_at)
      VALUES (?, ?, ?)`,
     [user.id, codeHash, expiresAt]
   );
@@ -57,7 +57,7 @@ export const verifyResetCodeService = async (email, code) => {
   const pool = getMariaDBPool();
 
   const [[user]] = await pool.query(
-    "SELECT id FROM users WHERE email = ?",
+    "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
     [email]
   );
 
@@ -65,7 +65,7 @@ export const verifyResetCodeService = async (email, code) => {
 
   // Tomamos el último código no usado
   const [[row]] = await pool.query(
-    "SELECT id, code_hash, expires_at, used FROM password_reset_codes WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+    "SELECT id, code_hash, expires_at, used FROM password_reset_codes WHERE person_id = ? ORDER BY created_at DESC LIMIT 1",
     [user.id]
   );
 
@@ -92,7 +92,7 @@ export const resetPasswordService = async (email, code, password) => {
 
   // 1️⃣ Buscar usuario
   const [[user]] = await pool.query(
-    "SELECT id FROM users WHERE email = ?",
+    "SELECT id FROM persons WHERE email = ? AND is_active = 1 LIMIT 1",
     [email]
   );
   if (!user) throw new Error("Usuario no encontrado");
@@ -106,7 +106,7 @@ export const resetPasswordService = async (email, code, password) => {
 
   // 4️⃣ Actualizar contraseña
   await pool.query(
-    "UPDATE users SET password_hash = ? WHERE id = ?",
+    "UPDATE persons SET password_hash = ? WHERE id = ?",
     [passwordHash, user.id]
   );
 

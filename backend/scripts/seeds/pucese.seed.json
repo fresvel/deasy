@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-04-06T20:32:00.245Z",
+  "captured_at": "2026-05-26T21:45:29.947Z",
   "tables": [
     {
       "table": "persons",
@@ -10,15 +10,30 @@
         "cedula",
         "first_name",
         "last_name",
+        "fecha_nacimiento",
+        "genero",
+        "etnia",
+        "nacionalidad",
+        "estado_civil",
+        "tipo_sangre",
+        "pasaporte",
+        "tipo_visa",
         "email",
         "whatsapp",
+        "celular",
         "direccion",
         "pais",
+        "provincia_nacimiento",
+        "canton",
+        "parroquia",
         "pais_residencia",
         "provincia_residencia",
         "ciudad_residencia",
         "calle_primaria",
         "calle_secundaria",
+        "numero_casa",
+        "referencia_domicilio",
+        "sector_barrio",
         "codigo_postal",
         "password_hash",
         "status",
@@ -35,15 +50,30 @@
         "cedula": "varchar(20)",
         "first_name": "varchar(120)",
         "last_name": "varchar(120)",
+        "fecha_nacimiento": "date",
+        "genero": "enum('M','F','LGBTI')",
+        "etnia": "varchar(60)",
+        "nacionalidad": "varchar(80)",
+        "estado_civil": "enum('Soltero','Casado','Union libre','Union de hecho','Divorciado','Viudo')",
+        "tipo_sangre": "varchar(10)",
+        "pasaporte": "varchar(30)",
+        "tipo_visa": "varchar(40)",
         "email": "varchar(180)",
         "whatsapp": "varchar(30)",
+        "celular": "varchar(30)",
         "direccion": "varchar(255)",
         "pais": "varchar(80)",
+        "provincia_nacimiento": "varchar(120)",
+        "canton": "varchar(120)",
+        "parroquia": "varchar(120)",
         "pais_residencia": "varchar(80)",
         "provincia_residencia": "varchar(120)",
         "ciudad_residencia": "varchar(120)",
         "calle_primaria": "varchar(180)",
         "calle_secundaria": "varchar(180)",
+        "numero_casa": "varchar(20)",
+        "referencia_domicilio": "varchar(255)",
+        "sector_barrio": "varchar(120)",
         "codigo_postal": "varchar(30)",
         "password_hash": "varchar(255)",
         "status": "enum('Inactivo','Activo','Verificado','Reportado')",
@@ -61,17 +91,32 @@
           "cedula": "1234567891",
           "first_name": "Persona",
           "last_name": "Demo Uno",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "persona.demo1@pucese.edu.ec",
           "whatsapp": "+5931234567891",
+          "celular": null,
           "direccion": "Direccion demo 1",
           "pais": "Ecuador",
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 0,
           "verify_whatsapp": 0,
@@ -79,24 +124,39 @@
           "is_active": 1,
           "token": "9b6D6WnuUE",
           "created_at": "2026-02-26 12:30:21",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 2,
           "cedula": "0987654321",
           "first_name": "Persona",
           "last_name": "Demo Dos",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "persona.demo2@pucese.edu.ec",
           "whatsapp": "+5931234567892",
+          "celular": null,
           "direccion": "Direccion demo 2",
           "pais": "Ecuador",
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Inactivo",
           "verify_email": 0,
           "verify_whatsapp": 0,
@@ -104,24 +164,39 @@
           "is_active": 1,
           "token": "xdm9kQQNnq",
           "created_at": "2026-02-26 19:21:43",
-          "updated_at": "2026-04-01 22:40:31"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 3,
           "cedula": "1234567890",
           "first_name": "Carlos",
           "last_name": "Montalvo Pereira",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "director.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -129,24 +204,39 @@
           "is_active": 1,
           "token": "48ba18cb71",
           "created_at": "2026-04-01 02:07:56",
-          "updated_at": "2026-04-01 02:07:56"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 4,
           "cedula": "9000000004",
           "first_name": "Asistente",
           "last_name": "Docencia Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "asistente.docencia.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -154,24 +244,39 @@
           "is_active": 1,
           "token": "DDEMO1901A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 5,
           "cedula": "9000000005",
           "first_name": "Asistente",
           "last_name": "Talento Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "asistente.tthh.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -179,24 +284,39 @@
           "is_active": 1,
           "token": "TDEMO2001A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 6,
           "cedula": "9000000006",
           "first_name": "Responsable",
           "last_name": "Financiero Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "responsable.financiero.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -204,24 +324,39 @@
           "is_active": 1,
           "token": "FDEMO2101A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 7,
           "cedula": "9000000007",
           "first_name": "Director",
           "last_name": "Escuela Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "director.escuela.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -229,24 +364,39 @@
           "is_active": 1,
           "token": "EDEMO0101A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 8,
           "cedula": "9000000008",
           "first_name": "Director",
           "last_name": "Docencia Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "director.docencia.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -254,24 +404,39 @@
           "is_active": 1,
           "token": "DDEMO0701A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 9,
           "cedula": "9000000009",
           "first_name": "Jefa",
           "last_name": "Talento Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "jefa.talento.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -279,24 +444,39 @@
           "is_active": 1,
           "token": "JDEMO2201A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 10,
           "cedula": "9000000010",
           "first_name": "Prorrector",
           "last_name": "Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
           "email": "prorrector.demo@pucese.edu.ec",
           "whatsapp": null,
+          "celular": null,
           "direccion": null,
           "pais": null,
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
           "pais_residencia": null,
           "provincia_residencia": null,
           "ciudad_residencia": null,
           "calle_primaria": null,
           "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$M/ClEypVskR/fiOXV5.Mk.3SBfch2xdYr3I9e7cDNmau2wxQzNyNW",
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 0,
@@ -304,7 +484,47 @@
           "is_active": 1,
           "token": "PDEMO2301A",
           "created_at": "2026-04-04 15:21:54",
-          "updated_at": "2026-04-04 23:56:53"
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 11,
+          "cedula": "9000000001",
+          "first_name": "Administrador",
+          "last_name": "Demo",
+          "fecha_nacimiento": null,
+          "genero": null,
+          "etnia": null,
+          "nacionalidad": null,
+          "estado_civil": null,
+          "tipo_sangre": null,
+          "pasaporte": null,
+          "tipo_visa": null,
+          "email": "admin.demo@pucese.edu.ec",
+          "whatsapp": "0990000001",
+          "celular": null,
+          "direccion": "Av. Demo y Calle QA",
+          "pais": "Ecuador",
+          "provincia_nacimiento": null,
+          "canton": null,
+          "parroquia": null,
+          "pais_residencia": "Ecuador",
+          "provincia_residencia": "Esmeraldas",
+          "ciudad_residencia": "Esmeraldas",
+          "calle_primaria": null,
+          "calle_secundaria": null,
+          "numero_casa": null,
+          "referencia_domicilio": null,
+          "sector_barrio": null,
+          "codigo_postal": null,
+          "password_hash": "$2b$10$AJRmImyrSLJbWMPwRyPOcuT25ndvCr615DJY.OG/0uj.zrZ24kU9W",
+          "status": "Activo",
+          "verify_email": 1,
+          "verify_whatsapp": 1,
+          "photo_url": null,
+          "is_active": 1,
+          "token": "ADEMO0101A",
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
         }
       ]
     },
@@ -731,7 +951,32 @@
         "description": "varchar(255)",
         "is_active": "tinyint(1)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "name": "Admin",
+          "description": "Acceso completo sobre administracion, usuarios, roles y procesos.",
+          "is_active": 1
+        },
+        {
+          "id": 2,
+          "name": "Gestor",
+          "description": "Crea, gestiona y elimina procesos operativos.",
+          "is_active": 1
+        },
+        {
+          "id": 3,
+          "name": "Auditor",
+          "description": "Solo lectura sobre datos y procesos.",
+          "is_active": 1
+        },
+        {
+          "id": 4,
+          "name": "Usuario",
+          "description": "Acceso a funcionalidades generales de usuario.",
+          "is_active": 1
+        }
+      ]
     },
     {
       "table": "resources",
@@ -753,7 +998,62 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "account",
+          "name": "Cuenta",
+          "description": "Datos de cuenta y sesion.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 2,
+          "code": "dossier",
+          "name": "Dossier",
+          "description": "Perfil profesional y evidencias.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 3,
+          "code": "documents",
+          "name": "Documentos",
+          "description": "Centro documental del usuario.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 4,
+          "code": "processes",
+          "name": "Procesos",
+          "description": "Procesos, tareas y definiciones.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 5,
+          "code": "roles",
+          "name": "Roles",
+          "description": "Roles, permisos y asignaciones.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 6,
+          "code": "users",
+          "name": "Usuarios",
+          "description": "Administracion de usuarios.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        }
+      ]
     },
     {
       "table": "actions",
@@ -775,7 +1075,53 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "read",
+          "name": "Leer",
+          "description": "Consultar registros.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 2,
+          "code": "create",
+          "name": "Crear",
+          "description": "Crear registros.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 3,
+          "code": "update",
+          "name": "Actualizar",
+          "description": "Modificar registros.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 4,
+          "code": "delete",
+          "name": "Eliminar",
+          "description": "Eliminar registros.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 5,
+          "code": "manage",
+          "name": "Administrar",
+          "description": "Administracion completa del modulo.",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        }
+      ]
     },
     {
       "table": "permissions",
@@ -799,7 +1145,308 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "resource_id": 1,
+          "action_id": 1,
+          "code": "account.read",
+          "description": "Leer Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 2,
+          "resource_id": 1,
+          "action_id": 2,
+          "code": "account.create",
+          "description": "Crear Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 3,
+          "resource_id": 1,
+          "action_id": 3,
+          "code": "account.update",
+          "description": "Actualizar Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 4,
+          "resource_id": 1,
+          "action_id": 4,
+          "code": "account.delete",
+          "description": "Eliminar Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 5,
+          "resource_id": 1,
+          "action_id": 5,
+          "code": "account.manage",
+          "description": "Administrar Cuenta",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 6,
+          "resource_id": 2,
+          "action_id": 1,
+          "code": "dossier.read",
+          "description": "Leer Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 7,
+          "resource_id": 2,
+          "action_id": 2,
+          "code": "dossier.create",
+          "description": "Crear Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 8,
+          "resource_id": 2,
+          "action_id": 3,
+          "code": "dossier.update",
+          "description": "Actualizar Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 9,
+          "resource_id": 2,
+          "action_id": 4,
+          "code": "dossier.delete",
+          "description": "Eliminar Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 10,
+          "resource_id": 2,
+          "action_id": 5,
+          "code": "dossier.manage",
+          "description": "Administrar Dossier",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 11,
+          "resource_id": 3,
+          "action_id": 1,
+          "code": "documents.read",
+          "description": "Leer Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 12,
+          "resource_id": 3,
+          "action_id": 2,
+          "code": "documents.create",
+          "description": "Crear Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 13,
+          "resource_id": 3,
+          "action_id": 3,
+          "code": "documents.update",
+          "description": "Actualizar Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 14,
+          "resource_id": 3,
+          "action_id": 4,
+          "code": "documents.delete",
+          "description": "Eliminar Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 15,
+          "resource_id": 3,
+          "action_id": 5,
+          "code": "documents.manage",
+          "description": "Administrar Documentos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 16,
+          "resource_id": 4,
+          "action_id": 1,
+          "code": "processes.read",
+          "description": "Leer Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 17,
+          "resource_id": 4,
+          "action_id": 2,
+          "code": "processes.create",
+          "description": "Crear Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 18,
+          "resource_id": 4,
+          "action_id": 3,
+          "code": "processes.update",
+          "description": "Actualizar Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 19,
+          "resource_id": 4,
+          "action_id": 4,
+          "code": "processes.delete",
+          "description": "Eliminar Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 20,
+          "resource_id": 4,
+          "action_id": 5,
+          "code": "processes.manage",
+          "description": "Administrar Procesos",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 21,
+          "resource_id": 5,
+          "action_id": 1,
+          "code": "roles.read",
+          "description": "Leer Roles",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 22,
+          "resource_id": 5,
+          "action_id": 2,
+          "code": "roles.create",
+          "description": "Crear Roles",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 23,
+          "resource_id": 5,
+          "action_id": 3,
+          "code": "roles.update",
+          "description": "Actualizar Roles",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 24,
+          "resource_id": 5,
+          "action_id": 4,
+          "code": "roles.delete",
+          "description": "Eliminar Roles",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 25,
+          "resource_id": 5,
+          "action_id": 5,
+          "code": "roles.manage",
+          "description": "Administrar Roles",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 26,
+          "resource_id": 6,
+          "action_id": 1,
+          "code": "users.read",
+          "description": "Leer Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 27,
+          "resource_id": 6,
+          "action_id": 2,
+          "code": "users.create",
+          "description": "Crear Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 28,
+          "resource_id": 6,
+          "action_id": 3,
+          "code": "users.update",
+          "description": "Actualizar Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 29,
+          "resource_id": 6,
+          "action_id": 4,
+          "code": "users.delete",
+          "description": "Eliminar Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        },
+        {
+          "id": 30,
+          "resource_id": 6,
+          "action_id": 5,
+          "code": "users.manage",
+          "description": "Administrar Usuarios",
+          "is_active": 1,
+          "created_at": "2026-05-26 21:02:13",
+          "updated_at": "2026-05-26 21:02:13"
+        }
+      ]
     },
     {
       "table": "role_permissions",
@@ -813,7 +1460,298 @@
         "role_id": "int(11)",
         "permission_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "role_id": 1,
+          "permission_id": 1
+        },
+        {
+          "id": 2,
+          "role_id": 1,
+          "permission_id": 2
+        },
+        {
+          "id": 3,
+          "role_id": 1,
+          "permission_id": 3
+        },
+        {
+          "id": 4,
+          "role_id": 1,
+          "permission_id": 4
+        },
+        {
+          "id": 5,
+          "role_id": 1,
+          "permission_id": 5
+        },
+        {
+          "id": 6,
+          "role_id": 1,
+          "permission_id": 6
+        },
+        {
+          "id": 7,
+          "role_id": 1,
+          "permission_id": 7
+        },
+        {
+          "id": 8,
+          "role_id": 1,
+          "permission_id": 8
+        },
+        {
+          "id": 9,
+          "role_id": 1,
+          "permission_id": 9
+        },
+        {
+          "id": 10,
+          "role_id": 1,
+          "permission_id": 10
+        },
+        {
+          "id": 11,
+          "role_id": 1,
+          "permission_id": 11
+        },
+        {
+          "id": 12,
+          "role_id": 1,
+          "permission_id": 12
+        },
+        {
+          "id": 13,
+          "role_id": 1,
+          "permission_id": 13
+        },
+        {
+          "id": 14,
+          "role_id": 1,
+          "permission_id": 14
+        },
+        {
+          "id": 15,
+          "role_id": 1,
+          "permission_id": 15
+        },
+        {
+          "id": 16,
+          "role_id": 1,
+          "permission_id": 16
+        },
+        {
+          "id": 17,
+          "role_id": 1,
+          "permission_id": 17
+        },
+        {
+          "id": 18,
+          "role_id": 1,
+          "permission_id": 18
+        },
+        {
+          "id": 19,
+          "role_id": 1,
+          "permission_id": 19
+        },
+        {
+          "id": 20,
+          "role_id": 1,
+          "permission_id": 20
+        },
+        {
+          "id": 21,
+          "role_id": 1,
+          "permission_id": 21
+        },
+        {
+          "id": 22,
+          "role_id": 1,
+          "permission_id": 22
+        },
+        {
+          "id": 23,
+          "role_id": 1,
+          "permission_id": 23
+        },
+        {
+          "id": 24,
+          "role_id": 1,
+          "permission_id": 24
+        },
+        {
+          "id": 25,
+          "role_id": 1,
+          "permission_id": 25
+        },
+        {
+          "id": 26,
+          "role_id": 1,
+          "permission_id": 26
+        },
+        {
+          "id": 27,
+          "role_id": 1,
+          "permission_id": 27
+        },
+        {
+          "id": 28,
+          "role_id": 1,
+          "permission_id": 28
+        },
+        {
+          "id": 29,
+          "role_id": 1,
+          "permission_id": 29
+        },
+        {
+          "id": 30,
+          "role_id": 1,
+          "permission_id": 30
+        },
+        {
+          "id": 31,
+          "role_id": 2,
+          "permission_id": 1
+        },
+        {
+          "id": 32,
+          "role_id": 2,
+          "permission_id": 3
+        },
+        {
+          "id": 33,
+          "role_id": 2,
+          "permission_id": 6
+        },
+        {
+          "id": 34,
+          "role_id": 2,
+          "permission_id": 8
+        },
+        {
+          "id": 35,
+          "role_id": 2,
+          "permission_id": 11
+        },
+        {
+          "id": 36,
+          "role_id": 2,
+          "permission_id": 12
+        },
+        {
+          "id": 37,
+          "role_id": 2,
+          "permission_id": 13
+        },
+        {
+          "id": 38,
+          "role_id": 2,
+          "permission_id": 16
+        },
+        {
+          "id": 39,
+          "role_id": 2,
+          "permission_id": 17
+        },
+        {
+          "id": 40,
+          "role_id": 2,
+          "permission_id": 18
+        },
+        {
+          "id": 41,
+          "role_id": 2,
+          "permission_id": 19
+        },
+        {
+          "id": 42,
+          "role_id": 2,
+          "permission_id": 21
+        },
+        {
+          "id": 43,
+          "role_id": 2,
+          "permission_id": 26
+        },
+        {
+          "id": 44,
+          "role_id": 3,
+          "permission_id": 1
+        },
+        {
+          "id": 45,
+          "role_id": 3,
+          "permission_id": 6
+        },
+        {
+          "id": 46,
+          "role_id": 3,
+          "permission_id": 11
+        },
+        {
+          "id": 47,
+          "role_id": 3,
+          "permission_id": 16
+        },
+        {
+          "id": 48,
+          "role_id": 3,
+          "permission_id": 21
+        },
+        {
+          "id": 49,
+          "role_id": 3,
+          "permission_id": 26
+        },
+        {
+          "id": 50,
+          "role_id": 4,
+          "permission_id": 1
+        },
+        {
+          "id": 51,
+          "role_id": 4,
+          "permission_id": 3
+        },
+        {
+          "id": 52,
+          "role_id": 4,
+          "permission_id": 6
+        },
+        {
+          "id": 53,
+          "role_id": 4,
+          "permission_id": 7
+        },
+        {
+          "id": 54,
+          "role_id": 4,
+          "permission_id": 8
+        },
+        {
+          "id": 55,
+          "role_id": 4,
+          "permission_id": 11
+        },
+        {
+          "id": 56,
+          "role_id": 4,
+          "permission_id": 12
+        },
+        {
+          "id": 57,
+          "role_id": 4,
+          "permission_id": 13
+        },
+        {
+          "id": 58,
+          "role_id": 4,
+          "permission_id": 16
+        }
+      ]
     },
     {
       "table": "role_assignments",
@@ -849,7 +1787,248 @@
         "revoked_at": "datetime",
         "revoked_reason": "varchar(255)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "role_id": 2,
+          "unit_id": 1,
+          "derived_from_assignment_id": 1,
+          "source": "derived",
+          "person_id": 1,
+          "max_depth": 0,
+          "start_date": "2025-10-01",
+          "end_date": "2026-09-01",
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 2,
+          "role_id": 2,
+          "unit_id": 3,
+          "derived_from_assignment_id": 4,
+          "source": "derived",
+          "person_id": 1,
+          "max_depth": 0,
+          "start_date": "2023-07-24",
+          "end_date": "2026-08-31",
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 3,
+          "role_id": 2,
+          "unit_id": 2,
+          "derived_from_assignment_id": 5,
+          "source": "derived",
+          "person_id": 1,
+          "max_depth": 0,
+          "start_date": "2025-09-01",
+          "end_date": "2026-09-01",
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 4,
+          "role_id": 4,
+          "unit_id": 1,
+          "derived_from_assignment_id": 6,
+          "source": "derived",
+          "person_id": 1,
+          "max_depth": 0,
+          "start_date": "2026-02-26",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 5,
+          "role_id": 4,
+          "unit_id": 1,
+          "derived_from_assignment_id": 7,
+          "source": "derived",
+          "person_id": 2,
+          "max_depth": 0,
+          "start_date": "2024-10-10",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 6,
+          "role_id": 2,
+          "unit_id": 1,
+          "derived_from_assignment_id": 8,
+          "source": "derived",
+          "person_id": 2,
+          "max_depth": 0,
+          "start_date": "2026-02-26",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 7,
+          "role_id": 4,
+          "unit_id": 1,
+          "derived_from_assignment_id": 9,
+          "source": "derived",
+          "person_id": 3,
+          "max_depth": 0,
+          "start_date": "2026-04-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 8,
+          "role_id": 2,
+          "unit_id": 1,
+          "derived_from_assignment_id": 10,
+          "source": "derived",
+          "person_id": 3,
+          "max_depth": 0,
+          "start_date": "2026-04-01",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 9,
+          "role_id": 2,
+          "unit_id": 13,
+          "derived_from_assignment_id": 13,
+          "source": "derived",
+          "person_id": 6,
+          "max_depth": 0,
+          "start_date": "2026-04-04",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 10,
+          "role_id": 2,
+          "unit_id": 4,
+          "derived_from_assignment_id": 14,
+          "source": "derived",
+          "person_id": 7,
+          "max_depth": 0,
+          "start_date": "2026-04-04",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 11,
+          "role_id": 2,
+          "unit_id": 6,
+          "derived_from_assignment_id": 15,
+          "source": "derived",
+          "person_id": 8,
+          "max_depth": 0,
+          "start_date": "2026-04-04",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 12,
+          "role_id": 2,
+          "unit_id": 12,
+          "derived_from_assignment_id": 16,
+          "source": "derived",
+          "person_id": 9,
+          "max_depth": 0,
+          "start_date": "2026-04-04",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 13,
+          "role_id": 2,
+          "unit_id": 14,
+          "derived_from_assignment_id": 17,
+          "source": "derived",
+          "person_id": 10,
+          "max_depth": 0,
+          "start_date": "2026-04-04",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 16,
+          "role_id": 1,
+          "unit_id": 11,
+          "derived_from_assignment_id": null,
+          "source": "manual",
+          "person_id": 11,
+          "max_depth": 0,
+          "start_date": "2026-05-26",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        },
+        {
+          "id": 17,
+          "role_id": 3,
+          "unit_id": 6,
+          "derived_from_assignment_id": null,
+          "source": "manual",
+          "person_id": 4,
+          "max_depth": 0,
+          "start_date": "2026-05-26",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-05-26 21:02:13",
+          "revoked_at": null,
+          "revoked_reason": null
+        }
+      ]
     },
     {
       "table": "role_assignment_relation_types",
@@ -877,7 +2056,38 @@
         "role_id": "int(11)",
         "cargo_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "role_id": 2,
+          "cargo_id": 1
+        },
+        {
+          "id": 2,
+          "role_id": 4,
+          "cargo_id": 2
+        },
+        {
+          "id": 3,
+          "role_id": 2,
+          "cargo_id": 3
+        },
+        {
+          "id": 4,
+          "role_id": 2,
+          "cargo_id": 4
+        },
+        {
+          "id": 5,
+          "role_id": 2,
+          "cargo_id": 5
+        },
+        {
+          "id": 6,
+          "role_id": 2,
+          "cargo_id": 8
+        }
+      ]
     },
     {
       "table": "unit_positions",
@@ -2762,6 +3972,7 @@
         "process_definition_id",
         "template_artifact_id",
         "usage_role",
+        "instance_mode",
         "creates_task",
         "is_required",
         "sort_order",
@@ -2772,6 +3983,7 @@
         "process_definition_id": "int(11)",
         "template_artifact_id": "int(11)",
         "usage_role": "enum('primary','attachment','support')",
+        "instance_mode": "enum('single_document','owner_many_documents')",
         "creates_task": "tinyint(1)",
         "is_required": "tinyint(1)",
         "sort_order": "int(11)",
@@ -2783,6 +3995,7 @@
           "process_definition_id": 12,
           "template_artifact_id": 4,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2793,6 +4006,7 @@
           "process_definition_id": 12,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2803,6 +4017,7 @@
           "process_definition_id": 17,
           "template_artifact_id": 4,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2813,6 +4028,7 @@
           "process_definition_id": 17,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2823,6 +4039,7 @@
           "process_definition_id": 18,
           "template_artifact_id": 4,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2833,6 +4050,7 @@
           "process_definition_id": 18,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2843,6 +4061,7 @@
           "process_definition_id": 19,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2853,6 +4072,7 @@
           "process_definition_id": 20,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2863,6 +4083,7 @@
           "process_definition_id": 21,
           "template_artifact_id": 4,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2873,6 +4094,7 @@
           "process_definition_id": 21,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2883,6 +4105,7 @@
           "process_definition_id": 22,
           "template_artifact_id": 4,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2893,6 +4116,7 @@
           "process_definition_id": 22,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2903,6 +4127,7 @@
           "process_definition_id": 23,
           "template_artifact_id": 4,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2913,6 +4138,7 @@
           "process_definition_id": 23,
           "template_artifact_id": 10,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2923,6 +4149,7 @@
           "process_definition_id": 24,
           "template_artifact_id": 13,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2933,6 +4160,7 @@
           "process_definition_id": 25,
           "template_artifact_id": 13,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -2943,6 +4171,7 @@
           "process_definition_id": 26,
           "template_artifact_id": 13,
           "usage_role": "primary",
+          "instance_mode": "single_document",
           "creates_task": 1,
           "is_required": 1,
           "sort_order": 1,
@@ -3290,6 +4519,9 @@
         "sort_order",
         "responsible_position_id",
         "assigned_person_id",
+        "start_date",
+        "end_date",
+        "user_started_at",
         "status",
         "created_at"
       ],
@@ -3302,6 +4534,9 @@
         "sort_order": "int(11)",
         "responsible_position_id": "int(11)",
         "assigned_person_id": "int(11)",
+        "start_date": "date",
+        "end_date": "date",
+        "user_started_at": "datetime",
         "status": "varchar(30)",
         "created_at": "datetime"
       },
@@ -3315,6 +4550,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-01",
+          "end_date": "2026-04-05",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 00:05:12"
         },
@@ -3327,6 +4565,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-01",
+          "end_date": "2026-04-05",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 00:05:12"
         },
@@ -3339,6 +4580,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-02-23",
+          "end_date": "2026-03-23",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 00:55:56"
         },
@@ -3351,6 +4595,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-02-23",
+          "end_date": "2026-04-05",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 00:59:50"
         },
@@ -3363,6 +4610,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-01",
+          "end_date": "2026-03-13",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:02:46"
         },
@@ -3375,6 +4625,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-05",
+          "end_date": "2026-03-13",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:05:39"
         },
@@ -3387,6 +4640,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-05",
+          "end_date": "2026-03-13",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:05:39"
         },
@@ -3399,6 +4655,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-05",
+          "end_date": "2026-03-13",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:05:39"
         },
@@ -3411,6 +4670,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-02",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:07:31"
         },
@@ -3423,6 +4685,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-02",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:07:31"
         },
@@ -3435,6 +4700,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-02",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-02 01:07:31"
         },
@@ -3447,6 +4715,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-04",
+          "end_date": "2026-03-29",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-04 17:14:56"
         },
@@ -3459,6 +4730,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-04",
+          "end_date": "2026-03-29",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-04 17:14:56"
         },
@@ -3471,6 +4745,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-03-04",
+          "end_date": "2026-03-29",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-03-04 17:14:56"
         },
@@ -3483,6 +4760,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-06-11",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 00:05:36"
         },
@@ -3495,6 +4775,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-06-11",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 00:05:36"
         },
@@ -3507,6 +4790,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-06-11",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 00:05:36"
         },
@@ -3519,6 +4805,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-06-11",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 00:05:36"
         },
@@ -3531,6 +4820,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-05-10",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 03:53:42"
         },
@@ -3543,6 +4835,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-05-10",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 03:53:42"
         },
@@ -3555,6 +4850,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-05-10",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 03:53:42"
         },
@@ -3567,6 +4865,9 @@
           "sort_order": 1,
           "responsible_position_id": null,
           "assigned_person_id": null,
+          "start_date": "2026-04-04",
+          "end_date": "2026-05-10",
+          "user_started_at": null,
           "status": "pendiente",
           "created_at": "2026-04-05 03:53:42"
         }
@@ -4149,7 +5450,9 @@
       "columns": [
         "id",
         "task_item_id",
+        "instance_no",
         "owner_person_id",
+        "origin_unit_id",
         "origin_type",
         "title",
         "status",
@@ -4160,7 +5463,9 @@
       "column_types": {
         "id": "int(11)",
         "task_item_id": "int(11)",
+        "instance_no": "int(11)",
         "owner_person_id": "int(11)",
+        "origin_unit_id": "int(11)",
         "origin_type": "enum('task_item','standalone','imported','generated')",
         "title": "varchar(180)",
         "status": "varchar(30)",
@@ -4172,7 +5477,9 @@
         {
           "id": 1,
           "task_item_id": 1,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Plan de Investigación Formativa por Carrera",
           "status": "Pendiente de llenado",
@@ -4183,7 +5490,9 @@
         {
           "id": 2,
           "task_item_id": 2,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4194,7 +5503,9 @@
         {
           "id": 3,
           "task_item_id": 3,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4205,7 +5516,9 @@
         {
           "id": 4,
           "task_item_id": 4,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4216,7 +5529,9 @@
         {
           "id": 5,
           "task_item_id": 5,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4227,7 +5542,9 @@
         {
           "id": 6,
           "task_item_id": 6,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Plan de Investigación Formativa por Carrera",
           "status": "Pendiente de llenado",
@@ -4238,7 +5555,9 @@
         {
           "id": 7,
           "task_item_id": 7,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4249,7 +5568,9 @@
         {
           "id": 8,
           "task_item_id": 8,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4260,7 +5581,9 @@
         {
           "id": 9,
           "task_item_id": 9,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Plan de Investigación Formativa por Carrera",
           "status": "Pendiente de llenado",
@@ -4271,7 +5594,9 @@
         {
           "id": 10,
           "task_item_id": 10,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4282,7 +5607,9 @@
         {
           "id": 11,
           "task_item_id": 11,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4293,7 +5620,9 @@
         {
           "id": 12,
           "task_item_id": 12,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Plan de Investigación Formativa por Carrera",
           "status": "Pendiente de llenado",
@@ -4304,7 +5633,9 @@
         {
           "id": 13,
           "task_item_id": 13,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4315,7 +5646,9 @@
         {
           "id": 14,
           "task_item_id": 14,
+          "instance_no": 1,
           "owner_person_id": 1,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4326,7 +5659,9 @@
         {
           "id": 15,
           "task_item_id": 15,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Plan de Investigación Formativa por Carrera",
           "status": "Pendiente de llenado",
@@ -4337,7 +5672,9 @@
         {
           "id": 16,
           "task_item_id": 16,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4348,7 +5685,9 @@
         {
           "id": 17,
           "task_item_id": 17,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4359,7 +5698,9 @@
         {
           "id": 18,
           "task_item_id": 18,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 12,
           "origin_type": "task_item",
           "title": "Requerimiento Docente",
           "status": "En proceso",
@@ -4370,7 +5711,9 @@
         {
           "id": 19,
           "task_item_id": 19,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Plan de Investigación Formativa por Carrera",
           "status": "En proceso",
@@ -4381,7 +5724,9 @@
         {
           "id": 20,
           "task_item_id": 20,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4392,7 +5737,9 @@
         {
           "id": 21,
           "task_item_id": 21,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Informe de Investigación Productiva por Carrera",
           "status": "Pendiente de llenado",
@@ -4403,7 +5750,9 @@
         {
           "id": 22,
           "task_item_id": 22,
+          "instance_no": 1,
           "owner_person_id": null,
+          "origin_unit_id": 1,
           "origin_type": "task_item",
           "title": "Requerimiento Docente",
           "status": "Listo para firma",
@@ -7414,14 +8763,18 @@
         "user_id",
         "code_hash",
         "expires_at",
-        "created_at"
+        "created_at",
+        "verification_token",
+        "token_used"
       ],
       "column_types": {
         "id": "bigint(20) unsigned",
         "user_id": "bigint(20) unsigned",
         "code_hash": "varchar(255)",
         "expires_at": "datetime",
-        "created_at": "timestamp"
+        "created_at": "timestamp",
+        "verification_token": "varchar(64)",
+        "token_used": "tinyint(1)"
       },
       "rows": []
     },
@@ -7430,6 +8783,7 @@
       "columns": [
         "id",
         "user_id",
+        "person_id",
         "code_hash",
         "expires_at",
         "used",
@@ -7438,10 +8792,35 @@
       "column_types": {
         "id": "bigint(20) unsigned",
         "user_id": "bigint(20) unsigned",
+        "person_id": "int(11)",
         "code_hash": "varchar(255)",
         "expires_at": "datetime",
         "used": "tinyint(1)",
         "created_at": "timestamp"
+      },
+      "rows": []
+    },
+    {
+      "table": "person_bank_accounts",
+      "columns": [
+        "id",
+        "person_id",
+        "banco",
+        "numero_cuenta",
+        "tipo_cuenta",
+        "es_principal",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(10) unsigned",
+        "person_id": "int(11)",
+        "banco": "varchar(120)",
+        "numero_cuenta": "varchar(30)",
+        "tipo_cuenta": "enum('Ahorro','Corriente')",
+        "es_principal": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
       },
       "rows": []
     },
@@ -7493,6 +8872,56 @@
           "updated_at": "2026-03-30 06:35:32"
         }
       ]
+    },
+    {
+      "table": "person_emergency_contacts",
+      "columns": [
+        "id",
+        "person_id",
+        "nombre",
+        "parentesco",
+        "telefono",
+        "celular",
+        "alergias",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(10) unsigned",
+        "person_id": "int(11)",
+        "nombre": "varchar(180)",
+        "parentesco": "varchar(80)",
+        "telefono": "varchar(30)",
+        "celular": "varchar(30)",
+        "alergias": "text",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
+    },
+    {
+      "table": "person_health",
+      "columns": [
+        "id",
+        "person_id",
+        "tiene_discapacidad",
+        "tipo_discapacidad",
+        "porcentaje_discapacidad",
+        "enfermedad_catastrofica",
+        "created_at",
+        "updated_at"
+      ],
+      "column_types": {
+        "id": "int(10) unsigned",
+        "person_id": "int(11)",
+        "tiene_discapacidad": "tinyint(1)",
+        "tipo_discapacidad": "enum('Auditiva','Fisica','Intelectual','Lenguaje','Visual')",
+        "porcentaje_discapacidad": "decimal(5,2)",
+        "enfermedad_catastrofica": "tinyint(1)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      },
+      "rows": []
     },
     {
       "table": "users",

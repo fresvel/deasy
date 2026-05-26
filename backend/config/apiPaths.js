@@ -17,7 +17,8 @@ export const PATHS = {
   dossier: "/dossier",
   email: "/email",
   resetPassword: "/reset-password",
-  sign: "/sign"
+  sign: "/sign",
+  system: "/system"
 };
 
 export const ROUTES = Object.fromEntries(

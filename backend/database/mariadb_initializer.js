@@ -60,11 +60,13 @@ const CREATE_PASSWORD_RESET_CODES_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS password_reset_codes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
+  person_id INT NULL,
   code_hash VARCHAR(255) NOT NULL,
   expires_at DATETIME NOT NULL,
   used TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_user_id (user_id),
+  INDEX idx_person_id (person_id),
   INDEX idx_expires_at (expires_at),
   CONSTRAINT fk_password_reset_user
     FOREIGN KEY (user_id)
@@ -85,6 +87,57 @@ const MODIFY_PHOTO_COLUMN_SQL = `
 ALTER TABLE users
 MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
 `;
+
+const ensurePasswordResetCodesPersonLink = async (connection) => {
+  const [columns] = await connection.query(
+    `SELECT COLUMN_NAME
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'password_reset_codes'`
+  );
+  const columnNames = new Set(columns.map((column) => column.COLUMN_NAME));
+
+  if (!columnNames.has("person_id")) {
+    await connection.query(
+      "ALTER TABLE password_reset_codes ADD COLUMN person_id INT NULL AFTER user_id"
+    );
+  }
+
+  await connection.query(
+    `UPDATE password_reset_codes prc
+     INNER JOIN users u ON u.id = prc.user_id
+     INNER JOIN persons p ON (p.email IS NOT NULL AND p.email = u.email) OR p.cedula = u.cedula
+     SET prc.person_id = p.id
+     WHERE prc.person_id IS NULL`
+  );
+
+  try {
+    await connection.query(
+      "ALTER TABLE password_reset_codes ADD INDEX idx_person_id (person_id)"
+    );
+  } catch (error) {
+    if (error?.code !== "ER_DUP_KEYNAME") {
+      throw error;
+    }
+  }
+
+  const [fkRows] = await connection.query(
+    `SELECT CONSTRAINT_NAME
+     FROM information_schema.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'password_reset_codes'
+       AND COLUMN_NAME = 'person_id'
+       AND REFERENCED_TABLE_NAME = 'persons'`
+  );
+
+  if (!fkRows.length) {
+    await connection.query(
+      `ALTER TABLE password_reset_codes
+       ADD CONSTRAINT fk_password_reset_person
+       FOREIGN KEY (person_id) REFERENCES persons(id)
+       ON DELETE CASCADE`
+    );
+  }
+};
 
 const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
 
@@ -229,6 +282,8 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       await connection.query(statement);
     }
     console.log("✅ Schema principal aplicado desde mariadb_schema.sql");
+    await ensurePasswordResetCodesPersonLink(connection);
+    console.log("✅ password_reset_codes alineada con persons");
 
     // 3. Migraciones sobre tablas del schema (ahora sí existen)
     const [columns] = await connection.query(

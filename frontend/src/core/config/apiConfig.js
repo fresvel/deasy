@@ -19,6 +19,8 @@ export const API_ROUTES = {
   USERS: `${API_PREFIX}/users`,
   VERIFY_EMAIL: `${API_PREFIX}/email/verify`,
   USERS_RECOVER_PASSWORD: `${API_PREFIX}/reset-password/request`,
+  USERS_VERIFY_RESET_CODE: `${API_PREFIX}/reset-password/verify`,
+  USERS_RESET_PASSWORD: `${API_PREFIX}/reset-password/reset`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
@@ -68,5 +70,7 @@ export const API_ROUTES = {
   SIGN_FILL_REQUEST_APPROVE: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/approve`,
   SIGN_FILL_REQUEST_RETURN: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/return`,
   SIGN_FILL_REQUEST_REJECT: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/reject`,
-  SIGN_FILL_REQUEST_CANCEL: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/cancel`
+  SIGN_FILL_REQUEST_CANCEL: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/cancel`,
+  SYSTEM_BOOTSTRAP_STATUS: `${API_PREFIX}/system/bootstrap/status`,
+  SYSTEM_BOOTSTRAP_INITIALIZE: `${API_PREFIX}/system/bootstrap/initialize`
 };

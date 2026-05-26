@@ -55,6 +55,24 @@ class AuthService {
     return response.data;
   }
 
+  async verifyResetCode(email, code) {
+    const response = await axios.post(API_ROUTES.USERS_VERIFY_RESET_CODE, {
+      email,
+      code,
+    });
+    return response.data;
+  }
+
+  async resetPassword(email, code, password, repassword) {
+    const response = await axios.post(API_ROUTES.USERS_RESET_PASSWORD, {
+      email,
+      code,
+      password,
+      repassword,
+    });
+    return response.data;
+  }
+
   async logout() {
     try {
       await axios.post(API_ROUTES.USERS_LOGOUT, {}, { withCredentials: true });
