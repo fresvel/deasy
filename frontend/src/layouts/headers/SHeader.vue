@@ -11,12 +11,6 @@
       >
         <IconMenu2 class="h-5 w-5" />
       </button>
-      <AppLogo
-        to="/dashboard"
-        size="sm"
-        class-name="shrink-0"
-        image-class="max-w-[6.5rem] sm:max-w-[7.5rem]"
-      />
       <div class="flex w-full items-center justify-between gap-2 overflow-x-auto [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
         <slot></slot>
       </div>
@@ -27,7 +21,6 @@
 <script setup>
 import { defineEmits, defineProps } from "vue";
 import { IconMenu2 } from "@tabler/icons-vue";
-import AppLogo from "@/shared/components/layout/AppLogo.vue";
 
 defineProps({
   menuOpen: {
