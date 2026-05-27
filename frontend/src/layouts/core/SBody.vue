@@ -1,15 +1,15 @@
 <template>
-  <div class="flex flex-col flex-1 min-w-0 w-full transition-all duration-300 px-2 sm:px-4 md:px-6 lg:px-8 py-6">
-    <div class="w-full h-full pb-8">
+  <main class="flex min-w-0 flex-1 flex-col w-full bg-white px-3 py-4 transition-all duration-300 sm:px-4 lg:px-5">
+    <div class="w-full h-full pb-6">
       <slot></slot>
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup>
-import { computed, defineProps } from 'vue';
+import { defineProps } from "vue";
 
-const props = defineProps({
+defineProps({
     showmenu: {
         type: Boolean,
         default: false
@@ -22,5 +22,5 @@ const props = defineProps({
         type: Boolean,
         default: false
     }
-})
+});
 </script>

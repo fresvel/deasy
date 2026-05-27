@@ -1,17 +1,37 @@
 <template>
   <s-menu :show="show" @close-mobile="$emit('close-mobile')">
-    <div :class="containerClass">
-      <div v-if="showLogo" class="mb-5 flex px-2">
-        <AppLogo to="/dashboard" size="md" class-name="max-w-full" />
+    <div class="deasy-sidebar">
+      <div class="deasy-sidebar__rail">
+        <AppLogo
+          v-if="showLogo"
+          to="/dashboard"
+          size="sm"
+          class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white/8 p-1"
+          image-class="max-h-8 max-w-8 object-contain"
+        />
+        <UserProfile
+          compact
+          :photo="photo"
+          :username="username"
+          :signature-marker="signatureMarker"
+          :editable="editable"
+          @photo-selected="$emit('photo-selected', $event)"
+        />
       </div>
-      <UserProfile
-        :photo="photo"
-        :username="username"
-        :signature-marker="signatureMarker"
-        :editable="editable"
-        @photo-selected="$emit('photo-selected', $event)"
-      />
-      <slot />
+
+      <div :class="['deasy-sidebar__flyout', containerClass]">
+        <div v-if="showLogo" class="mb-2 flex px-1 xl:hidden">
+          <AppLogo to="/dashboard" size="md" class-name="max-w-full" />
+        </div>
+        <UserProfile
+          :photo="photo"
+          :username="username"
+          :signature-marker="signatureMarker"
+          :editable="editable"
+          @photo-selected="$emit('photo-selected', $event)"
+        />
+        <slot />
+      </div>
     </div>
   </s-menu>
 </template>
@@ -48,7 +68,7 @@ defineProps({
   },
   containerClass: {
     type: [String, Array, Object],
-    default: "flex flex-col gap-0 p-[0.0625rem] h-full xl:min-h-[calc(100vh-4rem)]"
+    default: "flex flex-col gap-0 h-full"
   }
 });
 

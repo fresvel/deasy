@@ -1,0 +1,152 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e35]:
+    - complementary [ref=e36]:
+      - img "emqx-logo" [ref=e38]
+      - menubar [ref=e43]:
+        - menuitem " Monitoring" [ref=e44]:
+          - generic [ref=e45] [cursor=pointer]:
+            - generic [ref=e46]: 
+            - paragraph [ref=e47]: Monitoring
+        - menuitem " Access Control" [ref=e48]:
+          - generic [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]: 
+            - paragraph [ref=e51]: Access Control
+        - menuitem " Integration" [ref=e52]:
+          - generic [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]: 
+            - paragraph [ref=e55]: Integration
+        - menuitem " Smart Data Hub" [ref=e56]:
+          - generic [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]: 
+            - paragraph [ref=e59]: Smart Data Hub
+        - menuitem " Message Queue" [ref=e60] [cursor=pointer]:
+          - generic [ref=e61]: 
+          - paragraph [ref=e62]: Message Queue
+        - menuitem " Management" [ref=e63]:
+          - generic [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]: 
+            - paragraph [ref=e66]: Management
+        - menuitem " Diagnostics Tools" [ref=e67]:
+          - generic [ref=e68] [cursor=pointer]:
+            - generic [ref=e69]: 
+            - paragraph [ref=e70]: Diagnostics Tools
+        - menuitem " System" [ref=e71]:
+          - generic [ref=e72] [cursor=pointer]:
+            - generic [ref=e73]: 
+            - paragraph [ref=e74]: System
+      - generic [ref=e77] [cursor=pointer]: 
+    - generic [ref=e78]:
+      - generic [ref=e80]:
+        - heading "Clients" [level=1] [ref=e377]
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - text: Community Edition | Apply for
+              - link "License" [ref=e85] [cursor=pointer]:
+                - /url: https://www.emqx.com/en/apply-licenses/emqx?utm_source=emqx-dashboard&utm_medium=referral&version=5&utm_campaign=dashboard-to-license
+              - text: or try
+              - link "Cloud Service" [ref=e86] [cursor=pointer]:
+                - /url: https://accounts.emqx.com/signup?utm_source=emqx-dashboard&utm_medium=referral&utm_campaign=dashboard-to-cloud&continue=https%3A%2F%2Fcloud-intl.emqx.com%2Fconsole%2F
+            - img [ref=e88] [cursor=pointer]
+          - generic [ref=e90] [cursor=pointer]:
+            - generic [ref=e91]:
+              - img [ref=e93]
+              - generic [ref=e95]: Quick Find
+            - generic [ref=e96]:
+              - generic [ref=e97]: Ctrl
+              - generic [ref=e98]: K
+          - generic [ref=e100] [cursor=pointer]:
+            - link [ref=e101]:
+              - /url: "#/alarm"
+              - img [ref=e103]
+            - superscript [ref=e107]
+          - link "" [ref=e108] [cursor=pointer]:
+            - /url: javascript:;
+            - generic [ref=e109]: 
+          - button [ref=e111] [cursor=pointer]:
+            - img [ref=e113]
+          - button "A admin" [ref=e116] [cursor=pointer]:
+            - generic [ref=e117]: A
+            - text: admin
+      - main [ref=e118]:
+        - generic [ref=e378]:
+          - generic [ref=e380]:
+            - generic [ref=e382]:
+              - generic [ref=e385] [cursor=pointer]:
+                - generic:
+                  - combobox [ref=e387]
+                  - generic [ref=e388]: Fuzzy Search
+                - img [ref=e391]
+              - textbox "Client ID" [ref=e394]
+            - generic [ref=e396]:
+              - generic [ref=e399] [cursor=pointer]:
+                - generic:
+                  - combobox [ref=e401]
+                  - generic [ref=e402]: Fuzzy Search
+                - img [ref=e405]
+              - textbox "Username" [ref=e408]
+            - textbox "IP Address" [ref=e412]
+            - generic [ref=e413]:
+              - button "Search" [ref=e414] [cursor=pointer]:
+                - img [ref=e416]
+                - generic [ref=e418]: Search
+              - button "Reset" [ref=e419] [cursor=pointer]:
+                - img [ref=e421]
+                - generic [ref=e423]: Reset
+              - button [ref=e424] [cursor=pointer]:
+                - img [ref=e426]
+          - generic [ref=e428]:
+            - generic [ref=e429]:
+              - button "Show Columns" [ref=e431] [cursor=pointer]:
+                - generic [ref=e432]:
+                  - img [ref=e434]
+                  - generic [ref=e436]: Show Columns
+              - button "Export" [ref=e437] [cursor=pointer]:
+                - img [ref=e439]
+                - generic [ref=e441]: Export
+              - button "Kick Out" [disabled] [ref=e442]:
+                - img [ref=e444]
+                - generic [ref=e446]: Kick Out
+              - button "Refresh" [ref=e447] [cursor=pointer]:
+                - img [ref=e449]
+                - generic [ref=e451]: Refresh
+            - generic [ref=e453]:
+              - table [ref=e455]:
+                - rowgroup [ref=e466]:
+                  - row "Client ID Username Status IP Address Keepalive Clean Start/Clean Session Session Expiry Interval Connected At" [ref=e467]:
+                    - columnheader [ref=e468]:
+                      - generic [ref=e471] [cursor=pointer]:
+                        - checkbox [disabled]
+                    - columnheader "Client ID" [ref=e473]:
+                      - generic [ref=e474]: Client ID
+                    - columnheader "Username" [ref=e475]:
+                      - generic [ref=e476]: Username
+                    - columnheader "Status" [ref=e477]:
+                      - generic [ref=e478]: Status
+                    - columnheader "IP Address" [ref=e479]:
+                      - generic [ref=e480]: IP Address
+                    - columnheader "Keepalive" [ref=e481]:
+                      - generic [ref=e482]: Keepalive
+                    - columnheader "Clean Start/Clean Session" [ref=e483]:
+                      - generic [ref=e484]: Clean Start/Clean Session
+                    - columnheader "Session Expiry Interval" [ref=e485]:
+                      - generic [ref=e486]: Session Expiry Interval
+                    - columnheader "Connected At" [ref=e487]:
+                      - generic [ref=e488]: Connected At
+              - generic [ref=e492]:
+                - table:
+                  - rowgroup
+                - generic [ref=e494]: No Data
+            - generic [ref=e496]:
+              - generic [ref=e499] [cursor=pointer]:
+                - generic:
+                  - combobox [ref=e501]
+                  - generic [ref=e502]: 20/page
+                - img [ref=e505]
+              - button "Go to previous page" [disabled] [ref=e507]:
+                - generic:
+                  - img
+              - button "Go to next page" [disabled] [ref=e508]:
+                - generic:
+                  - img
+  - generic:   

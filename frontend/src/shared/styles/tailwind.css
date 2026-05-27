@@ -6,28 +6,28 @@
         --deasy-shell-max-width: 2560px;
         --deasy-radius-xs: 0.25rem;
         --deasy-radius-sm: 0.375rem;
-        --deasy-radius-md: 0.625rem;
-        --deasy-radius-lg: 0.875rem;
-        --deasy-radius-xl: 1.125rem;
-        --deasy-surface-page: #f3f7fb;
+        --deasy-radius-md: 0.5rem;
+        --deasy-radius-lg: 0.75rem;
+        --deasy-radius-xl: 1rem;
+        --deasy-surface-page: #071927;
         --deasy-surface-card: #ffffff;
-        --deasy-surface-muted: #f7fafc;
-        --deasy-surface-soft: rgba(247, 250, 252, 0.92);
-        --deasy-border-soft: #dbe5f0;
-        --deasy-border-strong: #c5d3e2;
-        --deasy-text-strong: #0f2d62;
-        --deasy-text-body: #294268;
-        --deasy-text-muted: #617997;
-        --deasy-primary: #123f88;
-        --deasy-primary-strong: #0d3472;
-        --deasy-primary-soft: rgba(18, 63, 136, 0.08);
-        --deasy-accent: #2cad49;
-        --deasy-accent-strong: #23923d;
-        --deasy-accent-soft: rgba(44, 173, 73, 0.12);
-        --deasy-sidebar: #0d2f68;
-        --deasy-sidebar-strong: #0a2550;
-        --deasy-brand-gradient: linear-gradient(135deg, #0f3576 0%, #144b95 48%, #28a746 100%);
-        --deasy-brand-gradient-soft: linear-gradient(135deg, rgba(15, 53, 118, 0.08) 0%, rgba(20, 75, 149, 0.06) 48%, rgba(40, 167, 70, 0.08) 100%);
+        --deasy-surface-muted: #f7f9fc;
+        --deasy-surface-soft: rgba(247, 249, 252, 0.92);
+        --deasy-border-soft: #e2e6f0;
+        --deasy-border-strong: #cfd6e4;
+        --deasy-text-strong: #343741;
+        --deasy-text-body: #3f4254;
+        --deasy-text-muted: #7a7b80;
+        --deasy-primary: #5e4eff;
+        --deasy-primary-strong: #4a3ce8;
+        --deasy-primary-soft: rgba(94, 78, 255, 0.08);
+        --deasy-accent: #00b2a9;
+        --deasy-accent-strong: #008b85;
+        --deasy-accent-soft: rgba(0, 178, 169, 0.1);
+        --deasy-sidebar: #071927;
+        --deasy-sidebar-strong: #061521;
+        --deasy-brand-gradient: linear-gradient(135deg, #5e4eff 0%, #3898ff 100%);
+        --deasy-brand-gradient-soft: linear-gradient(135deg, rgba(94, 78, 255, 0.09) 0%, rgba(56, 152, 255, 0.07) 100%);
     }
 
     html {
@@ -57,17 +57,17 @@
     }
 
     .deasy-workspace-layout {
-        @apply mx-auto flex w-full max-w-[2560px] flex-1 flex-col items-stretch xl:flex-row;
+        @apply mx-auto flex w-full max-w-[2560px] flex-1 flex-col items-stretch bg-white xl:flex-row;
     }
 
     .deasy-workspace-content {
-        @apply min-w-0 flex-1;
+        @apply min-w-0 flex-1 bg-white;
     }
 
     .deasy-workspace-header {
-        @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-[10px] border px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm;
+        @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border px-2 py-1.5 shadow-none;
         border-color: rgba(255, 255, 255, 0.08);
-        background: rgba(21, 40, 54, 0.22);
+        background: transparent;
     }
 
     .deasy-workspace-header__context {
@@ -79,13 +79,13 @@
     }
 
     .deasy-primary-nav {
-        @apply flex min-w-max shrink-0 items-center gap-1.5 rounded-[10px] border p-1.5 shadow-none;
+        @apply flex min-w-max shrink-0 items-center gap-1 rounded-lg border p-1 shadow-none;
         border-color: rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.06);
     }
 
     .deasy-primary-nav__item {
-        @apply inline-flex min-h-9 items-center gap-2 rounded-[8px] border border-transparent px-3 py-2 text-sm font-semibold transition-all focus:outline-none;
+        @apply inline-flex min-h-8 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1.5 text-sm font-semibold transition-all focus:outline-none;
         color: rgba(255, 255, 255, 0.76);
     }
 
@@ -96,7 +96,7 @@
     }
 
     .deasy-primary-nav__icon {
-        @apply inline-flex h-7 w-7 items-center justify-center rounded-[0.7rem] border border-transparent bg-white/10 text-white/86;
+        @apply inline-flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-white/10 text-white/86;
     }
 
     .deasy-primary-nav__item--active .deasy-primary-nav__icon {
@@ -109,6 +109,31 @@
 
     .deasy-secondary-nav {
         @apply min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin];
+    }
+
+    .deasy-sidebar {
+        @apply relative flex h-full min-h-0 w-full flex-col;
+    }
+
+    .deasy-sidebar__rail {
+        @apply hidden h-full w-20 shrink-0 flex-col items-center gap-3 px-3 py-4 xl:flex;
+    }
+
+    .deasy-sidebar__flyout {
+        @apply flex h-full min-h-0 w-full flex-col gap-3 p-3;
+    }
+
+    @media (min-width: 1280px) {
+        .deasy-sidebar__flyout {
+            @apply invisible absolute left-full top-3 z-50 max-h-[calc(100vh-5rem)] w-[21.5rem] translate-x-1 overflow-y-auto rounded-2xl border p-3 opacity-0 shadow-[0_18px_44px_rgba(0,0,0,0.24)] transition-all duration-150 [scrollbar-width:thin];
+            border-color: rgba(255, 255, 255, 0.08);
+            background: #0b2232;
+        }
+
+        .deasy-sidebar:hover .deasy-sidebar__flyout,
+        .deasy-sidebar:focus-within .deasy-sidebar__flyout {
+            @apply visible translate-x-0 opacity-100;
+        }
     }
 
     .deasy-secondary-tabs {
@@ -124,18 +149,18 @@
     }
 
     .deasy-card {
-        @apply rounded-[10px] border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03),0_12px_28px_rgba(11,31,63,0.05)];
+        @apply rounded-2xl border bg-white shadow-none;
         border-color: var(--deasy-border-soft);
     }
 
     .deasy-card-muted {
-        @apply rounded-[8px] border shadow-none;
+        @apply rounded-xl border shadow-none;
         border-color: var(--deasy-border-soft);
         background: var(--deasy-surface-muted);
     }
 
     .deasy-card-soft {
-        @apply rounded-[8px] border shadow-none;
+        @apply rounded-xl border shadow-none;
         border-color: var(--deasy-border-soft);
         background: var(--deasy-surface-soft);
     }
@@ -145,12 +170,12 @@
     }
 
     .deasy-panel {
-        @apply rounded-[10px] border bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03),0_8px_20px_rgba(11,31,63,0.04)];
+        @apply rounded-2xl border bg-white p-4 shadow-none;
         border-color: var(--deasy-border-soft);
     }
 
     .deasy-panel-muted {
-        @apply rounded-[8px] border p-4 shadow-none;
+        @apply rounded-xl border p-4 shadow-none;
         border-color: var(--deasy-border-soft);
         background: var(--deasy-surface-muted);
     }
@@ -160,7 +185,7 @@
     }
 
     .deasy-section-card {
-        @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-6 lg:p-8;
+        @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-none sm:p-6 lg:p-8;
     }
 
     .deasy-section-header {
@@ -270,7 +295,7 @@
     .deasy-field-input,
     .deasy-field-select,
     .deasy-field-textarea {
-        @apply block w-full rounded-[10px] border bg-white px-4 py-3 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm;
+        @apply block w-full rounded-lg border bg-white px-3 py-2 text-sm font-medium shadow-none outline-none transition-all placeholder:text-sm;
         border-color: var(--deasy-border-soft);
         color: var(--deasy-text-body);
     }
@@ -279,8 +304,8 @@
     .deasy-field-select:focus,
     .deasy-field-textarea:focus {
         @apply bg-white ring-4;
-        border-color: rgba(18, 63, 136, 0.42);
-        --tw-ring-color: rgba(18, 63, 136, 0.12);
+        border-color: rgba(94, 78, 255, 0.44);
+        --tw-ring-color: rgba(94, 78, 255, 0.12);
     }
 
     .deasy-field-input--icon-left {
@@ -312,7 +337,7 @@
     }
 
     .deasy-tag {
-        @apply inline-flex w-fit items-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-semibold;
+        @apply inline-flex w-fit items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold;
     }
 
     .deasy-tag__icon {
@@ -363,7 +388,7 @@
         @apply text-white;
         border-color: var(--deasy-primary);
         background: var(--deasy-brand-gradient);
-        box-shadow: 0 10px 24px rgba(18, 63, 136, 0.2);
+        box-shadow: none;
     }
 
     .deasy-btn--secondary {
@@ -378,7 +403,7 @@
 
     .deasy-btn--outline-primary {
         @apply bg-white;
-        border-color: rgba(18, 63, 136, 0.32);
+        border-color: rgba(94, 78, 255, 0.36);
         color: var(--deasy-primary);
     }
 
@@ -388,7 +413,7 @@
 
     .deasy-btn--soft-primary {
         @apply hover:text-white;
-        border-color: rgba(18, 63, 136, 0.18);
+        border-color: rgba(94, 78, 255, 0.2);
         background: var(--deasy-primary-soft);
         color: var(--deasy-primary);
     }
@@ -441,15 +466,15 @@
     }
 
     .deasy-btn--sm {
-        @apply px-3 py-2 text-sm;
+        @apply px-3 py-1.5 text-sm;
     }
 
     .deasy-btn--md {
-        @apply px-4 py-2.5 text-sm;
+        @apply px-4 py-2 text-sm;
     }
 
     .deasy-btn--lg {
-        @apply px-5 py-3 text-base;
+        @apply px-5 py-2.5 text-base;
     }
 
     .deasy-btn--icon {
@@ -581,7 +606,7 @@
     }
 
     .deasy-table-shell {
-        @apply mt-6 mb-6 rounded-[10px] border bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03),0_8px_20px_rgba(11,31,63,0.04)] sm:p-5;
+        @apply mt-6 mb-6 rounded-2xl border bg-white p-4 shadow-none sm:p-5;
         border-color: var(--deasy-border-soft);
     }
 
@@ -596,7 +621,7 @@
     }
 
     .deasy-table-responsive {
-        @apply overflow-x-auto rounded-[10px] border;
+        @apply overflow-x-auto rounded-2xl border;
         border-color: rgba(197, 211, 226, 0.52);
     }
 
@@ -607,16 +632,16 @@
     .deasy-table thead tr {
         @apply border-b;
         border-color: rgba(197, 211, 226, 0.6);
-        background: linear-gradient(180deg, #f8fbfd 0%, #eff5fb 100%);
+        background: #f7f9fc;
     }
 
     .deasy-table th {
-        @apply px-5 py-3.5 text-[12px] font-bold uppercase tracking-[0.18em];
+        @apply px-4 py-3 text-[12px] font-bold uppercase tracking-[0.12em];
         color: var(--deasy-text-muted);
     }
 
     .deasy-table td {
-        @apply px-5 py-3.5 text-sm;
+        @apply px-4 py-3 text-sm;
         color: var(--deasy-text-body);
     }
 
@@ -635,7 +660,7 @@
     }
 
     .deasy-nav-shell {
-        @apply flex flex-col gap-2 rounded-[1.5rem] border p-3 shadow-none backdrop-blur-sm;
+        @apply flex flex-col gap-2 rounded-2xl border p-2.5 shadow-none backdrop-blur-sm;
         border-color: rgba(255, 255, 255, 0.08);
         background: transparent;
     }
@@ -654,11 +679,11 @@
     }
 
     .deasy-nav-group-title {
-        @apply flex w-full items-center justify-between rounded-[1.1rem] border border-transparent px-4 py-3 text-left text-sm font-semibold text-white/84 transition-all;
+        @apply flex w-full items-center justify-between rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-semibold text-white/84 transition-all;
     }
 
     .deasy-nav-item {
-        @apply flex w-full items-start gap-2.5 rounded-[1rem] px-4 py-2.5 text-left text-sm font-medium text-white/76 transition-all duration-200 hover:bg-white/8 hover:text-white;
+        @apply flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium text-white/76 transition-all duration-200 hover:bg-white/8 hover:text-white;
     }
 
     .deasy-nav-item__label {
@@ -671,11 +696,11 @@
     }
 
     .deasy-nav-glyph {
-        @apply h-10 w-10 rounded-2xl;
+        @apply h-8 w-8 rounded-lg;
     }
 
     .deasy-nav-item__icon {
-        @apply h-9 w-9 rounded-[1rem];
+        @apply h-8 w-8 rounded-lg;
     }
 
     .deasy-nav-glyph--sky,
@@ -711,8 +736,8 @@
     }
 
     .deasy-nav-item--active {
-        @apply border bg-[linear-gradient(90deg,rgba(120,171,214,0.34)_0%,rgba(226,242,250,0.98)_100%)] text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(191, 215, 238, 0.7);
+        @apply border bg-white/12 font-semibold text-white shadow-none;
+        border-color: rgba(255, 255, 255, 0.12);
     }
 
     .deasy-nav-item--subtle-active {
@@ -721,8 +746,8 @@
     }
 
     .deasy-nav-item.router-link-active {
-        @apply border bg-[linear-gradient(90deg,rgba(120,171,214,0.34)_0%,rgba(226,242,250,0.98)_100%)] text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(191, 215, 238, 0.7);
+        @apply border bg-white/12 font-semibold text-white shadow-none;
+        border-color: rgba(255, 255, 255, 0.12);
     }
 
     .deasy-nav-meta {
@@ -808,7 +833,7 @@
     }
 
     .deasy-nav-action {
-        @apply flex shrink-0 items-center justify-center rounded-[10px] border border-white/10 bg-white/[0.08] text-white shadow-[0_8px_18px_rgba(6,12,24,0.24)] transition-all hover:bg-[#036065]/40 hover:text-white focus:outline-none focus:ring-2 focus:ring-[rgba(226,242,250,0.18)];
+        @apply flex shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.08] text-white shadow-none transition-all hover:bg-white/12 hover:text-white focus:outline-none focus:ring-2 focus:ring-[rgba(226,242,250,0.18)];
     }
 
     .deasy-nav-action--active {
@@ -1196,7 +1221,7 @@
     }
 
     .deasy-nav-shell {
-        @apply flex flex-col gap-2 rounded-[1.5rem] border p-3 shadow-none backdrop-blur-sm;
+        @apply flex flex-col gap-2 rounded-2xl border p-2.5 shadow-none backdrop-blur-sm;
         border-color: rgba(255, 255, 255, 0.08);
         background: transparent;
     }
@@ -1207,16 +1232,16 @@
     }
 
     .deasy-nav-group-title {
-        @apply rounded-[1.1rem] border border-transparent px-4 py-3 text-sm font-semibold text-white/84;
+        @apply rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold text-white/84;
     }
 
     .deasy-nav-item {
-        @apply rounded-[1rem] border border-transparent px-4 py-2.5 text-sm font-medium text-white/76 hover:bg-white/8 hover:text-white;
+        @apply rounded-lg border border-transparent px-3 py-2 text-sm font-medium text-white/76 hover:bg-white/8 hover:text-white;
     }
 
     .deasy-nav-glyph,
     .deasy-nav-item__icon {
-        @apply rounded-[1rem] shadow-none;
+        @apply rounded-lg shadow-none;
     }
 
     .deasy-nav-glyph--sky,
@@ -1255,14 +1280,14 @@
     .deasy-nav-item--active,
     .deasy-nav-item--subtle-active,
     .deasy-nav-item.router-link-active {
-        @apply border bg-[linear-gradient(90deg,rgba(120,171,214,0.34)_0%,rgba(226,242,250,0.98)_100%)] font-semibold text-slate-900 shadow-[0_10px_20px_rgba(70,110,150,0.14)];
-        border-color: rgba(191, 215, 238, 0.7);
+        @apply border bg-white/12 font-semibold text-white shadow-none;
+        border-color: rgba(255, 255, 255, 0.12);
     }
 
     .deasy-nav-item--active .deasy-nav-item__icon,
     .deasy-nav-item--subtle-active .deasy-nav-glyph,
     .deasy-nav-item.router-link-active .deasy-nav-item__icon {
-        @apply border-[#bfd7ee] bg-white text-[#21517a];
+        @apply border-white/15 bg-white/12 text-white;
     }
 
     .deasy-nav-meta {
@@ -1284,7 +1309,7 @@
     }
 
     .deasy-nav-action {
-        @apply rounded-[10px] border border-white/10 bg-white/[0.08] text-white shadow-[0_8px_18px_rgba(6,12,24,0.24)] hover:bg-[#036065]/40 hover:text-white focus:ring-2 focus:ring-[rgba(226,242,250,0.18)];
+        @apply rounded-lg border border-white/10 bg-white/[0.08] text-white shadow-none hover:bg-white/12 hover:text-white focus:ring-2 focus:ring-[rgba(226,242,250,0.18)];
     }
 
     .deasy-nav-action--active {

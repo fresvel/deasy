@@ -1,8 +1,33 @@
 <template>
-  <div class="mb-4 w-full">
+  <div v-if="compact" class="w-full">
+    <button
+      type="button"
+      class="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/8 p-1.5 text-white transition-all hover:bg-white/12 focus:outline-none focus:ring-2 focus:ring-white/18"
+      :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
+      :title="username"
+      :aria-label="`Perfil de ${username}`"
+      @click="handleImageClick"
+    >
+      <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-lg bg-white object-cover">
+      <span
+        v-if="signatureMarker"
+        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-[#071927] bg-emerald-400"
+        aria-hidden="true"
+      ></span>
+    </button>
+    <input
+      v-if="editable"
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="onFileChange"
+    >
+  </div>
+
+  <div v-else class="mb-3 w-full">
     <div
-      class="overflow-hidden rounded-[1.8rem] border p-4 shadow-[0_22px_40px_rgba(6,12,24,0.24)] backdrop-blur-sm"
-      style="border-color: rgba(255,255,255,0.16); background: linear-gradient(180deg, rgba(120,179,223,0.92) 0%, rgba(130,185,228,0.82) 100%);"
+      class="overflow-hidden rounded-2xl border border-white/10 bg-white/8 p-3 shadow-none backdrop-blur-sm"
     >
       <div class="flex items-center gap-3">
         <div 
@@ -10,7 +35,7 @@
           :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
           @click="handleImageClick"
         >
-          <div class="group relative h-14 w-14 rounded-full border border-white/55 bg-white/40 p-1 shadow-inner sm:h-16 sm:w-16">
+          <div class="group relative h-12 w-12 rounded-xl border border-white/15 bg-white/10 p-1 shadow-none">
             <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
@@ -30,14 +55,14 @@
         </div>
 
         <div class="min-w-0 flex-1">
-          <h3 class="m-0 truncate text-base font-semibold leading-tight text-white">
+          <h3 class="m-0 truncate text-sm font-semibold leading-tight text-white">
             {{ username }}
           </h3>
-          <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
+          <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
             Cuenta institucional
           </p>
-          <div v-if="signatureMarker" class="mt-2 rounded-[10px] border border-white/16 bg-white/12 px-3 py-1.5">
-            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-white/62">Token firma</p>
+          <div v-if="signatureMarker" class="mt-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5">
+            <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-white/52">Token firma</p>
             <p class="mt-1 truncate font-mono text-xs text-white/92">
               {{ signatureMarker }}
             </p>
@@ -65,6 +90,10 @@ const props = defineProps({
         default: ''
     },
     editable: {
+        type: Boolean,
+        default: false
+    },
+    compact: {
         type: Boolean,
         default: false
     }

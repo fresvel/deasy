@@ -24,30 +24,30 @@
         <div class="deasy-workspace-header__actions">
           <button
             v-if="showSignatureAction"
-            class="deasy-nav-action h-9 w-9 sm:h-10 sm:w-10"
+            class="deasy-nav-action h-8 w-8"
             type="button"
             title="Firmas"
             aria-label="Firmas"
             @click="emit('sign')"
           >
-            <IconSignature class="h-4.5 w-4.5" />
+            <IconSignature class="h-4 w-4" />
           </button>
           <button
-            class="deasy-nav-action h-9 w-9 sm:h-10 sm:w-10"
+            class="deasy-nav-action h-8 w-8"
             type="button"
             title="Notificaciones"
             aria-label="Notificaciones"
             @click="emit('notify')"
           >
-            <IconBell class="h-4.5 w-4.5" />
+            <IconBell class="h-4 w-4" />
           </button>
           <router-link
             to="/logout"
-            class="deasy-nav-action h-9 w-9 sm:h-10 sm:w-10"
+            class="deasy-nav-action h-8 w-8"
             title="Cerrar sesion"
             aria-label="Cerrar sesion"
           >
-            <IconLogout class="h-4.5 w-4.5" />
+            <IconLogout class="h-4 w-4" />
           </router-link>
         </div>
       </div>
