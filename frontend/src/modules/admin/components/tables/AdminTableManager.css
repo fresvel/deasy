@@ -579,12 +579,12 @@
   min-width: 8rem;
   width: 8rem;
   z-index: 2;
-  box-shadow: -6px 0 10px rgba(var(--brand-primary-rgb), 0.08);
+  box-shadow: -6px 0 12px rgba(136, 142, 191, 0.12);
 }
 
 .table-institutional.table-actions thead .admin-action-col {
   z-index: 3;
-  background: #e9f0fa;
+  background: #eef0f5;
 }
 
 .table-institutional.table-actions tbody .admin-action-col {
@@ -592,9 +592,9 @@
 }
 
 .table-institutional.table-actions.table-striped > tbody > tr:nth-of-type(odd) .admin-action-col {
-  background-color: #f7f9fc;
+  background-color: #fafbfe;
 }
 
 .table-institutional.table-actions tbody tr:hover .admin-action-col {
-  background: #edf4ff;
+  background: #f5f7fb;
 }

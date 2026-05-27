@@ -612,22 +612,22 @@
 
     .deasy-table-shell {
         @apply mt-6 mb-6 rounded-2xl border bg-white p-4 shadow-none sm:p-5;
-        border-color: var(--deasy-border-soft);
+        border-color: #e2e6f0;
     }
 
     .deasy-table-header {
         @apply mb-4 flex items-center justify-between gap-4 border-b pb-3;
-        border-color: rgba(197, 211, 226, 0.6);
+        border-color: #eeedf6;
     }
 
     .deasy-table-title {
-        @apply m-0 text-sm font-bold uppercase tracking-[0.16em] sm:text-base;
-        color: var(--deasy-text-strong);
+        @apply m-0 text-[0.95rem] font-semibold tracking-tight sm:text-base;
+        color: #192144;
     }
 
     .deasy-table-responsive {
-        @apply overflow-x-auto rounded-2xl border;
-        border-color: rgba(197, 211, 226, 0.52);
+        @apply overflow-x-auto rounded-2xl border bg-white;
+        border-color: #e2e6f0;
     }
 
     .deasy-table {
@@ -636,27 +636,83 @@
 
     .deasy-table thead tr {
         @apply border-b;
-        border-color: rgba(197, 211, 226, 0.6);
-        background: #f7f9fc;
+        border-color: #e2e6f0;
+        background: #eef0f5;
     }
 
     .deasy-table th {
-        @apply px-4 py-3 text-[12px] font-bold uppercase tracking-[0.12em];
-        color: var(--deasy-text-muted);
+        @apply px-4 py-3 text-[12px] font-semibold uppercase tracking-[0.04em];
+        color: #192144;
     }
 
     .deasy-table td {
-        @apply px-4 py-3 text-sm;
-        color: var(--deasy-text-body);
+        @apply px-4 py-3 text-sm leading-5;
+        color: #343741;
     }
 
     .deasy-table tbody tr {
         @apply border-b transition-colors;
-        border-color: rgba(226, 234, 242, 0.72);
+        border-color: #eeedf6;
+    }
+
+    .deasy-table tbody tr:last-child {
+        border-bottom: 0;
     }
 
     .deasy-table tbody tr:hover {
-        background: rgba(18, 63, 136, 0.035);
+        background: #f5f7fb;
+    }
+
+    .deasy-table-shell .deasy-btn,
+    .deasy-table-responsive .deasy-btn {
+        @apply rounded-md px-3 py-1.5 text-[13px] font-medium shadow-none;
+        min-height: 2rem;
+    }
+
+    .deasy-table-shell .deasy-btn--secondary,
+    .deasy-table-responsive .deasy-btn--secondary {
+        border-color: #d0d4dc;
+        background: #ffffff;
+        color: #343741;
+    }
+
+    .deasy-table-shell .deasy-btn--secondary:hover,
+    .deasy-table-responsive .deasy-btn--secondary:hover {
+        border-color: #bcc2cd;
+        background: #f8f9fc;
+        color: #192144;
+    }
+
+    .deasy-table-shell .deasy-btn--soft-primary,
+    .deasy-table-responsive .deasy-btn--soft-primary,
+    .deasy-table-shell .deasy-btn--outline-primary,
+    .deasy-table-responsive .deasy-btn--outline-primary {
+        border-color: #d7d3ff;
+        background: #ffffff;
+        color: #5e4eff;
+    }
+
+    .deasy-table-shell .deasy-btn--soft-primary:hover,
+    .deasy-table-responsive .deasy-btn--soft-primary:hover,
+    .deasy-table-shell .deasy-btn--outline-primary:hover,
+    .deasy-table-responsive .deasy-btn--outline-primary:hover {
+        border-color: #c3bcff;
+        background: #f7f5ff;
+        color: #5143dc;
+    }
+
+    .deasy-table-shell .deasy-btn--primary,
+    .deasy-table-responsive .deasy-btn--primary {
+        border-color: #5e4eff;
+        background: #5e4eff;
+        color: #ffffff;
+        box-shadow: none;
+    }
+
+    .deasy-table-shell .deasy-btn--primary:hover,
+    .deasy-table-responsive .deasy-btn--primary:hover {
+        border-color: #5143dc;
+        background: #5143dc;
     }
 
     .deasy-table tbody td:first-child {

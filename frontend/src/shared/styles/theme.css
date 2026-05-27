@@ -356,10 +356,46 @@ a:hover {
 
 .profile-table-shell {
   overflow-x: auto;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 0.85rem;
+  border: 1px solid #e2e6f0;
+  border-radius: 1rem;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+  box-shadow: none;
+}
+
+.profile-table-shell table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.profile-table-shell thead {
+  background: #eef0f5;
+}
+
+.profile-table-shell thead th {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e6f0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #192144;
+}
+
+.profile-table-shell tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eeedf6;
+  font-size: 0.875rem;
+  color: #343741;
+}
+
+.profile-table-shell tbody tr:hover {
+  background: #f5f7fb;
+}
+
+.profile-table-shell tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .profile-dialog-root {
@@ -552,57 +588,57 @@ a:hover {
 
 .table {
   --bs-table-bg: #ffffff;
-  --bs-table-striped-bg: #f8fafc;
-  --bs-table-striped-color: var(--brand-navy);
-  --bs-table-hover-bg: #eef3fb;
-  --bs-table-hover-color: var(--brand-navy);
-  --bs-table-border-color: rgba(3, 49, 100, 0.14);
-  font-size: 0.9rem;
+  --bs-table-striped-bg: #fafbfe;
+  --bs-table-striped-color: #343741;
+  --bs-table-hover-bg: #f5f7fb;
+  --bs-table-hover-color: #192144;
+  --bs-table-border-color: #eeedf6;
+  font-size: 0.875rem;
   margin-bottom: 0;
 }
 
 .table> :not(caption)>*>* {
-  padding: 0.68rem 0.85rem;
+  padding: 0.75rem 1rem;
   border-bottom-width: 1px;
 }
 
 .table thead th {
   border-bottom-width: 1px;
-  font-size: 0.73rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #334155;
-  background: #eef3f8;
+  color: #192144;
+  background: #eef0f5;
 }
 
 .table-institutional {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 0.75rem;
+  border: 1px solid #e2e6f0;
+  border-radius: 1rem;
   overflow: hidden;
   background: #ffffff;
 }
 
 .table-institutional thead {
-  background: #eef3f8;
+  background: #eef0f5;
 }
 
 .table-institutional thead th {
-  color: #334155;
-  font-weight: 700;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  color: #192144;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e6f0;
 }
 
 .table-institutional tbody tr {
-  border-color: rgba(148, 163, 184, 0.18);
+  border-color: #eeedf6;
 }
 
 .table-institutional.table-striped>tbody>tr:nth-of-type(odd) {
-  background-color: #fafcff;
+  background-color: #fafbfe;
 }
 
 .table-institutional tbody tr:hover {
-  background: #f3f8fc;
+  background: #f5f7fb;
 }
 
 .table-actions-scroll {
@@ -611,6 +647,71 @@ a:hover {
 
 .table-institutional.table-actions {
   overflow: visible;
+}
+
+.table-institutional .deasy-btn,
+.table-institutional .admin-btn,
+.profile-table-shell .deasy-btn,
+.profile-table-shell .admin-btn {
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.table-institutional .deasy-btn--secondary,
+.table-institutional .admin-btn--secondary,
+.profile-table-shell .deasy-btn--secondary,
+.profile-table-shell .admin-btn--secondary {
+  border-color: #d0d4dc !important;
+  background: #ffffff !important;
+  color: #343741 !important;
+}
+
+.table-institutional .deasy-btn--secondary:hover,
+.table-institutional .admin-btn--secondary:hover,
+.profile-table-shell .deasy-btn--secondary:hover,
+.profile-table-shell .admin-btn--secondary:hover {
+  border-color: #bcc2cd !important;
+  background: #f8f9fc !important;
+  color: #192144 !important;
+}
+
+.table-institutional .deasy-btn--outline-primary,
+.table-institutional .admin-btn--outline-primary,
+.profile-table-shell .deasy-btn--outline-primary,
+.profile-table-shell .admin-btn--outline-primary {
+  border-color: #d7d3ff !important;
+  background: #ffffff !important;
+  color: #5e4eff !important;
+}
+
+.table-institutional .deasy-btn--outline-primary:hover,
+.table-institutional .admin-btn--outline-primary:hover,
+.profile-table-shell .deasy-btn--outline-primary:hover,
+.profile-table-shell .admin-btn--outline-primary:hover {
+  border-color: #c3bcff !important;
+  background: #f7f5ff !important;
+  color: #5143dc !important;
+}
+
+.table-institutional .deasy-btn--primary,
+.table-institutional .admin-btn--primary,
+.profile-table-shell .deasy-btn--primary,
+.profile-table-shell .admin-btn--primary {
+  border-color: #5e4eff !important;
+  background: #5e4eff !important;
+  color: #ffffff !important;
+}
+
+.table-institutional .deasy-btn--primary:hover,
+.table-institutional .admin-btn--primary:hover,
+.profile-table-shell .deasy-btn--primary:hover,
+.profile-table-shell .admin-btn--primary:hover {
+  border-color: #5143dc !important;
+  background: #5143dc !important;
 }
 
 .alert-danger {
@@ -1612,12 +1713,12 @@ html[data-environment="local-dev"] textarea {
 html[data-environment="local-dev"] .deasy-table thead tr,
 html[data-environment="local-dev"] .table thead th,
 html[data-environment="local-dev"] .table-institutional thead {
-  background: #f7f9fc !important;
+  background: #eef0f5 !important;
 }
 
 html[data-environment="local-dev"] .deasy-table tbody tr:hover,
 html[data-environment="local-dev"] .table-institutional tbody tr:hover {
-  background-color: rgba(94, 78, 255, 0.045) !important;
+  background-color: #f5f7fb !important;
 }
 
 html[data-environment="local-dev"] .deasy-btn--secondary,
