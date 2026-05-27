@@ -4,7 +4,7 @@
       <div class="deasy-auth-card mx-auto grid max-w-5xl md:min-h-[38rem] md:grid-cols-[0.88fr_1.12fr]">
         <div class="deasy-auth-visual">
           <div class="relative z-10">
-            <AppLogo size="xl" class-name="mb-12" />
+            <AppLogo size="xl" :framed="true" class-name="mb-12" />
             <div class="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
               Plataforma operativa
             </div>
@@ -29,7 +29,7 @@
 
         <div class="deasy-auth-panel">
           <div class="mb-10 text-center md:hidden">
-            <AppLogo size="lg" class-name="justify-center" />
+            <AppLogo size="lg" :framed="true" class-name="justify-center" />
             <p class="mt-3 text-sm font-medium text-slate-500">Plataforma de gestión documental</p>
           </div>
 

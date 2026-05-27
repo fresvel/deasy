@@ -1,6 +1,7 @@
 <template>
   <header
-    class="sticky top-0 z-30 flex w-full flex-col justify-center border-b border-slate-200 bg-white/95 px-2 py-2 text-slate-800 shadow-sm backdrop-blur transition-all duration-300 sm:min-h-[4rem] sm:px-4"
+    class="sticky top-0 z-30 flex w-full flex-col justify-center border-b px-2 py-2 text-white shadow-[0_1px_2px_rgba(7,18,38,0.12),0_8px_18px_rgba(7,18,38,0.12)] backdrop-blur transition-all duration-300 sm:min-h-[4rem] sm:px-4"
+    style="border-color: rgba(255,255,255,0.06); background: linear-gradient(180deg, #345364 0%, #456878 100%);"
   >
     <div class="mx-auto flex w-full max-w-[2560px] items-center gap-2 sm:gap-4">
       <button

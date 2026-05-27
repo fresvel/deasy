@@ -1,13 +1,16 @@
 <template>
   <div class="mb-4 w-full">
-    <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div
+      class="overflow-hidden rounded-[1.8rem] border p-4 shadow-[0_22px_40px_rgba(6,12,24,0.24)] backdrop-blur-sm"
+      style="border-color: rgba(255,255,255,0.16); background: linear-gradient(180deg, rgba(120,179,223,0.92) 0%, rgba(130,185,228,0.82) 100%);"
+    >
       <div class="flex items-center gap-3">
         <div 
           class="relative shrink-0 transition-transform hover:scale-[1.03]"
           :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
           @click="handleImageClick"
         >
-          <div class="group relative h-14 w-14 rounded-full border border-slate-200 bg-slate-50 p-1 shadow-inner sm:h-16 sm:w-16">
+          <div class="group relative h-14 w-14 rounded-full border border-white/55 bg-white/40 p-1 shadow-inner sm:h-16 sm:w-16">
             <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
@@ -27,15 +30,15 @@
         </div>
 
         <div class="min-w-0 flex-1">
-          <h3 class="m-0 truncate text-base font-semibold leading-tight text-slate-950">
+          <h3 class="m-0 truncate text-base font-semibold leading-tight text-white">
             {{ username }}
           </h3>
-          <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Cuenta DEASY
+          <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
+            Cuenta institucional
           </p>
-          <div v-if="signatureMarker" class="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Token firma</p>
-            <p class="mt-1 truncate font-mono text-xs text-slate-700">
+          <div v-if="signatureMarker" class="mt-2 rounded-[10px] border border-white/16 bg-white/12 px-3 py-1.5">
+            <p class="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-white/62">Token firma</p>
+            <p class="mt-1 truncate font-mono text-xs text-white/92">
               {{ signatureMarker }}
             </p>
           </div>

@@ -2,7 +2,7 @@
   <div class="deasy-auth-page">
     <div class="deasy-auth-center">
     <div class="deasy-auth-card max-w-md p-8 sm:p-12 relative overflow-hidden">
-      <AppLogo size="lg" class-name="mb-8" />
+      <AppLogo size="lg" :framed="true" class-name="mb-8" />
       
       <!-- Go back button -->
       <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors mb-8 group">

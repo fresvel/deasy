@@ -4,7 +4,7 @@
       <div class="deasy-auth-card mx-auto grid max-w-5xl md:min-h-[38rem] md:grid-cols-[0.92fr_1.08fr]">
         <div class="deasy-auth-visual">
           <div class="relative z-10">
-            <AppLogo size="xl" class-name="mb-12" />
+            <AppLogo size="xl" :framed="true" class-name="mb-12" />
             <div class="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
               Primera instalación
             </div>

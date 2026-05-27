@@ -12,7 +12,9 @@
               :class="{ 'deasy-primary-nav__item--active': isNavActive(item) }"
               :title="item.label"
             >
-              <component :is="item.icon" class="h-4 w-4 shrink-0" />
+              <span class="deasy-primary-nav__icon">
+                <component :is="item.icon" class="h-4 w-4 shrink-0" />
+              </span>
               <span class="deasy-primary-nav__label">{{ item.label }}</span>
             </router-link>
           </nav>
