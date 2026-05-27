@@ -255,6 +255,12 @@ const DROP_TABLES = [
   "persons"
 ];
 
+const LEGACY_AUTH_TABLES = [
+  "password_reset_codes",
+  "email_verification_codes",
+  "users"
+];
+
 export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
   const pool = getMariaDBPool();
 
@@ -265,6 +271,17 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
 
   const connection = await pool.getConnection();
   try {
+    if (reset) {
+      await connection.query("SET FOREIGN_KEY_CHECKS = 0");
+      try {
+        for (const tableName of [...DROP_TABLES, ...LEGACY_AUTH_TABLES]) {
+          await connection.query(`DROP TABLE IF EXISTS \`${tableName}\``);
+        }
+      } finally {
+        await connection.query("SET FOREIGN_KEY_CHECKS = 1");
+      }
+    }
+
     // 1. Tablas legacy de autenticación (no dependen del schema principal)
     await connection.query(CREATE_USERS_TABLE_SQL);
     await connection.query(CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL);
