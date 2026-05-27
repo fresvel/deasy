@@ -389,10 +389,19 @@ const applySeed = async (connection, filePath) => {
       }
 
       const schemaColumns = await getTableColumns(connection, tableName);
+      const schemaColumnMap = new Map(schemaColumns.map((column) => [column.name, column]));
       const generatedColumnSet = new Set(
         schemaColumns.filter((column) => column.is_generated).map((column) => column.name)
       );
-      const insertColumns = columns.filter((column) => !generatedColumnSet.has(column));
+      const missingColumns = columns.filter((column) => !schemaColumnMap.has(column));
+      if (missingColumns.length) {
+        console.warn(
+          `[seed_pucese] ${tableName}: ${missingColumns.length} columna(s) omitida(s) por no existir en el esquema actual: ${missingColumns.join(", ")}`
+        );
+      }
+      const insertColumns = columns.filter(
+        (column) => schemaColumnMap.has(column) && !generatedColumnSet.has(column)
+      );
       if (!insertColumns.length) continue;
 
       const escapedColumns = insertColumns.map((column) => `\`${column}\``).join(", ");

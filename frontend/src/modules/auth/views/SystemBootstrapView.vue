@@ -36,42 +36,117 @@
             </p>
           </div>
 
-          <form v-if="mode === 'bootstrap'" @submit.prevent="submitBootstrap" class="space-y-5">
+          <form
+            v-if="mode === 'bootstrap'"
+            @submit.prevent="submitBootstrap"
+            class="space-y-5"
+            autocomplete="off"
+          >
+            <input type="text" name="bootstrap-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" />
+            <input type="password" name="bootstrap-decoy-password" autocomplete="current-password" class="hidden" tabindex="-1" aria-hidden="true" />
             <div class="grid gap-5 md:grid-cols-2">
               <div>
                 <label for="cedula" class="mb-2 block text-sm font-semibold text-slate-700">Cédula</label>
-                <input id="cedula" v-model="form.cedula" type="text" class="deasy-auth-field" placeholder="1234567890" required />
+                <input
+                  id="cedula"
+                  v-model="form.cedula"
+                  name="bootstrap-root-cedula"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  class="deasy-auth-field"
+                  placeholder="1234567890"
+                  required
+                />
               </div>
               <div>
                 <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-                <input id="email" v-model="form.email" type="email" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" required />
+                <input
+                  id="email"
+                  v-model="form.email"
+                  name="bootstrap-root-email"
+                  type="email"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  class="deasy-auth-field"
+                  placeholder="admin@institucion.edu.ec"
+                  required
+                />
               </div>
             </div>
 
             <div class="grid gap-5 md:grid-cols-2">
               <div>
                 <label for="first-name" class="mb-2 block text-sm font-semibold text-slate-700">Nombres</label>
-                <input id="first-name" v-model="form.first_name" type="text" class="deasy-auth-field" placeholder="Administrador" required />
+                <input
+                  id="first-name"
+                  v-model="form.first_name"
+                  name="bootstrap-root-first-name"
+                  type="text"
+                  autocomplete="off"
+                  class="deasy-auth-field"
+                  placeholder="Administrador"
+                  required
+                />
               </div>
               <div>
                 <label for="last-name" class="mb-2 block text-sm font-semibold text-slate-700">Apellidos</label>
-                <input id="last-name" v-model="form.last_name" type="text" class="deasy-auth-field" placeholder="Principal" required />
+                <input
+                  id="last-name"
+                  v-model="form.last_name"
+                  name="bootstrap-root-last-name"
+                  type="text"
+                  autocomplete="off"
+                  class="deasy-auth-field"
+                  placeholder="Principal"
+                  required
+                />
               </div>
             </div>
 
             <div>
               <label for="whatsapp" class="mb-2 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
-              <input id="whatsapp" v-model="form.whatsapp" type="text" class="deasy-auth-field" placeholder="0990000000" />
+              <input
+                id="whatsapp"
+                v-model="form.whatsapp"
+                name="bootstrap-root-whatsapp"
+                type="text"
+                inputmode="tel"
+                autocomplete="off"
+                class="deasy-auth-field"
+                placeholder="0990000000"
+              />
             </div>
 
             <div class="grid gap-5 md:grid-cols-2">
               <div>
                 <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">Contraseña</label>
-                <input id="password" v-model="form.password" type="password" class="deasy-auth-field" placeholder="Nueva contraseña" required />
+                <input
+                  id="password"
+                  v-model="form.password"
+                  name="bootstrap-root-password"
+                  type="password"
+                  autocomplete="new-password"
+                  class="deasy-auth-field"
+                  placeholder="Nueva contraseña"
+                  required
+                />
               </div>
               <div>
                 <label for="confirm-password" class="mb-2 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                <input id="confirm-password" v-model="form.confirm_password" type="password" class="deasy-auth-field" placeholder="Repite la contraseña" required />
+                <input
+                  id="confirm-password"
+                  v-model="form.confirm_password"
+                  name="bootstrap-root-password-confirmation"
+                  type="password"
+                  autocomplete="new-password"
+                  class="deasy-auth-field"
+                  placeholder="Repite la contraseña"
+                  required
+                />
               </div>
             </div>
 

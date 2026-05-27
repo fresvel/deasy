@@ -20,7 +20,8 @@
         </p>
       </div>
 
-      <form v-if="step === 'request'" @submit.prevent="recoverPassword" class="space-y-6">
+      <form v-if="step === 'request'" @submit.prevent="recoverPassword" class="space-y-6" autocomplete="off">
+        <input type="text" name="recover-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" />
         <div>
           <label for="email" class="block text-sm font-semibold text-slate-700 mb-2">
             Correo Electrónico
@@ -33,6 +34,10 @@
               id="email"
               type="email"
               v-model="email"
+              name="recover-request-email"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
               class="deasy-auth-field deasy-auth-field--icon-left"
               placeholder="correo@ejemplo.com"
               required
@@ -55,7 +60,9 @@
         </button>
       </form>
 
-      <form v-else @submit.prevent="submitReset" class="space-y-6">
+      <form v-else @submit.prevent="submitReset" class="space-y-6" autocomplete="off">
+        <input type="text" name="recover-reset-decoy-user" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true" />
+        <input type="password" name="recover-reset-decoy-password" autocomplete="current-password" class="hidden" tabindex="-1" aria-hidden="true" />
         <div>
           <label for="email-confirmed" class="block text-sm font-semibold text-slate-700 mb-2">
             Correo Electrónico
@@ -64,6 +71,8 @@
             id="email-confirmed"
             type="email"
             v-model="email"
+            name="recover-reset-email"
+            autocomplete="off"
             class="deasy-auth-field bg-slate-50"
             readonly
           />
@@ -77,6 +86,8 @@
             id="code"
             type="text"
             v-model="code"
+            name="recover-reset-code"
+            autocomplete="one-time-code"
             class="deasy-auth-field"
             placeholder="Ingresa el código recibido"
             required
@@ -91,6 +102,8 @@
             id="password"
             type="password"
             v-model="password"
+            name="recover-reset-new-password"
+            autocomplete="new-password"
             class="deasy-auth-field"
             placeholder="Nueva contraseña"
             required
@@ -105,6 +118,8 @@
             id="repassword"
             type="password"
             v-model="repassword"
+            name="recover-reset-new-password-confirmation"
+            autocomplete="new-password"
             class="deasy-auth-field"
             placeholder="Repite la nueva contraseña"
             required

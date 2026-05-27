@@ -1557,7 +1557,7 @@ html[data-environment="local-dev"] .table-institutional {
 
 html[data-environment="local-dev"] .deasy-auth-page {
   background:
-    linear-gradient(180deg, #e4ebf3 0%, #eef3f8 48%, #e7edf4 100%) !important;
+    linear-gradient(180deg, #fcfcff 0%, #f7f8fb 46%, #f4f6fb 100%) !important;
 }
 
 html[data-environment="local-dev"] .deasy-auth-panel,
@@ -1569,7 +1569,7 @@ html[data-environment="local-dev"] .admin-dialog-body {
 html[data-environment="local-dev"] .deasy-auth-visual,
 html[data-environment="local-dev"] .deasy-dialog-footer,
 html[data-environment="local-dev"] .admin-dialog-footer {
-  background-color: #edf3f8 !important;
+  background-color: #f7f9fe !important;
 }
 
 html[data-environment="local-dev"] .border-slate-100,
@@ -1582,7 +1582,7 @@ html[data-environment="local-dev"] .admin-workspace-frame,
 html[data-environment="local-dev"] .admin-surface-frame,
 html[data-environment="local-dev"] .profile-table-shell,
 html[data-environment="local-dev"] .table-institutional {
-  border-color: #d5e0eb !important;
+  border-color: #e2e6f0 !important;
 }
 
 html[data-environment="local-dev"] .shadow-xl,
@@ -1606,8 +1606,8 @@ html[data-environment="local-dev"] .profile-textarea,
 html[data-environment="local-dev"] input,
 html[data-environment="local-dev"] select,
 html[data-environment="local-dev"] textarea {
-  background-color: #f9fcfe;
-  border-color: #cbd8e6;
+  background-color: #ffffff;
+  border-color: #d0d4dc;
 }
 
 html[data-environment="local-dev"] .deasy-table thead tr,
@@ -1626,18 +1626,18 @@ html[data-environment="local-dev"] .deasy-btn--cancel,
 html[data-environment="local-dev"] .deasy-auth-button--secondary,
 html[data-environment="local-dev"] .admin-btn--secondary,
 html[data-environment="local-dev"] .admin-btn--cancel {
-  background-color: #f6f9fc !important;
-  border-color: #cbd8e6 !important;
+  background-color: #ffffff !important;
+  border-color: #d0d4dc !important;
 }
 
 html[data-environment="local-dev"] .deasy-nav-shell {
-  background-color: #f6f9fc !important;
-  border-color: #cbd8e6 !important;
+  background-color: #ffffff !important;
+  border-color: #e2e6f0 !important;
 }
 
 html[data-environment="local-dev"] header {
-  background-color: rgba(246, 249, 252, 0.96) !important;
-  border-color: #cbd8e6 !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  border-color: #e2e6f0 !important;
 }
 
 html[data-environment="local-dev"] .deasy-fa-icon {
@@ -1650,16 +1650,16 @@ html[data-environment="local-dev"] .deasy-btn--cancel,
 html[data-environment="local-dev"] .deasy-auth-button--secondary,
 html[data-environment="local-dev"] .admin-btn--secondary,
 html[data-environment="local-dev"] .admin-btn--cancel {
-  color: #1f3342 !important;
+  color: #343741 !important;
 }
 
 html[data-environment="local-dev"] .deasy-btn--secondary:hover,
 html[data-environment="local-dev"] .deasy-btn--cancel:hover,
 html[data-environment="local-dev"] .admin-btn--secondary:hover,
 html[data-environment="local-dev"] .admin-btn--cancel:hover {
-  color: #102233 !important;
-  background-color: #eef5fa !important;
-  border-color: #aebfd2 !important;
+  color: #192144 !important;
+  background-color: rgba(94, 78, 255, 0.08) !important;
+  border-color: #b8b1ff !important;
 }
 
 html[data-environment="local-dev"] .hope-action-btn {
