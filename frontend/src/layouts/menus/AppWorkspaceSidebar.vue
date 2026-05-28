@@ -1,6 +1,10 @@
 <template>
   <s-menu :show="show" @close-mobile="$emit('close-mobile')">
-    <div class="deasy-sidebar">
+    <div
+      ref="sidebarRef"
+      class="deasy-sidebar"
+      @mouseleave="handleSidebarMouseLeave"
+    >
       <div class="deasy-sidebar__rail">
         <AppLogo
           v-if="showLogo"
@@ -49,11 +53,12 @@
 </template>
 
 <script setup>
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import SMenu from "@/layouts/menus/SMenu.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import UserProfile from "@/shared/components/widgets/UserProfile.vue";
 
-defineProps({
+const props = defineProps({
   show: {
     type: Boolean,
     default: false
@@ -84,5 +89,46 @@ defineProps({
   }
 });
 
-defineEmits(["close-mobile", "photo-selected"]);
+const emit = defineEmits(["close-mobile", "photo-selected"]);
+
+const sidebarRef = ref(null);
+
+const isDesktopViewport = () =>
+  typeof window !== "undefined" && window.innerWidth >= 1280;
+
+const requestClose = () => {
+  emit("close-mobile");
+};
+
+const handleSidebarMouseLeave = () => {
+  if (!props.show || !isDesktopViewport()) {
+    return;
+  }
+  requestClose();
+};
+
+const handlePointerDownOutside = (event) => {
+  if (!props.show || !isDesktopViewport()) {
+    return;
+  }
+  const root = sidebarRef.value;
+  if (!root || root.contains(event.target)) {
+    return;
+  }
+  requestClose();
+};
+
+onMounted(() => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.addEventListener("pointerdown", handlePointerDownOutside, true);
+});
+
+onBeforeUnmount(() => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.removeEventListener("pointerdown", handlePointerDownOutside, true);
+});
 </script>
