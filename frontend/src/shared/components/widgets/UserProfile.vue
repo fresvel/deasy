@@ -59,9 +59,9 @@
             {{ username }}
           </h3>
           <p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
-            Cuenta institucional
+            {{ subtitle }}
           </p>
-          <div v-if="signatureMarker" class="mt-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5">
+          <div v-if="showSignatureDetails && signatureMarker" class="mt-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5">
             <p class="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-white/52">Token firma</p>
             <p class="mt-1 truncate font-mono text-xs text-white/92">
               {{ signatureMarker }}
@@ -85,9 +85,17 @@ const props = defineProps({
         type: String,
         default: 'Usuario'
     },
+    subtitle: {
+        type: String,
+        default: 'Cuenta institucional'
+    },
     signatureMarker: {
         type: String,
         default: ''
+    },
+    showSignatureDetails: {
+        type: Boolean,
+        default: true
     },
     editable: {
         type: Boolean,

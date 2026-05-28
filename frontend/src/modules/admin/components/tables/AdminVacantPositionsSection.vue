@@ -15,30 +15,31 @@
         </div>
       </div>
       <div class="admin-surface-frame">
-          <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
+          <div class="deasy-filter-shell deasy-filter-shell--embedded">
+          <div class="deasy-filter-grid deasy-filter-grid--admin">
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminInputField :model-value="searchTerm" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+              <AdminInputField :model-value="searchTerm" input-class="deasy-filter-control" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
             </div>
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.unit_type_id" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
+              <AdminSelectField :model-value="filters.unit_type_id" select-class="deasy-filter-control" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
                 <option value="">Tipo de unidad</option>
                 <option v-for="row in unitTypeOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("unit_types", row) }}</option>
               </AdminSelectField>
             </div>
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.unit_id" :disabled="!filters.unit_type_id || filterLoading" @update:model-value="updateFilter('unit_id', $event)" @change="$emit('handle-unit-change')">
+              <AdminSelectField :model-value="filters.unit_id" select-class="deasy-filter-control" :disabled="!filters.unit_type_id || filterLoading" @update:model-value="updateFilter('unit_id', $event)" @change="$emit('handle-unit-change')">
                 <option value="">Unidad</option>
                 <option v-for="row in unitOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("units", row) }}</option>
               </AdminSelectField>
             </div>
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.cargo_id" :disabled="filterLoading" @update:model-value="updateFilter('cargo_id', $event)" @change="$emit('handle-cargo-change')">
+              <AdminSelectField :model-value="filters.cargo_id" select-class="deasy-filter-control" :disabled="filterLoading" @update:model-value="updateFilter('cargo_id', $event)" @change="$emit('handle-cargo-change')">
                 <option value="">Cargo</option>
                 <option v-for="row in cargoOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("cargos", row) }}</option>
               </AdminSelectField>
             </div>
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.position_type" :disabled="filterLoading" @update:model-value="updateFilter('position_type', $event)" @change="$emit('handle-position-type-filter-change')">
+              <AdminSelectField :model-value="filters.position_type" select-class="deasy-filter-control" :disabled="filterLoading" @update:model-value="updateFilter('position_type', $event)" @change="$emit('handle-position-type-filter-change')">
                 <option value="">Tipo de puesto</option>
                 <option value="real">Real</option>
                 <option value="promocion">Promocion</option>
@@ -46,15 +47,19 @@
                 </AdminSelectField>
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
-              <div class="inline-flex items-center gap-2">
-                <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  <font-awesome-icon icon="times" />
+              <div class="deasy-filter-actions">
+                <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
+                  Reset
                 </AdminButton>
-                <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
-                  <font-awesome-icon icon="rotate-right" />
+                <AdminButton variant="outlinePrimary" size="sm" class-name="deasy-filter-btn" title="Buscar" aria-label="Buscar" @click="$emit('load')">
+                  Buscar
+                </AdminButton>
+                <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
+                  Actualizar
                 </AdminButton>
               </div>
             </div>
+          </div>
           </div>
 
           <div v-if="loading" class="text-sm text-slate-500">Cargando puestos sin ocupaciones...</div>

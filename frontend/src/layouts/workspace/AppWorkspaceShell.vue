@@ -43,7 +43,9 @@
         :show="menuOpen"
         :photo="photo"
         :username="username"
+        :profile-subtitle="sidebarSubtitle"
         :signature-marker="signatureMarker"
+        :show-signature-details="showSidebarSignatureDetails"
         :editable="editable"
         :show-logo="false"
         container-class="flex h-full flex-col gap-0"
@@ -123,9 +125,17 @@ const props = defineProps({
     type: String,
     default: "Usuario"
   },
+  sidebarSubtitle: {
+    type: String,
+    default: "Cuenta institucional"
+  },
   signatureMarker: {
     type: String,
     default: ""
+  },
+  showSidebarSignatureDetails: {
+    type: Boolean,
+    default: false
   },
   editable: {
     type: Boolean,

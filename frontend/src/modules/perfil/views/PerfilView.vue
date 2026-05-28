@@ -5,6 +5,7 @@
     current-section="perfil"
     :photo="userPhoto"
     :username="userFullName"
+    sidebar-subtitle="Dossier profesional"
     :signature-marker="signatureMarker"
     editable
     @menu-toggle="handleHeaderToggle"
@@ -17,10 +18,6 @@
   >
     <template #sidebar>
         <div class="flex flex-col">
-            <div class="deasy-nav-meta mt-3 mb-2">
-                Secciones
-            </div>
-
             <div class="deasy-nav-group mt-2">
               <div class="deasy-nav-shell">
               <div class="deasy-nav-section">

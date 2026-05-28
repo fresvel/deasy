@@ -5,6 +5,7 @@
     current-section="admin"
     :photo="userPhoto"
     :username="userFullName"
+    sidebar-subtitle="Administración"
     @menu-toggle="handleHeaderToggle"
     @close-mobile="vmenu = false"
     @notify="toggleNotify"

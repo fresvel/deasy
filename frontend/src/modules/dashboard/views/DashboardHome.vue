@@ -5,6 +5,7 @@
     current-section="dashboard"
     :photo="userPhoto"
     :username="userFullName"
+    :sidebar-subtitle="sidebarContextLabel"
     @menu-toggle="handleHeaderToggle"
     @close-mobile="showMenu = false"
     @notify="toggleNotify"
@@ -20,10 +21,6 @@
 
     <template #sidebar>
         <div v-if="isGlobalSignatureRoute" class="deasy-nav-group scroll-mt-24">
-          <div class="deasy-nav-meta mt-3 mb-2">
-            Centro de firmas
-          </div>
-
           <div class="deasy-nav-group mt-2">
             <div class="deasy-nav-shell">
               <div class="deasy-nav-section">
@@ -52,7 +49,6 @@
         <div v-else id="procesos" class="deasy-nav-group scroll-mt-24">
           <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="unitGroups.length">
             <label class="flex flex-col gap-1.5 relative">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Cargos asignados</span>
               <div class="relative">
                 <button
                   type="button"
@@ -93,9 +89,6 @@
                 </div>
               </div>
             </label>
-          </div>
-          <div v-else class="deasy-nav-meta mt-3 mb-2">
-            {{ menuContextLabel }}
           </div>
 
           <div v-if="menuLoading" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
@@ -171,47 +164,49 @@
             </AppPageIntro>
 
             <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
-              <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
-                <label class="flex flex-col gap-2 xl:col-span-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
-                  <input v-model="documentCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10" />
+              <div class="deasy-filter-shell">
+              <div class="deasy-filter-grid">
+                <label class="deasy-filter-field deasy-filter-search-span">
+                  <span class="sr-only">Buscar</span>
+                  <input v-model="documentCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-filter-search-input" />
                 </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-                  <select v-model="documentCenterFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todos</option>
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Año</span>
+                  <select v-model="documentCenterFilters.year" class="deasy-filter-control">
+                    <option value="all">Año</option>
                     <option v-for="option in documentCenterFilterYears" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
-                  <select v-model="documentCenterFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todos</option>
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Tipo de periodo</span>
+                  <select v-model="documentCenterFilters.termType" class="deasy-filter-control">
+                    <option value="all">Tipo de periodo</option>
                     <option v-for="option in documentCenterFilterTermTypes" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-                  <select v-model="documentCenterFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todas</option>
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Unidad</span>
+                  <select v-model="documentCenterFilters.unit" class="deasy-filter-control">
+                    <option value="all">Unidad</option>
                     <option v-for="option in documentCenterFilterUnits" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-                  <select v-model="documentCenterFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-                    <option value="all">Todos</option>
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Proceso</span>
+                  <select v-model="documentCenterFilters.process" class="deasy-filter-control">
+                    <option value="all">Proceso</option>
                     <option v-for="option in documentCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
               </div>
 
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="text-sm font-medium text-slate-500">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
-                <div class="flex flex-wrap gap-2">
-                  <AppButton variant="softNeutral" size="sm" @click="resetDocumentCenterFilters">Limpiar filtros</AppButton>
-                  <AppButton variant="softPrimary" size="sm" @click="loadDocumentCenterPage">Actualizar</AppButton>
+              <div class="deasy-filter-toolbar">
+                <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
+                <div class="deasy-filter-actions">
+                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetDocumentCenterFilters">Reset</AppButton>
+                  <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="loadDocumentCenterPage">Actualizar</AppButton>
                 </div>
+              </div>
               </div>
 
               <section v-if="documentCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
@@ -1081,81 +1076,81 @@
       content-class="rounded-4 shadow border-0"
       body-class="pt-4"
     >
-      <div class="flex flex-col gap-5">
-        <label class="flex flex-col gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+      <div class="deasy-filter-shell flex flex-col gap-5">
+        <label class="deasy-filter-field">
+          <span class="sr-only">Buscar</span>
           <div class="relative">
             <IconSearch class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               v-model="taskListFilters.query"
               type="text"
               placeholder="Buscar entregables, periodos o unidades"
-              class="block w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+              class="deasy-filter-search-input py-3 pl-11 pr-4"
             />
           </div>
         </label>
 
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-            <select v-model="taskListFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+        <div class="deasy-filter-grid md:grid-cols-3 xl:grid-cols-3">
+          <label class="deasy-filter-field">
+            <span class="sr-only">Año</span>
+            <select v-model="taskListFilters.year" class="deasy-filter-control">
+              <option value="all">Año</option>
               <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipo de periodo</span>
-            <select v-model="taskListFilters.termType" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Tipo de periodo</span>
+            <select v-model="taskListFilters.termType" class="deasy-filter-control">
+              <option value="all">Tipo de periodo</option>
               <option v-for="option in taskFilterTermTypes" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-            <select v-model="taskListFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todas</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Unidad</span>
+            <select v-model="taskListFilters.unit" class="deasy-filter-control">
+              <option value="all">Unidad</option>
               <option v-for="option in taskFilterUnits" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-            <select v-model="taskListFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Proceso</span>
+            <select v-model="taskListFilters.process" class="deasy-filter-control">
+              <option value="all">Proceso</option>
               <option v-for="option in taskFilterProcesses" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Periodo</span>
-            <select v-model="taskListFilters.term" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Periodo</span>
+            <select v-model="taskListFilters.term" class="deasy-filter-control">
+              <option value="all">Periodo</option>
               <option v-for="option in taskFilterTerms" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Estado</span>
-            <select v-model="taskListFilters.status" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Estado</span>
+            <select v-model="taskListFilters.status" class="deasy-filter-control">
+              <option value="all">Estado</option>
               <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Participación</span>
-            <select v-model="taskListFilters.participation" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+          <label class="deasy-filter-field">
+            <span class="sr-only">Participación</span>
+            <select v-model="taskListFilters.participation" class="deasy-filter-control">
               <option v-for="option in taskFilterParticipationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Acción</span>
-            <select v-model="taskListFilters.actionState" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all appearance-none focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
+          <label class="deasy-filter-field">
+            <span class="sr-only">Acción</span>
+            <select v-model="taskListFilters.actionState" class="deasy-filter-control">
               <option v-for="option in taskFilterActionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
         </div>
       </div>
       <template #footer>
-        <AppButton variant="softNeutral" @click="resetTaskListFilters">Limpiar filtros</AppButton>
+        <AppButton variant="softNeutral" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
         <AppButton variant="secondary" @click="closeTaskFiltersModal">Cerrar</AppButton>
-        <AppButton variant="primary" @click="closeTaskFiltersModal">Aplicar</AppButton>
+        <AppButton variant="primary" class-name="deasy-filter-btn" @click="closeTaskFiltersModal">Aplicar</AppButton>
       </template>
     </AdminModalShell>
 
@@ -2696,12 +2691,14 @@ const userFullName = computed(() => {
 });
 const deliverableWorkspaceSubject = computed(() => fillWorkflowState.value.subject || signatureFlowState.value.subject || null);
 
-const menuContextLabel = computed(() => {
-  if (selectedGroupId.value) {
-    const group = unitGroups.value.find((item) => item.id === selectedGroupId.value);
-    return group ? `Área: ${group.label || group.name}` : 'Área seleccionada';
+const sidebarContextLabel = computed(() => {
+  if (isGlobalSignatureRoute.value) {
+    return 'Centro de firmas';
   }
-  return 'Cargos consolidados';
+  if (isDocumentCenterRoute.value) {
+    return 'Centro documental';
+  }
+  return selectedGroupLabel.value;
 });
 
 const selectedGroupLabel = computed(() => {

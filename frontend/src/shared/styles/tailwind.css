@@ -194,6 +194,106 @@
         color: #5e4eff;
     }
 
+    .deasy-filter-shell {
+        @apply rounded-xl border bg-white p-4 shadow-none md:p-5;
+        border-color: #e2e6f0;
+    }
+
+    .deasy-filter-shell--embedded {
+        @apply rounded-none border-0 bg-transparent p-0 md:p-0;
+    }
+
+    .deasy-filter-grid {
+        @apply grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6 xl:items-center;
+    }
+
+    .deasy-filter-grid--admin {
+        @apply lg:grid-cols-12;
+    }
+
+    .deasy-filter-search-span {
+        @apply xl:col-span-2;
+    }
+
+    .deasy-filter-label {
+        @apply text-xs font-medium text-[#343741];
+    }
+
+    .deasy-filter-field {
+        @apply flex flex-col gap-2;
+    }
+
+    .deasy-filter-control {
+        @apply block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
+        border-color: #d7deea;
+    }
+
+    .deasy-filter-control:focus {
+        border-color: #5e4eff;
+        box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+    }
+
+    .deasy-filter-search-row {
+        @apply flex items-center gap-2;
+    }
+
+    .deasy-filter-search-input {
+        @apply block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
+        border-color: #d7deea;
+        min-width: 0;
+    }
+
+    .deasy-filter-search-input:focus {
+        border-color: #5e4eff;
+        box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+    }
+
+    .deasy-filter-toolbar {
+        @apply flex flex-wrap items-center justify-between gap-3 border-t pt-3;
+        border-color: #eef0f5;
+    }
+
+    .deasy-filter-summary {
+        @apply text-sm font-medium text-[#697081];
+    }
+
+    .deasy-filter-summary strong,
+    .deasy-filter-summary span.font-bold {
+        color: #192144;
+    }
+
+    .deasy-filter-actions {
+        @apply flex flex-wrap items-center gap-2 justify-end;
+    }
+
+    .deasy-filter-btn {
+        @apply rounded-lg px-3.5 py-2 text-sm font-medium shadow-none;
+    }
+
+    .deasy-filter-btn.deasy-btn--secondary,
+    .deasy-filter-btn.deasy-btn--soft-neutral {
+        border-color: #d7deea;
+        background: #fff;
+        color: #343741;
+    }
+
+    .deasy-filter-btn.deasy-btn--outline-primary {
+        border-color: #c9c5ff;
+        background: #fff;
+        color: #5e4eff;
+    }
+
+    .deasy-filter-btn.deasy-btn--soft-primary,
+    .deasy-filter-btn.deasy-btn--primary {
+        border-color: transparent;
+        background: #5e4eff;
+        color: #fff;
+    }
+
+    .deasy-filter-btn--icon {
+        @apply h-10 w-10 rounded-lg px-0 py-0;
+    }
+
     .deasy-card {
         @apply rounded-2xl border bg-white shadow-none;
         border-color: var(--deasy-border-soft);

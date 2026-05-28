@@ -17,7 +17,9 @@
           compact
           :photo="photo"
           :username="username"
+          :subtitle="profileSubtitle"
           :signature-marker="signatureMarker"
+          :show-signature-details="false"
           :editable="editable"
           @photo-selected="$emit('photo-selected', $event)"
         />
@@ -39,7 +41,9 @@
         <UserProfile
           :photo="photo"
           :username="username"
+          :subtitle="profileSubtitle"
           :signature-marker="signatureMarker"
+          :show-signature-details="showSignatureDetails"
           :editable="editable"
           @photo-selected="$emit('photo-selected', $event)"
         />
@@ -71,9 +75,17 @@ const props = defineProps({
     type: String,
     default: "Usuario"
   },
+  profileSubtitle: {
+    type: String,
+    default: "Cuenta institucional"
+  },
   signatureMarker: {
     type: String,
     default: ""
+  },
+  showSignatureDetails: {
+    type: Boolean,
+    default: false
   },
   editable: {
     type: Boolean,

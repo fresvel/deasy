@@ -180,49 +180,51 @@
       @close="closePendingModal"
     >
       <div class="flex flex-col gap-5 p-6">
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <label class="flex flex-col gap-2 xl:col-span-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Buscar</span>
+        <div class="deasy-filter-shell">
+          <div class="deasy-filter-grid xl:grid-cols-5">
+            <label class="deasy-filter-field xl:col-span-2">
+            <span class="sr-only">Buscar</span>
             <input
               v-model="tableFilters.query"
               type="text"
               placeholder="Documento, proceso, unidad o paso"
-              class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+              class="deasy-filter-search-input"
             />
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Año</span>
-            <select v-model="tableFilters.year" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Año</span>
+            <select v-model="tableFilters.year" class="deasy-filter-control">
+              <option value="all">Año</option>
               <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidad</span>
-            <select v-model="tableFilters.unit" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todas</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Unidad</span>
+            <select v-model="tableFilters.unit" class="deasy-filter-control">
+              <option value="all">Unidad</option>
               <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Proceso</span>
-            <select v-model="tableFilters.process" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10">
-              <option value="all">Todos</option>
+          <label class="deasy-filter-field">
+            <span class="sr-only">Proceso</span>
+            <select v-model="tableFilters.process" class="deasy-filter-control">
+              <option value="all">Proceso</option>
               <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-        </div>
+          </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="text-sm font-medium text-slate-500">
+          <div class="deasy-filter-toolbar">
+          <div class="deasy-filter-summary">
             Seleccionados: <span class="font-bold text-slate-700">{{ selectedItems.length }}</span>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <AppButton variant="softNeutral" size="sm" @click="resetTableFilters">Limpiar filtros</AppButton>
-            <AppButton variant="softPrimary" size="sm" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
+          <div class="deasy-filter-actions">
+            <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
+            <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
               {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
             </AppButton>
           </div>
+        </div>
         </div>
 
         <AppDataTable

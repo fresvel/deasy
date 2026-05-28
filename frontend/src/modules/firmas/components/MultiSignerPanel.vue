@@ -17,19 +17,19 @@
 
           <div
             v-if="showDocumentFilters"
-            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            class="deasy-filter-shell"
           >
             <div class="grid grid-cols-1 gap-3">
-              <label class="flex flex-col gap-1.5">
+              <label class="deasy-filter-field">
                 <span class="sr-only">
                   Buscar
                 </span>
-                <div class="flex items-center gap-2">
+                <div class="deasy-filter-search-row">
                   <input
                     v-model="filters.query"
                     type="text"
                     placeholder="Buscar por documento, proceso, unidad o periodo"
-                    class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
+                    class="deasy-filter-search-input"
                   />
                   <AdminButton
                     variant="secondary"
@@ -37,7 +37,7 @@
                     icon-only
                     title="Limpiar filtros"
                     aria-label="Limpiar filtros"
-                    class-name="shrink-0"
+                    class-name="deasy-filter-btn deasy-filter-btn--icon shrink-0"
                     @click="resetFilters"
                   >
                     <IconX class="h-4 w-4" stroke-width="2.5" />
@@ -46,30 +46,30 @@
               </label>
 
               <div class="grid grid-cols-1 gap-3">
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Unidad</span>
-                  <select v-model="filters.unit" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.unit" class="deasy-filter-control">
                     <option value="all">Unidad: Todas</option>
                     <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Proceso</span>
-                  <select v-model="filters.process" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.process" class="deasy-filter-control">
                     <option value="all">Proceso: Todos</option>
                     <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Año</span>
-                  <select v-model="filters.year" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.year" class="deasy-filter-control">
                     <option value="all">Año: Todos</option>
                     <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Periodo</span>
-                  <select v-model="filters.period" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.period" class="deasy-filter-control">
                     <option value="all">Periodo: Todos</option>
                     <option v-for="option in periodOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
