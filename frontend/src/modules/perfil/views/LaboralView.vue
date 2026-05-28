@@ -7,8 +7,13 @@
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
+    <ProfileSubsectionTabs
+      v-model="activeTab"
+      aria-label="Tipos de experiencia laboral"
+      :tabs="experienceTabs"
+    />
 
-    <ProfileTableBlock title="Experiencia profesional">
+    <ProfileTableBlock v-if="activeTab === 'profesional'" title="Experiencia profesional">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -54,7 +59,7 @@
         </div>
     </ProfileTableBlock>
 
-    <ProfileTableBlock title="Experiencia docente">
+    <ProfileTableBlock v-else title="Experiencia docente">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -149,6 +154,7 @@ import AgregarExperiencia from "@/modules/perfil/components/AgregarExperiencia.v
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
@@ -164,6 +170,7 @@ const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
+const activeTab = ref("profesional");
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -177,6 +184,11 @@ const experienciaProfesional = computed(() => {
     if (!dossier.value || !dossier.value.experiencia) return [];
     return dossier.value.experiencia.filter(e => e.tipo === 'Profesional');
 });
+
+const experienceTabs = computed(() => ([
+    { key: "profesional", label: "Profesional", count: experienciaProfesional.value.length },
+    { key: "docente", label: "Docente", count: experienciaDocente.value.length },
+]));
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 

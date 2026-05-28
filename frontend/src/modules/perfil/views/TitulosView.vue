@@ -7,8 +7,14 @@
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
+      <ProfileSubsectionTabs
+        v-model="activeTab"
+        aria-label="Tipos de formación profesional"
+        :tabs="titleTabs"
+      />
+
       <!-- Títulos de Cuarto Nivel -->
-      <ProfileTableBlock title="Títulos de Cuarto Nivel">
+      <ProfileTableBlock v-if="activeTab === 'cuarto-nivel'" title="Títulos de Cuarto Nivel">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -57,7 +63,7 @@
       </ProfileTableBlock>
 
       <!-- Títulos de Grado -->
-      <ProfileTableBlock title="Títulos de Grado">
+      <ProfileTableBlock v-else-if="activeTab === 'grado'" title="Títulos de Grado">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -106,7 +112,7 @@
       </ProfileTableBlock>
 
       <!-- Títulos Técnicos y Tecnológicos -->
-      <ProfileTableBlock title="Títulos Técnicos y Tecnológicos">
+      <ProfileTableBlock v-else title="Títulos Técnicos y Tecnológicos">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -201,6 +207,7 @@ import AgregarTitulo from "@/modules/perfil/components/AgregarTitulo.vue";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
@@ -218,6 +225,7 @@ const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
+const activeTab = ref("cuarto-nivel");
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -237,6 +245,12 @@ const titulosCuartoNivel = computed(() => {
     const quartoLevels = ['Maestría', 'Maestría Tecnológica', 'Diplomado', 'Doctorado', 'Posdoctorado'];
     return dossier.value.titulos.filter(t => quartoLevels.includes(t.nivel));
 });
+
+const titleTabs = computed(() => ([
+    { key: "cuarto-nivel", label: "Cuarto Nivel", count: titulosCuartoNivel.value.length },
+    { key: "grado", label: "Grado", count: titulosGrado.value.length },
+    { key: "tecnicos", label: "Técnicos y Tecnológicos", count: titulosTecnicos.value.length },
+]));
 
 const loadDossier = async () => {
     try {

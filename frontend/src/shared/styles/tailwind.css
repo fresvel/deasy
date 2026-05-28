@@ -153,6 +153,30 @@
         @apply border-blue-200 bg-blue-50 text-blue-700;
     }
 
+    .deasy-inline-tabs {
+        @apply mb-5 flex overflow-x-auto border-b border-[#e2e6f0] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+    }
+
+    .deasy-inline-tab {
+        @apply inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-[0.95rem] font-medium text-[#5a5f6f] transition-colors hover:text-[#192144] focus:outline-none focus:ring-2 focus:ring-[#5e4eff]/15;
+    }
+
+    .deasy-inline-tab--active {
+        color: #5e4eff;
+        border-bottom-color: #5e4eff;
+    }
+
+    .deasy-inline-tab__badge {
+        @apply inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold;
+        background: #f1f3f8;
+        color: #5a5f6f;
+    }
+
+    .deasy-inline-tab__badge--active {
+        background: #efedff;
+        color: #5e4eff;
+    }
+
     .deasy-card {
         @apply rounded-2xl border bg-white shadow-none;
         border-color: var(--deasy-border-soft);

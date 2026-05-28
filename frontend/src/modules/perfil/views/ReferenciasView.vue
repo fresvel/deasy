@@ -7,8 +7,14 @@
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
+      <ProfileSubsectionTabs
+        v-model="activeTab"
+        aria-label="Tipos de referencias"
+        :tabs="referenceTabs"
+      />
+
       <!-- Referencias Laborales -->
-      <ProfileTableBlock title="Referencias laborales">
+      <ProfileTableBlock v-if="activeTab === 'laborales'" title="Referencias laborales">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -55,7 +61,7 @@
       </ProfileTableBlock>
 
       <!-- Referencias Familiares -->
-      <ProfileTableBlock title="Referencias familiares">
+      <ProfileTableBlock v-else-if="activeTab === 'familiares'" title="Referencias familiares">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -100,7 +106,7 @@
       </ProfileTableBlock>
 
       <!-- Referencias Personales -->
-      <ProfileTableBlock title="Referencias personales">
+      <ProfileTableBlock v-else title="Referencias personales">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -190,6 +196,7 @@ import AgregarReferencia from "@/modules/perfil/components/AgregarReferencia.vue
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
@@ -206,6 +213,7 @@ const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
+const activeTab = ref("laborales");
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -224,6 +232,12 @@ const referenciasPersonales = computed(() => {
     if (!dossier.value || !dossier.value.referencias) return [];
     return dossier.value.referencias.filter(r => r.tipo === 'personal');
 });
+
+const referenceTabs = computed(() => ([
+    { key: "laborales", label: "Laborales", count: referenciasLaborales.value.length },
+    { key: "familiares", label: "Familiares", count: referenciasFamiliares.value.length },
+    { key: "personales", label: "Personales", count: referenciasPersonales.value.length },
+]));
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 

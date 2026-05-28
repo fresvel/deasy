@@ -7,8 +7,13 @@
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
+    <ProfileSubsectionTabs
+      v-model="activeTab"
+      aria-label="Tipos de capacitación"
+      :tabs="trainingTabs"
+    />
 
-    <ProfileTableBlock title="Capacitación en el área docente">
+    <ProfileTableBlock v-if="activeTab === 'docente'" title="Capacitación en el área docente">
       <div class="profile-table-shell">
         <table class="w-full text-sm text-left border-collapse min-w-max">
           <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -60,7 +65,7 @@
       </div>
     </ProfileTableBlock>
 
-    <ProfileTableBlock title="Capacitación profesional">
+    <ProfileTableBlock v-else title="Capacitación profesional">
       <div class="profile-table-shell">
         <table class="w-full text-sm text-left border-collapse min-w-max">
           <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -181,6 +186,7 @@ import RowActionMenu from "@/shared/components/data/RowActionMenu.vue";
 import DossierService from "@/modules/dossier/services/DossierService";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
 import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
@@ -197,6 +203,7 @@ const dossier = ref(null);
 const loading = ref(true);
 const currentUser = ref(null);
 const pendingEdit = ref(null);
+const activeTab = ref("docente");
 let modalInstance = null;
 let editModalInstance = null;
 let deleteInstance = null;
@@ -213,6 +220,11 @@ const capacitacionesProfesionales = computed(() => {
     if (!dossier.value || !dossier.value.formacion) return [];
     return dossier.value.formacion.filter(c => c.tipo === 'Profesional');
 });
+
+const trainingTabs = computed(() => ([
+    { key: "docente", label: "Docente", count: capacitacionesDocentes.value.length },
+    { key: "profesional", label: "Profesional", count: capacitacionesProfesionales.value.length },
+]));
 
 // Formatear fecha para mostrar
 const formatDate = (date) => {

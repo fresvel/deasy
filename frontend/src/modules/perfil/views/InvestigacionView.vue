@@ -7,8 +7,14 @@
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openAddModal"
     >
+      <ProfileSubsectionTabs
+        v-model="activeTab"
+        aria-label="Tipos de producción académica"
+        :tabs="researchTabs"
+      />
+
       <!-- Artículos -->
-      <ProfileTableBlock title="Artículos">
+      <ProfileTableBlock v-if="activeTab === 'articulos'" title="Artículos">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -59,7 +65,7 @@
       </ProfileTableBlock>
 
       <!-- Libros -->
-      <ProfileTableBlock title="Libros y capítulos">
+      <ProfileTableBlock v-else-if="activeTab === 'libros'" title="Libros y capítulos">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -108,7 +114,7 @@
       </ProfileTableBlock>
 
       <!-- Ponencias -->
-      <ProfileTableBlock title="Ponencias">
+      <ProfileTableBlock v-else-if="activeTab === 'ponencias'" title="Ponencias">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -153,7 +159,7 @@
       </ProfileTableBlock>
 
       <!-- Tesis -->
-      <ProfileTableBlock title="Tesis dirigidas o revisadas">
+      <ProfileTableBlock v-else-if="activeTab === 'tesis'" title="Tesis dirigidas o revisadas">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -202,7 +208,7 @@
       </ProfileTableBlock>
 
       <!-- Proyectos -->
-      <ProfileTableBlock title="Proyectos">
+      <ProfileTableBlock v-else title="Proyectos">
         <div class="profile-table-shell mt-4">
           <table class="w-full text-sm text-left border-collapse min-w-max">
             <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -299,6 +305,7 @@ import { Modal } from "@/shared/utils/modalController";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
 import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import AgregarInvestigacion from "@/modules/perfil/components/AgregarInvestigacion.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
@@ -318,6 +325,7 @@ const pendingEdit = ref(null);
 const pendingType = ref("articulos");
 const pendingDelete = ref(null);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
+const activeTab = ref("articulos");
 
 let modalInstance = null;
 let deleteInstance = null;
@@ -328,6 +336,14 @@ const libros = computed(() => investigacion.value?.libros || []);
 const ponencias = computed(() => investigacion.value?.ponencias || []);
 const tesis = computed(() => investigacion.value?.tesis || []);
 const proyectos = computed(() => investigacion.value?.proyectos || []);
+
+const researchTabs = computed(() => ([
+  { key: "articulos", label: "Artículos", count: articulos.value.length },
+  { key: "libros", label: "Libros y capítulos", count: libros.value.length },
+  { key: "ponencias", label: "Ponencias", count: ponencias.value.length },
+  { key: "tesis", label: "Tesis", count: tesis.value.length },
+  { key: "proyectos", label: "Proyectos", count: proyectos.value.length },
+]));
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
