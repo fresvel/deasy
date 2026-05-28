@@ -1,25 +1,11 @@
 <template>
-  <div class="profile-section-header">
-    <div>
-      <h2 class="text-start profile-section-title table-title-with-icon">
-        <span
-          class="table-title-icon"
-          :class="{ 'is-template-artifacts': isTemplateArtifactsTable }"
-          aria-hidden="true"
-        >
-          <font-awesome-icon :icon="tableHeaderIcon" />
-        </span>
-        <span>{{ tableHeaderTitle }}</span>
-      </h2>
-      <p class="profile-section-subtitle">
-        {{ tableHeaderSubtitle }}
-      </p>
-    </div>
-    <div class="profile-section-actions">
+  <div class="admin-page-header">
+    <div class="admin-page-header__main" />
+    <div class="admin-page-header__actions">
       <div class="flex flex-wrap items-center gap-2">
         <AdminButton
           variant="secondary"
-          size="lg"
+          size="sm"
           :disabled="!table"
           title="Regresar"
           aria-label="Regresar"
@@ -30,7 +16,7 @@
         <AdminButton
           v-if="isTemplateSeedsTable && canUpdate"
           variant="secondary"
-          size="lg"
+          size="sm"
           :disabled="!table || loading"
           @click="$emit('sync-template-seeds')"
         >
@@ -40,7 +26,7 @@
         <AdminButton
           v-if="isTemplateArtifactsTable && canUpdate"
           variant="secondary"
-          size="lg"
+          size="sm"
           :disabled="!table || loading"
           @click="$emit('sync-template-artifacts')"
         >
@@ -50,8 +36,8 @@
         <AdminButton
           v-if="canCreate"
           variant="primary"
-          size="lg"
-          class-name="profile-add-btn"
+          size="md"
+          class-name="admin-page-header__create"
           :disabled="!table"
           title="Agregar"
           aria-label="Agregar"

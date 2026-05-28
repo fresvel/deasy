@@ -14,7 +14,7 @@
               />
             </div>
 
-            <template v-if="isPositionFilterTable">
+            <template v-if="showAdvancedFilters && isPositionFilterTable">
               <div class="md:col-span-4 lg:col-span-2">
                 <AdminSelectField :model-value="unitPositionFilters.unit_type_id" select-class="deasy-filter-control" :disabled="unitPositionFilterLoading" @update:model-value="updateUnitPositionFilter('unit_type_id', $event)" @change="$emit('handle-unit-position-type-change')">
                   <option value="">Tipo de unidad</option>
@@ -41,7 +41,7 @@
               </div>
             </template>
 
-            <template v-else-if="isProcessDefinitionFilterTable">
+            <template v-else-if="showAdvancedFilters && isProcessDefinitionFilterTable">
               <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processDefinitionInlineFilters.process_id" select-class="deasy-filter-control" @update:model-value="updateProcessDefinitionFilter('process_id', $event)" @change="$emit('fetch-rows')">
                   <option value="">Proceso</option>
@@ -68,7 +68,7 @@
               </div>
             </template>
 
-            <template v-else-if="isProcessTargetRuleFilterTable">
+            <template v-else-if="showAdvancedFilters && isProcessTargetRuleFilterTable">
               <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="processTargetRuleInlineFilters.definition_status" select-class="deasy-filter-control" @update:model-value="updateProcessTargetRuleFilter('definition_status', $event)" @change="$emit('fetch-rows')">
                   <option value="">Estado</option>
@@ -79,7 +79,7 @@
               </div>
             </template>
 
-            <template v-else-if="isTemplateArtifactsTable">
+            <template v-else-if="showAdvancedFilters && isTemplateArtifactsTable">
               <div class="md:col-span-6 lg:col-span-2">
                 <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_origin" select-class="deasy-filter-control" @update:model-value="updateTemplateArtifactFilter('artifact_origin', $event)" @change="$emit('fetch-rows')">
                   <option value="">Catalogo</option>
@@ -108,7 +108,8 @@
                   :disabled="!searchTerm"
                   @click="resetGenericSearch"
                 >
-                  Reset
+                  <font-awesome-icon icon="times" />
+                  <span>Reset</span>
                 </AdminButton>
                 <AdminButton
                   v-if="isPositionFilterTable"
@@ -120,7 +121,8 @@
                   :disabled="!hasUnitPositionFilters"
                   @click="$emit('clear-unit-position-inline-filters')"
                 >
-                  Reset
+                  <font-awesome-icon icon="times" />
+                  <span>Reset</span>
                 </AdminButton>
                 <AdminButton
                   v-else-if="isProcessDefinitionFilterTable"
@@ -132,7 +134,8 @@
                   :disabled="!hasProcessDefinitionInlineFilters"
                   @click="$emit('clear-process-definition-inline-filters')"
                 >
-                  Reset
+                  <font-awesome-icon icon="times" />
+                  <span>Reset</span>
                 </AdminButton>
                 <AdminButton
                   v-else-if="isProcessTargetRuleFilterTable"
@@ -144,7 +147,8 @@
                   :disabled="!hasProcessTargetRuleInlineFilters"
                   @click="$emit('clear-process-target-rule-inline-filters')"
                 >
-                  Reset
+                  <font-awesome-icon icon="times" />
+                  <span>Reset</span>
                 </AdminButton>
                 <AdminButton
                   v-else-if="isTemplateArtifactsTable"
@@ -156,15 +160,35 @@
                   :disabled="!hasTemplateArtifactInlineFilters"
                   @click="$emit('clear-template-artifact-inline-filters')"
                 >
-                  Reset
+                  <font-awesome-icon icon="times" />
+                  <span>Reset</span>
                 </AdminButton>
                 <AdminButton variant="outlinePrimary" size="sm" class-name="deasy-filter-btn" title="Buscar" aria-label="Buscar" @click="$emit('fetch-rows')">
-                  Buscar
+                  <font-awesome-icon icon="search" />
+                  <span>Search</span>
                 </AdminButton>
-                <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Actualizar" aria-label="Actualizar" @click="$emit('fetch-rows')">
-                  Actualizar
+                <AdminButton
+                  v-if="hasExpandableFilters"
+                  variant="secondary"
+                  size="sm"
+                  icon-only
+                  class-name="deasy-filter-btn deasy-filter-btn--icon"
+                  :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                  :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                  @click="showAdvancedFilters = !showAdvancedFilters"
+                >
+                  <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
                 </AdminButton>
               </div>
+            </div>
+          </div>
+          <div class="deasy-filter-toolbar">
+            <div class="deasy-filter-summary"></div>
+            <div class="deasy-filter-actions">
+              <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('fetch-rows')">
+                <font-awesome-icon icon="rotate-right" />
+                <span>Refresh</span>
+              </AdminButton>
             </div>
           </div>
           </div>
@@ -348,6 +372,13 @@ const actionColumnClass = computed(() => (
         props.isTemplateArtifactsTable ? "lg:col-span-3 lg:justify-self-end" :
           "md:col-span-6 md:justify-self-end"
 ));
+const hasExpandableFilters = computed(() =>
+  props.isPositionFilterTable ||
+  props.isProcessDefinitionFilterTable ||
+  props.isProcessTargetRuleFilterTable ||
+  props.isTemplateArtifactsTable
+);
+const showAdvancedFilters = ref(false);
 
 const updateUnitPositionFilter = (field, value) => emit("update:unit-position-filters", { ...props.unitPositionFilters, [field]: value });
 const updateProcessDefinitionFilter = (field, value) => emit("update:process-definition-inline-filters", { ...props.processDefinitionInlineFilters, [field]: value });

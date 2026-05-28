@@ -1,5 +1,5 @@
 <template>
-  <div class="py-4">
+  <div class="admin-table-manager">
     <AdminFeedbackToast
       :visible="feedbackToast.visible"
       :kind="feedbackToast.kind"

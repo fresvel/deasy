@@ -14,6 +14,17 @@
     @primary-nav="handlePrimaryNavInteraction"
   >
 
+      <template #header>
+        <div class="deasy-context-header">
+          <div class="deasy-context-header__copy">
+            <div class="deasy-context-header__title">{{ adminShellHeaderTitle }}</div>
+            <div v-if="adminShellHeaderSubtitle" class="deasy-context-header__subtitle">
+              {{ adminShellHeaderSubtitle }}
+            </div>
+          </div>
+        </div>
+      </template>
+
       <template #sidebar>
 
           <div class="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 xl:max-h-[calc(100vh-14rem)] custom-scrollbar">
@@ -399,7 +410,7 @@
           </div>
         </div>
 
-        <div v-else class="admin-workspace-frame w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
+        <div v-else class="admin-workspace-frame admin-workspace-frame--table w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
           <div class="admin-page admin-typography w-full h-full relative overflow-y-auto">
              <AdminTableManager
                ref="adminManager"
@@ -932,6 +943,18 @@ const adminHeroKicker = computed(() =>
   : showAcademyCrudIndex.value || showGestionCrudIndex.value || showUsersCrudIndex.value || showContractsCrudIndex.value || showSecurityCrudIndex.value || showGroupCrudIndex.value
     ? 'Índice de gestión'
     : 'Administración'
+);
+
+const adminShellHeaderTitle = computed(() =>
+  selectedTable.value
+    ? (selectedTable.value.label || adminHeroTitle.value)
+    : adminHeroTitle.value
+);
+
+const adminShellHeaderSubtitle = computed(() =>
+  selectedTable.value
+    ? (selectedTable.value.description || adminHeroDescription.value)
+    : adminHeroDescription.value
 );
 
 const handleHeroBack = () => {

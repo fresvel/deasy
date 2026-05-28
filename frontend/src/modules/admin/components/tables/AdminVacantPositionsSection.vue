@@ -20,25 +20,25 @@
             <div class="md:col-span-4 lg:col-span-2">
               <AdminInputField :model-value="searchTerm" input-class="deasy-filter-control" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.unit_type_id" select-class="deasy-filter-control" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
                 <option value="">Tipo de unidad</option>
                 <option v-for="row in unitTypeOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("unit_types", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.unit_id" select-class="deasy-filter-control" :disabled="!filters.unit_type_id || filterLoading" @update:model-value="updateFilter('unit_id', $event)" @change="$emit('handle-unit-change')">
                 <option value="">Unidad</option>
                 <option v-for="row in unitOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("units", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.cargo_id" select-class="deasy-filter-control" :disabled="filterLoading" @update:model-value="updateFilter('cargo_id', $event)" @change="$emit('handle-cargo-change')">
                 <option value="">Cargo</option>
                 <option v-for="row in cargoOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("cargos", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
               <AdminSelectField :model-value="filters.position_type" select-class="deasy-filter-control" :disabled="filterLoading" @update:model-value="updateFilter('position_type', $event)" @change="$emit('handle-position-type-filter-change')">
                 <option value="">Tipo de puesto</option>
                 <option value="real">Real</option>
@@ -49,15 +49,34 @@
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
               <div class="deasy-filter-actions">
                 <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  Reset
+                  <font-awesome-icon icon="times" />
+                  <span>Reset</span>
                 </AdminButton>
                 <AdminButton variant="outlinePrimary" size="sm" class-name="deasy-filter-btn" title="Buscar" aria-label="Buscar" @click="$emit('load')">
-                  Buscar
+                  <font-awesome-icon icon="search" />
+                  <span>Search</span>
                 </AdminButton>
-                <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
-                  Actualizar
+                <AdminButton
+                  variant="secondary"
+                  size="sm"
+                  icon-only
+                  class-name="deasy-filter-btn deasy-filter-btn--icon"
+                  :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                  :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                  @click="showAdvancedFilters = !showAdvancedFilters"
+                >
+                  <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
                 </AdminButton>
               </div>
+            </div>
+          </div>
+          <div class="deasy-filter-toolbar">
+            <div class="deasy-filter-summary"></div>
+            <div class="deasy-filter-actions">
+              <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('load')">
+                <font-awesome-icon icon="rotate-right" />
+                <span>Refresh</span>
+              </AdminButton>
             </div>
           </div>
           </div>
@@ -98,6 +117,7 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
@@ -124,6 +144,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:search-term", "update:filters", "debounced-search", "handle-type-change", "handle-unit-change", "handle-cargo-change", "handle-position-type-filter-change", "clear-filters", "load", "deactivate", "assign"]);
+
+const showAdvancedFilters = ref(false);
 
 const updateFilter = (field, value) => emit("update:filters", { ...props.filters, [field]: value });
 </script>

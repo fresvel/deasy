@@ -340,17 +340,25 @@ a:hover {
   padding: 0.5rem;
 }
 
+.admin-workspace-frame--table {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
 .admin-surface-frame {
   border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 0.85rem;
+  border-radius: 1rem;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
-  padding: 1rem;
+  box-shadow: none;
+  padding: 0.95rem;
 }
 
 @media (min-width: 640px) {
   .admin-surface-frame {
-    padding: 1.15rem;
+    padding: 1rem 1.1rem 1.1rem;
   }
 }
 
@@ -534,6 +542,90 @@ a:hover {
   margin-bottom: 1rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
   padding-bottom: 0.85rem;
+}
+
+.admin-table-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0;
+}
+
+.admin-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0 0.85rem;
+  border-bottom: 1px solid #eef0f5;
+  margin-bottom: 0;
+}
+
+.admin-page-header__main {
+  min-width: 0;
+}
+
+.admin-page-header__title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #192144;
+}
+
+.admin-page-header__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: #697081;
+}
+
+.admin-page-header__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef4ff;
+  border: 1px solid rgba(94, 78, 255, 0.14);
+  color: #5e4eff;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+}
+
+.admin-page-header__icon.is-template-artifacts {
+  background: #eef4ff;
+  border-color: rgba(94, 78, 255, 0.16);
+  color: #5e4eff;
+}
+
+.admin-page-header__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  flex: 0 0 auto;
+}
+
+.admin-page-header__actions .admin-btn {
+  min-height: 2.45rem;
+}
+
+.admin-page-header__actions .deasy-btn--sm {
+  padding-inline: 0.9rem;
+  font-size: 0.88rem;
+}
+
+.admin-page-header__actions .deasy-btn--md {
+  padding-inline: 1rem;
+  font-size: 0.94rem;
+}
+
+.admin-page-header__create {
+  min-width: 8.75rem;
 }
 
 .profile-section-title {
@@ -1654,6 +1746,10 @@ html[data-environment="local-dev"] .table-institutional {
   background-color: #ffffff !important;
 }
 
+html[data-environment="local-dev"] .admin-workspace-frame--table {
+  background-color: transparent !important;
+}
+
 html[data-environment="local-dev"] .deasy-auth-page {
   background:
     linear-gradient(180deg, #ffffff 0%, #f7f9fc 46%, #f3f5fa 100%) !important;
@@ -1693,6 +1789,11 @@ html[data-environment="local-dev"] .admin-workspace-frame,
 html[data-environment="local-dev"] .admin-surface-frame,
 html[data-environment="local-dev"] .profile-table-shell {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-environment="local-dev"] .admin-workspace-frame--table {
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 html[data-environment="local-dev"] .deasy-field-input,

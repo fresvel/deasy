@@ -78,6 +78,22 @@
         @apply flex shrink-0 items-center gap-1.5 sm:gap-2;
     }
 
+    .deasy-context-header {
+        @apply flex min-w-0 items-center gap-3;
+    }
+
+    .deasy-context-header__copy {
+        @apply min-w-0;
+    }
+
+    .deasy-context-header__title {
+        @apply truncate text-[1.05rem] font-semibold leading-tight text-white;
+    }
+
+    .deasy-context-header__subtitle {
+        @apply mt-0.5 truncate text-[0.8rem] leading-tight text-white/55;
+    }
+
     .deasy-primary-nav {
         @apply flex min-w-max shrink-0 items-center gap-2 rounded-lg border px-2.5 py-2 shadow-none;
         border-color: rgba(255, 255, 255, 0.08);
@@ -195,7 +211,7 @@
     }
 
     .deasy-filter-shell {
-        @apply rounded-xl border bg-white p-4 shadow-none md:p-5;
+        @apply rounded-xl border bg-white p-4 shadow-none md:p-4;
         border-color: #e2e6f0;
     }
 
@@ -224,7 +240,7 @@
     }
 
     .deasy-filter-control {
-        @apply block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
         border-color: #d7deea;
     }
 
@@ -238,7 +254,7 @@
     }
 
     .deasy-filter-search-input {
-        @apply block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
+        @apply block h-10 w-full rounded-[10px] border bg-white px-3 py-2 text-sm text-[#343741] shadow-none outline-none transition placeholder:text-[#8a93a8];
         border-color: #d7deea;
         min-width: 0;
     }
@@ -267,7 +283,7 @@
     }
 
     .deasy-filter-btn {
-        @apply rounded-lg px-3.5 py-2 text-sm font-medium shadow-none;
+        @apply inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 py-0 text-sm font-medium shadow-none;
     }
 
     .deasy-filter-btn.deasy-btn--secondary,
@@ -291,7 +307,13 @@
     }
 
     .deasy-filter-btn--icon {
-        @apply h-10 w-10 rounded-lg px-0 py-0;
+        @apply h-10 w-10 rounded-[10px] px-0 py-0 justify-center;
+    }
+
+    .deasy-filter-btn .deasy-fa-icon {
+        width: 1rem;
+        height: 1rem;
+        flex: 0 0 auto;
     }
 
     .deasy-card {

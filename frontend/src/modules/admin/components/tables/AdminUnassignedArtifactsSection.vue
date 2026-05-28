@@ -15,24 +15,37 @@
         </div>
       </div>
       <div class="admin-surface-frame">
-          <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
-            <div class="md:col-span-4 lg:col-span-3">
-              <AdminInputField :model-value="searchTerm" placeholder="Buscar artifacts sin definicion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+          <div class="deasy-filter-shell deasy-filter-shell--embedded">
+            <div class="deasy-filter-grid deasy-filter-grid--admin">
+              <div class="md:col-span-4 lg:col-span-3">
+                <AdminInputField :model-value="searchTerm" input-class="deasy-filter-control" placeholder="Buscar artifacts sin definicion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+              </div>
+              <div class="md:col-span-4 lg:col-span-2">
+                <AdminSelectField :model-value="filters.is_active" select-class="deasy-filter-control" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
+                  <option value="">Activo</option>
+                  <option value="1">Si</option>
+                  <option value="0">No</option>
+                </AdminSelectField>
+              </div>
+              <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
+                <div class="deasy-filter-actions">
+                  <AdminButton variant="secondary" size="sm" class-name="deasy-filter-btn" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
+                    <font-awesome-icon icon="times" />
+                    <span>Reset</span>
+                  </AdminButton>
+                  <AdminButton variant="outlinePrimary" size="sm" class-name="deasy-filter-btn" title="Buscar" aria-label="Buscar" @click="$emit('load')">
+                    <font-awesome-icon icon="search" />
+                    <span>Search</span>
+                  </AdminButton>
+                </div>
+              </div>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.is_active" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
-                <option value="">Activo</option>
-                <option value="1">Si</option>
-                <option value="0">No</option>
-              </AdminSelectField>
-            </div>
-            <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
-              <div class="inline-flex items-center gap-2">
-                <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  <font-awesome-icon icon="times" />
-                </AdminButton>
-                <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
+            <div class="deasy-filter-toolbar">
+              <div class="deasy-filter-summary"></div>
+              <div class="deasy-filter-actions">
+                <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('load')">
                   <font-awesome-icon icon="rotate-right" />
+                  <span>Refresh</span>
                 </AdminButton>
               </div>
             </div>
