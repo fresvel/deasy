@@ -5,7 +5,7 @@
 Revisar y estabilizar el flujo de firmas del proceso `Requerimiento Docente`,
 priorizando:
 
-- consistencia entre estado documental, snapshot del flujo y UX del dashboard,
+- consistencia entre estado documental, snapshot del flujo y UX del home,
 - trazabilidad real de las solicitudes de firma por paso,
 - y el error reportado donde una firma aparentemente correcta termina
   mostrándose como error en el modal.
@@ -23,7 +23,7 @@ La revisión debe cubrir el flujo documental activo del proceso:
 - definición `Requerimiento Docente`,
 - documento pendiente de firma,
 - secuencia multirol configurada para sus seis pasos,
-- y navegación operativa desde dashboard hasta el entregable.
+- y navegación operativa desde home hasta el entregable.
 
 ### 2. Validar consistencia backend/frontend
 
@@ -34,7 +34,7 @@ El sistema debe mantener coherencia entre:
 - `document_signatures`,
 - estado de `document_versions`,
 - snapshot entregado por `GET /sign/documents/:documentVersionId/signature-flow`,
-- y componentes de dashboard / firmador embebido.
+- y componentes de home / firmador embebido.
 
 ### 3. Revisar el error del modal post-firma
 
@@ -94,7 +94,7 @@ Resultado validado en entorno activo:
 
 Impacto resuelto:
 
-- el dashboard no puede habilitar correctamente el firmador embebido,
+- el home no puede habilitar correctamente el firmador embebido,
 - la vista de flujo pierde trazabilidad operativa,
 - y el estado visible del flujo no coincide con la realidad de negocio.
 
@@ -240,4 +240,4 @@ Esta fase se considera cerrada cuando se cumplan todos estos puntos:
 - el resultado final mostrado en modal coincide con la respuesta real del
   backend,
 - y el avance del documento hacia el siguiente paso de firma queda reflejado en
-  dashboard y backend.
+  home y backend.

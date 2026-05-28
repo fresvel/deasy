@@ -8,7 +8,7 @@ Buenas practicas base para esta tarea:
 - Usar `Requisitos05.md` como fuente de verdad funcional y tecnica.
 - Separar con claridad los flujos disparados por sistema de los flujos
   disparados por usuario.
-- Validar toda decision de dashboard contra los componentes globales y clases
+- Validar toda decision de home contra los componentes globales y clases
   compartidas del frontend antes de introducir patrones nuevos.
 - Registrar decisiones de frontend con Context7 `/vuejs/docs` y decisiones de
   backend con Context7 `/expressjs/express/v5.1.0` cuando el cambio dependa de
@@ -24,9 +24,9 @@ Buenas practicas base para esta tarea:
 5. [x] Diseñar el modelo de tarea manual para usuario comun, separando `tarea general` y `tarea atada a proceso`.
 6. [x] Definir la matriz de actores que pueden disparar procesos manuales usando periodo existente o periodo custom.
 7. [x] Definir quienes pueden actualizar, reinstanciar o corregir corridas de proceso y sus dependencias operativas.
-8. [x] Definir como se modelan entregables y artifacts de usuario dentro de la creacion de tarea desde dashboard.
+8. [x] Definir como se modelan entregables y artifacts de usuario dentro de la creacion de tarea desde home.
 9. [x] Diseñar el flujo de modales requerido para registrar tarea, template/artifact, entregables, flujo de llenado y flujo de firmas.
-10. [x] Implementar en dashboard la accion real `Crear tarea` para usuario comun respetando el sistema de componentes compartidos.
+10. [x] Implementar en home la accion real `Crear tarea` para usuario comun respetando el sistema de componentes compartidos.
 11. [x] Definir la estrategia de relacion entre tareas creadas por usuario y procesos existentes: hija, derivada o clasificacion equivalente.
 12. [x] Rediseñar la vista `Tareas asignadas` hacia una lista de paneles con filtros por año, periodo, tipo, origen y estado.
 13. [x] Ajustar la jerarquia visual de tareas y entregables para reducir ruido operativo sin perder contexto documental.
@@ -34,7 +34,7 @@ Buenas practicas base para esta tarea:
 15. [x] Documentar como se llenan `documents`, `document_versions`, `signature_flow_instances`, `signature_requests` y `document_signatures` en artifacts de catalogo `process`.
 16. [x] Definir y ejecutar una estrategia segura de limpieza de base para pruebas reales del flujo documental y de firmas.
 17. [ ] Convertir `Nueva tarea general` en flujo real con backend, artifacts y entregables personalizados.
-18. [ ] Revisar la politica de `Iniciar` contrastando la logica actual del dashboard con seeds/templates de llenado para fijar la regla definitiva sin romper el contrato.
+18. [ ] Revisar la politica de `Iniciar` contrastando la logica actual del home con seeds/templates de llenado para fijar la regla definitiva sin romper el contrato.
 19. [ ] Refactorizar la base y contratos para incluir `anio` y fechas de inicio/fin en tareas y entregables cuando corresponda.
 20. [ ] Endurecer la politica de versionado para que un artifact publicado que ya disparo tareas quede inmutable y obligue nueva version para cambios de workflow o estructura.
 21. [x] Simplificar los workflows de llenado de templates de investigacion formativa y productiva a un solo paso operado por `document_owner`, preservando el flujo de firmas actual.

@@ -5,7 +5,7 @@
 - Error tipico: `Unknown column 'launch_mode' in 'SELECT'`
 - Contexto: el codigo backend ya fue actualizado, pero la base sigue con un esquema anterior.
 - Estado: esperado si se cambiaron tablas como `tasks`, `task_items`, `documents` o `signature_flow_templates` y no se recreo el esquema.
-- Impacto: listados, CRUDs y paneles del dashboard pueden fallar aunque el frontend este correcto.
+- Impacto: listados, CRUDs y paneles del home pueden fallar aunque el frontend este correcto.
 
 ## Causa habitual
 

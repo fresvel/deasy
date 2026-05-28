@@ -400,7 +400,7 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
       variation_key: "general",
       definition_version: "1.0.0",
       name: "Flujo demo de cuenta",
-      description: "Proceso de prueba para revisar dashboard, documentos, llenado y firma.",
+      description: "Proceso de prueba para revisar home, documentos, llenado y firma.",
       has_document: 1,
       status: "active",
       effective_from: "2026-01-01",

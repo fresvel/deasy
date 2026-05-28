@@ -127,8 +127,8 @@ Para el flujo de templates:
 
 ## Pendientes
 
-- Afinar el flujo operativo del dashboard para seguimiento de tareas derivadas o de subordinados.
+- Afinar el flujo operativo del home para seguimiento de tareas derivadas o de subordinados.
 - Decidir si `artifact_stage` tendrá edición operativa o seguirá siendo principalmente un estado de repositorio.
 - Completar el flujo de generación/edición de documentos desde `task_items`.
-- Completar el flujo operacional de firmas en el dashboard del usuario.
+- Completar el flujo operacional de firmas en el home del usuario.
 - Validar con datos reales las reglas de alcance y los disparadores por tipo de periodo.

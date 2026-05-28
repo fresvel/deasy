@@ -44,6 +44,6 @@ const props = defineProps({
 
 const introClass = computed(() => [
   "deasy-page-intro",
-  props.variant === "dashboard" ? "deasy-page-intro--dashboard" : ""
+  props.variant === "home" ? "deasy-page-intro--home" : ""
 ]);
 </script>

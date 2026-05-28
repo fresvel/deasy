@@ -22,7 +22,7 @@
   - sincronización desde artifacts
   - instanciación parcial desde backend
   - integración base del firmador con signature_requests
-  - modal embebido de firma desde dashboard
+  - modal embebido de firma desde home
 
   Falta:
 
@@ -191,7 +191,7 @@
   - firma y vuelve al panel
   - refresca secuencia del flujo al terminar
 
-### 4. Visibilidad correcta en dashboard
+### 4. Visibilidad correcta en home
 
   Reglas de UI:
 

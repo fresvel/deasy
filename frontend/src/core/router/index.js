@@ -5,27 +5,33 @@ import RecoverPassword from "@/modules/auth/views/RecoverPasswordView.vue";
 import SystemBootstrapView from "@/modules/auth/views/SystemBootstrapView.vue";
 import TermsView from "@/modules/auth/views/TermsView.vue";
 import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
-import DashboardHome from "@/modules/dashboard/views/DashboardHome.vue";
+import HomeView from "@/modules/home/views/HomeView.vue";
 import IndexPage from "@/modules/perfil/views/PerfilView.vue";
 import AdminView from "@/modules/admin/views/AdminView.vue";
 import { isTokenValid, clearAuthData } from "@/core/utils/tokenUtils.js";
-import { canAccessAdmin, getDefaultAuthenticatedRoute, isAdminUser } from "@/core/utils/accessControl.js";
+import {
+  canAccessAdmin,
+  canAccessResource,
+  getDefaultAuthenticatedRoute,
+  hasAnyRole,
+  isAdminUser
+} from "@/core/utils/accessControl.js";
 import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import SystemBootstrapService from "@/modules/auth/services/SystemBootstrapService";
 
 const routes = [
   { path: "/", name: "login", component: Login },
-  { path: "/dashboard", name: "dashboard", component: DashboardHome },
-  { path: "/dashboard/documentos", name: "dashboard-documents", component: DashboardHome },
-  { path: "/dashboard/firmas", name: "dashboard-signatures", component: DashboardHome },
-  { path: "/firmas/herramientas", redirect: { name: "dashboard-signatures" } },
+  { path: "/home", name: "home", component: HomeView },
+  { path: "/home/documentos", name: "home-documents", component: HomeView },
+  { path: "/home/firmas", name: "home-signatures", component: HomeView },
   { path: "/perfil", name: "perfil", component: IndexPage },
   { path: "/register", name: "register", component: Register },
   { path: "/recover-password", name: "recover-password", component: RecoverPassword },
   { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
   { path: "/terminos", name: "terminos", component: TermsView },
   { path: "/admin", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
+  { path: "/procesos", name: "process-management", component: AdminView, meta: { requiresAdminAccess: true, managementSection: "processes" } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
   {
     path: "/logout",
@@ -48,11 +54,16 @@ const router = createRouter({
 });
 
 const adminBlockedRouteNames = new Set([
-  "dashboard",
-  "dashboard-documents",
-  "dashboard-signatures",
+  "home",
+  "home-documents",
+  "home-signatures",
   "perfil"
 ]);
+
+const canAccessProcessManagement = () =>
+  hasAnyRole(["Admin", "Gestor"]) ||
+  canAccessResource("processes", "create") ||
+  canAccessResource("processes", "update");
 
 router.beforeEach(async (to) => {
   const token = localStorage.getItem('token');
@@ -101,8 +112,12 @@ router.beforeEach(async (to) => {
     return '/admin';
   }
 
+  if (to.name === "process-management" && !canAccessProcessManagement()) {
+    return canAccessAdmin() ? '/admin' : '/home';
+  }
+
   if (to.meta?.requiresAdminAccess && !canAccessAdmin()) {
-    return '/dashboard';
+    return '/home';
   }
 });
 

@@ -16,7 +16,7 @@ Buenas practicas base para esta tarea:
   usando `Demo1234!`.
 
 0. [x] Revisar `Requisitos06.md` y convertirlo en hoja de ruta operativa.
-1. [x] Reproducir el acceso real al proceso `Requerimiento Docente` con cuentas demo desde dashboard.
+1. [x] Reproducir el acceso real al proceso `Requerimiento Docente` con cuentas demo desde home.
 2. [x] Confirmar por API que el documento activo del flujo mantiene 6 solicitudes de firma pendientes.
 3. [x] Identificar que el snapshot actual deja `currentSignatureStepOrder = null` y `canOperate = false` pese a existir solicitudes pendientes reales.
 4. [x] Aplicar corrección mínima en backend para que el resumen del flujo soporte tanto filas SQL crudas como objetos serializados.

@@ -72,10 +72,10 @@ const isAdminOnly = computed(() => isAdminUser());
 const navItems = computed(() => {
   return [
     {
-      key: "dashboard",
+      key: "home",
       label: "Home",
-      title: "Ir a dashboard",
-      to: "/dashboard",
+      title: "Ir a Home",
+      to: "/home",
       icon: IconHome
     },
     {

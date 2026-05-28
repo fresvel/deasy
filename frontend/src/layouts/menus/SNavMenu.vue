@@ -7,12 +7,12 @@
       <div class="nav-menu-body deasy-nav-group">
         <router-link 
           v-if="!isAdmin"
-          to="/dashboard" 
+          to="/home" 
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >
           <font-awesome-icon icon="home" />
-          <span>Dashboard</span>
+          <span>Home</span>
         </router-link>
         <router-link 
           v-if="!isAdmin"
@@ -25,7 +25,7 @@
         </router-link>
         <router-link
           v-if="!isAdmin"
-          :to="{ path: '/dashboard', query: { view: 'firmar' } }"
+          :to="{ path: '/home/firmas' }"
           class="nav-menu-item deasy-nav-item"
           @click="$emit('close')"
         >

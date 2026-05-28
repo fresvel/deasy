@@ -106,7 +106,7 @@
           </div>
           <p class="m-0 text-sm font-bold text-slate-700">Sin contexto de proceso</p>
           <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
-            Abre primero un proceso desde el dashboard para dejar disponible su thread en el launcher global.
+            Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
           </p>
         </div>
 

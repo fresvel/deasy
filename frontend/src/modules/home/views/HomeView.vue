@@ -2,7 +2,7 @@
   <AppWorkspaceShell
     :menu-open="showMenu"
     :show-notify="showNotify"
-    current-section="dashboard"
+    current-section="home"
     :photo="userPhoto"
     :username="userFullName"
     :sidebar-subtitle="sidebarContextLabel"
@@ -10,7 +10,7 @@
     @close-mobile="showMenu = false"
     @notify="toggleNotify"
     @notify-close="showNotify = false"
-    @sign="router.push({ name: 'dashboard-signatures' })"
+    @sign="router.push({ name: 'home-signatures' })"
     @primary-nav="handlePrimaryNavInteraction"
   >
     <template #header>
@@ -151,14 +151,14 @@
         <template v-if="isDocumentCenterRoute">
           <section class="flex flex-col gap-6">
             <AppPageIntro
-              variant="dashboard"
+              variant="home"
               title="Centro documental"
               :meta="`${filteredDocumentCenterItems.length} documento(s)`"
               description="Consulta y descarga los documentos accesibles de tu cuenta, filtrando por unidad, proceso, periodo, año y estado."
             >
               <template #actions>
-                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToDashboardHome">
-                  Volver al dashboard
+                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToHome">
+                  Volver a Home
                 </AppButton>
               </template>
             </AppPageIntro>
@@ -254,21 +254,21 @@
           </section>
         </template>
         <template v-else-if="isGlobalSignatureRoute">
-          <DashboardSignatureEntry @refresh-dashboard="handleSignatureCenterRefresh" />
+          <HomeSignatureEntry @refresh-home="handleSignatureCenterRefresh" />
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
-          <section class="dashboard-account-shell">
-            <section class="dashboard-account-hero">
-              <div class="dashboard-account-hero__copy">
-                <span class="dashboard-account-kicker">Cuenta activa</span>
+          <section class="home-account-shell">
+            <section class="home-account-hero">
+              <div class="home-account-hero__copy">
+                <span class="home-account-kicker">Cuenta activa</span>
                 <h1>{{ userFullName }}</h1>
                 <p>
                   Vista consolidada de tu cuenta: cargos asignados, procesos disponibles, documentos, firmas y dossier profesional.
                 </p>
-                <div class="dashboard-account-meta">
+                <div class="home-account-meta">
                   <span>
                     <IconId class="h-4 w-4" />
-                    {{ dashboardIdentityLabel }}
+                    {{ homeIdentityLabel }}
                   </span>
                   <span>
                     <IconBuildingMonument class="h-4 w-4" />
@@ -277,73 +277,73 @@
                 </div>
               </div>
 
-              <aside class="dashboard-account-focus">
-                <span class="dashboard-account-focus__label">Prioridad</span>
-                <strong>{{ dashboardFocus.title }}</strong>
-                <p>{{ dashboardFocus.description }}</p>
-                <AppButton variant="primary" size="md" class-name="w-full justify-center" @click="runDashboardAction(dashboardFocus)">
-                  {{ dashboardFocus.actionLabel }}
+              <aside class="home-account-focus">
+                <span class="home-account-focus__label">Prioridad</span>
+                <strong>{{ homeFocus.title }}</strong>
+                <p>{{ homeFocus.description }}</p>
+                <AppButton variant="primary" size="md" class-name="w-full justify-center" @click="runHomeAction(homeFocus)">
+                  {{ homeFocus.actionLabel }}
                   <IconArrowRight class="h-4 w-4" />
                 </AppButton>
               </aside>
             </section>
 
-            <section v-if="dashboardErrorMessage" class="dashboard-account-alert">
+            <section v-if="homeErrorMessage" class="home-account-alert">
               <IconAlertTriangle class="h-5 w-5 shrink-0" />
-              <span>{{ dashboardErrorMessage }}</span>
+              <span>{{ homeErrorMessage }}</span>
             </section>
 
-            <section class="dashboard-stats-grid">
+            <section class="home-stats-grid">
               <article
-                v-for="stat in dashboardStats"
+                v-for="stat in homeStats"
                 :key="stat.label"
-                class="dashboard-stat-card"
-                :class="`dashboard-stat-card--${stat.tone}`"
+                class="home-stat-card"
+                :class="`home-stat-card--${stat.tone}`"
               >
-                <span class="dashboard-stat-card__icon">
+                <span class="home-stat-card__icon">
                   <component :is="stat.icon" class="h-5 w-5" />
                 </span>
-                <span class="dashboard-stat-card__label">{{ stat.label }}</span>
+                <span class="home-stat-card__label">{{ stat.label }}</span>
                 <strong>{{ stat.value }}</strong>
                 <p>{{ stat.detail }}</p>
               </article>
             </section>
 
-            <section class="dashboard-account-grid">
-              <article class="dashboard-panel dashboard-panel--wide">
-                <header class="dashboard-panel__header">
+            <section class="home-account-grid">
+              <article class="home-panel home-panel--wide">
+                <header class="home-panel__header">
                   <div>
-                    <span class="dashboard-panel__kicker">Siguiente paso</span>
+                    <span class="home-panel__kicker">Siguiente paso</span>
                     <h2>Acciones recomendadas</h2>
                   </div>
                   <AppButton
                     variant="softNeutral"
                     size="sm"
-                    :disabled="dashboardLoading"
+                    :disabled="homeLoading"
                     class-name="shrink-0"
-                    @click="loadDashboardHomeData"
+                    @click="loadHomeData"
                   >
                     <IconRefresh class="h-4 w-4" />
                     Actualizar
                   </AppButton>
                 </header>
 
-                <div v-if="dashboardLoading" class="dashboard-loading-card">
+                <div v-if="homeLoading" class="home-loading-card">
                   Actualizando informacion de la cuenta...
                 </div>
-                <div v-else class="dashboard-action-list">
+                <div v-else class="home-action-list">
                   <button
-                    v-for="action in dashboardActions"
+                    v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="dashboard-action-card"
-                    :class="`dashboard-action-card--${action.tone}`"
-                    @click="runDashboardAction(action)"
+                    class="home-action-card"
+                    :class="`home-action-card--${action.tone}`"
+                    @click="runHomeAction(action)"
                   >
-                    <span class="dashboard-action-card__icon">
+                    <span class="home-action-card__icon">
                       <component :is="action.icon" class="h-5 w-5" />
                     </span>
-                    <span class="dashboard-action-card__body">
+                    <span class="home-action-card__body">
                       <strong>{{ action.title }}</strong>
                       <small>{{ action.description }}</small>
                     </span>
@@ -352,28 +352,28 @@
                 </div>
               </article>
 
-              <article class="dashboard-panel">
-                <header class="dashboard-panel__header">
+              <article class="home-panel">
+                <header class="home-panel__header">
                   <div>
-                    <span class="dashboard-panel__kicker">Dossier</span>
+                    <span class="home-panel__kicker">Dossier</span>
                     <h2>Perfil profesional</h2>
                   </div>
-                  <span class="dashboard-dossier-score">{{ dashboardDossierCompletion }}%</span>
+                  <span class="home-dossier-score">{{ homeDossierCompletion }}%</span>
                 </header>
 
-                <div class="dashboard-dossier-progress" aria-hidden="true">
-                  <span :style="{ width: `${dashboardDossierCompletion}%` }"></span>
+                <div class="home-dossier-progress" aria-hidden="true">
+                  <span :style="{ width: `${homeDossierCompletion}%` }"></span>
                 </div>
 
-                <div v-if="dashboardDossierLoading" class="dashboard-loading-card">
+                <div v-if="homeDossierLoading" class="home-loading-card">
                   Cargando dossier...
                 </div>
-                <div v-else class="dashboard-dossier-list">
-                  <div v-for="row in dashboardDossierRows" :key="row.key" class="dashboard-dossier-row">
-                    <span class="dashboard-dossier-row__icon">
+                <div v-else class="home-dossier-list">
+                  <div v-for="row in homeDossierRows" :key="row.key" class="home-dossier-row">
+                    <span class="home-dossier-row__icon">
                       <component :is="row.icon" class="h-4 w-4" />
                     </span>
-                    <span class="dashboard-dossier-row__label">{{ row.label }}</span>
+                    <span class="home-dossier-row__label">{{ row.label }}</span>
                     <AppTag :variant="row.variant">{{ row.count }}</AppTag>
                   </div>
                 </div>
@@ -384,26 +384,26 @@
               </article>
             </section>
 
-            <section class="dashboard-panel">
-              <header class="dashboard-panel__header">
+            <section class="home-panel">
+              <header class="home-panel__header">
                 <div>
-                  <span class="dashboard-panel__kicker">Operativo</span>
+                  <span class="home-panel__kicker">Operativo</span>
                   <h2>Tus cargos y procesos</h2>
                 </div>
-                <span class="dashboard-panel__meta">{{ dashboardProcesses.length }} proceso(s)</span>
+                <span class="home-panel__meta">{{ homeProcesses.length }} proceso(s)</span>
               </header>
 
-              <div v-if="menuLoading" class="dashboard-loading-card">
+              <div v-if="menuLoading" class="home-loading-card">
                 Cargando cargos asignados...
               </div>
-              <div v-else-if="!dashboardProcessCards.length" class="dashboard-empty-card">
+              <div v-else-if="!homeProcessCards.length" class="home-empty-card">
                 <IconBriefcase class="h-5 w-5" />
                 <span>No hay cargos o procesos asignados para esta cuenta.</span>
               </div>
-              <div v-else class="dashboard-process-grid">
-                <article v-for="cargo in dashboardProcessCards" :key="cargo.key" class="dashboard-process-card">
-                  <div class="dashboard-process-card__header">
-                    <span class="dashboard-process-card__icon">
+              <div v-else class="home-process-grid">
+                <article v-for="cargo in homeProcessCards" :key="cargo.key" class="home-process-card">
+                  <div class="home-process-card__header">
+                    <span class="home-process-card__icon">
                       <component :is="cargo.icon" class="h-5 w-5" />
                     </span>
                     <div>
@@ -411,7 +411,7 @@
                       <p>{{ cargo.processes.length }} proceso(s) disponible(s)</p>
                     </div>
                   </div>
-                  <div class="dashboard-process-card__list">
+                  <div class="home-process-card__list">
                     <button
                       v-for="process in cargo.previewProcesses"
                       :key="`${cargo.key}-${process.process_definition_id || process.id || process.name}`"
@@ -421,7 +421,7 @@
                       <span>{{ process.name }}</span>
                       <IconArrowRight class="h-4 w-4" />
                     </button>
-                    <span v-if="cargo.remainingCount" class="dashboard-process-card__more">
+                    <span v-if="cargo.remainingCount" class="home-process-card__more">
                       +{{ cargo.remainingCount }} mas
                     </span>
                   </div>
@@ -938,7 +938,7 @@
           <div class="rounded-xl border border-sky-200 bg-sky-50/70 p-5">
             <h3 class="m-0 text-base font-bold text-sky-900">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-sky-800/80">
-              Esta tarea se creará usando los templates activos de la definición. En este corte, el dashboard informa el alcance documental real antes de confirmar la creación.
+              Esta tarea se creará usando los templates activos de la definición. En este corte, Home informa el alcance documental real antes de confirmar la creación.
             </p>
           </div>
 
@@ -2223,7 +2223,7 @@
           accept="application/pdf,.pdf,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           :disabled="isUploadingDeliverable"
           :selected-file="selectedDeliverableUploadFile"
-          input-id="dashboard-deliverable-upload"
+          input-id="home-deliverable-upload"
           @files-selected="handleDeliverableFilesSelected"
           @clear="clearDeliverableUploadSelection"
         />
@@ -2459,7 +2459,7 @@ import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
-import DashboardSignatureEntry from '@/modules/dashboard/components/DashboardSignatureEntry.vue';
+import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue';
 import {
   resolveWorkspaceCargoIcon,
   resolveWorkspaceProcessIcon,
@@ -2604,12 +2604,12 @@ const deliverableResetState = ref({
 const documentCenterLoading = ref(false);
 const documentCenterError = ref('');
 const documentCenterItems = ref([]);
-const dashboardDossierLoading = ref(false);
-const dashboardDossierError = ref('');
-const dashboardDossier = ref(null);
-const dashboardSignatureLoading = ref(false);
-const dashboardSignatureError = ref('');
-const dashboardSignatureItems = ref([]);
+const homeDossierLoading = ref(false);
+const homeDossierError = ref('');
+const homeDossier = ref(null);
+const homeSignatureLoading = ref(false);
+const homeSignatureError = ref('');
+const homeSignatureItems = ref([]);
 const fillWorkflowState = ref({
   subject: null,
   request: null,
@@ -2720,23 +2720,23 @@ const deliverableUploadModalHelp = computed(() => {
   return `Carga el archivo de trabajo para ${subject.title || subject.template_artifact_name || `#${subject.itemId || subject.id}`}.`;
 });
 
-const dashboardPlural = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
-const asDashboardArray = (value) => (Array.isArray(value) ? value : []);
-const countDashboardArray = (value) => asDashboardArray(value).length;
+const homePlural = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+const asHomeArray = (value) => (Array.isArray(value) ? value : []);
+const countHomeArray = (value) => asHomeArray(value).length;
 
-const dashboardIdentityLabel = computed(() => (
+const homeIdentityLabel = computed(() => (
   currentUser.value?.email
   || currentUser.value?.cedula
   || 'Sin identificador'
 ));
 
-const dashboardCargoSource = computed(() => (
+const homeCargoSource = computed(() => (
   consolidatedCargos.value.length ? consolidatedCargos.value : menuCargos.value
 ));
 
-const dashboardCargos = computed(() => {
+const homeCargos = computed(() => {
   const cargoMap = new Map();
-  dashboardCargoSource.value.forEach((cargo) => {
+  homeCargoSource.value.forEach((cargo) => {
     const key = String(cargo?.id || cargo?.name || cargoMap.size);
     if (!cargoMap.has(key)) {
       cargoMap.set(key, {
@@ -2747,7 +2747,7 @@ const dashboardCargos = computed(() => {
       });
     }
     const target = cargoMap.get(key);
-    asDashboardArray(cargo?.processes).forEach((process) => {
+    asHomeArray(cargo?.processes).forEach((process) => {
       const processKey = String(process?.process_definition_id || process?.id || process?.name || target.processes.length);
       if (!target.processes.some((item) => String(item?.process_definition_id || item?.id || item?.name) === processKey)) {
         target.processes.push(process);
@@ -2757,23 +2757,23 @@ const dashboardCargos = computed(() => {
   return Array.from(cargoMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const dashboardCargoCount = computed(() => dashboardCargos.value.length);
+const homeCargoCount = computed(() => homeCargos.value.length);
 
-const dashboardUnitCount = computed(() => {
+const homeUnitCount = computed(() => {
   const unitMap = new Map();
   const addUnit = (unit = {}) => {
     const key = String(unit?.id || unit?.label || unit?.name || '');
     if (key) unitMap.set(key, unit);
   };
   userUnits.value.forEach(addUnit);
-  unitGroups.value.forEach((group) => asDashboardArray(group?.units).forEach(addUnit));
+  unitGroups.value.forEach((group) => asHomeArray(group?.units).forEach(addUnit));
   return unitMap.size;
 });
 
-const dashboardProcesses = computed(() => {
+const homeProcesses = computed(() => {
   const processMap = new Map();
-  dashboardCargos.value.forEach((cargo) => {
-    asDashboardArray(cargo?.processes).forEach((process) => {
+  homeCargos.value.forEach((cargo) => {
+    asHomeArray(cargo?.processes).forEach((process) => {
       const key = String(process?.process_definition_id || process?.id || process?.name || processMap.size);
       if (!processMap.has(key)) {
         processMap.set(key, {
@@ -2786,15 +2786,15 @@ const dashboardProcesses = computed(() => {
   return Array.from(processMap.values()).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
 });
 
-const dashboardPrimaryProcess = computed(() => (
-  dashboardProcesses.value.find((process) => process?.access_source === 'process')
-  || dashboardProcesses.value[0]
+const homePrimaryProcess = computed(() => (
+  homeProcesses.value.find((process) => process?.access_source === 'process')
+  || homeProcesses.value[0]
   || null
 ));
 
-const dashboardProcessCards = computed(() => dashboardCargos.value.map((cargo) => {
+const homeProcessCards = computed(() => homeCargos.value.map((cargo) => {
   const iconMeta = cargoIconMeta(cargo);
-  const processes = asDashboardArray(cargo?.processes).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  const processes = asHomeArray(cargo?.processes).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   return {
     key: String(cargo?.id || cargo?.name),
     name: cargo?.name || 'Cargo sin nombre',
@@ -2805,112 +2805,112 @@ const dashboardProcessCards = computed(() => dashboardCargos.value.map((cargo) =
   };
 }));
 
-const dashboardDossierCounts = computed(() => {
-  const dossier = dashboardDossier.value || {};
+const homeDossierCounts = computed(() => {
+  const dossier = homeDossier.value || {};
   const investigacion = dossier.investigacion || {};
   return {
-    titulos: countDashboardArray(dossier.titulos),
-    experiencia: countDashboardArray(dossier.experiencia),
-    referencias: countDashboardArray(dossier.referencias),
-    formacion: countDashboardArray(dossier.formacion),
-    certificaciones: countDashboardArray(dossier.certificaciones),
-    investigacion: countDashboardArray(investigacion.articulos)
-      + countDashboardArray(investigacion.libros)
-      + countDashboardArray(investigacion.ponencias)
-      + countDashboardArray(investigacion.tesis)
-      + countDashboardArray(investigacion.proyectos)
+    titulos: countHomeArray(dossier.titulos),
+    experiencia: countHomeArray(dossier.experiencia),
+    referencias: countHomeArray(dossier.referencias),
+    formacion: countHomeArray(dossier.formacion),
+    certificaciones: countHomeArray(dossier.certificaciones),
+    investigacion: countHomeArray(investigacion.articulos)
+      + countHomeArray(investigacion.libros)
+      + countHomeArray(investigacion.ponencias)
+      + countHomeArray(investigacion.tesis)
+      + countHomeArray(investigacion.proyectos)
   };
 });
 
-const dashboardDossierRows = computed(() => [
-  { key: 'titulos', label: 'Titulos', count: dashboardDossierCounts.value.titulos, icon: IconFileCheck },
-  { key: 'experiencia', label: 'Experiencia', count: dashboardDossierCounts.value.experiencia, icon: IconBriefcase },
-  { key: 'formacion', label: 'Formacion', count: dashboardDossierCounts.value.formacion, icon: IconChecklist },
-  { key: 'certificaciones', label: 'Certificaciones', count: dashboardDossierCounts.value.certificaciones, icon: IconCircleCheck },
-  { key: 'investigacion', label: 'Investigacion', count: dashboardDossierCounts.value.investigacion, icon: IconFiles },
-  { key: 'referencias', label: 'Referencias', count: dashboardDossierCounts.value.referencias, icon: IconUserCheck }
+const homeDossierRows = computed(() => [
+  { key: 'titulos', label: 'Titulos', count: homeDossierCounts.value.titulos, icon: IconFileCheck },
+  { key: 'experiencia', label: 'Experiencia', count: homeDossierCounts.value.experiencia, icon: IconBriefcase },
+  { key: 'formacion', label: 'Formacion', count: homeDossierCounts.value.formacion, icon: IconChecklist },
+  { key: 'certificaciones', label: 'Certificaciones', count: homeDossierCounts.value.certificaciones, icon: IconCircleCheck },
+  { key: 'investigacion', label: 'Investigacion', count: homeDossierCounts.value.investigacion, icon: IconFiles },
+  { key: 'referencias', label: 'Referencias', count: homeDossierCounts.value.referencias, icon: IconUserCheck }
 ].map((row) => ({
   ...row,
   variant: row.count > 0 ? 'success' : 'muted'
 })));
 
-const dashboardDossierTotal = computed(() =>
-  dashboardDossierRows.value.reduce((total, row) => total + Number(row.count || 0), 0)
+const homeDossierTotal = computed(() =>
+  homeDossierRows.value.reduce((total, row) => total + Number(row.count || 0), 0)
 );
 
-const dashboardDossierCompletion = computed(() => {
-  const totalSections = dashboardDossierRows.value.length;
+const homeDossierCompletion = computed(() => {
+  const totalSections = homeDossierRows.value.length;
   if (!totalSections) return 0;
-  const completedSections = dashboardDossierRows.value.filter((row) => Number(row.count || 0) > 0).length;
+  const completedSections = homeDossierRows.value.filter((row) => Number(row.count || 0) > 0).length;
   return Math.round((completedSections / totalSections) * 100);
 });
 
-const dashboardDocumentCount = computed(() => documentCenterItems.value.length);
-const dashboardPendingFillCount = computed(() =>
+const homeDocumentCount = computed(() => documentCenterItems.value.length);
+const homePendingFillCount = computed(() =>
   documentCenterItems.value.reduce((total, item) => total + Number(item?.pending_fill_count || 0), 0)
 );
-const dashboardSignatureCount = computed(() => dashboardSignatureItems.value.length);
+const homeSignatureCount = computed(() => homeSignatureItems.value.length);
 
-const dashboardLoading = computed(() =>
+const homeLoading = computed(() =>
   menuLoading.value
   || documentCenterLoading.value
-  || dashboardDossierLoading.value
-  || dashboardSignatureLoading.value
+  || homeDossierLoading.value
+  || homeSignatureLoading.value
 );
 
-const dashboardErrorMessage = computed(() =>
-  dashboardDossierError.value
-  || dashboardSignatureError.value
+const homeErrorMessage = computed(() =>
+  homeDossierError.value
+  || homeSignatureError.value
   || (workspaceRouteMode.value === 'default' ? documentCenterError.value : '')
   || menuError.value
 );
 
-const dashboardStats = computed(() => [
+const homeStats = computed(() => [
   {
     label: 'Unidades',
-    value: dashboardUnitCount.value,
-    detail: dashboardPlural(dashboardCargoCount.value, 'cargo', 'cargos'),
+    value: homeUnitCount.value,
+    detail: homePlural(homeCargoCount.value, 'cargo', 'cargos'),
     icon: IconBuildingMonument,
     tone: 'sky'
   },
   {
     label: 'Procesos',
-    value: dashboardProcesses.value.length,
-    detail: dashboardPrimaryProcess.value?.name || 'Sin procesos activos',
+    value: homeProcesses.value.length,
+    detail: homePrimaryProcess.value?.name || 'Sin procesos activos',
     icon: IconChecklist,
     tone: 'emerald'
   },
   {
     label: 'Documentos',
-    value: dashboardDocumentCount.value,
-    detail: dashboardPendingFillCount.value ? `${dashboardPendingFillCount.value} pendiente(s) de llenado` : 'Centro documental al dia',
+    value: homeDocumentCount.value,
+    detail: homePendingFillCount.value ? `${homePendingFillCount.value} pendiente(s) de llenado` : 'Centro documental al dia',
     icon: IconFileDescription,
     tone: 'indigo'
   },
   {
     label: 'Firmas',
-    value: dashboardSignatureCount.value,
-    detail: dashboardSignatureCount.value ? 'Accion requerida' : 'Sin pendientes',
+    value: homeSignatureCount.value,
+    detail: homeSignatureCount.value ? 'Accion requerida' : 'Sin pendientes',
     icon: IconSignature,
     tone: 'amber'
   },
   {
     label: 'Dossier',
-    value: `${dashboardDossierCompletion.value}%`,
-    detail: dashboardPlural(dashboardDossierTotal.value, 'registro', 'registros'),
+    value: `${homeDossierCompletion.value}%`,
+    detail: homePlural(homeDossierTotal.value, 'registro', 'registros'),
     icon: IconUserCheck,
     tone: 'slate'
   }
 ]);
 
-const dashboardActions = computed(() => {
+const homeActions = computed(() => {
   const actions = [];
-  if (dashboardSignatureCount.value) {
+  if (homeSignatureCount.value) {
     actions.push({
       key: 'signatures',
       action: 'signatures',
       title: 'Firmas pendientes',
-      description: `${dashboardSignatureCount.value} documento(s) esperan tu firma.`,
+      description: `${homeSignatureCount.value} documento(s) esperan tu firma.`,
       meta: 'Pendiente',
       tagVariant: 'warning',
       icon: IconSignature,
@@ -2918,12 +2918,12 @@ const dashboardActions = computed(() => {
       actionLabel: 'Ir a firmas'
     });
   }
-  if (dashboardPendingFillCount.value) {
+  if (homePendingFillCount.value) {
     actions.push({
       key: 'documents-fill',
       action: 'documents',
       title: 'Llenados pendientes',
-      description: `${dashboardPendingFillCount.value} entregable(s) requieren completar informacion.`,
+      description: `${homePendingFillCount.value} entregable(s) requieren completar informacion.`,
       meta: 'Completar',
       tagVariant: 'info',
       icon: IconFileDescription,
@@ -2931,26 +2931,26 @@ const dashboardActions = computed(() => {
       actionLabel: 'Abrir documentos'
     });
   }
-  if (dashboardPrimaryProcess.value) {
+  if (homePrimaryProcess.value) {
     actions.push({
-      key: `process-${dashboardPrimaryProcess.value.process_definition_id || dashboardPrimaryProcess.value.id}`,
+      key: `process-${homePrimaryProcess.value.process_definition_id || homePrimaryProcess.value.id}`,
       action: 'process',
-      payload: dashboardPrimaryProcess.value,
+      payload: homePrimaryProcess.value,
       title: 'Continuar proceso',
-      description: dashboardPrimaryProcess.value.name || 'Proceso disponible para tu cargo.',
-      meta: dashboardPrimaryProcess.value.cargoName || 'Proceso',
+      description: homePrimaryProcess.value.name || 'Proceso disponible para tu cargo.',
+      meta: homePrimaryProcess.value.cargoName || 'Proceso',
       tagVariant: 'success',
       icon: IconChecklist,
       tone: 'success',
       actionLabel: 'Abrir proceso'
     });
   }
-  if (dashboardDocumentCount.value) {
+  if (homeDocumentCount.value) {
     actions.push({
       key: 'documents',
       action: 'documents',
       title: 'Centro documental',
-      description: `${dashboardDocumentCount.value} documento(s) disponibles en tu cuenta.`,
+      description: `${homeDocumentCount.value} documento(s) disponibles en tu cuenta.`,
       meta: 'Disponible',
       tagVariant: 'neutral',
       icon: IconFiles,
@@ -2958,13 +2958,13 @@ const dashboardActions = computed(() => {
       actionLabel: 'Ver documentos'
     });
   }
-  if (dashboardDossierCompletion.value < 100) {
+  if (homeDossierCompletion.value < 100) {
     actions.push({
       key: 'profile',
       action: 'profile',
       title: 'Completar dossier',
-      description: `Tu perfil profesional registra ${dashboardDossierCompletion.value}% de secciones con datos.`,
-      meta: `${dashboardDossierTotal.value} registro(s)`,
+      description: `Tu perfil profesional registra ${homeDossierCompletion.value}% de secciones con datos.`,
+      meta: `${homeDossierTotal.value} registro(s)`,
       tagVariant: 'warning',
       icon: IconUserCheck,
       tone: 'warning',
@@ -2987,7 +2987,7 @@ const dashboardActions = computed(() => {
   return actions.slice(0, 4);
 });
 
-const dashboardFocus = computed(() => dashboardActions.value[0]);
+const homeFocus = computed(() => homeActions.value[0]);
 
 const resolvePhotoUrl = (value) => {
   if (!value) {
@@ -3162,24 +3162,24 @@ const clearSelectedProcess = () => {
   resetTaskLaunchForm();
 };
 
-const navigateToDashboardHome = async () => {
-  if (route.name !== 'dashboard') {
-    await router.push({ name: 'dashboard' });
+const navigateToHome = async () => {
+  if (route.name !== 'home') {
+    await router.push({ name: 'home' });
   }
 };
 
 const navigateToDocumentCenterPage = async () => {
-  await router.push({ name: 'dashboard-documents' });
+  await router.push({ name: 'home-documents' });
 };
 
 const navigateToGlobalSignaturePage = async () => {
-  await router.push({ name: 'dashboard-signatures' });
+  await router.push({ name: 'home-signatures' });
 };
 
 const currentUserId = computed(() => currentUser.value?.id ?? currentUser.value?._id ?? null);
 const workspaceRouteMode = computed(() => {
-  if (route.name === 'dashboard-documents') return 'documents';
-  if (route.name === 'dashboard-signatures') return 'signatures';
+  if (route.name === 'home-documents') return 'documents';
+  if (route.name === 'home-signatures') return 'signatures';
   return 'default';
 });
 const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
@@ -3208,8 +3208,8 @@ const scrollToSignatureAnchor = async (hash) => {
 
 const openSignatureSidebarItem = async (item) => {
   const targetHash = item?.hash || '#signature-home';
-  if (route.name !== 'dashboard-signatures' || route.hash !== targetHash) {
-    await router.replace({ name: 'dashboard-signatures', hash: targetHash });
+  if (route.name !== 'home-signatures' || route.hash !== targetHash) {
+    await router.replace({ name: 'home-signatures', hash: targetHash });
   }
   await scrollToSignatureAnchor(targetHash);
 };
@@ -3222,7 +3222,7 @@ const isSignatureSidebarItemActive = (item) => {
 watch(
   () => [route.name, route.hash],
   async ([routeName, hash]) => {
-    if (routeName === 'dashboard-signatures' && hash) {
+    if (routeName === 'home-signatures' && hash) {
       await scrollToSignatureAnchor(hash);
     }
   }
@@ -3837,47 +3837,47 @@ const loadDocumentCenterPage = async () => {
   }
 };
 
-const loadDashboardDossier = async () => {
-  dashboardDossierLoading.value = true;
-  dashboardDossierError.value = '';
+const loadHomeDossier = async () => {
+  homeDossierLoading.value = true;
+  homeDossierError.value = '';
   try {
     const response = await DossierService.getDossier();
-    dashboardDossier.value = response?.data || null;
+    homeDossier.value = response?.data || null;
   } catch (error) {
-    console.error('Error al cargar el dossier del dashboard:', error);
-    dashboardDossier.value = null;
-    dashboardDossierError.value = error?.response?.data?.message || error?.message || 'No se pudo cargar el dossier.';
+    console.error('Error al cargar el dossier de Home:', error);
+    homeDossier.value = null;
+    homeDossierError.value = error?.response?.data?.message || error?.message || 'No se pudo cargar el dossier.';
   } finally {
-    dashboardDossierLoading.value = false;
+    homeDossierLoading.value = false;
   }
 };
 
-const loadDashboardSignatureCenter = async () => {
+const loadHomeSignatureCenter = async () => {
   const userId = currentUserId.value;
   if (!userId) return;
-  dashboardSignatureLoading.value = true;
-  dashboardSignatureError.value = '';
+  homeSignatureLoading.value = true;
+  homeSignatureError.value = '';
   try {
     const response = await processPanelService.getSignatureCenter(userId);
-    dashboardSignatureItems.value = Array.isArray(response?.signatures) ? response.signatures : [];
+    homeSignatureItems.value = Array.isArray(response?.signatures) ? response.signatures : [];
   } catch (error) {
-    console.error('Error al cargar firmas pendientes del dashboard:', error);
-    dashboardSignatureItems.value = [];
-    dashboardSignatureError.value = error?.response?.data?.message || error?.message || 'No se pudo cargar la bandeja de firmas.';
+    console.error('Error al cargar firmas pendientes de Home:', error);
+    homeSignatureItems.value = [];
+    homeSignatureError.value = error?.response?.data?.message || error?.message || 'No se pudo cargar la bandeja de firmas.';
   } finally {
-    dashboardSignatureLoading.value = false;
+    homeSignatureLoading.value = false;
   }
 };
 
-const loadDashboardHomeData = async () => {
+const loadHomeData = async () => {
   await Promise.all([
     loadDocumentCenterPage(),
-    loadDashboardSignatureCenter(),
-    loadDashboardDossier()
+    loadHomeSignatureCenter(),
+    loadHomeDossier()
   ]);
 };
 
-const runDashboardAction = async (target) => {
+const runHomeAction = async (target) => {
   const action = typeof target === 'string' ? target : target?.action;
   if (action === 'signatures') {
     await navigateToGlobalSignaturePage();
@@ -3888,7 +3888,7 @@ const runDashboardAction = async (target) => {
     return;
   }
   if (action === 'process') {
-    const process = target?.payload || dashboardPrimaryProcess.value;
+    const process = target?.payload || homePrimaryProcess.value;
     if (process) {
       await handleProcessSelect(process);
     }
@@ -3899,9 +3899,9 @@ const runDashboardAction = async (target) => {
   }
 };
 
-const handleDashboardDossierUpdated = () => {
+const handleHomeDossierUpdated = () => {
   if (workspaceRouteMode.value === 'default') {
-    loadDashboardDossier();
+    loadHomeDossier();
   }
 };
 
@@ -3914,7 +3914,7 @@ const handleSignatureCenterRefresh = async () => {
     await loadDocumentCenterPage();
   }
   if (workspaceRouteMode.value === 'default') {
-    await loadDashboardHomeData();
+    await loadHomeData();
   }
 };
 
@@ -3945,7 +3945,7 @@ const buildWorkspacePayloadFromCenterItem = (item = {}) => ({
 
 const handleProcessSelect = async (process) => {
   if (workspaceRouteMode.value !== 'default') {
-    await router.push({ name: 'dashboard' });
+    await router.push({ name: 'home' });
   }
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
@@ -3962,7 +3962,7 @@ const closeTaskLaunchModal = () => {
 
 const showGeneralTaskInfo = () => {
   setProcessActionInfo(
-    'La creación de tareas generales todavía no tiene backend habilitado en este dashboard. El siguiente paso es conectar este botón al flujo de artifacts generales y entregables personalizados.',
+    'La creación de tareas generales todavía no tiene backend habilitado en Home. El siguiente paso es conectar este botón al flujo de artifacts generales y entregables personalizados.',
     'error'
   );
 };
@@ -4081,7 +4081,7 @@ onMounted(async () => {
   
   if (isClient) {
     window.addEventListener('resize', handleResize);
-    window.addEventListener('dossier-updated', handleDashboardDossierUpdated);
+    window.addEventListener('dossier-updated', handleHomeDossierUpdated);
     document.addEventListener('click', handleGroupDropdownOutsideClick);
   }
 
@@ -4161,7 +4161,7 @@ onMounted(async () => {
     await loadDocumentCenterPage();
   }
   if (workspaceRouteMode.value === 'default') {
-    await loadDashboardHomeData();
+    await loadHomeData();
   }
 });
 
@@ -4181,13 +4181,13 @@ watch(
 watch(
   () => route.fullPath,
   async () => {
-    if (!String(route.path || '').startsWith('/dashboard')) return;
+    if (!String(route.path || '').startsWith('/home')) return;
     await loadUserMenu();
     if (workspaceRouteMode.value === 'documents') {
       await loadDocumentCenterPage();
     }
     if (workspaceRouteMode.value === 'default') {
-      await loadDashboardHomeData();
+      await loadHomeData();
     }
   }
 );
@@ -4195,7 +4195,7 @@ watch(
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener('resize', handleResize);
-    window.removeEventListener('dossier-updated', handleDashboardDossierUpdated);
+    window.removeEventListener('dossier-updated', handleHomeDossierUpdated);
     document.removeEventListener('click', handleGroupDropdownOutsideClick);
   }
   if (deliverablePreviewUrl.value) {
@@ -4206,17 +4206,17 @@ onBeforeUnmount(() => {
 
 const navigateTo = (destination) => {
   switch (destination) {
-    case 'dashboard':
-      router.push('/dashboard');
+    case 'home':
+      router.push('/home');
       break;
-    case 'dashboard-documents':
-      router.push('/dashboard/documentos');
+    case 'home-documents':
+      router.push('/home/documentos');
       break;
-    case 'dashboard-signatures':
-      router.push('/dashboard/firmas');
+    case 'home-signatures':
+      router.push('/home/firmas');
       break;
     case 'firmar':
-      router.push({ name: 'dashboard-signatures' });
+      router.push({ name: 'home-signatures' });
       break;
     case 'perfil':
     default:

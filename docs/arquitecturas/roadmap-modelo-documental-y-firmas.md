@@ -852,7 +852,7 @@ Objetivo:
 
 Trabajo:
 
-- dashboard documental real
+- home documental real
 - seguimiento de llenado
 - seguimiento de firmas
 - reinstanciación manual
@@ -899,7 +899,7 @@ Estado actual:
 
 ### Frontend
 
-- [ ] Rediseñar panel documental del dashboard
+- [ ] Rediseñar panel documental del home
 - [ ] Separar visualización de tareas y documentos
 - [ ] Exponer llenado, revisión y rebote
 - [ ] Exponer firma por pasos

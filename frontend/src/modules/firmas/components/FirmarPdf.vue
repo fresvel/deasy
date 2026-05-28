@@ -160,7 +160,7 @@
       <div
         id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
-        :class="enableDashboardShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
+        :class="enableHomeShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
         <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
@@ -218,10 +218,10 @@
 
         <button
           id="signature-launcher-received"
-          v-if="enableDashboardShortcuts && canShowLauncher('pending')"
+          v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
-          @click="emit('open-dashboard-pending')"
+          @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
           <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
@@ -240,7 +240,7 @@
           v-if="canShowLauncher('database')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
-          :class="enableDashboardShortcuts ? 'xl:col-start-2' : ''"
+          :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
@@ -248,12 +248,12 @@
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
               <span class="mt-5 text-base font-semibold text-slate-700">
-                {{ enableDashboardShortcuts ? 'Procesos pendientes' : 'Bandeja del dashboard' }}
+                {{ enableHomeShortcuts ? 'Procesos pendientes' : 'Bandeja de Home' }}
               </span>
               <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
-                {{ enableDashboardShortcuts
+                {{ enableHomeShortcuts
                   ? 'Consulta procesos con firma pendiente.'
-                  : 'Consulta solicitudes pendientes del dashboard.' }}
+                  : 'Consulta solicitudes pendientes de Home.' }}
               </p>
             </div>
           </div>
@@ -261,10 +261,10 @@
 
         <button
           id="signature-launcher-pending"
-          v-if="enableDashboardShortcuts && canShowLauncher('pending')"
+          v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
-          @click="emit('open-dashboard-pending')"
+          @click="emit('open-home-pending')"
         >
           <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
           <div class="flex flex-1 items-center justify-center rounded-xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
@@ -1029,7 +1029,7 @@
       type: Boolean,
       default: false
     },
-    enableDashboardShortcuts: {
+    enableHomeShortcuts: {
       type: Boolean,
       default: false
     },
@@ -1046,7 +1046,7 @@
       default: () => []
     }
   });
-  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'request-close', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner', 'open-sign-modal', 'open-request-modal', 'multi-header-update']);
+  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'request-close', 'open-home-pending', 'open-home-multisigner', 'open-general-multisigner', 'open-sign-modal', 'open-request-modal', 'multi-header-update']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
@@ -1274,11 +1274,11 @@
   );
 
   const handleDatabaseEntry = () => {
-    if (props.enableDashboardShortcuts) {
-      emit('open-dashboard-multisigner');
+    if (props.enableHomeShortcuts) {
+      emit('open-home-multisigner');
       return;
     }
-    router.push({ name: 'dashboard-signatures' });
+    router.push({ name: 'home-signatures' });
   };
 
   const removeBox = () => {
@@ -1738,7 +1738,7 @@
         return;
       }
       if (mode === 'multi') {
-        if (props.enableDashboardShortcuts) {
+        if (props.enableHomeShortcuts) {
           emit('open-general-multisigner', { files: pdfFiles });
           return;
         }
@@ -1751,7 +1751,7 @@
         return;
       }
       const file = pdfFiles[0];
-      if (props.enableDashboardShortcuts && !props.embedded && (mode === 'sign' || mode === 'request')) {
+      if (props.enableHomeShortcuts && !props.embedded && (mode === 'sign' || mode === 'request')) {
         emit(mode === 'sign' ? 'open-sign-modal' : 'open-request-modal', { files: [file], mode });
         return;
       }

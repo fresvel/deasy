@@ -7,7 +7,7 @@ El motor de negocio usa procesos base, variantes controladas, definiciones versi
 
 ## Componentes principales
 
-- Frontend (Vue): dashboard de usuario, consola operativa por definicion de proceso, panel admin y flujos de firma.
+- Frontend (Vue): home de usuario, consola operativa por definicion de proceso, panel admin y flujos de firma.
 - Backend (Node.js): API REST, autenticacion, reglas de negocio, instanciacion de tareas y orquestacion documental.
 - MariaDB: datos relacionales principales.
 - MongoDB: conversaciones y mensajes (chat/notificaciones).
@@ -28,7 +28,7 @@ El motor de negocio usa procesos base, variantes controladas, definiciones versi
 2) Backend aplica reglas, persiste en MariaDB y resuelve tareas, entregables, documentos y firmas.
 3) Chat/Notificaciones: mensajes guardados en Mongo y publicados por EMQX.
 4) Templates del sistema se empaquetan desde `tools/templates`, se publican a MinIO y se sincronizan en `template_artifacts`.
-5) El dashboard del usuario abre una consola operativa por `process_definition_id`, donde el usuario ve solo sus tareas, sus entregables, sus documentos y sus firmas.
+5) El home del usuario abre una consola operativa por `process_definition_id`, donde el usuario ve solo sus tareas, sus entregables, sus documentos y sus firmas.
 6) Reportes/firma: backend orquesta plantillas, genera documentos y delega la firma al servicio `signer`.
 
 ## Storage actual

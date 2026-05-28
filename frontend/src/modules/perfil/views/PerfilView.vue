@@ -12,7 +12,7 @@
     @close-mobile="vmenu = false"
     @notify="toggleNotify"
     @notify-close="vnotify = false"
-    @sign="router.push({ name: 'dashboard-signatures' })"
+    @sign="router.push({ name: 'home-signatures' })"
     @photo-selected="handlePhotoSelected"
     @primary-nav="handlePrimaryNavInteraction"
   >
@@ -126,7 +126,7 @@ const goBackFromProfileHome = () => {
     router.back();
     return;
   }
-  router.push('/dashboard');
+  router.push('/home');
 };
 
     // Obtener datos del usuario desde localStorage

@@ -8,11 +8,11 @@
   1. permita conversaciones directas, grupales y threads ligados a procesos,
   2. persista mensajes y conversaciones en MongoDB,
   3. publique eventos realtime por EMQX,
-  4. integre el acceso al dashboard operativo sin romper el dominio actual,
+  4. integre el acceso al home operativo sin romper el dominio actual,
   5. deje preparada una extracción futura hacia un microservicio dedicado de
      mensajería si la carga, el alcance funcional o la operación lo justifican.
   6. sea compatible desde su diseño con una futura app móvil sin depender del
-     dashboard web como único cliente.
+     home web como único cliente.
 
 ## Decisión arquitectónica recomendada
 
@@ -68,7 +68,7 @@
   - EMQX en el stack Docker.
   - bucket/prefijo de chat en MinIO:
       - `deasy-chat/Chat`
-  - placeholder visual de `Chat del proceso` en el dashboard.
+  - placeholder visual de `Chat del proceso` en el home.
   - señalización backend de capacidad:
       - `can_open_process_chat`
       - `implemented.process_chat = false`
@@ -191,7 +191,7 @@
 ### 1. Principio de diseño
 
   El sistema de chat no debe diseñarse como una extensión visual exclusiva del
-  dashboard web.
+  home web.
 
   Debe diseñarse como un módulo de mensajería con contratos HTTP y realtime
   reutilizables por:
@@ -203,7 +203,7 @@
 ### 2. Reglas de compatibilidad móvil
 
   - la API debe ser neutral al cliente y no devolver estructuras acopladas a
-    componentes del dashboard,
+    componentes del home,
   - el flujo principal puede abrirse desde `Chat del proceso`, pero el contrato
     debe poder ser consumido por una app móvil sin conocer la UI web,
   - la carga de mensajes debe ser paginada o por cursor desde el inicio,
@@ -236,7 +236,7 @@
 
 ### 5. Riesgo a evitar
 
-  No convertir el chat en una API “del dashboard” con payloads mezclados con
+  No convertir el chat en una API “del home” con payloads mezclados con
   contexto visual de web. El contexto de proceso puede viajar como metadata,
   pero el contrato debe seguir siendo un contrato de mensajería reutilizable.
 
@@ -256,7 +256,7 @@
 ### thread
 
   - conversación ligada al seguimiento operativo de un proceso.
-  - es el objetivo prioritario para integrarse al dashboard operativo.
+  - es el objetivo prioritario para integrarse al home operativo.
   - la autorización de participantes debe derivarse del dominio SQL y no desde
     reglas aisladas en Mongo.
 
@@ -477,7 +477,7 @@
 
 ### 5. Endpoint recomendado de conveniencia
 
-  Para el caso principal del dashboard:
+  Para el caso principal del home:
 
   - `POST /chat/processes/:processId/thread`
       - crea o recupera el thread canónico del proceso
@@ -552,7 +552,7 @@
 
 ### 1. Integración inicial
 
-  El MVP debe integrarse primero al dashboard operativo existente.
+  El MVP debe integrarse primero al home operativo existente.
 
   Se recomienda:
 
@@ -564,7 +564,7 @@
 ### 1.1 Patrón UX/UI del contenedor de chat
 
   La experiencia de chat no debe reintroducir un panel que empuje o comprima el
-  contenido principal del dashboard.
+  contenido principal del home.
 
   Decisión recomendada:
 
@@ -575,7 +575,7 @@
 
   Justificación UX/UI:
 
-  - el dashboard actual ya es denso y no conviene reducir su ancho útil,
+  - el home actual ya es denso y no conviene reducir su ancho útil,
   - evitar reflow visual y desplazamiento de targets mientras el usuario trabaja,
   - mantener consistencia con patrones overlay ya presentes en la interfaz,
   - permitir que el chat funcione como herramienta transversal sin competir con
@@ -639,7 +639,7 @@
   - mostrar estado de carga/error,
   - reflejar llegada realtime,
   - mostrar adjuntos si el backend ya los soporta,
-  - mostrar notificaciones no leídas si se habilitan en la UI del dashboard.
+  - mostrar notificaciones no leídas si se habilitan en la UI del home.
 
   Decisión de esta fase:
 
@@ -655,8 +655,8 @@
 ### 3.1 Reglas UX/UI específicas
 
   - el botón flotante debe permanecer accesible y no bloquear acciones críticas
-    del dashboard,
-  - el panel debe poder cerrarse sin perder el contexto del dashboard,
+    del home,
+  - el panel debe poder cerrarse sin perder el contexto del home,
   - el overlay debe priorizar legibilidad y foco sin oscurecer en exceso el
     resto de la interfaz,
   - la lista de conversaciones debe mostrar señales claras de recencia y no
@@ -670,7 +670,7 @@
 
 ### 4. Reglas UX
 
-  - no bloquear el dashboard si el chat falla,
+  - no bloquear el home si el chat falla,
   - el panel debe poder degradar a polling o recarga manual si realtime falla,
   - mensajes de error deben ser claros,
   - el botón actual `Chat del proceso` debe dejar de ser placeholder y abrir el
@@ -779,7 +779,7 @@
   4. Implementar servicios internos de autorización, persistencia y publicación.
   5. Exponer endpoints `/chat` y `/notifications`.
   6. Implementar publicación realtime a EMQX.
-  7. Integrar el botón `Chat del proceso` del dashboard.
+  7. Integrar el botón `Chat del proceso` del home.
   8. Implementar panel de chat y carga paginada de mensajes.
   9. Implementar unread/read state mínimo.
   10. Implementar adjuntos en MinIO si entran en el MVP.
@@ -798,6 +798,6 @@
     estado sin romper UX,
   - el botón `Chat del proceso` deja de ser placeholder,
   - la API queda usable por una futura app móvil sin depender de payloads
-    acoplados al dashboard,
+    acoplados al home,
   - la implementación no rompe separación entre dominio SQL y mensajería,
   - el diseño deja documentada la ruta de extracción futura a microservicio.

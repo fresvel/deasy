@@ -79,7 +79,7 @@ Con la semilla demo y el patch RBAC:
 - `Auditor` puede leer tablas permitidas, pero recibe `403` si intenta crear,
   editar o eliminar.
 - Un request sin token a `/admin/sql/meta` responde `401`.
-- El dashboard sigue cargando documentos y firmas del usuario autenticado.
+- El home sigue cargando documentos y firmas del usuario autenticado.
 
 ## Pendientes fuera del alcance
 

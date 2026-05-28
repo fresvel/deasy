@@ -135,4 +135,4 @@ export const isAdminUser = (user = getStoredUser()) =>
   hasAnyRole(["Admin"], user);
 
 export const getDefaultAuthenticatedRoute = (user = getStoredUser()) =>
-  isAdminUser(user) ? "/admin" : "/dashboard";
+  isAdminUser(user) ? "/admin" : "/home";

@@ -417,7 +417,7 @@
 
 <script setup>
 
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 import { 
   IconLock,
@@ -431,7 +431,7 @@ import {
 } from '@tabler/icons-vue'
 
 import axios from "axios";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
@@ -467,6 +467,7 @@ const adminManager = ref(null);
 
 const currentUser = ref(null);
 const router = useRouter();
+const route = useRoute();
 const defaultPhoto = "/images/avatar.png";
 const userPhoto = ref(defaultPhoto);
 const userFullName = computed(() => {
@@ -938,7 +939,7 @@ const handleHeroBack = () => {
     router.back();
     return;
   }
-  router.push('/dashboard');
+  router.push('/home');
 };
 
 const groupIconMap = {
@@ -1357,12 +1358,27 @@ const fetchMeta = async () => {
         openCategories.value[group.label] = false;
       }
     });
+    if (route.meta?.managementSection === "processes") {
+      openGestionItem(GESTION_INDEX_ITEMS[0]);
+    }
   } catch (error) {
     metaError.value = error?.response?.data?.message || "No se pudo cargar el catalogo.";
   } finally {
     loadingMeta.value = false;
   }
 };
+
+watch(
+  () => route.meta?.managementSection,
+  (section) => {
+    if (loadingMeta.value) {
+      return;
+    }
+    if (section === "processes") {
+      openGestionItem(GESTION_INDEX_ITEMS[0]);
+    }
+  }
+);
 
 onMounted(() => {
   const userDataString = localStorage.getItem("user");

@@ -8,7 +8,7 @@
       <div class="deasy-sidebar__rail">
         <AppLogo
           v-if="showLogo"
-          to="/dashboard"
+          to="/home"
           size="sm"
           class-name="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white/8 p-1"
           image-class="max-h-8 max-w-8 object-contain"
@@ -36,7 +36,7 @@
         ]"
       >
         <div v-if="showLogo" class="mb-2 flex px-1 xl:hidden">
-          <AppLogo to="/dashboard" size="md" class-name="max-w-full" />
+          <AppLogo to="/home" size="md" class-name="max-w-full" />
         </div>
         <UserProfile
           :photo="photo"

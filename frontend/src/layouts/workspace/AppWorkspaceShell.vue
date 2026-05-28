@@ -92,17 +92,17 @@ import {
   IconBell,
   IconFileText,
   IconHome,
-  IconLayoutDashboard,
   IconLogout,
   IconSettings,
   IconSignature,
+  IconSitemap,
   IconUser,
 } from "@tabler/icons-vue";
 import SHeader from "@/layouts/headers/SHeader.vue";
 import SBody from "@/layouts/core/SBody.vue";
 import SMessage from "@/layouts/core/SNotify.vue";
 import AppWorkspaceSidebar from "@/layouts/menus/AppWorkspaceSidebar.vue";
-import { canAccessAdmin, canReadResource, hasAnyRole, isAdminUser } from "@/core/utils/accessControl.js";
+import { canAccessAdmin, canAccessResource, canReadResource, hasAnyRole, isAdminUser } from "@/core/utils/accessControl.js";
 
 const props = defineProps({
   menuOpen: {
@@ -115,7 +115,7 @@ const props = defineProps({
   },
   currentSection: {
     type: String,
-    default: "dashboard"
+    default: "home"
   },
   photo: {
     type: String,
@@ -172,47 +172,54 @@ const canShowAdminNav = computed(() =>
   )
 );
 
+const canShowProcessManagementNav = computed(() =>
+  canAccessAdmin() &&
+  !isAuditorView.value &&
+  (
+    hasAnyRole(["Admin", "Gestor"]) ||
+    canAccessResource("processes", "create") ||
+    canAccessResource("processes", "update")
+  )
+);
+
 const primaryNavItems = computed(() => {
   const adminOnly = isAdminUser();
   const items = [
     {
       key: "home",
       label: "Inicio",
-      to: { name: "dashboard" },
+      to: { name: "home" },
       icon: IconHome,
       hideForAdminOnly: true,
-      exactRouteNames: ["dashboard"],
-      inactiveHashes: ["#procesos"]
+      exactRouteNames: ["home"]
     },
     {
       key: "processes",
       label: "Procesos",
-      to: { name: "dashboard", hash: "#procesos" },
-      icon: IconLayoutDashboard,
-      hideForAdminOnly: true,
+      to: { name: "process-management" },
+      icon: IconSitemap,
       hideForAuditor: true,
-      requiresResource: "processes",
-      exactRouteNames: ["dashboard"],
-      activeHash: "#procesos"
+      requiresProcessManagement: true,
+      exactRouteNames: ["process-management"]
     },
     {
       key: "documents",
       label: "Documentos",
-      to: { name: "dashboard-documents" },
+      to: { name: "home-documents" },
       icon: IconFileText,
       hideForAdminOnly: true,
       requiresResource: "documents",
-      exactRouteNames: ["dashboard-documents"]
+      exactRouteNames: ["home-documents"]
     },
     {
       key: "signatures",
       label: "Firmas",
-      to: { name: "dashboard-signatures" },
+      to: { name: "home-signatures" },
       icon: IconSignature,
       hideForAdminOnly: true,
       hideForAuditor: true,
       requiresResource: "documents",
-      exactRouteNames: ["dashboard-signatures"]
+      exactRouteNames: ["home-signatures"]
     },
     {
       key: "profile",
@@ -236,6 +243,7 @@ const primaryNavItems = computed(() => {
   return items.filter((item) => {
     if (adminOnly && item.hideForAdminOnly) return false;
     if (isAuditorView.value && item.hideForAuditor) return false;
+    if (item.requiresProcessManagement && !canShowProcessManagementNav.value) return false;
     if (item.requiresResource && !canReadResource(item.requiresResource)) return false;
     if (item.requiresAdminAccess && !canShowAdminNav.value) return false;
     return true;

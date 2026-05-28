@@ -25,7 +25,7 @@ Ya existe, en términos reales:
 - flujos de firma sincronizados e instanciados
 - estados documentales formales en backend
 - storage documental canónico en `deasy-documents/...`
-- dashboard documental parcial con acciones operativas
+- home documental parcial con acciones operativas
 
 Lo pendiente ya no es "crear las tablas" ni "definir el modelo". Lo pendiente es cerrar la ejecución
 operativa del ciclo documental completo, especialmente en la transición entre llenado y firma, el
@@ -162,7 +162,7 @@ Qué ya está:
 - sincronización desde artifacts
 - resolución parcial de actores
 - devolución, reenvío, retrabajo y aprobación
-- panel de llenado en dashboard con modal operativo
+- panel de llenado en home con modal operativo
 - historial de notas operativas visible
 - control de carga y reemplazo de archivo por responsable actual
 
@@ -245,7 +245,7 @@ Estado:
 
 Qué ya está:
 
-- dashboard documental parcial
+- home documental parcial
 - acciones por entregable
 - inicio de flujo
 - carga y reemplazo de archivo

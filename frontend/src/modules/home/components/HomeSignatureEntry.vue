@@ -1,10 +1,10 @@
 <template>
   <section id="signature-home" class="flex flex-col gap-6">
     <AppPageIntro
-      variant="dashboard"
+      variant="home"
       title="Firmas electrónicas"
       :meta="`${filteredItems.length} documento(s) pendiente(s)`"
-      description="Centraliza la firma manual, solicitudes, validación, multifirma general y la firma de pendientes vinculados al dashboard."
+      description="Centraliza la firma manual, solicitudes, validación, multifirma general y la firma de pendientes vinculados a Home."
     >
       <template #actions>
         <div class="flex flex-wrap gap-2">
@@ -22,10 +22,10 @@
     <section id="signature-launchers" class="rounded-xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
       <FirmarPdf
         :show-start-heading="false"
-        :enable-dashboard-shortcuts="true"
+        :enable-home-shortcuts="true"
         @open-general-multisigner="openGeneralMultiSignerModal"
-        @open-dashboard-multisigner="openAllPendingInMultiSigner"
-        @open-dashboard-pending="openPendingModal"
+        @open-home-multisigner="openAllPendingInMultiSigner"
+        @open-home-pending="openPendingModal"
         @open-sign-modal="handleOpenSignModal"
         @open-request-modal="handleOpenRequestModal"
       />
@@ -34,7 +34,7 @@
     <AppModalShell
       controlled
       :open="signModalOpen"
-      labelled-by="dashboard-signature-sign-modal"
+      labelled-by="home-signature-sign-modal"
       size="xl"
       dialog-class="max-w-[108rem]"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
@@ -42,7 +42,7 @@
       @close="closeSignModal"
     >
       <template #header>
-        <div id="dashboard-signature-sign-modal" class="flex min-w-0 flex-1 items-center gap-4">
+        <div id="home-signature-sign-modal" class="flex min-w-0 flex-1 items-center gap-4">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21h-7a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v7"></path><path d="M14 19l2 2l4 -4"></path><path d="M9 7h4"></path><path d="M9 11h4"></path></svg>
           </div>
@@ -66,7 +66,7 @@
     <AppModalShell
       controlled
       :open="requestModalOpen"
-      labelled-by="dashboard-signature-request-modal"
+      labelled-by="home-signature-request-modal"
       size="xl"
       dialog-class="max-w-[108rem]"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
@@ -74,7 +74,7 @@
       @close="closeRequestModal"
     >
       <template #header>
-        <div id="dashboard-signature-request-modal" class="flex min-w-0 flex-1 items-center gap-4">
+        <div id="home-signature-request-modal" class="flex min-w-0 flex-1 items-center gap-4">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l11 -11"></path><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7.5l-7.5 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"></path></svg>
           </div>
@@ -98,7 +98,7 @@
     <AppModalShell
       controlled
       :open="generalMultiSignerOpen"
-      labelled-by="dashboard-signature-general-multisigner-modal"
+      labelled-by="home-signature-general-multisigner-modal"
       size="xl"
       dialog-class="max-w-[108rem]"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
@@ -107,7 +107,7 @@
       @close="closeGeneralMultiSignerModal"
     >
       <template #header>
-        <div id="dashboard-signature-general-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
+        <div id="home-signature-general-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
           <div class="flex min-w-0 max-w-[22rem] items-center gap-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
@@ -173,7 +173,7 @@
     <AppModalShell
       controlled
       :open="pendingModalOpen"
-      labelled-by="dashboard-signature-pending-modal"
+      labelled-by="home-signature-pending-modal"
       size="xl"
       title="Documentos pendientes por firma"
       body-class="px-0 py-0"
@@ -230,7 +230,7 @@
         <AppDataTable
           :fields="tableFields"
           :rows="filteredItems"
-          :row-key="(row) => `dashboard-signature-${row.signature_request_id}`"
+          :row-key="(row) => `home-signature-${row.signature_request_id}`"
           empty-text="No hay documentos pendientes por firma."
           actions-label="ACCIONES"
         >
@@ -274,7 +274,7 @@
     <AppModalShell
       controlled
       :open="multiSignerOpen"
-      labelled-by="dashboard-signature-multisigner-modal"
+      labelled-by="home-signature-multisigner-modal"
       size="xl"
       dialog-class="max-w-[108rem]"
       content-class="flex max-h-[calc(100vh-4rem)] flex-col"
@@ -283,7 +283,7 @@
       @close="closeMultiSignerModal"
     >
       <template #header>
-        <div id="dashboard-signature-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
+        <div id="home-signature-multisigner-modal" class="flex min-w-0 flex-1 items-center gap-4">
           <div class="flex min-w-0 max-w-[22rem] items-center gap-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v4a1 1 0 0 0 1 1h4"></path><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2"></path><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path></svg>
@@ -364,7 +364,7 @@ import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import ProcessDefinitionPanelService from "@/core/services/ProcessDefinitionPanelService.js";
 
-const emit = defineEmits(["refresh-dashboard"]);
+const emit = defineEmits(["refresh-home"]);
 const processPanelService = new ProcessDefinitionPanelService();
 const HEADER_FILE_NAME_LIMIT = 20;
 
@@ -744,12 +744,12 @@ const openAllPendingInMultiSigner = async () => {
 
 const handleBatchFinished = async () => {
   await loadSignatureCenter();
-  emit("refresh-dashboard", { source: "pending-multisigner" });
+  emit("refresh-home", { source: "pending-multisigner" });
 };
 
 const handleGeneralBatchFinished = async () => {
   await loadSignatureCenter();
-  emit("refresh-dashboard", { source: "general-multisigner" });
+  emit("refresh-home", { source: "general-multisigner" });
 };
 
 onMounted(async () => {

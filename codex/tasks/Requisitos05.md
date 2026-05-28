@@ -49,7 +49,7 @@ Hoy el sistema mezcla varias responsabilidades:
 - la instanciacion de tareas por periodo se comporta como si todos los
   templates fueran ejecutables por sistema,
 - la creacion de artifacts nuevos esta concentrada en admin,
-- el dashboard del usuario no modela correctamente la creacion manual de tareas
+- el home del usuario no modela correctamente la creacion manual de tareas
   ni sus dependencias,
 - la vista de tareas asignadas ya muestra mucha informacion operativa pero no
   escala bien en volumen ni en filtros,
@@ -91,7 +91,7 @@ periodo debe aplicar solo cuando el artifact asociado sea de catalogo
 ## 2. Creacion de tareas manuales por usuario comun
 
 El sistema debe incorporar una capacidad real para que un usuario comun cree
- tareas desde el dashboard sin depender del panel admin.
+ tareas desde el home sin depender del panel admin.
 
 ### Decision funcional importante
 
@@ -164,12 +164,12 @@ tiene dos ejes utiles y deben separarse por responsabilidad:
 
 - Pertenecer a un proceso no implica ser hija de otra tarea.
 - Ser derivada de otra tarea no implica crear una corrida nueva.
-- El dashboard y la base deben tratar `process_run_id` como contexto y
+- El home y la base deben tratar `process_run_id` como contexto y
   `parent_task_id` como jerarquia puntual.
 
 ### Requerimientos funcionales
 
-- El dashboard del usuario debe ofrecer una accion real de `Crear tarea`.
+- El home del usuario debe ofrecer una accion real de `Crear tarea`.
 - La creacion no debe limitarse a metadata basica; debe cubrir tambien
   entregables, templates y flujos asociados.
 - El usuario debe poder registrar artifacts de usuario mediante un flujo de
@@ -201,7 +201,7 @@ disparar un proceso y quien puede modificar o actualizar corridas ya creadas.
   - crear tareas manuales,
   - adjuntar artifacts de usuario,
   - y reconfigurar dependencias operativas.
-- El dashboard no debe mostrar acciones de disparo o actualizacion sin una
+- El home no debe mostrar acciones de disparo o actualizacion sin una
   politica explicita de permisos.
 
 ### Matriz funcional inicial propuesta
@@ -282,7 +282,7 @@ Toda tarea creada por usuario debe contemplar entregables desde el inicio.
 ### Modelo funcional propuesto
 
 - Tarea manual ligada a proceso:
-  - nace desde una definicion activa del dashboard,
+  - nace desde una definicion activa del home,
   - conserva el uso de `hydrateTaskFromDefinition()` para materializar
     entregables documentales,
   - puede usar templates del sistema ya vinculados a la definicion,
@@ -304,7 +304,7 @@ Toda tarea creada por usuario debe contemplar entregables desde el inicio.
   - asociar flujo de llenado cuando aplique,
   - asociar flujo de firmas cuando aplique,
   - y cerrar la tarea con sus dependencias minimas consistentes.
-- El dashboard debe comportarse como una experiencia guiada y no como una sola
+- El home debe comportarse como una experiencia guiada y no como una sola
   forma plana con todos los campos al mismo tiempo.
 
 ### Restriccion importante
@@ -444,7 +444,7 @@ crecimiento del volumen documental y de entregables.
     - no hay resultados para los filtros actuales.
 
 - Persistencia deseable:
-  - mantener filtros y expansion al cambiar entre definiciones del dashboard si
+  - mantener filtros y expansion al cambiar entre definiciones del home si
     no contradice el contexto activo.
 
 ### Jerarquia visual requerida
@@ -478,7 +478,7 @@ crecimiento del volumen documental y de entregables.
 
 ## 4.1 Flujo de modales propuesto para crear tareas
 
-La creacion de tarea desde dashboard debe dejar de ser un modal unico y pasar a
+La creacion de tarea desde home debe dejar de ser un modal unico y pasar a
 un flujo guiado por pasos.
 
 ### Flujo propuesto para tarea ligada a proceso
@@ -533,13 +533,13 @@ un flujo guiado por pasos.
 
 - El usuario no deberia ver todos los campos a la vez.
 - Cada modal debe resolver una sola decision principal.
-- El dashboard debe conservar progreso entre pasos y permitir volver atras sin
+- El home debe conservar progreso entre pasos y permitir volver atras sin
   perder el trabajo ya ingresado.
 
 ### Corte implementado en frontend
 
 - En esta fase ya se implemento el flujo guiado de `Crear tarea` para tareas
-  manuales ligadas a proceso dentro del dashboard.
+  manuales ligadas a proceso dentro del home.
 - El modal dejo de ser una forma plana y paso a tres pasos:
   - contexto,
   - base documental,
@@ -752,7 +752,7 @@ intervenidos en pruebas:
 
 ### Frontend
 
-- Incorporar en dashboard una UX real para `Crear tarea`.
+- Incorporar en home una UX real para `Crear tarea`.
 - Modelar flujos de modales en pasos para creacion de tarea manual.
 - Reutilizar los componentes compartidos del proyecto y evitar UI local ad hoc.
 - Rediseñar la seccion de tareas asignadas con filtros y estructura escalable.
@@ -797,7 +797,7 @@ Debe registrarse:
    - dependencias de firma.
 4. Definir la matriz de actores que pueden disparar procesos manuales y
    actualizar corridas o dependencias operativas.
-5. Diseñar y luego implementar el flujo de modales del dashboard para crear
+5. Diseñar y luego implementar el flujo de modales del home para crear
    tareas y registrar sus artifacts.
 6. Rediseñar la vista `Tareas asignadas` con filtros y una lista de paneles
    escalable.
@@ -812,7 +812,7 @@ Debe registrarse:
   artifacts `system`.
 - Existe una definicion clara de quienes pueden disparar procesos manuales y
   quienes pueden actualizar sus corridas.
-- El sistema queda preparado para crear tareas manuales desde dashboard de
+- El sistema queda preparado para crear tareas manuales desde home de
   usuario.
 - La creacion de tarea contempla entregables y artifacts de usuario mediante
   flujo guiado.

@@ -50,9 +50,9 @@ Storage actual:
 - `deasy-templates/Seeds`
 - `deasy-templates/Users/<cedula>`
 
-## Estado actual del dashboard operativo
+## Estado actual del home operativo
 
-Ya existe un primer panel operativo en el dashboard cuando el usuario hace click en un proceso de su menu.
+Ya existe un primer panel operativo en el home cuando el usuario hace click en un proceso de su menu.
 
 Ese panel ya muestra:
 
@@ -78,7 +78,7 @@ No cubre todavia:
 
 ## Pendientes inmediatos
 
-1) Refinar UX/UI del panel operativo del dashboard.
+1) Refinar UX/UI del panel operativo del home.
 2) Agregar una segunda vista de seguimiento para tareas derivadas, asignadas a subordinados o a la unidad.
 3) Definir el flujo funcional exacto para:
    - generar documentos desde `task_items`
@@ -91,7 +91,7 @@ No cubre todavia:
    - `user/published`
    - y si existira una promocion administrativa hacia `system`.
 5) Decidir si `artifact_stage` se mostrara y editara en la UI de negocio o si quedara solo como estado de repositorio.
-6) Implementar el flujo de firma operativo por documento en el dashboard del usuario:
+6) Implementar el flujo de firma operativo por documento en el home del usuario:
    - ver pasos
    - ver pendientes
    - firmar cuando corresponda.
@@ -125,5 +125,5 @@ No cubre todavia:
 ## Documentacion pendiente
 
 1) Mantener alineados los diagramas visuales con el modelo vigente.
-2) Completar ejemplos de uso por endpoint para el flujo operativo del dashboard.
+2) Completar ejemplos de uso por endpoint para el flujo operativo del home.
 3) Documentar el flujo de vida de `task_items -> documents -> signatures`.
