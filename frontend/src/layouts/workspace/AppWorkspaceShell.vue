@@ -3,51 +3,36 @@
     <SHeader :menu-open="menuOpen" @onclick="emit('menu-toggle')">
       <div class="deasy-workspace-header">
         <div class="deasy-workspace-header__context">
-          <nav class="deasy-primary-nav" aria-label="Navegacion principal">
-            <router-link
-              v-for="item in primaryNavItems"
-              :key="item.key"
-              :to="item.to"
-              class="deasy-primary-nav__item"
-              :class="{ 'deasy-primary-nav__item--active': isNavActive(item) }"
-              :title="item.label"
-            >
-              <span class="deasy-primary-nav__icon">
-                <component :is="item.icon" class="h-4 w-4 shrink-0" />
-              </span>
-              <span class="deasy-primary-nav__label">{{ item.label }}</span>
-            </router-link>
-          </nav>
           <slot name="header" />
         </div>
 
         <div class="deasy-workspace-header__actions">
           <button
             v-if="showSignatureAction"
-            class="deasy-nav-action h-8 w-8"
+            class="deasy-nav-action h-9 w-9"
             type="button"
             title="Firmas"
             aria-label="Firmas"
             @click="emit('sign')"
           >
-            <IconSignature class="h-4 w-4" />
+            <IconSignature class="h-5 w-5" />
           </button>
           <button
-            class="deasy-nav-action h-8 w-8"
+            class="deasy-nav-action h-9 w-9"
             type="button"
             title="Notificaciones"
             aria-label="Notificaciones"
             @click="emit('notify')"
           >
-            <IconBell class="h-4 w-4" />
+            <IconBell class="h-5 w-5" />
           </button>
           <router-link
             to="/logout"
-            class="deasy-nav-action h-8 w-8"
+            class="deasy-nav-action h-9 w-9"
             title="Cerrar sesion"
             aria-label="Cerrar sesion"
           >
-            <IconLogout class="h-4 w-4" />
+            <IconLogout class="h-5 w-5" />
           </router-link>
         </div>
       </div>
@@ -65,6 +50,25 @@
         @close-mobile="emit('close-mobile')"
         @photo-selected="emit('photo-selected', $event)"
       >
+        <template #rail>
+          <nav class="deasy-sidebar-rail-nav" aria-label="Navegacion principal">
+            <router-link
+              v-for="item in primaryNavItems"
+              :key="item.key"
+              :to="item.to"
+              class="deasy-sidebar-rail-nav__item"
+              :class="{ 'deasy-sidebar-rail-nav__item--active': isNavActive(item) }"
+              :title="item.label"
+              :aria-label="item.label"
+              @click="emit('primary-nav', { key: item.key, active: isNavActive(item) })"
+            >
+              <span class="deasy-sidebar-rail-nav__icon">
+                <component :is="item.icon" class="h-6 w-6 shrink-0" />
+              </span>
+            </router-link>
+          </nav>
+        </template>
+
         <div v-if="$slots.sidebar" class="deasy-secondary-nav">
           <slot name="sidebar" />
         </div>
@@ -135,7 +139,8 @@ const emit = defineEmits([
   "notify",
   "notify-close",
   "sign",
-  "photo-selected"
+  "photo-selected",
+  "primary-nav"
 ]);
 
 const route = useRoute();

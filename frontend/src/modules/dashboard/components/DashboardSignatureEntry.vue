@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col gap-6">
+  <section id="signature-home" class="flex flex-col gap-6">
     <AppPageIntro
       variant="dashboard"
       title="Firmas electrónicas"
@@ -19,7 +19,7 @@
       {{ error }}
     </section>
 
-    <section class="rounded-xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
+    <section id="signature-launchers" class="rounded-xl border border-slate-100 bg-white shadow-xl shadow-slate-200/30">
       <FirmarPdf
         :show-start-heading="false"
         :enable-dashboard-shortcuts="true"

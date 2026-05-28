@@ -10,6 +10,7 @@
     @notify="toggleNotify"
     @notify-close="vnotify = false"
     @sign="isSigningView = !isSigningView"
+    @primary-nav="handlePrimaryNavInteraction"
   >
 
       <template #sidebar>
@@ -478,6 +479,15 @@ const userFullName = computed(() => {
 
 const handleHeaderToggle = () => {
   vmenu.value = !vmenu.value;
+};
+
+const handlePrimaryNavInteraction = ({ active } = {}) => {
+  if (!isClient) return;
+  if (window.innerWidth >= 1280) {
+    vmenu.value = active ? !vmenu.value : true;
+    return;
+  }
+  vmenu.value = true;
 };
 
 const GROUP_DEFS = [

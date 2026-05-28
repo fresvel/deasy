@@ -13,24 +13,8 @@
     @notify-close="vnotify = false"
     @sign="router.push({ name: 'dashboard-signatures' })"
     @photo-selected="handlePhotoSelected"
+    @primary-nav="handlePrimaryNavInteraction"
   >
-    <template #header>
-        <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-          <button
-            v-for="(item, index) in areas"
-            :key="index"
-            class="deasy-secondary-tab"
-            :title="item.name"
-            :class="item.active ? 'deasy-secondary-tab--active' : ''"
-            type="button"
-            @click="onheadClick(item)"
-          >
-             <component :is="resolveAreaIcon(item.name)" class="w-5 h-5 shrink-0" />
-            <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
-          </button>
-        </div>
-    </template>
-
     <template #sidebar>
         <div class="flex flex-col">
             <div class="deasy-nav-meta mt-3 mb-2">
@@ -113,8 +97,7 @@ import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
     import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
     import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
-    import {
-      resolveWorkspaceAreaIcon,
+import {
       resolveWorkspaceProfileMenuIcon,
       resolveWorkspaceSectionIcon,
       workspaceIconToneClass,
@@ -323,18 +306,12 @@ const goBackFromProfileHome = () => {
         }
     });
 
-    service.getEasymAreas()
-    const areas =service.getEasymdata().areas
     const tareas=service.getEasymdata().tareas
     
 const isClient = typeof window !== 'undefined';
 
 const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');
 const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
-
-const resolveAreaIcon = (name) => {
-    return resolveWorkspaceAreaIcon(name).icon;
-};
 
     const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
     const vnotify = ref(false);
@@ -351,6 +328,15 @@ const resolveAreaIcon = (name) => {
         }
     };
 
+    const handlePrimaryNavInteraction = ({ active } = {}) => {
+        if (!isClient) return;
+        if (window.innerWidth >= 1280) {
+            vmenu.value = active ? !vmenu.value : true;
+            return;
+        }
+        vmenu.value = true;
+    };
+
     const area= ref("Perfil")
     const showDossierMenu = ref(true);
     
@@ -362,12 +348,6 @@ const resolveAreaIcon = (name) => {
     const toggleNotify = () => {
         vnotify.value = !vnotify.value;
     };
-    
-    const navigateToPerfil = () => {
-        router.push('/perfil');
-    };
-    
-    
     
     const handlePhotoSelected = async (file) => {
         if (!file || !currentUser.value?.cedula) {
@@ -412,9 +392,6 @@ const resolveAreaIcon = (name) => {
 
     const syncAreaState = (areaName) => {
         area.value = areaName;
-        for (const el of areas.value) {
-            el.active = el.name === areaName;
-        }
     };
 
     const openSigningWorkspace = () => {
@@ -453,76 +430,6 @@ const resolveAreaIcon = (name) => {
         }
     }
     
-
-    const onheadClick=(item)=>{
-        syncAreaState(item.name);
-        switch(item.name){
-            case 'Perfil':
-                mainmenu.value = buildPerfilMenu();
-                process.value="Inicio";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Academia':
-                console.log("Academia detected")
-                mainmenu.value=[
-                    {
-                        label: 'Logros Académicos',
-                        key: null,
-                        icon: 'certificate',
-                        active: true,
-                    },
-                    {
-                        label: 'Tutorías',
-                        key: null,
-                        icon: 'check-double',
-                        active: false,
-                    },
-                    {
-                        label: 'Horarios',
-                        key: null,
-                        icon: 'info-circle',
-                        active: false,
-                    },
-                    {
-                        label: 'Gestión',
-                        key: null,
-                        icon: 'id-card',
-                        active: false,
-                    },
-                    {
-                        label: 'Eventos',
-                        key: null,
-                        icon: 'globe',
-                        active: false,
-                    }
-                ]
-                process.value="index";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Investigación':
-                mainmenu.value=[]
-                process.value="Investigación";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Vinculación':
-                mainmenu.value=[]
-                process.value="Vinculación";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Internacionalización':
-                mainmenu.value=[]
-                process.value="Internacionalización";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Firmar':
-                openSigningWorkspace();
-                break;
-            case 'Message':
-                break;
-            default:
-                break;
-        }
-    }
 
     watch(() => route.query.view, () => {
         syncViewFromRoute();

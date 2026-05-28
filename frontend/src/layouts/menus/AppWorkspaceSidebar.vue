@@ -17,9 +17,18 @@
           :editable="editable"
           @photo-selected="$emit('photo-selected', $event)"
         />
+        <slot name="rail" />
       </div>
 
-      <div :class="['deasy-sidebar__flyout', containerClass]">
+      <div
+        :class="[
+          'deasy-sidebar__flyout',
+          containerClass,
+          show
+            ? 'xl:visible xl:translate-x-0 xl:opacity-100'
+            : 'xl:pointer-events-none xl:invisible xl:-translate-x-1 xl:opacity-0'
+        ]"
+      >
         <div v-if="showLogo" class="mb-2 flex px-1 xl:hidden">
           <AppLogo to="/dashboard" size="md" class-name="max-w-full" />
         </div>
@@ -30,6 +39,9 @@
           :editable="editable"
           @photo-selected="$emit('photo-selected', $event)"
         />
+        <div class="deasy-sidebar__rail-mobile xl:hidden">
+          <slot name="rail" />
+        </div>
         <slot />
       </div>
     </div>

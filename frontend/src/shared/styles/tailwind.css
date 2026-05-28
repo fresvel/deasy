@@ -113,7 +113,7 @@
     }
 
     .deasy-secondary-nav {
-        @apply min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin];
+        @apply mt-4 min-h-0 flex-1 overflow-y-auto border-t border-white/8 pt-4 pr-1 [scrollbar-width:thin];
     }
 
     .deasy-sidebar {
@@ -121,7 +121,7 @@
     }
 
     .deasy-sidebar__rail {
-        @apply hidden h-full w-20 shrink-0 flex-col items-center gap-3 px-3 py-4 xl:flex;
+        @apply hidden h-full w-20 shrink-0 flex-col items-center gap-4 px-3 py-4 xl:flex;
     }
 
     .deasy-sidebar__flyout {
@@ -130,15 +130,32 @@
 
     @media (min-width: 1280px) {
         .deasy-sidebar__flyout {
-            @apply invisible absolute left-full top-3 z-50 max-h-[calc(100vh-5rem)] w-[21.5rem] translate-x-1 overflow-y-auto rounded-2xl border p-3 opacity-0 shadow-[0_18px_44px_rgba(0,0,0,0.24)] transition-all duration-150 [scrollbar-width:thin];
+            @apply visible absolute left-full top-3 z-50 max-h-[calc(100vh-5rem)] w-[21.5rem] translate-x-0 overflow-y-auto rounded-2xl border p-3 opacity-100 shadow-[0_18px_44px_rgba(0,0,0,0.24)] [scrollbar-width:thin];
             border-color: rgba(255, 255, 255, 0.08);
             background: #0b2232;
         }
+    }
 
-        .deasy-sidebar:hover .deasy-sidebar__flyout,
-        .deasy-sidebar:focus-within .deasy-sidebar__flyout {
-            @apply visible translate-x-0 opacity-100;
-        }
+    .deasy-sidebar__rail-mobile {
+        @apply mb-2 border-b border-white/8 pb-3;
+    }
+
+    .deasy-sidebar-rail-nav {
+        @apply flex flex-col items-center gap-2.5;
+    }
+
+    .deasy-sidebar-rail-nav__item {
+        @apply inline-flex h-12 w-12 items-center justify-center rounded-xl border border-transparent text-white/72 transition-all hover:bg-white/8 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/16;
+    }
+
+    .deasy-sidebar-rail-nav__item--active {
+        @apply border text-white;
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .deasy-sidebar-rail-nav__icon {
+        @apply inline-flex items-center justify-center;
     }
 
     .deasy-secondary-tabs {

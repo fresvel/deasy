@@ -158,11 +158,12 @@
 
     <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-xl p-6 lg:p-8 shadow-sm">
       <div
+        id="signature-launchers-grid"
         class="grid grid-cols-1 gap-6 lg:grid-cols-2"
         :class="enableDashboardShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
       >
 
-        <div v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -174,7 +175,7 @@
           />
         </div>
 
-        <div v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -186,7 +187,7 @@
           />
         </div>
 
-        <div v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -199,6 +200,7 @@
         </div>
 
         <div
+          id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
         >
@@ -215,6 +217,7 @@
         </div>
 
         <button
+          id="signature-launcher-received"
           v-if="enableDashboardShortcuts && canShowLauncher('pending')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
@@ -233,6 +236,7 @@
         </button>
 
         <button
+          id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
@@ -256,6 +260,7 @@
         </button>
 
         <button
+          id="signature-launcher-pending"
           v-if="enableDashboardShortcuts && canShowLauncher('pending')"
           type="button"
           class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"

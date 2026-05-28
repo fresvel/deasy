@@ -10,6 +10,7 @@
     @notify="toggleNotify"
     @notify-close="showNotify = false"
     @sign="router.push({ name: 'dashboard-signatures' })"
+    @primary-nav="handlePrimaryNavInteraction"
   >
     <template #header>
         <span v-if="!userUnits.length && !menuLoading" class="text-sm font-medium text-slate-500">
@@ -18,7 +19,37 @@
     </template>
 
     <template #sidebar>
-        <div id="procesos" class="deasy-nav-group scroll-mt-24">
+        <div v-if="isGlobalSignatureRoute" class="deasy-nav-group scroll-mt-24">
+          <div class="deasy-nav-meta mt-3 mb-2">
+            Centro de firmas
+          </div>
+
+          <div class="deasy-nav-group mt-2">
+            <div class="deasy-nav-shell">
+              <div class="deasy-nav-section">
+                <button
+                  v-for="item in signatureSidebarItems"
+                  :key="item.key"
+                  type="button"
+                  class="deasy-nav-item"
+                  :class="isSignatureSidebarItemActive(item) ? 'deasy-nav-item--active' : ''"
+                  :title="item.label"
+                  @click="openSignatureSidebarItem(item)"
+                >
+                  <span
+                    class="deasy-nav-item__icon"
+                    :class="workspaceIconToneClass(item.tone || 'sky')"
+                  >
+                    <component :is="item.icon" class="h-4.5 w-4.5 shrink-0" />
+                  </span>
+                  <span class="deasy-nav-item__label">{{ item.label }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else id="procesos" class="deasy-nav-group scroll-mt-24">
           <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="unitGroups.length">
             <label class="flex flex-col gap-1.5 relative">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Cargos asignados</span>
@@ -2504,6 +2535,15 @@ const handleResize = () => {
   }
 };
 
+const handlePrimaryNavInteraction = ({ active } = {}) => {
+  if (!isClient) return;
+  if (window.innerWidth >= 1280) {
+    showMenu.value = active ? !showMenu.value : true;
+    return;
+  }
+  showMenu.value = true;
+};
+
 const menuLoading = ref(false);
 const menuError = ref('');
 const userUnits = ref([]);
@@ -3147,6 +3187,49 @@ const workspaceRouteMode = computed(() => {
 });
 const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'documents');
 const isGlobalSignatureRoute = computed(() => workspaceRouteMode.value === 'signatures');
+const signatureSidebarItems = computed(() => ([
+  { key: 'home', label: 'Inicio de firmas', icon: IconSignature, tone: 'sky', hash: '#signature-home' },
+  { key: 'sign', label: 'Firmar documento', icon: IconSignature, tone: 'sky', hash: '#signature-launcher-sign' },
+  { key: 'request', label: 'Solicitar firmas', icon: IconMessages, tone: 'sky', hash: '#signature-launcher-request' },
+  { key: 'validate', label: 'Validar documento', icon: IconFileCheck, tone: 'sky', hash: '#signature-launcher-validate' },
+  { key: 'multi', label: 'Multifirmador', icon: IconFiles, tone: 'sky', hash: '#signature-launcher-multi' },
+  { key: 'received', label: 'Solicitudes recibidas', icon: IconMessages, tone: 'sky', hash: '#signature-launcher-received' },
+  { key: 'database', label: 'Buscar en BD', icon: IconSearch, tone: 'sky', hash: '#signature-launcher-database' },
+  { key: 'pending', label: 'Bandeja de pendientes', icon: IconChecklist, tone: 'sky', hash: '#signature-launcher-pending' },
+]));
+
+const scrollToSignatureAnchor = async (hash) => {
+  if (!isClient || !hash) return;
+  await nextTick();
+  requestAnimationFrame(() => {
+    const target = document.querySelector(hash);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+};
+
+const openSignatureSidebarItem = async (item) => {
+  const targetHash = item?.hash || '#signature-home';
+  if (route.name !== 'dashboard-signatures' || route.hash !== targetHash) {
+    await router.replace({ name: 'dashboard-signatures', hash: targetHash });
+  }
+  await scrollToSignatureAnchor(targetHash);
+};
+
+const isSignatureSidebarItemActive = (item) => {
+  const currentHash = route.hash || '#signature-home';
+  return currentHash === (item?.hash || '#signature-home');
+};
+
+watch(
+  () => [route.name, route.hash],
+  async ([routeName, hash]) => {
+    if (routeName === 'dashboard-signatures' && hash) {
+      await scrollToSignatureAnchor(hash);
+    }
+  }
+);
 
 const documentCenterFields = [
   { name: 'document', label: 'Documento' },
