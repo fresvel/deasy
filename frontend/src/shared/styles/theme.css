@@ -551,6 +551,10 @@ a:hover {
   padding: 0;
 }
 
+.admin-related-tabs {
+  padding: 0.15rem 0 0.2rem;
+}
+
 .admin-page-header {
   display: flex;
   align-items: flex-start;

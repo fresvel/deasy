@@ -8,6 +8,15 @@
       @close="hideFeedbackToast"
     />
 
+    <div v-if="table && siblingTabs.length" class="admin-related-tabs">
+      <ProfileSubsectionTabs
+        :model-value="activeSiblingTab"
+        :tabs="siblingTabs"
+        aria-label="Tablas hermanas"
+        @update:model-value="$emit('select-sibling-tab', $event)"
+      />
+    </div>
+
     <AdminTableHeader
       :table-header-icon="tableHeaderIcon"
       :table-header-title="tableHeaderTitle"
@@ -730,18 +739,27 @@ import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 
 const props = defineProps({
   table: {
     type: Object,
     default: null
   },
+  siblingTabs: {
+    type: Array,
+    default: () => []
+  },
+  activeSiblingTab: {
+    type: String,
+    default: ""
+  },
   allTables: {
     type: Array,
     default: () => []
   }
 });
-const emit = defineEmits(["go-back"]);
+const emit = defineEmits(["go-back", "select-sibling-tab"]);
 
 const rows = ref([]);
 const loading = ref(false);

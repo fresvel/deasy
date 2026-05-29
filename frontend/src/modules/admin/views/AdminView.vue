@@ -415,7 +415,10 @@
              <AdminTableManager
                ref="adminManager"
                :table="selectedTable"
+               :sibling-tabs="currentSiblingTabs"
+               :active-sibling-tab="selectedTable?.table || ''"
                :all-tables="tables"
+               @select-sibling-tab="handleSiblingTabChange"
                @go-back="handleManagerGoBack"
              />
           </div>
@@ -700,6 +703,12 @@ const SECURITY_INDEX_ITEMS = [
   }
 ];
 
+const TABLE_TAB_LABEL_OVERRIDES = {
+  template_seeds: "Seeds de plantilla",
+  template_artifacts: "Paquetes de plantillas",
+  process_definition_templates: "Plantillas de procesos definidos"
+};
+
 const hiddenTables = new Set([]);
 const visibleTables = computed(() =>
   tables.value.filter((table) =>
@@ -791,6 +800,37 @@ const securityMenuItems = computed(() =>
     };
   })
 );
+
+const currentSiblingSourceItem = computed(() => {
+  const tableName = selectedTable.value?.table;
+  if (!tableName) {
+    return null;
+  }
+
+  return [
+    ...academyMenuItems.value,
+    ...gestionMenuItems.value,
+    ...usersMenuItems.value,
+    ...contractsMenuItems.value,
+    ...securityMenuItems.value
+  ].find((item) => item.availableTables.some((table) => table.table === tableName)) || null;
+});
+
+const currentSiblingTabs = computed(() => {
+  if (!selectedTable.value || !currentSiblingSourceItem.value) {
+    return [];
+  }
+
+  const availableTables = currentSiblingSourceItem.value.availableTables || [];
+  if (availableTables.length < 2) {
+    return [];
+  }
+
+  return availableTables.map((table) => ({
+    key: table.table,
+    label: TABLE_TAB_LABEL_OVERRIDES[table.table] || table.label || table.table
+  }));
+});
 
 const showAcademiaIndex = computed(
   () => selectedSection.value === ACADEMY_GROUP_KEY
@@ -953,9 +993,17 @@ const adminShellHeaderTitle = computed(() =>
 
 const adminShellHeaderSubtitle = computed(() =>
   selectedTable.value
-    ? (selectedTable.value.description || adminHeroDescription.value)
+    ? ""
     : adminHeroDescription.value
 );
+
+const handleSiblingTabChange = (tableName) => {
+  const targetTable = tableMap.value[tableName];
+  if (!targetTable || targetTable.table === selectedTable.value?.table) {
+    return;
+  }
+  selectTable(targetTable);
+};
 
 const handleHeroBack = () => {
   if (typeof window !== 'undefined' && window.history.length > 1) {
