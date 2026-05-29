@@ -164,7 +164,10 @@ export const MANAGEMENT_ROLES = ROLE_CATALOG
 export const PROCESS_MANAGEMENT_ROLES = [
   "AdminSistema",
   "GestorProcesos",
-  "GestorEjecucionProcesos"
+  "GestorPlantillas",
+  "GestorEjecucionProcesos",
+  "GestorDocumental",
+  "GestorFirmas"
 ];
 
 export const OPERATIVE_READ_ROLES = [

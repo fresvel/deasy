@@ -8,6 +8,7 @@ import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
 import HomeView from "@/modules/home/views/HomeView.vue";
 import IndexPage from "@/modules/perfil/views/PerfilView.vue";
 import AdminView from "@/modules/admin/views/AdminView.vue";
+import ProcessManagementView from "@/modules/procesos/views/ProcessManagementView.vue";
 import { isTokenValid, clearAuthData } from "@/core/utils/tokenUtils.js";
 import {
   canAccessAdmin,
@@ -30,7 +31,7 @@ const routes = [
   { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
   { path: "/terminos", name: "terminos", component: TermsView },
   { path: "/admin", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
-  { path: "/procesos", name: "process-management", component: AdminView, meta: { requiresProcessManagementAccess: true, managementSection: "processes" } },
+  { path: "/procesos", name: "process-management", component: ProcessManagementView, meta: { requiresProcessManagementAccess: true, managementSection: "processes" } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
   {
     path: "/logout",

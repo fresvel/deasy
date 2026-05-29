@@ -163,11 +163,24 @@ export const canAccessManagement = (user = getStoredUser()) =>
   MANAGEMENT_RESOURCES.some((resource) => canAccessResource(resource, "read", user));
 
 export const canAccessProcessManagement = (user = getStoredUser()) =>
-  hasAnyRole(["AdminSistema", "GestorProcesos", "GestorEjecucionProcesos"], user) ||
-  canAccessResource("process_definitions", "create", user) ||
-  canAccessResource("process_definitions", "update", user) ||
-  canAccessResource("process_execution", "create", user) ||
-  canAccessResource("process_execution", "update", user);
+  hasAnyRole([
+    "AdminSistema",
+    "GestorProcesos",
+    "GestorPlantillas",
+    "GestorEjecucionProcesos",
+    "GestorDocumental",
+    "GestorFirmas"
+  ], user) ||
+  ["process_definitions", "process_execution", "templates"].some((resource) =>
+    ["create", "update", "delete", "manage"].some((action) =>
+      canAccessResource(resource, action, user)
+    )
+  ) ||
+  ["documents", "fill_flows", "signature_flows"].some((resource) =>
+    ["create", "delete", "manage"].some((action) =>
+      canAccessResource(resource, action, user)
+    )
+  );
 
 export const isAdminUser = (user = getStoredUser()) =>
   hasAnyRole(SYSTEM_ADMIN_ROLES, user);
