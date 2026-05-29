@@ -28,7 +28,7 @@ Deasy1234!
 
 La cuenta `admin.demo@pucese.edu.ec` se crea o actualiza al ejecutar el patch
 RBAC. Los usuarios con cargo de director conservan su rol operativo derivado del
-cargo, pero no reciben el rol `Admin` por defecto.
+cargo, pero no reciben el rol `AdminSistema` por defecto.
 
 ## Recarga del seed en dev
 

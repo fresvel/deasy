@@ -37,7 +37,7 @@ const bootstrapService = new SystemBootstrapService();
 try {
   const result = await bootstrapService.recoverAdmin(payload);
   console.log(result.message);
-  console.log(`Admin: ${result.admin.email} (${result.admin.cedula})`);
+  console.log(`AdminSistema: ${result.admin.email} (${result.admin.cedula})`);
 } catch (error) {
   console.error("No se pudo recuperar el administrador:", error.message);
   process.exitCode = 1;

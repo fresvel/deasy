@@ -37,11 +37,20 @@ export default class RbacService {
          AND (ra.end_date IS NULL OR ra.end_date >= CURDATE())
        ORDER BY
          CASE r.name
-           WHEN 'Admin' THEN 1
-           WHEN 'Gestor' THEN 2
-           WHEN 'Auditor' THEN 3
-           WHEN 'Usuario' THEN 4
-           ELSE 5
+           WHEN 'AdminSistema' THEN 1
+           WHEN 'GestorSeguridad' THEN 2
+           WHEN 'GestorTalentoHumano' THEN 3
+           WHEN 'GestorUnidades' THEN 4
+           WHEN 'GestorAcademico' THEN 5
+           WHEN 'GestorProcesos' THEN 6
+           WHEN 'GestorPlantillas' THEN 7
+           WHEN 'GestorEjecucionProcesos' THEN 8
+           WHEN 'GestorDocumental' THEN 9
+           WHEN 'GestorFirmas' THEN 10
+           WHEN 'GestorContratacion' THEN 11
+           WHEN 'Auditor' THEN 12
+           WHEN 'Usuario' THEN 13
+           ELSE 14
          END,
          r.name ASC`,
       [numericUserId]

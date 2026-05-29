@@ -79,7 +79,7 @@ const uploadDeliverable = multer({
 });
 
 router.post('/', validatePassword, createUser)
-router.get('/', authMiddleware, loadAccessContext, requirePermissions("users.read"), getUsers)
+router.get('/', authMiddleware, loadAccessContext, requirePermissions("people.read"), getUsers)
 
 router.post('/login', loginUser)
 router.post('/logout', logoutUser)
@@ -96,7 +96,7 @@ router.get(
   '/:id/process-definitions/:definitionId/panel',
   authMiddleware,
   loadAccessContext,
-  requireRouteUserAccess({ resource: "processes", action: "read" }),
+  requireRouteUserAccess({ resource: "process_execution", action: "read" }),
   getUserProcessDefinitionPanel
 );
 router.get(
@@ -110,28 +110,28 @@ router.get(
   '/:id/signature-center',
   authMiddleware,
   loadAccessContext,
-  requireRouteUserAccess({ resource: "documents", action: "read" }),
+  requireRouteUserAccess({ resource: "signature_flows", action: "read" }),
   getUserGlobalSignatureCenter
 );
 router.post(
   '/:id/process-definitions/:definitionId/tasks',
   authMiddleware,
   loadAccessContext,
-  requireRouteUserAccess({ resource: "processes", action: "create" }),
+  requireRouteUserAccess({ resource: "process_execution", action: "create" }),
   createUserProcessTask
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
   authMiddleware,
   loadAccessContext,
-  requireRouteUserAccess({ resource: "documents", action: "create", elevatedRoles: ["Admin", "Gestor"] }),
+  requireRouteUserAccess({ resource: "documents", action: "create", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
   createTaskItemDocumentInstance
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',
   authMiddleware,
   loadAccessContext,
-  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["Admin", "Gestor"] }),
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
   uploadDeliverable.single('file'),
   uploadDeliverablePdf
 );
@@ -153,24 +153,24 @@ router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/reset-workflow',
   authMiddleware,
   loadAccessContext,
-  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["Admin", "Gestor"] }),
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
   resetDeliverableWorkflow
 );
 
 //perfil 
 router.get('/me', authMiddleware, loadAccessContext, getMyProfile);
 router.patch('/me', authMiddleware, loadAccessContext, requirePermissions("account.update"), updateMyProfile);
-router.get('/me/certificates', authMiddleware, loadAccessContext, requirePermissions("documents.read"), listMyCertificates);
-router.post('/me/certificates', authMiddleware, loadAccessContext, requirePermissions("documents.update"), uploadCertificate.single('certificate'), uploadMyCertificate);
-router.put('/me/certificates/:certificateId/default', authMiddleware, loadAccessContext, requirePermissions("documents.update"), setMyDefaultCertificate);
-router.get('/me/certificates/:certificateId/download', authMiddleware, loadAccessContext, requirePermissions("documents.read"), downloadMyCertificate);
-router.delete('/me/certificates/:certificateId', authMiddleware, loadAccessContext, requirePermissions("documents.delete"), deleteMyCertificate);
+router.get('/me/certificates', authMiddleware, loadAccessContext, requirePermissions("signature_flows.read"), listMyCertificates);
+router.post('/me/certificates', authMiddleware, loadAccessContext, requirePermissions("signature_flows.update"), uploadCertificate.single('certificate'), uploadMyCertificate);
+router.put('/me/certificates/:certificateId/default', authMiddleware, loadAccessContext, requirePermissions("signature_flows.update"), setMyDefaultCertificate);
+router.get('/me/certificates/:certificateId/download', authMiddleware, loadAccessContext, requirePermissions("signature_flows.read"), downloadMyCertificate);
+router.delete('/me/certificates/:certificateId', authMiddleware, loadAccessContext, requirePermissions("signature_flows.update"), deleteMyCertificate);
 
 router.put(
   '/:cedula/photo',
   authMiddleware,
   loadAccessContext,
-  requireCedulaAccess({ resource: "account", action: "update", elevatedRoles: ["Admin"] }),
+  requireCedulaAccess({ resource: "account", action: "update", elevatedRoles: ["AdminSistema", "GestorTalentoHumano"] }),
   (req, res, next) => {
     uploadProfilePhoto.single('photo')(req, res, (err) => {
       if (err) {

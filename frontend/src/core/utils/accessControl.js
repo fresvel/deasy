@@ -1,60 +1,74 @@
 const ADMIN_TABLE_RESOURCE_MAP = {
-  actions: "roles",
-  aplications: "processes",
-  cargo_role_map: "roles",
-  cargos: "processes",
-  contract_origin_recruitment: "processes",
-  contract_origin_renewal: "processes",
-  contract_origins: "processes",
-  contracts: "processes",
-  document_fill_flows: "documents",
-  document_signatures: "documents",
+  actions: "security",
+  aplications: "contracts",
+  cargo_role_map: "security",
+  cargos: "people",
+  contract_origin_recruitment: "contracts",
+  contract_origin_renewal: "contracts",
+  contract_origins: "contracts",
+  contracts: "contracts",
+  document_fill_flows: "fill_flows",
+  document_signatures: "signature_flows",
   document_versions: "documents",
   documents: "documents",
-  fill_flow_steps: "documents",
-  fill_flow_templates: "documents",
-  fill_requests: "documents",
-  offers: "processes",
-  permissions: "roles",
-  person_certificates: "users",
-  persons: "users",
-  position_assignments: "users",
-  process_definition_series: "processes",
-  process_definition_templates: "processes",
-  process_definition_triggers: "processes",
-  process_definition_versions: "processes",
-  process_runs: "processes",
-  process_target_rules: "processes",
-  processes: "processes",
-  relation_unit_types: "processes",
-  resources: "roles",
-  role_assignment_relation_types: "roles",
-  role_assignments: "roles",
-  role_permissions: "roles",
-  roles: "roles",
-  signature_flow_instances: "documents",
-  signature_flow_steps: "documents",
-  signature_flow_templates: "documents",
-  signature_request_statuses: "documents",
-  signature_requests: "documents",
-  signature_statuses: "documents",
-  signature_types: "documents",
-  task_assignments: "processes",
-  task_items: "processes",
-  tasks: "processes",
-  template_artifacts: "processes",
-  template_seeds: "processes",
-  term_types: "processes",
-  terms: "processes",
-  unit_positions: "processes",
-  unit_relations: "processes",
-  unit_types: "processes",
-  units: "processes",
-  vacancies: "processes",
-  vacancy_visibility: "processes"
+  fill_flow_steps: "fill_flows",
+  fill_flow_templates: "fill_flows",
+  fill_requests: "fill_flows",
+  offers: "contracts",
+  permissions: "security",
+  person_certificates: "signature_flows",
+  persons: "people",
+  position_assignments: "people",
+  process_definition_series: "process_definitions",
+  process_definition_templates: "templates",
+  process_definition_triggers: "process_definitions",
+  process_definition_versions: "process_definitions",
+  process_runs: "process_execution",
+  process_target_rules: "process_definitions",
+  processes: "process_definitions",
+  relation_unit_types: "units",
+  resources: "security",
+  role_assignment_relation_types: "security",
+  role_assignments: "security",
+  role_permissions: "security",
+  roles: "security",
+  signature_flow_instances: "signature_flows",
+  signature_flow_steps: "signature_flows",
+  signature_flow_templates: "signature_flows",
+  signature_request_statuses: "signature_flows",
+  signature_requests: "signature_flows",
+  signature_statuses: "signature_flows",
+  signature_types: "signature_flows",
+  task_assignments: "process_execution",
+  task_items: "process_execution",
+  tasks: "process_execution",
+  template_artifacts: "templates",
+  template_seeds: "templates",
+  term_types: "academic_terms",
+  terms: "academic_terms",
+  unit_positions: "people",
+  unit_relations: "units",
+  unit_types: "units",
+  units: "units",
+  vacancies: "contracts",
+  vacancy_visibility: "contracts"
 };
 
-const DEFAULT_ADMIN_RESOURCE = "processes";
+const DEFAULT_ADMIN_RESOURCE = "process_definitions";
+const SYSTEM_ADMIN_ROLES = ["AdminSistema"];
+const MANAGEMENT_RESOURCES = [
+  "security",
+  "people",
+  "units",
+  "academic_terms",
+  "process_definitions",
+  "process_execution",
+  "templates",
+  "documents",
+  "fill_flows",
+  "signature_flows",
+  "contracts"
+];
 
 export const getStoredUser = () => {
   if (typeof window === "undefined") return null;
@@ -92,7 +106,7 @@ export const hasAnyRole = (roles = [], user = getStoredUser()) => {
 
 export const hasPermission = (permissionCode, user = getStoredUser()) => {
   if (!permissionCode) return false;
-  if (hasAnyRole(["Admin"], user)) return true;
+  if (hasAnyRole(SYSTEM_ADMIN_ROLES, user)) return true;
   return getUserPermissions(user).includes(permissionCode);
 };
 
@@ -126,13 +140,37 @@ export const canDeleteAdminTable = (tableName, user = getStoredUser()) =>
   canAccessResource(resolveAdminTableResource(tableName), "delete", user);
 
 export const canAccessAdmin = (user = getStoredUser()) =>
-  hasAnyRole(["Admin", "Gestor", "Auditor"], user) ||
-  ["roles", "users", "processes", "documents"].some((resource) =>
+  hasAnyRole(["AdminSistema", "GestorSeguridad", "Auditor"], user) ||
+  ["security"].some((resource) =>
     canAccessResource(resource, "read", user)
   );
 
+export const canAccessManagement = (user = getStoredUser()) =>
+  hasAnyRole([
+    "AdminSistema",
+    "GestorSeguridad",
+    "GestorTalentoHumano",
+    "GestorUnidades",
+    "GestorAcademico",
+    "GestorProcesos",
+    "GestorPlantillas",
+    "GestorEjecucionProcesos",
+    "GestorDocumental",
+    "GestorFirmas",
+    "GestorContratacion",
+    "Auditor"
+  ], user) ||
+  MANAGEMENT_RESOURCES.some((resource) => canAccessResource(resource, "read", user));
+
+export const canAccessProcessManagement = (user = getStoredUser()) =>
+  hasAnyRole(["AdminSistema", "GestorProcesos", "GestorEjecucionProcesos"], user) ||
+  canAccessResource("process_definitions", "create", user) ||
+  canAccessResource("process_definitions", "update", user) ||
+  canAccessResource("process_execution", "create", user) ||
+  canAccessResource("process_execution", "update", user);
+
 export const isAdminUser = (user = getStoredUser()) =>
-  hasAnyRole(["Admin"], user);
+  hasAnyRole(SYSTEM_ADMIN_ROLES, user);
 
 export const getDefaultAuthenticatedRoute = (user = getStoredUser()) =>
   isAdminUser(user) ? "/admin" : "/home";

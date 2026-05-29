@@ -13,17 +13,18 @@ import {
   deleteSqlRow
 } from "../controllers/admin/sql_admin_controller.js";
 import { requireAnyRole, requireSqlAdminPermission } from "../middlewares/rbac.js";
+import { MANAGEMENT_ROLES } from "../config/rbacPolicy.js";
 
 const router = new Router();
 const draftArtifactUpload = multer({ storage: multer.memoryStorage() });
 
-router.get("/meta", requireAnyRole(["Admin", "Gestor", "Auditor"]), getSqlMeta);
-router.post("/template_artifacts/sync", requireSqlAdminPermission({ resource: "processes", action: "update" }), syncTemplateArtifacts);
-router.post("/template_seeds/sync", requireSqlAdminPermission({ resource: "processes", action: "update" }), syncTemplateSeeds);
-router.get("/template_seeds/:id/preview", requireSqlAdminPermission({ resource: "processes", action: "read" }), getTemplateSeedPreview);
+router.get("/meta", requireAnyRole(MANAGEMENT_ROLES), getSqlMeta);
+router.post("/template_artifacts/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateArtifacts);
+router.post("/template_seeds/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateSeeds);
+router.get("/template_seeds/:id/preview", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateSeedPreview);
 router.post(
   "/template_artifacts/draft",
-  requireSqlAdminPermission({ resource: "processes", action: "create" }),
+  requireSqlAdminPermission({ resource: "templates", action: "create" }),
   draftArtifactUpload.fields([
     { name: "pdf_file", maxCount: 1 },
     { name: "docx_file", maxCount: 1 },
@@ -34,7 +35,7 @@ router.post(
 );
 router.put(
   "/template_artifacts/draft/:id",
-  requireSqlAdminPermission({ resource: "processes", action: "update" }),
+  requireSqlAdminPermission({ resource: "templates", action: "update" }),
   draftArtifactUpload.fields([
     { name: "pdf_file", maxCount: 1 },
     { name: "docx_file", maxCount: 1 },

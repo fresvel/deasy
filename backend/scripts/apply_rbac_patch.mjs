@@ -1,71 +1,14 @@
 import { closeMariaDBPool, getMariaDBPool } from "../config/mariadb.js";
 import bcrypt from "bcrypt";
-
-const roles = [
-  { name: "Admin", description: "Acceso completo sobre administracion, usuarios, roles y procesos." },
-  { name: "Gestor", description: "Crea, gestiona y elimina procesos operativos." },
-  { name: "Auditor", description: "Solo lectura sobre datos y procesos." },
-  { name: "Usuario", description: "Acceso a funcionalidades generales de usuario." }
-];
-
-const resources = [
-  { code: "account", name: "Cuenta", description: "Datos de cuenta y sesion." },
-  { code: "dossier", name: "Dossier", description: "Perfil profesional y evidencias." },
-  { code: "documents", name: "Documentos", description: "Centro documental del usuario." },
-  { code: "processes", name: "Procesos", description: "Procesos, tareas y definiciones." },
-  { code: "roles", name: "Roles", description: "Roles, permisos y asignaciones." },
-  { code: "users", name: "Usuarios", description: "Administracion de usuarios." }
-];
-
-const actions = [
-  { code: "read", name: "Leer", description: "Consultar registros." },
-  { code: "create", name: "Crear", description: "Crear registros." },
-  { code: "update", name: "Actualizar", description: "Modificar registros." },
-  { code: "delete", name: "Eliminar", description: "Eliminar registros." },
-  { code: "manage", name: "Administrar", description: "Administracion completa del modulo." }
-];
-
-const rolePermissionMatrix = {
-  Admin: {
-    account: ["read", "create", "update", "delete", "manage"],
-    dossier: ["read", "create", "update", "delete", "manage"],
-    documents: ["read", "create", "update", "delete", "manage"],
-    processes: ["read", "create", "update", "delete", "manage"],
-    roles: ["read", "create", "update", "delete", "manage"],
-    users: ["read", "create", "update", "delete", "manage"]
-  },
-  Gestor: {
-    account: ["read", "update"],
-    dossier: ["read", "update"],
-    documents: ["read", "create", "update"],
-    processes: ["read", "create", "update", "delete"],
-    roles: ["read"],
-    users: ["read"]
-  },
-  Auditor: {
-    account: ["read"],
-    dossier: ["read"],
-    documents: ["read"],
-    processes: ["read"],
-    roles: ["read"],
-    users: ["read"]
-  },
-  Usuario: {
-    account: ["read", "update"],
-    dossier: ["read", "create", "update"],
-    documents: ["read", "create", "update"],
-    processes: ["read"]
-  }
-};
-
-const cargoRoleMap = {
-  coordinador: ["Gestor"],
-  director: ["Gestor"],
-  prorrector: ["Gestor"],
-  jefe: ["Gestor"],
-  responsable: ["Gestor"],
-  docente: ["Usuario"]
-};
+import {
+  ACTION_CATALOG,
+  ADMIN_ROLE_NAME,
+  CARGO_ROLE_MAP,
+  LEGACY_ROLE_RENAMES,
+  RESOURCE_CATALOG,
+  ROLE_CATALOG,
+  ROLE_PERMISSION_MATRIX
+} from "../config/rbacCatalog.js";
 
 const demoAdmin = {
   cedula: process.env.DEASY_RBAC_DEMO_ADMIN_CEDULA || "9000000001",
@@ -163,15 +106,15 @@ const seedPermissions = async (connection, roleIds) => {
   const actionIds = new Map();
   const permissionIds = new Map();
 
-  for (const resource of resources) {
+  for (const resource of RESOURCE_CATALOG) {
     resourceIds.set(resource.code, await upsertResource(connection, resource));
   }
-  for (const action of actions) {
+  for (const action of ACTION_CATALOG) {
     actionIds.set(action.code, await upsertAction(connection, action));
   }
 
-  for (const resource of resources) {
-    for (const action of actions) {
+  for (const resource of RESOURCE_CATALOG) {
+    for (const action of ACTION_CATALOG) {
       const permissionId = await upsertPermission(connection, {
         resourceId: resourceIds.get(resource.code),
         actionId: actionIds.get(action.code),
@@ -182,9 +125,10 @@ const seedPermissions = async (connection, roleIds) => {
     }
   }
 
-  for (const [roleName, resourceMatrix] of Object.entries(rolePermissionMatrix)) {
+  for (const [roleName, resourceMatrix] of Object.entries(ROLE_PERMISSION_MATRIX)) {
     const roleId = roleIds.get(roleName);
     if (!roleId) continue;
+    await connection.query("DELETE FROM role_permissions WHERE role_id = ?", [roleId]);
     for (const [resourceCode, actionCodes] of Object.entries(resourceMatrix)) {
       for (const actionCode of actionCodes) {
         const permissionId = permissionIds.get(`${resourceCode}.${actionCode}`);
@@ -202,7 +146,7 @@ const seedCargoRoleMap = async (connection, roleIds) => {
   const [cargoRows] = await connection.query("SELECT id, code FROM cargos WHERE is_active = 1");
   let inserted = 0;
   for (const cargo of cargoRows) {
-    const roleNames = cargoRoleMap[String(cargo.code || "").toLowerCase()] || [];
+    const roleNames = CARGO_ROLE_MAP[String(cargo.code || "").toLowerCase()] || [];
     for (const roleName of roleNames) {
       const roleId = roleIds.get(roleName);
       if (!roleId) continue;
@@ -214,6 +158,101 @@ const seedCargoRoleMap = async (connection, roleIds) => {
     }
   }
   return inserted;
+};
+
+const migrateLegacyRoles = async (connection, roleIds) => {
+  let assignmentsMigrated = 0;
+  let cargoMappingsMigrated = 0;
+  let rolesDeactivated = 0;
+
+  for (const [legacyRoleName, targetRoleName] of Object.entries(LEGACY_ROLE_RENAMES)) {
+    const legacyRole = await fetchOne(connection, "SELECT id FROM roles WHERE name = ? LIMIT 1", [legacyRoleName]);
+    const targetRoleId = roleIds.get(targetRoleName);
+    if (!legacyRole || !targetRoleId) continue;
+
+    const legacyRoleId = Number(legacyRole.id);
+    const [assignmentInsertResult] = await connection.query(
+      `INSERT IGNORE INTO role_assignments (
+         role_id,
+         unit_id,
+         derived_from_assignment_id,
+         source,
+         person_id,
+         max_depth,
+         start_date,
+         end_date,
+         is_current,
+         assigned_at,
+         revoked_at,
+         revoked_reason
+       )
+       SELECT
+         ?,
+         unit_id,
+         derived_from_assignment_id,
+         source,
+         person_id,
+         max_depth,
+         start_date,
+         end_date,
+         is_current,
+         COALESCE(assigned_at, NOW()),
+         revoked_at,
+         revoked_reason
+       FROM role_assignments
+       WHERE role_id = ?
+         AND NOT EXISTS (
+           SELECT 1
+           FROM role_assignments target_ra
+           WHERE target_ra.role_id = ?
+             AND target_ra.person_id = role_assignments.person_id
+             AND target_ra.unit_id = role_assignments.unit_id
+             AND target_ra.source = role_assignments.source
+             AND target_ra.start_date = role_assignments.start_date
+             AND COALESCE(target_ra.end_date, '9999-12-31') = COALESCE(role_assignments.end_date, '9999-12-31')
+         )`,
+      [targetRoleId, legacyRoleId, targetRoleId]
+    );
+    assignmentsMigrated += Number(assignmentInsertResult.affectedRows || 0);
+
+    const [cargoInsertResult] = await connection.query(
+      `INSERT IGNORE INTO cargo_role_map (cargo_id, role_id)
+       SELECT cargo_id, ?
+       FROM cargo_role_map
+       WHERE role_id = ?`,
+      [targetRoleId, legacyRoleId]
+    );
+    cargoMappingsMigrated += Number(cargoInsertResult.affectedRows || 0);
+
+    await connection.query("DELETE FROM cargo_role_map WHERE role_id = ?", [legacyRoleId]);
+    await connection.query("DELETE FROM role_permissions WHERE role_id = ?", [legacyRoleId]);
+    const [assignmentRevokeResult] = await connection.query(
+      `UPDATE role_assignments
+       SET is_current = 0,
+           end_date = COALESCE(end_date, CURDATE()),
+           revoked_at = COALESCE(revoked_at, NOW()),
+           revoked_reason = COALESCE(revoked_reason, ?)
+       WHERE role_id = ?
+         AND is_current = 1`,
+      [`Migrado a ${targetRoleName}`, legacyRoleId]
+    );
+    assignmentsMigrated += Number(assignmentRevokeResult.affectedRows || 0);
+
+    const [roleResult] = await connection.query(
+      `UPDATE roles
+       SET is_active = 0,
+           description = ?
+       WHERE id = ?`,
+      [`Rol legacy migrado a ${targetRoleName}.`, legacyRoleId]
+    );
+    rolesDeactivated += Number(roleResult.affectedRows || 0);
+  }
+
+  return {
+    assignmentsMigrated,
+    cargoMappingsMigrated,
+    rolesDeactivated
+  };
 };
 
 const ensureDemoAdminPerson = async (connection) => {
@@ -347,6 +386,19 @@ const assignManualRoleByEmail = async (connection, { email, roleName, roleIds, f
   const roleId = roleIds.get(roleName);
   if (!roleId) return 0;
   const unitId = await resolvePersonUnitId(connection, person.id, fallbackUnitId);
+  const existingAssignment = await fetchOne(
+    connection,
+    `SELECT id
+     FROM role_assignments
+     WHERE person_id = ?
+       AND role_id = ?
+       AND source = 'manual'
+       AND is_current = 1
+       AND (end_date IS NULL OR end_date >= CURDATE())
+     LIMIT 1`,
+    [person.id, roleId]
+  );
+  if (existingAssignment) return 0;
   const [result] = await connection.query(
     `INSERT IGNORE INTO role_assignments (
        role_id,
@@ -409,12 +461,13 @@ const applyPatch = async () => {
     await connection.beginTransaction();
 
     const roleIds = new Map();
-    for (const role of roles) {
+    for (const role of ROLE_CATALOG) {
       roleIds.set(role.name, await upsertRole(connection, role));
     }
 
     await ensureDemoAdminPerson(connection);
     await seedPermissions(connection, roleIds);
+    const legacyMigration = await migrateLegacyRoles(connection, roleIds);
     const cargoMappings = await seedCargoRoleMap(connection, roleIds);
     const derivedAssignments = await backfillDerivedRoleAssignments(connection);
     const fallbackUnitId = await resolveDefaultUnitId(connection);
@@ -423,7 +476,7 @@ const applyPatch = async () => {
     for (const email of legacyAdminEmails) {
       revokedAssignments += await revokeManualRoleByEmail(connection, {
         email,
-        roleName: "Admin",
+        roleName: ADMIN_ROLE_NAME,
         roleIds
       });
     }
@@ -432,7 +485,7 @@ const applyPatch = async () => {
     for (const email of adminEmails) {
       manualAssignments += await assignManualRoleByEmail(connection, {
         email,
-        roleName: "Admin",
+        roleName: ADMIN_ROLE_NAME,
         roleIds,
         fallbackUnitId
       });
@@ -450,6 +503,9 @@ const applyPatch = async () => {
     console.log("Patch RBAC aplicado correctamente.");
     console.log(`Roles: ${roleIds.size}`);
     console.log(`Mapeos cargo-rol nuevos: ${cargoMappings}`);
+    console.log(`Asignaciones legacy migradas/revocadas: ${legacyMigration.assignmentsMigrated}`);
+    console.log(`Mapeos cargo-rol legacy migrados: ${legacyMigration.cargoMappingsMigrated}`);
+    console.log(`Roles legacy desactivados: ${legacyMigration.rolesDeactivated}`);
     console.log(`Asignaciones derivadas nuevas: ${derivedAssignments}`);
     console.log(`Asignaciones manuales nuevas: ${manualAssignments}`);
     console.log(`Asignaciones admin heredadas revocadas: ${revokedAssignments}`);

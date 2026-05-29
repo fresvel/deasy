@@ -10,6 +10,12 @@ import mysql from "mysql2/promise";
 
 import { Dossier } from "../models/users/dossiers.js";
 import { Usuario } from "../models/users/usuario_model.js";
+import {
+  ACTION_CATALOG,
+  RESOURCE_CATALOG,
+  ROLE_CATALOG,
+  ROLE_PERMISSION_MATRIX
+} from "../config/rbacCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.resolve(__dirname, "..");
@@ -23,9 +29,9 @@ const demoUsers = [
   {
     cedula: "0999900001",
     email: "admin.demo@deasy.local",
-    first_name: "Admin",
+    first_name: "AdminSistema",
     last_name: "Demo",
-    role: "Admin",
+    role: "AdminSistema",
     cargo: { code: "DEMO-ADMIN", name: "Administrador demo" },
     token: "DMADMIN001",
     whatsapp: "0999900001"
@@ -33,10 +39,10 @@ const demoUsers = [
   {
     cedula: "0999900002",
     email: "gestor.demo@deasy.local",
-    first_name: "Gestor",
+    first_name: "GestorProcesos",
     last_name: "Demo",
-    role: "Gestor",
-    cargo: { code: "DEMO-GESTOR", name: "Gestor demo" },
+    role: "GestorProcesos",
+    cargo: { code: "DEMO-GESTOR-PROCESOS", name: "Gestion de procesos demo" },
     token: "DMGESTR001",
     whatsapp: "0999900002"
   },
@@ -61,63 +67,6 @@ const demoUsers = [
     whatsapp: "0999900004"
   }
 ];
-
-const roles = [
-  { name: "Auditor", description: "Solo lectura sobre datos y procesos." },
-  { name: "Admin", description: "Acceso completo sobre administracion, usuarios, roles y procesos." },
-  { name: "Gestor", description: "Crea, gestiona y elimina procesos operativos." },
-  { name: "Usuario", description: "Acceso a funcionalidades generales de usuario." }
-];
-
-const resources = [
-  { code: "account", name: "Cuenta", description: "Datos de cuenta y sesion." },
-  { code: "dossier", name: "Dossier", description: "Perfil profesional y evidencias." },
-  { code: "documents", name: "Documentos", description: "Centro documental del usuario." },
-  { code: "processes", name: "Procesos", description: "Procesos, tareas y definiciones." },
-  { code: "roles", name: "Roles", description: "Roles, permisos y asignaciones." },
-  { code: "users", name: "Usuarios", description: "Administracion de usuarios." }
-];
-
-const actions = [
-  { code: "read", name: "Leer", description: "Consultar registros." },
-  { code: "create", name: "Crear", description: "Crear registros." },
-  { code: "update", name: "Actualizar", description: "Modificar registros." },
-  { code: "delete", name: "Eliminar", description: "Eliminar registros." },
-  { code: "manage", name: "Administrar", description: "Administracion completa del modulo." }
-];
-
-const rolePermissionMatrix = {
-  Admin: {
-    account: ["read", "create", "update", "delete", "manage"],
-    dossier: ["read", "create", "update", "delete", "manage"],
-    documents: ["read", "create", "update", "delete", "manage"],
-    processes: ["read", "create", "update", "delete", "manage"],
-    roles: ["read", "create", "update", "delete", "manage"],
-    users: ["read", "create", "update", "delete", "manage"]
-  },
-  Gestor: {
-    account: ["read", "update"],
-    dossier: ["read", "update"],
-    documents: ["read", "create", "update"],
-    processes: ["read", "create", "update", "delete"],
-    roles: ["read"],
-    users: ["read"]
-  },
-  Auditor: {
-    account: ["read"],
-    dossier: ["read"],
-    documents: ["read"],
-    processes: ["read"],
-    roles: ["read"],
-    users: ["read"]
-  },
-  Usuario: {
-    account: ["read", "update"],
-    dossier: ["read", "create", "update"],
-    documents: ["read", "create", "update"],
-    processes: ["read"]
-  }
-};
 
 const loadEnvFile = async () => {
   const envPath = path.join(backendRoot, ".env");
@@ -282,15 +231,15 @@ const seedPermissions = async (connection, roleIds) => {
   const actionIds = new Map();
   const permissionIds = new Map();
 
-  for (const resource of resources) {
+  for (const resource of RESOURCE_CATALOG) {
     resourceIds.set(resource.code, await upsertResource(connection, resource));
   }
-  for (const action of actions) {
+  for (const action of ACTION_CATALOG) {
     actionIds.set(action.code, await upsertAction(connection, action));
   }
 
-  for (const resource of resources) {
-    for (const action of actions) {
+  for (const resource of RESOURCE_CATALOG) {
+    for (const action of ACTION_CATALOG) {
       const permissionId = await upsertPermission(connection, {
         resourceId: resourceIds.get(resource.code),
         actionId: actionIds.get(action.code),
@@ -301,9 +250,10 @@ const seedPermissions = async (connection, roleIds) => {
     }
   }
 
-  for (const [roleName, resourceMap] of Object.entries(rolePermissionMatrix)) {
+  for (const [roleName, resourceMap] of Object.entries(ROLE_PERMISSION_MATRIX)) {
     const roleId = roleIds.get(roleName);
     if (!roleId) continue;
+    await connection.query("DELETE FROM role_permissions WHERE role_id = ?", [roleId]);
     for (const [resourceCode, actionCodes] of Object.entries(resourceMap)) {
       for (const actionCode of actionCodes) {
         const permissionId = permissionIds.get(`${resourceCode}.${actionCode}`);
@@ -503,8 +453,8 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
       `INSERT IGNORE INTO cargo_role_map (role_id, cargo_id)
        SELECT r.id, ?
        FROM roles r
-       WHERE r.name IN ('Admin', 'Gestor', 'Auditor', 'Usuario')`,
-      [cargoId]
+       WHERE r.name IN (?)`,
+      [cargoId, ROLE_CATALOG.map((role) => role.name)]
     );
   }
 
@@ -930,7 +880,7 @@ const run = async () => {
     const unitTypeId = await getOrCreateUnitType(connection);
     const unitId = await getOrCreateUnit(connection, unitTypeId);
 
-    for (const role of roles) {
+    for (const role of ROLE_CATALOG) {
       roleIds.set(role.name, await getOrCreateRole(connection, role));
     }
 

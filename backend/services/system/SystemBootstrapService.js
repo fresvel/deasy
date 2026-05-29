@@ -1,70 +1,19 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { getMariaDBPool } from "../../config/mariadb.js";
+import {
+  ACTION_CATALOG,
+  ADMIN_ROLE_NAME,
+  RESOURCE_CATALOG,
+  ROLE_CATALOG,
+  ROLE_PERMISSION_MATRIX
+} from "../../config/rbacCatalog.js";
 
 const BOOTSTRAP_UNIT_TYPE_NAME = "Sistema";
 const BOOTSTRAP_UNIT_NAME = "Raiz del sistema";
 const BOOTSTRAP_UNIT_LABEL = "Sistema";
 const BOOTSTRAP_UNIT_SLUG = "root-system";
-const ADMIN_ROLE_NAME = "Admin";
 const MANUAL_ROLE_SOURCE = "manual";
-
-const ROLE_CATALOG = [
-  { name: "Admin", description: "Acceso completo sobre administracion, usuarios, roles y procesos." },
-  { name: "Gestor", description: "Crea, gestiona y elimina procesos operativos." },
-  { name: "Auditor", description: "Solo lectura sobre datos y procesos." },
-  { name: "Usuario", description: "Acceso a funcionalidades generales de usuario." }
-];
-
-const RESOURCE_CATALOG = [
-  { code: "account", name: "Cuenta", description: "Datos de cuenta y sesion." },
-  { code: "dossier", name: "Dossier", description: "Perfil profesional y evidencias." },
-  { code: "documents", name: "Documentos", description: "Centro documental del usuario." },
-  { code: "processes", name: "Procesos", description: "Procesos, tareas y definiciones." },
-  { code: "roles", name: "Roles", description: "Roles, permisos y asignaciones." },
-  { code: "users", name: "Usuarios", description: "Administracion de usuarios." }
-];
-
-const ACTION_CATALOG = [
-  { code: "read", name: "Leer", description: "Consultar registros." },
-  { code: "create", name: "Crear", description: "Crear registros." },
-  { code: "update", name: "Actualizar", description: "Modificar registros." },
-  { code: "delete", name: "Eliminar", description: "Eliminar registros." },
-  { code: "manage", name: "Administrar", description: "Administracion completa del modulo." }
-];
-
-const ROLE_PERMISSION_MATRIX = {
-  Admin: {
-    account: ["read", "create", "update", "delete", "manage"],
-    dossier: ["read", "create", "update", "delete", "manage"],
-    documents: ["read", "create", "update", "delete", "manage"],
-    processes: ["read", "create", "update", "delete", "manage"],
-    roles: ["read", "create", "update", "delete", "manage"],
-    users: ["read", "create", "update", "delete", "manage"]
-  },
-  Gestor: {
-    account: ["read", "update"],
-    dossier: ["read", "update"],
-    documents: ["read", "create", "update"],
-    processes: ["read", "create", "update", "delete"],
-    roles: ["read"],
-    users: ["read"]
-  },
-  Auditor: {
-    account: ["read"],
-    dossier: ["read"],
-    documents: ["read"],
-    processes: ["read"],
-    roles: ["read"],
-    users: ["read"]
-  },
-  Usuario: {
-    account: ["read", "update"],
-    dossier: ["read", "create", "update"],
-    documents: ["read", "create", "update"],
-    processes: ["read"]
-  }
-};
 
 const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const TOKEN_LENGTH = 10;
@@ -231,6 +180,7 @@ const seedBaseRbacCatalog = async (connection) => {
   for (const [roleName, resourceMatrix] of Object.entries(ROLE_PERMISSION_MATRIX)) {
     const roleId = roleIds.get(roleName);
     if (!roleId) continue;
+    await connection.query("DELETE FROM role_permissions WHERE role_id = ?", [roleId]);
     for (const [resourceCode, actionCodes] of Object.entries(resourceMatrix)) {
       for (const actionCode of actionCodes) {
         const permissionId = permissionIds.get(`${resourceCode}.${actionCode}`);

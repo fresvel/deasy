@@ -1,132 +1,50 @@
-# Propuesta inicial de roles y permisos
+# Roles y permisos granulares
 
-## Estado actual observado
+## Decision vigente
 
-El backend ya tiene una base SQL preparada para RBAC:
+El rol generico `Gestor` queda reemplazado por roles de gestion por dominio.
+El rol de maxima prioridad del sistema es `AdminSistema`.
 
-- `roles`
-- `resources`
-- `actions`
-- `permissions`
-- `role_permissions`
-- `role_assignments`
-- `cargo_role_map`
+## Roles obligatorios
 
-Por eso la evolucion recomendada es extender ese modelo MariaDB y no basar la
-autorizacion principal en el modelo legacy de Mongo `models/users/roles.js`.
+- `AdminSistema`: seguridad, bootstrap, configuracion critica y gobierno global.
+- `GestorSeguridad`: roles, permisos, asignaciones y mapas cargo-rol.
+- `GestorTalentoHumano`: personas, cargos, puestos y ocupaciones.
+- `GestorUnidades`: unidades, tipos de unidad y relaciones jerarquicas.
+- `GestorAcademico`: tipos de periodo y periodos academicos.
+- `GestorProcesos`: procesos base, definiciones, versiones, reglas y disparadores.
+- `GestorPlantillas`: seeds, artifacts y plantillas de procesos definidos.
+- `GestorEjecucionProcesos`: corridas, tareas, entregables y asignaciones operativas.
+- `GestorDocumental`: documentos, versiones y flujos de llenado.
+- `GestorFirmas`: flujos, solicitudes, estados y firmas documentales.
+- `GestorContratacion`: vacantes, postulaciones, ofertas, contratos y origenes.
+- `Auditor`: lectura transversal sin escritura.
+- `Usuario`: acceso operativo propio.
 
-## Roles base
+## Recursos RBAC
 
-### Auditor
+Los permisos se expresan como `resource.action`.
 
-Objetivo: lectura sin modificacion.
-
-Permisos sugeridos:
-
-- Leer usuarios.
-- Leer procesos.
-- Leer tareas.
-- Leer documentos.
-- Leer reportes.
-- Leer configuracion administrativa.
-
-Sin permisos para crear, editar, eliminar, firmar, aprobar, devolver o resetear.
-
-### Admin
-
-Objetivo: administracion completa del sistema.
-
-Permisos sugeridos:
-
-- Todos los permisos sobre todos los recursos.
-- Gestion de roles.
-- Gestion de permisos.
-- Asignacion de roles a usuarios.
-- Configuracion de procesos, plantillas, cargos, unidades y reglas.
-
-### Gestor
-
-Objetivo: operar procesos.
-
-Permisos sugeridos:
-
-- Crear procesos.
-- Editar procesos.
-- Eliminar procesos, si el proceso no tiene dependencias activas o si la regla de negocio lo permite.
-- Lanzar tareas/procesos.
-- Gestionar reglas de proceso.
-- Gestionar plantillas asociadas al proceso, si corresponde.
-- Leer usuarios necesarios para asignaciones.
-
-No deberia administrar roles globales ni permisos del sistema.
-
-### Usuario
-
-Objetivo: uso funcional de la plataforma.
-
-Permisos sugeridos:
-
-- Leer y editar su propio perfil.
-- Gestionar su dossier.
-- Ver su centro documental.
-- Subir entregables propios o asignados.
-- Firmar documentos asignados.
-- Responder solicitudes de llenado/firma asignadas.
-
-Sin acceso a administracion global salvo que tenga otro rol adicional.
-
-## Acciones base
-
-Acciones minimas para poblar `actions`:
-
-- `read`
-- `create`
-- `update`
-- `delete`
-- `manage`
-- `assign`
-- `approve`
-- `sign`
-- `download`
-- `upload`
-
-## Recursos iniciales
-
-Recursos minimos para poblar `resources`:
-
-- `users`
-- `roles`
-- `permissions`
-- `units`
-- `cargos`
-- `processes`
-- `process_definitions`
-- `tasks`
-- `documents`
-- `templates`
-- `reports`
+- `account`
 - `dossier`
-- `signatures`
+- `security`
+- `people`
+- `units`
+- `academic_terms`
+- `process_definitions`
+- `process_execution`
+- `templates`
+- `documents`
+- `fill_flows`
+- `signature_flows`
+- `contracts`
 
-## Reglas de implementacion recomendadas
+## Migracion
 
-1. Resolver permisos en backend mediante middleware, no solo ocultando botones en frontend.
-2. Mantener los permisos como `resource.action`, por ejemplo `processes.create`.
-3. Incluir permisos efectivos en `/users/me` o en un endpoint dedicado como `/users/me/permissions`.
-4. Usar el frontend solo para presentar u ocultar acciones segun permisos ya calculados por backend.
-5. Permitir que un usuario tenga multiples roles vigentes por unidad mediante `role_assignments`.
-6. Mantener `Admin` como rol global o de maxima prioridad.
-7. Tratar `Auditor` como permiso de lectura, no como bypass administrativo.
+La migracion RBAC conserva asignaciones existentes y las mueve asi:
 
-## Primera pantalla sugerida
+- `Admin` -> `AdminSistema`
+- `Gestor` -> `GestorProcesos`
 
-En `admin`, crear una seccion "Roles y permisos" con tres vistas:
-
-- Roles: listar, crear, editar, activar/desactivar roles.
-- Matriz de permisos: asignar acciones por recurso a cada rol.
-- Asignaciones: asignar roles a usuarios, opcionalmente por unidad.
-
-## Nota de alcance
-
-Esta propuesta no cambia aun reglas de negocio. Sirve como base para implementar
-la seccion administrativa respetando el esquema SQL existente.
+Los roles legacy quedan inactivos y sin permisos en los roles base. Los permisos
+vigentes se reconstruyen desde el catalogo central del backend.

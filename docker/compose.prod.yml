@@ -29,6 +29,7 @@ services:
     ports:
       - "21883:1883"
       - "28084:18083"
+      - "28083:8083"
 
   minio:
     env_file: *prod_runtime_env_file

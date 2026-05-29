@@ -11,9 +11,8 @@ import AdminView from "@/modules/admin/views/AdminView.vue";
 import { isTokenValid, clearAuthData } from "@/core/utils/tokenUtils.js";
 import {
   canAccessAdmin,
-  canAccessResource,
+  canAccessProcessManagement,
   getDefaultAuthenticatedRoute,
-  hasAnyRole,
   isAdminUser
 } from "@/core/utils/accessControl.js";
 import axios from "axios";
@@ -31,7 +30,7 @@ const routes = [
   { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
   { path: "/terminos", name: "terminos", component: TermsView },
   { path: "/admin", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
-  { path: "/procesos", name: "process-management", component: AdminView, meta: { requiresAdminAccess: true, managementSection: "processes" } },
+  { path: "/procesos", name: "process-management", component: AdminView, meta: { requiresProcessManagementAccess: true, managementSection: "processes" } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
   {
     path: "/logout",
@@ -59,11 +58,6 @@ const adminBlockedRouteNames = new Set([
   "home-signatures",
   "perfil"
 ]);
-
-const canAccessProcessManagement = () =>
-  hasAnyRole(["Admin", "Gestor"]) ||
-  canAccessResource("processes", "create") ||
-  canAccessResource("processes", "update");
 
 router.beforeEach(async (to) => {
   const token = localStorage.getItem('token');
@@ -112,8 +106,8 @@ router.beforeEach(async (to) => {
     return '/admin';
   }
 
-  if (to.name === "process-management" && !canAccessProcessManagement()) {
-    return canAccessAdmin() ? '/admin' : '/home';
+  if (to.meta?.requiresProcessManagementAccess && !canAccessProcessManagement()) {
+    return '/home';
   }
 
   if (to.meta?.requiresAdminAccess && !canAccessAdmin()) {

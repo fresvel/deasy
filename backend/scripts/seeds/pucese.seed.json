@@ -954,14 +954,14 @@
       "rows": [
         {
           "id": 1,
-          "name": "Admin",
-          "description": "Acceso completo sobre administracion, usuarios, roles y procesos.",
+          "name": "AdminSistema",
+          "description": "Administra seguridad, bootstrap, configuracion critica y gobierno global del sistema.",
           "is_active": 1
         },
         {
           "id": 2,
-          "name": "Gestor",
-          "description": "Crea, gestiona y elimina procesos operativos.",
+          "name": "GestorProcesos",
+          "description": "Gestiona procesos base, definiciones, versiones, reglas y disparadores.",
           "is_active": 1
         },
         {
@@ -1028,27 +1028,27 @@
         },
         {
           "id": 4,
-          "code": "processes",
-          "name": "Procesos",
-          "description": "Procesos, tareas y definiciones.",
+          "code": "process_definitions",
+          "name": "Definiciones de proceso",
+          "description": "Procesos base, definiciones, versiones, reglas y disparadores.",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 5,
-          "code": "roles",
-          "name": "Roles",
-          "description": "Roles, permisos y asignaciones.",
+          "code": "security",
+          "name": "Seguridad",
+          "description": "Roles, permisos, recursos, acciones y asignaciones de seguridad.",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
         },
         {
           "id": 6,
-          "code": "users",
-          "name": "Usuarios",
-          "description": "Administracion de usuarios.",
+          "code": "people",
+          "name": "Talento humano",
+          "description": "Personas, cargos, puestos y ocupaciones.",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1300,8 +1300,8 @@
           "id": 16,
           "resource_id": 4,
           "action_id": 1,
-          "code": "processes.read",
-          "description": "Leer Procesos",
+          "code": "process_definitions.read",
+          "description": "Leer Definiciones de proceso",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1310,8 +1310,8 @@
           "id": 17,
           "resource_id": 4,
           "action_id": 2,
-          "code": "processes.create",
-          "description": "Crear Procesos",
+          "code": "process_definitions.create",
+          "description": "Crear Definiciones de proceso",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1320,8 +1320,8 @@
           "id": 18,
           "resource_id": 4,
           "action_id": 3,
-          "code": "processes.update",
-          "description": "Actualizar Procesos",
+          "code": "process_definitions.update",
+          "description": "Actualizar Definiciones de proceso",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1330,8 +1330,8 @@
           "id": 19,
           "resource_id": 4,
           "action_id": 4,
-          "code": "processes.delete",
-          "description": "Eliminar Procesos",
+          "code": "process_definitions.delete",
+          "description": "Eliminar Definiciones de proceso",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1340,8 +1340,8 @@
           "id": 20,
           "resource_id": 4,
           "action_id": 5,
-          "code": "processes.manage",
-          "description": "Administrar Procesos",
+          "code": "process_definitions.manage",
+          "description": "Administrar Definiciones de proceso",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1350,8 +1350,8 @@
           "id": 21,
           "resource_id": 5,
           "action_id": 1,
-          "code": "roles.read",
-          "description": "Leer Roles",
+          "code": "security.read",
+          "description": "Leer Seguridad",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1360,8 +1360,8 @@
           "id": 22,
           "resource_id": 5,
           "action_id": 2,
-          "code": "roles.create",
-          "description": "Crear Roles",
+          "code": "security.create",
+          "description": "Crear Seguridad",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1370,8 +1370,8 @@
           "id": 23,
           "resource_id": 5,
           "action_id": 3,
-          "code": "roles.update",
-          "description": "Actualizar Roles",
+          "code": "security.update",
+          "description": "Actualizar Seguridad",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1380,8 +1380,8 @@
           "id": 24,
           "resource_id": 5,
           "action_id": 4,
-          "code": "roles.delete",
-          "description": "Eliminar Roles",
+          "code": "security.delete",
+          "description": "Eliminar Seguridad",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1390,8 +1390,8 @@
           "id": 25,
           "resource_id": 5,
           "action_id": 5,
-          "code": "roles.manage",
-          "description": "Administrar Roles",
+          "code": "security.manage",
+          "description": "Administrar Seguridad",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1400,8 +1400,8 @@
           "id": 26,
           "resource_id": 6,
           "action_id": 1,
-          "code": "users.read",
-          "description": "Leer Usuarios",
+          "code": "people.read",
+          "description": "Leer Talento humano",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1410,8 +1410,8 @@
           "id": 27,
           "resource_id": 6,
           "action_id": 2,
-          "code": "users.create",
-          "description": "Crear Usuarios",
+          "code": "people.create",
+          "description": "Crear Talento humano",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1420,8 +1420,8 @@
           "id": 28,
           "resource_id": 6,
           "action_id": 3,
-          "code": "users.update",
-          "description": "Actualizar Usuarios",
+          "code": "people.update",
+          "description": "Actualizar Talento humano",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1430,8 +1430,8 @@
           "id": 29,
           "resource_id": 6,
           "action_id": 4,
-          "code": "users.delete",
-          "description": "Eliminar Usuarios",
+          "code": "people.delete",
+          "description": "Eliminar Talento humano",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"
@@ -1440,8 +1440,8 @@
           "id": 30,
           "resource_id": 6,
           "action_id": 5,
-          "code": "users.manage",
-          "description": "Administrar Usuarios",
+          "code": "people.manage",
+          "description": "Administrar Talento humano",
           "is_active": 1,
           "created_at": "2026-05-26 21:02:13",
           "updated_at": "2026-05-26 21:02:13"

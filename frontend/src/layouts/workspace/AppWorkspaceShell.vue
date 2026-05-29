@@ -102,7 +102,13 @@ import SHeader from "@/layouts/headers/SHeader.vue";
 import SBody from "@/layouts/core/SBody.vue";
 import SMessage from "@/layouts/core/SNotify.vue";
 import AppWorkspaceSidebar from "@/layouts/menus/AppWorkspaceSidebar.vue";
-import { canAccessAdmin, canAccessResource, canReadResource, hasAnyRole, isAdminUser } from "@/core/utils/accessControl.js";
+import {
+  canAccessAdmin,
+  canAccessProcessManagement,
+  canReadResource,
+  hasAnyRole,
+  isAdminUser
+} from "@/core/utils/accessControl.js";
 
 const props = defineProps({
   menuOpen: {
@@ -156,30 +162,24 @@ const emit = defineEmits([
 const route = useRoute();
 
 const isAuditorView = computed(() =>
-  hasAnyRole(["Auditor"]) && !hasAnyRole(["Admin", "Gestor"])
+  hasAnyRole(["Auditor"]) && !hasAnyRole(["AdminSistema"])
 );
 
 const showSignatureAction = computed(() =>
-  !isAdminUser() && !isAuditorView.value && canReadResource("documents")
+  !isAdminUser() && !isAuditorView.value && canReadResource("signature_flows")
 );
 
 const canShowAdminNav = computed(() =>
   canAccessAdmin() &&
   (
-    hasAnyRole(["Admin", "Gestor", "Auditor"]) ||
-    canReadResource("users") ||
-    canReadResource("roles")
+    hasAnyRole(["AdminSistema", "GestorSeguridad", "Auditor"]) ||
+    canReadResource("security")
   )
 );
 
 const canShowProcessManagementNav = computed(() =>
-  canAccessAdmin() &&
   !isAuditorView.value &&
-  (
-    hasAnyRole(["Admin", "Gestor"]) ||
-    canAccessResource("processes", "create") ||
-    canAccessResource("processes", "update")
-  )
+  canAccessProcessManagement()
 );
 
 const primaryNavItems = computed(() => {
@@ -218,7 +218,7 @@ const primaryNavItems = computed(() => {
       icon: IconSignature,
       hideForAdminOnly: true,
       hideForAuditor: true,
-      requiresResource: "documents",
+      requiresResource: "signature_flows",
       exactRouteNames: ["home-signatures"]
     },
     {
@@ -232,7 +232,7 @@ const primaryNavItems = computed(() => {
     },
     {
       key: "admin",
-      label: "Admin",
+      label: "Sistema",
       to: { name: "admin" },
       icon: IconSettings,
       requiresAdminAccess: true,

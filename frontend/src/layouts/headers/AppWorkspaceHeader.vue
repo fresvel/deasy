@@ -87,7 +87,7 @@ const navItems = computed(() => {
     },
     {
       key: "admin",
-      label: "Admin",
+      label: "Sistema",
       title: "Ir a administración",
       to: "/admin",
       icon: IconSettings,

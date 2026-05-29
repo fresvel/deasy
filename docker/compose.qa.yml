@@ -25,6 +25,7 @@ services:
     ports:
       - "11883:1883"
       - "18084:18083"
+      - "18083:8083"
 
   minio:
     env_file: *qa_runtime_env_file

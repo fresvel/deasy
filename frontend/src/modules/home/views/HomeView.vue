@@ -1173,7 +1173,7 @@
     <AdminModalShell
       ref="documentCenterModal"
       labelled-by="document-center-modal-title"
-      title="Gestor documental"
+      title="Centro documental"
       size="lg"
       content-class="rounded-4 shadow border-0"
       body-class="pt-4"

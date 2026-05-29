@@ -15,13 +15,13 @@ const router = new Router();
 
 router.use(authMiddleware, loadAccessContext);
 
-router.post("/program", requirePermissions("processes.create"), createProgram)
+router.post("/program", requirePermissions("units.create"), createProgram)
 
-router.post("/faculty", requirePermissions("processes.create"), createFacultad)
+router.post("/faculty", requirePermissions("units.create"), createFacultad)
 
-router.post("/perfil", requirePermissions("processes.create"), createPerfil)
-router.post("/process", requirePermissions("processes.create"), createProceso)
-router.post("/terms/:termId/generate-tasks", requirePermissions("processes.create"), generateTasksForTermController)
+router.post("/perfil", requirePermissions("people.create"), createPerfil)
+router.post("/process", requirePermissions("process_definitions.create"), createProceso)
+router.post("/terms/:termId/generate-tasks", requirePermissions("process_execution.create"), generateTasksForTermController)
 
 router.use("/sql", sqlAdminRouter);
 

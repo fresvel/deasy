@@ -212,7 +212,7 @@ disparar un proceso y quien puede modificar o actualizar corridas ya creadas.
   - y solo cuando los templates que generan tarea pertenezcan a artifacts
     `system`.
 
-- Admin:
+- AdminSistema:
   - puede disparar corridas manuales y automaticas con capacidad operativa de
     soporte,
   - puede corregir, reinstanciar o limpiar corridas para mantenimiento,
