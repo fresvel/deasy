@@ -246,7 +246,91 @@
           <HomeSignatureEntry @refresh-home="handleSignatureCenterRefresh" />
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
-          <div class="flex flex-col gap-4">
+
+          <!-- Panel: Mis cargos -->
+          <div v-if="showCargosPanel" class="flex flex-col gap-5">
+
+            <!-- Cabecera con botón volver -->
+            <div class="admin-page-header">
+              <button
+                type="button"
+                class="deasy-hero-back-button"
+                @click="showCargosPanel = false"
+              >
+                <span class="deasy-hero-back-button__icon">
+                  <IconArrowLeft class="h-4.5 w-4.5" />
+                </span>
+                <span>Volver</span>
+              </button>
+            </div>
+
+            <div v-if="!cargosPanelData.length" class="text-sm font-medium text-slate-500 py-4">
+              No hay cargos asignados para mostrar.
+            </div>
+            <template v-else>
+              <!-- Tabs: uno por cargo -->
+              <div class="deasy-inline-tabs" role="tablist">
+                <button
+                  v-for="cargo in cargosPanelData"
+                  :key="cargo.id"
+                  type="button"
+                  role="tab"
+                  class="deasy-inline-tab"
+                  :class="activeCargoPanelTab === cargo.id ? 'deasy-inline-tab--active' : ''"
+                  :aria-selected="activeCargoPanelTab === cargo.id"
+                  @click="activeCargoPanelTab = cargo.id"
+                >
+                  {{ cargo.name }}
+                </button>
+              </div>
+
+              <!-- Contenido del tab activo -->
+              <template v-for="cargo in cargosPanelData" :key="cargo.id">
+                <div v-if="activeCargoPanelTab === cargo.id" class="flex flex-col gap-5">
+
+                  <!-- Unidades donde está activo este cargo -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <section
+                      v-for="pos in cargo.positions"
+                      :key="pos.unitId"
+                      class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4"
+                    >
+                      <div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ pos.groupName }}</div>
+                        <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1">{{ pos.unitName }}</h3>
+                      </div>
+
+                      <div v-if="!pos.processes.length" class="text-sm font-medium text-slate-400 italic">
+                        Sin procesos asignados.
+                      </div>
+                      <div v-else class="flex flex-col gap-2">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Procesos disponibles</div>
+                        <button
+                          v-for="process in pos.processes"
+                          :key="process.process_definition_id || process.id"
+                          type="button"
+                          class="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
+                          @click="handleProcessSelect(process)"
+                        >
+                          <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
+                            <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
+                          </span>
+                          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ process.name }}</strong>
+                          </span>
+                          <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
+                        </button>
+                      </div>
+                    </section>
+                  </div>
+
+                </div>
+              </template>
+            </template>
+          </div>
+
+          <!-- Dashboard normal -->
+          <div v-else class="flex flex-col gap-4">
 
             <!-- Error banner -->
             <div v-if="homeErrorMessage" class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
@@ -351,7 +435,7 @@
               <button
                 type="button"
                 class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-100/40 hover:shadow-md"
-                @click="scrollToProcessNav"
+                @click="openCargosPanel"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis cargos</h3>
                 <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
@@ -2541,6 +2625,8 @@ const resolveDeliverableGridColumns = () => {
 const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const showNotify = ref(false);
 const homeDashTab = ref('inicio');
+const showCargosPanel = ref(false);
+const activeCargoPanelTab = ref(null);
 const showNavMenu = ref(false);
 const deliverableGridColumns = ref(resolveDeliverableGridColumns());
 
@@ -2797,6 +2883,32 @@ const homeCargos = computed(() => {
 });
 
 const homeCargoCount = computed(() => homeCargos.value.length);
+
+const cargosPanelData = computed(() => {
+  const cargoMap = new Map();
+  unitGroups.value.forEach((group) => {
+    (group.units || []).forEach((unit) => {
+      (unit.cargos || []).forEach((cargo) => {
+        if (!cargoMap.has(cargo.id)) {
+          cargoMap.set(cargo.id, { id: cargo.id, name: cargo.name, positions: [] });
+        }
+        cargoMap.get(cargo.id).positions.push({
+          unitId: unit.id,
+          unitName: unit.label || unit.name,
+          groupName: group.label || group.name,
+          processes: cargo.processes || []
+        });
+      });
+    });
+  });
+  // Fallback: si no hay unit_groups, usar consolidated
+  if (!cargoMap.size) {
+    consolidatedCargos.value.forEach((cargo) => {
+      cargoMap.set(cargo.id, { id: cargo.id, name: cargo.name, positions: [{ unitName: '—', groupName: '—', processes: cargo.processes || [] }] });
+    });
+  }
+  return Array.from(cargoMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
 
 const homeUnitCount = computed(() => {
   const unitMap = new Map();
@@ -3214,6 +3326,11 @@ const scrollToProcessNav = async () => {
     const el = document.getElementById('procesos');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+};
+
+const openCargosPanel = () => {
+  showCargosPanel.value = true;
+  activeCargoPanelTab.value = cargosPanelData.value[0]?.id ?? null;
 };
 
 const navigateToDocumentCenterPage = async () => {
