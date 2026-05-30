@@ -1,8 +1,6 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
-      title="Referencias"
-      subtitle="Agrega referencias laborales, familiares y personales."
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
@@ -13,176 +11,68 @@
         :tabs="referenceTabs"
       />
 
-      <!-- Referencias Laborales -->
-      <ProfileTableBlock v-if="activeTab === 'laborales'" title="Referencias laborales">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REFERENCIA</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CARGO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CORREO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TELÉFONO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="referenciasLaborales.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">No hay referencias laborales registradas</td>
-              </tr>
-              <tr v-for="ref in referenciasLaborales" :key="ref._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(ref.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.nombre }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.cargo_parentesco }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.institution }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(ref.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarReferencia(ref)"
-                    @preview="previewDocument(ref)"
-                    @download="openDocument(ref)"
-                    @upload="triggerFileUpload(ref._id)"
-                    @delete-document="eliminarSoloPDF(ref)"
-                    @delete="openDelete(ref)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ProfileTableBlock>
-
-      <!-- Referencias Familiares -->
-      <ProfileTableBlock v-else-if="activeTab === 'familiares'" title="Referencias familiares">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REFERENCIA</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PARENTESCO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CORREO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TELÉFONO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="referenciasFamiliares.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">No hay referencias familiares registradas</td>
-              </tr>
-              <tr v-for="ref in referenciasFamiliares" :key="ref._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(ref.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.nombre }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.cargo_parentesco }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(ref.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarReferencia(ref)"
-                    @preview="previewDocument(ref)"
-                    @download="openDocument(ref)"
-                    @upload="triggerFileUpload(ref._id)"
-                    @delete-document="eliminarSoloPDF(ref)"
-                    @delete="openDelete(ref)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ProfileTableBlock>
-
-      <!-- Referencias Personales -->
-      <ProfileTableBlock v-else title="Referencias personales">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">REFERENCIA</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CORREO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TELÉFONO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="referenciasPersonales.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="5" class="px-4 py-8 text-center text-slate-500 italic">No hay referencias personales registradas</td>
-              </tr>
-              <tr v-for="ref in referenciasPersonales" :key="ref._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(ref.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.nombre }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.email }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ ref.telefono }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(ref.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarReferencia(ref)"
-                    @preview="previewDocument(ref)"
-                    @download="openDocument(ref)"
-                    @upload="triggerFileUpload(ref._id)"
-                    @delete-document="eliminarSoloPDF(ref)"
-                    @delete="openDelete(ref)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ProfileTableBlock>
+      <AppDataTable
+        :fields="tableFields"
+        :rows="tableRows"
+        :row-key="(row) => row._id"
+        empty-text="No hay registros."
+        actions-label="ACCIÓN"
+      >
+        <template #cell="{ row, field }">
+          <BtnSera v-if="field.name === 'sera'" :type="getSeraType(row.sera)" />
+          <span v-else>{{ row[field.name] ?? '—' }}</span>
+        </template>
+        <template #actions="{ row }">
+          <DossierDocumentActions
+            :has-document="Boolean(row.url_documento)"
+            :can-edit="canUpdateDossier"
+            :can-upload="canUpdateDossier"
+            :can-delete-document="canDeleteDossier"
+            :can-delete="canDeleteDossier"
+            @edit="editarReferencia(row)"
+            @preview="previewDocument(row)"
+            @download="openDocument(row)"
+            @upload="triggerFileUpload(row._id)"
+            @delete-document="eliminarSoloPDF(row)"
+            @delete="openDelete(row)"
+          />
+        </template>
+      </AppDataTable>
     </ProfileSectionShell>
 
     <!-- Modal Agregar/Editar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="referenciaModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarReferencia 
-            :editing-item="pendingEdit" 
-            @referencia-added="loadDossier" 
-            @referencia-updated="handleReferenciaUpdated" 
-          />
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      ref="modal"
+      id="referenciaModal"
+      labelled-by="referencia-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+    >
+      <AgregarReferencia
+        :editing-item="pendingEdit"
+        @referencia-added="loadDossier"
+        @referencia-updated="handleReferenciaUpdated"
+      />
+    </AppModalShell>
 
     <!-- Modal Eliminar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="referenciaDeleteModal" tabindex="-1" ref="deleteModal" aria-hidden="true">
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </button>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar la referencia de 
-            <strong>{{ pendingDelete?.nombre || "seleccionada" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      controlled
+      :open="showDeleteModal"
+      title="Confirmar eliminación"
+      labelled-by="referencia-delete-modal-title"
+      size="md"
+      @close="showDeleteModal = false"
+    >
+      <p class="text-sm text-slate-700">
+        ¿Deseas eliminar la referencia de <strong>{{ pendingDelete?.nombre || "seleccionada" }}</strong>?
+      </p>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -190,33 +80,33 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, onBeforeUnmount} from "vue"
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import AgregarReferencia from "@/modules/perfil/components/AgregarReferencia.vue";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import DossierService from "@/modules/dossier/services/DossierService";
 import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
-const deleteModal = ref(null);
 const pdfPreviewModal = ref(null);
 const fileInput = ref(null);
 const selectedItemId = ref(null);
 const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const showDeleteModal = ref(false);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 const activeTab = ref("laborales");
 
 let modalInstance = null;
-let deleteInstance = null;
 
 const referenciasLaborales = computed(() => {
     if (!dossier.value || !dossier.value.referencias) return [];
@@ -239,6 +129,36 @@ const referenceTabs = computed(() => ([
     { key: "personales", label: "Personales", count: referenciasPersonales.value.length },
 ]));
 
+const tableFields = computed(() => {
+  if (activeTab.value === 'laborales') return [
+    { name: 'sera', label: '' },
+    { name: 'nombre', label: 'REFERENCIA' },
+    { name: 'cargo_parentesco', label: 'CARGO' },
+    { name: 'email', label: 'CORREO' },
+    { name: 'telefono', label: 'TELÉFONO' },
+    { name: 'institution', label: 'INSTITUCIÓN' },
+  ];
+  if (activeTab.value === 'familiares') return [
+    { name: 'sera', label: '' },
+    { name: 'nombre', label: 'REFERENCIA' },
+    { name: 'cargo_parentesco', label: 'PARENTESCO' },
+    { name: 'email', label: 'CORREO' },
+    { name: 'telefono', label: 'TELÉFONO' },
+  ];
+  return [
+    { name: 'sera', label: '' },
+    { name: 'nombre', label: 'REFERENCIA' },
+    { name: 'email', label: 'CORREO' },
+    { name: 'telefono', label: 'TELÉFONO' },
+  ];
+});
+
+const tableRows = computed(() => {
+  if (activeTab.value === 'laborales') return referenciasLaborales.value;
+  if (activeTab.value === 'familiares') return referenciasFamiliares.value;
+  return referenciasPersonales.value;
+});
+
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
 const loadDossier = async () => {
@@ -253,16 +173,16 @@ const loadDossier = async () => {
 const openModal = () => {
     if (!canCreateDossier.value) return;
     pendingEdit.value = null;
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const editarReferencia = (ref) => {
     if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...ref };
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
@@ -274,9 +194,7 @@ const handleReferenciaUpdated = () => {
 const openDelete = (ref) => {
     if (!canDeleteDossier.value) return;
     pendingDelete.value = ref;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-    deleteInstance.show();
+    showDeleteModal.value = true;
 };
 
 const confirmDelete = async () => {
@@ -284,7 +202,7 @@ const confirmDelete = async () => {
     try {
         await DossierService.deleteReferencia(pendingDelete.value._id);
         await loadDossier();
-        deleteInstance?.hide();
+        showDeleteModal.value = false;
     } catch (error) {
         console.error('Error al eliminar:', error);
     }
@@ -355,14 +273,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (modalInstance) {
-        modalInstance.hide();
-        modalInstance.dispose();
-    }
-    if (deleteInstance) {
-        deleteInstance.hide();
-        deleteInstance.dispose();
-    }
+    modalInstance?.dispose();
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>

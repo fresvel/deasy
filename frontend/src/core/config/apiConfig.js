@@ -7,7 +7,7 @@ const API_PORT = import.meta.env.VITE_API_PORT || "3030";
 const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "").trim();
 const API_BASE_URL = RAW_API_BASE_URL || `${DEFAULT_PROTOCOL}//${DEFAULT_HOST}:${API_PORT}`;
 const NORMALIZED_API_BASE_URL = API_BASE_URL.replace(/\/$/, "");
-export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/easym/v1`;
+export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/deasy/v1`;
 
 export const API_ROUTES = {
   BASE: NORMALIZED_API_BASE_URL,

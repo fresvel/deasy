@@ -14,7 +14,7 @@ Las dependencias ya están instaladas:
 
 **Método 1: API REST**
 ```bash
-POST http://localhost:3000/easym/v1/whatsapp/initialize
+POST http://localhost:3000/deasy/v1/whatsapp/initialize
 ```
 
 **Método 2: Iniciar automáticamente con el servidor**
@@ -38,7 +38,7 @@ whatsappBot.initialize();
 
 ### Inicializar Bot
 ```http
-POST /easym/v1/whatsapp/initialize
+POST /deasy/v1/whatsapp/initialize
 ```
 
 **Respuesta:**
@@ -52,7 +52,7 @@ POST /easym/v1/whatsapp/initialize
 
 ### Obtener Estado
 ```http
-GET /easym/v1/whatsapp/status
+GET /deasy/v1/whatsapp/status
 ```
 
 **Respuesta:**
@@ -69,7 +69,7 @@ GET /easym/v1/whatsapp/status
 
 ### Enviar Mensaje
 ```http
-POST /easym/v1/whatsapp/send-message
+POST /deasy/v1/whatsapp/send-message
 
 Content-Type: application/json
 
@@ -81,7 +81,7 @@ Content-Type: application/json
 
 ### Enviar Código de Verificación
 ```http
-POST /easym/v1/whatsapp/send-verification
+POST /deasy/v1/whatsapp/send-verification
 
 Content-Type: application/json
 
@@ -93,7 +93,7 @@ Content-Type: application/json
 
 ### Enviar Mensaje de Bienvenida
 ```http
-POST /easym/v1/whatsapp/send-welcome
+POST /deasy/v1/whatsapp/send-welcome
 
 Content-Type: application/json
 
@@ -105,7 +105,7 @@ Content-Type: application/json
 
 ### Destruir Bot
 ```http
-DELETE /easym/v1/whatsapp/destroy
+DELETE /deasy/v1/whatsapp/destroy
 ```
 
 ## 💬 Comandos del Bot
@@ -214,7 +214,7 @@ cp -r whatsapp-sessions whatsapp-sessions-backup
 
 ### El bot no responde a mensajes
 **Solución:**
-1. Verifica que el bot esté listo: `GET /easym/v1/whatsapp/status`
+1. Verifica que el bot esté listo: `GET /deasy/v1/whatsapp/status`
 2. Revisa la consola del servidor para ver los logs
 3. Intenta destruir y reinicializar el bot
 

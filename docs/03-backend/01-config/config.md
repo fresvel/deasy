@@ -8,7 +8,7 @@ La carpeta `/config` dentro del directorio `/backend` contiene archivos de confi
 
 #### `apiPaths.js`
 Este archivo define las rutas y prefijos de la API REST utilizada por el backend. Incluye:
-- Prefijo base de la API (`/easym/v1`)
+- Prefijo base de la API (`/deasy/v1`)
 - Rutas específicas para diferentes módulos (academia, usuarios, tutorías, admin, etc.)
 - Rutas generadas automáticamente combinando el prefijo con las rutas específicas
 - Rutas para documentación (docs y docs.json)

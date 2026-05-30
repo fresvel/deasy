@@ -1,98 +1,76 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
-      title="Certificaciones y reconocimientos"
-      subtitle="Registra los certificados o reconocimientos relevantes para tu carrera."
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
-
-    <ProfileTableBlock title="Certificaciones registradas">
-      <div class="profile-table-shell">
-        <table class="w-full text-sm text-left border-collapse min-w-max">
-          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Certificación</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fecha</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Ámbito</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Descripción</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!certificaciones.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">
-                No has registrado certificaciones aún.
-              </td>
-            </tr>
-            <tr v-for="certificacion in certificaciones" :key="certificacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(certificacion.sera)" /></td>
-              <td class="px-4 py-3 text-slate-700">{{ certificacion.titulo }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ certificacion.institution }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ certificacion.horas || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ formatDate(certificacion.fecha) }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ certificacion.tipo || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700 max-w-xs truncate">{{ certificacion.descripcion || 'N/A' }}</td>
-              <td class="px-4 py-3">
-                <DossierDocumentActions
-                  :has-document="Boolean(certificacion.url_documento)"
-                  :can-edit="canUpdateDossier"
-                  :can-upload="canUpdateDossier"
-                  :can-delete-document="canDeleteDossier"
-                  :can-delete="canDeleteDossier"
-                  @edit="editarCertificacion(certificacion)"
-                  @preview="previewDocument(certificacion)"
-                  @download="openDocument(certificacion)"
-                  @upload="triggerFileUpload(certificacion._id)"
-                  @delete-document="eliminarSoloPDF(certificacion)"
-                  @delete="openDelete(certificacion)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ProfileTableBlock>
+      <AppDataTable
+        :fields="tableFields"
+        :rows="tableRows"
+        :row-key="(row) => row._id"
+        empty-text="No hay registros."
+        actions-label="ACCIÓN"
+      >
+        <template #cell="{ row, field }">
+          <BtnSera v-if="field.name === 'sera'" :type="getSeraType(row.sera)" />
+          <span v-else-if="field.name === 'horas'">{{ row.horas || '—' }}</span>
+          <span v-else-if="field.name === 'fecha'">{{ formatDate(row.fecha) }}</span>
+          <span v-else-if="field.name === 'tipo'">{{ row.tipo || '—' }}</span>
+          <span v-else-if="field.name === 'descripcion'" class="max-w-xs truncate block">{{ row.descripcion || '—' }}</span>
+          <span v-else>{{ row[field.name] ?? '—' }}</span>
+        </template>
+        <template #actions="{ row }">
+          <DossierDocumentActions
+            :has-document="Boolean(row.url_documento)"
+            :can-edit="canUpdateDossier"
+            :can-upload="canUpdateDossier"
+            :can-delete-document="canDeleteDossier"
+            :can-delete="canDeleteDossier"
+            @edit="editarCertificacion(row)"
+            @preview="previewDocument(row)"
+            @download="openDocument(row)"
+            @upload="triggerFileUpload(row._id)"
+            @delete-document="eliminarSoloPDF(row)"
+            @delete="openDelete(row)"
+          />
+        </template>
+      </AppDataTable>
     </ProfileSectionShell>
 
     <!-- Modal Agregar/Editar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="certificacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarCertificacion 
-            :editing-item="pendingEdit" 
-            @certificacion-added="loadDossier" 
-            @certificacion-updated="handleCertificacionUpdated"
-          />
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      ref="modal"
+      id="certificacionModal"
+      labelled-by="certificacion-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+    >
+      <AgregarCertificacion
+        :editing-item="pendingEdit"
+        @certificacion-added="loadDossier"
+        @certificacion-updated="handleCertificacionUpdated"
+      />
+    </AppModalShell>
 
     <!-- Modal Eliminar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="certificacionDeleteModal" tabindex="-1" ref="deleteModal" aria-hidden="true">
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </button>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar la certificación
-            <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      controlled
+      :open="showDeleteModal"
+      title="Confirmar eliminación"
+      labelled-by="certificacion-delete-modal-title"
+      size="md"
+      @close="showDeleteModal = false"
+    >
+      <p class="text-sm text-slate-700">
+        ¿Deseas eliminar la certificación <strong>{{ pendingDelete?.titulo || "seleccionada" }}</strong>?
+      </p>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <!-- Input file oculto -->
     <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
@@ -106,16 +84,16 @@ import { Modal } from "@/shared/utils/modalController";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import AgregarCertificacion from "@/modules/perfil/components/AgregarCertificacion.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import DossierService from "@/modules/dossier/services/DossierService";
 import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
-const deleteModal = ref(null);
 const pdfPreviewModal = ref(null);
 const fileInput = ref(null);
 const selectedItemId = ref(null);
@@ -123,15 +101,27 @@ const dossier = ref(null);
 const loading = ref(true);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const showDeleteModal = ref(false);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
 let modalInstance = null;
-let deleteInstance = null;
+
+const tableFields = [
+  { name: 'sera', label: '' },
+  { name: 'titulo', label: 'CERTIFICACIÓN' },
+  { name: 'institution', label: 'INSTITUCIÓN' },
+  { name: 'horas', label: 'HORAS' },
+  { name: 'fecha', label: 'FECHA' },
+  { name: 'tipo', label: 'ÁMBITO' },
+  { name: 'descripcion', label: 'DESCRIPCIÓN' },
+];
 
 const certificaciones = computed(() => {
     if (!dossier.value || !dossier.value.certificaciones) return [];
     return dossier.value.certificaciones;
 });
+
+const tableRows = certificaciones;
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
@@ -158,16 +148,16 @@ const loadDossier = async () => {
 const openModal = () => {
     if (!canCreateDossier.value) return;
     pendingEdit.value = null;
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const editarCertificacion = (certificacion) => {
     if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...certificacion };
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
@@ -179,9 +169,7 @@ const handleCertificacionUpdated = () => {
 const openDelete = (certificacion) => {
     if (!canDeleteDossier.value) return;
     pendingDelete.value = certificacion;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-    deleteInstance.show();
+    showDeleteModal.value = true;
 };
 
 const confirmDelete = async () => {
@@ -189,10 +177,9 @@ const confirmDelete = async () => {
     try {
         await DossierService.deleteCertificacion(pendingDelete.value._id);
         await loadDossier();
-        deleteInstance?.hide();
+        showDeleteModal.value = false;
     } catch (error) {
         console.error('Error al eliminar:', error);
-        alert('Error al eliminar');
     }
 };
 
@@ -247,7 +234,7 @@ const triggerFileUpload = (itemId) => {
 const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     try {
         const response = await DossierService.uploadCertificacionDocument(selectedItemId.value, file);
         if (response.success) {
@@ -266,14 +253,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (modalInstance) {
-        modalInstance.hide();
-        modalInstance.dispose();
-    }
-    if (deleteInstance) {
-        deleteInstance.hide();
-        deleteInstance.dispose();
-    }
+    modalInstance?.dispose();
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>

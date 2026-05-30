@@ -16,6 +16,15 @@
     @photo-selected="handlePhotoSelected"
     @primary-nav="handlePrimaryNavInteraction"
   >
+    <template #header>
+      <div class="deasy-context-header">
+        <div class="deasy-context-header__copy">
+          <div class="deasy-context-header__title">{{ profileContextTitle }}</div>
+          <div v-if="profileContextSubtitle" class="deasy-context-header__subtitle">{{ profileContextSubtitle }}</div>
+        </div>
+      </div>
+    </template>
+
     <template #sidebar>
         <div class="flex flex-col">
             <div class="deasy-nav-group mt-2">
@@ -309,6 +318,15 @@ const isClient = typeof window !== 'undefined';
 
 const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');
 const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
+
+const profileContextTitle = computed(() => {
+  if (process.value === 'Inicio') return 'Dossier profesional';
+  return process.value || 'Dossier profesional';
+});
+const profileContextSubtitle = computed(() => {
+  if (process.value === 'Inicio') return 'Vista general de tu perfil académico y profesional';
+  return '';
+});
 
     const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
     const vnotify = ref(false);

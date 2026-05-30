@@ -19,7 +19,7 @@
 
 ## Endpoints relacionados
 
-- Documentados en Swagger (ver /easym/docs).
+- Documentados en Swagger (ver /deasy/docs).
 - Controladores en backend/controllers/users/.
 
 ## 2FA

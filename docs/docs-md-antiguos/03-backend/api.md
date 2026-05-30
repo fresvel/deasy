@@ -2,8 +2,8 @@
 
 ## Base URL
 
-- /easym/v1/
-- Swagger: /easym/docs y /easym/docs.json
+- /deasy/v1/
+- Swagger: /deasy/docs y /deasy/docs.json
 
 ## Rutas principales (segun archivos de routes)
 

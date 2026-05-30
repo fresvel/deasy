@@ -1295,7 +1295,7 @@ const startServer = async () => {
   await initializeMariaDBWithRetry();
 
   app.listen(PORT, () => {
-    console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
+    console.log(`Servidor iniciado en: http://localhost:${PORT}/deasy/v1/`)
   });
 };
 

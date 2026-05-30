@@ -4,7 +4,7 @@ Este archivo documenta las constantes exportadas desde `config/apiPaths.js` que 
 
 ## `API_PREFIX`
 
-- **Valor:** `"/easym/v1"`
+- **Valor:** `"/deasy/v1"`
 - Se usa como prefijo base para todos los endpoints de la API.
 
 ## `PATHS`
@@ -30,12 +30,12 @@ Ejemplos de entradas:
 Derivado de `PATHS` anteponiendo `API_PREFIX` a cada ruta relativa.
 
 Ejemplo:
-- `ROUTES.users` => `"/easym/v1/users"`
-- `ROUTES.tutorias` => `"/easym/v1/tutorias"`
+- `ROUTES.users` => `"/deasy/v1/users"`
+- `ROUTES.tutorias` => `"/deasy/v1/tutorias"`
 
 ## Rutas de documentación
 
-- `DOCS_PATH` – `"/easym/docs"`
-- `DOCS_JSON_PATH` – `"/easym/docs.json"`
+- `DOCS_PATH` – `"/deasy/docs"`
+- `DOCS_JSON_PATH` – `"/deasy/docs.json"`
 
 Se usan para servir la documentación de la API y la especificación OpenAPI en JSON.

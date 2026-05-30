@@ -12,7 +12,7 @@ de estos comandos son `package.json`, `Dockerfile`, `docker/README.md`,
 El repositorio esta organizado como un monorepo con capas separadas:
 
 - `frontend/`: aplicacion web en Vue 3, Vite y TailwindCSS. Usa `pnpm`.
-- `backend/`: API Express en ESM. Usa `npm` y expone la API bajo `/easym/v1`.
+- `backend/`: API Express en ESM. Usa `npm` y expone la API bajo `/deasy/v1`.
 - `docs/`: sitio de documentacion en Astro Starlight. Usa `pnpm`.
 - `signer/`: servicio de firma digital con Python, `pyhanko`, MinIO y un helper Node en `sigmaker/`.
 - `docker/`: composicion de servicios para MariaDB, MongoDB, RabbitMQ, EMQX, MinIO, Nginx, backend, frontend, signer y analytics.
@@ -60,8 +60,8 @@ URLs locales:
 
 - Aplicacion via proxy HTTP: `http://localhost:9088`
 - Aplicacion via proxy HTTPS: `https://localhost:9443`
-- API via proxy: `https://localhost:9443/api/easym/v1`
-- Swagger UI: `https://localhost:9443/api/easym/docs`
+- API via proxy: `https://localhost:9443/api/deasy/v1`
+- Swagger UI: `https://localhost:9443/api/deasy/docs`
 - MinIO API: `http://localhost:9100`
 - MinIO Console: `http://localhost:9101`
 - RabbitMQ UI: `http://localhost:15673`
@@ -157,16 +157,16 @@ Con el stack Docker de `dev`:
 
 Si el backend se ejecuta directamente en local:
 
-- API base: `http://localhost:3030/easym/v1`
-- Swagger UI: `http://localhost:3030/easym/docs`
-- Swagger JSON: `http://localhost:3030/easym/docs.json`
+- API base: `http://localhost:3030/deasy/v1`
+- Swagger UI: `http://localhost:3030/deasy/docs`
+- Swagger JSON: `http://localhost:3030/deasy/docs.json`
 - Healthcheck: `http://localhost:3030/health`
 
 Con el proxy Nginx de Docker, la API se consume bajo `/api`, por ejemplo:
 
 ```text
-https://localhost:8443/api/easym/v1
-https://localhost:8443/api/easym/docs
+https://localhost:8443/api/deasy/v1
+https://localhost:8443/api/deasy/docs
 ```
 
 ## Frontend local

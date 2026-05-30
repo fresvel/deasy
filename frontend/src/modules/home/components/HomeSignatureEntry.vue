@@ -181,7 +181,7 @@
     >
       <div class="flex flex-col gap-5 p-6">
         <div class="deasy-filter-shell">
-          <div class="deasy-filter-grid xl:grid-cols-5">
+          <div class="deasy-filter-grid xl:grid-cols-7">
             <label class="deasy-filter-field xl:col-span-2">
             <span class="sr-only">Buscar</span>
             <input
@@ -212,19 +212,18 @@
               <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
+          <div class="md:col-span-2 xl:col-span-2 xl:justify-self-end">
+            <div class="deasy-filter-actions">
+              <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
+              <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
+                {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
+              </AppButton>
+            </div>
           </div>
-
-          <div class="deasy-filter-toolbar">
-          <div class="deasy-filter-summary">
+          </div>
+          <div class="deasy-filter-summary pt-2">
             Seleccionados: <span class="font-bold text-slate-700">{{ selectedItems.length }}</span>
           </div>
-          <div class="deasy-filter-actions">
-            <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
-            <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
-              {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
-            </AppButton>
-          </div>
-        </div>
         </div>
 
         <AppDataTable

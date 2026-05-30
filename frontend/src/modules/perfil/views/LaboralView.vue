@@ -1,145 +1,81 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
-      title="Experiencia laboral"
-      subtitle="Detalla tu experiencia docente y profesional."
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
-    <ProfileSubsectionTabs
-      v-model="activeTab"
-      aria-label="Tipos de experiencia laboral"
-      :tabs="experienceTabs"
-    />
+      <ProfileSubsectionTabs
+        v-model="activeTab"
+        aria-label="Tipos de experiencia laboral"
+        :tabs="experienceTabs"
+      />
 
-    <ProfileTableBlock v-if="activeTab === 'profesional'" title="Experiencia profesional">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">FUNCIONES</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">MODALIDAD</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">DESDE</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">HASTA</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="!experienciaProfesional.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">No has registrado experiencia profesional todavía.</td>
-              </tr>
-              <tr v-for="experiencia in experienciaProfesional" :key="experiencia._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.institucion }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.modalidad || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ formatDate(experiencia.fecha_inicio) }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(experiencia.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarExperiencia(experiencia)"
-                    @preview="previewDocument(experiencia)"
-                    @download="openDocument(experiencia)"
-                    @upload="triggerFileUpload(experiencia._id)"
-                    @delete-document="eliminarSoloPDF(experiencia)"
-                    @delete="openDelete(experiencia)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-    </ProfileTableBlock>
-
-    <ProfileTableBlock v-else title="Experiencia docente">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CÁTEDRAS</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">MODALIDAD</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">DESDE</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">HASTA</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="!experienciaDocente.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">No has registrado experiencia docente todavía.</td>
-              </tr>
-              <tr v-for="experiencia in experienciaDocente" :key="experiencia._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(experiencia.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.institucion }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.funcion_catedra ? experiencia.funcion_catedra.join(', ') : 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.modalidad || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ formatDate(experiencia.fecha_inicio) }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ experiencia.fecha_fin ? formatDate(experiencia.fecha_fin) : 'Actualidad' }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(experiencia.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarExperiencia(experiencia)"
-                    @preview="previewDocument(experiencia)"
-                    @download="openDocument(experiencia)"
-                    @upload="triggerFileUpload(experiencia._id)"
-                    @delete-document="eliminarSoloPDF(experiencia)"
-                    @delete="openDelete(experiencia)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-    </ProfileTableBlock>
+      <AppDataTable
+        :fields="tableFields"
+        :rows="tableRows"
+        :row-key="(row) => row._id"
+        empty-text="No hay registros."
+        actions-label="ACCIÓN"
+      >
+        <template #cell="{ row, field }">
+          <BtnSera v-if="field.name === 'sera'" :type="getSeraType(row.sera)" />
+          <span v-else-if="field.name === 'funciones'">{{ row.funcion_catedra?.join(', ') || '—' }}</span>
+          <span v-else-if="field.name === 'fecha_inicio'">{{ formatDate(row.fecha_inicio) }}</span>
+          <span v-else-if="field.name === 'fecha_fin'">{{ row.fecha_fin ? formatDate(row.fecha_fin) : 'Actualidad' }}</span>
+          <span v-else>{{ row[field.name] ?? '—' }}</span>
+        </template>
+        <template #actions="{ row }">
+          <DossierDocumentActions
+            :has-document="Boolean(row.url_documento)"
+            :can-edit="canUpdateDossier"
+            :can-upload="canUpdateDossier"
+            :can-delete-document="canDeleteDossier"
+            :can-delete="canDeleteDossier"
+            @edit="editarExperiencia(row)"
+            @preview="previewDocument(row)"
+            @download="openDocument(row)"
+            @upload="triggerFileUpload(row._id)"
+            @delete-document="eliminarSoloPDF(row)"
+            @delete="openDelete(row)"
+          />
+        </template>
+      </AppDataTable>
     </ProfileSectionShell>
 
     <!-- Modal Agregar/Editar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="experienciaModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarExperiencia 
-            :editing-item="pendingEdit" 
-            @experiencia-added="loadDossier" 
-            @experiencia-updated="handleExperienciaUpdated"
-          />
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      ref="modal"
+      id="experienciaModal"
+      labelled-by="experiencia-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+    >
+      <AgregarExperiencia
+        :editing-item="pendingEdit"
+        @experiencia-added="loadDossier"
+        @experiencia-updated="handleExperienciaUpdated"
+      />
+    </AppModalShell>
 
     <!-- Modal Eliminar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="experienciaDeleteModal" tabindex="-1" ref="deleteModal" aria-hidden="true">
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </button>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar la experiencia en 
-            <strong>{{ pendingDelete?.institucion || "seleccionada" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      controlled
+      :open="showDeleteModal"
+      title="Confirmar eliminación"
+      labelled-by="experiencia-delete-modal-title"
+      size="md"
+      @close="showDeleteModal = false"
+    >
+      <p class="text-sm text-slate-700">
+        ¿Deseas eliminar la experiencia en <strong>{{ pendingDelete?.institucion || "seleccionada" }}</strong>?
+      </p>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -153,27 +89,27 @@ import { Modal } from "@/shared/utils/modalController";
 import AgregarExperiencia from "@/modules/perfil/components/AgregarExperiencia.vue";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
-const deleteModal = ref(null);
 const pdfPreviewModal = ref(null);
 const fileInput = ref(null);
 const selectedItemId = ref(null);
 const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const showDeleteModal = ref(false);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 const activeTab = ref("profesional");
 
 let modalInstance = null;
-let deleteInstance = null;
 
 const experienciaDocente = computed(() => {
     if (!dossier.value || !dossier.value.experiencia) return [];
@@ -189,6 +125,19 @@ const experienceTabs = computed(() => ([
     { key: "profesional", label: "Profesional", count: experienciaProfesional.value.length },
     { key: "docente", label: "Docente", count: experienciaDocente.value.length },
 ]));
+
+const tableFields = computed(() => [
+  { name: 'sera', label: '' },
+  { name: 'institucion', label: 'INSTITUCIÓN' },
+  { name: 'funciones', label: activeTab.value === 'profesional' ? 'FUNCIONES' : 'CÁTEDRAS' },
+  { name: 'modalidad', label: 'MODALIDAD' },
+  { name: 'fecha_inicio', label: 'DESDE' },
+  { name: 'fecha_fin', label: 'HASTA' },
+]);
+
+const tableRows = computed(() =>
+  activeTab.value === 'profesional' ? experienciaProfesional.value : experienciaDocente.value
+);
 
 const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 
@@ -210,16 +159,16 @@ const loadDossier = async () => {
 const openModal = () => {
     if (!canCreateDossier.value) return;
     pendingEdit.value = null;
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const editarExperiencia = (experiencia) => {
     if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...experiencia };
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
@@ -231,9 +180,7 @@ const handleExperienciaUpdated = () => {
 const openDelete = (experiencia) => {
     if (!canDeleteDossier.value) return;
     pendingDelete.value = experiencia;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-    deleteInstance.show();
+    showDeleteModal.value = true;
 };
 
 const confirmDelete = async () => {
@@ -241,7 +188,7 @@ const confirmDelete = async () => {
     try {
         await DossierService.deleteExperiencia(pendingDelete.value._id);
         await loadDossier();
-        deleteInstance?.hide();
+        showDeleteModal.value = false;
     } catch (error) {
         console.error('Error al eliminar:', error);
     }
@@ -312,14 +259,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (modalInstance) {
-        modalInstance.hide();
-        modalInstance.dispose();
-    }
-    if (deleteInstance) {
-        deleteInstance.hide();
-        deleteInstance.dispose();
-    }
+    modalInstance?.dispose();
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>

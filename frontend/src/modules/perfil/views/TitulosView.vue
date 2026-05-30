@@ -1,8 +1,6 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
-      title="Formación Profesional"
-      subtitle="Registra tu formación académica y títulos obtenidos."
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
@@ -13,188 +11,69 @@
         :tabs="titleTabs"
       />
 
-      <!-- Títulos de Cuarto Nivel -->
-      <ProfileTableBlock v-if="activeTab === 'cuarto-nivel'" title="Títulos de Cuarto Nivel">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">N.° DE REGISTRO SENESCYT</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CAMPO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="titulosCuartoNivel.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">No hay títulos de cuarto nivel registrados</td>
-              </tr>
-              <tr v-for="titulo in titulosCuartoNivel" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(titulo.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarTitulo(titulo)"
-                    @preview="previewDocument(titulo)"
-                    @download="openDocument(titulo)"
-                    @upload="triggerFileUpload(titulo._id)"
-                    @delete-document="eliminarSoloPDF(titulo)"
-                    @delete="openDelete(titulo)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ProfileTableBlock>
-
-      <!-- Títulos de Grado -->
-      <ProfileTableBlock v-else-if="activeTab === 'grado'" title="Títulos de Grado">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">N.° DE REGISTRO SENESCYT</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CAMPO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="titulosGrado.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">No hay títulos de grado registrados</td>
-              </tr>
-              <tr v-for="titulo in titulosGrado" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(titulo.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarTitulo(titulo)"
-                    @preview="previewDocument(titulo)"
-                    @download="openDocument(titulo)"
-                    @upload="triggerFileUpload(titulo._id)"
-                    @delete-document="eliminarSoloPDF(titulo)"
-                    @delete="openDelete(titulo)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ProfileTableBlock>
-
-      <!-- Títulos Técnicos y Tecnológicos -->
-      <ProfileTableBlock v-else title="Títulos Técnicos y Tecnológicos">
-        <div class="profile-table-shell mt-4">
-          <table class="w-full text-sm text-left border-collapse min-w-max">
-            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TÍTULO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">INSTITUCIÓN</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">TIPO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">N.° DE REGISTRO SENESCYT</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">CAMPO</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">PAÍS</th>
-                <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">ACCIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="titulosTecnicos.length === 0" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">No hay títulos técnicos/tecnológicos registrados</td>
-              </tr>
-              <tr v-for="titulo in titulosTecnicos" :key="titulo._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(titulo.sera)" /></td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.titulo }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.ies }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.tipo }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.sreg || 'N/A' }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.campo_amplio }}</td>
-                <td class="px-4 py-3 text-slate-700">{{ titulo.pais }}</td>
-                <td class="px-4 py-3">
-                  <DossierDocumentActions
-                    :has-document="Boolean(titulo.url_documento)"
-                    :can-edit="canUpdateDossier"
-                    :can-upload="canUpdateDossier"
-                    :can-delete-document="canDeleteDossier"
-                    :can-delete="canDeleteDossier"
-                    @edit="editarTitulo(titulo)"
-                    @preview="previewDocument(titulo)"
-                    @download="openDocument(titulo)"
-                    @upload="triggerFileUpload(titulo._id)"
-                    @delete-document="eliminarSoloPDF(titulo)"
-                    @delete="openDelete(titulo)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ProfileTableBlock>
+      <AppDataTable
+        :fields="tableFields"
+        :rows="tableRows"
+        :row-key="(row) => row._id"
+        empty-text="No hay registros."
+        actions-label="ACCIÓN"
+      >
+        <template #cell="{ row, field }">
+          <BtnSera v-if="field.name === 'sera'" :type="getSeraType(row.sera)" />
+          <span v-else-if="field.name === 'sreg'">{{ row.sreg || '—' }}</span>
+          <span v-else>{{ row[field.name] ?? '—' }}</span>
+        </template>
+        <template #actions="{ row }">
+          <DossierDocumentActions
+            :has-document="Boolean(row.url_documento)"
+            :can-edit="canUpdateDossier"
+            :can-upload="canUpdateDossier"
+            :can-delete-document="canDeleteDossier"
+            :can-delete="canDeleteDossier"
+            @edit="editarTitulo(row)"
+            @preview="previewDocument(row)"
+            @download="openDocument(row)"
+            @upload="triggerFileUpload(row._id)"
+            @delete-document="eliminarSoloPDF(row)"
+            @delete="openDelete(row)"
+          />
+        </template>
+      </AppDataTable>
     </ProfileSectionShell>
 
     <!-- Modal Agregar/Editar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="tituloModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarTitulo 
-            :editing-item="pendingEdit" 
-            @title-added="loadDossier" 
-            @title-updated="handleTituloUpdated" 
-          />
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      ref="modal"
+      id="tituloModal"
+      labelled-by="titulo-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+    >
+      <AgregarTitulo
+        :editing-item="pendingEdit"
+        @title-added="loadDossier"
+        @title-updated="handleTituloUpdated"
+      />
+    </AppModalShell>
 
     <!-- Modal Eliminar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="tituloDeleteModal" tabindex="-1" ref="deleteModal" aria-hidden="true">
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </button>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar el título 
-            <strong>{{ pendingDelete?.titulo || "seleccionado" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AppModalShell
+      controlled
+      :open="showDeleteModal"
+      title="Confirmar eliminación"
+      labelled-by="titulo-delete-modal-title"
+      size="md"
+      @close="showDeleteModal = false"
+    >
+      <p class="text-sm text-slate-700">
+        ¿Deseas eliminar el título <strong>{{ pendingDelete?.titulo || "seleccionado" }}</strong>?
+      </p>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <input type="file" ref="fileInput" accept="application/pdf" style="display: none" @change="handleFileSelect">
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -202,33 +81,33 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, onBeforeUnmount} from "vue"
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import AgregarTitulo from "@/modules/perfil/components/AgregarTitulo.vue";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import { Modal } from "@/shared/utils/modalController";
 import DossierService from "@/modules/dossier/services/DossierService";
 import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
-const deleteModal = ref(null);
 const pdfPreviewModal = ref(null);
 const fileInput = ref(null);
 const selectedTituloId = ref(null);
 const dossier = ref(null);
 const pendingEdit = ref(null);
 const pendingDelete = ref(null);
+const showDeleteModal = ref(false);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 const activeTab = ref("cuarto-nivel");
 
 let modalInstance = null;
-let deleteInstance = null;
 
 const titulosTecnicos = computed(() => {
     if (!dossier.value || !dossier.value.titulos) return [];
@@ -252,6 +131,22 @@ const titleTabs = computed(() => ([
     { key: "tecnicos", label: "Técnicos y Tecnológicos", count: titulosTecnicos.value.length },
 ]));
 
+const tableFields = [
+  { name: 'sera', label: '' },
+  { name: 'titulo', label: 'TÍTULO' },
+  { name: 'ies', label: 'INSTITUCIÓN' },
+  { name: 'tipo', label: 'TIPO' },
+  { name: 'sreg', label: 'N.° SENESCYT' },
+  { name: 'campo_amplio', label: 'CAMPO' },
+  { name: 'pais', label: 'PAÍS' },
+];
+
+const tableRows = computed(() => {
+  if (activeTab.value === 'cuarto-nivel') return titulosCuartoNivel.value;
+  if (activeTab.value === 'grado') return titulosGrado.value;
+  return titulosTecnicos.value;
+});
+
 const loadDossier = async () => {
     try {
         const data = await DossierService.getDossier();
@@ -266,16 +161,16 @@ const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 const openModal = () => {
     if (!canCreateDossier.value) return;
     pendingEdit.value = null;
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const editarTitulo = (titulo) => {
     if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...titulo };
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
@@ -287,9 +182,7 @@ const handleTituloUpdated = () => {
 const openDelete = (titulo) => {
     if (!canDeleteDossier.value) return;
     pendingDelete.value = titulo;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-    deleteInstance.show();
+    showDeleteModal.value = true;
 };
 
 const confirmDelete = async () => {
@@ -297,7 +190,7 @@ const confirmDelete = async () => {
     try {
         await DossierService.deleteTitulo(pendingDelete.value._id);
         await loadDossier();
-        deleteInstance?.hide();
+        showDeleteModal.value = false;
     } catch (error) {
         console.error('Error al eliminar:', error);
     }
@@ -368,14 +261,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (modalInstance) {
-        modalInstance.hide();
-        modalInstance.dispose();
-    }
-    if (deleteInstance) {
-        deleteInstance.hide();
-        deleteInstance.dispose();
-    }
+    modalInstance?.dispose();
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>

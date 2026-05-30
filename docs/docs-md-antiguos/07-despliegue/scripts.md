@@ -240,7 +240,7 @@ Uso operativo recomendado:
 
 Variables relevantes:
 
-- `API_BASE`: base de la API (default `http://localhost:3030/easym/v1`)
+- `API_BASE`: base de la API (default `http://localhost:3030/deasy/v1`)
 - `SEED_PASSWORD`: password de los usuarios demo
 - `SEED`: semilla para generar sufijo deterministico (`SEED_SUFFIX` tiene prioridad)
 - `SEED_SUFFIX`: sufijo explicito para IDs/correos demo
@@ -252,6 +252,6 @@ Variables relevantes:
 
 Variables relevantes:
 
-- `API_BASE`: base de la API (default `http://localhost:3030/easym/v1`)
+- `API_BASE`: base de la API (default `http://localhost:3030/deasy/v1`)
 - `SEED_PASSWORD`: password de usuarios generados
 - `SEED`: semilla deterministica para asignaciones y UUID pseudoaleatorios

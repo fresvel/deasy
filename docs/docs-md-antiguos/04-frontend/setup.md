@@ -24,7 +24,7 @@ Variables soportadas:
 Por defecto usa el host actual y puerto 3030:
 
 - `API_BASE_URL = http://hostname:3030`
-- API_PREFIX = /easym/v1
+- API_PREFIX = /deasy/v1
 
 ## Arranque
 

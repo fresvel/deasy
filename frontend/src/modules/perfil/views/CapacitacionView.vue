@@ -1,176 +1,99 @@
 <template>
-  <div class="profile-admin-skin w-full animate-fade-in">
+  <div class="w-full animate-fade-in">
     <ProfileSectionShell
-      title="Formación continua y conferencias"
-      subtitle="Registra los eventos de capacitación docente y profesional en los que has participado."
       :add-disabled="!canCreateDossier"
       add-disabled-title="No tienes permiso para agregar registros del dossier."
       @add="openModal"
     >
-    <ProfileSubsectionTabs
-      v-model="activeTab"
-      aria-label="Tipos de capacitación"
-      :tabs="trainingTabs"
-    />
+      <ProfileSubsectionTabs
+        v-model="activeTab"
+        aria-label="Tipos de capacitación"
+        :tabs="trainingTabs"
+      />
 
-    <ProfileTableBlock v-if="activeTab === 'docente'" title="Capacitación en el área docente">
-      <div class="profile-table-shell">
-        <table class="w-full text-sm text-left border-collapse min-w-max">
-          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Tema</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">País</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Inicio</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fin</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Rol</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!capacitacionesDocentes.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">
-                No has registrado capacitación docente.
-              </td>
-            </tr>
-            <tr v-for="capacitacion in capacitacionesDocentes" :key="capacitacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.pais || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
-              <td class="px-4 py-3">
-                <DossierDocumentActions
-                  :has-document="Boolean(capacitacion.url_documento)"
-                  :can-edit="canUpdateDossier"
-                  :can-upload="canUpdateDossier"
-                  :can-delete-document="canDeleteDossier"
-                  :can-delete="canDeleteDossier"
-                  @edit="editarCapacitacion(capacitacion)"
-                  @preview="previewDocument(capacitacion)"
-                  @download="openDocument(capacitacion)"
-                  @upload="triggerFileUpload(capacitacion._id)"
-                  @delete-document="eliminarSoloPDF(capacitacion)"
-                  @delete="openDelete(capacitacion)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ProfileTableBlock>
-
-    <ProfileTableBlock v-else title="Capacitación profesional">
-      <div class="profile-table-shell">
-        <table class="w-full text-sm text-left border-collapse min-w-max">
-          <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700"></th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Tema</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Institución</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Horas</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">País</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Inicio</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Fin</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Rol</th>
-              <th class="px-4 py-3 font-semibold whitespace-nowrap text-left text-slate-700">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!capacitacionesProfesionales.length" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td colspan="9" class="px-4 py-8 text-center text-slate-500 italic">
-                No has registrado capacitación profesional.
-              </td>
-            </tr>
-            <tr v-for="capacitacion in capacitacionesProfesionales" :key="capacitacion._id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 text-slate-700"><BtnSera :type="getSeraType(capacitacion.sera)" /></td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.tema }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.institution }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.horas || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.pais || 'N/A' }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_inicio) }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ formatDate(capacitacion.fecha_fin) }}</td>
-              <td class="px-4 py-3 text-slate-700">{{ capacitacion.rol || 'N/A' }}</td>
-              <td class="px-4 py-3">
-                <DossierDocumentActions
-                  :has-document="Boolean(capacitacion.url_documento)"
-                  :can-edit="canUpdateDossier"
-                  :can-upload="canUpdateDossier"
-                  :can-delete-document="canDeleteDossier"
-                  :can-delete="canDeleteDossier"
-                  @edit="editarCapacitacion(capacitacion)"
-                  @preview="previewDocument(capacitacion)"
-                  @download="openDocument(capacitacion)"
-                  @upload="triggerFileUpload(capacitacion._id)"
-                  @delete-document="eliminarSoloPDF(capacitacion)"
-                  @delete="openDelete(capacitacion)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ProfileTableBlock>
-
+      <AppDataTable
+        :fields="tableFields"
+        :rows="tableRows"
+        :row-key="(row) => row._id"
+        empty-text="No hay registros."
+        actions-label="ACCIÓN"
+      >
+        <template #cell="{ row, field }">
+          <BtnSera v-if="field.name === 'sera'" :type="getSeraType(row.sera)" />
+          <span v-else-if="field.name === 'horas'">{{ row.horas || '—' }}</span>
+          <span v-else-if="field.name === 'pais'">{{ row.pais || '—' }}</span>
+          <span v-else-if="field.name === 'rol'">{{ row.rol || '—' }}</span>
+          <span v-else-if="field.name === 'fecha_inicio'">{{ formatDate(row.fecha_inicio) }}</span>
+          <span v-else-if="field.name === 'fecha_fin'">{{ formatDate(row.fecha_fin) }}</span>
+          <span v-else>{{ row[field.name] ?? '—' }}</span>
+        </template>
+        <template #actions="{ row }">
+          <DossierDocumentActions
+            :has-document="Boolean(row.url_documento)"
+            :can-edit="canUpdateDossier"
+            :can-upload="canUpdateDossier"
+            :can-delete-document="canDeleteDossier"
+            :can-delete="canDeleteDossier"
+            @edit="editarCapacitacion(row)"
+            @preview="previewDocument(row)"
+            @download="openDocument(row)"
+            @upload="triggerFileUpload(row._id)"
+            @delete-document="eliminarSoloPDF(row)"
+            @delete="openDelete(row)"
+          />
+        </template>
+      </AppDataTable>
     </ProfileSectionShell>
 
-
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionModal" tabindex="-1" ref="modal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarCapacitacion @capacitacion-added="loadDossier" />
-        </div>
-      </div>
-    </div>
+    <!-- Modal Agregar -->
+    <AppModalShell
+      ref="modal"
+      id="capacitacionModal"
+      labelled-by="capacitacion-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+    >
+      <AgregarCapacitacion @capacitacion-added="loadDossier" />
+    </AppModalShell>
 
     <!-- Modal Editar -->
-    <div class="profile-admin-skin profile-dialog-root" data-dialog-root id="capacitacionEditModal" tabindex="-1" ref="editModal" aria-hidden="true">
-      <div class="profile-dialog-shell">
-        <div class="profile-dialog-panel">
-          <AgregarCapacitacion :editing-item="pendingEdit" @capacitacion-updated="handleCapacitacionUpdated" />
-        </div>
-      </div>
-    </div>
-
-    <div
-      class="profile-admin-skin profile-dialog-root"
-      data-dialog-root
-      id="capacitacionDeleteModal"
-      tabindex="-1"
-      ref="deleteModal"
-      aria-hidden="true"
+    <AppModalShell
+      controlled
+      :open="showEditModal"
+      labelled-by="capacitacion-edit-modal-title"
+      size="lg"
+      :show-header="false"
+      body-class="p-0"
+      @close="showEditModal = false"
     >
-      <div class="profile-dialog-shell profile-dialog-shell--compact">
-        <div class="profile-dialog-panel">
-          <div class="profile-confirm-header">
-            <h5 class="profile-confirm-title">Confirmar eliminación</h5>
-            <button type="button" class="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" data-modal-dismiss aria-label="Close">
-              <span class="text-xl leading-none">&times;</span>
-            </button>
-          </div>
-          <div class="profile-confirm-body">
-            ¿Deseas eliminar la capacitación
-            <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
-          </div>
-          <div class="profile-confirm-footer">
-            <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-            <AdminButton variant="danger" @click="confirmDelete">Eliminar</AdminButton>
-          </div>
-        </div>
-      </div>
-    </div>
+      <AgregarCapacitacion :editing-item="pendingEdit" @capacitacion-updated="handleCapacitacionUpdated" />
+    </AppModalShell>
+
+    <!-- Modal Eliminar -->
+    <AppModalShell
+      controlled
+      :open="showDeleteModal"
+      title="Confirmar eliminación"
+      labelled-by="capacitacion-delete-modal-title"
+      size="md"
+      @close="showDeleteModal = false"
+    >
+      <p class="text-sm text-slate-700">
+        ¿Deseas eliminar la capacitación <strong>{{ pendingDelete?.tema || "seleccionada" }}</strong>?
+      </p>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Eliminar</AppButton>
+      </template>
+    </AppModalShell>
 
     <!-- Input file oculto para subir documentos -->
-    <input 
-      type="file" 
-      ref="fileInput" 
-      accept="application/pdf" 
-      style="display: none" 
+    <input
+      type="file"
+      ref="fileInput"
+      accept="application/pdf"
+      style="display: none"
       @change="handleFileSelect"
     >
     <DossierPdfPreviewModal ref="pdfPreviewModal" />
@@ -182,20 +105,18 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Modal } from "@/shared/utils/modalController";
 import AgregarCapacitacion from "@/modules/perfil/components/AgregarCapacitacion.vue";
 import BtnSera from "@/shared/components/buttons/BtnSera.vue";
-import RowActionMenu from "@/shared/components/data/RowActionMenu.vue";
 import DossierService from "@/modules/dossier/services/DossierService";
 import ProfileSectionShell from "@/modules/perfil/components/ProfileSectionShell.vue";
-import ProfileTableBlock from "@/modules/perfil/components/ProfileTableBlock.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import DossierDocumentActions from "@/modules/perfil/components/DossierDocumentActions.vue";
 import DossierPdfPreviewModal from "@/modules/perfil/components/DossierPdfPreviewModal.vue";
-import AdminButton from "@/modules/admin/components/ui/AdminButton.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import { mapDossierStatusToSeraType } from "@/modules/perfil/utils/dossierStatus";
 import { useDossierAccess } from "@/modules/perfil/composables/useDossierAccess";
 
 const modal = ref(null);
-const editModal = ref(null);
-const deleteModal = ref(null);
 const fileInput = ref(null);
 const pdfPreviewModal = ref(null);
 const selectedItemId = ref(null);
@@ -204,9 +125,9 @@ const loading = ref(true);
 const currentUser = ref(null);
 const pendingEdit = ref(null);
 const activeTab = ref("docente");
+const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 let modalInstance = null;
-let editModalInstance = null;
-let deleteInstance = null;
 const pendingDelete = ref(null);
 const { canCreateDossier, canUpdateDossier, canDeleteDossier } = useDossierAccess();
 
@@ -226,6 +147,21 @@ const trainingTabs = computed(() => ([
     { key: "profesional", label: "Profesional", count: capacitacionesProfesionales.value.length },
 ]));
 
+const tableFields = [
+  { name: 'sera', label: '' },
+  { name: 'tema', label: 'TEMA' },
+  { name: 'institution', label: 'INSTITUCIÓN' },
+  { name: 'horas', label: 'HORAS' },
+  { name: 'pais', label: 'PAÍS' },
+  { name: 'fecha_inicio', label: 'INICIO' },
+  { name: 'fecha_fin', label: 'FIN' },
+  { name: 'rol', label: 'ROL' },
+];
+
+const tableRows = computed(() =>
+  activeTab.value === 'docente' ? capacitacionesDocentes.value : capacitacionesProfesionales.value
+);
+
 // Formatear fecha para mostrar
 const formatDate = (date) => {
     if (!date) return '';
@@ -239,14 +175,14 @@ const getSeraType = (sera) => mapDossierStatusToSeraType(sera);
 const loadDossier = async () => {
     try {
         loading.value = true;
-        
+
         const data = await DossierService.getDossier();
-        
+
         if (data.success) {
             dossier.value = data.data;
             currentUser.value = { cedula: DossierService.getCedula() };
         }
-        
+
     } catch (error) {
         console.error('Error al cargar dossier:', error);
     } finally {
@@ -256,17 +192,15 @@ const loadDossier = async () => {
 
 const openModal = () => {
     if (!canCreateDossier.value) return;
-    if (!modal.value) return;
-    modalInstance = Modal.getOrCreateInstance(modal.value);
+    if (!modal.value?.el) return;
+    modalInstance = Modal.getOrCreateInstance(modal.value.el);
     modalInstance.show();
 };
 
 const openDelete = (capacitacion) => {
     if (!canDeleteDossier.value) return;
     pendingDelete.value = capacitacion;
-    if (!deleteModal.value) return;
-    deleteInstance = Modal.getOrCreateInstance(deleteModal.value);
-    deleteInstance.show();
+    showDeleteModal.value = true;
 };
 
 const handleCapacitacionAdded = () => {
@@ -301,19 +235,18 @@ const eliminarSoloPDF = async (capacitacion) => {
 const confirmDelete = async () => {
     if (!pendingDelete.value) return;
     await eliminarCapacitacion(pendingDelete.value);
-    deleteInstance?.hide();
+    showDeleteModal.value = false;
     pendingDelete.value = null;
 };
 
 const editarCapacitacion = (registro) => {
     if (!canUpdateDossier.value) return;
     pendingEdit.value = { ...registro };
-    if (!editModal.value) return;
-    editModalInstance = Modal.getOrCreateInstance(editModal.value);
-    editModalInstance.show();
+    showEditModal.value = true;
 };
 
 const handleCapacitacionUpdated = () => {
+    showEditModal.value = false;
     pendingEdit.value = null;
     loadDossier();
 };
@@ -359,19 +292,19 @@ const triggerFileUpload = (itemId) => {
 const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     if (file.type !== 'application/pdf') {
         alert('Solo se permiten archivos PDF');
         event.target.value = '';
         return;
     }
-    
+
     if (file.size > 10 * 1024 * 1024) {
         alert('El archivo no puede superar los 10MB');
         event.target.value = '';
         return;
     }
-    
+
     try {
         const response = await DossierService.uploadCapacitacionDocument(selectedItemId.value, file);
         if (response.success) {
@@ -382,7 +315,7 @@ const handleFileSelect = async (event) => {
         console.error('Error al subir documento:', error);
         alert('Error al subir el documento');
     }
-    
+
     event.target.value = '';
 };
 
@@ -391,29 +324,7 @@ onMounted(() => {
     window.addEventListener('dossier-updated', loadDossier);
 });
 onBeforeUnmount(() => {
-    if (modalInstance) {
-        modalInstance.hide();
-        modalInstance.dispose();
-        modalInstance = null;
-    }
-    if (editModalInstance) {
-        editModalInstance.hide();
-        editModalInstance.dispose();
-        editModalInstance = null;
-    }
-    if (deleteInstance) {
-        deleteInstance.hide();
-        deleteInstance.dispose();
-        deleteInstance = null;
-    }
+    modalInstance?.dispose();
     window.removeEventListener('dossier-updated', loadDossier);
 });
 </script>
-
-<style scoped>
-.table thead th {
-  color: #1d3557;
-  font-weight: 600;
-}
-
-</style>

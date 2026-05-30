@@ -33,12 +33,12 @@ npm run start
 
 Servidor por defecto:
 
-- http://localhost:3000/easym/v1/
+- http://localhost:3000/deasy/v1/
 
 ## Swagger
 
-- UI: http://localhost:3000/easym/docs
-- JSON: http://localhost:3000/easym/docs.json
+- UI: http://localhost:3000/deasy/docs
+- JSON: http://localhost:3000/deasy/docs.json
 
 ## Notas de DB
 

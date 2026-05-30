@@ -14,9 +14,12 @@
     @primary-nav="handlePrimaryNavInteraction"
   >
     <template #header>
-        <span v-if="!userUnits.length && !menuLoading" class="text-sm font-medium text-slate-500">
-          Sin unidades
-        </span>
+      <div class="deasy-context-header">
+        <div class="deasy-context-header__copy">
+          <div class="deasy-context-header__title">{{ homeContextTitle }}</div>
+          <div v-if="homeContextSubtitle" class="deasy-context-header__subtitle">{{ homeContextSubtitle }}</div>
+        </div>
+      </div>
     </template>
 
     <template #sidebar>
@@ -165,7 +168,7 @@
 
             <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
               <div class="deasy-filter-shell">
-              <div class="deasy-filter-grid">
+              <div class="deasy-filter-grid xl:grid-cols-8">
                 <label class="deasy-filter-field deasy-filter-search-span">
                   <span class="sr-only">Buscar</span>
                   <input v-model="documentCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-filter-search-input" />
@@ -198,15 +201,14 @@
                     <option v-for="option in documentCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-              </div>
-
-              <div class="deasy-filter-toolbar">
-                <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
-                <div class="deasy-filter-actions">
-                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetDocumentCenterFilters">Reset</AppButton>
-                  <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="loadDocumentCenterPage">Actualizar</AppButton>
+                <div class="md:col-span-2 xl:col-span-2 xl:justify-self-end">
+                  <div class="deasy-filter-actions">
+                    <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetDocumentCenterFilters">Reset</AppButton>
+                    <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="loadDocumentCenterPage">Actualizar</AppButton>
+                  </div>
                 </div>
               </div>
+              <div class="deasy-filter-summary pt-2">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
               </div>
 
               <section v-if="documentCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
@@ -2699,6 +2701,21 @@ const sidebarContextLabel = computed(() => {
     return 'Centro documental';
   }
   return selectedGroupLabel.value;
+});
+
+const homeContextTitle = computed(() => {
+  if (isGlobalSignatureRoute.value) return 'Centro de firmas';
+  if (isDocumentCenterRoute.value) return 'Centro documental';
+  if (selectedProcessKey.value) {
+    return selectedProcessPanel.value?.definition?.name || 'Proceso activo';
+  }
+  return userFullName.value;
+});
+
+const homeContextSubtitle = computed(() => {
+  if (isGlobalSignatureRoute.value || isDocumentCenterRoute.value || selectedProcessKey.value) return '';
+  const label = sidebarContextLabel.value;
+  return label && label !== userFullName.value ? label : '';
 });
 
 const selectedGroupLabel = computed(() => {
