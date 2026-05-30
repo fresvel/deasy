@@ -20,11 +20,14 @@ class ProcessDefinitionPanelService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  async getPanel(userId, processDefinitionId) {
+  async getPanel(userId, processDefinitionId, scopeUnitId = null) {
     if (!userId || !processDefinitionId) {
       throw new Error("Se requiere usuario y definicion de proceso.");
     }
-    const { data } = await axios.get(API_ROUTES.USERS_PROCESS_DEFINITION_PANEL(userId, processDefinitionId));
+    const { data } = await axios.get(
+      API_ROUTES.USERS_PROCESS_DEFINITION_PANEL(userId, processDefinitionId),
+      { params: scopeUnitId ? { scope_unit_id: scopeUnitId } : undefined }
+    );
     return data;
   }
 

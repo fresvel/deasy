@@ -668,7 +668,15 @@ const getUserOwnedTemplateArtifacts = async (pool, userId) => {
   return rows;
 };
 
-const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId) => {
+const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, scopeUnitId = null) => {
+  const unitFilter = scopeUnitId
+    ? `AND EXISTS (
+         SELECT 1 FROM unit_positions up_scope
+         WHERE up_scope.id = t.responsible_position_id
+           AND up_scope.unit_id = ${Number(scopeUnitId)}
+       )`
+    : "";
+
   const [rows] = await pool.query(
     `SELECT
        t.id,
@@ -691,6 +699,7 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId) =
      INNER JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
      WHERE t.process_definition_id = ?
+       ${unitFilter}
        AND (
          t.created_by_user_id = ?
          OR EXISTS (
@@ -1494,7 +1503,7 @@ const getCustomTermType = async (connection) => {
   return rows[0] || null;
 };
 
-const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
+const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scopeUnitId = null) => {
   const definition = await getDefinitionContext(pool, definitionId);
   if (!definition || definition.status !== "active") {
     return null;
@@ -1508,7 +1517,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId) => {
   const childrenByUnit = await getOrgChildrenMap(pool);
   const getUnitSubtree = createUnitSubtreeResolver(childrenByUnit);
   const matchingRules = rules.filter((rule) => positions.some((position) => doesPositionMatchRule(position, rule, getUnitSubtree)));
-  const tasks = await getUserAccessibleTasksForDefinition(pool, userId, definitionId);
+  const tasks = await getUserAccessibleTasksForDefinition(pool, userId, definitionId, scopeUnitId);
   const fillRequests = await getUserPendingFillRequestsForDefinition(pool, userId, definitionId);
   const signatures = await getUserPendingSignaturesForDefinition(pool, userId, definitionId);
   const hasOperationalAccess = Boolean(matchingRules.length || tasks.length || fillRequests.length || signatures.length);
@@ -2031,6 +2040,7 @@ export const getUserMenu = async (req, res) => {
     const [positions] = await pool.query(
       `SELECT DISTINCT
          up.id AS position_id,
+         up.position_type,
          u.id AS unit_id,
          u.name AS unit_name,
          u.label AS unit_label,
@@ -2099,6 +2109,7 @@ export const getUserMenu = async (req, res) => {
         unitCargoMap.set(row.cargo_id, {
           id: row.cargo_id,
           name: row.cargo_name,
+          position_type: row.position_type ?? null,
           processes: []
         });
       }
@@ -2107,6 +2118,7 @@ export const getUserMenu = async (req, res) => {
         consolidatedMap.set(row.cargo_id, {
           id: row.cargo_id,
           name: row.cargo_name,
+          position_type: row.position_type ?? null,
           processes: []
         });
       }
@@ -2386,12 +2398,14 @@ export const getUserProcessDefinitionPanel = async (req, res) => {
       return res.status(400).json({ message: "Se requieren el usuario y la definicion del proceso." });
     }
 
+    const scopeUnitId = req.query?.scope_unit_id ? Number(req.query.scope_unit_id) : null;
+
     const pool = getMariaDBPool();
     if (!pool) {
       return res.status(500).json({ message: "Conexion MariaDB no disponible" });
     }
 
-    const panel = await buildUserProcessDefinitionPanel(pool, userId, definitionId);
+    const panel = await buildUserProcessDefinitionPanel(pool, userId, definitionId, scopeUnitId);
     if (!panel) {
       return res.status(404).json({
         message: "La definicion no esta activa o el usuario no tiene acceso operativo a ella."

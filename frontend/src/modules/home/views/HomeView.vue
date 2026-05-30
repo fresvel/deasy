@@ -50,14 +50,14 @@
         </div>
 
         <div v-else id="procesos" class="deasy-nav-group scroll-mt-24">
-          <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="unitGroups.length">
+          <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="userUnits.length > 1">
             <label class="flex flex-col gap-1.5 relative">
               <div class="relative">
                 <button
                   type="button"
                   class="plain deasy-nav-group-title deasy-nav-item--subtle-active deasy-nav-select-trigger"
                   :aria-expanded="showGroupDropdown ? 'true' : 'false'"
-                  aria-label="Seleccionar grupo de cargos"
+                  aria-label="Seleccionar unidad"
                   @click="toggleGroupDropdown"
                 >
                   <span class="flex items-center gap-3.5 text-base font-semibold">
@@ -75,19 +75,19 @@
                     type="button"
                     class="deasy-nav-select-option"
                     :class="!selectedGroupId ? 'deasy-nav-select-option--active' : ''"
-                    @click="selectGroupOption(null)"
+                    @click="selectUnitOption(null)"
                   >
-                    <span class="truncate">Consolidado</span>
+                    <span class="truncate">Todas las unidades</span>
                   </button>
                   <button
-                    v-for="group in unitGroups"
-                    :key="group.id"
+                    v-for="unit in userUnits"
+                    :key="unit.id"
                     type="button"
                     class="deasy-nav-select-option"
-                    :class="String(selectedGroupId) === String(group.id) ? 'deasy-nav-select-option--active' : ''"
-                    @click="selectGroupOption(group)"
+                    :class="String(selectedGroupId) === String(unit.id) ? 'deasy-nav-select-option--active' : ''"
+                    @click="selectUnitOption(unit)"
                   >
-                    <span class="truncate">{{ group.label || group.name }}</span>
+                    <span class="truncate">{{ unit.label || unit.name }}</span>
                   </button>
                 </div>
               </div>
@@ -295,9 +295,22 @@
                       :key="pos.unitId"
                       class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4"
                     >
-                      <div>
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ pos.groupName }}</div>
-                        <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1">{{ pos.unitName }}</h3>
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ pos.groupName }}</div>
+                          <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1 leading-snug">{{ pos.unitName }}</h3>
+                        </div>
+                        <span
+                          v-if="pos.positionType"
+                          class="shrink-0 inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider"
+                          :class="{
+                            'bg-emerald-100 text-emerald-700': pos.positionType === 'real',
+                            'bg-sky-100 text-sky-700': pos.positionType === 'simbolico',
+                            'bg-amber-100 text-amber-700': pos.positionType === 'promocion',
+                          }"
+                        >
+                          {{ { real: 'Real', simbolico: 'Simbólico', promocion: 'Promoción' }[pos.positionType] ?? pos.positionType }}
+                        </span>
                       </div>
 
                       <div v-if="!pos.processes.length" class="text-sm font-medium text-slate-400 italic">
@@ -2827,8 +2840,10 @@ const homeContextSubtitle = computed(() => {
 });
 
 const selectedGroupLabel = computed(() => {
-  if (!selectedGroupId.value) return 'Consolidado';
-  const group = unitGroups.value.find((item) => String(item.id) === String(selectedGroupId.value));
+  if (!selectedGroupId.value) return 'Todas las unidades';
+  const unit = userUnits.value.find((u) => String(u.id) === String(selectedGroupId.value));
+  if (unit) return unit.label || unit.name;
+  const group = unitGroups.value.find((g) => String(g.id) === String(selectedGroupId.value));
   return group?.label || group?.name || 'Área seleccionada';
 });
 
@@ -2896,6 +2911,7 @@ const cargosPanelData = computed(() => {
           unitId: unit.id,
           unitName: unit.label || unit.name,
           groupName: group.label || group.name,
+          positionType: cargo.position_type ?? null,
           processes: cargo.processes || []
         });
       });
@@ -2904,7 +2920,7 @@ const cargosPanelData = computed(() => {
   // Fallback: si no hay unit_groups, usar consolidated
   if (!cargoMap.size) {
     consolidatedCargos.value.forEach((cargo) => {
-      cargoMap.set(cargo.id, { id: cargo.id, name: cargo.name, positions: [{ unitName: '—', groupName: '—', processes: cargo.processes || [] }] });
+      cargoMap.set(cargo.id, { id: cargo.id, name: cargo.name, positions: [{ unitName: '—', groupName: '—', positionType: cargo.position_type ?? null, processes: cargo.processes || [] }] });
     });
   }
   return Array.from(cargoMap.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -3217,6 +3233,26 @@ const selectGroupOption = (group) => {
   selectGroup(group);
 };
 
+const selectUnitOption = (unit) => {
+  showGroupDropdown.value = false;
+  if (!unit) {
+    selectedGroupId.value = null;
+    applyMenuCargos(consolidatedCargos.value);
+  } else {
+    selectedGroupId.value = unit.id;
+    const cargos = (unit.cargos || []).map((c) => ({
+      ...c,
+      processes: (c.processes || []).slice().sort((a, b) => a.name.localeCompare(b.name))
+    }));
+    cargos.sort((a, b) => a.name.localeCompare(b.name));
+    applyMenuCargos(cargos);
+  }
+  // Si hay un proceso abierto, recargarlo con el nuevo contexto de unidad
+  if (selectedProcessContext.value) {
+    loadSelectedProcessPanel(selectedProcessContext.value);
+  }
+};
+
 const handleGroupDropdownOutsideClick = (event) => {
   if (!showGroupDropdown.value) return;
   if (!groupDropdownRef.value) return;
@@ -3231,11 +3267,13 @@ const toggleCargo = (cargo) => {
 const cargoIconMeta = (cargo = {}) => resolveWorkspaceCargoIcon(cargo?.name || '');
 const processIconMeta = (process = {}) => resolveWorkspaceProcessIcon(process);
 const unitGroupIconMeta = (group = {}) => resolveWorkspaceUnitGroupIcon(group);
-const selectedGroupIconMeta = computed(() => (
-  selectedGroupId.value
-    ? unitGroupIconMeta(unitGroups.value.find((group) => String(group.id) === String(selectedGroupId.value)) || {})
-    : unitGroupIconMeta({ label: 'Consolidado' })
-));
+const selectedGroupIconMeta = computed(() => {
+  if (!selectedGroupId.value) return unitGroupIconMeta({ label: 'Consolidado' });
+  const unit = userUnits.value.find((u) => String(u.id) === String(selectedGroupId.value));
+  if (unit) return unitGroupIconMeta({ label: unit.label || unit.name, name: unit.name });
+  const group = unitGroups.value.find((g) => String(g.id) === String(selectedGroupId.value));
+  return unitGroupIconMeta(group || {});
+});
 
 const resolveUnitNameById = (unitId) => {
   const normalized = Number(unitId || 0);
@@ -3966,7 +4004,14 @@ const loadSelectedProcessPanel = async (process) => {
   processPanelError.value = '';
   processActionMessage.value = null;
   try {
-    const panel = await processPanelService.getPanel(userId, definitionId);
+    // Filtrar por unidad solo cuando hay contexto explícito de unidad:
+    // - Desde panel "Mis cargos": unit_id viene del card de la unidad específica
+    // - Desde sidebar con unidad seleccionada: selectedGroupId apunta a esa unidad
+    // - Desde sidebar "Todas las unidades" (selectedGroupId=null): sin filtro
+    const scopeUnitId = showCargosPanel.value
+      ? (process?.unit_id ? Number(process.unit_id) : null)
+      : (selectedGroupId.value ? Number(selectedGroupId.value) : null);
+    const panel = await processPanelService.getPanel(userId, definitionId, scopeUnitId);
     if (panel?.definition && process?.access_source) {
       panel.definition.access_source = process.access_source;
     }
@@ -4214,10 +4259,11 @@ const loadUserMenu = async () => {
       ];
     }
 
-    if (consolidatedCargos.value.length) {
+    if (userUnits.value.length) {
+      // Default: seleccionar primera unidad (la carrera/área directa del usuario)
+      selectUnitOption(userUnits.value[0]);
+    } else if (consolidatedCargos.value.length) {
       selectConsolidated();
-    } else if (unitGroups.value.length) {
-      selectGroup(unitGroups.value[0]);
     } else {
       applyMenuCargos([]);
       selectedGroupId.value = null;
