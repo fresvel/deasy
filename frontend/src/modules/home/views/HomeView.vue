@@ -153,22 +153,9 @@
 
         <template v-if="isDocumentCenterRoute">
           <section class="flex flex-col gap-6">
-            <AppPageIntro
-              variant="home"
-              title="Centro documental"
-              :meta="`${filteredDocumentCenterItems.length} documento(s)`"
-              description="Consulta y descarga los documentos accesibles de tu cuenta, filtrando por unidad, proceso, periodo, año y estado."
-            >
-              <template #actions>
-                <AppButton variant="secondary" size="md" class-name="whitespace-nowrap" @click="navigateToHome">
-                  Volver a Home
-                </AppButton>
-              </template>
-            </AppPageIntro>
-
             <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
               <div class="deasy-filter-shell">
-              <div class="deasy-filter-grid xl:grid-cols-8">
+              <div class="deasy-filter-grid">
                 <label class="deasy-filter-field deasy-filter-search-span">
                   <span class="sr-only">Buscar</span>
                   <input v-model="documentCenterFilters.query" type="text" placeholder="Documento, proceso, unidad o periodo" class="deasy-filter-search-input" />
@@ -201,14 +188,14 @@
                     <option v-for="option in documentCenterFilterProcesses" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <div class="md:col-span-2 xl:col-span-2 xl:justify-self-end">
-                  <div class="deasy-filter-actions">
-                    <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetDocumentCenterFilters">Reset</AppButton>
-                    <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="loadDocumentCenterPage">Actualizar</AppButton>
-                  </div>
+              </div>
+              <div class="deasy-filter-toolbar">
+                <div class="deasy-filter-summary">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
+                <div class="deasy-filter-actions">
+                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetDocumentCenterFilters">Reset</AppButton>
+                  <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" @click="loadDocumentCenterPage">Actualizar</AppButton>
                 </div>
               </div>
-              <div class="deasy-filter-summary pt-2">Documentos visibles: <span class="font-bold text-slate-700">{{ filteredDocumentCenterItems.length }}</span></div>
               </div>
 
               <section v-if="documentCenterLoading" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-bold text-slate-600">
@@ -259,178 +246,211 @@
           <HomeSignatureEntry @refresh-home="handleSignatureCenterRefresh" />
         </template>
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
-          <section class="home-account-shell">
-            <section class="home-account-hero">
-              <div class="home-account-hero__copy">
-                <span class="home-account-kicker">Cuenta activa</span>
-                <h1>{{ userFullName }}</h1>
-                <p>
-                  Vista consolidada de tu cuenta: cargos asignados, procesos disponibles, documentos, firmas y dossier profesional.
-                </p>
-                <div class="home-account-meta">
-                  <span>
-                    <IconId class="h-4 w-4" />
-                    {{ homeIdentityLabel }}
-                  </span>
-                  <span>
-                    <IconBuildingMonument class="h-4 w-4" />
-                    {{ selectedGroupLabel }}
-                  </span>
-                </div>
-              </div>
+          <div class="flex flex-col gap-4">
 
-              <aside class="home-account-focus">
-                <span class="home-account-focus__label">Prioridad</span>
-                <strong>{{ homeFocus.title }}</strong>
-                <p>{{ homeFocus.description }}</p>
-                <AppButton variant="primary" size="md" class-name="w-full justify-center" @click="runHomeAction(homeFocus)">
-                  {{ homeFocus.actionLabel }}
-                  <IconArrowRight class="h-4 w-4" />
-                </AppButton>
-              </aside>
-            </section>
-
-            <section v-if="homeErrorMessage" class="home-account-alert">
+            <!-- Error banner -->
+            <div v-if="homeErrorMessage" class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
               <IconAlertTriangle class="h-5 w-5 shrink-0" />
               <span>{{ homeErrorMessage }}</span>
-            </section>
+            </div>
 
-            <section class="home-stats-grid">
-              <article
-                v-for="stat in homeStats"
-                :key="stat.label"
-                class="home-stat-card"
-                :class="`home-stat-card--${stat.tone}`"
+            <!-- Tabs -->
+            <div class="deasy-inline-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                class="deasy-inline-tab"
+                :class="homeDashTab === 'inicio' ? 'deasy-inline-tab--active' : ''"
+                :aria-selected="homeDashTab === 'inicio'"
+                @click="homeDashTab = 'inicio'"
               >
-                <span class="home-stat-card__icon">
-                  <component :is="stat.icon" class="h-5 w-5" />
+                Inicio
+              </button>
+              <button
+                type="button"
+                role="tab"
+                class="deasy-inline-tab"
+                :class="homeDashTab === 'resumen' ? 'deasy-inline-tab--active' : ''"
+                :aria-selected="homeDashTab === 'resumen'"
+                @click="homeDashTab = 'resumen'"
+              >
+                Resumen
+                <span v-if="homeActions.length" class="deasy-inline-tab__badge" :class="homeDashTab === 'resumen' ? 'deasy-inline-tab__badge--active' : ''">
+                  {{ homeActions.length }}
                 </span>
-                <span class="home-stat-card__label">{{ stat.label }}</span>
-                <strong>{{ stat.value }}</strong>
-                <p>{{ stat.detail }}</p>
-              </article>
-            </section>
+              </button>
+            </div>
 
-            <section class="home-account-grid">
-              <article class="home-panel home-panel--wide">
-                <header class="home-panel__header">
-                  <div>
-                    <span class="home-panel__kicker">Siguiente paso</span>
-                    <h2>Acciones recomendadas</h2>
+            <!-- Tab: Inicio — launcher cards -->
+            <div v-if="homeDashTab === 'inicio'" class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+                @click="scrollToProcessNav"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis procesos</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconChecklist class="h-10 w-10 text-slate-400" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeProcesses.length }} proceso(s) disponible(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Accede y gestiona las tareas y entregables de tus procesos activos.</p>
                   </div>
-                  <AppButton
-                    variant="softNeutral"
-                    size="sm"
-                    :disabled="homeLoading"
-                    class-name="shrink-0"
-                    @click="loadHomeData"
-                  >
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
+                :class="homeSignatureCount ? 'border-amber-200 bg-amber-50/30' : ''"
+                @click="navigateToGlobalSignaturePage"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro de firmas</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm"
+                  :class="homeSignatureCount ? 'border-amber-200/80' : ''">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconSignature class="h-10 w-10" :class="homeSignatureCount ? 'text-amber-500' : 'text-slate-400'" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">
+                      {{ homeSignatureCount ? `${homeSignatureCount} firma(s) pendiente(s)` : 'Sin pendientes' }}
+                    </span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Firma, solicita y valida documentos electrónicos.</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
+                @click="navigateToDocumentCenterPage"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro documental</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconFileDescription class="h-10 w-10 text-slate-400" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeDocumentCount }} documento(s) accesibles</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Consulta y descarga los documentos accesibles de tu cuenta.</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md"
+                @click="navigateTo('perfil')"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mi dossier</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconUserCheck class="h-10 w-10 text-slate-400" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeDossierCompletion }}% completado · {{ homeDossierTotal }} registro(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Gestiona tu perfil académico, experiencia y certificaciones.</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-100/40 hover:shadow-md"
+                @click="scrollToProcessNav"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis cargos</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconBriefcase class="h-10 w-10 text-slate-400" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ homeCargoCount }} cargo(s) asignado(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Consulta las unidades y cargos vinculados a tu cuenta.</p>
+                  </div>
+                </div>
+              </button>
+
+            </div>
+
+            <!-- Tab: Resumen — layout 2 columnas -->
+            <div v-else-if="homeDashTab === 'resumen'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              <!-- Columna izquierda: Acciones pendientes -->
+              <section class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-lg font-semibold text-slate-800 m-0">Acciones pendientes</h3>
+                  <AppButton variant="softNeutral" size="sm" :disabled="homeLoading" @click="loadHomeData">
                     <IconRefresh class="h-4 w-4" />
                     Actualizar
                   </AppButton>
-                </header>
-
-                <div v-if="homeLoading" class="home-loading-card">
-                  Actualizando informacion de la cuenta...
                 </div>
-                <div v-else class="home-action-list">
+                <div class="flex flex-col gap-2">
+                  <div v-if="homeLoading" class="text-sm font-medium text-slate-400 py-2">
+                    Actualizando...
+                  </div>
+                  <div v-else-if="!homeActions.length" class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700">
+                    <IconCircleCheck class="h-5 w-5 shrink-0" />
+                    Todo al día. No hay acciones pendientes.
+                  </div>
                   <button
+                    v-else
                     v-for="action in homeActions"
                     :key="action.key"
                     type="button"
-                    class="home-action-card"
-                    :class="`home-action-card--${action.tone}`"
+                    class="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3.5 text-left shadow-sm transition hover:shadow-md"
+                    :class="{
+                      'hover:border-amber-200': action.tone === 'warning',
+                      'hover:border-sky-200': action.tone === 'info',
+                      'hover:border-emerald-200': action.tone === 'success',
+                    }"
                     @click="runHomeAction(action)"
                   >
-                    <span class="home-action-card__icon">
+                    <span
+                      class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      :class="{
+                        'bg-amber-100 text-amber-600': action.tone === 'warning',
+                        'bg-sky-100 text-sky-600': action.tone === 'info',
+                        'bg-emerald-100 text-emerald-600': action.tone === 'success',
+                        'bg-slate-100 text-slate-600': !['warning','info','success'].includes(action.tone),
+                      }"
+                    >
                       <component :is="action.icon" class="h-5 w-5" />
                     </span>
-                    <span class="home-action-card__body">
-                      <strong>{{ action.title }}</strong>
-                      <small>{{ action.description }}</small>
+                    <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <strong class="text-sm font-bold text-slate-800 leading-tight">{{ action.title }}</strong>
+                      <span class="text-xs font-medium text-slate-500 leading-snug">{{ action.description }}</span>
                     </span>
-                    <AppTag :variant="action.tagVariant">{{ action.meta }}</AppTag>
+                    <AppTag :variant="action.tagVariant" class-name="shrink-0">{{ action.meta }}</AppTag>
                   </button>
                 </div>
-              </article>
+              </section>
 
-              <article class="home-panel">
-                <header class="home-panel__header">
-                  <div>
-                    <span class="home-panel__kicker">Dossier</span>
-                    <h2>Perfil profesional</h2>
-                  </div>
-                  <span class="home-dossier-score">{{ homeDossierCompletion }}%</span>
-                </header>
-
-                <div class="home-dossier-progress" aria-hidden="true">
-                  <span :style="{ width: `${homeDossierCompletion}%` }"></span>
-                </div>
-
-                <div v-if="homeDossierLoading" class="home-loading-card">
-                  Cargando dossier...
-                </div>
-                <div v-else class="home-dossier-list">
-                  <div v-for="row in homeDossierRows" :key="row.key" class="home-dossier-row">
-                    <span class="home-dossier-row__icon">
-                      <component :is="row.icon" class="h-4 w-4" />
-                    </span>
-                    <span class="home-dossier-row__label">{{ row.label }}</span>
-                    <AppTag :variant="row.variant">{{ row.count }}</AppTag>
-                  </div>
-                </div>
-
-                <AppButton variant="secondary" size="md" class-name="w-full justify-center" @click="navigateTo('perfil')">
-                  Gestionar perfil
-                </AppButton>
-              </article>
-            </section>
-
-            <section class="home-panel">
-              <header class="home-panel__header">
-                <div>
-                  <span class="home-panel__kicker">Operativo</span>
-                  <h2>Tus cargos y procesos</h2>
-                </div>
-                <span class="home-panel__meta">{{ homeProcesses.length }} proceso(s)</span>
-              </header>
-
-              <div v-if="menuLoading" class="home-loading-card">
-                Cargando cargos asignados...
-              </div>
-              <div v-else-if="!homeProcessCards.length" class="home-empty-card">
-                <IconBriefcase class="h-5 w-5" />
-                <span>No hay cargos o procesos asignados para esta cuenta.</span>
-              </div>
-              <div v-else class="home-process-grid">
-                <article v-for="cargo in homeProcessCards" :key="cargo.key" class="home-process-card">
-                  <div class="home-process-card__header">
-                    <span class="home-process-card__icon">
-                      <component :is="cargo.icon" class="h-5 w-5" />
-                    </span>
-                    <div>
-                      <h3>{{ cargo.name }}</h3>
-                      <p>{{ cargo.processes.length }} proceso(s) disponible(s)</p>
-                    </div>
-                  </div>
-                  <div class="home-process-card__list">
-                    <button
-                      v-for="process in cargo.previewProcesses"
-                      :key="`${cargo.key}-${process.process_definition_id || process.id || process.name}`"
-                      type="button"
-                      @click="handleProcessSelect(process)"
+              <!-- Columna derecha: Estadísticas -->
+              <section class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4">
+                <h3 class="text-lg font-semibold text-slate-800 m-0">Estadísticas de cuenta</h3>
+                <div class="flex flex-col gap-2">
+                  <div
+                    v-for="stat in homeStats"
+                    :key="stat.label"
+                    class="flex items-center gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm"
+                  >
+                    <span
+                      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                      :class="{
+                        'bg-sky-100 text-sky-600': stat.tone === 'sky',
+                        'bg-emerald-100 text-emerald-600': stat.tone === 'emerald',
+                        'bg-indigo-100 text-indigo-600': stat.tone === 'indigo',
+                        'bg-amber-100 text-amber-600': stat.tone === 'amber',
+                        'bg-slate-100 text-slate-600': stat.tone === 'slate',
+                      }"
                     >
-                      <span>{{ process.name }}</span>
-                      <IconArrowRight class="h-4 w-4" />
-                    </button>
-                    <span v-if="cargo.remainingCount" class="home-process-card__more">
-                      +{{ cargo.remainingCount }} mas
+                      <component :is="stat.icon" class="h-4.5 w-4.5" />
                     </span>
+                    <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ stat.label }}</span>
+                      <span class="text-xs font-medium text-slate-500 truncate">{{ stat.detail }}</span>
+                    </div>
+                    <strong class="text-xl font-extrabold text-slate-800 shrink-0">{{ stat.value }}</strong>
                   </div>
-                </article>
-              </div>
-            </section>
-          </section>
+                </div>
+              </section>
+
+            </div>
+
+          </div>
         </template>
 
         <template v-else>
@@ -2448,7 +2468,6 @@ import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
 import AppDataTable from '@/shared/components/data/AppDataTable.vue';
-import AppPageIntro from '@/shared/components/layout/AppPageIntro.vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import FirmarPdf from '@/modules/firmas/components/FirmarPdf.vue';
 import UserMenuService from '@/core/services/UserMenuService.js';
@@ -2474,6 +2493,7 @@ import {
   IconDownload,
   IconFileDescription,
   IconEye,
+  IconHome,
   IconSignature,
   IconUpload,
   IconAlertTriangle,
@@ -2494,6 +2514,7 @@ import {
   IconId,
   IconSearch,
   IconSquareCheck,
+  IconUser,
   IconUserCheck,
   IconX
 } from '@tabler/icons-vue';
@@ -2519,6 +2540,7 @@ const resolveDeliverableGridColumns = () => {
 
 const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const showNotify = ref(false);
+const homeDashTab = ref('inicio');
 const showNavMenu = ref(false);
 const deliverableGridColumns = ref(resolveDeliverableGridColumns());
 
@@ -2939,7 +2961,7 @@ const homeActions = computed(() => {
     actions.push({
       key: 'documents-fill',
       action: 'documents',
-      title: 'Llenados pendientes',
+      title: 'Entregas pendientes',
       description: `${homePendingFillCount.value} entregable(s) requieren completar informacion.`,
       meta: 'Completar',
       tagVariant: 'info',
@@ -3185,6 +3207,15 @@ const navigateToHome = async () => {
   }
 };
 
+const scrollToProcessNav = async () => {
+  await navigateToHome();
+  await nextTick();
+  requestAnimationFrame(() => {
+    const el = document.getElementById('procesos');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
 const navigateToDocumentCenterPage = async () => {
   await router.push({ name: 'home-documents' });
 };
@@ -3203,10 +3234,7 @@ const isDocumentCenterRoute = computed(() => workspaceRouteMode.value === 'docum
 const isGlobalSignatureRoute = computed(() => workspaceRouteMode.value === 'signatures');
 const signatureSidebarItems = computed(() => ([
   { key: 'home', label: 'Inicio de firmas', icon: IconSignature, tone: 'sky', hash: '#signature-home' },
-  { key: 'sign', label: 'Firmar documento', icon: IconSignature, tone: 'sky', hash: '#signature-launcher-sign' },
   { key: 'request', label: 'Solicitar firmas', icon: IconMessages, tone: 'sky', hash: '#signature-launcher-request' },
-  { key: 'validate', label: 'Validar documento', icon: IconFileCheck, tone: 'sky', hash: '#signature-launcher-validate' },
-  { key: 'multi', label: 'Multifirmador', icon: IconFiles, tone: 'sky', hash: '#signature-launcher-multi' },
   { key: 'received', label: 'Solicitudes recibidas', icon: IconMessages, tone: 'sky', hash: '#signature-launcher-received' },
   { key: 'database', label: 'Buscar en BD', icon: IconSearch, tone: 'sky', hash: '#signature-launcher-database' },
   { key: 'pending', label: 'Bandeja de pendientes', icon: IconChecklist, tone: 'sky', hash: '#signature-launcher-pending' },

@@ -1,20 +1,5 @@
 <template>
   <section id="signature-home" class="flex flex-col gap-6">
-    <AppPageIntro
-      variant="home"
-      title="Firmas electrónicas"
-      :meta="`${filteredItems.length} documento(s) pendiente(s)`"
-      description="Centraliza la firma manual, solicitudes, validación, multifirma general y la firma de pendientes vinculados a Home."
-    >
-      <template #actions>
-        <div class="flex flex-wrap gap-2">
-          <AppButton variant="softNeutral" size="md" :disabled="loading" @click="loadSignatureCenter">
-            Actualizar
-          </AppButton>
-        </div>
-      </template>
-    </AppPageIntro>
-
     <section v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm font-bold text-rose-700">
       {{ error }}
     </section>
@@ -181,7 +166,7 @@
     >
       <div class="flex flex-col gap-5 p-6">
         <div class="deasy-filter-shell">
-          <div class="deasy-filter-grid xl:grid-cols-7">
+          <div class="deasy-filter-grid xl:grid-cols-5">
             <label class="deasy-filter-field xl:col-span-2">
             <span class="sr-only">Buscar</span>
             <input
@@ -212,18 +197,18 @@
               <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
             </select>
           </label>
-          <div class="md:col-span-2 xl:col-span-2 xl:justify-self-end">
-            <div class="deasy-filter-actions">
-              <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
-              <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
-                {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
-              </AppButton>
-            </div>
           </div>
-          </div>
-          <div class="deasy-filter-summary pt-2">
+          <div class="deasy-filter-toolbar">
+          <div class="deasy-filter-summary">
             Seleccionados: <span class="font-bold text-slate-700">{{ selectedItems.length }}</span>
           </div>
+          <div class="deasy-filter-actions">
+            <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTableFilters">Reset</AppButton>
+            <AppButton variant="softPrimary" size="sm" class-name="deasy-filter-btn" :disabled="pendingPreparation" @click="openSelectedInMultiSigner">
+              {{ pendingPreparation ? "Preparando..." : "Enviar al multifirmador" }}
+            </AppButton>
+          </div>
+        </div>
         </div>
 
         <AppDataTable
@@ -357,7 +342,6 @@ import { computed, nextTick, onMounted, ref } from "vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import AppPageIntro from "@/shared/components/layout/AppPageIntro.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";

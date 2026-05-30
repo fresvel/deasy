@@ -167,10 +167,6 @@
                   <font-awesome-icon icon="search" />
                   <span>Search</span>
                 </AdminButton>
-                <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('fetch-rows')">
-                  <font-awesome-icon icon="rotate-right" />
-                  <span>Refresh</span>
-                </AdminButton>
                 <AdminButton
                   v-if="hasExpandableFilters"
                   variant="secondary"
@@ -184,6 +180,15 @@
                   <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
                 </AdminButton>
               </div>
+            </div>
+          </div>
+          <div class="deasy-filter-toolbar">
+            <div class="deasy-filter-summary"></div>
+            <div class="deasy-filter-actions">
+              <AdminButton variant="primary" size="sm" class-name="deasy-filter-btn" title="Refresh" aria-label="Refresh" @click="$emit('fetch-rows')">
+                <font-awesome-icon icon="rotate-right" />
+                <span>Refresh</span>
+              </AdminButton>
             </div>
           </div>
           </div>
