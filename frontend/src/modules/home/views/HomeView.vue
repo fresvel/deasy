@@ -50,49 +50,6 @@
         </div>
 
         <div v-else id="procesos" class="deasy-nav-group scroll-mt-24">
-          <div ref="groupDropdownRef" class="px-2 mt-3 mb-2" v-if="userUnits.length > 1">
-            <label class="flex flex-col gap-1.5 relative">
-              <div class="relative">
-                <button
-                  type="button"
-                  class="plain deasy-nav-group-title deasy-nav-item--subtle-active deasy-nav-select-trigger"
-                  :aria-expanded="showGroupDropdown ? 'true' : 'false'"
-                  aria-label="Seleccionar unidad"
-                  @click="toggleGroupDropdown"
-                >
-                  <span class="flex items-center gap-3.5 text-base font-semibold">
-                    <span class="deasy-nav-glyph" :class="workspaceIconToneClass(selectedGroupIconMeta.tone, 'deasy-nav-glyph')">
-                      <component :is="selectedGroupIconMeta.icon" class="h-5 w-5 shrink-0" />
-                    </span>
-                    <span class="truncate">{{ selectedGroupLabel }}</span>
-                  </span>
-                  <span class="inline-flex items-center text-[#486178]">
-                    <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="showGroupDropdown ? 'rotate-180' : ''" />
-                  </span>
-                </button>
-                <div v-if="showGroupDropdown" class="deasy-nav-select-panel">
-                  <button
-                    type="button"
-                    class="deasy-nav-select-option"
-                    :class="!selectedGroupId ? 'deasy-nav-select-option--active' : ''"
-                    @click="selectUnitOption(null)"
-                  >
-                    <span class="truncate">Todas las unidades</span>
-                  </button>
-                  <button
-                    v-for="unit in userUnits"
-                    :key="unit.id"
-                    type="button"
-                    class="deasy-nav-select-option"
-                    :class="String(selectedGroupId) === String(unit.id) ? 'deasy-nav-select-option--active' : ''"
-                    @click="selectUnitOption(unit)"
-                  >
-                    <span class="truncate">{{ unit.label || unit.name }}</span>
-                  </button>
-                </div>
-              </div>
-            </label>
-          </div>
 
           <div v-if="menuLoading" class="deasy-nav-feedback deasy-nav-feedback--info my-2">
             Cargando menú...
@@ -245,10 +202,304 @@
         <template v-else-if="isGlobalSignatureRoute">
           <HomeSignatureEntry @refresh-home="handleSignatureCenterRefresh" />
         </template>
+
+        <!-- Vista consolidada: Mis procesos — nivel 1: unidades / nivel 2: procesos -->
+        <template v-else-if="showProcessesPanel">
+          <section class="flex flex-col gap-6">
+
+            <!-- Nivel 1: tabs por unidad + botón volver en la misma fila -->
+            <div class="admin-related-tabs flex items-center justify-between gap-3">
+              <div class="deasy-inline-tabs" role="tablist" aria-label="Unidades">
+                <button
+                  v-for="unit in unitsPanelData"
+                  :key="unit.id"
+                  type="button"
+                  role="tab"
+                  class="deasy-inline-tab"
+                  :class="activeConsolidatedUnitTab === unit.id ? 'deasy-inline-tab--active' : ''"
+                  :aria-selected="activeConsolidatedUnitTab === unit.id"
+                  @click="selectConsolidatedUnit(unit)"
+                >
+                  {{ unit.name }}
+                </button>
+              </div>
+              <button
+                type="button"
+                class="deasy-hero-back-button shrink-0"
+                @click="showProcessesPanel = false; clearSelectedProcess()"
+              >
+                <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
+                <span>Volver</span>
+              </button>
+            </div>
+
+            <!-- Barra de filtros: Cargo / Año / Estado -->
+            <div class="deasy-filter-shell">
+              <div class="deasy-filter-grid">
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Cargo</span>
+                  <select v-model="activeConsolidatedCargoFilter" class="deasy-filter-control" @change="activeConsolidatedProcessTab = null; clearSelectedProcess(); consolidatedUnitProcesses[0] && selectConsolidatedProcess(consolidatedUnitProcesses[0])">
+                    <option :value="null">Todos los cargos</option>
+                    <option v-for="cargo in consolidatedUnitCargos" :key="cargo.id" :value="cargo.id">{{ cargo.name }}</option>
+                  </select>
+                </label>
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Año</span>
+                  <select v-model="taskListFilters.year" class="deasy-filter-control">
+                    <option value="all">Año</option>
+                    <option v-for="option in taskFilterYears" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+                <label class="deasy-filter-field">
+                  <span class="sr-only">Estado</span>
+                  <select v-model="taskListFilters.status" class="deasy-filter-control">
+                    <option value="all">Estado</option>
+                    <option v-for="option in taskFilterStatuses" :key="option" :value="option">{{ option }}</option>
+                  </select>
+                </label>
+              </div>
+              <div class="deasy-filter-toolbar">
+                <div class="deasy-filter-summary">
+                  Entregables visibles: <span class="font-bold text-slate-700">{{ filteredProcessDeliverables.length }}</span>
+                </div>
+                <div class="deasy-filter-actions">
+                  <AppButton variant="softNeutral" size="sm" class-name="deasy-filter-btn" @click="resetTaskListFilters">Reset</AppButton>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nivel 2: tabs por proceso de la unidad seleccionada (filtrado por cargo) -->
+            <div v-if="consolidatedUnitProcesses.length > 0" class="deasy-inline-tabs" role="tablist" aria-label="Procesos de la unidad">
+              <button
+                v-for="process in consolidatedUnitProcesses"
+                :key="process.process_definition_id || process.id"
+                type="button"
+                role="tab"
+                class="deasy-inline-tab"
+                :class="activeConsolidatedProcessTab === String(process.process_definition_id || process.id) ? 'deasy-inline-tab--active' : ''"
+                :aria-selected="activeConsolidatedProcessTab === String(process.process_definition_id || process.id)"
+                @click="selectConsolidatedProcess(process)"
+              >
+                {{ process.name }}
+              </button>
+            </div>
+
+            <!-- Estado de carga / error -->
+            <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl p-5 font-semibold text-sm animate-pulse">
+              Cargando proceso...
+            </section>
+            <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
+              {{ processPanelError }}
+            </section>
+            <div v-else-if="!selectedProcessPanel" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 text-center text-sm font-medium">
+              Selecciona una unidad y proceso para ver sus entregables.
+            </div>
+
+            <template v-else>
+
+              <section v-if="processActionMessage" class="rounded-2xl p-5 font-bold text-sm shadow-sm" :class="processActionMessage.type === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'">
+                {{ processActionMessage.text }}
+              </section>
+
+              <!-- Tarjetas de entregables -->
+              <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
+
+                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                    No tienes tareas activas para este proceso.
+                  </div>
+                  <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                    No hay entregables que coincidan con los filtros actuales.
+                  </div>
+                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-7">
+                    <section v-for="row in deliverableRows" :key="row.id" class="flex flex-col gap-3">
+                      <div class="flex items-center gap-3 px-1">
+                        <div class="h-px flex-1 bg-slate-200/90"></div>
+                        <AppButton
+                          variant="plain"
+                          class-name="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                          :aria-label="isDeliverableRowCollapsed(row) ? `Expandir fila ${row.index + 1}` : `Colapsar fila ${row.index + 1}`"
+                          @click="toggleDeliverableRow(row)"
+                        >
+                          <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isDeliverableRowCollapsed(row) ? 'rotate-180' : ''" />
+                        </AppButton>
+                        <div class="h-px flex-1 bg-slate-200/90"></div>
+                      </div>
+                      <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
+                        <article
+                          v-for="deliverable in row.items"
+                          :key="deliverable.key"
+                          class="relative overflow-hidden rounded-[5%] border bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-white/60 transition"
+                          :class="getDeliverableCardTone(deliverable.item).card"
+                        >
+                          <span class="absolute inset-x-0 top-0 h-1.5" :class="getDeliverableCardTone(deliverable.item).accent"></span>
+                          <div class="flex h-full flex-col gap-3 pt-2">
+                            <div class="flex min-w-0 flex-col gap-3">
+                              <div
+                                class="-mx-4 -mt-4 flex cursor-pointer items-center justify-between gap-3 border-b px-4 pb-2.5 pt-1.5"
+                                :class="getDeliverableCardTone(deliverable.item).header"
+                                role="button"
+                                tabindex="0"
+                                @click="toggleDeliverableCard(deliverable.item)"
+                                @keydown.enter.prevent="toggleDeliverableCard(deliverable.item)"
+                                @keydown.space.prevent="toggleDeliverableCard(deliverable.item)"
+                              >
+                                <div class="flex min-w-0 flex-1 items-center gap-3">
+                                  <div class="min-w-0 flex flex-1 flex-col self-stretch py-1.5">
+                                    <p class="m-0 text-[1rem] font-semibold leading-[1.3]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                      {{ getDeliverableUnitLabel(deliverable.item) || deliverable.item.template_artifact_name || `Entregable #${deliverable.item.id}` }}
+                                      <span v-if="deliverable.item.document_version" class="ml-1 whitespace-nowrap text-[0.95em] font-medium opacity-90" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">
+                                        v{{ deliverable.item.document_version }}
+                                      </span>
+                                    </p>
+                                    <p class="m-0 mt-1.5 min-w-0 truncate text-sm font-medium leading-snug text-slate-500">
+                                      {{ getDeliverablePeriodLabel(deliverable.task) }}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-1.5">
+                                  <AppButton
+                                    variant="plain"
+                                    :class-name="['relative inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', getDeliverableHeaderActionTone(deliverable.item)].join(' ')"
+                                    aria-label="Abrir detalle del entregable"
+                                    @click.stop
+                                    @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))"
+                                  >
+                                    <IconEye class="h-6 w-6" />
+                                  </AppButton>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div v-show="!isDeliverableCollapsed(deliverable.item)" class="mt-auto border-t border-slate-100 pt-3">
+                              <div class="rounded-[1.05rem] border px-4 py-3" :class="getDeliverableCardTone(deliverable.item).responsibility">
+                                <div v-if="getDeliverableProgress(deliverable.item)">
+                                  <div class="flex items-start justify-between gap-3">
+                                    <p class="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.18em]" :class="getDeliverableCardTone(deliverable.item).responsibilityLabel">{{ getDeliverableProgress(deliverable.item).label }}</p>
+                                    <AppTag :variant="getDeliverableDueState(deliverable.item).variant" class-name="shrink-0">{{ getDeliverableDueState(deliverable.item).value }}</AppTag>
+                                  </div>
+                                  <div class="mt-2.5 flex items-start justify-between gap-3">
+                                    <div class="min-w-0 flex-1">
+                                      <p class="m-0 line-clamp-2 text-[0.98rem] font-semibold leading-snug text-slate-800">{{ getDeliverableCurrentResponsibility(deliverable.item).name }}</p>
+                                      <div class="mt-1.5 flex items-center justify-between gap-3">
+                                        <span class="shrink-0 text-xs font-semibold text-slate-600">Paso {{ getDeliverableProgress(deliverable.item).current }} de {{ getDeliverableProgress(deliverable.item).total }}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/75">
+                                    <div class="h-full rounded-full transition-all duration-300" :class="getDeliverableCardTone(deliverable.item).accent" :style="{ width: `${getDeliverableProgress(deliverable.item).percent}%` }"></div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div class="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+                                <button v-if="shouldShowStartDeliverable(deliverable.item)" type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/60 disabled:cursor-not-allowed disabled:opacity-60" :disabled="processingFillItemId === deliverable.item.id || !canStartDeliverableAction(deliverable.item)" @click="startDeliverableFlow(deliverable.item)">
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-slate-200 bg-slate-50/70 text-slate-700"><IconPlayerPlayFilled class="h-4.5 w-4.5" /></div>
+                                  <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">{{ processingFillItemId === deliverable.item.id ? 'Iniciando...' : 'Iniciar' }}</span></div>
+                                </button>
+                                <PdfDropField v-else-if="shouldShowUploadDeliverable(deliverable.item)" class="deliverable-inline-upload h-full" :input-id="`deliverable-upload-${deliverable.item.id}`" variant="compact" :icon="IconUpload" :disabled="!deliverable.item.actions?.can_upload_deliverable || isUploadingDeliverable" :title="''" :action-text="getUploadActionLabel(deliverable.item)" help-text="" accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" @files-selected="handleInlineDeliverableUpload(deliverable.item, $event)" />
+                                <button v-else-if="shouldShowSign(deliverable.item)" type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-[#4BF1A1]/75 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#4BF1A1] hover:bg-[#4BF1A1]/10 disabled:cursor-not-allowed disabled:opacity-60" :disabled="!deliverable.item.actions?.implemented?.sign" @click="openDocumentSignFlow(deliverable.item)">
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-[#4BF1A1]/55 bg-[#4BF1A1]/10 text-[#118a57]"><IconSignature class="h-4.5 w-4.5" /></div>
+                                  <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">Firmar</span></div>
+                                </button>
+                                <button v-else type="button" class="group relative flex w-full items-center gap-2.5 rounded-[1rem] border border-slate-200/90 bg-white px-3.5 py-2.5 text-left shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/45" @click="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload(deliverable))">
+                                  <div class="flex h-9 w-9 items-center justify-center rounded-[0.85rem] border border-sky-100/95 bg-sky-50/55 text-sky-700"><IconChecklist class="h-4.5 w-4.5" /></div>
+                                  <div class="flex min-w-0 flex-col"><span class="text-sm font-semibold text-slate-800">Abrir</span></div>
+                                </button>
+
+                                <div class="flex h-full items-center justify-end gap-2">
+                                  <AppButton v-if="!shouldShowStartDeliverable(deliverable.item) && canApproveFillRequestForPayload(deliverable.item)" variant="plain" class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-emerald-200/90 bg-white text-emerald-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-200/70 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fillWorkflowSubmitting" :aria-label="getFillApproveActionLabelForPayload(deliverable.item)" @click="submitDeliverableCardFillAction(deliverable.item, 'approve')"><IconCircleCheck class="h-5 w-5" /></AppButton>
+                                  <AppButton v-else-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadFilePath" variant="plain" class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar PDF" @click="downloadDeliverableFile(deliverable.item)"><IconDownload class="h-5 w-5" /></AppButton>
+                                  <AppButton v-else-if="!shouldShowStartDeliverable(deliverable.item) && shouldShowTemplateDownload(deliverable.item)" variant="plain" class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Descargar plantilla" @click="handleDeliverableFutureAction('download_template', deliverable.item)"><IconFileDescription class="h-5 w-5" /></AppButton>
+                                  <AppButton v-if="!shouldShowStartDeliverable(deliverable.item) && getDeliverableSubject(deliverable.item).preloadPdfPath" variant="plain" class-name="inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border border-sky-200/90 bg-white text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70" aria-label="Ver PDF" @click="previewDeliverableFile(deliverable.item)"><IconEye class="h-5 w-5" /></AppButton>
+                                  <AppButton variant="plain" :class-name="['group inline-flex h-[3.125rem] w-[3.125rem] items-center justify-center rounded-[0.95rem] border bg-white transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-4', getDeliverableHeaderActionTone(deliverable.item)].join(' ')" :disabled="!deliverable.item.actions?.can_open_process_chat" aria-label="Abrir chat" @click="handleDeliverableFutureAction('process_chat', deliverable.item)"><IconMessages class="h-6 w-6" /></AppButton>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      </div>
+                    </section>
+                  </div>
+                </article>
+              </section>
+            </template>
+          </section>
+        </template>
+
         <template v-else-if="!selectedProcessKey && !processPanelLoading">
 
+          <!-- Panel: Mis unidades -->
+          <div v-if="showUnitsPanel" class="flex flex-col gap-5">
+            <div class="admin-page-header">
+              <div class="admin-page-header__main">
+                <h1 class="admin-page-header__title">Mis unidades</h1>
+              </div>
+              <div class="admin-page-header__actions">
+                <button type="button" class="deasy-hero-back-button" @click="showUnitsPanel = false">
+                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
+                  <span>Volver</span>
+                </button>
+              </div>
+            </div>
+            <div v-if="!unitsPanelData.length" class="text-sm font-medium text-slate-500 py-4">
+              No hay unidades con procesos asignados.
+            </div>
+            <template v-else>
+              <div class="deasy-inline-tabs" role="tablist">
+                <button
+                  v-for="unit in unitsPanelData"
+                  :key="unit.id"
+                  type="button"
+                  role="tab"
+                  class="deasy-inline-tab"
+                  :class="activeUnitPanelTab === unit.id ? 'deasy-inline-tab--active' : ''"
+                  :aria-selected="activeUnitPanelTab === unit.id"
+                  @click="activeUnitPanelTab = unit.id"
+                >
+                  {{ unit.name }}
+                </button>
+              </div>
+              <template v-for="unit in unitsPanelData" :key="unit.id">
+                <div v-if="activeUnitPanelTab === unit.id" class="flex flex-col gap-5">
+                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <section class="bg-slate-50/50 rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-4">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <div v-if="unit.groupName" class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ unit.groupName }}</div>
+                          <h3 class="text-lg font-semibold text-slate-800 m-0 mt-1 leading-snug">{{ unit.name }}</h3>
+                        </div>
+                      </div>
+                      <div v-if="!unit.processes.length" class="text-sm font-medium text-slate-400 italic">
+                        Sin procesos asignados.
+                      </div>
+                      <div v-else class="flex flex-col gap-2">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Procesos disponibles</div>
+                        <button
+                          v-for="process in unit.processes"
+                          :key="process.process_definition_id || process.id"
+                          type="button"
+                          class="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md"
+                          @click="handleProcessSelect(process)"
+                        >
+                          <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(processIconMeta(process).tone)">
+                            <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
+                          </span>
+                          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ process.name }}</strong>
+                          </span>
+                          <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
+                        </button>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </template>
+            </template>
+          </div>
+
           <!-- Panel: Mis cargos -->
-          <div v-if="showCargosPanel" class="flex flex-col gap-5">
+          <div v-else-if="showCargosPanel" class="flex flex-col gap-5">
 
             <!-- Cabecera con botón volver -->
             <div class="admin-page-header">
@@ -460,6 +711,21 @@
                 </div>
               </button>
 
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-violet-200 hover:bg-violet-50/30 hover:shadow-md"
+                @click="openUnitsPanel"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis unidades</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconBuildingMonument class="h-10 w-10 text-slate-400" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">{{ unitsPanelData.length }} unidad(es) activa(s)</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Revisa los procesos disponibles en cada una de tus unidades.</p>
+                  </div>
+                </div>
+              </button>
+
             </div>
 
             <!-- Tab: Resumen — layout 2 columnas -->
@@ -551,45 +817,49 @@
         </template>
 
         <template v-else>
-          <section class="flex flex-col gap-8">
-            <section class="deasy-hero-shell">
-              <div class="deasy-hero-layout">
-                <div class="deasy-hero-main deasy-hero-main--with-media">
-                  <div class="deasy-hero-media">
-                    <div class="deasy-hero-media-card">
-                      <IconChecklist class="h-10 w-10" />
-                    </div>
-                  </div>
-                  <div class="deasy-hero-copy sm:pt-0">
-                    <div class="flex flex-wrap items-center gap-2.5">
-                      <div class="deasy-hero-kicker">
-                        {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
-                      </div>
-                    </div>
-                    <div class="flex flex-col gap-3">
-                      <h1 class="deasy-hero-title">
-                        {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
-                      </h1>
-                      <p class="deasy-hero-description">
-                        Gestiona tus tareas y entregables de esta definición activa.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="deasy-hero-side">
-                  <button
-                    type="button"
-                    class="deasy-hero-back-button"
-                    @click="clearSelectedProcess"
-                  >
-                    <span class="deasy-hero-back-button__icon">
-                        <IconArrowLeft class="h-4.5 w-4.5" />
-                    </span>
-                    <span>Volver atrás</span>
-                  </button>
-                </div>
+          <section class="flex flex-col gap-6">
+
+            <!-- Tabs de unidades (arriba del header, como en admin) -->
+            <div v-if="!processPanelLoading && !processPanelError && processUnitTabs.length > 1" class="admin-related-tabs">
+              <div class="deasy-inline-tabs" role="tablist" aria-label="Unidades del proceso">
+                <button
+                  v-for="tab in processUnitTabs"
+                  :key="tab.key"
+                  type="button"
+                  role="tab"
+                  class="deasy-inline-tab"
+                  :class="activeProcessUnitTab === tab.key ? 'deasy-inline-tab--active' : ''"
+                  :aria-selected="activeProcessUnitTab === tab.key"
+                  @click="activeProcessUnitTab = tab.key"
+                >
+                  {{ tab.label }}
+                </button>
               </div>
-            </section>
+            </div>
+
+            <!-- Cabecera con título y botón volver -->
+            <div class="admin-page-header">
+              <div class="admin-page-header__main">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 m-0">
+                  {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
+                </p>
+                <h1 class="admin-page-header__title mt-1">
+                  {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
+                </h1>
+              </div>
+              <div class="admin-page-header__actions">
+                <button
+                  type="button"
+                  class="deasy-hero-back-button"
+                  @click="clearSelectedProcess"
+                >
+                  <span class="deasy-hero-back-button__icon">
+                    <IconArrowLeft class="h-4.5 w-4.5" />
+                  </span>
+                  <span>Volver</span>
+                </button>
+              </div>
+            </div>
 
             <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl p-5 font-semibold text-sm animate-pulse">
               Cargando la definición seleccionada...
@@ -2639,7 +2909,14 @@ const showMenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const showNotify = ref(false);
 const homeDashTab = ref('inicio');
 const showCargosPanel = ref(false);
+const showUnitsPanel = ref(false);
+const showProcessesPanel = ref(false);
+const activeConsolidatedUnitTab = ref(null);
+const activeConsolidatedProcessTab = ref(null);
+const activeConsolidatedCargoFilter = ref(null);
 const activeCargoPanelTab = ref(null);
+const activeUnitPanelTab = ref(null);
+const activeProcessUnitTab = ref('all');
 const showNavMenu = ref(false);
 const deliverableGridColumns = ref(resolveDeliverableGridColumns());
 
@@ -2653,8 +2930,26 @@ const handleResize = () => {
   }
 };
 
-const handlePrimaryNavInteraction = ({ active } = {}) => {
+const handlePrimaryNavInteraction = async ({ active } = {}) => {
   if (!isClient) return;
+  // En sub-rutas, siempre navegar a home
+  if (workspaceRouteMode.value !== 'default') {
+    await router.push({ name: 'home' });
+    return;
+  }
+  // Si hay un proceso abierto, cerrarlo (volver al dashboard)
+  if (selectedProcessKey.value) {
+    clearSelectedProcess();
+    return;
+  }
+  // Si hay un panel abierto, cerrarlo
+  if (showCargosPanel.value || showUnitsPanel.value || showProcessesPanel.value) {
+    showCargosPanel.value = false;
+    showUnitsPanel.value = false;
+    showProcessesPanel.value = false;
+    return;
+  }
+  // Comportamiento normal: toggle sidebar
   if (window.innerWidth >= 1280) {
     showMenu.value = active ? !showMenu.value : true;
     return;
@@ -2924,6 +3219,58 @@ const cargosPanelData = computed(() => {
     });
   }
   return Array.from(cargoMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const unitsPanelData = computed(() => {
+  const unitMap = new Map();
+  unitGroups.value.forEach((group) => {
+    (group.units || []).forEach((unit) => {
+      if (!unitMap.has(unit.id)) {
+        unitMap.set(unit.id, { id: unit.id, name: unit.label || unit.name, groupName: group.label || group.name, cargos: [], processes: [] });
+      }
+      const target = unitMap.get(unit.id);
+      (unit.cargos || []).forEach((cargo) => {
+        if (!target.cargos.some((c) => c.id === cargo.id)) {
+          target.cargos.push({ id: cargo.id, name: cargo.name });
+        }
+        (cargo.processes || []).forEach((process) => {
+          const key = String(process.process_definition_id || process.id);
+          if (!target.processes.some((p) => String(p.process_definition_id || p.id) === key)) {
+            target.processes.push({ ...process, cargoId: cargo.id, cargoName: cargo.name });
+          }
+        });
+      });
+    });
+  });
+  if (!unitMap.size) {
+    userUnits.value.forEach((unit) => {
+      const processes = [];
+      consolidatedCargos.value.forEach((cargo) => {
+        (cargo.processes || []).forEach((process) => {
+          const key = String(process.process_definition_id || process.id);
+          if (!processes.some((p) => String(p.process_definition_id || p.id) === key)) {
+            processes.push({ ...process, cargoId: cargo.id, cargoName: cargo.name });
+          }
+        });
+      });
+      if (processes.length) {
+        const cargos = consolidatedCargos.value.map((c) => ({ id: c.id, name: c.name }));
+        unitMap.set(unit.id, { id: unit.id, name: unit.label || unit.name, groupName: '', cargos, processes });
+      }
+    });
+  }
+  return Array.from(unitMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const consolidatedUnitCargos = computed(() =>
+  unitsPanelData.value.find((u) => u.id === activeConsolidatedUnitTab.value)?.cargos || []
+);
+
+const consolidatedUnitProcesses = computed(() => {
+  const unit = unitsPanelData.value.find((u) => u.id === activeConsolidatedUnitTab.value);
+  if (!unit) return [];
+  if (!activeConsolidatedCargoFilter.value) return unit.processes;
+  return unit.processes.filter((p) => p.cargoId === activeConsolidatedCargoFilter.value);
 });
 
 const homeUnitCount = computed(() => {
@@ -3347,6 +3694,7 @@ const clearSelectedProcess = () => {
   processPanelError.value = '';
   processActionMessage.value = null;
   showTaskLaunchModal.value = false;
+  activeProcessUnitTab.value = 'all';
   resetTaskListFilters();
   resetTaskLaunchForm();
 };
@@ -3359,16 +3707,41 @@ const navigateToHome = async () => {
 
 const scrollToProcessNav = async () => {
   await navigateToHome();
-  await nextTick();
-  requestAnimationFrame(() => {
-    const el = document.getElementById('procesos');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  showProcessesPanel.value = true;
+  showCargosPanel.value = false;
+  showUnitsPanel.value = false;
+  const firstUnit = unitsPanelData.value[0];
+  if (firstUnit) await selectConsolidatedUnit(firstUnit);
 };
 
 const openCargosPanel = () => {
   showCargosPanel.value = true;
+  showUnitsPanel.value = false;
+  showProcessesPanel.value = false;
   activeCargoPanelTab.value = cargosPanelData.value[0]?.id ?? null;
+};
+
+const openUnitsPanel = () => {
+  showUnitsPanel.value = true;
+  showCargosPanel.value = false;
+  showProcessesPanel.value = false;
+  activeUnitPanelTab.value = unitsPanelData.value[0]?.id ?? null;
+};
+
+const selectConsolidatedUnit = async (unit) => {
+  activeConsolidatedUnitTab.value = unit.id;
+  activeConsolidatedProcessTab.value = null;
+  activeConsolidatedCargoFilter.value = null;
+  clearSelectedProcess();
+  const firstProcess = unit.processes?.[0];
+  if (firstProcess) await selectConsolidatedProcess(firstProcess);
+};
+
+const selectConsolidatedProcess = async (process) => {
+  const key = String(process?.process_definition_id || process?.id || '');
+  activeConsolidatedProcessTab.value = key;
+  activeProcessUnitTab.value = 'all';
+  await loadSelectedProcessPanel(process);
 };
 
 const navigateToDocumentCenterPage = async () => {
@@ -3605,6 +3978,11 @@ const filteredProcessDeliverables = computed(() =>
       if (actionState === 'all') return true;
       return getDeliverableActionFilterState(deliverable.item) === actionState;
     })
+    .filter((deliverable) => {
+      if (activeProcessUnitTab.value === 'all') return true;
+      const unitId = deliverable.item.origin_unit_id || deliverable.item.originUnitId || deliverable.item.scope_unit_id;
+      return String(unitId) === activeProcessUnitTab.value;
+    })
 );
 
 const deliverableRows = computed(() => {
@@ -3621,6 +3999,22 @@ const deliverableRows = computed(() => {
   }
 
   return rows;
+});
+
+const processUnitTabs = computed(() => {
+  const seen = new Set();
+  const tabs = [{ key: 'all', label: 'Consolidado' }];
+  for (const task of selectedProcessPanel.value?.tasks || []) {
+    for (const item of task.items || []) {
+      const unitId = item.origin_unit_id || item.originUnitId || item.scope_unit_id || null;
+      const unitLabel = item.unit_label || item.unitLabel || resolveUnitNameById(unitId) || null;
+      if (unitId && !seen.has(unitId)) {
+        seen.add(unitId);
+        tabs.push({ key: String(unitId), label: unitLabel || String(unitId) });
+      }
+    }
+  }
+  return tabs;
 });
 
 const filteredDocumentCenterItems = computed(() => {
@@ -4010,13 +4404,16 @@ const loadSelectedProcessPanel = async (process) => {
     // - Desde sidebar "Todas las unidades" (selectedGroupId=null): sin filtro
     const scopeUnitId = showCargosPanel.value
       ? (process?.unit_id ? Number(process.unit_id) : null)
-      : (selectedGroupId.value ? Number(selectedGroupId.value) : null);
+      : showProcessesPanel.value
+        ? (activeConsolidatedUnitTab.value ? Number(activeConsolidatedUnitTab.value) : null)
+        : (selectedGroupId.value ? Number(selectedGroupId.value) : null);
     const panel = await processPanelService.getPanel(userId, definitionId, scopeUnitId);
     if (panel?.definition && process?.access_source) {
       panel.definition.access_source = process.access_source;
     }
     selectedProcessPanel.value = panel;
     selectedProcessKey.value = `${definitionId}`;
+    activeProcessUnitTab.value = 'all';
     resetTaskListFilters();
   } catch (error) {
     console.error('Error al cargar el panel operativo de la definición:', error);
@@ -4154,6 +4551,8 @@ const handleProcessSelect = async (process) => {
   if (workspaceRouteMode.value !== 'default') {
     await router.push({ name: 'home' });
   }
+  // Desde el aside o paneles secundarios: modo standalone (cierra vista consolidada)
+  showProcessesPanel.value = false;
   selectedProcessKey.value = process?.process_definition_id ? String(process.process_definition_id) : null;
   selectedProcessContext.value = process || null;
   if (window.innerWidth < 1024) {

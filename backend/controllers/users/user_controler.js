@@ -693,11 +693,14 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, s
        trm.name AS term_name,
        tt.code AS term_type_code,
        tt.name AS term_type_name,
-       rp.title AS responsible_position_title
+       rp.title AS responsible_position_title,
+       rp.unit_id AS responsible_unit_id,
+       COALESCE(ru.label, ru.name) AS responsible_unit_label
      FROM tasks t
      INNER JOIN terms trm ON trm.id = t.term_id
      INNER JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
+     LEFT JOIN units ru ON ru.id = rp.unit_id
      WHERE t.process_definition_id = ?
        ${unitFilter}
        AND (
@@ -1796,8 +1799,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         start_date: relatedDocument?.start_date ?? item.start_date ?? null,
         end_date: relatedDocument?.end_date ?? item.end_date ?? null,
         user_started_at: relatedDocument?.user_started_at ?? item.user_started_at ?? null,
-        origin_unit_id: relatedDocument?.origin_unit_id ?? item.origin_unit_id ?? null,
-        unit_label: relatedDocument?.unit_label ?? item.origin_unit_label ?? item.unit_label ?? null,
+        origin_unit_id: relatedDocument?.origin_unit_id ?? item.origin_unit_id ?? task.responsible_unit_id ?? null,
+        unit_label: relatedDocument?.unit_label ?? item.origin_unit_label ?? item.unit_label ?? task.responsible_unit_label ?? null,
         instance_mode: item.instance_mode || "single_document",
         document_count: relatedDocuments.length,
         can_create_document_instance: isOwnerManyDocuments && Number(item.resolved_owner_person_id || 0) === Number(userId),
