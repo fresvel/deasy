@@ -236,13 +236,46 @@
             <!-- Barra de filtros: Cargo / Año / Estado -->
             <div class="deasy-filter-shell">
               <div class="deasy-filter-grid">
-                <label class="deasy-filter-field">
-                  <span class="sr-only">Cargo</span>
-                  <select v-model="activeConsolidatedCargoFilter" class="deasy-filter-control" @change="activeConsolidatedProcessTab = null; clearSelectedProcess(); consolidatedUnitProcesses[0] && selectConsolidatedProcess(consolidatedUnitProcesses[0])">
-                    <option :value="null">Todos los cargos</option>
-                    <option v-for="cargo in consolidatedUnitCargos" :key="cargo.id" :value="cargo.id">{{ cargo.name }}</option>
-                  </select>
-                </label>
+                <div ref="processMultiSelectRef" class="deasy-filter-field relative">
+                  <span class="sr-only">Procesos</span>
+                  <button
+                    type="button"
+                    class="deasy-filter-control flex w-full items-center justify-between gap-2 text-left"
+                    :disabled="!consolidatedCargoProcesses.length"
+                    @click="showProcessMultiSelect = !showProcessMultiSelect"
+                  >
+                    <span class="truncate">{{ processMultiSelectLabel }}</span>
+                    <IconChevronDown class="h-4 w-4 shrink-0 transition-transform" :class="showProcessMultiSelect ? 'rotate-180' : ''" />
+                  </button>
+                  <div
+                    v-if="showProcessMultiSelect && consolidatedCargoProcesses.length"
+                    class="absolute left-0 top-full z-20 mt-1 w-full min-w-[16rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/60"
+                  >
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      @click="toggleAllConsolidatedProcesses"
+                    >
+                      <span class="flex h-4 w-4 items-center justify-center rounded border" :class="allConsolidatedProcessesSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
+                        <IconCheck v-if="allConsolidatedProcessesSelected" class="h-3 w-3" />
+                      </span>
+                      Todos los procesos
+                    </button>
+                    <div class="my-1 h-px bg-slate-100"></div>
+                    <button
+                      v-for="process in consolidatedCargoProcesses"
+                      :key="process.process_definition_id || process.id"
+                      type="button"
+                      class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      @click="toggleConsolidatedProcess(process.process_definition_id || process.id)"
+                    >
+                      <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id)) ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300'">
+                        <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
+                      </span>
+                      <span class="truncate">{{ process.name }}</span>
+                    </button>
+                  </div>
+                </div>
                 <label class="deasy-filter-field">
                   <span class="sr-only">Año</span>
                   <select v-model="taskListFilters.year" class="deasy-filter-control">
@@ -268,19 +301,19 @@
               </div>
             </div>
 
-            <!-- Nivel 2: tabs por proceso de la unidad seleccionada (filtrado por cargo) -->
-            <div v-if="consolidatedUnitProcesses.length > 0" class="deasy-inline-tabs" role="tablist" aria-label="Procesos de la unidad">
+            <!-- Nivel 2: tabs por cargo de la unidad seleccionada -->
+            <div v-if="consolidatedUnitCargos.length > 0" class="deasy-inline-tabs" role="tablist" aria-label="Cargos de la unidad">
               <button
-                v-for="process in consolidatedUnitProcesses"
-                :key="process.process_definition_id || process.id"
+                v-for="cargo in consolidatedUnitCargos"
+                :key="cargo.id"
                 type="button"
                 role="tab"
                 class="deasy-inline-tab"
-                :class="activeConsolidatedProcessTab === String(process.process_definition_id || process.id) ? 'deasy-inline-tab--active' : ''"
-                :aria-selected="activeConsolidatedProcessTab === String(process.process_definition_id || process.id)"
-                @click="selectConsolidatedProcess(process)"
+                :class="activeConsolidatedCargoTab === cargo.id ? 'deasy-inline-tab--active' : ''"
+                :aria-selected="activeConsolidatedCargoTab === cargo.id"
+                @click="selectConsolidatedCargo(cargo)"
               >
-                {{ process.name }}
+                {{ cargo.name }}
               </button>
             </div>
 
@@ -291,7 +324,7 @@
             <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
               {{ processPanelError }}
             </section>
-            <div v-else-if="!selectedProcessPanel" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 text-center text-sm font-medium">
+            <div v-else-if="!selectedProcessPanel && consolidatedCargoProcesses.length && selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 text-center text-sm font-medium">
               Selecciona una unidad y proceso para ver sus entregables.
             </div>
 
@@ -305,48 +338,59 @@
               <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
 
-                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
-                    No tienes tareas activas para este proceso.
+                  <div v-if="!consolidatedCargoProcesses.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                    No hay procesos asignados para este cargo.
+                  </div>
+                  <div v-else-if="!selectedConsolidatedProcessIds.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                    Selecciona al menos un proceso para ver sus entregables.
                   </div>
                   <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
-                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-7">
-                    <section v-for="row in deliverableRows" :key="row.id" class="flex flex-col gap-3">
-                      <div class="flex items-center gap-3 px-1">
-                        <div class="h-px flex-1 bg-slate-200/90"></div>
-                        <AppButton
-                          variant="plain"
-                          class-name="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-                          :aria-label="isDeliverableRowCollapsed(row) ? `Expandir fila ${row.index + 1}` : `Colapsar fila ${row.index + 1}`"
-                          @click="toggleDeliverableRow(row)"
-                        >
-                          <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isDeliverableRowCollapsed(row) ? 'rotate-180' : ''" />
-                        </AppButton>
-                        <div class="h-px flex-1 bg-slate-200/90"></div>
+                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
+                    <div class="flex items-center gap-3 px-1">
+                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                      <AppButton
+                        variant="plain"
+                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        :aria-label="isProcessCollapsed ? 'Expandir todo' : 'Colapsar todo'"
+                        @click="toggleDeliverableProcess"
+                      >
+                        <span>{{ isProcessCollapsed ? 'Expandir' : 'Colapsar' }}</span>
+                        <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isProcessCollapsed ? 'rotate-180' : ''" />
+                      </AppButton>
+                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                    </div>
+                    <div v-for="group in deliverableGroups" :key="group.id" class="flex flex-col gap-3">
+                      <div v-if="showDeliverableGroupHeaders" class="flex items-center gap-2 px-1">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><IconChecklist class="h-3.5 w-3.5" /></span>
+                        <h3 class="m-0 text-sm font-bold text-slate-700">{{ group.name }}</h3>
+                        <span class="text-xs font-semibold text-slate-400">{{ group.items.length }}</span>
                       </div>
-                      <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
-                        <DeliverableCard
-                          v-for="deliverable in row.items"
-                          :key="deliverable.key"
-                          :deliverable="deliverable"
-                          :helpers="deliverableCardHelpers"
-                          :processing-fill-item-id="processingFillItemId"
-                          :fill-workflow-submitting="fillWorkflowSubmitting"
-                          :is-uploading-deliverable="isUploadingDeliverable"
-                          @toggle="toggleDeliverableCard"
-                          @open="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload($event))"
-                          @start="startDeliverableFlow"
-                          @upload="handleInlineDeliverableUpload($event.item, $event.files)"
-                          @sign="openDocumentSignFlow"
-                          @approve="submitDeliverableCardFillAction($event, 'approve')"
-                          @download="downloadDeliverableFile"
-                          @template="handleDeliverableFutureAction('download_template', $event)"
-                          @preview="previewDeliverableFile"
-                          @chat="handleDeliverableFutureAction('process_chat', $event)"
-                        />
-                      </div>
-                    </section>
+                      <section v-for="row in group.rows" :key="row.id" class="flex flex-col gap-3">
+                        <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
+                          <DeliverableCard
+                            v-for="deliverable in row.items"
+                            :key="deliverable.key"
+                            :deliverable="deliverable"
+                            :helpers="deliverableCardHelpers"
+                            :processing-fill-item-id="processingFillItemId"
+                            :fill-workflow-submitting="fillWorkflowSubmitting"
+                            :is-uploading-deliverable="isUploadingDeliverable"
+                            @toggle="toggleDeliverableCard"
+                            @open="openDeliverableWorkspaceModal(getDeliverableWorkspacePayload($event))"
+                            @start="startDeliverableFlow"
+                            @upload="handleInlineDeliverableUpload($event.item, $event.files)"
+                            @sign="openDocumentSignFlow"
+                            @approve="submitDeliverableCardFillAction($event, 'approve')"
+                            @download="downloadDeliverableFile"
+                            @template="handleDeliverableFutureAction('download_template', $event)"
+                            @preview="previewDeliverableFile"
+                            @chat="handleDeliverableFutureAction('process_chat', $event)"
+                          />
+                        </div>
+                      </section>
+                    </div>
                   </div>
                 </article>
               </section>
@@ -869,26 +913,26 @@
                     No hay entregables que coincidan con los filtros actuales.
                   </div>
 
-                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-7">
+                  <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
+                    <div class="flex items-center gap-3 px-1">
+                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                      <AppButton
+                        variant="plain"
+                        class-name="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                        :aria-label="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
+                        :title="isProcessCollapsed ? 'Expandir proceso' : 'Colapsar proceso'"
+                        @click="toggleDeliverableProcess"
+                      >
+                        <span>{{ isProcessCollapsed ? 'Expandir' : 'Colapsar' }}</span>
+                        <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isProcessCollapsed ? 'rotate-180' : ''" />
+                      </AppButton>
+                      <div class="h-px flex-1 bg-slate-200/90"></div>
+                    </div>
                     <section
                       v-for="row in deliverableRows"
                       :key="row.id"
                       class="flex flex-col gap-3"
                     >
-                      <div class="flex items-center gap-3 px-1">
-                        <div class="h-px flex-1 bg-slate-200/90"></div>
-                        <AppButton
-                          variant="plain"
-                          class-name="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-                          :aria-label="isDeliverableRowCollapsed(row) ? `Expandir fila ${row.index + 1}` : `Colapsar fila ${row.index + 1}`"
-                          :title="isDeliverableRowCollapsed(row) ? `Expandir fila ${row.index + 1}` : `Colapsar fila ${row.index + 1}`"
-                          @click="toggleDeliverableRow(row)"
-                        >
-                          <IconChevronDown class="h-4 w-4 transition-transform duration-200" :class="isDeliverableRowCollapsed(row) ? 'rotate-180' : ''" />
-                        </AppButton>
-                        <div class="h-px flex-1 bg-slate-200/90"></div>
-                      </div>
-
                       <div class="grid grid-cols-1 gap-x-9 gap-y-0 md:grid-cols-2 xl:grid-cols-3">
                         <DeliverableCard
                           v-for="deliverable in row.items"
@@ -2605,6 +2649,7 @@ import {
   IconArrowRight,
   IconBuildingMonument,
   IconBriefcase,
+  IconCheck,
   IconChevronDown,
   IconCircleCheck,
   IconFileCheck,
@@ -2649,8 +2694,9 @@ const showCargosPanel = ref(false);
 const showUnitsPanel = ref(false);
 const showProcessesPanel = ref(false);
 const activeConsolidatedUnitTab = ref(null);
-const activeConsolidatedProcessTab = ref(null);
-const activeConsolidatedCargoFilter = ref(null);
+const activeConsolidatedCargoTab = ref(null);
+const selectedConsolidatedProcessIds = ref([]);
+const showProcessMultiSelect = ref(false);
 const activeCargoPanelTab = ref(null);
 const activeUnitPanelTab = ref(null);
 const activeProcessUnitTab = ref('all');
@@ -2703,9 +2749,12 @@ const menuCargos = ref([]);
 const selectedGroupId = ref(null);
 const showGroupDropdown = ref(false);
 const groupDropdownRef = ref(null);
+const processMultiSelectRef = ref(null);
 const selectedProcessKey = ref(null);
 const selectedProcessContext = ref(null);
 const selectedProcessPanel = ref(null);
+// En el panel consolidado pueden cargarse varios procesos a la vez (multi-selección).
+const selectedProcessPanels = ref([]);
 const processPanelLoading = ref(false);
 const processPanelError = ref('');
 const processActionMessage = ref(null);
@@ -2967,13 +3016,19 @@ const unitsPanelData = computed(() => {
       }
       const target = unitMap.get(unit.id);
       (unit.cargos || []).forEach((cargo) => {
-        if (!target.cargos.some((c) => c.id === cargo.id)) {
-          target.cargos.push({ id: cargo.id, name: cargo.name });
+        let targetCargo = target.cargos.find((c) => c.id === cargo.id);
+        if (!targetCargo) {
+          targetCargo = { id: cargo.id, name: cargo.name, processes: [] };
+          target.cargos.push(targetCargo);
         }
         (cargo.processes || []).forEach((process) => {
           const key = String(process.process_definition_id || process.id);
+          const enriched = { ...process, cargoId: cargo.id, cargoName: cargo.name };
           if (!target.processes.some((p) => String(p.process_definition_id || p.id) === key)) {
-            target.processes.push({ ...process, cargoId: cargo.id, cargoName: cargo.name });
+            target.processes.push(enriched);
+          }
+          if (!targetCargo.processes.some((p) => String(p.process_definition_id || p.id) === key)) {
+            targetCargo.processes.push(enriched);
           }
         });
       });
@@ -2982,16 +3037,18 @@ const unitsPanelData = computed(() => {
   if (!unitMap.size) {
     userUnits.value.forEach((unit) => {
       const processes = [];
-      consolidatedCargos.value.forEach((cargo) => {
+      const cargos = consolidatedCargos.value.map((c) => ({ id: c.id, name: c.name, processes: [] }));
+      consolidatedCargos.value.forEach((cargo, cargoIndex) => {
         (cargo.processes || []).forEach((process) => {
           const key = String(process.process_definition_id || process.id);
+          const enriched = { ...process, cargoId: cargo.id, cargoName: cargo.name };
           if (!processes.some((p) => String(p.process_definition_id || p.id) === key)) {
-            processes.push({ ...process, cargoId: cargo.id, cargoName: cargo.name });
+            processes.push(enriched);
           }
+          cargos[cargoIndex].processes.push(enriched);
         });
       });
       if (processes.length) {
-        const cargos = consolidatedCargos.value.map((c) => ({ id: c.id, name: c.name }));
         unitMap.set(unit.id, { id: unit.id, name: unit.label || unit.name, groupName: '', cargos, processes });
       }
     });
@@ -2999,15 +3056,35 @@ const unitsPanelData = computed(() => {
   return Array.from(unitMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 });
 
+// Nivel 2: todos los cargos de la unidad activa (incluye los que no tienen procesos).
 const consolidatedUnitCargos = computed(() =>
   unitsPanelData.value.find((u) => u.id === activeConsolidatedUnitTab.value)?.cargos || []
 );
 
-const consolidatedUnitProcesses = computed(() => {
-  const unit = unitsPanelData.value.find((u) => u.id === activeConsolidatedUnitTab.value);
-  if (!unit) return [];
-  if (!activeConsolidatedCargoFilter.value) return unit.processes;
-  return unit.processes.filter((p) => p.cargoId === activeConsolidatedCargoFilter.value);
+// Procesos de la cargo activa (poblan el selector múltiple de procesos).
+const consolidatedCargoProcesses = computed(() => {
+  const cargo = consolidatedUnitCargos.value.find((c) => c.id === activeConsolidatedCargoTab.value);
+  return cargo?.processes || [];
+});
+
+const allConsolidatedProcessesSelected = computed(() =>
+  consolidatedCargoProcesses.value.length > 0
+  && selectedConsolidatedProcessIds.value.length === consolidatedCargoProcesses.value.length
+);
+
+const processMultiSelectLabel = computed(() => {
+  const total = consolidatedCargoProcesses.value.length;
+  const selected = selectedConsolidatedProcessIds.value.length;
+  if (!total) return 'Sin procesos';
+  if (selected === 0) return 'Selecciona procesos';
+  if (selected === total) return 'Todos los procesos';
+  if (selected === 1) {
+    const p = consolidatedCargoProcesses.value.find(
+      (proc) => String(proc.process_definition_id || proc.id) === selectedConsolidatedProcessIds.value[0]
+    );
+    return p?.name || '1 proceso';
+  }
+  return `${selected} procesos`;
 });
 
 const homeUnitCount = computed(() => {
@@ -3338,10 +3415,12 @@ const selectUnitOption = (unit) => {
 };
 
 const handleGroupDropdownOutsideClick = (event) => {
-  if (!showGroupDropdown.value) return;
-  if (!groupDropdownRef.value) return;
-  if (groupDropdownRef.value.contains(event.target)) return;
-  showGroupDropdown.value = false;
+  if (showGroupDropdown.value && groupDropdownRef.value && !groupDropdownRef.value.contains(event.target)) {
+    showGroupDropdown.value = false;
+  }
+  if (showProcessMultiSelect.value && processMultiSelectRef.value && !processMultiSelectRef.value.contains(event.target)) {
+    showProcessMultiSelect.value = false;
+  }
 };
 
 const toggleCargo = (cargo) => {
@@ -3428,6 +3507,7 @@ const clearSelectedProcess = () => {
   selectedProcessKey.value = null;
   selectedProcessContext.value = null;
   selectedProcessPanel.value = null;
+  selectedProcessPanels.value = [];
   processPanelError.value = '';
   processActionMessage.value = null;
   showTaskLaunchModal.value = false;
@@ -3467,18 +3547,56 @@ const openUnitsPanel = () => {
 
 const selectConsolidatedUnit = async (unit) => {
   activeConsolidatedUnitTab.value = unit.id;
-  activeConsolidatedProcessTab.value = null;
-  activeConsolidatedCargoFilter.value = null;
+  activeConsolidatedCargoTab.value = null;
+  selectedConsolidatedProcessIds.value = [];
   clearSelectedProcess();
-  const firstProcess = unit.processes?.[0];
-  if (firstProcess) await selectConsolidatedProcess(firstProcess);
+  const cargos = unit.cargos || [];
+  // Prioriza un cargo con procesos; si ninguno tiene, abre el primero (mostrará vacío).
+  const firstCargo = cargos.find((cargo) => (cargo.processes || []).length > 0) || cargos[0];
+  if (firstCargo) await selectConsolidatedCargo(firstCargo);
 };
 
-const selectConsolidatedProcess = async (process) => {
-  const key = String(process?.process_definition_id || process?.id || '');
-  activeConsolidatedProcessTab.value = key;
+const selectConsolidatedCargo = async (cargo) => {
+  activeConsolidatedCargoTab.value = cargo.id;
+  clearSelectedProcess();
+  // Por defecto, selecciona todos los procesos del cargo.
+  const ids = (cargo.processes || []).map((p) => String(p.process_definition_id || p.id));
+  selectedConsolidatedProcessIds.value = ids;
+  await loadSelectedProcessPanels();
+};
+
+// Carga (en paralelo) los paneles de todos los procesos seleccionados del cargo activo.
+const loadSelectedProcessPanels = async () => {
+  const processes = consolidatedCargoProcesses.value.filter((p) =>
+    selectedConsolidatedProcessIds.value.includes(String(p.process_definition_id || p.id))
+  );
   activeProcessUnitTab.value = 'all';
-  await loadSelectedProcessPanel(process);
+  if (!processes.length) {
+    selectedProcessPanels.value = [];
+    selectedProcessPanel.value = null;
+    selectedProcessKey.value = null;
+    return;
+  }
+  await loadProcessPanelsForProcesses(processes);
+};
+
+const toggleConsolidatedProcess = async (processId) => {
+  const id = String(processId);
+  const current = new Set(selectedConsolidatedProcessIds.value);
+  if (current.has(id)) current.delete(id);
+  else current.add(id);
+  // Mantiene el orden original de los procesos del cargo.
+  selectedConsolidatedProcessIds.value = consolidatedCargoProcesses.value
+    .map((p) => String(p.process_definition_id || p.id))
+    .filter((pid) => current.has(pid));
+  await loadSelectedProcessPanels();
+};
+
+const toggleAllConsolidatedProcesses = async () => {
+  const allIds = consolidatedCargoProcesses.value.map((p) => String(p.process_definition_id || p.id));
+  selectedConsolidatedProcessIds.value =
+    selectedConsolidatedProcessIds.value.length === allIds.length ? [] : allIds;
+  await loadSelectedProcessPanels();
 };
 
 const navigateToDocumentCenterPage = async () => {
@@ -3571,7 +3689,7 @@ const taskLaunchSelectedTermLabel = computed(() => {
 
 const taskFilterYears = computed(() => {
   const years = new Set();
-  (selectedProcessPanel.value?.tasks || []).forEach((task) => {
+  aggregatedProcessTasks.value.forEach((task) => {
     const source = String(task.term_name || task.start_date || task.end_date || '');
     const match = source.match(/(20\d{2})/);
     if (match?.[1]) {
@@ -3583,7 +3701,7 @@ const taskFilterYears = computed(() => {
 
 const taskFilterTerms = computed(() => {
   const map = new Map();
-  (selectedProcessPanel.value?.tasks || []).forEach((task) => {
+  aggregatedProcessTasks.value.forEach((task) => {
     const value = String(task.term_id || task.term_name || task.id);
     const label = task.term_name || `Tarea ${task.id}`;
     if (!map.has(value)) {
@@ -3595,7 +3713,7 @@ const taskFilterTerms = computed(() => {
 
 const taskFilterTermTypes = computed(() => {
   const types = new Set(
-    (selectedProcessPanel.value?.tasks || [])
+    aggregatedProcessTasks.value
       .map((task) => String(task.term_type_name || '').trim())
       .filter(Boolean)
   );
@@ -3604,7 +3722,7 @@ const taskFilterTermTypes = computed(() => {
 
 const taskFilterUnits = computed(() => {
   const values = new Set();
-  (selectedProcessPanel.value?.tasks || []).forEach((task) => {
+  aggregatedProcessTasks.value.forEach((task) => {
     const taskUnitName = resolveUnitNameById(selectedProcessContext.value?.unit_id);
     if (taskUnitName) values.add(taskUnitName);
     (task.items || []).forEach((item) => {
@@ -3617,17 +3735,25 @@ const taskFilterUnits = computed(() => {
 });
 
 const taskFilterProcesses = computed(() => {
-  const processName = String(
-    selectedProcessPanel.value?.definition?.process_name
-    || selectedProcessContext.value?.name
-    || ''
-  ).trim();
-  return processName ? [processName] : [];
+  const names = new Set();
+  aggregatedProcessTasks.value.forEach((task) => {
+    const name = String(task.__processName || '').trim();
+    if (name) names.add(name);
+  });
+  if (!names.size) {
+    const fallback = String(
+      selectedProcessPanel.value?.definition?.process_name
+      || selectedProcessContext.value?.name
+      || ''
+    ).trim();
+    if (fallback) names.add(fallback);
+  }
+  return Array.from(names).sort((a, b) => a.localeCompare(b));
 });
 
 const taskFilterStatuses = computed(() => {
   const statuses = new Set(
-    (selectedProcessPanel.value?.tasks || [])
+    aggregatedProcessTasks.value
       .map((task) => String(task.status || '').trim())
       .filter(Boolean)
   );
@@ -3660,9 +3786,30 @@ const documentCenterFilterStatuses = computed(() =>
   getCenterFilterOptions(documentCenterItems.value, 'document_version_status')
 );
 
+// Tasks combinadas de todos los procesos seleccionados, anotadas con su proceso de origen.
+const aggregatedProcessTasks = computed(() => {
+  const panels = selectedProcessPanels.value;
+  if (panels.length) {
+    return panels.flatMap(({ definitionId, process, panel }) => {
+      const processName = panel?.definition?.name || panel?.definition?.process_name || process?.name || '';
+      return (panel?.tasks || []).map((task) => ({
+        ...task,
+        __processDefinitionId: definitionId,
+        __processName: processName,
+        items: (task.items || []).map((item) => ({
+          ...item,
+          process_definition_id: item.process_definition_id || definitionId,
+        })),
+      }));
+    });
+  }
+  // Fallback: panel único (modo standalone) sin anotaciones extra.
+  return selectedProcessPanel.value?.tasks || [];
+});
+
 const filteredProcessTasks = computed(() => {
   const query = String(taskListFilters.value.query || '').trim().toLowerCase();
-  return (selectedProcessPanel.value?.tasks || []).filter((task) => {
+  return aggregatedProcessTasks.value.filter((task) => {
     const taskYearSource = String(task.term_name || task.start_date || task.end_date || '');
     const yearMatch = taskYearSource.match(/(20\d{2})/);
     const taskYear = yearMatch?.[1] || '';
@@ -3679,7 +3826,7 @@ const filteredProcessTasks = computed(() => {
       .filter(Boolean)
       .map((value) => String(value).trim());
     const matchesUnit = taskListFilters.value.unit === 'all' || unitLabels.includes(taskListFilters.value.unit);
-    const processLabel = String(selectedProcessPanel.value?.definition?.process_name || selectedProcessContext.value?.name || '').trim();
+    const processLabel = String(task.__processName || selectedProcessPanel.value?.definition?.process_name || selectedProcessContext.value?.name || '').trim();
     const matchesProcess = taskListFilters.value.process === 'all' || processLabel === taskListFilters.value.process;
     const matchesStatus = taskListFilters.value.status === 'all' || String(task.status || '').trim() === taskListFilters.value.status;
     const haystack = [
@@ -3701,7 +3848,9 @@ const filteredProcessDeliverables = computed(() =>
     (task.items || []).map((item) => ({
       key: `${task.id}-${item.id}`,
       task,
-      item
+      item,
+      processDefinitionId: task.__processDefinitionId || null,
+      processName: task.__processName || '',
     }))
   )
     .filter((deliverable) => !isDeliverableSignatureFlowCompleted(deliverable.item))
@@ -3722,21 +3871,39 @@ const filteredProcessDeliverables = computed(() =>
     })
 );
 
-const deliverableRows = computed(() => {
+const buildDeliverableRows = (items, keyPrefix = 'row') => {
   const columns = Math.max(1, Number(deliverableGridColumns.value || 1));
-  const items = filteredProcessDeliverables.value;
   const rows = [];
-
   for (let index = 0; index < items.length; index += columns) {
     rows.push({
-      id: `deliverable-row-${columns}-${Math.floor(index / columns)}`,
+      id: `${keyPrefix}-${columns}-${Math.floor(index / columns)}`,
       index: Math.floor(index / columns),
       items: items.slice(index, index + columns)
     });
   }
-
   return rows;
+};
+
+const deliverableRows = computed(() => buildDeliverableRows(filteredProcessDeliverables.value, 'deliverable-row'));
+
+// Deliverables agrupados por proceso, cada grupo con sus propias filas (multi-selección).
+const deliverableGroups = computed(() => {
+  const groups = new Map();
+  filteredProcessDeliverables.value.forEach((deliverable) => {
+    const id = String(deliverable.processDefinitionId || 'sin-proceso');
+    if (!groups.has(id)) {
+      groups.set(id, { id, name: deliverable.processName || 'Proceso', items: [] });
+    }
+    groups.get(id).items.push(deliverable);
+  });
+  return Array.from(groups.values()).map((group) => ({
+    ...group,
+    rows: buildDeliverableRows(group.items, `group-${group.id}`),
+  }));
 });
+
+// Mostrar encabezados de grupo sólo cuando hay más de un proceso seleccionado.
+const showDeliverableGroupHeaders = computed(() => deliverableGroups.value.length > 1);
 
 const processUnitTabs = computed(() => {
   const seen = new Set();
@@ -4094,7 +4261,7 @@ const createDeliverableDocumentInstance = async (payload) => {
     });
     const created = await processPanelService.createTaskItemDocument(userId, definitionId, taskItemId);
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
     const refreshedTaskItem = getTaskItemFromSelectedPanel(taskItemId);
     const createdDocument = (refreshedTaskItem?.documents || []).find(
@@ -4149,15 +4316,77 @@ const loadSelectedProcessPanel = async (process) => {
       panel.definition.access_source = process.access_source;
     }
     selectedProcessPanel.value = panel;
+    selectedProcessPanels.value = panel ? [{ definitionId, process, panel }] : [];
     selectedProcessKey.value = `${definitionId}`;
     activeProcessUnitTab.value = 'all';
     resetTaskListFilters();
   } catch (error) {
     console.error('Error al cargar el panel operativo de la definición:', error);
     selectedProcessPanel.value = null;
+    selectedProcessPanels.value = [];
     processPanelError.value = error?.response?.data?.message || 'No se pudo cargar la definición seleccionada.';
   } finally {
     processPanelLoading.value = false;
+  }
+};
+
+// Carga en paralelo los paneles de varios procesos (multi-selección del panel consolidado).
+const loadProcessPanelsForProcesses = async (processes, { resetFilters = true } = {}) => {
+  const userId = currentUserId.value;
+  if (!userId) {
+    processPanelError.value = 'No se pudo identificar al usuario.';
+    return;
+  }
+  processPanelLoading.value = true;
+  processPanelError.value = '';
+  processActionMessage.value = null;
+  const scopeUnitId = activeConsolidatedUnitTab.value ? Number(activeConsolidatedUnitTab.value) : null;
+  try {
+    const results = await Promise.all(
+      processes.map(async (process) => {
+        const definitionId = Number(process?.process_definition_id || process?.id);
+        if (!definitionId) return null;
+        const panel = await processPanelService.getPanel(userId, definitionId, scopeUnitId);
+        if (panel?.definition && process?.access_source) {
+          panel.definition.access_source = process.access_source;
+        }
+        return panel ? { definitionId, process, panel } : null;
+      })
+    );
+    selectedProcessPanels.value = results.filter(Boolean);
+    // selectedProcessPanel apunta al primero, para compatibilidad con código existente.
+    selectedProcessPanel.value = selectedProcessPanels.value[0]?.panel || null;
+    selectedProcessKey.value = selectedProcessPanels.value[0]?.definitionId
+      ? String(selectedProcessPanels.value[0].definitionId)
+      : null;
+    if (resetFilters) {
+      activeProcessUnitTab.value = 'all';
+      resetTaskListFilters();
+    }
+  } catch (error) {
+    console.error('Error al cargar los paneles operativos:', error);
+    selectedProcessPanels.value = [];
+    selectedProcessPanel.value = null;
+    processPanelError.value = error?.response?.data?.message || 'No se pudieron cargar los procesos seleccionados.';
+  } finally {
+    processPanelLoading.value = false;
+  }
+};
+
+// Refresca el/los panel(es) activos tras una acción, preservando filtros y selección.
+// En modo consolidado recarga todos los procesos seleccionados; si no, el panel singular.
+const refreshActiveProcessPanel = async () => {
+  if (showProcessesPanel.value && selectedProcessPanels.value.length) {
+    const processes = consolidatedCargoProcesses.value.filter((p) =>
+      selectedConsolidatedProcessIds.value.includes(String(p.process_definition_id || p.id))
+    );
+    if (processes.length) {
+      await loadProcessPanelsForProcesses(processes, { resetFilters: false });
+      return;
+    }
+  }
+  if (selectedProcessContext.value) {
+    await loadSelectedProcessPanel(selectedProcessContext.value);
   }
 };
 
@@ -4248,8 +4477,8 @@ const handleHomeDossierUpdated = () => {
 
 const handleSignatureCenterRefresh = async () => {
   await loadUserMenu();
-  if (selectedProcessContext.value) {
-    await loadSelectedProcessPanel(selectedProcessContext.value);
+  if (selectedProcessContext.value || selectedProcessPanels.value.length) {
+    await refreshActiveProcessPanel();
   }
   if (workspaceRouteMode.value === 'documents') {
     await loadDocumentCenterPage();
@@ -5705,11 +5934,6 @@ const getDeliverableCollapseKey = (payload) => String(payload?.id || payload?.do
 
 const isDeliverableCollapsed = (payload) => collapsedDeliverableIds.value.has(getDeliverableCollapseKey(payload));
 
-const isDeliverableRowCollapsed = (row) => {
-  const items = Array.isArray(row?.items) ? row.items : [];
-  return items.length > 0 && items.every((deliverable) => isDeliverableCollapsed(deliverable?.item));
-};
-
 const toggleDeliverableCard = (payload) => {
   const key = getDeliverableCollapseKey(payload);
   if (!key) return;
@@ -5719,12 +5943,18 @@ const toggleDeliverableCard = (payload) => {
   collapsedDeliverableIds.value = next;
 };
 
-const toggleDeliverableRow = (row) => {
-  const items = Array.isArray(row?.items) ? row.items : [];
+// Colapso a nivel proceso: todas las tarjetas del proceso visible se contraen/expanden juntas.
+const isProcessCollapsed = computed(() => {
+  const items = filteredProcessDeliverables.value;
+  return items.length > 0 && items.every((deliverable) => isDeliverableCollapsed(deliverable?.item));
+});
+
+const toggleDeliverableProcess = () => {
+  const items = filteredProcessDeliverables.value;
   if (!items.length) return;
 
   const next = new Set(collapsedDeliverableIds.value);
-  const shouldExpand = isDeliverableRowCollapsed(row);
+  const shouldExpand = isProcessCollapsed.value;
 
   items.forEach((deliverable) => {
     const key = getDeliverableCollapseKey(deliverable?.item);
@@ -6168,7 +6398,7 @@ const startDeliverableFlow = async (payload) => {
       note: 'Inicio del flujo desde el panel del entregable.'
     });
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
     openDeliverableOperationModal({
       title: 'Entregable iniciado',
@@ -6228,7 +6458,7 @@ const completeDeliverableFill = async (payload) => {
         : 'El archivo de trabajo quedó validado. Si aún no existe un PDF, la firma seguirá bloqueada.'
     });
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
   } catch (error) {
     openDeliverableOperationModal({
@@ -6302,7 +6532,7 @@ const submitFillWorkflowAction = async (action) => {
     fillWorkflowModalInstance?.hide();
     closeDeliverableWorkspaceModal();
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
   } catch (error) {
     const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.';
@@ -6367,7 +6597,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
     setProcessActionInfo(`El flujo de llenado de ${subject.title} se actualizó correctamente.`, 'success');
     deliverablePreviewModalInstance?.hide();
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
   } catch (error) {
     const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.';
@@ -6455,7 +6685,7 @@ const uploadSelectedDeliverableFile = async (file) => {
       detail: `Ruta de trabajo: ${uploadResult?.working_file_path || file.name}`
     });
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
   } catch (error) {
     openDeliverableOperationModal({
@@ -6625,8 +6855,8 @@ const handleEmbeddedWorkflowSigned = async (payload = {}) => {
 
   documentSignModalInstance?.hide();
 
-  if (selectedProcessContext.value) {
-    await loadSelectedProcessPanel(selectedProcessContext.value);
+  if (selectedProcessContext.value || selectedProcessPanels.value.length) {
+    await refreshActiveProcessPanel();
   }
 
   if (documentVersionId && currentSignatureFlowDocumentVersionId && documentVersionId === currentSignatureFlowDocumentVersionId) {
@@ -6708,7 +6938,7 @@ const submitDeliverableReset = async () => {
     resetSignatureFlowState();
 
     if (selectedProcessContext.value) {
-      await loadSelectedProcessPanel(selectedProcessContext.value);
+      await refreshActiveProcessPanel();
     }
 
     openDeliverableOperationModal({
