@@ -15,7 +15,7 @@ El repositorio esta organizado como un monorepo con capas separadas:
 - `backend/`: API Express en ESM. Usa `npm` y expone la API bajo `/deasy/v1`.
 - `docs/`: sitio de documentacion en Astro Starlight. Usa `pnpm`.
 - `signer/`: servicio de firma digital con Python, `pyhanko`, MinIO y un helper Node en `sigmaker/`.
-- `docker/`: composicion de servicios para MariaDB, MongoDB, RabbitMQ, EMQX, MinIO, Nginx, backend, frontend, signer y analytics.
+- `docker/`: composicion de servicios para MariaDB, MongoDB, RabbitMQ, MinIO, Nginx, backend, frontend, signer y analytics. El chat en tiempo real usa WebSockets (Socket.IO) dentro del backend, sin broker externo.
 - `scripts/`: wrappers operativos para arranque, despliegue, seeds, reset y migraciones.
 - `tools/`: herramientas auxiliares, incluyendo plantillas.
 
@@ -65,7 +65,6 @@ URLs locales:
 - MinIO API: `http://localhost:9100`
 - MinIO Console: `http://localhost:9101`
 - RabbitMQ UI: `http://localhost:15673`
-- EMQX UI: `http://localhost:18084`
 - Signer: `http://localhost:14000`
 
 Ver estado:
@@ -152,7 +151,6 @@ Con el stack Docker de `dev`:
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
 - RabbitMQ UI: `http://localhost:15672`
-- EMQX UI: `http://localhost:18083`
 - Signer: `http://localhost:4000`
 
 Si el backend se ejecuta directamente en local:
@@ -220,8 +218,9 @@ Variables clave:
 - `MINIO_SECRET_KEY`
 - `RABBITMQ_HTTP_API`
 
-El backend necesita que MariaDB, MongoDB, RabbitMQ, EMQX y MinIO esten
-disponibles si se usan los flujos completos del sistema.
+El backend necesita que MariaDB, MongoDB, RabbitMQ y MinIO esten
+disponibles si se usan los flujos completos del sistema. El chat en tiempo real
+se sirve por WebSockets (Socket.IO) desde el propio backend.
 
 ## Documentacion local
 
@@ -500,8 +499,6 @@ Dev:
 - MongoDB: `27017`
 - RabbitMQ AMQP: `5672`
 - RabbitMQ UI: `15672`
-- EMQX MQTT: `1883`
-- EMQX UI: `18083`
 - MinIO API: `9000`
 - MinIO Console: `9001`
 - Signer: `4000`
@@ -512,8 +509,6 @@ QA:
 - MongoDB: `12717`
 - RabbitMQ AMQP: `15672`
 - RabbitMQ UI: `15673`
-- EMQX MQTT: `11883`
-- EMQX UI: `18084`
 - MinIO API: `9100`
 - MinIO Console: `9101`
 - Signer: `14000`
@@ -524,8 +519,6 @@ Prod:
 - MongoDB: `22717`
 - RabbitMQ AMQP: `25672`
 - RabbitMQ UI: `25673`
-- EMQX MQTT: `21883`
-- EMQX UI: `28084`
 - MinIO API: `9200`
 - MinIO Console: `9201`
 - Signer: `24000`

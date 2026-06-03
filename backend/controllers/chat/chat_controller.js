@@ -103,7 +103,7 @@ export const createConversationMessage = async (req, res) => {
       realtime = {
         published: false,
         reason: "publish_failed",
-        error: realtimeError?.message || "No se pudo publicar en EMQX."
+        error: realtimeError?.message || "No se pudo publicar el evento en tiempo real."
       };
     }
     return res.status(201).json({

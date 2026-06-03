@@ -155,10 +155,6 @@ collect_persistent_volumes() {
       rabbitmq)
         echo "rabbitmq_data"
         ;;
-      emqx)
-        echo "emqx_data"
-        echo "emqx_log"
-        ;;
       minio)
         echo "minio_data"
         ;;

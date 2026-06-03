@@ -161,10 +161,6 @@ function Get-PersistentVolumes {
             'rabbitmq' {
                 $result += 'rabbitmq_data'
             }
-            'emqx' {
-                $result += 'emqx_data'
-                $result += 'emqx_log'
-            }
             'minio' {
                 $result += 'minio_data'
             }

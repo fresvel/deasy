@@ -23,14 +23,6 @@ services:
       - "25672:5672"
       - "25673:15672"
 
-  emqx:
-    env_file: *prod_runtime_env_file
-    restart: always
-    ports:
-      - "21883:1883"
-      - "28084:18083"
-      - "28083:8083"
-
   minio:
     env_file: *prod_runtime_env_file
     restart: always
@@ -131,10 +123,6 @@ volumes:
     name: deasy_prod_mongodb_data
   rabbitmq_data:
     name: deasy_prod_rabbitmq_data
-  emqx_data:
-    name: deasy_prod_emqx_data
-  emqx_log:
-    name: deasy_prod_emqx_log
   minio_data:
     name: deasy_prod_minio_data
   backend_node_modules_v2:

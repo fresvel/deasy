@@ -24,7 +24,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
   - Authoring de templates integrado en `tools/templates`.
   - Servicios de reportes/latex.
   - Servicio de firmas (signer).
-  - Mensajeria en tiempo real via EMQX (WebSocket).
+  - Mensajeria en tiempo real via WebSockets (Socket.IO) integrados en el backend.
 
 ## Quick start (desarrollo)
 
@@ -101,27 +101,27 @@ Anexos:
 
 Resumen clave desde Deploy/deploy_broker:
 
-- Mensajeria en tiempo real con EMQX (WebSocket) y Mongo.
+- Mensajeria en tiempo real con WebSockets (Socket.IO) integrados en el backend, y Mongo.
 - Tipos de conversacion: direct, group, thread (thread ligado a process_id).
 - Responsable del proceso puede agregar/remover participantes en threads.
 - Notificaciones internas en tiempo real.
 - Adjuntos hasta 100 MB en storage compartido (NFS u otro).
 - Ruta de storage via variable SHARED_STORAGE_ROOT.
-- EMQX con auth por usuario/clave por persona; credenciales derivadas de la contrasena del sistema.
-- ACL: usuarios solo pueden suscribirse a sus conversaciones; publicar solo backend.
-- Backend publica directo a EMQX (opcion A), con evolucion futura a servicio dedicado.
+- El handshake del socket se autentica con el mismo JWT de la app; el backend resuelve la persona a partir del token.
+- ACL: el cliente pide unirse a un room (conversation:{id} / process:{id}) y el backend valida la participacion antes de unirlo; publicar solo backend.
+- El backend emite directo a los rooms de Socket.IO (user:{id}, conversation:{id}, process:{id}).
 
-Topics confirmados:
+Rooms en tiempo real (antes topics MQTT):
 
-- users/{userId}/notifications
-- conversations/{conversationId}/messages
-- processes/{processId}/thread
+- user:{personId}            (notificaciones dirigidas)
+- conversation:{conversationId}  (mensajes de la conversacion)
+- process:{processId}        (hilo del proceso)
 
 Pendientes:
 
 - Definir ruta exacta de SHARED_STORAGE_ROOT en entorno docker/NFS.
 - Confirmar donde vive el "responsable del proceso" en BD (tabla/campo).
-- Detallar reglas ACL de EMQX segun topics y usuarios.
+- Escalado horizontal: si se corren varias instancias de backend, anadir el adapter de Redis de Socket.IO.
 
 Nota sobre error legado:
 

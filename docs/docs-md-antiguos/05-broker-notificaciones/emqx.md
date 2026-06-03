@@ -1,5 +1,14 @@
 # Broker y notificaciones - EMQX
 
+> ⚠️ **OBSOLETO.** EMQX fue retirado. El chat y las notificaciones en tiempo real
+> ahora usan **WebSockets (Socket.IO)** integrados en el backend, reutilizando el
+> JWT de la aplicación. Los topics MQTT se mapean a rooms de Socket.IO
+> (`users/{id}` → `user:{id}`, `conversations/{id}` → `conversation:{id}`,
+> `processes/{id}` → `process:{id}`). Ver `backend/services/realtime/RealtimeGateway.js`,
+> `backend/services/chat/ChatRealtimePublisherService.js` y
+> `frontend/src/core/services/realtimeClient.js`. Este documento se conserva solo
+> como referencia histórica.
+
 ## Rol del broker (alto nivel)
 
 - Canal de mensajeria en tiempo real para chat y notificaciones internas.

@@ -55,7 +55,7 @@ Mapa actual:
 - `prod` -> proyecto `deasy-prod`
 - `ingress` -> proyecto `deasy-ingress`
 
-Con esto, MariaDB, MongoDB, RabbitMQ, EMQX, MinIO, uploads y storage quedan
+Con esto, MariaDB, MongoDB, RabbitMQ, MinIO, uploads y storage quedan
 aislados por stack aunque los ambientes convivan en el mismo host.
 
 ## Matriz de puertos y redes
@@ -71,14 +71,13 @@ adicional administrada por `ingress` para la entrada pública:
 Puertos de referencia:
 
 - `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, MariaDB `3306`, MongoDB
-  `27017`, RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX
-  UI `18083`, MinIO API `9000`, MinIO Console `9001`, signer `4000`
+  `27017`, RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, MinIO API `9000`, MinIO
+  Console `9001`, signer `4000`. El chat en tiempo real usa WebSockets
+  (Socket.IO) sobre el mismo puerto HTTP del backend, sin puerto adicional.
 - `qa`: MariaDB `13306`, MongoDB `12717`, RabbitMQ AMQP `15672`, RabbitMQ UI
-  `15673`, EMQX MQTT `11883`, EMQX UI `18084`, MinIO API `9100`, MinIO Console
-  `9101`, signer `14000`
+  `15673`, MinIO API `9100`, MinIO Console `9101`, signer `14000`
 - `prod`: MariaDB `23306`, MongoDB `22717`, RabbitMQ AMQP `25672`, RabbitMQ UI
-  `25673`, EMQX MQTT `21883`, EMQX UI `28084`, MinIO API `9200`, MinIO Console
-  `9201`, signer `24000`
+  `25673`, MinIO API `9200`, MinIO Console `9201`, signer `24000`
 - `ingress`: HTTP `80`, HTTPS `443`
 
 ## Uso previsto por ambiente

@@ -19,12 +19,6 @@ services:
       - "15672:5672"
       - "15673:15672"
 
-  emqx:
-    ports:
-      - "11883:1883"
-      - "18084:18083"
-      - "18083:8083"
-
   minio:
     ports:
       - "${MINIO_API_PORT}:9000"
@@ -87,10 +81,6 @@ volumes:
     name: deasy_qa_local_mongodb_data
   rabbitmq_data:
     name: deasy_qa_local_rabbitmq_data
-  emqx_data:
-    name: deasy_qa_local_emqx_data
-  emqx_log:
-    name: deasy_qa_local_emqx_log
   minio_data:
     name: deasy_qa_local_minio_data
   backend_node_modules_v2:

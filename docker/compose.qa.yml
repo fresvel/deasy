@@ -20,13 +20,6 @@ services:
       - "15672:5672"
       - "15673:15672"
 
-  emqx:
-    env_file: *qa_runtime_env_file
-    ports:
-      - "11883:1883"
-      - "18084:18083"
-      - "18083:8083"
-
   minio:
     env_file: *qa_runtime_env_file
     ports:
@@ -86,10 +79,6 @@ volumes:
     name: deasy_qa_mongodb_data
   rabbitmq_data:
     name: deasy_qa_rabbitmq_data
-  emqx_data:
-    name: deasy_qa_emqx_data
-  emqx_log:
-    name: deasy_qa_emqx_log
   minio_data:
     name: deasy_qa_minio_data
   backend_node_modules_v2:

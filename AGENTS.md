@@ -194,7 +194,7 @@
 ## Infraestructura y Docker rules
 
 ### Docker y servicios
-- Respetar la estructura actual de `docker/` y la integración con MariaDB, MongoDB, RabbitMQ, EMQX, MinIO y contenedores de aplicación.
+- Respetar la estructura actual de `docker/` y la integración con MariaDB, MongoDB, RabbitMQ, MinIO y contenedores de aplicación. El chat en tiempo real usa WebSockets (Socket.IO) integrados en el backend, no un broker externo.
 - No cambiar puertos, nombres de servicios, variables o dependencias sin justificación clara.
 - Si un cambio requiere ajuste de entorno, documentarlo explícitamente.
 

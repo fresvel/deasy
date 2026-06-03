@@ -240,6 +240,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
+import realtimeClient from '@/core/services/realtimeClient.js';
 import {
   IconArrowLeft,
   IconDownload,
@@ -280,6 +281,9 @@ const storedContext = ref({
   accessibleScopeUnitIds: []
 });
 let pollTimer = null;
+let offMessage = null;
+let offNotification = null;
+let subscribedConversationId = null;
 
 const modeOptions = ['processes', 'groups', 'users'];
 const modeLabels = {
@@ -380,10 +384,7 @@ const closePanel = () => {
   view.value = 'inbox';
   draft.value = '';
   pendingAttachments.value = [];
-  if (pollTimer) {
-    window.clearInterval(pollTimer);
-    pollTimer = null;
-  }
+  teardownConversationRealtime();
 };
 
 const resolveScopeUnitId = () => {
@@ -567,40 +568,95 @@ watch(
   { immediate: true }
 );
 
+const refreshActiveConversation = async (conversationId) => {
+  if (loading.value || submitting.value) return;
+  if (!conversationId || thread.value?.id !== conversationId) return;
+  try {
+    await loadMessages(conversationId);
+    await markRead(conversationId);
+  } catch {
+    // no-op: la próxima emisión o el fallback reintentarán
+  }
+};
+
+const teardownConversationRealtime = () => {
+  if (offMessage) {
+    offMessage();
+    offMessage = null;
+  }
+  if (subscribedConversationId) {
+    realtimeClient.unsubscribeConversation(subscribedConversationId);
+    subscribedConversationId = null;
+  }
+  if (pollTimer) {
+    window.clearInterval(pollTimer);
+    pollTimer = null;
+  }
+};
+
+const setupConversationRealtime = async (conversationId) => {
+  teardownConversationRealtime();
+  if (!conversationId) return;
+
+  realtimeClient.connect();
+  subscribedConversationId = conversationId;
+  await realtimeClient.subscribeConversation(conversationId);
+
+  // Evento en tiempo real: nuevo mensaje en la conversación abierta.
+  offMessage = realtimeClient.on('chat.message.created', (envelope) => {
+    const incomingId = envelope?.conversation?.id;
+    if (incomingId && incomingId === conversationId) {
+      refreshActiveConversation(conversationId);
+    }
+  });
+
+  // Red de seguridad: si el socket está caído, refresca a baja frecuencia.
+  pollTimer = window.setInterval(() => {
+    if (realtimeClient.isConnected()) return;
+    refreshActiveConversation(conversationId);
+  }, 60000);
+};
+
 watch(
   () => [showChat.value, view.value, thread.value?.id],
   () => {
-    if (pollTimer) {
-      window.clearInterval(pollTimer);
-      pollTimer = null;
-    }
     if (showChat.value && view.value === 'conversation' && thread.value?.id) {
-      pollTimer = window.setInterval(async () => {
-        if (loading.value || submitting.value || !thread.value?.id) return;
-        try {
-          await loadMessages(thread.value.id);
-          await markRead(thread.value.id);
-        } catch {
-          // no-op fallback polling
-        }
-      }, 12000);
+      setupConversationRealtime(thread.value.id);
+    } else {
+      teardownConversationRealtime();
     }
   },
   { immediate: true }
 );
 
+const handleRealtimeNotification = async () => {
+  // Refresca el badge de no leídos del hilo cuando llega un aviso mientras no
+  // se está viendo la conversación (esa vista ya se refresca por mensajes).
+  if (!showChat.value || view.value === 'conversation' || !storedContext.value.processId) return;
+  try {
+    const refreshed = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
+    thread.value = refreshed?.data || thread.value;
+  } catch {
+    // no-op
+  }
+};
+
 onMounted(() => {
   loadStoredContext();
+  realtimeClient.connect();
+  offNotification = realtimeClient.on('chat.notification.created', handleRealtimeNotification);
   window.addEventListener('storage', loadStoredContext);
   window.addEventListener('workspace-chat:open-process', handleOpenProcessEvent);
   window.addEventListener('workspace-chat:context-updated', handleStorageUpdateEvent);
 });
 
 onBeforeUnmount(() => {
-  if (pollTimer) {
-    window.clearInterval(pollTimer);
-    pollTimer = null;
+  teardownConversationRealtime();
+  if (offNotification) {
+    offNotification();
+    offNotification = null;
   }
+  realtimeClient.disconnect();
   window.removeEventListener('storage', loadStoredContext);
   window.removeEventListener('workspace-chat:open-process', handleOpenProcessEvent);
   window.removeEventListener('workspace-chat:context-updated', handleStorageUpdateEvent);
