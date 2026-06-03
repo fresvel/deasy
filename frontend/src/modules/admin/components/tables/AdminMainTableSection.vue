@@ -80,14 +80,7 @@
             </template>
 
             <template v-else-if="showAdvancedFilters && isTemplateArtifactsTable">
-              <div class="md:col-span-6 lg:col-span-2">
-                <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_origin" select-class="deasy-filter-control" @update:model-value="updateTemplateArtifactFilter('artifact_origin', $event)" @change="$emit('fetch-rows')">
-                  <option value="">Catalogo</option>
-                  <option value="process">process</option>
-                  <option value="general">general</option>
-                </AdminSelectField>
-              </div>
-              <div class="md:col-span-6 lg:col-span-2">
+              <div class="md:col-span-6 lg:col-span-3">
                 <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_stage" select-class="deasy-filter-control" @update:model-value="updateTemplateArtifactFilter('artifact_stage', $event)" @change="$emit('fetch-rows')">
                   <option value="">Etapa</option>
                   <option value="draft">draft</option>
@@ -270,10 +263,10 @@
                     size="sm"
                     icon-only
                     class-name="text-primary hope-action-btn hope-action-edit"
-                    :title="String(row?.artifact_origin || '') === 'process' ? 'Los artifacts de proceso se sincronizan desde MinIO' : 'Editar'"
-                    :aria-label="String(row?.artifact_origin || '') === 'process' ? 'Edicion bloqueada para artifacts de proceso' : 'Editar'"
-                    :disabled="String(row?.artifact_origin || '') === 'process'"
-                    @click="String(row?.artifact_origin || '') === 'process' ? undefined : $emit('open-edit', row)"
+                    :title="!row?.owner_ref ? 'Las plantillas oficiales del sistema se sincronizan desde MinIO' : 'Editar'"
+                    :aria-label="!row?.owner_ref ? 'Edicion bloqueada para plantillas del sistema' : 'Editar'"
+                    :disabled="!row?.owner_ref"
+                    @click="!row?.owner_ref ? undefined : $emit('open-edit', row)"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M11.4925 2.78906H7.75349C4.67849 2.78906 2.75049 4.96606 2.75049 8.04806V16.3621C2.75049 19.4441 4.66949 21.6211 7.75349 21.6211H16.5775C19.6625 21.6211 21.5815 19.4441 21.5815 16.3621V12.3341" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -357,11 +350,15 @@ const emit = defineEmits([
 
 const searchInputRef = ref(null);
 
+const showAdvancedFilters = ref(false);
+
 const searchColumnClass = computed(() => (
   props.isPositionFilterTable ? "lg:col-span-3" :
     props.isProcessDefinitionFilterTable ? "md:col-span-6 lg:col-span-2" :
       props.isProcessTargetRuleFilterTable ? "md:col-span-6 lg:col-span-3" :
-        props.isTemplateArtifactsTable ? "md:col-span-6 lg:col-span-3" :
+        // template_artifacts: con filtros ocultos imita a la tabla de seeds (search ancho); al
+        // expandir el filtro de etapa se estrecha para dar espacio.
+        props.isTemplateArtifactsTable ? (showAdvancedFilters.value ? "md:col-span-6 lg:col-span-3" : "md:col-span-6") :
           "md:col-span-6"
 ));
 
@@ -369,7 +366,7 @@ const actionColumnClass = computed(() => (
   props.isPositionFilterTable ? "lg:col-span-2 lg:justify-self-end" :
     props.isProcessDefinitionFilterTable ? "lg:col-span-3 lg:justify-self-end" :
       props.isProcessTargetRuleFilterTable ? "lg:col-span-3 lg:justify-self-end" :
-        props.isTemplateArtifactsTable ? "lg:col-span-3 lg:justify-self-end" :
+        props.isTemplateArtifactsTable ? (showAdvancedFilters.value ? "md:col-span-12 md:justify-self-end lg:col-span-6 lg:justify-self-end" : "md:col-span-6 md:justify-self-end") :
           "md:col-span-6 md:justify-self-end"
 ));
 const hasExpandableFilters = computed(() =>
@@ -378,7 +375,6 @@ const hasExpandableFilters = computed(() =>
   props.isProcessTargetRuleFilterTable ||
   props.isTemplateArtifactsTable
 );
-const showAdvancedFilters = ref(false);
 
 const updateUnitPositionFilter = (field, value) => emit("update:unit-position-filters", { ...props.unitPositionFilters, [field]: value });
 const updateProcessDefinitionFilter = (field, value) => emit("update:process-definition-inline-filters", { ...props.processDefinitionInlineFilters, [field]: value });

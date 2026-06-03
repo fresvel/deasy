@@ -11,6 +11,7 @@ import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   createDocumentInstanceForTaskItem,
   hydrateTaskFromDefinition,
+  hydrateGeneralTask,
   resolveOriginUnitIdForTaskItem,
   resolveOwnerPersonIdForTaskItem
 } from "../../services/admin/TaskGenerationService.js";
@@ -21,7 +22,8 @@ import {
   minioClient,
   uploadFileToMinio,
   statMinioObject,
-  getMinioObjectStream
+  getMinioObjectStream,
+  removeMinioObject
 } from "../../services/storage/minio_service.js";
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
 import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
@@ -596,14 +598,12 @@ const getDefinitionTemplates = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
        pdt.id,
-       pdt.usage_role,
        pdt.instance_mode,
        pdt.creates_task,
        pdt.is_required,
        pdt.sort_order,
        tar.id AS template_artifact_id,
        tar.display_name AS template_artifact_name,
-       tar.artifact_origin,
        tar.artifact_stage,
        COUNT(DISTINCT sft.id) AS signature_flow_count
      FROM process_definition_templates pdt
@@ -614,14 +614,12 @@ const getDefinitionTemplates = async (pool, definitionId) => {
      WHERE pdt.process_definition_id = ?
      GROUP BY
        pdt.id,
-       pdt.usage_role,
        pdt.instance_mode,
        pdt.creates_task,
        pdt.is_required,
        pdt.sort_order,
        tar.id,
        tar.display_name,
-       tar.artifact_origin,
        tar.artifact_stage
      ORDER BY pdt.sort_order ASC, pdt.id ASC`,
     [definitionId]
@@ -659,7 +657,6 @@ const getUserOwnedTemplateArtifacts = async (pool, userId) => {
        created_at
      FROM template_artifacts
      WHERE owner_person_id = ?
-       AND artifact_origin = 'general'
        AND is_active = 1
      ORDER BY created_at DESC, id DESC
      LIMIT 12`,
@@ -763,7 +760,6 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.process_definition_template_id,
        ti.template_artifact_id,
        tar.template_seed_id,
-       ti.template_usage_role,
        pdt.instance_mode,
        ti.sort_order,
        ti.responsible_position_id,
@@ -911,7 +907,6 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
        t.id AS task_id,
        t.term_id,
        ti.process_definition_template_id,
-       ti.template_usage_role,
        pdt.instance_mode,
        ti.template_artifact_id,
        ti.start_date,
@@ -1246,6 +1241,22 @@ const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionI
   return rows;
 };
 
+const getAttachmentsForDocumentVersions = async (pool, documentVersionIds) => {
+  if (!documentVersionIds.length) {
+    return [];
+  }
+  const placeholders = documentVersionIds.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT id, document_version_id, kind, file_path, file_name, mime_type,
+            size_bytes, description, uploaded_by_person_id, sort_order, created_at
+     FROM document_attachments
+     WHERE document_version_id IN (${placeholders})
+     ORDER BY sort_order ASC, id ASC`,
+    documentVersionIds
+  );
+  return rows || [];
+};
+
 const getFillWorkflowStepsForDocumentVersions = async (pool, documentVersionIds) => {
   if (!documentVersionIds.length) {
     return [];
@@ -1553,14 +1564,6 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       }
     ])
   );
-  const documentsByTaskItemId = new Map();
-  taskItemDocuments.forEach((document) => {
-    const key = Number(document.task_item_id || 0);
-    if (!documentsByTaskItemId.has(key)) {
-      documentsByTaskItemId.set(key, []);
-    }
-    documentsByTaskItemId.get(key).push(document);
-  });
 
   const fillWorkflowSteps = await getFillWorkflowStepsForDocumentVersions(
     pool,
@@ -1573,6 +1576,27 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
     .filter((id) => id > 0);
   const signatureWorkflowRequests = await getSignatureWorkflowRequestsForDocumentVersions(pool, documentVersionIds);
   const signatureWorkflowSteps = await getSignatureWorkflowStepsForDocumentVersions(pool, documentVersionIds);
+  const documentAttachments = await getAttachmentsForDocumentVersions(pool, documentVersionIds);
+  const attachmentsByDocumentVersion = new Map();
+  documentAttachments.forEach((row) => {
+    const key = Number(row.document_version_id);
+    if (!attachmentsByDocumentVersion.has(key)) {
+      attachmentsByDocumentVersion.set(key, []);
+    }
+    attachmentsByDocumentVersion.get(key).push({
+      id: Number(row.id),
+      document_version_id: key,
+      kind: row.kind,
+      file_path: row.file_path,
+      file_name: row.file_name,
+      mime_type: row.mime_type || null,
+      size_bytes: row.size_bytes != null ? Number(row.size_bytes) : null,
+      description: row.description || null,
+      uploaded_by_person_id: row.uploaded_by_person_id != null ? Number(row.uploaded_by_person_id) : null,
+      sort_order: Number(row.sort_order || 1),
+      created_at: row.created_at,
+    });
+  });
   const fillRequestsByDocumentVersion = new Map();
   fillRequests.forEach((request) => {
     const key = Number(request.document_version_id);
@@ -1675,6 +1699,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       const relatedSignatureRequests = signatureWorkflowRequestsByDocumentVersion.get(documentVersionId) || [];
       const relatedSignatureSteps = signatureWorkflowStepsByDocumentVersion.get(documentVersionId) || [];
       const relatedUserSignatures = userSignaturesByDocumentVersion.get(documentVersionId) || [];
+      const relatedAttachments = attachmentsByDocumentVersion.get(documentVersionId) || [];
       const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = fillWorkflowByDocumentVersion.get(documentVersionId) || {
         status: null,
@@ -1683,7 +1708,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       };
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
       const canSign = relatedUserSignatures.some((request) => !request.responded_at);
-      const canUploadDeliverable = ["primary", "attachment"].includes(String(taskItem?.template_usage_role || ""));
+      // Todo entregable de proceso admite carga manual (usage_role deprecado, siempre 'primary').
+      const canUploadDeliverable = true;
       const canResetWorkflow = canCurrentUserResetWorkflow({
         userId,
         fillWorkflow,
@@ -1699,7 +1725,6 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         unit_label: item.origin_unit_label || null,
         template_artifact_id: taskItem?.template_artifact_id || null,
         template_artifact_name: taskItem?.template_artifact_name || null,
-        template_usage_role: taskItem?.template_usage_role || null,
         instance_mode: taskItem?.instance_mode || "single_document",
         start_date: taskItem?.start_date || null,
         end_date: taskItem?.end_date || null,
@@ -1713,6 +1738,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         total_signature_count: item.total_signature_count,
         pending_fill_count: relatedFillRequests.filter((request) => !request.responded_at).length,
         total_fill_count: relatedFillRequests.length,
+        attachments: relatedAttachments,
+        attachment_count: relatedAttachments.length,
         workflow: {
           fill_requests: relatedFillRequests,
           fill_flow: fillWorkflow,
@@ -1747,6 +1774,15 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         }
       };
     });
+  // Agrupa los documentos ya enriquecidos (incluyen attachments) por task_item.
+  const documentsByTaskItemId = new Map();
+  documents.forEach((document) => {
+    const key = Number(document.task_item_id || 0);
+    if (!documentsByTaskItemId.has(key)) {
+      documentsByTaskItemId.set(key, []);
+    }
+    documentsByTaskItemId.get(key).push(document);
+  });
   const enrichedTasks = tasks.map((task) => {
     const items = (taskItemsByTask.get(task.id) || []).map((item) => {
       const relatedDocuments = documentsByTaskItemId.get(Number(item.id)) || [];
@@ -1762,7 +1798,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         : { status: null, current_step_order: null, steps: [] };
       const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
       const canSign = relatedUserSignatures.some((request) => !request.responded_at);
-      const canUploadDeliverable = ["primary", "attachment"].includes(String(item.template_usage_role || ""));
+      // Todo entregable de proceso admite carga manual (usage_role deprecado, siempre 'primary').
+      const canUploadDeliverable = true;
       const canResetWorkflow = canCurrentUserResetWorkflow({
         userId,
         fillWorkflow,
@@ -1803,6 +1840,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         unit_label: relatedDocument?.unit_label ?? item.origin_unit_label ?? item.unit_label ?? task.responsible_unit_label ?? null,
         instance_mode: item.instance_mode || "single_document",
         document_count: relatedDocuments.length,
+        attachments: relatedDocument?.attachments || [],
+        attachment_count: relatedDocument?.attachment_count ?? (relatedDocument?.attachments?.length || 0),
         can_create_document_instance: isOwnerManyDocuments && Number(item.resolved_owner_person_id || 0) === Number(userId),
         participation: participationByTaskItemId.get(Number(item.id)) || {
           has_past_fill: false,
@@ -2805,13 +2844,7 @@ export const uploadDeliverablePdf = async (req, res) => {
       });
     }
 
-    const normalizedRole = String(target.template_usage_role || "").trim().toLowerCase();
-    if (!["primary", "attachment"].includes(normalizedRole)) {
-      return res.status(400).json({
-        message: "Este entregable no requiere carga manual de archivos."
-      });
-    }
-
+    // usage_role deprecado: todo entregable de proceso (siempre 'primary') admite carga manual.
     if (!target.scope_unit_id || !target.process_id || !target.term_id || !target.term_type_id || !target.task_id || !target.document_id) {
       return res.status(400).json({
         message: "No se pudo determinar la ruta documental canónica para este entregable."
@@ -3181,5 +3214,468 @@ export const getMyProfile = async (req, res) => {
     res.status(500).json({
       message: "Error obteniendo perfil"
     });
+  }
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// Anexos heterogéneos del entregable (document_attachments).
+// Archivos auxiliares (evidencias, soportes) adicionales al documento principal.
+// ──────────────────────────────────────────────────────────────────────────
+
+const ATTACHMENT_ALLOWED_KINDS = new Set(["annex", "evidence", "source", "other"]);
+
+const buildAttachmentObjectPath = ({ basePath, originalName, extension }) => {
+  const safeOriginalName = sanitizeStorageSegment(originalName, `anexo.${extension || "bin"}`);
+  const safeExtension = sanitizeStorageSegment(extension || "bin", "bin").toLowerCase();
+  return [
+    basePath,
+    "attachments",
+    safeExtension,
+    `${Date.now()}-${randomUUID()}-${safeOriginalName}`
+  ].join("/");
+};
+
+const mapAttachmentRow = (row) => ({
+  id: Number(row.id),
+  document_version_id: Number(row.document_version_id),
+  kind: row.kind,
+  file_path: row.file_path,
+  file_name: row.file_name,
+  mime_type: row.mime_type || null,
+  size_bytes: row.size_bytes != null ? Number(row.size_bytes) : null,
+  description: row.description || null,
+  uploaded_by_person_id: row.uploaded_by_person_id != null ? Number(row.uploaded_by_person_id) : null,
+  sort_order: Number(row.sort_order || 1),
+  created_at: row.created_at,
+});
+
+export const listDeliverableAttachments = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  const documentId = Number(req.query?.document_id || 0) || null;
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para consultar los anexos." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
+    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+  }
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+
+  try {
+    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId, { documentId });
+    if (!target?.document_version_id) {
+      return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
+    }
+    const [rows] = await pool.query(
+      `SELECT * FROM document_attachments
+       WHERE document_version_id = ?
+       ORDER BY sort_order ASC, id ASC`,
+      [Number(target.document_version_id)]
+    );
+    return res.json({
+      document_version_id: Number(target.document_version_id),
+      attachments: (rows || []).map(mapAttachmentRow),
+    });
+  } catch (error) {
+    console.error("Error al listar los anexos del entregable:", error);
+    return res.status(500).json({ message: "No se pudieron listar los anexos.", error: error.message });
+  }
+};
+
+export const uploadDeliverableAttachment = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  const documentId = Number(req.body?.document_id || req.query?.document_id || 0) || null;
+  const requestedKind = String(req.body?.kind || "annex").trim().toLowerCase();
+  const description = String(req.body?.description || "").trim().slice(0, 255) || null;
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para subir anexos." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
+    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+  }
+  const uploadedFile = req.file;
+  if (!uploadedFile) {
+    return res.status(400).json({ message: "Debes seleccionar un archivo para el anexo." });
+  }
+  const kind = ATTACHMENT_ALLOWED_KINDS.has(requestedKind) ? requestedKind : "annex";
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    await fs.remove(uploadedFile.path).catch(() => {});
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    const target = await getAccessibleTaskItemDocumentForUser(connection, authenticatedUserId, definitionId, taskItemId, { documentId });
+    if (!target?.document_version_id) {
+      return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
+    }
+    if (target.requires_document_selection) {
+      return res.status(409).json({
+        message: "Debes seleccionar la instancia documental sobre la que deseas adjuntar el archivo.",
+        requires_document_selection: true,
+      });
+    }
+    if (!target.scope_unit_id || !target.process_id || !target.term_id || !target.term_type_id || !target.task_id || !target.document_id) {
+      return res.status(400).json({ message: "No se pudo determinar la ruta documental canónica para este entregable." });
+    }
+
+    const originalName = String(uploadedFile.originalname || "anexo");
+    const extension = path.extname(originalName).replace(/^\./, "").toLowerCase() || "bin";
+    const relativeObjectPath = buildAttachmentObjectPath({
+      basePath: buildCanonicalDocumentVersionBasePath(target),
+      originalName,
+      extension
+    });
+    const minioObjectName = `${MINIO_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
+
+    await ensureBucketExists(MINIO_DOCUMENTS_BUCKET);
+    await uploadFileToMinio(MINIO_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
+      "Content-Type": uploadedFile.mimetype || "application/octet-stream",
+      "Original-Name": originalName
+    });
+
+    const [orderRows] = await connection.query(
+      `SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order
+       FROM document_attachments WHERE document_version_id = ?`,
+      [Number(target.document_version_id)]
+    );
+    const sortOrder = Number(orderRows?.[0]?.next_order || 1);
+
+    const [insertResult] = await connection.query(
+      `INSERT INTO document_attachments
+        (document_version_id, kind, file_path, file_name, mime_type, size_bytes, description, uploaded_by_person_id, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        Number(target.document_version_id),
+        kind,
+        relativeObjectPath,
+        originalName.slice(0, 255),
+        (uploadedFile.mimetype || null)?.slice(0, 120) || null,
+        Number(uploadedFile.size || 0) || null,
+        description,
+        authenticatedUserId,
+        sortOrder
+      ]
+    );
+
+    return res.json({
+      message: "El anexo se cargó correctamente.",
+      attachment: {
+        id: Number(insertResult.insertId),
+        document_version_id: Number(target.document_version_id),
+        kind,
+        file_path: relativeObjectPath,
+        file_name: originalName,
+        mime_type: uploadedFile.mimetype || null,
+        size_bytes: Number(uploadedFile.size || 0) || null,
+        description,
+        uploaded_by_person_id: authenticatedUserId,
+        sort_order: sortOrder,
+      }
+    });
+  } catch (error) {
+    console.error("Error al subir el anexo del entregable:", error);
+    return res.status(500).json({ message: "No se pudo cargar el anexo.", error: error.message });
+  } finally {
+    connection.release();
+    await fs.remove(uploadedFile.path).catch(() => {});
+  }
+};
+
+export const deleteDeliverableAttachment = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  const attachmentId = Number(req.params?.attachmentId);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para eliminar anexos." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId) || !attachmentId || Number.isNaN(attachmentId)) {
+    return res.status(400).json({ message: "Se requieren la definición, el entregable y el anexo." });
+  }
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+
+  try {
+    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId, {});
+    if (!target?.task_item_id) {
+      return res.status(404).json({ message: "No se encontró el entregable." });
+    }
+    // El anexo debe pertenecer a una versión documental de este task_item (cualquier instancia).
+    const [rows] = await pool.query(
+      `SELECT da.id, da.file_path
+       FROM document_attachments da
+       INNER JOIN document_versions dv ON dv.id = da.document_version_id
+       INNER JOIN documents d ON d.id = dv.document_id
+       WHERE da.id = ? AND d.task_item_id = ?
+       LIMIT 1`,
+      [attachmentId, Number(target.task_item_id)]
+    );
+    const attachment = rows?.[0];
+    if (!attachment) {
+      return res.status(404).json({ message: "El anexo no existe o no pertenece a este entregable." });
+    }
+
+    await pool.query(`DELETE FROM document_attachments WHERE id = ?`, [attachmentId]);
+
+    const resolved = resolveStoredDocumentObject(attachment.file_path);
+    if (resolved) {
+      await removeMinioObject(resolved.bucket, resolved.objectName).catch((err) => {
+        console.warn("No se pudo eliminar el objeto del anexo en MinIO:", err?.message);
+      });
+    }
+
+    return res.json({ message: "El anexo se eliminó correctamente.", attachment_id: attachmentId });
+  } catch (error) {
+    console.error("Error al eliminar el anexo del entregable:", error);
+    return res.status(500).json({ message: "No se pudo eliminar el anexo.", error: error.message });
+  }
+};
+
+export const downloadDeliverableAttachment = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  const attachmentId = Number(req.params?.attachmentId);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para descargar el anexo." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId) || !attachmentId || Number.isNaN(attachmentId)) {
+    return res.status(400).json({ message: "Se requieren la definición, el entregable y el anexo." });
+  }
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+
+  try {
+    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId, {});
+    if (!target?.task_item_id) {
+      return res.status(404).json({ message: "No se encontró el entregable." });
+    }
+    const [rows] = await pool.query(
+      `SELECT da.file_path, da.file_name, da.mime_type
+       FROM document_attachments da
+       INNER JOIN document_versions dv ON dv.id = da.document_version_id
+       INNER JOIN documents d ON d.id = dv.document_id
+       WHERE da.id = ? AND d.task_item_id = ?
+       LIMIT 1`,
+      [attachmentId, Number(target.task_item_id)]
+    );
+    const attachment = rows?.[0];
+    if (!attachment) {
+      return res.status(404).json({ message: "El anexo no existe o no pertenece a este entregable." });
+    }
+
+    const resolved = resolveStoredDocumentObject(attachment.file_path);
+    if (!resolved) {
+      return res.status(404).json({ message: "No se pudo resolver la ruta del anexo." });
+    }
+    const stat = await statMinioObject(resolved.bucket, resolved.objectName).catch(() => null);
+    if (!stat) {
+      return res.status(404).json({ message: "El archivo del anexo no se encontró en almacenamiento." });
+    }
+
+    const stream = await getMinioObjectStream(resolved.bucket, resolved.objectName);
+    const fileName = attachment.file_name || path.basename(resolved.objectName);
+    const contentType = attachment.mime_type
+      || stat?.metaData?.["content-type"]
+      || "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Length", stat.size);
+    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    stream.on("error", (streamError) => {
+      console.error("Error transmitiendo el anexo:", streamError);
+      if (!res.headersSent) res.status(500).json({ message: "No se pudo transmitir el anexo." });
+      else res.destroy(streamError);
+    });
+    stream.pipe(res);
+  } catch (error) {
+    console.error("Error al descargar el anexo del entregable:", error);
+    return res.status(500).json({ message: "No se pudo descargar el anexo.", error: error.message });
+  }
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// Fase B: tareas libres (proceso General) y derivadas de un entregable.
+// - Libre (3c): tarea del proceso General, periodo custom, asignada al creador.
+// - Derivada (3b): igual pero parent_task_id = tarea del entregable origen,
+//   heredando la unidad/contexto de ese entregable.
+// ──────────────────────────────────────────────────────────────────────────
+
+const GENERAL_PROCESS_SLUG = "default";
+
+const getActiveGeneralDefinition = async (conn) => {
+  const [rows] = await conn.query(
+    `SELECT pdv.id
+     FROM process_definition_versions pdv
+     INNER JOIN processes p ON p.id = pdv.process_id
+     WHERE p.slug = ? AND pdv.status = 'active'
+     ORDER BY pdv.id DESC
+     LIMIT 1`,
+    [GENERAL_PROCESS_SLUG]
+  );
+  return rows?.[0]?.id ? Number(rows[0].id) : null;
+};
+
+// Resuelve la posición vigente del usuario en una unidad concreta.
+const resolveUserPositionInUnit = async (conn, personId, unitId) => {
+  if (!unitId) return null;
+  const [rows] = await conn.query(
+    `SELECT up.id
+     FROM position_assignments pa
+     INNER JOIN unit_positions up ON up.id = pa.position_id
+     WHERE pa.person_id = ? AND pa.is_current = 1 AND up.unit_id = ?
+     ORDER BY up.id ASC
+     LIMIT 1`,
+    [personId, unitId]
+  );
+  return rows?.[0]?.id ? Number(rows[0].id) : null;
+};
+
+export const createGeneralTask = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado para crear la tarea." });
+  }
+
+  const mode = String(req.body?.mode || "free").trim().toLowerCase(); // 'free' | 'derived'
+  const title = String(req.body?.title || "").trim();
+  const description = String(req.body?.description || "").trim() || null;
+  const customTerm = req.body?.custom_term ?? null;
+  const parentTaskId = req.body?.parent_task_id ? Number(req.body.parent_task_id) : null;
+  const requestedUnitId = req.body?.unit_id ? Number(req.body.unit_id) : null;
+
+  if (!title) {
+    return res.status(400).json({ message: "Debes indicar un título para la tarea." });
+  }
+  if (mode === "derived" && (!parentTaskId || Number.isNaN(parentTaskId))) {
+    return res.status(400).json({ message: "Se requiere la tarea de origen para una tarea derivada." });
+  }
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const definitionId = await getActiveGeneralDefinition(connection);
+    if (!definitionId) {
+      throw new Error("El proceso General no está disponible. Ejecuta el seed correspondiente.");
+    }
+
+    // Resolver unidad de contexto.
+    let unitId = requestedUnitId;
+    if (mode === "derived") {
+      // Hereda la unidad de la tarea/entregable de origen.
+      const [parentRows] = await connection.query(
+        `SELECT t.id, rp.unit_id AS responsible_unit_id
+         FROM tasks t
+         LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
+         WHERE t.id = ?
+         LIMIT 1`,
+        [parentTaskId]
+      );
+      const parent = parentRows?.[0];
+      if (!parent) {
+        throw new Error("La tarea de origen no existe.");
+      }
+      unitId = parent.responsible_unit_id || requestedUnitId || null;
+    }
+
+    // Posición del creador en la unidad (responsable de la nueva tarea).
+    const responsiblePositionId = await resolveUserPositionInUnit(connection, authenticatedUserId, unitId);
+    if (!responsiblePositionId) {
+      throw new Error("No tienes una posición vigente en la unidad indicada para crear esta tarea.");
+    }
+
+    // Periodo: custom obligatorio para tareas libres/derivadas.
+    const customType = await getCustomTermType(connection);
+    if (!customType) {
+      throw new Error("No existe el tipo de periodo Custom.");
+    }
+    const displayTermName = String(customTerm?.name || title).trim();
+    const startDate = String(customTerm?.start_date || "").trim() || new Date().toISOString().slice(0, 10);
+    // terms.end_date es NOT NULL: si no se indica, usa la fecha de inicio.
+    const endDate = String(customTerm?.end_date || "").trim() || startDate;
+    // terms.name es UNIQUE global: para tareas libres se sufija para evitar colisiones
+    // entre usuarios/tareas. El nombre legible se conserva en term_name visible vía el periodo.
+    const uniqueTermName = `${displayTermName} · #${authenticatedUserId}-${Date.now().toString(36)}`.slice(0, 180);
+
+    const [termResult] = await connection.query(
+      `INSERT INTO terms (name, term_type_id, start_date, end_date, is_active)
+       VALUES (?, ?, ?, ?, 1)`,
+      [uniqueTermName, customType.id, startDate, endDate]
+    );
+    const termId = Number(termResult.insertId);
+
+    const [taskResult] = await connection.query(
+      `INSERT INTO tasks (
+         process_definition_id, term_id, launch_mode, created_by_user_id,
+         parent_task_id, responsible_position_id, description, start_date, end_date, status
+       ) VALUES (?, ?, 'manual', ?, ?, ?, ?, ?, ?, 'pendiente')`,
+      [
+        definitionId,
+        termId,
+        authenticatedUserId,
+        mode === "derived" ? parentTaskId : null,
+        responsiblePositionId,
+        description ? `${title}\n\n${description}` : title,
+        startDate,
+        endDate,
+      ]
+    );
+    const taskId = Number(taskResult.insertId);
+
+    // Materializa el task_item contenedor + documento + versión (para colgar anexos),
+    // asignando únicamente al creador (sin aplicar target rules de la definición).
+    const hydrated = await hydrateGeneralTask({
+      connection,
+      taskId,
+      processDefinitionId: definitionId,
+      responsiblePositionId,
+      startDate,
+      endDate,
+    });
+
+    await connection.commit();
+
+    return res.json({
+      result: "ok",
+      mode,
+      task_id: taskId,
+      term_id: termId,
+      definition_id: definitionId,
+      unit_id: unitId,
+      responsible_position_id: responsiblePositionId,
+      hydration: hydrated,
+    });
+  } catch (error) {
+    await connection.rollback().catch(() => {});
+    console.error("Error creando tarea general:", error);
+    return res.status(400).json({ message: error.message || "No se pudo crear la tarea." });
+  } finally {
+    connection.release();
   }
 };

@@ -12,6 +12,7 @@ import {
   IconDownload,
   IconFileDescription,
   IconMessages,
+  IconPaperclip,
 } from '@tabler/icons-vue';
 
 const UPLOAD_ACCEPT = [
@@ -66,6 +67,13 @@ const h = props.helpers;
               </span>
               <span class="truncate text-[0.7rem] font-semibold uppercase tracking-[0.14em]" :class="h.getDeliverableCardTone(deliverable.item).responsibilityLabel">
                 {{ h.getDeliverableUnitLabel(deliverable.item) || 'Unidad' }}
+              </span>
+              <span
+                v-if="deliverable.item.attachment_count"
+                class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.62rem] font-bold text-slate-500"
+                :title="`${deliverable.item.attachment_count} anexo(s)`"
+              >
+                <IconPaperclip class="h-3 w-3" />{{ deliverable.item.attachment_count }}
               </span>
             </div>
             <p class="m-0 line-clamp-2 text-[0.95rem] font-semibold leading-snug text-slate-800" :title="deliverable.item.template_artifact_name">

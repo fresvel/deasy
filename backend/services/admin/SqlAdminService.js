@@ -61,6 +61,154 @@ const ARTIFACT_WORKFLOW_CONTRACT = [
   "  templates: []",
   "  data: []"
 ].join("\n");
+
+// Escapa un valor escalar para YAML entre comillas dobles.
+const yamlQuote = (value) => `"${String(value ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+
+// Genera el bloque YAML `workflows:` (fill + signatures) a partir de los flujos definidos
+// en el editor web. Produce la misma estructura que consumen normalizeFillSteps/normalizeSignatureSteps.
+const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
+  const lines = ["workflows:"];
+
+  // ── Fill ──
+  const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
+  const fillRequired = fillWorkflow?.required !== false;
+  lines.push("  fill:");
+  lines.push(`    required: ${fillRequired ? "true" : "false"}`);
+  lines.push('    source: "artifact"');
+  lines.push('    sync_mode: "artifact_to_db"');
+  if (!fillSteps.length) {
+    lines.push("    steps: []");
+  } else {
+    lines.push("    steps:");
+    fillSteps.forEach((step, index) => {
+      const order = Number(step?.order) || index + 1;
+      lines.push(`      - order: ${order}`);
+      if (step?.code) lines.push(`        code: ${yamlQuote(step.code)}`);
+      lines.push(`        name: ${yamlQuote(step?.name || `Paso ${order}`)}`);
+      lines.push("        resolver:");
+      lines.push(`          type: ${yamlQuote(step?.resolver_type || "task_assignee")}`);
+      lines.push(`          selection_mode: ${yamlQuote(step?.selection_mode || "auto_one")}`);
+      if (step?.resolver_type === "cargo_in_scope") {
+        if (step?.cargo_code) lines.push(`          cargo_code: ${yamlQuote(step.cargo_code)}`);
+        lines.push(`          unit_scope_type: ${yamlQuote(step?.unit_scope_type || "unit_exact")}`);
+      }
+      if (step?.resolver_type === "specific_person" && step?.person_id) {
+        lines.push(`          person_id: ${Number(step.person_id)}`);
+      }
+      if (step?.resolver_type === "position" && step?.position_id) {
+        lines.push(`          position_id: ${Number(step.position_id)}`);
+      }
+      const fieldRefs = Array.isArray(step?.field_refs) ? step.field_refs.filter(Boolean) : [];
+      if (fieldRefs.length) {
+        lines.push("        field_refs:");
+        fieldRefs.forEach((ref) => lines.push(`          - ${yamlQuote(ref)}`));
+      }
+      lines.push(`        required: ${step?.required === false ? "false" : "true"}`);
+      lines.push(`        can_reject: ${step?.can_reject === false ? "false" : "true"}`);
+    });
+  }
+
+  // ── Signatures ──
+  const sigSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [];
+  const sigRequired = signatureWorkflow?.required === true && sigSteps.length > 0;
+  lines.push("  signatures:");
+  lines.push(`    required: ${sigRequired ? "true" : "false"}`);
+  lines.push('    source: "artifact"');
+  lines.push('    sync_mode: "artifact_to_db"');
+  // Anchors por token (cada anchor referencia un campo del schema que marca la posición).
+  const anchors = Array.isArray(signatureWorkflow?.anchors) ? signatureWorkflow.anchors : [];
+  if (anchors.length) {
+    lines.push("    anchors:");
+    anchors.forEach((anchor) => {
+      if (!anchor?.code || !anchor?.token_field_ref) return;
+      lines.push(`      - code: ${yamlQuote(anchor.code)}`);
+      lines.push("        placement:");
+      lines.push('          strategy: "token"');
+      lines.push(`          token_field_ref: ${yamlQuote(anchor.token_field_ref)}`);
+      lines.push("        size:");
+      lines.push(`          width: ${Number(anchor.width) || 124}`);
+      lines.push(`          height: ${Number(anchor.height) || 48}`);
+    });
+  }
+  if (!sigSteps.length) {
+    lines.push("    steps: []");
+  } else {
+    lines.push("    steps:");
+    sigSteps.forEach((step, index) => {
+      const order = Number(step?.order) || index + 1;
+      lines.push(`      - order: ${order}`);
+      if (step?.code) lines.push(`        code: ${yamlQuote(step.code)}`);
+      lines.push(`        name: ${yamlQuote(step?.name || `Firma ${order}`)}`);
+      lines.push(`        step_type_code: ${yamlQuote(step?.step_type_code || "electronic")}`);
+      if (step?.required_cargo_code) lines.push(`        required_cargo_code: ${yamlQuote(step.required_cargo_code)}`);
+      lines.push(`        selection_mode: ${yamlQuote(step?.selection_mode || "auto_all")}`);
+      lines.push(`        required_signers_min: ${Number(step?.required_signers_min) || 1}`);
+      lines.push(`        required_signers_max: ${Number(step?.required_signers_max) || 1}`);
+      lines.push(`        required: ${step?.required === false ? "false" : "true"}`);
+      const anchorRefs = Array.isArray(step?.anchor_refs) ? step.anchor_refs.filter(Boolean) : [];
+      if (anchorRefs.length) {
+        lines.push("        anchor_refs:");
+        anchorRefs.forEach((ref) => lines.push(`          - ${yamlQuote(ref)}`));
+      }
+    });
+  }
+
+  lines.push("dependencies:");
+  lines.push("  templates: []");
+  lines.push("  data: []");
+  return lines.join("\n");
+};
+
+// Componentes UI permitidos para los campos del schema editados desde la web.
+const SCHEMA_FIELD_COMPONENTS = new Set([
+  "text", "richtext", "textarea", "number", "switch", "date", "date_expression", "select", "hidden"
+]);
+
+const slugifyFieldKey = (value, fallback = "campo") => {
+  const base = String(value || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return base || fallback;
+};
+
+// Convierte la lista de campos definida en la web en un JSON Schema con extensiones x-deasy-*.
+// Cada field: { key, title, type, component, group, required }
+const buildSchemaJsonFromFields = (fields = []) => {
+  const properties = {};
+  const required = [];
+  const seen = new Set();
+  (Array.isArray(fields) ? fields : []).forEach((rawField, index) => {
+    const dataKey = slugifyFieldKey(rawField?.key || rawField?.title, `campo_${index + 1}`);
+    if (seen.has(dataKey)) return;
+    seen.add(dataKey);
+    const component = SCHEMA_FIELD_COMPONENTS.has(String(rawField?.component || "").trim())
+      ? String(rawField.component).trim()
+      : "text";
+    const group = slugifyFieldKey(rawField?.group || "general", "general");
+    const jsonType = component === "switch" ? "boolean"
+      : component === "number" ? "number"
+      : "string";
+    const fieldCode = String(rawField?.field_code || `${group}.${dataKey}`).trim();
+    properties[dataKey] = {
+      type: jsonType,
+      title: String(rawField?.title || dataKey).slice(0, 180),
+      "x-deasy-field-code": fieldCode,
+      "x-deasy-data-key": dataKey,
+      "x-deasy-ui": { component, group },
+    };
+    if (rawField?.required) required.push(dataKey);
+  });
+  return {
+    type: "object",
+    properties,
+    required,
+    additionalProperties: true,
+  };
+};
+
 const FILL_RESOLVER_TYPES = new Set([
   "task_assignee",
   "document_owner",
@@ -268,6 +416,26 @@ const fPutObject = (bucket, objectName, filePath) => new Promise((resolve, rejec
     resolve(etag);
   });
 });
+
+const putMinioObjectFromText = (bucket, objectName, text, contentType = "text/plain") => new Promise((resolve, reject) => {
+  const buffer = Buffer.from(String(text ?? ""), "utf8");
+  getMinioClient().putObject(bucket, objectName, buffer, buffer.length, { "Content-Type": contentType }, (error, etag) => {
+    if (error) {
+      reject(error);
+      return;
+    }
+    resolve(etag);
+  });
+});
+
+// Transiciones de stage permitidas (lineal + reversas razonables + archivar desde cualquiera).
+const ARTIFACT_STAGE_TRANSITIONS = {
+  draft: ["review", "archived"],
+  review: ["approved", "draft", "archived"],
+  approved: ["published", "review", "archived"],
+  published: ["archived", "approved"],
+  archived: ["draft"],
+};
 
 const ensureMinioBucket = (bucket) => new Promise((resolve, reject) => {
   getMinioClient().bucketExists(bucket, (checkError, exists) => {
@@ -879,9 +1047,6 @@ const validateTableRules = (tableName, candidate) => {
         if (!availableFormats || !Object.keys(availableFormats).length) {
           throw new Error("Debes registrar al menos un formato disponible en available_formats.");
         }
-        if (!candidate.artifact_origin) {
-          candidate.artifact_origin = candidate.owner_ref ? "general" : "process";
-        }
       }
       break;
     default:
@@ -1197,7 +1362,7 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, template_artifact_id, usage_role, instance_mode, sort_order, creates_task
+      `SELECT id, process_definition_id, template_artifact_id, instance_mode, sort_order, creates_task
        FROM process_definition_templates
        WHERE id = ?
        LIMIT 1`,
@@ -1367,7 +1532,7 @@ export default class SqlAdminService {
     }
 
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, usage_role, instance_mode, creates_task, is_required, sort_order
+      `SELECT template_artifact_id, instance_mode, creates_task, is_required, sort_order
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -1379,16 +1544,14 @@ export default class SqlAdminService {
         `INSERT INTO process_definition_templates (
           process_definition_id,
           template_artifact_id,
-          usage_role,
           instance_mode,
           creates_task,
           is_required,
           sort_order
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.template_artifact_id,
-          row.usage_role,
           row.instance_mode || "single_document",
           row.creates_task,
           row.is_required,
@@ -1760,7 +1923,6 @@ export default class SqlAdminService {
         throw new Error("La plantilla seleccionada no pertenece a la definicion de proceso de la tarea.");
       }
       payload.template_artifact_id = template.template_artifact_id;
-      payload.template_usage_role = template.usage_role;
       if (!payload.start_date) {
         payload.start_date = task.start_date;
       }
@@ -2301,14 +2463,10 @@ export default class SqlAdminService {
       updates.code = code;
     }
     if (tableName === "template_artifacts") {
-      if (String(existing.artifact_origin || "process") === "process") {
-        throw new Error("Los artifacts de proceso se sincronizan desde MinIO y no se pueden editar manualmente.");
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, "artifact_origin")) {
-        if (String(updates.artifact_origin || "") !== String(existing.artifact_origin || "")) {
-          throw new Error("No se puede cambiar el origen del artifact.");
-        }
-        delete updates.artifact_origin;
+      // Propiedad, no origen: las plantillas oficiales del sistema (sin owner_ref) se sincronizan desde
+      // MinIO/dist y no se editan a mano; las de usuario (con owner_ref) se editan por el flujo de borrador.
+      if (!existing.owner_ref) {
+        throw new Error("Los artifacts oficiales del sistema se sincronizan desde MinIO y no se pueden editar manualmente.");
       }
     }
     let activateDraftVersion = false;
@@ -3214,7 +3372,6 @@ export default class SqlAdminService {
                    description = COALESCE(description, NULL),
                    owner_ref = NULL,
                    owner_person_id = NULL,
-                   artifact_origin = 'process',
                    source_version = ?,
                    artifact_stage = ?,
                    template_seed_id = ?,
@@ -3250,7 +3407,6 @@ export default class SqlAdminService {
                 display_name,
                 description,
                 owner_ref,
-                artifact_origin,
                 source_version,
                 storage_version,
                 artifact_stage,
@@ -3261,7 +3417,7 @@ export default class SqlAdminService {
                 meta_object_key,
                 content_hash,
                 is_active
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
               [
                 templateSeedId,
                 null,
@@ -3269,7 +3425,6 @@ export default class SqlAdminService {
                 displayName,
                 null,
                 null,
-                "process",
                 sourceVersion,
                 storageVersion,
                 repositoryStage,
@@ -3445,6 +3600,217 @@ export default class SqlAdminService {
     return { discovered, inserted, updated, bucket, prefix: MINIO_TEMPLATES_SEEDS_PREFIX };
   }
 
+  // Lee el schema.json de un artifact desde MinIO y lo devuelve como lista de campos
+  // editables en la web (formato inverso de buildSchemaJsonFromFields).
+  async getTemplateArtifactSchema(artifactId) {
+    this.ensurePool();
+    const artifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+    let schema = {};
+    try {
+      const text = await readMinioObjectAsText(bucket, artifact.schema_object_key);
+      schema = JSON.parse(text || "{}");
+    } catch {
+      schema = {};
+    }
+    const properties = schema?.properties || {};
+    const requiredSet = new Set(Array.isArray(schema?.required) ? schema.required : []);
+    const fields = Object.entries(properties).map(([key, def]) => ({
+      key: def?.["x-deasy-data-key"] || key,
+      title: def?.title || key,
+      field_code: def?.["x-deasy-field-code"] || "",
+      component: def?.["x-deasy-ui"]?.component || "text",
+      group: def?.["x-deasy-ui"]?.group || "general",
+      required: requiredSet.has(def?.["x-deasy-data-key"] || key),
+    }));
+
+    // Lee los workflows (fill/signatures) del meta.yaml en formato editable por la web.
+    let fillWorkflow = { required: true, steps: [] };
+    let signatureWorkflow = { required: false, anchors: [], steps: [] };
+    try {
+      const meta = await this.loadTemplateArtifactMetaDocument(artifact);
+      const fill = meta?.workflows?.fill || {};
+      fillWorkflow = {
+        required: fill?.required !== false,
+        steps: (Array.isArray(fill?.steps) ? fill.steps : []).map((s, i) => ({
+          order: Number(s?.order) || i + 1,
+          code: s?.code || "",
+          name: s?.name || "",
+          resolver_type: s?.resolver?.type || "task_assignee",
+          selection_mode: s?.resolver?.selection_mode || "auto_one",
+          cargo_code: s?.resolver?.cargo_code || "",
+          unit_scope_type: s?.resolver?.unit_scope_type || "unit_exact",
+          person_id: s?.resolver?.person_id || null,
+          position_id: s?.resolver?.position_id || null,
+          field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
+          required: s?.required !== false,
+          can_reject: s?.can_reject !== false,
+        })),
+      };
+      const sig = meta?.workflows?.signatures || {};
+      signatureWorkflow = {
+        required: sig?.required === true,
+        anchors: (Array.isArray(sig?.anchors) ? sig.anchors : []).map((a) => ({
+          code: a?.code || "",
+          token_field_ref: a?.placement?.token_field_ref || "",
+          width: a?.size?.width || 124,
+          height: a?.size?.height || 48,
+        })),
+        steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => ({
+          order: Number(s?.order) || i + 1,
+          code: s?.code || "",
+          name: s?.name || "",
+          step_type_code: s?.step_type_code || "electronic",
+          required_cargo_code: s?.required_cargo_code || s?.resolver?.cargo_code || "",
+          selection_mode: s?.selection_mode || "auto_all",
+          required_signers_min: s?.required_signers_min || 1,
+          required_signers_max: s?.required_signers_max || 1,
+          required: s?.required !== false,
+          anchor_refs: Array.isArray(s?.anchor_refs) ? s.anchor_refs : [],
+        })),
+      };
+    } catch {
+      // sin meta legible → flujos vacíos por defecto
+    }
+
+    return {
+      artifact_id: Number(artifactId),
+      template_code: artifact.template_code,
+      display_name: artifact.display_name,
+      fields,
+      fill_workflow: fillWorkflow,
+      signature_workflow: signatureWorkflow,
+    };
+  }
+
+  // Cambia el stage de un artifact (gobierno del ciclo de vida) actualizando BD y meta.yaml.
+  async updateTemplateArtifactStage(artifactId, nextStage) {
+    this.ensurePool();
+    const stage = String(nextStage || "").trim().toLowerCase();
+    if (!ARTIFACT_STAGE_VALUES.has(stage)) {
+      throw new Error("Etapa inválida. Debe ser: draft, review, approved, published o archived.");
+    }
+    const artifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const current = String(artifact.artifact_stage || "draft").toLowerCase();
+    if (current === stage) {
+      return { artifact_id: Number(artifactId), artifact_stage: stage, changed: false };
+    }
+    const allowed = ARTIFACT_STAGE_TRANSITIONS[current] || [];
+    if (!allowed.includes(stage)) {
+      throw new Error(`No se permite pasar de "${current}" a "${stage}".`);
+    }
+
+    // Al publicar, exigir que la plantilla tenga al menos un paso de llenado definido en su meta.yaml
+    // (regla: las plantillas de proceso no se publican sin flujo de llenado). La firma puede ser ad-hoc.
+    if (stage === "published") {
+      let fillSteps = 0;
+      try {
+        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
+        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+      } catch {
+        fillSteps = 0;
+      }
+      if (!fillSteps) {
+        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de llenado.");
+      }
+    }
+
+    await this.pool.query(
+      "UPDATE template_artifacts SET artifact_stage = ? WHERE id = ?",
+      [stage, Number(artifactId)]
+    );
+
+    // Refleja el stage en el meta.yaml de MinIO (campos stage / repository_stage).
+    try {
+      const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+      const metaKey = String(artifact.meta_object_key || "").trim();
+      if (metaKey) {
+        let meta = await readMinioObjectAsText(bucket, metaKey);
+        const replaceOrAppend = (content, key, value) => {
+          const re = new RegExp(`^${key}:.*$`, "m");
+          return re.test(content) ? content.replace(re, `${key}: ${value}`) : `${content.trimEnd()}\n${key}: ${value}\n`;
+        };
+        meta = replaceOrAppend(meta, "stage", stage);
+        meta = replaceOrAppend(meta, "repository_stage", stage);
+        await putMinioObjectFromText(bucket, metaKey, meta, "text/yaml");
+      }
+    } catch (metaError) {
+      console.warn("Stage actualizado en BD pero no en meta.yaml:", metaError?.message);
+    }
+
+    return { artifact_id: Number(artifactId), artifact_stage: stage, previous_stage: current, changed: true };
+  }
+
+  // Crea una nueva versión (storage_version) clonando un artifact existente en stage draft.
+  async createTemplateArtifactVersion(artifactId) {
+    this.ensurePool();
+    const artifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+    const templateCode = String(artifact.template_code);
+    const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode);
+    const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
+    const newPrefix = oldPrefix.replace(/v\d+\/?$/i, `${nextStorageVersion}/`);
+    if (newPrefix === oldPrefix) {
+      throw new Error("No se pudo derivar la ruta de la nueva versión.");
+    }
+
+    // Copia los objetos de la versión actual a la nueva ruta en MinIO.
+    const objectNames = await listMinioObjects(bucket, oldPrefix, true);
+    if (!objectNames.length) {
+      throw new Error("La versión actual no tiene objetos en MinIO para clonar.");
+    }
+    for (const objectName of objectNames) {
+      if (!objectName.startsWith(oldPrefix)) continue;
+      const relative = objectName.slice(oldPrefix.length);
+      if (!relative) continue;
+      const text = await readMinioObjectAsText(bucket, objectName);
+      await putMinioObjectFromText(bucket, `${newPrefix}${relative}`, text);
+    }
+
+    const newSchemaKey = `${newPrefix}schema.json`;
+    const newMetaKey = `${newPrefix}meta.yaml`;
+    const [result] = await this.pool.query(
+      `INSERT INTO template_artifacts (
+        template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
+        source_version, storage_version, artifact_stage, bucket, base_object_prefix,
+        available_formats, schema_object_key, meta_object_key, content_hash, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        artifact.template_seed_id,
+        artifact.owner_person_id,
+        templateCode,
+        artifact.display_name,
+        artifact.description,
+        artifact.owner_ref,
+        artifact.source_version,
+        nextStorageVersion,
+        bucket,
+        newPrefix,
+        typeof artifact.available_formats === "string" ? artifact.available_formats : JSON.stringify(artifact.available_formats || {}),
+        newSchemaKey,
+        newMetaKey,
+        artifact.content_hash,
+      ]
+    );
+
+    return {
+      id: Number(result.insertId),
+      template_code: templateCode,
+      storage_version: nextStorageVersion,
+      artifact_stage: "draft",
+      __notice: `Nueva versión ${nextStorageVersion} creada en estado draft.`,
+    };
+  }
+
   async getTemplateSeedPreview(seedId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
@@ -3514,15 +3880,15 @@ export default class SqlAdminService {
     return `v${String(maxVersion + 1).padStart(4, "0")}`;
   }
 
-  async createTemplateArtifactDraft(data = {}, files = {}) {
-    return this.saveTemplateArtifactDraft(null, data, files);
+  async createTemplateArtifactDraft(data = {}, files = {}, actor = {}) {
+    return this.saveTemplateArtifactDraft(null, data, files, actor);
   }
 
-  async updateTemplateArtifactDraft(artifactId, data = {}, files = {}) {
-    return this.saveTemplateArtifactDraft(artifactId, data, files);
+  async updateTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
+    return this.saveTemplateArtifactDraft(artifactId, data, files, actor);
   }
 
-  async saveTemplateArtifactDraft(artifactId, data = {}, files = {}) {
+  async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
     this.ensurePool();
 
     const displayName = String(data.display_name || "").trim();
@@ -3553,9 +3919,17 @@ export default class SqlAdminService {
       if (!existingArtifact) {
         throw new Error("El artifact seleccionado no existe.");
       }
-      if (String(existingArtifact.artifact_origin || "process") !== "general") {
-        throw new Error("Solo se pueden editar artifacts generales con este flujo.");
+      // Este flujo edita plantillas creadas desde la web (propiedad de usuario: tienen owner_ref).
+      // Las plantillas oficiales del sistema (sin owner_ref, sincronizadas desde dist) no se editan aquí.
+      if (!existingArtifact.owner_ref) {
+        throw new Error("Las plantillas oficiales del sistema no se editan con este flujo (usa el pipeline de templates).");
       }
+    }
+
+    // Fail-fast: el ejecutor debe elegir proceso destino al crear, antes de subir nada a MinIO
+    // (el rollback solo borra la fila SQL; así evitamos objetos huérfanos por un envío inválido).
+    if (!isEdit && actor?.requireProcessLink && !(data.process_definition_id ? Number(data.process_definition_id) : null)) {
+      throw new Error("Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla.");
     }
 
     const existingAvailableFormats = parseAvailableFormats(existingArtifact?.available_formats);
@@ -3708,7 +4082,19 @@ export default class SqlAdminService {
 
     const schemaObjectKey = `${baseObjectPrefix}schema.json`;
     const metaObjectKey = `${baseObjectPrefix}meta.yaml`;
-    fs.writeFileSync(path.join(draftDir, "schema.json"), "{}\n", "utf8");
+    // Campos definidos desde la web (editor de schema). Si no llegan, se conserva {}.
+    let schemaFields = data.schema_fields;
+    if (typeof schemaFields === "string") {
+      try { schemaFields = JSON.parse(schemaFields); } catch { schemaFields = null; }
+    }
+    const schemaJson = Array.isArray(schemaFields) && schemaFields.length
+      ? buildSchemaJsonFromFields(schemaFields)
+      : null;
+    fs.writeFileSync(
+      path.join(draftDir, "schema.json"),
+      schemaJson ? `${JSON.stringify(schemaJson, null, 2)}\n` : "{}\n",
+      "utf8"
+    );
     const metaLines = [
       `name: "${displayName.replace(/"/g, '\\"')}"`,
       `version: "${sourceVersion.replace(/"/g, '\\"')}"`,
@@ -3722,9 +4108,24 @@ export default class SqlAdminService {
     if (seedRow?.seed_code) {
       metaLines.push(`seed_code: "${String(seedRow.seed_code).replace(/"/g, '\\"')}"`);
     }
+    // Flujos definidos desde el editor web (fill/signatures). Si no llegan, se usa el contrato vacío.
+    let fillWorkflow = data.fill_workflow;
+    let signatureWorkflow = data.signature_workflow;
+    if (typeof fillWorkflow === "string") {
+      try { fillWorkflow = JSON.parse(fillWorkflow); } catch { fillWorkflow = null; }
+    }
+    if (typeof signatureWorkflow === "string") {
+      try { signatureWorkflow = JSON.parse(signatureWorkflow); } catch { signatureWorkflow = null; }
+    }
+    const hasCustomWorkflows =
+      (fillWorkflow && Array.isArray(fillWorkflow.steps) && fillWorkflow.steps.length)
+      || (signatureWorkflow && Array.isArray(signatureWorkflow.steps) && signatureWorkflow.steps.length);
+    const workflowsYaml = hasCustomWorkflows
+      ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })
+      : ARTIFACT_WORKFLOW_CONTRACT;
     fs.writeFileSync(
       path.join(draftDir, "meta.yaml"),
-      `${metaLines.join("\n")}\n${ARTIFACT_WORKFLOW_CONTRACT}\n`,
+      `${metaLines.join("\n")}\n${workflowsYaml}\n`,
       "utf8"
     );
     validatePackagedArtifactDraft(draftDir, availableFormats);
@@ -3743,7 +4144,6 @@ export default class SqlAdminService {
                display_name = ?,
                description = ?,
                owner_ref = ?,
-               artifact_origin = 'general',
                source_version = ?,
                artifact_stage = ?,
                bucket = ?,
@@ -3780,7 +4180,6 @@ export default class SqlAdminService {
             display_name,
             description,
             owner_ref,
-            artifact_origin,
             source_version,
             storage_version,
             artifact_stage,
@@ -3791,7 +4190,7 @@ export default class SqlAdminService {
             meta_object_key,
             content_hash,
             is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
           [
             templateSeedId,
             ownerPersonId,
@@ -3799,7 +4198,6 @@ export default class SqlAdminService {
             displayName,
             description,
             ownerRef,
-            "general",
             sourceVersion,
             storageVersion,
             bucket,
@@ -3813,6 +4211,48 @@ export default class SqlAdminService {
         createdId = result.insertId;
       }
 
+      // Vínculo a proceso destino. Obligatorio para ejecutores (GestorEjecucionProcesos):
+      // su plantilla debe colgar de un proceso ya definido o de 'default'. Opcional para diseñadores.
+      // El requisito de vínculo obligatorio para ejecutores al crear ya se validó arriba (fail-fast);
+      // en edición el vínculo previo se conserva. Aquí solo se materializa el vínculo si llega un destino.
+      const requestedProcessDefinitionId = data.process_definition_id ? Number(data.process_definition_id) : null;
+      if (requestedProcessDefinitionId && createdId) {
+        const def = await this.getByKeys("process_definition_versions", { id: requestedProcessDefinitionId });
+        if (!def) {
+          throw new Error("El proceso destino seleccionado no existe.");
+        }
+        const [existingLink] = await this.pool.query(
+          `SELECT id FROM process_definition_templates
+           WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
+          [requestedProcessDefinitionId, createdId]
+        );
+        if (!existingLink?.length) {
+          await this.pool.query(
+            `INSERT INTO process_definition_templates
+              (process_definition_id, template_artifact_id, instance_mode, creates_task, is_required, sort_order)
+             VALUES (?, ?, 'single_document', 1, 1, 1)`,
+            [requestedProcessDefinitionId, createdId]
+          );
+        }
+      }
+
+      // Si se definieron flujos y el artifact ya está vinculado a definiciones de proceso,
+      // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
+      let workflowNotice = "";
+      if (hasCustomWorkflows && createdId) {
+        try {
+          const summary = await this.syncArtifactWorkflowsForTemplateArtifactId(createdId);
+          const fillTpls = summary?.fill?.syncedTemplates || 0;
+          const sigTpls = summary?.signatures?.syncedTemplates || 0;
+          if (fillTpls || sigTpls) {
+            workflowNotice = ` Flujos sincronizados (llenado: ${fillTpls}, firmas: ${sigTpls}).`;
+          }
+        } catch (syncError) {
+          console.warn("No se pudieron sincronizar los flujos del artifact:", syncError?.message);
+          workflowNotice = " Los flujos se guardaron en el meta.yaml pero no se pudieron sincronizar a la base de datos.";
+        }
+      }
+
       return {
         id: createdId,
         template_seed_id: templateSeedId,
@@ -3821,7 +4261,6 @@ export default class SqlAdminService {
         display_name: displayName,
         description,
         owner_ref: ownerRef,
-        artifact_origin: "general",
         source_version: sourceVersion,
         storage_version: storageVersion,
         artifact_stage: artifactStage,
@@ -3832,9 +4271,9 @@ export default class SqlAdminService {
         meta_object_key: metaObjectKey,
         content_hash: contentHash,
         is_active: 1,
-        __notice: isEdit
+        __notice: (isEdit
           ? "El artifact general fue actualizado y cargado correctamente en MinIO."
-          : "El artifact general fue cargado correctamente en MinIO y registrado en el sistema."
+          : "El artifact general fue cargado correctamente en MinIO y registrado en el sistema.") + workflowNotice
       };
     } catch (error) {
       if (createdId && !isEdit) {

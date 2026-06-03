@@ -125,7 +125,6 @@ export function useAdminTableReset({
         definition_status: ""
       };
       templateArtifactInlineFilters.value = {
-        artifact_origin: "",
         artifact_stage: ""
       };
       processDefinitionProcessOptions.value = [];

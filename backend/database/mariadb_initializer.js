@@ -481,7 +481,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     const processDefinitionTemplateColumnNames = processDefinitionTemplateColumns.map((col) => col.COLUMN_NAME);
     if (!processDefinitionTemplateColumnNames.includes("instance_mode")) {
       await connection.query(
-        "ALTER TABLE process_definition_templates ADD COLUMN instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document' AFTER usage_role"
+        "ALTER TABLE process_definition_templates ADD COLUMN instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document' AFTER template_artifact_id"
       );
     }
 
@@ -934,53 +934,91 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudieron eliminar columnas legacy de document_versions:", error.message);
     }
 
+    // Limpieza modelo (2026-06): columnas vestigiales de 'processes' (unit_id/program_id/person_id/term_id).
+    // Nunca fueron leídas ni escritas por la aplicación; el scoping vive en process_definition_series +
+    // process_target_rules + triggers. Se eliminan (idempotente): primero las FKs, luego las columnas.
     const [processColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'`
     );
     const processColumnNames = processColumns.map((col) => col.COLUMN_NAME);
-    if (!processColumnNames.includes("unit_id"))
-      await connection.query("ALTER TABLE processes ADD COLUMN unit_id INT NULL");
-    if (!processColumnNames.includes("program_id"))
-      await connection.query("ALTER TABLE processes ADD COLUMN program_id INT NULL");
-    if (!processColumnNames.includes("person_id"))
-      await connection.query("ALTER TABLE processes ADD COLUMN person_id INT NULL");
-    if (!processColumnNames.includes("term_id"))
-      await connection.query("ALTER TABLE processes ADD COLUMN term_id INT NULL");
-
-    try {
-      const [fkRows] = await connection.query(
-        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'
-           AND COLUMN_NAME = 'person_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
-      );
-      if (!fkRows.length)
-        await connection.query(
-          "ALTER TABLE processes ADD CONSTRAINT fk_processes_person FOREIGN KEY (person_id) REFERENCES persons(id)"
-        );
-    } catch (error) {
-      console.warn("⚠️  No se pudo crear FK de processes.person_id:", error.message);
+    const [processFkRows] = await connection.query(
+      `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'
+         AND COLUMN_NAME IN ('person_id', 'term_id') AND REFERENCED_TABLE_NAME IS NOT NULL`
+    );
+    for (const fk of processFkRows.map((r) => r.CONSTRAINT_NAME)) {
+      try {
+        await connection.query(`ALTER TABLE processes DROP FOREIGN KEY ${fk}`);
+      } catch (error) {
+        console.warn(`⚠️  No se pudo eliminar FK ${fk} de processes:`, error.message);
+      }
+    }
+    for (const col of ["unit_id", "program_id", "person_id", "term_id"]) {
+      if (processColumnNames.includes(col)) {
+        try {
+          await connection.query(`ALTER TABLE processes DROP COLUMN ${col}`);
+        } catch (error) {
+          console.warn(`⚠️  No se pudo eliminar processes.${col}:`, error.message);
+        }
+      }
     }
 
-    try {
-      const [fkRows] = await connection.query(
-        `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'
-           AND COLUMN_NAME = 'term_id' AND REFERENCED_TABLE_NAME IS NOT NULL`
+    // Limpieza modelo (2026-06): columnas deprecadas por la migración del modelo de plantillas.
+    // - template_artifacts.artifact_origin: constante 'process'; la propiedad se distingue por owner_ref.
+    const dropDeprecatedColumn = async (table, column) => {
+      const [exists] = await connection.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        [table, column]
       );
-      if (!fkRows.length)
-        await connection.query(
-          "ALTER TABLE processes ADD CONSTRAINT fk_processes_term FOREIGN KEY (term_id) REFERENCES terms(id)"
-        );
-    } catch (error) {
-      console.warn("⚠️  No se pudo crear FK de processes.term_id:", error.message);
+      if (exists.length) {
+        try {
+          await connection.query(`ALTER TABLE \`${table}\` DROP COLUMN \`${column}\``);
+        } catch (error) {
+          console.warn(`⚠️  No se pudo eliminar ${table}.${column}:`, error.message);
+        }
+      }
+    };
+    await dropDeprecatedColumn("template_artifacts", "artifact_origin");
+    // - usage_role / template_usage_role: deprecados (Paso 6). Toda plantilla/entregable es 'primary';
+    //   la adjunción ad-hoc va por document_attachments.
+    await dropDeprecatedColumn("task_items", "template_usage_role");
+    // process_definition_templates.usage_role forma parte del UNIQUE KEY (necesitado por un FK), así que se
+    // reconstruye el índice sin esa columna en un único ALTER atómico (InnoDB ve el índice de reemplazo).
+    {
+      const [pdtUsageRole] = await connection.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_definition_templates' AND COLUMN_NAME = 'usage_role'`
+      );
+      if (pdtUsageRole.length) {
+        try {
+          await connection.query(
+            `ALTER TABLE process_definition_templates
+               DROP INDEX uq_process_definition_templates,
+               DROP COLUMN usage_role,
+               ADD UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id)`
+          );
+        } catch (error) {
+          console.warn("⚠️  No se pudo eliminar process_definition_templates.usage_role:", error.message);
+        }
+      }
     }
 
-    try {
-      await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
-    } catch (error) {
-      if (error?.code !== "ER_CONSTRAINT_NOT_FOUND")
+    // CHECK legacy que referenciaba processes.unit_id/program_id (ya eliminadas). En un schema nuevo
+    // no existe; solo se elimina si está presente (evita un warning falso por código de error variable
+    // entre MariaDB/MySQL al hacer DROP de una constraint inexistente).
+    const [processCheckRows] = await connection.query(
+      `SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'processes'
+         AND CONSTRAINT_NAME = 'chk_process_unit_program'`
+    );
+    if (processCheckRows.length) {
+      try {
+        await connection.query("ALTER TABLE processes DROP CONSTRAINT chk_process_unit_program");
+      } catch (error) {
         console.warn("⚠️  No se pudo eliminar CHECK de processes:", error.message);
+      }
     }
 
     // Migración legacy: solo si la tabla 'templates' aún existe (schema viejo)

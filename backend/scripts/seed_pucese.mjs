@@ -28,14 +28,47 @@ const formatError = (error) => {
 
 const usage = () => {
   console.log("Uso:");
-  console.log("  node backend/scripts/seed_pucese.mjs [apply] [--file <ruta>]");
+  console.log("  node backend/scripts/seed_pucese.mjs [apply] [--file <ruta>] [--full]");
   console.log("  node backend/scripts/seed_pucese.mjs capture [--file <ruta>]");
   console.log("");
+  console.log("Por defecto 'apply' siembra solo el baseline estructural (organizacion, RBAC y");
+  console.log("catalogo de procesos); las plantillas y los datos de ejecucion se omiten porque");
+  console.log("las plantillas se crean desde la UI. Usa --full para sembrar el snapshot completo.");
+  console.log("");
   console.log("Ejemplos:");
-  console.log("  node backend/scripts/seed_pucese.mjs");
+  console.log("  node backend/scripts/seed_pucese.mjs                 # baseline estructural");
+  console.log("  node backend/scripts/seed_pucese.mjs apply --full    # snapshot completo (demo)");
   console.log("  node backend/scripts/seed_pucese.mjs apply --file backend/scripts/seeds/pucese.seed.json");
   console.log("  node backend/scripts/seed_pucese.mjs capture");
 };
+
+// Tablas excluidas del baseline estructural: contenido de plantillas (hoy se autora desde la
+// UI, ver editor web Fase C) y todo el rastro de ejecucion (se genera al lanzar procesos).
+// 'apply' por defecto vacia estas tablas pero NO inserta sus filas; con --full se siembran.
+// Las kept (org, RBAC, processes/series/versions/triggers/rules, terms, catalogos) son
+// FK-consistentes sin estas: la ejecucion depende de la estructura, no al reves.
+const BASELINE_EXCLUDED_TABLES = new Set([
+  // Plantillas (se crean/vinculan desde la UI)
+  "template_artifacts",
+  "template_seeds",
+  "process_definition_templates",
+  "fill_flow_templates",
+  "fill_flow_steps",
+  "signature_flow_templates",
+  "signature_flow_steps",
+  // Ejecucion (se materializa al lanzar procesos/tareas)
+  "process_runs",
+  "tasks",
+  "task_assignments",
+  "task_items",
+  "documents",
+  "document_versions",
+  "document_fill_flows",
+  "fill_requests",
+  "signature_flow_instances",
+  "signature_requests",
+  "document_signatures"
+]);
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
@@ -46,6 +79,7 @@ const parseArgs = () => {
     startIndex = 1;
   }
   let file = defaultSeedFile;
+  let includeAll = false;
 
   for (let i = startIndex; i < args.length; i += 1) {
     const arg = args[i];
@@ -56,11 +90,19 @@ const parseArgs = () => {
       i += 1;
       continue;
     }
+    if (arg === "--full") {
+      includeAll = true;
+      continue;
+    }
+    if (arg === "--baseline") {
+      includeAll = false;
+      continue;
+    }
     throw new Error(`Parametro no soportado: ${arg}`);
   }
 
   if (!["capture", "apply"].includes(mode)) throw new Error(`Modo no soportado: ${mode}`);
-  return { mode, file };
+  return { mode, file, includeAll };
 };
 
 const loadEnv = async () => {
@@ -332,7 +374,7 @@ const captureSeed = async (connection, config, filePath) => {
   console.log(`Tablas: ${snapshot.tables.length}`);
 };
 
-const applySeed = async (connection, filePath) => {
+const applySeed = async (connection, filePath, { includeAll = false } = {}) => {
   const raw = await readFile(filePath, "utf8");
   const snapshot = JSON.parse(raw);
   const originalTables = Array.isArray(snapshot.tables) ? snapshot.tables : [];
@@ -359,9 +401,26 @@ const applySeed = async (connection, filePath) => {
     );
   }
 
+  // Tablas presentes en el seed y en el esquema actual. Siempre se VACIAN todas (para dejar un
+  // estado limpio), pero en modo baseline solo se INSERTAN las no excluidas: las plantillas se
+  // crean desde la UI y la ejecucion se materializa al lanzar procesos.
   const tables = orderedTables.filter((tableData) => schemaTables.has(tableData.table));
   if (!tables.length) {
     throw new Error("Ninguna tabla de la semilla existe en la base de datos actual.");
+  }
+
+  const insertTables = includeAll
+    ? tables
+    : tables.filter((tableData) => !BASELINE_EXCLUDED_TABLES.has(tableData.table));
+  const skippedTables = tables
+    .filter((tableData) => !insertTables.includes(tableData))
+    .map((tableData) => tableData.table);
+
+  if (!includeAll && skippedTables.length) {
+    console.log(
+      `[seed_pucese] Modo baseline: se vaciaran pero NO se sembraran ${skippedTables.length} tabla(s) de plantillas/ejecucion: ${skippedTables.join(", ")}`
+    );
+    console.log("[seed_pucese] Usa --full para sembrar el snapshot completo (demo).");
   }
 
   await connection.beginTransaction();
@@ -373,7 +432,7 @@ const applySeed = async (connection, filePath) => {
       await connection.query(`DELETE FROM \`${tableName}\``);
     }
 
-    for (const tableData of tables) {
+    for (const tableData of insertTables) {
       const tableName = tableData.table;
       const columns = Array.isArray(tableData.columns) ? tableData.columns : [];
       let rows = Array.isArray(tableData.rows) ? tableData.rows : [];
@@ -416,10 +475,10 @@ const applySeed = async (connection, filePath) => {
 
     await connection.query("SET FOREIGN_KEY_CHECKS = 1");
     await connection.commit();
-    console.log(`Semilla aplicada: ${filePath}`);
-    console.log(`Tablas procesadas: ${tables.length}`);
+    console.log(`Semilla aplicada (${includeAll ? "completa" : "baseline estructural"}): ${filePath}`);
+    console.log(`Tablas vaciadas: ${tables.length} | sembradas: ${insertTables.length}`);
     if (missingTables.length) {
-      console.log(`Tablas omitidas: ${missingTables.length}`);
+      console.log(`Tablas omitidas (inexistentes en el esquema): ${missingTables.length}`);
     }
   } catch (error) {
     try {
@@ -452,7 +511,7 @@ const run = async () => {
       await captureSeed(connection, config, args.file);
       return;
     }
-    await applySeed(connection, args.file);
+    await applySeed(connection, args.file, { includeAll: args.includeAll });
   } finally {
     await connection.end();
   }

@@ -45,19 +45,6 @@ class AdminPresentationService {
   }
 
   formatSelectOptionLabel(field, value) {
-    if (field?.name === "artifact_origin") {
-      return {
-        process: "Proceso",
-        general: "General"
-      }[value] || value;
-    }
-    if (field?.name === "usage_role" || field?.name === "template_usage_role") {
-      return {
-        primary: "Principal",
-        attachment: "Adjunto",
-        support: "Soporte"
-      }[value] || value;
-    }
     if (field?.name === "instance_mode") {
       return {
         single_document: "Un documento",
@@ -181,8 +168,7 @@ class AdminPresentationService {
         row.process_definition_id ? `Def ${row.process_definition_id}` : null,
         row.template_artifact_id
           ? (getFkCachedLabel("template_artifacts", row.template_artifact_id) || `Paquete ${row.template_artifact_id}`)
-          : null,
-        this.formatSelectOptionLabel({ name: "usage_role" }, row.usage_role)
+          : null
       ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
       if (parts.length) {
         return parts.join(" · ");

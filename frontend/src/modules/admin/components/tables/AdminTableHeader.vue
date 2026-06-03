@@ -34,6 +34,18 @@
           Sincronizar dist
         </AdminButton>
         <AdminButton
+          v-if="isProcessDefinitionsTable && canCreate"
+          variant="outlinePrimary"
+          size="md"
+          :disabled="!table"
+          title="Crear proceso guiado"
+          aria-label="Crear proceso guiado"
+          @click="$emit('create-wizard')"
+        >
+          <font-awesome-icon icon="list-check" class="mr-2" />
+          Crear proceso guiado
+        </AdminButton>
+        <AdminButton
           v-if="canCreate"
           variant="primary"
           size="md"
@@ -83,6 +95,10 @@ defineProps({
     type: Boolean,
     default: false
   },
+  isProcessDefinitionsTable: {
+    type: Boolean,
+    default: false
+  },
   canCreate: {
     type: Boolean,
     default: true
@@ -97,6 +113,7 @@ defineEmits([
   "go-back",
   "sync-template-seeds",
   "sync-template-artifacts",
-  "create"
+  "create",
+  "create-wizard"
 ]);
 </script>

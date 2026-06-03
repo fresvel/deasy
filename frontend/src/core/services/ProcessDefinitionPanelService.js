@@ -66,6 +66,18 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async createGeneralTask(userId, payload = {}) {
+    if (!userId) {
+      throw new Error("Se requiere usuario.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.USERS_GENERAL_TASKS(userId),
+      payload,
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
   async createTaskItemDocument(userId, processDefinitionId, taskItemId, payload = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, definición y entregable.");
@@ -105,6 +117,68 @@ class ProcessDefinitionPanelService {
       }
     );
     return data;
+  }
+
+  async listDeliverableAttachments(userId, processDefinitionId, taskItemId, options = {}) {
+    if (!userId || !processDefinitionId || !taskItemId) {
+      throw new Error("Se requiere usuario, definición y entregable.");
+    }
+    const { data } = await axios.get(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS(userId, processDefinitionId, taskItemId),
+      {
+        headers: { ...this.getAuthHeaders() },
+        params: options.documentId ? { document_id: options.documentId } : undefined,
+      }
+    );
+    return data;
+  }
+
+  async uploadDeliverableAttachment(userId, processDefinitionId, taskItemId, file, options = {}) {
+    if (!userId || !processDefinitionId || !taskItemId) {
+      throw new Error("Se requiere usuario, definición y entregable.");
+    }
+    if (!file) {
+      throw new Error("Debes seleccionar un archivo.");
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    if (options.kind) formData.append("kind", String(options.kind));
+    if (options.description) formData.append("description", String(options.description));
+    if (options.documentId) formData.append("document_id", String(options.documentId));
+    const { data } = await axios.post(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS(userId, processDefinitionId, taskItemId),
+      formData,
+      {
+        headers: { ...this.getAuthHeaders(), "Content-Type": "multipart/form-data" },
+      }
+    );
+    return data;
+  }
+
+  async deleteDeliverableAttachment(userId, processDefinitionId, taskItemId, attachmentId) {
+    if (!userId || !processDefinitionId || !taskItemId || !attachmentId) {
+      throw new Error("Se requiere usuario, definición, entregable y anexo.");
+    }
+    const { data } = await axios.delete(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT(userId, processDefinitionId, taskItemId, attachmentId),
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
+  async downloadDeliverableAttachment(userId, processDefinitionId, taskItemId, attachmentId) {
+    if (!userId || !processDefinitionId || !taskItemId || !attachmentId) {
+      throw new Error("Se requiere usuario, definición, entregable y anexo.");
+    }
+    const response = await axios.get(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT_DOWNLOAD(userId, processDefinitionId, taskItemId, attachmentId),
+      { headers: { ...this.getAuthHeaders() }, responseType: "blob" }
+    );
+    return {
+      blob: response.data,
+      fileName: this.extractDownloadFileName(response, "anexo.bin"),
+      contentType: String(response.headers?.["content-type"] || "application/octet-stream"),
+    };
   }
 
   async approveFillRequest(fillRequestId, payload = {}) {

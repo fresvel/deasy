@@ -77,31 +77,16 @@ const getTargetRulesMap = async (connection, termStart, termEnd) => {
   return map;
 };
 
-const getExecutableTemplatesMap = async (connection, options = {}) => {
-  const artifactOrigin = String(options.artifactOrigin || "").trim().toLowerCase();
-  const params = [];
-  const artifactJoin = artifactOrigin
-    ? "\n     INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id"
-    : "";
-  const artifactWhere = artifactOrigin
-    ? "\n       AND LOWER(ta.artifact_origin) = ?"
-    : "";
-
-  if (artifactOrigin) {
-    params.push(artifactOrigin);
-  }
-
+const getExecutableTemplatesMap = async (connection) => {
   const [rows] = await connection.query(
     `SELECT
        pdt.id,
        pdt.process_definition_id,
        pdt.template_artifact_id,
-       pdt.usage_role,
        pdt.sort_order
-     FROM process_definition_templates pdt${artifactJoin}
-     WHERE pdt.creates_task = 1${artifactWhere}
-     ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`,
-    params
+     FROM process_definition_templates pdt
+     WHERE pdt.creates_task = 1
+     ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`
   );
   const map = new Map();
   rows.forEach((row) => {
@@ -248,11 +233,9 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        d.task_item_id,
        ti.task_id,
        ti.process_definition_template_id,
-       ti.template_usage_role,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
-       tar.artifact_origin,
        COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
@@ -539,16 +522,9 @@ const shouldInferSignatureFlowForContext = (context) => {
     return false;
   }
 
-  const usageRole = String(context.template_usage_role || "primary");
-  if (usageRole === "attachment" || usageRole === "support") {
-    return false;
-  }
-
-  const artifactOrigin = String(context.artifact_origin || "");
-  if (artifactOrigin !== "process") {
-    return false;
-  }
-
+  // usage_role attachment/support deprecado (toda adjunción ad-hoc va por document_attachments, que no
+  // genera task_items); y el gate por artifact_origin también se deprecó. Todo entregable de proceso
+  // (siempre usage_role='primary') participa del ciclo de llenado/firma.
   return true;
 };
 
@@ -1236,17 +1212,15 @@ const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, e
         task_id,
         process_definition_template_id,
         template_artifact_id,
-        template_usage_role,
         sort_order,
         start_date,
         end_date,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         taskId,
         template.id,
         template.template_artifact_id,
-        template.usage_role || "primary",
         template.sort_order ?? 1,
         resolvedStart,
         resolvedEnd ?? null,
@@ -1362,6 +1336,38 @@ export const hydrateTaskFromDefinition = async ({
   };
 };
 
+// Materializa una tarea del proceso General (libre/derivada) SIN aplicar target rules:
+// crea el task_item contenedor, su documento/versión (para anexos) y asigna ÚNICAMENTE
+// a la posición del creador. Así la tarea es privada de quien la crea, no de toda la unidad.
+export const hydrateGeneralTask = async ({
+  connection,
+  taskId,
+  processDefinitionId,
+  responsiblePositionId,
+  startDate = null,
+  endDate = null,
+}) => {
+  const templatesMap = await getExecutableTemplatesMap(connection);
+  const taskItems = await ensureTaskItemsForTask(
+    connection, taskId, processDefinitionId, templatesMap, startDate, endDate
+  );
+  let assignmentsCreated = 0;
+  if (responsiblePositionId) {
+    assignmentsCreated = await ensureUnitTaskAssignments(
+      connection,
+      taskId,
+      [{ position_id: responsiblePositionId, person_id: null }],
+      responsiblePositionId
+    );
+  }
+  await ensureDocumentsForTask(connection, taskId);
+  return {
+    task_items_inserted: taskItems.inserted,
+    task_items_total: taskItems.total,
+    assignments_created: assignmentsCreated,
+  };
+};
+
 export const generateTasksForTerm = async (termId) => {
   const pool = getMariaDBPool();
   if (!pool) throw new Error("La conexion con MariaDB no esta disponible.");
@@ -1375,7 +1381,9 @@ export const generateTasksForTerm = async (termId) => {
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
-    const executableTemplatesMap = await getExecutableTemplatesMap(connection, { artifactOrigin: "process" });
+    // artifact_origin deprecado: la generación automática toma todas las plantillas ejecutables
+    // (creates_task=1), sin filtrar por process/general.
+    const executableTemplatesMap = await getExecutableTemplatesMap(connection);
     const existingTasksMap = await getExistingAutomaticTasksMap(connection, term.id);
 
     const createdTaskIds = [];

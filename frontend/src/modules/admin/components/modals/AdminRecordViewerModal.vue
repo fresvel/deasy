@@ -91,16 +91,27 @@
     </div>
 
     <template #footer>
+      <AdminButton
+        v-if="canDownloadArchive"
+        variant="outlinePrimary"
+        :disabled="downloading"
+        @click="$emit('download-archive')"
+      >
+        <font-awesome-icon icon="file-zipper" />
+        <span>{{ downloading ? "Generando ZIP…" : "Descargar formatos (ZIP)" }}</span>
+      </AdminButton>
       <AdminButton variant="outlineDanger" @click="$emit('close')">Cerrar</AdminButton>
     </template>
   </AdminModalShell>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+
+const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "template_seeds"]);
 
 const props = defineProps({
   loading: { type: Boolean, default: false },
@@ -110,6 +121,7 @@ const props = defineProps({
   summaryTableFields: { type: Array, default: () => [] },
   displayRows: { type: Array, default: () => [] },
   relatedSections: { type: Array, default: () => [] },
+  downloading: { type: Boolean, default: false },
   formatRecordViewerValue: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
   getAvailableFormatBadgeStyle: { type: Function, required: true },
@@ -117,7 +129,11 @@ const props = defineProps({
   formatValueForTable: { type: Function, required: true }
 });
 
-defineEmits(["close"]);
+defineEmits(["close", "download-archive"]);
+
+const canDownloadArchive = computed(() =>
+  Boolean(props.recordViewerRow?.id) && ARCHIVE_DOWNLOADABLE_TABLES.has(props.recordViewerTable?.table)
+);
 
 const modalRef = ref(null);
 

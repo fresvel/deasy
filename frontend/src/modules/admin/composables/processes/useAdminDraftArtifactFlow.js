@@ -36,7 +36,11 @@ export function useAdminDraftArtifactFlow({
       template_seed_id: "",
       display_name: "",
       description: "",
-      source_version: "1.0.0"
+      source_version: "1.0.0",
+      process_definition_id: "",
+      schema_fields: [],
+      fill_workflow: { required: true, steps: [] },
+      signature_workflow: { required: true, anchors: [], steps: [] }
     };
     draftArtifactFiles.value = {
       pdf: null,
@@ -92,7 +96,10 @@ export function useAdminDraftArtifactFlow({
         template_seed_id: row.template_seed_id ? String(row.template_seed_id) : "",
         display_name: row.display_name ? String(row.display_name) : "",
         description: row.description ? String(row.description) : "",
-        source_version: row.source_version ? String(row.source_version) : "1.0.0"
+        source_version: row.source_version ? String(row.source_version) : "1.0.0",
+        artifact_stage: row.artifact_stage ? String(row.artifact_stage) : "draft",
+        storage_version: row.storage_version ? String(row.storage_version) : "",
+        schema_fields: []
       };
       draftArtifactExistingFiles.value = {
         pdf: getFileNameFromObjectKey(availableFormats?.general?.pdf?.entry_object_key),
@@ -100,12 +107,28 @@ export function useAdminDraftArtifactFlow({
         xlsx: getFileNameFromObjectKey(availableFormats?.general?.xlsx?.entry_object_key),
         pptx: getFileNameFromObjectKey(availableFormats?.general?.pptx?.entry_object_key)
       };
+      // Carga los campos y flujos actuales (desde MinIO) para edición.
+      try {
+        const { data: schemaData } = await adminSqlService.getTemplateArtifactSchema(row.id);
+        draftArtifactForm.value = {
+          ...draftArtifactForm.value,
+          schema_fields: Array.isArray(schemaData?.fields) ? schemaData.fields : [],
+          fill_workflow: schemaData?.fill_workflow || { required: true, steps: [] },
+          signature_workflow: schemaData?.signature_workflow || { required: true, anchors: [], steps: [] }
+        };
+      } catch {
+        // Si falla la lectura, se continúa con campos/flujos vacíos.
+      }
     } else {
       draftArtifactForm.value = {
         template_seed_id: "",
         display_name: "",
         description: "",
-        source_version: "1.0.0"
+        source_version: "1.0.0",
+        process_definition_id: "",
+        schema_fields: [],
+        fill_workflow: { required: true, steps: [] },
+        signature_workflow: { required: true, anchors: [], steps: [] }
       };
     }
     await loadDraftArtifactSeedOptions();
@@ -156,6 +179,18 @@ export function useAdminDraftArtifactFlow({
       form.append("display_name", draftArtifactForm.value.display_name || "");
       form.append("description", draftArtifactForm.value.description || "");
       form.append("source_version", draftArtifactForm.value.source_version || "1.0.0");
+      if (Array.isArray(draftArtifactForm.value.schema_fields) && draftArtifactForm.value.schema_fields.length) {
+        form.append("schema_fields", JSON.stringify(draftArtifactForm.value.schema_fields));
+      }
+      if (draftArtifactForm.value.fill_workflow?.steps?.length) {
+        form.append("fill_workflow", JSON.stringify(draftArtifactForm.value.fill_workflow));
+      }
+      if (draftArtifactForm.value.signature_workflow?.steps?.length) {
+        form.append("signature_workflow", JSON.stringify(draftArtifactForm.value.signature_workflow));
+      }
+      if (draftArtifactForm.value.process_definition_id) {
+        form.append("process_definition_id", String(draftArtifactForm.value.process_definition_id));
+      }
       if (draftArtifactFiles.value.pdf) {
         form.append("pdf_file", draftArtifactFiles.value.pdf);
       }

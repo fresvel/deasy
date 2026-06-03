@@ -51,12 +51,10 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.task_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
        ti.process_definition_template_id,
-       ti.template_usage_role,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
        t.created_by_user_id AS task_created_by_user_id,
-       tar.artifact_origin,
        COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
        COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
@@ -81,12 +79,10 @@ const shouldInferSignatureFlowForContext = (context) => {
     return false;
   }
 
-  const usageRole = String(context.template_usage_role || "primary");
-  if (usageRole === "attachment" || usageRole === "support") {
-    return false;
-  }
-
-  return String(context.artifact_origin || "") === "process";
+  // usage_role attachment/support y artifact_origin deprecados como gate: toda plantilla de proceso
+  // (siempre usage_role='primary') puede tener flujo de firma. Las adjunciones ad-hoc van por
+  // document_attachments y no llegan aquí (no crean task_items con process_definition_template_id).
+  return true;
 };
 
 const getActiveSignatureFlowTemplateForDefinitionTemplate = async (

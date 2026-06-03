@@ -489,13 +489,12 @@ CREATE TABLE IF NOT EXISTS process_definition_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_id INT NOT NULL,
   template_artifact_id INT NOT NULL,
-  usage_role ENUM('primary', 'attachment', 'support') NOT NULL DEFAULT 'primary',
   instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document',
   creates_task TINYINT(1) NOT NULL DEFAULT 1,
   is_required TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id, usage_role),
+  UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id),
   CONSTRAINT fk_process_definition_templates_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
   CONSTRAINT fk_process_definition_templates_artifact
@@ -612,7 +611,6 @@ CREATE TABLE IF NOT EXISTS task_items (
   task_id INT NOT NULL,
   process_definition_template_id INT NOT NULL,
   template_artifact_id INT NOT NULL,
-  template_usage_role ENUM('primary', 'attachment', 'support') NOT NULL DEFAULT 'primary',
   sort_order INT NOT NULL DEFAULT 1,
   responsible_position_id INT NULL,
   assigned_person_id INT NULL,
@@ -693,6 +691,28 @@ CREATE TABLE IF NOT EXISTS document_versions (
   INDEX idx_document_versions_artifact (template_artifact_id),
   CONSTRAINT fk_document_versions_document FOREIGN KEY (document_id) REFERENCES documents(id),
   CONSTRAINT fk_document_versions_artifact FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Anexos heterogéneos de un entregable: archivos auxiliares (evidencias, soportes)
+-- adicionales al documento principal de una versión documental.
+CREATE TABLE IF NOT EXISTS document_attachments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  document_version_id INT NOT NULL,
+  kind ENUM('annex', 'evidence', 'source', 'other') NOT NULL DEFAULT 'annex',
+  file_path VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NULL,
+  size_bytes BIGINT NULL,
+  description VARCHAR(255) NULL,
+  uploaded_by_person_id INT NULL,
+  sort_order INT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_document_attachments_version (document_version_id, sort_order),
+  INDEX idx_document_attachments_uploader (uploaded_by_person_id),
+  CONSTRAINT fk_document_attachments_version
+    FOREIGN KEY (document_version_id) REFERENCES document_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_document_attachments_uploader
+    FOREIGN KEY (uploaded_by_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS signature_types (

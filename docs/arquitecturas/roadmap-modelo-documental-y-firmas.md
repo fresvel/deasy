@@ -29,15 +29,18 @@ Este documento fija:
 
 Fuente de verdad del esquema:
 
-- [backend/database/mariadb_schema.sql](/home/fresvel/Sharepoint/DIR/Deploy/deasy/backend/database/mariadb_schema.sql)
+- [backend/database/mariadb_schema.sql](../../backend/database/mariadb_schema.sql)
 
 Código relevante revisado:
 
-- [backend/services/admin/TaskGenerationService.js](/home/fresvel/Sharepoint/DIR/Deploy/deasy/backend/services/admin/TaskGenerationService.js)
-- [backend/controllers/users/user_controler.js](/home/fresvel/Sharepoint/DIR/Deploy/deasy/backend/controllers/users/user_controler.js)
-- [backend/controllers/tareas/tareas_controler.js](/home/fresvel/Sharepoint/DIR/Deploy/deasy/backend/controllers/tareas/tareas_controler.js)
-- [frontend/src/services/admin/AdminTableManagerConfig.js](/home/fresvel/Sharepoint/DIR/Deploy/deasy/frontend/src/services/admin/AdminTableManagerConfig.js)
-- [tools/templates/README.md](/home/fresvel/Sharepoint/DIR/Deploy/deasy/tools/templates/README.md)
+- [backend/services/admin/TaskGenerationService.js](../../backend/services/admin/TaskGenerationService.js)
+- [backend/controllers/users/user_controler.js](../../backend/controllers/users/user_controler.js)
+- [backend/controllers/tareas/tareas_controler.js](../../backend/controllers/tareas/tareas_controler.js)
+- [frontend/src/modules/admin/services/AdminTableManagerConfig.js](../../frontend/src/modules/admin/services/AdminTableManagerConfig.js)
+- [tools/templates/README.md](../../tools/templates/README.md)
+
+> Nota (2026-06): rutas actualizadas a la ubicación vigente del repo. Para el estado actual de
+> entregables/plantillas ver [redisenio-entregables-2026-06.md](./redisenio-entregables-2026-06.md).
 
 Estado real de la base viva al momento de la revisión:
 

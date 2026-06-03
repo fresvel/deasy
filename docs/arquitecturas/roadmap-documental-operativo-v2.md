@@ -303,4 +303,7 @@ El tramo crítico ya no es rediseñar el modelo. El siguiente trabajo de mayor i
 Este documento debe usarse como hoja de ruta operativa principal.
 La hoja anterior queda como referencia histórica y de decisiones extendidas:
 
-- [roadmap-modelo-documental-y-firmas.md](/home/fresvel/Sharepoint/DIR/Deploy/deasy/docs/arquitecturas/roadmap-modelo-documental-y-firmas.md)
+- [roadmap-modelo-documental-y-firmas.md](./roadmap-modelo-documental-y-firmas.md)
+
+Para las capacidades añadidas en junio 2026 (anexos, tareas libres/derivadas y editor web de
+plantillas), ver [redisenio-entregables-2026-06.md](./redisenio-entregables-2026-06.md).

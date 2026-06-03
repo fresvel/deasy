@@ -5,8 +5,13 @@ import {
   syncTemplateArtifacts,
   syncTemplateSeeds,
   getTemplateSeedPreview,
+  downloadTemplateArtifactArchive,
+  downloadTemplateSeedArchive,
   createTemplateArtifactDraft,
   updateTemplateArtifactDraft,
+  getTemplateArtifactSchema,
+  updateTemplateArtifactStage,
+  createTemplateArtifactVersion,
   listSqlRows,
   createSqlRow,
   updateSqlRow,
@@ -22,6 +27,11 @@ router.get("/meta", requireAnyRole(MANAGEMENT_ROLES), getSqlMeta);
 router.post("/template_artifacts/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateArtifacts);
 router.post("/template_seeds/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateSeeds);
 router.get("/template_seeds/:id/preview", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateSeedPreview);
+router.get("/template_seeds/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateSeedArchive);
+router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateArtifactArchive);
+router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
+router.patch("/template_artifacts/:id/stage", requireSqlAdminPermission({ resource: "templates", action: "update" }), updateTemplateArtifactStage);
+router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
 router.post(
   "/template_artifacts/draft",
   requireSqlAdminPermission({ resource: "templates", action: "create" }),

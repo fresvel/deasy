@@ -304,13 +304,6 @@ export const SQL_TABLES = [
         required: true
       },
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
-      {
-        name: "template_usage_role",
-        label: "Rol",
-        type: "select",
-        options: ["primary", "attachment", "support"],
-        defaultValue: "primary"
-      },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "assigned_person_id", label: "Responsable", type: "number" },
@@ -326,7 +319,7 @@ export const SQL_TABLES = [
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_usage_role", "status"]
+    searchFields: ["status"]
   },
   {
     table: "task_assignments",
@@ -384,13 +377,6 @@ export const SQL_TABLES = [
       { name: "source_version", label: "Version fuente", type: "text", required: true },
       { name: "storage_version", label: "Version storage", type: "text", required: true },
       {
-        name: "artifact_origin",
-        label: "Catalogo",
-        type: "select",
-        options: ["process", "general"],
-        defaultValue: "process"
-      },
-      {
         name: "artifact_stage",
         label: "Etapa",
         type: "select",
@@ -407,7 +393,7 @@ export const SQL_TABLES = [
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_code", "display_name", "storage_version", "owner_ref", "artifact_origin", "artifact_stage"]
+    searchFields: ["template_code", "display_name", "storage_version", "owner_ref", "artifact_stage"]
   },
   {
     table: "process_definition_templates",
@@ -418,13 +404,6 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Definicion", type: "number", required: true },
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
-      {
-        name: "usage_role",
-        label: "Rol",
-        type: "select",
-        options: ["primary", "attachment", "support"],
-        defaultValue: "primary"
-      },
       {
         name: "instance_mode",
         label: "Modo de instancia",
@@ -437,7 +416,7 @@ export const SQL_TABLES = [
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["usage_role"]
+    searchFields: []
   },
   {
     table: "persons",

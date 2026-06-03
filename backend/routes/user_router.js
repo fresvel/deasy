@@ -13,7 +13,12 @@ import {
   uploadDeliverablePdf,
   downloadDeliverableTemplate,
   downloadDeliverableFile,
-  resetDeliverableWorkflow
+  resetDeliverableWorkflow,
+  listDeliverableAttachments,
+  uploadDeliverableAttachment,
+  deleteDeliverableAttachment,
+  downloadDeliverableAttachment,
+  createGeneralTask
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -78,6 +83,24 @@ const uploadDeliverable = multer({
   }
 });
 
+// Anexos heterogéneos: acepta documentos, imágenes y comprimidos como evidencias/soportes.
+const uploadAttachment = multer({
+  dest: os.tmpdir(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const lowerName = file.originalname.toLowerCase();
+    const allowedExtensions = [
+      ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+      ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
+      ".csv", ".txt", ".zip", ".rar", ".7z"
+    ];
+    if (file.fieldname === "file" && allowedExtensions.some((ext) => lowerName.endsWith(ext))) {
+      return cb(null, true);
+    }
+    cb(new Error("Formato de anexo no permitido."));
+  }
+});
+
 router.post('/', validatePassword, createUser)
 router.get('/', authMiddleware, loadAccessContext, requirePermissions("people.read"), getUsers)
 
@@ -121,6 +144,13 @@ router.post(
   createUserProcessTask
 );
 router.post(
+  '/:id/general-tasks',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "process_execution", action: "create" }),
+  createGeneralTask
+);
+router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
   authMiddleware,
   loadAccessContext,
@@ -134,6 +164,35 @@ router.post(
   requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
   uploadDeliverable.single('file'),
   uploadDeliverablePdf
+);
+router.get(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/attachments',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  listDeliverableAttachments
+);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/attachments',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  uploadAttachment.single('file'),
+  uploadDeliverableAttachment
+);
+router.get(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/attachments/:attachmentId/download',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  downloadDeliverableAttachment
+);
+router.delete(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/attachments/:attachmentId',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  deleteDeliverableAttachment
 );
 router.get(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/template-download',

@@ -10,13 +10,16 @@ DEFAULT_SEED_FILE="/app/backend/scripts/seeds/pucese.seed.json"
 usage() {
   cat <<'EOF'
 Uso:
-  bash scripts/seed-db.sh <dev|qa-local|qa|prod> <capture|apply|rbac> [--file <ruta-en-contenedor>]
+  bash scripts/seed-db.sh <dev|qa-local|qa|prod> <capture|apply|rbac> [--file <ruta-en-contenedor>] [--full]
+
+apply siembra por defecto el baseline estructural (organizacion, RBAC y catalogo de
+procesos); las plantillas se crean desde la UI. Usa --full para el snapshot completo (demo).
 
 Ejemplos:
   bash scripts/seed-db.sh dev capture
-  bash scripts/seed-db.sh qa-local apply
+  bash scripts/seed-db.sh qa-local apply            # baseline estructural
+  bash scripts/seed-db.sh qa-local apply --full     # snapshot completo (demo)
   bash scripts/seed-db.sh qa-local rbac
-  bash scripts/seed-db.sh qa apply
   bash scripts/seed-db.sh qa apply --file /app/backend/scripts/seeds/pucese.seed.json
 
 Notas:
@@ -60,16 +63,34 @@ case "$MODE" in
     run_in_backend "$ENVIRONMENT" node /app/backend/scripts/seed_pucese.mjs capture
     ;;
   apply)
-    if [ "$#" -eq 0 ]; then
-      run_in_backend "$ENVIRONMENT" node /app/backend/scripts/seed_pucese.mjs apply --file "$DEFAULT_SEED_FILE"
-      exit 0
-    fi
-    if [ "$#" -ne 2 ] || [ "$1" != "--file" ]; then
-      echo "Uso invalido para apply."
-      usage
-      exit 1
-    fi
-    run_in_backend "$ENVIRONMENT" node /app/backend/scripts/seed_pucese.mjs apply --file "$2"
+    APPLY_FILE="$DEFAULT_SEED_FILE"
+    APPLY_MODE_FLAG="--baseline"
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --file)
+          if [ "$#" -lt 2 ]; then
+            echo "Falta el valor para --file."
+            exit 1
+          fi
+          APPLY_FILE="$2"
+          shift 2
+          ;;
+        --full)
+          APPLY_MODE_FLAG="--full"
+          shift
+          ;;
+        --baseline)
+          APPLY_MODE_FLAG="--baseline"
+          shift
+          ;;
+        *)
+          echo "Parametro no soportado para apply: $1"
+          usage
+          exit 1
+          ;;
+      esac
+    done
+    run_in_backend "$ENVIRONMENT" node /app/backend/scripts/seed_pucese.mjs apply --file "$APPLY_FILE" "$APPLY_MODE_FLAG"
     ;;
   rbac)
     if [ "$#" -gt 0 ]; then

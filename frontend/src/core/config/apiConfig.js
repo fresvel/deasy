@@ -43,6 +43,13 @@ export const API_ROUTES = {
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/file`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_RESET_WORKFLOW: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/reset-workflow`,
+  USERS_GENERAL_TASKS: (userId) => `${API_PREFIX}/users/${userId}/general-tasks`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT: (userId, definitionId, taskItemId, attachmentId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments/${attachmentId}`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT_DOWNLOAD: (userId, definitionId, taskItemId, attachmentId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments/${attachmentId}/download`,
   CHAT_PROCESS_THREAD: (processId) => `${API_PREFIX}/chat/processes/${processId}/thread`,
   CHAT_CONVERSATION_MESSAGES: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/messages`,
   CHAT_CONVERSATION_READ: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/read`,
@@ -57,6 +64,11 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT: `${API_PREFIX}/admin/sql/template_artifacts/draft`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/draft/${artifactId}`,
   ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
+  ADMIN_SQL_TEMPLATE_SEED_DOWNLOAD: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/download`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/download`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_SCHEMA: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/schema`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_STAGE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/stage`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/version`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
   SIGN: `${API_PREFIX}/sign`,

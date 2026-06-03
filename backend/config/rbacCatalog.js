@@ -84,7 +84,7 @@ export const ROLE_PERMISSION_MATRIX = {
     academic_terms: ["read"],
     process_definitions: ["read", "create", "update", "delete", "manage"],
     process_execution: ["read", "create", "update"],
-    templates: ["read"],
+    templates: ["read", "create", "update", "delete", "manage"],
     documents: ["read"],
     fill_flows: ["read"],
     signature_flows: ["read"]
@@ -104,7 +104,7 @@ export const ROLE_PERMISSION_MATRIX = {
     academic_terms: ["read"],
     process_definitions: ["read"],
     process_execution: ["read", "create", "update", "delete", "manage"],
-    templates: ["read"],
+    templates: ["read", "create", "update"],
     documents: ["read", "create", "update"],
     fill_flows: ["read", "update"],
     signature_flows: ["read", "update"]

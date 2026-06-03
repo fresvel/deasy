@@ -1,19 +1,5 @@
 <template>
   <section class="mt-4 space-y-4">
-      <div class="profile-section-header">
-        <div>
-          <h2 class="text-start profile-section-title table-title-with-icon">
-            <span class="table-title-icon" aria-hidden="true">
-              <font-awesome-icon icon="id-card" />
-            </span>
-            <span>Puestos sin ocupaciones</span>
-          </h2>
-          <p class="profile-section-subtitle mb-0">Gestiona puestos activos sin ocupacion actual.</p>
-        </div>
-        <div class="profile-section-actions">
-          <AppTag variant="neutral">{{ rows.length }}</AppTag>
-        </div>
-      </div>
       <div class="admin-surface-frame">
           <div class="deasy-filter-shell deasy-filter-shell--embedded">
           <div class="deasy-filter-grid deasy-filter-grid--admin">
@@ -119,7 +105,6 @@
 <script setup>
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AppTag from "@/shared/components/data/AppTag.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";

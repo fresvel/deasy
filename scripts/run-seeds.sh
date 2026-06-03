@@ -9,17 +9,23 @@ BACKEND_DIR="$ROOT_DIR/backend"
 DEFAULT_SEED_FILE="$ROOT_DIR/backend/scripts/seeds/pucese.seed.json"
 
 RUN_DB_SEED=1
-RUN_STORAGE_SEEDS=1
+RUN_STORAGE_SEEDS=0
+DB_SEED_FULL=0
 SEED_FILE="$DEFAULT_SEED_FILE"
 
 usage() {
   cat <<'EOF'
 Uso:
-  scripts/run-seeds.sh [--skip-db] [--skip-storage] [--seed-file <ruta>]
+  scripts/run-seeds.sh [--skip-db] [--with-storage] [--full] [--seed-file <ruta>]
+
+Por defecto siembra solo el baseline estructural en MariaDB (organizacion, RBAC y catalogo
+de procesos) y NO publica plantillas en MinIO, porque las plantillas se crean desde la UI.
 
 Opciones:
   --skip-db         Omite la semilla SQL de MariaDB.
-  --skip-storage    Omite la publicacion de seeds en MinIO.
+  --with-storage    Publica el contenido de plantillas en MinIO (tools/templates/seeds).
+  --full            Siembra el snapshot completo (plantillas + ejecucion) y publica el
+                    storage. Equivale a DB completa + --with-storage (modo demo).
   --seed-file       Ruta alternativa al archivo JSON de la semilla SQL.
   --help            Muestra esta ayuda.
 EOF
@@ -122,13 +128,18 @@ run_db_seed() {
   local mariadb_port
   mariadb_port="$(resolve_mariadb_host_port)"
 
-  echo "Aplicando semilla SQL desde $SEED_FILE..."
+  local mode_flag="--baseline"
+  if [ "$DB_SEED_FULL" -eq 1 ]; then
+    mode_flag="--full"
+  fi
+
+  echo "Aplicando semilla SQL ($([ "$DB_SEED_FULL" -eq 1 ] && echo completa || echo baseline)) desde $SEED_FILE..."
   MARIADB_HOST=127.0.0.1 \
   MARIADB_PORT="$mariadb_port" \
   MARIADB_USER="$MARIADB_USER" \
   MARIADB_PASSWORD="$MARIADB_PASSWORD" \
   MARIADB_DATABASE="$MARIADB_DATABASE" \
-  node "$ROOT_DIR/backend/scripts/seed_pucese.mjs" apply --file "$SEED_FILE"
+  node "$ROOT_DIR/backend/scripts/seed_pucese.mjs" apply --file "$SEED_FILE" "$mode_flag"
 }
 
 run_storage_seeds() {
@@ -142,7 +153,15 @@ while [ $# -gt 0 ]; do
     --skip-db)
       RUN_DB_SEED=0
       ;;
+    --with-storage)
+      RUN_STORAGE_SEEDS=1
+      ;;
+    --full)
+      DB_SEED_FULL=1
+      RUN_STORAGE_SEEDS=1
+      ;;
     --skip-storage)
+      # Compatibilidad: el storage ya no se publica por defecto; este flag es no-op.
       RUN_STORAGE_SEEDS=0
       ;;
     --seed-file)

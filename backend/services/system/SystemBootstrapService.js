@@ -1,6 +1,10 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { getMariaDBPool } from "../../config/mariadb.js";
+import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
@@ -234,6 +238,312 @@ const ensureBootstrapUnit = async (connection) => {
   return Number(inserted.id);
 };
 
+// Proceso por defecto 'default': paraguas de tareas libres / no clasificadas.
+// Su plantilla base NACE DE UN SEED real (contrato latex/jinja2 + schema), empaquetado dentro del backend
+// en services/system/seeds/informe-general. El bootstrap lo publica a MinIO (catálogo Seeds/ + artifact
+// instanciado System/) y registra la fila template_seeds + template_artifacts. El flujo de llenado queda
+// simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
+const DEFAULT_PROCESS_SLUG = "default";
+const DEFAULT_PROCESS_NAME = "Proceso por defecto";
+const DEFAULT_SERIES_CODE = "default";
+const DEFAULT_VARIATION = "general";
+const DEFAULT_DEFINITION_VERSION = "1.0.0";
+
+// Seed base empaquetado en el backend (copia de tools/templates/seeds/latex/informe-general, sin render/).
+const BASE_SEED_TYPE = "latex";
+const BASE_SEED_NAME = "informe-general";
+const BASE_SEED_CODE = `${BASE_SEED_TYPE}/${BASE_SEED_NAME}`;
+const BASE_SEED_DISPLAY = "Informe general";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BASE_SEED_DIR = path.join(__dirname, "seeds", BASE_SEED_NAME);
+
+const DEFAULT_TEMPLATE_CODE = "tpl_informe_general";
+const DEFAULT_TEMPLATE_BUCKET = "deasy-templates";
+const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/v0001/`;
+const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/modes/process/jinja2/src/`;
+const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
+
+// meta.yaml generado del artifact instanciado (descriptivo; el contrato de render vive en src/).
+const BASE_META_YAML = `key: "${BASE_SEED_CODE}"
+export_id: "${DEFAULT_TEMPLATE_CODE}"
+seed_code: "${BASE_SEED_CODE}"
+name: "${BASE_SEED_DISPLAY}"
+repository_stage: published
+version: 1.0.0
+storage_version: v0001
+modes:
+  process:
+    jinja2:
+      path: "modes/process/jinja2/src"
+origins: []
+workflows:
+  fill:
+    required: true
+    source: "artifact"
+    sync_mode: "artifact_to_db"
+    steps:
+      - order: 1
+        code: "owner_fill"
+        name: "Llenado del responsable"
+        resolver:
+          type: "document_owner"
+          selection_mode: "auto_one"
+        required: true
+        can_reject: false
+  signatures:
+    required: false
+    source: "artifact"
+    steps: []
+`;
+
+const SEED_CONTENT_TYPES = {
+  ".json": "application/json",
+  ".yaml": "text/yaml",
+  ".yml": "text/yaml",
+  ".j2": "text/plain",
+  ".tex": "text/plain",
+  ".sh": "text/x-shellscript",
+  ".md": "text/markdown",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".bib": "text/plain"
+};
+const guessSeedContentType = (filePath) => SEED_CONTENT_TYPES[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+
+// Lista recursiva de archivos de un directorio como [{ abs, rel }] con rel en formato POSIX.
+const walkSeedFiles = (dir, base = dir) => {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const abs = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...walkSeedFiles(abs, base));
+    } else if (entry.isFile()) {
+      out.push({ abs, rel: path.relative(base, abs).split(path.sep).join("/") });
+    }
+  }
+  return out;
+};
+
+const putBufferObject = (bucket, objectName, buffer, contentType = "application/octet-stream") =>
+  new Promise((resolve, reject) => {
+    minioClient.putObject(bucket, objectName, buffer, buffer.length, { "Content-Type": contentType }, (error, etag) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(etag);
+    });
+  });
+
+const putSeedFileObject = async (bucket, objectName, absPath) => {
+  const buffer = await fs.promises.readFile(absPath);
+  return putBufferObject(bucket, objectName, buffer, guessSeedContentType(absPath));
+};
+
+// Publica en MinIO el seed base: (1) el árbol completo al catálogo Seeds/ y (2) el artifact instanciado en
+// System/ (src jinja2 + schema.json + meta.yaml generado + data.yaml desde defaults.yaml). Idempotente: si el
+// main.tex.j2 del artifact ya existe no reescribe (respeta ediciones del admin). Best-effort: un fallo de
+// MinIO no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
+export const publishBaseSeedAssets = async () => {
+  const bucket = DEFAULT_TEMPLATE_BUCKET;
+  const mainKey = `${DEFAULT_TEMPLATE_SRC_PREFIX}main.tex.j2`;
+  try {
+    await ensureBucketExists(bucket);
+    try {
+      await statMinioObject(bucket, mainKey);
+      return { published: false, reason: "ya_existe" };
+    } catch {
+      // No existe: se publica.
+    }
+    if (!fs.existsSync(BASE_SEED_DIR)) {
+      console.warn("publishBaseSeedAssets: no se encontró el seed base empaquetado en", BASE_SEED_DIR);
+      return { published: false, reason: "seed_no_empaquetado" };
+    }
+
+    const files = walkSeedFiles(BASE_SEED_DIR);
+    // 1. Catálogo Seeds/<tipo>/<nombre>/...
+    for (const file of files) {
+      await putSeedFileObject(bucket, `${SEEDS_CATALOG_PREFIX}${file.rel}`, file.abs);
+    }
+    // 2. Artifact instanciado System/<code>/v0001/...
+    for (const file of files) {
+      if (file.rel === "schema.json") {
+        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_PREFIX}schema.json`, file.abs);
+      } else if (file.rel === "defaults.yaml") {
+        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_PREFIX}data.yaml`, file.abs);
+        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}data.yaml`, file.abs);
+      } else if (file.rel.startsWith("src/")) {
+        await putSeedFileObject(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}${file.rel.slice("src/".length)}`, file.abs);
+      }
+      // workflow.yaml / README.md sólo viven en el catálogo Seeds/.
+    }
+    await putBufferObject(bucket, `${DEFAULT_TEMPLATE_PREFIX}meta.yaml`, Buffer.from(BASE_META_YAML, "utf8"), "text/yaml");
+    return { published: true };
+  } catch (error) {
+    console.warn("publishBaseSeedAssets: no se pudieron publicar los objetos del seed base:", error?.message);
+    return { published: false, reason: error?.message };
+  }
+};
+
+export const ensureDefaultProcess = async (connection) => {
+  // 1. proceso
+  let process = await fetchOne(connection, "SELECT id FROM processes WHERE slug = ? LIMIT 1", [DEFAULT_PROCESS_SLUG]);
+  if (!process) {
+    const [r] = await connection.query(
+      "INSERT INTO processes (name, slug, parent_id, is_active) VALUES (?, ?, NULL, 1)",
+      [DEFAULT_PROCESS_NAME, DEFAULT_PROCESS_SLUG]
+    );
+    process = { id: r.insertId };
+  }
+  const processId = Number(process.id);
+
+  // 2. serie
+  let series = await fetchOne(connection, "SELECT id FROM process_definition_series WHERE code = ? LIMIT 1", [DEFAULT_SERIES_CODE]);
+  if (!series) {
+    const [r] = await connection.query(
+      "INSERT INTO process_definition_series (source_type, unit_type_id, cargo_id, code, is_active) VALUES ('legacy', NULL, NULL, ?, 1)",
+      [DEFAULT_SERIES_CODE]
+    );
+    series = { id: r.insertId };
+  }
+
+  // 3. definición activa
+  let definition = await fetchOne(
+    connection,
+    "SELECT id, status FROM process_definition_versions WHERE process_id = ? AND variation_key = ? AND definition_version = ? LIMIT 1",
+    [processId, DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION]
+  );
+  if (!definition) {
+    const [r] = await connection.query(
+      `INSERT INTO process_definition_versions
+        (process_id, series_id, variation_key, definition_version, name, description, has_document, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, ?, 1, 'active', CURDATE())`,
+      [processId, Number(series.id), DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION,
+       "Tarea por defecto", "Tareas libres y no clasificadas."]
+    );
+    definition = { id: r.insertId };
+  } else if (definition.status !== "active") {
+    await connection.query("UPDATE process_definition_versions SET status = 'active' WHERE id = ?", [definition.id]);
+  }
+  const definitionId = Number(definition.id);
+
+  // 4. seed base (catálogo). El template nace de este seed (contrato latex/jinja2 + schema).
+  let seedRow = await fetchOne(
+    connection,
+    "SELECT id FROM template_seeds WHERE seed_code = ? LIMIT 1",
+    [BASE_SEED_CODE]
+  );
+  if (!seedRow) {
+    const [r] = await connection.query(
+      `INSERT INTO template_seeds
+        (seed_code, display_name, description, seed_type, source_path, preview_path, is_active)
+       VALUES (?, ?, ?, ?, ?, NULL, 1)`,
+      [BASE_SEED_CODE, BASE_SEED_DISPLAY, "Seed base del sistema (informe general).", BASE_SEED_TYPE, SEEDS_CATALOG_PREFIX]
+    );
+    seedRow = { id: r.insertId };
+  }
+  const templateSeedId = Number(seedRow.id);
+
+  // 5. plantilla base instanciada desde el seed. Schema/meta/jinja2 viven en MinIO (publicados abajo).
+  let artifact = await fetchOne(
+    connection,
+    "SELECT id FROM template_artifacts WHERE template_code = ? AND storage_version = 'v0001' LIMIT 1",
+    [DEFAULT_TEMPLATE_CODE]
+  );
+  if (!artifact) {
+    const availableFormats = { process: { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } } };
+    const [r] = await connection.query(
+      `INSERT INTO template_artifacts
+        (template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
+         source_version, storage_version, artifact_stage, bucket, base_object_prefix,
+         available_formats, schema_object_key, meta_object_key, is_active)
+       VALUES (?, NULL, ?, ?, ?, NULL, '1.0.0', 'v0001', 'published', ?, ?, ?, ?, ?, 1)`,
+      [
+        templateSeedId,
+        DEFAULT_TEMPLATE_CODE,
+        BASE_SEED_DISPLAY,
+        "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
+        DEFAULT_TEMPLATE_BUCKET,
+        DEFAULT_TEMPLATE_PREFIX,
+        JSON.stringify(availableFormats),
+        `${DEFAULT_TEMPLATE_PREFIX}schema.json`,
+        `${DEFAULT_TEMPLATE_PREFIX}meta.yaml`,
+      ]
+    );
+    artifact = { id: r.insertId };
+  }
+  const artifactId = Number(artifact.id);
+
+  // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado
+  //       (idempotente, best-effort: no aborta el bootstrap si MinIO falla).
+  await publishBaseSeedAssets();
+
+  // 5. vínculo definición↔plantilla (creates_task)
+  let pdt = await fetchOne(
+    connection,
+    "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+    [definitionId, artifactId]
+  );
+  if (!pdt) {
+    const [r] = await connection.query(
+      `INSERT INTO process_definition_templates
+        (process_definition_id, template_artifact_id, instance_mode, creates_task, is_required, sort_order)
+       VALUES (?, ?, 'single_document', 1, 1, 1)`,
+      [definitionId, artifactId]
+    );
+    pdt = { id: r.insertId };
+  }
+  const pdtId = Number(pdt.id);
+
+  // 6. flujo de llenado: 1 paso, el dueño del documento llena (universal).
+  let fillTpl = await fetchOne(
+    connection,
+    "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ? LIMIT 1",
+    [pdtId]
+  );
+  if (!fillTpl) {
+    const [r] = await connection.query(
+      "INSERT INTO fill_flow_templates (process_definition_template_id, name, description, is_active) VALUES (?, ?, ?, 1)",
+      [pdtId, "Llenado del responsable", "El responsable de la tarea completa el contenido."]
+    );
+    fillTpl = { id: r.insertId };
+    await connection.query(
+      `INSERT INTO fill_flow_steps
+        (fill_flow_template_id, step_order, resolver_type, selection_mode, is_required, can_reject)
+       VALUES (?, 1, 'document_owner', 'auto_one', 1, 0)`,
+      [Number(fillTpl.id)]
+    );
+  }
+  // Firma: ad-hoc (no se predefine para tareas libres).
+
+  // 7. trigger manual + regla all_units
+  const trigger = await fetchOne(
+    connection,
+    "SELECT id FROM process_definition_triggers WHERE process_definition_id = ? AND trigger_mode = 'manual_custom_term' AND normalized_term_type_id = 0 LIMIT 1",
+    [definitionId]
+  );
+  if (!trigger) {
+    await connection.query(
+      "INSERT INTO process_definition_triggers (process_definition_id, trigger_mode, term_type_id, is_active) VALUES (?, 'manual_custom_term', NULL, 1)",
+      [definitionId]
+    );
+  }
+  const rule = await fetchOne(
+    connection,
+    "SELECT id FROM process_target_rules WHERE process_definition_id = ? AND unit_scope_type = 'all_units' LIMIT 1",
+    [definitionId]
+  );
+  if (!rule) {
+    await connection.query(
+      "INSERT INTO process_target_rules (process_definition_id, unit_scope_type, recipient_policy, priority, is_active) VALUES (?, 'all_units', 'all_matches', 1, 1)",
+      [definitionId]
+    );
+  }
+
+  return { processId, definitionId, artifactId };
+};
+
 const upsertAdminPerson = async (connection, payload) => {
   const existingPerson = await fetchOne(
     connection,
@@ -430,6 +740,7 @@ export default class SystemBootstrapService {
         roleId: roleIds.get(ADMIN_ROLE_NAME),
         unitId
       });
+      await ensureDefaultProcess(connection);
       await connection.commit();
 
       return {

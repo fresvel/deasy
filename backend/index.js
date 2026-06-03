@@ -1,5 +1,7 @@
 import "dotenv/config"
+import http from "http";
 import express from "express";
+import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import user_router from "./routes/user_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
@@ -1187,25 +1189,28 @@ const privateProxyPorts = new Set([
   "9443"
 ].filter(Boolean));
 
+const resolveCorsOrigin = (origin, callback) => {
+  const originUrl = parseUrl(origin);
+  const isPrivateProxyOrigin = Boolean(
+    process.env.DEASY_ENV !== "prod" &&
+    originUrl &&
+    originUrl.protocol === "https:" &&
+    privateProxyPorts.has(originUrl.port) &&
+    isPrivateOrLoopbackHost(originUrl.hostname)
+  );
+
+  if (!origin || whitelist.has(origin) || isPrivateProxyOrigin) {
+    return callback(null, true);
+  }
+
+  return callback("Error de cors: " + origin + " not authorized");
+};
+
 app.use((req, res, next) => cors({
   origin: (origin, callback) => {
     console.log(`Iniciando CORS`)
     console.log("Origin: " + origin);
-
-    const originUrl = parseUrl(origin);
-    const isPrivateProxyOrigin = Boolean(
-      process.env.DEASY_ENV !== "prod" &&
-      originUrl &&
-      originUrl.protocol === "https:" &&
-      privateProxyPorts.has(originUrl.port) &&
-      isPrivateOrLoopbackHost(originUrl.hostname)
-    );
-
-    if (!origin || whitelist.has(origin) || isPrivateProxyOrigin) {
-      return callback(null, true);
-    }
-
-    return callback("Error de cors: " + origin + " not authorized");
+    return resolveCorsOrigin(origin, callback);
   },
   credentials: true // Permite el envío de cookies y credenciales
 })(req, res, next))
@@ -1296,8 +1301,12 @@ const initializeMariaDBWithRetry = async () => {
 const startServer = async () => {
   await initializeMariaDBWithRetry();
 
-  app.listen(PORT, () => {
+  const httpServer = http.createServer(app);
+  realtimeGateway.init(httpServer, { corsOrigin: resolveCorsOrigin, credentials: true });
+
+  httpServer.listen(PORT, () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/deasy/v1/`)
+    console.log(`WebSocket (Socket.IO) escuchando en: ws://localhost:${PORT}/socket.io`)
   });
 };
 

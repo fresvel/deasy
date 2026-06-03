@@ -9,9 +9,10 @@
     </p>
     <template #footer>
       <AdminButton variant="secondary" @click="$emit('close')">Ahora no</AdminButton>
-      <AdminButton variant="outlinePrimary" @click="$emit('open-rules')">Agregar reglas</AdminButton>
-      <AdminButton variant="outlinePrimary" @click="$emit('open-triggers')">Agregar disparadores</AdminButton>
-      <AdminButton variant="primary" @click="$emit('open-artifacts')">Agregar paquetes</AdminButton>
+      <AdminButton variant="outlinePrimary" @click="$emit('open-rules')">Reglas</AdminButton>
+      <AdminButton variant="outlinePrimary" @click="$emit('open-triggers')">Disparadores</AdminButton>
+      <AdminButton variant="outlinePrimary" @click="$emit('open-artifacts')">Paquetes</AdminButton>
+      <AdminButton variant="primary" @click="$emit('open-wizard')">Continuar guiado →</AdminButton>
     </template>
   </AdminModalShell>
 </template>
@@ -23,7 +24,7 @@ import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 defineProps({
   context: { type: Object, default: null }
 });
-defineEmits(["close", "open-rules", "open-triggers", "open-artifacts"]);
+defineEmits(["close", "open-rules", "open-triggers", "open-artifacts", "open-wizard"]);
 const modalRef = ref(null);
 defineExpose({
   get el() {

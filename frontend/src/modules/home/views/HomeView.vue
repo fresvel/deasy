@@ -223,14 +223,24 @@
                   {{ unit.name }}
                 </button>
               </div>
-              <button
-                type="button"
-                class="deasy-hero-back-button shrink-0"
-                @click="showProcessesPanel = false; clearSelectedProcess()"
-              >
-                <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
-                <span>Volver</span>
-              </button>
+              <div class="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 bg-white px-3.5 py-2 text-sm font-semibold text-indigo-700 transition hover:-translate-y-0.5 hover:bg-indigo-50"
+                  @click="openGeneralTaskModal('free')"
+                >
+                  <IconPlus class="h-4 w-4" />
+                  <span>Nueva tarea</span>
+                </button>
+                <button
+                  type="button"
+                  class="deasy-hero-back-button"
+                  @click="showProcessesPanel = false; clearSelectedProcess()"
+                >
+                  <span class="deasy-hero-back-button__icon"><IconArrowLeft class="h-4.5 w-4.5" /></span>
+                  <span>Volver</span>
+                </button>
+              </div>
             </div>
 
             <!-- Barra de filtros: Cargo / Año / Estado -->
@@ -875,7 +885,7 @@
                             <span class="text-sm font-bold text-slate-800">Firma global</span>
                           </span>
                         </button>
-                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="showFutureTaskCreationInfo">
+                        <button type="button" class="group relative flex w-full items-center gap-3 rounded-[1.2rem] border border-slate-200/90 bg-white px-4 py-4 text-left shadow-[0_8px_18px_rgba(15,23,42,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/70" @click="openGeneralTaskModal('free')">
                           <span class="inline-flex h-11 w-11 items-center justify-center rounded-[0.95rem] border border-slate-200 bg-slate-50/80 text-slate-600 transition-all group-hover:border-slate-300 group-hover:bg-slate-100">
                             <IconPlus class="h-5 w-5" />
                           </span>
@@ -996,7 +1006,6 @@
                         <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                           <span>{{ template.template_artifact_name }}</span>
                           <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                            <span class="bg-slate-100 px-2 py-0.5 rounded">{{ prettifyArtifactRole(template.usage_role) }}</span>
                             <span :class="template.creates_task ? 'text-sky-600' : 'text-slate-400'">{{ template.creates_task ? 'Genera tarea' : 'Soporte' }}</span>
                           </span>
                         </li>
@@ -1127,7 +1136,6 @@
                 <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2">
                   <div class="flex flex-wrap items-center gap-2">
                     <strong class="text-sm font-bold text-slate-800">{{ template.template_artifact_name }}</strong>
-                    <AppTag variant="muted">{{ prettifyArtifactRole(template.usage_role) }}</AppTag>
                     <AppTag variant="success">Proceso</AppTag>
                   </div>
                   <div class="flex flex-wrap gap-2">
@@ -1443,6 +1451,19 @@
             @click="deliverableWorkspaceState.tab = 'history'"
           >
             Historial
+          </button>
+          <button
+            v-if="deliverableWorkspaceSubject"
+            type="button"
+            role="tab"
+            :aria-selected="deliverableWorkspaceState.tab === 'attachments'"
+            :tabindex="deliverableWorkspaceState.tab === 'attachments' ? 0 : -1"
+            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
+            :class="getDeliverableWorkspaceTabClass('attachments')"
+            @click="deliverableWorkspaceState.tab = 'attachments'"
+          >
+            Anexos
+            <span v-if="attachmentsState.items.length" class="ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-indigo-100 px-1 text-[0.65rem] font-bold text-indigo-700">{{ attachmentsState.items.length }}</span>
           </button>
         </div>
 
@@ -1979,13 +2000,127 @@
             </section>
           </div>
         </template>
+        <template v-else-if="deliverableWorkspaceState.tab === 'attachments'">
+          <div class="flex flex-col gap-4">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-col gap-1">
+                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Anexos del entregable</h3>
+                <p class="m-0 text-xs font-medium text-slate-500">Archivos auxiliares (evidencias, soportes) adicionales al documento principal.</p>
+              </div>
+
+              <div class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/40 p-4">
+                <label class="flex flex-col gap-1">
+                  <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Tipo</span>
+                  <select v-model="attachmentUploadKind" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+                    <option value="annex">Anexo</option>
+                    <option value="evidence">Evidencia</option>
+                    <option value="source">Fuente</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </label>
+                <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50" :class="attachmentsState.uploading ? 'pointer-events-none opacity-60' : ''">
+                  <IconUpload class="h-4 w-4" />
+                  <span>{{ attachmentsState.uploading ? 'Subiendo...' : 'Agregar anexo' }}</span>
+                  <input type="file" class="hidden" :disabled="attachmentsState.uploading" @change="handleAttachmentUpload" />
+                </label>
+              </div>
+
+              <div v-if="attachmentsState.error" class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ attachmentsState.error }}</div>
+
+              <div v-if="attachmentsState.loading" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500 text-center animate-pulse">Cargando anexos...</div>
+              <div v-else-if="!attachmentsState.items.length" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500 text-center">
+                Este entregable todavía no tiene anexos.
+              </div>
+              <ul v-else class="mt-4 flex flex-col gap-2">
+                <li
+                  v-for="attachment in attachmentsState.items"
+                  :key="`attachment-${attachment.id}`"
+                  class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+                >
+                  <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><IconFileDescription class="h-4.5 w-4.5" /></span>
+                  <div class="min-w-0 flex-1">
+                    <p class="m-0 truncate text-sm font-semibold text-slate-800" :title="attachment.file_name">{{ attachment.file_name }}</p>
+                    <p class="m-0 mt-0.5 flex items-center gap-2 text-[0.7rem] font-medium text-slate-400">
+                      <span class="rounded bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-600">{{ ATTACHMENT_KIND_LABELS[attachment.kind] || attachment.kind }}</span>
+                      <span v-if="formatAttachmentSize(attachment.size_bytes)">{{ formatAttachmentSize(attachment.size_bytes) }}</span>
+                      <span v-if="attachment.description" class="truncate">· {{ attachment.description }}</span>
+                    </p>
+                  </div>
+                  <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-sky-700 transition hover:border-sky-300 hover:bg-sky-50" aria-label="Descargar anexo" @click="handleAttachmentDownload(attachment)"><IconDownload class="h-4.5 w-4.5" /></AppButton>
+                  <AppButton variant="plain" class-name="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar anexo" @click="handleAttachmentDelete(attachment)"><IconX class="h-4.5 w-4.5" /></AppButton>
+                </li>
+              </ul>
+            </section>
+          </div>
+        </template>
         <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
           No hay una sección disponible para este entregable.
         </div>
       </div>
       <template #footer>
+        <AppButton v-if="deliverableWorkspaceSubject" variant="softPrimary" @click="openDerivedTaskFromWorkspace">
+          Derivar tarea
+        </AppButton>
         <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
+        </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
+      ref="generalTaskModal"
+      labelled-by="general-task-modal-title"
+      title="Nueva tarea"
+      size="lg"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div class="flex flex-col gap-4">
+        <p class="m-0 text-sm font-medium text-slate-500">
+          {{ generalTaskForm.mode === 'derived'
+            ? 'Crea una tarea derivada del entregable seleccionado. Heredará su unidad de contexto.'
+            : 'Crea una tarea libre (sin proceso predefinido). Podrás adjuntar archivos una vez creada.' }}
+        </p>
+
+        <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Título *</span>
+          <input v-model="generalTaskForm.title" type="text" maxlength="180" placeholder="Ej. Memorando interno, solicitud de equipo…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Descripción</span>
+          <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle de la tarea…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
+        </label>
+
+        <label v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-1">
+          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Unidad *</span>
+          <select v-model="generalTaskForm.unitId" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+            <option :value="null" disabled>Selecciona una unidad</option>
+            <option v-for="unit in unitsPanelData" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+          </select>
+        </label>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <label class="flex flex-col gap-1 sm:col-span-1">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Periodo</span>
+            <input v-model="generalTaskForm.termName" type="text" maxlength="180" placeholder="Ej. Junio 2026" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Inicio</span>
+            <input v-model="generalTaskForm.startDate" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Fin</span>
+            <input v-model="generalTaskForm.endDate" type="date" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+          </label>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" data-modal-dismiss>Cancelar</AppButton>
+        <AppButton variant="primary" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="submitGeneralTask">
+          {{ generalTaskSubmitting ? 'Creando…' : 'Crear tarea' }}
         </AppButton>
       </template>
     </AdminModalShell>
@@ -2769,6 +2904,20 @@ const documentCenterModal = ref(null);
 const fillWorkflowModal = ref(null);
 const deliverableUploadModal = ref(null);
 const deliverableWorkspaceModal = ref(null);
+const generalTaskModal = ref(null);
+let generalTaskModalInstance = null;
+const generalTaskSubmitting = ref(false);
+const generalTaskError = ref('');
+const generalTaskForm = ref({
+  mode: 'free',
+  title: '',
+  description: '',
+  unitId: null,
+  parentTaskId: null,
+  termName: '',
+  startDate: '',
+  endDate: '',
+});
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -2823,6 +2972,123 @@ const fillWorkflowState = ref({
 const deliverableWorkspaceState = ref({
   tab: 'summary'
 });
+const attachmentsState = ref({
+  loading: false,
+  uploading: false,
+  error: '',
+  items: [],
+});
+const attachmentUploadKind = ref('annex');
+const ATTACHMENT_KIND_LABELS = {
+  annex: 'Anexo',
+  evidence: 'Evidencia',
+  source: 'Fuente',
+  other: 'Otro',
+};
+
+const resolveAttachmentContext = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const userId = currentUserId.value;
+  const definitionId = Number(
+    subject.processDefinitionId
+    || selectedProcessContext.value?.process_definition_id
+    || selectedProcessKey.value
+  );
+  return { userId, definitionId, taskItemId: subject.itemId, documentId: subject.documentId || null };
+};
+
+const loadDeliverableAttachments = async (payload) => {
+  const { userId, definitionId, taskItemId, documentId } = resolveAttachmentContext(payload);
+  if (!userId || !definitionId || !taskItemId) {
+    attachmentsState.value = { loading: false, uploading: false, error: '', items: [] };
+    return;
+  }
+  attachmentsState.value = { ...attachmentsState.value, loading: true, error: '' };
+  try {
+    const data = await processPanelService.listDeliverableAttachments(userId, definitionId, taskItemId, { documentId });
+    attachmentsState.value = {
+      loading: false,
+      uploading: false,
+      error: '',
+      items: Array.isArray(data?.attachments) ? data.attachments : [],
+    };
+  } catch (error) {
+    attachmentsState.value = {
+      loading: false,
+      uploading: false,
+      error: error?.response?.data?.message || error?.message || 'No se pudieron cargar los anexos.',
+      items: [],
+    };
+  }
+};
+
+const handleAttachmentUpload = async (event) => {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+  const payload = deliverableWorkspaceSubject.value;
+  const { userId, definitionId, taskItemId, documentId } = resolveAttachmentContext(payload);
+  if (!userId || !definitionId || !taskItemId) {
+    setProcessActionInfo('No se pudo resolver el entregable para adjuntar el archivo.', 'error');
+    return;
+  }
+  attachmentsState.value = { ...attachmentsState.value, uploading: true, error: '' };
+  try {
+    await processPanelService.uploadDeliverableAttachment(userId, definitionId, taskItemId, file, {
+      kind: attachmentUploadKind.value,
+      documentId,
+    });
+    if (event?.target) event.target.value = '';
+    await loadDeliverableAttachments(payload);
+    await refreshActiveProcessPanel();
+    setProcessActionInfo('Anexo agregado correctamente.', 'success');
+  } catch (error) {
+    attachmentsState.value = { ...attachmentsState.value, uploading: false };
+    setProcessActionInfo(
+      error?.response?.data?.message || error?.message || 'No se pudo subir el anexo.',
+      'error'
+    );
+  }
+};
+
+const handleAttachmentDelete = async (attachment) => {
+  const payload = deliverableWorkspaceSubject.value;
+  const { userId, definitionId, taskItemId } = resolveAttachmentContext(payload);
+  if (!userId || !definitionId || !taskItemId || !attachment?.id) return;
+  try {
+    await processPanelService.deleteDeliverableAttachment(userId, definitionId, taskItemId, attachment.id);
+    await loadDeliverableAttachments(payload);
+    await refreshActiveProcessPanel();
+    setProcessActionInfo('Anexo eliminado.', 'success');
+  } catch (error) {
+    setProcessActionInfo(
+      error?.response?.data?.message || error?.message || 'No se pudo eliminar el anexo.',
+      'error'
+    );
+  }
+};
+
+const handleAttachmentDownload = async (attachment) => {
+  const payload = deliverableWorkspaceSubject.value;
+  const { userId, definitionId, taskItemId } = resolveAttachmentContext(payload);
+  if (!userId || !definitionId || !taskItemId || !attachment?.id) return;
+  try {
+    const { blob, fileName } = await processPanelService.downloadDeliverableAttachment(userId, definitionId, taskItemId, attachment.id);
+    downloadBlob(blob, fileName || attachment.file_name || 'anexo.bin');
+  } catch (error) {
+    setProcessActionInfo(
+      error?.response?.data?.message || error?.message || 'No se pudo descargar el anexo.',
+      'error'
+    );
+  }
+};
+
+const formatAttachmentSize = (bytes) => {
+  const value = Number(bytes || 0);
+  if (!value) return '';
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+};
 const signatureFlowState = ref({
   loading: false,
   error: '',
@@ -3666,10 +3932,7 @@ const documentCenterFields = [
 
 const taskLaunchSystemTemplates = computed(() =>
   (selectedProcessPanel.value?.dependencies?.templates || [])
-    .filter((template) =>
-      Number(template.creates_task) === 1
-      && String(template.artifact_origin || '').trim().toLowerCase() === 'process'
-    )
+    .filter((template) => Number(template.creates_task) === 1)
 );
 
 const taskLaunchSelectedTermLabel = computed(() => {
@@ -4167,14 +4430,6 @@ const formatTriggerLabel = (trigger) => {
   return 'Manual sobre periodo existente';
 };
 
-const prettifyArtifactRole = (value) => {
-  const normalized = String(value || '').trim().toLowerCase();
-  if (normalized === 'primary') return 'Principal';
-  if (normalized === 'attachment') return 'Adjunto';
-  if (normalized === 'support') return 'Soporte';
-  return value || 'Principal';
-};
-
 const getDeliverableProcessLabel = (_task = null, item = null) =>
   item?.process_label
   || item?.processLabel
@@ -4196,7 +4451,12 @@ const getDeliverableUnitLabel = (item) =>
   || selectedProcessContext.value?.name
   || 'Unidad no definida';
 
-const getDeliverablePeriodLabel = (task) => task?.term_name || 'Periodo no definido';
+const getDeliverablePeriodLabel = (task) => {
+  const raw = task?.term_name || '';
+  // Las tareas libres usan un term con sufijo técnico único (" · #uid-token"); se oculta.
+  const clean = raw.replace(/\s*·\s*#[^·]*$/, '').trim();
+  return clean || 'Periodo no definido';
+};
 
 const getTaskItemFromSelectedPanel = (taskItemId) => {
   const normalizedTaskItemId = Number(taskItemId || 0);
@@ -4539,11 +4799,75 @@ const showGeneralTaskInfo = () => {
   );
 };
 
-const showFutureTaskCreationInfo = () => {
-  setProcessActionInfo(
-    'La creación manual de nuevas tareas desde este panel todavía está pendiente de implementación.',
-    'error'
-  );
+const openGeneralTaskModal = (mode = 'free', context = {}) => {
+  const today = new Date().toISOString().slice(0, 10);
+  generalTaskError.value = '';
+  generalTaskForm.value = {
+    mode,
+    title: '',
+    description: '',
+    unitId: mode === 'free'
+      ? (activeConsolidatedUnitTab.value || unitsPanelData.value[0]?.id || null)
+      : (context.unitId || null),
+    parentTaskId: context.parentTaskId || null,
+    termName: '',
+    startDate: today,
+    endDate: '',
+  };
+  generalTaskModalInstance = Modal.getOrCreateInstance(generalTaskModal.value?.el);
+  generalTaskModalInstance?.show();
+};
+
+const openDerivedTaskFromWorkspace = () => {
+  const subject = deliverableWorkspaceSubject.value ? getDeliverableSubject(deliverableWorkspaceSubject.value) : null;
+  if (!subject?.taskId) {
+    setProcessActionInfo('No se pudo resolver la tarea de origen para derivar.', 'error');
+    return;
+  }
+  deliverableWorkspaceModalInstance?.hide();
+  openGeneralTaskModal('derived', {
+    parentTaskId: subject.taskId,
+    unitId: subject.scopeUnitId || subject.originUnitId || null,
+  });
+};
+
+const submitGeneralTask = async () => {
+  const form = generalTaskForm.value;
+  const userId = currentUserId.value;
+  if (!form.title.trim()) {
+    generalTaskError.value = 'Debes indicar un título.';
+    return;
+  }
+  if (form.mode === 'free' && !form.unitId) {
+    generalTaskError.value = 'Debes seleccionar una unidad.';
+    return;
+  }
+  generalTaskSubmitting.value = true;
+  generalTaskError.value = '';
+  try {
+    const payload = {
+      mode: form.mode,
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      unit_id: form.unitId || null,
+      parent_task_id: form.parentTaskId || null,
+      custom_term: {
+        name: form.termName.trim() || form.title.trim(),
+        start_date: form.startDate || null,
+        end_date: form.endDate || null,
+      },
+    };
+    await processPanelService.createGeneralTask(userId, payload);
+    generalTaskModalInstance?.hide();
+    await loadUserMenu();
+    await refreshActiveProcessPanel();
+    setProcessActionInfo('Tarea creada correctamente.', 'success');
+  } catch (error) {
+    generalTaskError.value =
+      error?.response?.data?.message || error?.message || 'No se pudo crear la tarea.';
+  } finally {
+    generalTaskSubmitting.value = false;
+  }
 };
 
 const goToNextTaskLaunchStep = () => {
@@ -6883,6 +7207,7 @@ const openDeliverableWorkspaceModal = async (payload) => {
   deliverableWorkspaceState.value = {
     tab: resolveDeliverableWorkspaceTab(payload)
   };
+  loadDeliverableAttachments(payload);
 
   if (canReviewSignatureFlow) {
     await loadSignatureFlowState(payload);

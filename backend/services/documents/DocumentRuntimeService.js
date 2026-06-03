@@ -186,8 +186,7 @@ const getDocumentVersionArtifactContext = async (connection, documentVersionId) 
        ta.base_object_prefix,
        ta.available_formats,
        ta.schema_object_key,
-       ta.meta_object_key,
-       ta.artifact_origin
+       ta.meta_object_key
      FROM document_versions dv
      INNER JOIN documents d ON d.id = dv.document_id
      LEFT JOIN template_artifacts ta ON ta.id = dv.template_artifact_id
@@ -374,7 +373,6 @@ export class DocumentRuntimeService {
           baseObjectPrefix: artifactContext.base_object_prefix || null,
           format: artifactContext.format || null,
           renderEngine: artifactContext.render_engine || null,
-          artifactOrigin: artifactContext.artifact_origin || null,
         },
         sources: {
           metaObjectKey: artifactDocuments.metaObjectKey,

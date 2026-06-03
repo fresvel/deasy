@@ -38,7 +38,6 @@ export function useAdminShellSearchActions({
 
   const clearTemplateArtifactInlineFilters = async () => {
     templateArtifactInlineFilters.value = {
-      artifact_origin: "",
       artifact_stage: ""
     };
     await fetchRows();

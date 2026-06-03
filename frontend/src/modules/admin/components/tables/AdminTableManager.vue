@@ -25,13 +25,33 @@
       :loading="loading"
       :is-template-seeds-table="isTemplateSeedsTable"
       :is-template-artifacts-table="isTemplateArtifactsTable"
+      :is-process-definitions-table="isProcessDefinitionFilterTable"
       :can-create="canCreateCurrentTable"
       :can-update="canUpdateCurrentTable"
       @go-back="handleGoBack"
       @sync-template-seeds="syncTemplateSeedsFromSource"
       @sync-template-artifacts="syncTemplateArtifactsFromDist"
       @create="handlePrimaryCreateAction"
+      @create-wizard="openProcessWizardFromScratch"
     />
+
+    <div v-if="table && isPositionAssignmentsTable" class="admin-related-tabs">
+      <ProfileSubsectionTabs
+        :model-value="positionAssignmentsView"
+        :tabs="positionAssignmentsTabs"
+        aria-label="Vistas de ocupaciones"
+        @update:model-value="positionAssignmentsView = $event"
+      />
+    </div>
+
+    <div v-if="table && isProcessDefinitionTemplatesTable" class="admin-related-tabs">
+      <ProfileSubsectionTabs
+        :model-value="definitionTemplatesView"
+        :tabs="definitionTemplatesTabs"
+        aria-label="Vistas de plantillas"
+        @update:model-value="definitionTemplatesView = $event"
+      />
+    </div>
 
     <div v-if="!table" class="flex">
       <div class="w-full">
@@ -45,6 +65,7 @@
 
     <AdminMainTableSection
       v-else
+      v-show="(!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
       ref="mainTableSection"
       :table="table"
       :loading="loading"
@@ -102,6 +123,7 @@
 
     <AdminVacantPositionsSection
       v-if="isPositionAssignmentsTable"
+      v-show="positionAssignmentsView === 'vacantes'"
       :search-term="vacantSearchTerm"
       :filters="vacantPositionFilters"
       :filter-loading="vacantPositionFilterLoading"
@@ -133,6 +155,7 @@
 
     <AdminUnassignedArtifactsSection
       v-if="isProcessDefinitionTemplatesTable"
+      v-show="definitionTemplatesView === 'sin-vincular'"
       :search-term="unassignedTemplateArtifactSearch"
       :filters="unassignedTemplateArtifactFilters"
       :has-filters="hasUnassignedTemplateArtifactFilters"
@@ -252,6 +275,7 @@
     />
 
     <AdminProcessDefinitionActivationModal
+      v-if="!processWizardOpen"
       ref="processDefinitionActivationModal"
       :checking="processDefinitionActivationChecking"
       :has-active-rules="processDefinitionActivationHasActiveRules"
@@ -283,12 +307,14 @@
       ref="definitionArtifactsPromptModal"
       :context="definitionArtifactsPromptContext"
       @close="closeDefinitionArtifactsPrompt"
+      @open-wizard="handleOpenWizardFromPrompt"
       @open-rules="confirmDefinitionRulesPrompt"
       @open-triggers="confirmDefinitionTriggersPrompt"
       @open-artifacts="confirmDefinitionArtifactsPrompt"
     />
 
     <AdminDefinitionArtifactsModal
+      v-if="!processWizardOpen"
       ref="definitionArtifactsModal"
       :context="definitionArtifactsContext"
       :error="definitionArtifactsError"
@@ -314,6 +340,7 @@
     />
 
     <AdminDefinitionTriggersModal
+      v-if="!processWizardOpen"
       ref="definitionTriggersModal"
       :context="definitionTriggersContext"
       :error="definitionTriggersError"
@@ -341,6 +368,7 @@
     />
 
     <AdminDefinitionRulesModal
+      v-if="!processWizardOpen"
       ref="definitionRulesModal"
       :context="definitionRulesContext"
       :error="definitionRulesError"
@@ -365,6 +393,128 @@
       @close="closeDefinitionRulesManager"
       @accept="acceptDefinitionRulesManager"
     />
+
+    <AdminProcessWizardModal
+      :open="processWizardOpen"
+      :style="{ zIndex: 1080 }"
+      :current-step="processWizardStep"
+      :steps="processWizardSteps"
+      :step-status="processWizardStepStatus"
+      :definition-context="processWizardDefinition"
+      :definition-form="processWizardDefinitionForm"
+      :process-options="processWizardProcessOptions"
+      :unit-type-options="processWizardUnitTypeOptions"
+      :cargo-options="processWizardCargoOptions"
+      :creating-definition="processWizardCreating"
+      :wizard-error="processWizardError"
+      @update:definition-form="processWizardDefinitionForm = $event"
+      @go-to-step="handleProcessWizardGoToStep"
+      @create-definition="handleProcessWizardCreateDefinition"
+      @close="handleProcessWizardClose"
+    >
+      <template #packages>
+        <AdminDefinitionArtifactsPanel
+          :context="definitionArtifactsContext"
+          :error="definitionArtifactsError"
+          :can-manage="canManageDefinitionArtifacts"
+          :can-submit="canSubmitDefinitionArtifact"
+          :labels="definitionArtifactsLabels"
+          :form="definitionArtifactsForm"
+          :edit-id="definitionArtifactsEditId"
+          :loading="definitionArtifactsLoading"
+          :rows="definitionArtifactsRows"
+          :table-fields="definitionArtifactsTableFields"
+          :format-cell="formatCell"
+          @update:form="definitionArtifactsForm = $event"
+          @clear-selection="clearDefinitionArtifactSelection"
+          @open-fk-search="openDefinitionArtifactFkSearch"
+          @submit="wizardSubmitArtifact"
+          @reset="resetDefinitionArtifactsForm"
+          @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
+          @edit-row="startDefinitionArtifactEdit"
+          @delete-row="deleteDefinitionArtifact"
+        />
+      </template>
+      <template #rules>
+        <AdminDefinitionRulesPanel
+          :context="definitionRulesContext"
+          :error="definitionRulesError"
+          :can-manage="canManageDefinitionRules"
+          :can-submit="canSubmitDefinitionRule"
+          :labels="definitionRulesLabels"
+          :form="definitionRulesForm"
+          :edit-id="definitionRulesEditId"
+          :loading="definitionRulesLoading"
+          :rows="definitionRulesRows"
+          :table-fields="definitionRulesTableFields"
+          :format-cell="formatDefinitionRuleCell"
+          @update:form="definitionRulesForm = $event"
+          @scope-change="handleDefinitionRuleScopeChange"
+          @clear-field="clearDefinitionRuleField"
+          @open-fk-search="openDefinitionRuleFkSearch"
+          @submit="wizardSubmitRule"
+          @reset="resetDefinitionRulesForm"
+          @view-row="openRecordViewer($event, allTablesMap.process_target_rules)"
+          @edit-row="startDefinitionRuleEdit"
+          @delete-row="deleteDefinitionRule"
+        />
+      </template>
+      <template #triggers>
+        <AdminDefinitionTriggersPanel
+          :context="definitionTriggersContext"
+          :error="definitionTriggersError"
+          :can-manage="canManageDefinitionTriggers"
+          :can-submit="canSubmitDefinitionTrigger"
+          :requires-term-type="definitionTriggerRequiresTermType"
+          :labels="definitionTriggersLabels"
+          :form="definitionTriggersForm"
+          :edit-id="definitionTriggersEditId"
+          :loading="definitionTriggersLoading"
+          :rows="definitionTriggersRows"
+          :table-fields="definitionTriggersTableFields"
+          :format-cell="formatCell"
+          @update:form="definitionTriggersForm = $event"
+          @trigger-mode-change="handleDefinitionTriggerModeChange"
+          @clear-term-type="clearDefinitionTriggerTermType"
+          @open-fk-search="openDefinitionTriggerFkSearch"
+          @submit="wizardSubmitTrigger"
+          @reset="resetDefinitionTriggersForm"
+          @view-row="openRecordViewer($event, allTablesMap.process_definition_triggers)"
+          @edit-row="startDefinitionTriggerEdit"
+          @delete-row="deleteDefinitionTrigger"
+        />
+      </template>
+      <template #activate>
+        <ProcessActivationPanel
+          :checking="processDefinitionActivationChecking"
+          :has-active-rules="processDefinitionActivationHasActiveRules"
+          :has-active-triggers="processDefinitionActivationHasActiveTriggers"
+          :has-required-artifacts="processDefinitionActivationHasRequiredArtifacts"
+          :requires-artifacts="processDefinitionActivationRequiresArtifacts"
+          :view="processDefinitionActivationView"
+          :selected-row="processWizardDefinition"
+          :rules="processDefinitionActivationRules"
+          :triggers="processDefinitionActivationTriggers"
+          :artifacts="processDefinitionActivationArtifacts"
+          :rule-table-fields="processDefinitionActivationRuleTableFields"
+          :trigger-table-fields="processDefinitionActivationTriggerTableFields"
+          :artifact-table-fields="processDefinitionActivationArtifactTableFields"
+          :format-cell="formatCell"
+          :format-definition-rule-summary="formatDefinitionRuleSummary"
+          @update:view="processDefinitionActivationView = $event"
+        />
+        <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+          <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-amber-600">
+            Completa los requisitos (reglas, disparadores{{ processDefinitionActivationRequiresArtifacts ? ', paquetes' : '' }}) para activar.
+          </span>
+          <AdminButton
+            variant="success"
+            :disabled="processDefinitionActivationChecking || !allProcessDefinitionActivationRequirementsMet"
+            @click="wizardConfirmActivation"
+          >Activar proceso</AdminButton>
+        </div>
+      </template>
+    </AdminProcessWizardModal>
 
     <AdminFkBrowserModal
       ref="fkModal"
@@ -429,7 +579,9 @@
       :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       :row-key-for-table="rowKeyForTable"
       :format-value-for-table="formatValueForTable"
+      :downloading="recordArchiveDownloading"
       @close="closeRecordViewer"
+      @download-archive="handleDownloadRecordArchive"
     />
 
     <AdminFkViewerModal
@@ -647,17 +799,21 @@
       :draft-artifact-seed-options="draftArtifactSeedOptions"
       :draft-artifact-preview-url="draftArtifactPreviewUrl"
       :get-draft-artifact-file-label="getDraftArtifactFileLabel"
+      :new-process-definition-id="draftNewProcessDefinitionId"
       @update:form="draftArtifactForm = $event"
       @file-change="handleDraftArtifactFileChange"
       @drop="handleDraftArtifactDrop"
       @close="closeDraftArtifactModal"
       @submit="submitDraftArtifact"
+      @change-stage="handleArtifactStageChange"
+      @new-version="handleArtifactNewVersion"
+      @create-process="handleDraftCreateProcess"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref } from "vue";
+import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
 import { useAdminFkManager } from "@/modules/admin/composables/fk/useAdminFkManager";
 import { useAdminFkCrud } from "@/modules/admin/composables/fk/useAdminFkCrud";
 import { useAdminFkSearch } from "@/modules/admin/composables/fk/useAdminFkSearch";
@@ -680,6 +836,8 @@ import { useAdminSearchFilters } from "@/modules/admin/composables/data/useAdmin
 import { useAdminTableDataSource } from "@/modules/admin/composables/data/useAdminTableDataSource";
 import { useProcessDefinitionActivationFlow } from "@/modules/admin/composables/processes/useProcessDefinitionActivationFlow";
 import { useProcessDefinitionManager } from "@/modules/admin/composables/processes/useProcessDefinitionManager";
+import axios from "axios";
+import { useProcessWizard } from "@/modules/admin/composables/processes/useProcessWizard";
 import { useAdminSubmitFlow } from "@/modules/admin/composables/forms/useAdminSubmitFlow";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import {
@@ -711,9 +869,12 @@ import {
 } from "@/modules/admin/services/AdminTableManagerConfig";
 import AdminFeedbackToast from "@/modules/admin/components/ui/AdminFeedbackToast.vue";
 import AdminDefinitionArtifactsModal from "@/modules/admin/components/modals/AdminDefinitionArtifactsModal.vue";
+import AdminDefinitionArtifactsPanel from "@/modules/admin/components/modals/AdminDefinitionArtifactsPanel.vue";
 import AdminDefinitionCreatedPromptModal from "@/modules/admin/components/modals/AdminDefinitionCreatedPromptModal.vue";
 import AdminDefinitionRulesModal from "@/modules/admin/components/modals/AdminDefinitionRulesModal.vue";
+import AdminDefinitionRulesPanel from "@/modules/admin/components/modals/AdminDefinitionRulesPanel.vue";
 import AdminDefinitionTriggersModal from "@/modules/admin/components/modals/AdminDefinitionTriggersModal.vue";
+import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/AdminDefinitionTriggersPanel.vue";
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
@@ -728,6 +889,8 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminPersonAssignmentsModal from "@/modules/admin/components/modals/AdminPersonAssignmentsModal.vue";
 import AdminProcessDefinitionActivationModal from "@/modules/admin/components/modals/AdminProcessDefinitionActivationModal.vue";
 import AdminProcessDefinitionVersioningModal from "@/modules/admin/components/modals/AdminProcessDefinitionVersioningModal.vue";
+import AdminProcessWizardModal from "@/modules/admin/components/modals/AdminProcessWizardModal.vue";
+import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 import AdminRecordViewerModal from "@/modules/admin/components/modals/AdminRecordViewerModal.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableHeader from "@/modules/admin/components/tables/AdminTableHeader.vue";
@@ -781,7 +944,6 @@ const processTargetRuleInlineFilters = ref({
   definition_status: ""
 });
 const templateArtifactInlineFilters = ref({
-  artifact_origin: "",
   artifact_stage: ""
 });
 const processDefinitionProcessOptions = ref([]);
@@ -816,6 +978,7 @@ const recordViewerRow = ref(null);
 const recordViewerLoading = ref(false);
 const recordViewerError = ref("");
 const recordViewerRelatedSections = ref([]);
+const recordArchiveDownloading = ref(false);
 const processDefinitionVersioningSource = ref(null);
 const processDefinitionCloneSourceId = ref("");
 const processDefinitionActivationConfirmed = ref(false);
@@ -879,7 +1042,6 @@ const definitionArtifactsError = ref("");
 const definitionArtifactsEditId = ref("");
 const definitionArtifactsForm = ref({
   template_artifact_id: "",
-  usage_role: "primary",
   creates_task: "1",
   is_required: "1",
   sort_order: "1"
@@ -902,7 +1064,13 @@ const draftArtifactForm = ref({
   template_seed_id: "",
   display_name: "",
   description: "",
-  source_version: "1.0.0"
+  source_version: "1.0.0",
+  artifact_stage: "draft",
+  storage_version: "",
+  process_definition_id: "",
+  schema_fields: [],
+  fill_workflow: { required: true, steps: [] },
+  signature_workflow: { required: true, anchors: [], steps: [] }
 });
 const draftArtifactFiles = ref({
   pdf: null,
@@ -1273,7 +1441,32 @@ const isTemplateArtifactsTable = computed(() => props.table?.table === "template
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
 const isPositionAssignmentsTable = computed(() => props.table?.table === "position_assignments");
+
+// Subpestañas de la vista de ocupaciones: una tabla por pestaña (ocupaciones / puestos sin ocupacion)
+// en lugar de apilarlas verticalmente.
+const positionAssignmentsView = ref("ocupaciones");
+const positionAssignmentsTabs = computed(() => [
+  { key: "ocupaciones", label: "Ocupaciones", count: rows.value?.length || 0 },
+  { key: "vacantes", label: "Puestos sin ocupacion", count: vacantPositionRows.value?.length || 0 }
+]);
+
 const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "process_definition_templates");
+
+// Subpestañas de la vista de plantillas de procesos definidos (plantillas vinculadas / artifacts sin definicion).
+const definitionTemplatesView = ref("plantillas");
+const definitionTemplatesTabs = computed(() => [
+  { key: "plantillas", label: "Plantillas", count: rows.value?.length || 0 },
+  { key: "sin-vincular", label: "Artifacts sin definicion", count: unassignedTemplateArtifactRows.value?.length || 0 }
+]);
+
+watch(
+  () => props.table?.table,
+  () => {
+    positionAssignmentsView.value = "ocupaciones";
+    definitionTemplatesView.value = "plantillas";
+  }
+);
+
 const isPositionFilterTable = computed(() =>
   isUnitPositionsTable.value || isPositionAssignmentsTable.value
 );
@@ -1415,8 +1608,7 @@ const hasProcessTargetRuleInlineFilters = computed(() =>
 );
 const hasTemplateArtifactInlineFilters = computed(() =>
   Boolean(
-    templateArtifactInlineFilters.value.artifact_origin
-    || templateArtifactInlineFilters.value.artifact_stage
+    templateArtifactInlineFilters.value.artifact_stage
   )
 );
 const hasVacantPositionFilters = computed(() =>
@@ -1989,6 +2181,32 @@ const {
   resolveModalElement
 });
 
+const handleArtifactStageChange = async (nextStage) => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.updateTemplateArtifactStage(id, nextStage);
+    draftArtifactForm.value = { ...draftArtifactForm.value, artifact_stage: data?.artifact_stage || nextStage };
+    await fetchRows();
+    showFeedbackToast({ kind: "success", title: "Estado actualizado", message: `El artifact pasó a estado "${data?.artifact_stage || nextStage}".` });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo cambiar el estado", message: err?.response?.data?.message || "Error al actualizar el estado." });
+  }
+};
+
+const handleArtifactNewVersion = async () => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.createTemplateArtifactVersion(id);
+    await fetchRows();
+    closeDraftArtifactModal();
+    showFeedbackToast({ kind: "success", title: "Nueva versión creada", message: data?.__notice || "Se creó una nueva versión en borrador." });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo crear la versión", message: err?.response?.data?.message || "Error al crear la nueva versión." });
+  }
+};
+
 const {
   syncTemplateArtifactsFromDist,
   syncTemplateSeedsFromSource,
@@ -2110,6 +2328,52 @@ const {
   getRecordViewerInstance,
   hideParentModals: hideParentModalsForRecordViewer
 });
+
+// Descarga el ZIP de formatos del registro abierto en el visor (paquetes de plantilla o seeds).
+const handleDownloadRecordArchive = async () => {
+  const row = recordViewerRow.value;
+  const tableName = recordViewerTable.value?.table;
+  if (!row?.id || recordArchiveDownloading.value) {
+    return;
+  }
+  let url = null;
+  if (tableName === "template_artifacts") {
+    url = API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD(row.id);
+  } else if (tableName === "template_seeds") {
+    url = API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_DOWNLOAD(row.id);
+  }
+  if (!url) {
+    return;
+  }
+  recordArchiveDownloading.value = true;
+  try {
+    const response = await axios.get(url, { responseType: "blob" });
+    const disposition = response.headers?.["content-disposition"] || "";
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+    const fallbackName = `${row.template_code || row.seed_code || row.display_name || "formatos"}.zip`.replace(/\//g, "-");
+    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
+    const blobUrl = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    let message = error?.response?.data?.message || "No se pudo descargar el ZIP de formatos.";
+    if (error?.response?.data instanceof Blob) {
+      try {
+        message = JSON.parse(await error.response.data.text())?.message || message;
+      } catch {
+        // se conserva el mensaje por defecto
+      }
+    }
+    showFeedbackToast({ kind: "error", title: "Descarga fallida", message });
+  } finally {
+    recordArchiveDownloading.value = false;
+  }
+};
 
 const hideDefinitionArtifactsPromptModal = () => {
   definitionArtifactsPromptInstance?.hide();
@@ -2378,6 +2642,114 @@ const {
   openDefinitionArtifactsFromActivation,
   submitForm: async () => submitForm()
 });
+
+// ── Wizard guiado de proceso (creación → activación) ──
+const {
+  wizardOpen: processWizardOpen,
+  currentStep: processWizardStep,
+  definitionContext: processWizardDefinition,
+  definitionForm: processWizardDefinitionForm,
+  processOptions: processWizardProcessOptions,
+  unitTypeOptions: processWizardUnitTypeOptions,
+  cargoOptions: processWizardCargoOptions,
+  creatingDefinition: processWizardCreating,
+  wizardError: processWizardError,
+  stepStatus: processWizardStepStatus,
+  steps: processWizardSteps,
+  openWizard: openProcessWizard,
+  closeWizard: closeProcessWizard,
+  goToStep: processWizardGoToStep,
+  createDefinition: runProcessWizardCreateDefinition,
+  refreshStepStatus: refreshProcessWizardStatus
+} = useProcessWizard();
+
+const loadProcessWizardStep = async (key) => {
+  const def = processWizardDefinition.value;
+  if (!def?.id) {
+    return;
+  }
+  if (key === "packages") {
+    await openDefinitionArtifactsManager(def);
+  } else if (key === "rules") {
+    await openDefinitionRulesManager(def);
+  } else if (key === "triggers") {
+    await openDefinitionTriggersManager(def);
+  } else if (key === "activate") {
+    selectedRow.value = def;
+    await openProcessDefinitionActivationModal();
+  }
+};
+
+const handleProcessWizardGoToStep = async (key) => {
+  processWizardGoToStep(key);
+  if (processWizardStep.value === key && key !== "definition") {
+    await loadProcessWizardStep(key);
+    await refreshProcessWizardStatus();
+  }
+};
+
+// Vinculación con el modal de plantilla: cuando el wizard se abre desde "Crear proceso", al crear la
+// definición se devuelve su id al modal para preseleccionarla.
+const wizardFromDraft = ref(false);
+const draftNewProcessDefinitionId = ref("");
+
+const handleProcessWizardCreateDefinition = async () => {
+  if (processWizardDefinition.value?.id) {
+    await handleProcessWizardGoToStep("packages");
+    return;
+  }
+  const created = await runProcessWizardCreateDefinition();
+  if (created?.id) {
+    if (wizardFromDraft.value) {
+      draftNewProcessDefinitionId.value = String(created.id);
+    }
+    await loadProcessWizardStep("packages");
+  }
+};
+
+const handleDraftCreateProcess = async () => {
+  wizardFromDraft.value = true;
+  await openProcessWizard();
+};
+
+const handleProcessWizardClose = async () => {
+  closeProcessWizard();
+  wizardFromDraft.value = false;
+  if (props.table?.table === "process_definition_versions") {
+    await fetchRows();
+  }
+};
+
+// Tras guardar dentro de un paso embebido, refresca el estado del stepper.
+const refreshWizardAfter = async (action) => {
+  await action();
+  if (processWizardOpen.value) {
+    await refreshProcessWizardStatus();
+  }
+};
+const wizardSubmitArtifact = () => refreshWizardAfter(submitDefinitionArtifact);
+const wizardSubmitRule = () => refreshWizardAfter(submitDefinitionRule);
+const wizardSubmitTrigger = () => refreshWizardAfter(submitDefinitionTrigger);
+const wizardConfirmActivation = async () => {
+  await confirmProcessDefinitionActivation();
+  closeProcessWizard();
+  if (props.table?.table === "process_definition_versions") {
+    await fetchRows();
+  }
+};
+
+const handleOpenWizardFromPrompt = async () => {
+  const context = definitionArtifactsPromptContext.value;
+  closeDefinitionArtifactsPrompt();
+  if (context?.id) {
+    await openProcessWizard({ definitionRow: context, step: "packages" });
+  }
+};
+
+// Punto de entrada para crear un proceso desde otros flujos (p.ej. el modal de plantilla).
+const openProcessWizardFromScratch = async () => {
+  await openProcessWizard();
+};
 
 const {
   openCreate,

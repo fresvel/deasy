@@ -1,6 +1,27 @@
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
+import { getMariaDBPool } from "../../config/mariadb.js";
+import {
+  TEMPLATES_BUCKET,
+  collectFormatResources,
+  collectPrefixResources,
+  sendResourcesAsZip
+} from "../../utils/templateArchive.js";
 
 const service = new SqlAdminService();
+
+const parseAvailableFormats = (value) => {
+  if (!value) {
+    return {};
+  }
+  if (typeof value === "object") {
+    return value;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+};
 
 export const getSqlMeta = (req, res) => {
   try {
@@ -47,9 +68,100 @@ export const getTemplateSeedPreview = async (req, res) => {
   }
 };
 
+const buildArtifactDraftActor = (req) => {
+  const roleNames = req.access?.roleNames || [];
+  const isDesigner = roleNames.includes("AdminSistema") || roleNames.includes("GestorProcesos");
+  return {
+    personId: Number(req.user?.uid || req.auth?.userId || 0) || null,
+    roleNames,
+    // Diseñador (admin/gestor de procesos): puede crear plantillas sin vincular.
+    // Ejecutor (gestor de ejecución): debe vincular a un proceso existente o 'default'.
+    requireProcessLink: !isDesigner,
+  };
+};
+
+// Descarga un ZIP con todos los archivos de los formatos de un paquete de plantilla (incluye latex/jinja2:
+// el admin gestiona el contrato, a diferencia del flujo de entregables que los excluye).
+export const downloadTemplateArtifactArchive = async (req, res) => {
+  const id = Number(req.params?.id);
+  if (!id || Number.isNaN(id)) {
+    return res.status(400).json({ message: "Identificador de plantilla invalido." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, template_code, display_name, available_formats FROM template_artifacts WHERE id = ? LIMIT 1",
+      [id]
+    );
+    const artifact = rows?.[0];
+    if (!artifact) {
+      return res.status(404).json({ message: "No se encontro el paquete de plantilla." });
+    }
+    const availableFormats = parseAvailableFormats(artifact.available_formats);
+    const resources = await collectFormatResources(availableFormats, { bucket: TEMPLATES_BUCKET });
+    if (!resources.length) {
+      return res.status(404).json({ message: "El paquete no tiene archivos publicados en MinIO para descargar." });
+    }
+    return await sendResourcesAsZip(res, {
+      bucket: TEMPLATES_BUCKET,
+      resources,
+      fileBaseName: artifact.template_code || artifact.display_name || `plantilla-${id}`
+    });
+  } catch (error) {
+    console.error("Error al descargar el ZIP del paquete de plantilla:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del paquete." });
+    }
+    return res.end();
+  }
+};
+
+// Descarga un ZIP con todos los archivos de un seed (bajo su source_path en MinIO).
+export const downloadTemplateSeedArchive = async (req, res) => {
+  const id = Number(req.params?.id);
+  if (!id || Number.isNaN(id)) {
+    return res.status(400).json({ message: "Identificador de seed invalido." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, seed_code, display_name, source_path FROM template_seeds WHERE id = ? LIMIT 1",
+      [id]
+    );
+    const seed = rows?.[0];
+    if (!seed) {
+      return res.status(404).json({ message: "No se encontro el seed." });
+    }
+    if (!seed.source_path) {
+      return res.status(404).json({ message: "El seed no tiene ruta fuente registrada." });
+    }
+    const resources = await collectPrefixResources(seed.source_path, { bucket: TEMPLATES_BUCKET });
+    if (!resources.length) {
+      return res.status(404).json({ message: "El seed no tiene archivos publicados en MinIO para descargar." });
+    }
+    return await sendResourcesAsZip(res, {
+      bucket: TEMPLATES_BUCKET,
+      resources,
+      fileBaseName: (seed.seed_code || seed.display_name || `seed-${id}`).replace(/\//g, "-")
+    });
+  } catch (error) {
+    console.error("Error al descargar el ZIP del seed:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del seed." });
+    }
+    return res.end();
+  }
+};
+
 export const createTemplateArtifactDraft = async (req, res) => {
   try {
-    const created = await service.createTemplateArtifactDraft(req.body ?? {}, req.files ?? {});
+    const created = await service.createTemplateArtifactDraft(req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
     res.json(created);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -58,8 +170,35 @@ export const createTemplateArtifactDraft = async (req, res) => {
 
 export const updateTemplateArtifactDraft = async (req, res) => {
   try {
-    const updated = await service.updateTemplateArtifactDraft(req.params.id, req.body ?? {}, req.files ?? {});
+    const updated = await service.updateTemplateArtifactDraft(req.params.id, req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
     res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getTemplateArtifactSchema = async (req, res) => {
+  try {
+    const result = await service.getTemplateArtifactSchema(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateTemplateArtifactStage = async (req, res) => {
+  try {
+    const result = await service.updateTemplateArtifactStage(req.params.id, req.body?.stage);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const createTemplateArtifactVersion = async (req, res) => {
+  try {
+    const result = await service.createTemplateArtifactVersion(req.params.id);
+    res.json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
