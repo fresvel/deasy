@@ -798,6 +798,7 @@
       :draft-artifact-form="draftArtifactForm"
       :draft-artifact-seed-options="draftArtifactSeedOptions"
       :draft-artifact-preview-url="draftArtifactPreviewUrl"
+      :draft-artifact-preview-status="draftArtifactPreviewStatus"
       :get-draft-artifact-file-label="getDraftArtifactFileLabel"
       :new-process-definition-id="draftNewProcessDefinitionId"
       @update:form="draftArtifactForm = $event"
@@ -1566,12 +1567,34 @@ const allProcessDefinitionActivationRequirementsMet = computed(() =>
   && processDefinitionActivationHasActiveTriggers.value
   && processDefinitionActivationHasRequiredArtifacts.value
 );
-const draftArtifactPreviewUrl = computed(() => {
-  if (!draftArtifactForm.value.template_seed_id) {
-    return "";
+// El preview del seed se descarga por axios (responseType blob) para que lleve el header Bearer del
+// interceptor; un <iframe src="..."> con la URL cruda no manda el token → backend responde "Token requerido".
+const draftArtifactPreviewUrl = ref("");
+// idle = sin seed; loading = descargando; ready = PDF disponible; empty = seed sin preview PDF.
+const draftArtifactPreviewStatus = ref("idle");
+let draftArtifactPreviewObjectUrl = "";
+const loadDraftArtifactPreview = async (seedId) => {
+  if (draftArtifactPreviewObjectUrl) {
+    URL.revokeObjectURL(draftArtifactPreviewObjectUrl);
+    draftArtifactPreviewObjectUrl = "";
   }
-  return API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_PREVIEW(draftArtifactForm.value.template_seed_id);
-});
+  draftArtifactPreviewUrl.value = "";
+  if (!seedId) {
+    draftArtifactPreviewStatus.value = "idle";
+    return;
+  }
+  draftArtifactPreviewStatus.value = "loading";
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_PREVIEW(seedId), { responseType: "blob" });
+    draftArtifactPreviewObjectUrl = URL.createObjectURL(response.data);
+    draftArtifactPreviewUrl.value = draftArtifactPreviewObjectUrl;
+    draftArtifactPreviewStatus.value = "ready";
+  } catch {
+    draftArtifactPreviewUrl.value = "";
+    draftArtifactPreviewStatus.value = "empty";
+  }
+};
+watch(() => draftArtifactForm.value.template_seed_id, (seedId) => loadDraftArtifactPreview(seedId), { immediate: true });
 const currentLoggedUser = computed(() => {
   if (typeof window === "undefined") {
     return null;

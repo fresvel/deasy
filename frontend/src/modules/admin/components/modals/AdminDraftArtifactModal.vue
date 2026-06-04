@@ -118,9 +118,15 @@
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PowerPoint</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" accept=".ppt,.pptx" input-id="draft-upload-pptx" @files-selected="emitDraftFiles('pptx', $event)" />
       </div>
-      <div v-if="draftArtifactPreviewUrl" class="md:col-span-12">
+      <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</label>
-        <iframe :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-slate-200 bg-white" title="Preview del seed"></iframe>
+        <div v-if="draftArtifactPreviewStatus === 'loading'" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-500">
+          Cargando preview…
+        </div>
+        <iframe v-else-if="draftArtifactPreviewStatus === 'ready' && draftArtifactPreviewUrl" :src="draftArtifactPreviewUrl" class="min-h-105 w-full rounded-xl border border-slate-200 bg-white" title="Preview del seed"></iframe>
+        <div v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-500">
+          Este seed no tiene un PDF de preview publicado.
+        </div>
       </div>
     </div>
 
@@ -362,6 +368,7 @@ const props = defineProps({
   draftArtifactForm: { type: Object, default: () => ({}) },
   draftArtifactSeedOptions: { type: Array, default: () => [] },
   draftArtifactPreviewUrl: { type: String, default: "" },
+  draftArtifactPreviewStatus: { type: String, default: "idle" },
   getDraftArtifactFileLabel: { type: Function, required: true },
   // Cuando el wizard crea un proceso desde este modal, se pasa su id para seleccionarlo y refrescar opciones.
   newProcessDefinitionId: { type: [String, Number], default: "" }
