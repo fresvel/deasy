@@ -42,12 +42,12 @@
 
     <!-- Pestaña: General -->
     <div v-show="activeTab === 'general'" class="mt-4 grid gap-3 md:grid-cols-12">
-      <AdminFieldGroup label="Seed LaTeX" group-class="md:col-span-6">
+      <AdminFieldGroup label="Semilla (base)" group-class="md:col-span-6">
         <AdminSelectField
           :model-value="draftArtifactForm.template_seed_id"
           @update:model-value="updateField('template_seed_id', $event)"
         >
-          <option value="">Sin seed</option>
+          <option value="">General (por defecto)</option>
           <option
             v-for="row in draftArtifactSeedOptions"
             :key="row.id"
@@ -56,6 +56,7 @@
             {{ row.display_name }}
           </option>
         </AdminSelectField>
+        <p class="m-0 mt-1 text-xs font-medium text-slate-500">Toda plantilla nace de una semilla; si no eliges una, se usa la general.</p>
       </AdminFieldGroup>
       <AdminFieldGroup label="Version fuente" group-class="md:col-span-6">
         <AdminInputField
@@ -102,6 +103,9 @@
 
     <!-- Pestaña: Formatos -->
     <div v-show="activeTab === 'formatos'" class="mt-4 grid gap-3 md:grid-cols-12">
+      <div v-if="!isFormatosComplete" class="md:col-span-12 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">
+        Adjunta al menos un documento de referencia (PDF, Word, Excel o PowerPoint) para poder crear la plantilla.
+      </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PDF</label>
         <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" accept=".pdf" input-id="draft-upload-pdf" @files-selected="emitDraftFiles('pdf', $event)" />
@@ -388,7 +392,8 @@ watch(() => props.newProcessDefinitionId, async (id) => {
 });
 
 // ── Pestañas ──
-const TAB_KEYS = ["general", "formatos", "campos", "llenado", "firmas"];
+// Flujo guiado: semilla/base → documento de referencia → llenado → firmas → campos del documento (schema).
+const TAB_KEYS = ["general", "formatos", "llenado", "firmas", "campos"];
 const activeTab = ref("general");
 
 const isGeneralComplete = computed(() => {
@@ -396,12 +401,13 @@ const isGeneralComplete = computed(() => {
   const hasProcess = !requireProcessLink.value || Boolean(props.draftArtifactForm.process_definition_id);
   return hasName && hasProcess;
 });
+// Al crear se exige al menos un documento de referencia (pdf/docx/xlsx/pptx); el seed ya no basta.
+// En edición se considera completo si ya hay formatos existentes en el artifact.
 const isFormatosComplete = computed(() => {
-  const f = props.draftArtifactForm;
-  if (f.template_seed_id) return true;
-  if (props.draftArtifactPreviewUrl) return true;
   const labels = ["pdf", "docx", "xlsx", "pptx"].map((k) => props.getDraftArtifactFileLabel(k));
-  return labels.some((l) => l && l !== "Sin archivo");
+  const hasUploadedDoc = labels.some((l) => l && l !== "Sin archivo");
+  if (hasUploadedDoc) return true;
+  return Boolean(props.draftArtifactEditId);
 });
 const isCamposComplete = computed(() => schemaFields.value.length > 0);
 const isLlenadoComplete = computed(() => fillSteps.value.length > 0);
@@ -414,7 +420,7 @@ const tabState = {
   llenado: isLlenadoComplete,
   firmas: isFirmasComplete,
 };
-const TAB_LABELS = { general: "General", formatos: "Formatos", campos: "Campos", llenado: "Llenado", firmas: "Firmas" };
+const TAB_LABELS = { general: "General", formatos: "Formatos", llenado: "Llenado", firmas: "Firmas", campos: "Campos (documento)" };
 const tabDescriptors = computed(() => TAB_KEYS.map((key) => ({
   key,
   label: `${TAB_LABELS[key]}${tabState[key].value ? " ✓" : ""}`,

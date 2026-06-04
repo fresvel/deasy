@@ -37,6 +37,12 @@ const TEMPLATE_DIST_ROOT = path.join(REPO_ROOT, "tools", "templates", "dist", "P
 const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
 const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
 const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
+// Semilla por defecto ("general") cuando se crea una plantilla sin elegir seed. Coincide con la del bootstrap.
+const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
+// Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
+const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
+// Único subárbol editable por el admin (contenido LaTeX). Todo lo demás del contrato es protegido (hash).
+const EDITABLE_CONTENT_SUBPATH = "template/modes/process/jinja2/src/Contenido/";
 const MINIO_TEMPLATES_SEEDS_PREFIX = (process.env.MINIO_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
 const TEMPLATE_USERS_PREFIX = (
   process.env.MINIO_TEMPLATES_USERS_PREFIX
@@ -291,6 +297,30 @@ const hashDirectory = (dirPath) => {
     hash.update(fs.readFileSync(filePath));
   }
   return files.length ? hash.digest("hex") : null;
+};
+
+// Manifiesto de integridad del contrato: hash sha256 de cada archivo PROTEGIDO (todo menos el subárbol
+// editable de contenido). Se publica como manifest.json en la raíz del artifact (fuera de los prefijos de
+// available_formats, por lo que NO entra en la descarga de formatos) y es la fuente de verdad para verificar
+// la re-subida del admin en la Fase 3.
+const buildProtectedManifest = (dirPath) => {
+  const relFiles = walkFiles(dirPath)
+    .map((filePath) => path.relative(dirPath, filePath).replace(/\\/g, "/"))
+    .filter((rel) => !path.basename(rel).startsWith(".") && rel !== "manifest.json")
+    .sort((a, b) => a.localeCompare(b));
+  const protectedHashes = {};
+  for (const rel of relFiles) {
+    if (rel.startsWith(EDITABLE_CONTENT_SUBPATH)) {
+      continue; // contenido editable: no se fija hash
+    }
+    protectedHashes[rel] = crypto.createHash("sha256").update(fs.readFileSync(path.join(dirPath, rel))).digest("hex");
+  }
+  return {
+    manifest_version: 1,
+    generated_at: new Date().toISOString(),
+    editable_prefixes: [EDITABLE_CONTENT_SUBPATH],
+    protected: protectedHashes
+  };
 };
 
 const slugify = (value) => String(value || "")
@@ -3910,7 +3940,7 @@ export default class SqlAdminService {
     const sourceVersion = String(data.source_version || "1.0.0").trim();
     const ownerCedula = String(data.owner_cedula || "").trim();
     const requestedOwnerPersonId = normalizeNumericId(data.owner_person_id);
-    const templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
+    let templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
     const isEdit = artifactId !== null && artifactId !== undefined && artifactId !== "";
 
     if (!displayName) {
@@ -3948,12 +3978,30 @@ export default class SqlAdminService {
 
     const existingAvailableFormats = parseAvailableFormats(existingArtifact?.available_formats);
 
-    if (
+    // Toda plantilla nace de una semilla: si al crear no se eligió ninguna, se usa la general (default).
+    if (!isEdit && !templateSeedId) {
+      const [defaultSeedRows] = await this.pool.query(
+        "SELECT id FROM template_seeds WHERE seed_code = ? AND is_active = 1 LIMIT 1",
+        [DEFAULT_SEED_CODE]
+      );
+      if (!defaultSeedRows?.[0]?.id) {
+        throw new Error(`No existe la semilla por defecto "${DEFAULT_SEED_CODE}". Ejecuta el bootstrap del sistema.`);
+      }
+      templateSeedId = Number(defaultSeedRows[0].id);
+    }
+
+    // Al crear, siempre se exige al menos un documento de referencia (word/excel/pdf/pptx).
+    if (!isEdit) {
+      const hasReferenceDoc = REFERENCE_DOC_FORMATS.some((format) => uploadedFiles[format]);
+      if (!hasReferenceDoc) {
+        throw new Error("Debes adjuntar al menos un documento de referencia (PDF, Word, Excel o PowerPoint).");
+      }
+    } else if (
       !templateSeedId
       && !Object.values(uploadedFiles).some(Boolean)
       && !Object.keys(existingAvailableFormats).length
     ) {
-      throw new Error("Selecciona un seed o sube al menos un archivo para crear el borrador.");
+      throw new Error("Selecciona un seed o sube al menos un archivo para actualizar el borrador.");
     }
 
     const ownerRef = String(existingArtifact?.owner_ref || ownerCedula).slice(0, 180);
@@ -4038,13 +4086,19 @@ export default class SqlAdminService {
       } catch {
         // Optional for non-latex seeds.
       }
+      // El render compilado (general/latex) es opcional/derivable: si el seed no lo publica (p.ej. el seed
+      // base se empaqueta sin render/), se omite sin abortar. El contrato real es process/jinja2.
       if (String(seedRow.seed_type || "").toLowerCase() === "latex") {
-        await downloadMinioPrefixToDirectory(
-          MINIO_TEMPLATES_BUCKET,
-          `${seedRow.source_path}render/`,
-          buildArtifactModeDir(draftDir, "general", "latex")
-        );
-        setAvailableFormatEntry(availableFormats, "general", "latex", baseObjectPrefix);
+        try {
+          await downloadMinioPrefixToDirectory(
+            MINIO_TEMPLATES_BUCKET,
+            `${seedRow.source_path}render/`,
+            buildArtifactModeDir(draftDir, "general", "latex")
+          );
+          setAvailableFormatEntry(availableFormats, "general", "latex", baseObjectPrefix);
+        } catch {
+          // Sin render/ publicado: se omite el formato general/latex.
+        }
       }
     }
 
@@ -4145,6 +4199,12 @@ export default class SqlAdminService {
     validatePackagedArtifactDraft(draftDir, availableFormats);
 
     const contentHash = hashDirectory(draftDir);
+    // Manifiesto de integridad (después del content_hash para no alterarlo; antes del upload para que viaje).
+    fs.writeFileSync(
+      path.join(draftDir, "manifest.json"),
+      `${JSON.stringify(buildProtectedManifest(draftDir), null, 2)}\n`,
+      "utf8"
+    );
     let createdId = isEdit ? Number(existingArtifact.id) : null;
     let uploadedToMinio = false;
 
