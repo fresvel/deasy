@@ -580,8 +580,12 @@
       :row-key-for-table="rowKeyForTable"
       :format-value-for-table="formatValueForTable"
       :downloading="recordArchiveDownloading"
+      :is-admin="isAdminUser"
+      :source-busy="templateSourceBusy"
       @close="closeRecordViewer"
       @download-archive="handleDownloadRecordArchive"
+      @download-source="handleDownloadTemplateSource"
+      @upload-source="handleUploadTemplateSource"
     />
 
     <AdminFkViewerModal
@@ -844,7 +848,8 @@ import { API_ROUTES } from "@/core/config/apiConfig";
 import {
   canCreateAdminTable,
   canDeleteAdminTable,
-  canUpdateAdminTable
+  canUpdateAdminTable,
+  hasAnyRole
 } from "@/core/utils/accessControl.js";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
@@ -2395,6 +2400,47 @@ const handleDownloadRecordArchive = async () => {
     showFeedbackToast({ kind: "error", title: "Descarga fallida", message });
   } finally {
     recordArchiveDownloading.value = false;
+  }
+};
+
+// Edición de código LaTeX (solo admin): descargar el contrato y re-subir el ZIP editado.
+const isAdminUser = computed(() => hasAnyRole(["AdminSistema"]));
+const templateSourceBusy = ref(false);
+
+const handleDownloadTemplateSource = async () => {
+  const row = recordViewerRow.value;
+  if (!row?.id || templateSourceBusy.value) return;
+  templateSourceBusy.value = true;
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE(row.id), { responseType: "blob" });
+    const blobUrl = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `${row.template_code || `plantilla-${row.id}`}-source.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    showFeedbackToast({ kind: "error", title: "Descarga fallida", message: error?.response?.data?.message || "No se pudo descargar el código." });
+  } finally {
+    templateSourceBusy.value = false;
+  }
+};
+
+const handleUploadTemplateSource = async (file) => {
+  const row = recordViewerRow.value;
+  if (!row?.id || !file || templateSourceBusy.value) return;
+  templateSourceBusy.value = true;
+  try {
+    const form = new FormData();
+    form.append("source", file);
+    const { data } = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE(row.id), form);
+    showFeedbackToast({ kind: "success", title: "Código actualizado", message: data?.__notice || "Se creó una nueva versión con el código editado." });
+  } catch (error) {
+    showFeedbackToast({ kind: "error", title: "No se pudo actualizar el código", message: error?.response?.data?.message || "La re-subida no cumple el contrato o falló." });
+  } finally {
+    templateSourceBusy.value = false;
   }
 };
 

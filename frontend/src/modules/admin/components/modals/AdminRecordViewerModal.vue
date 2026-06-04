@@ -100,6 +100,25 @@
         <font-awesome-icon icon="file-zipper" />
         <span>{{ downloading ? "Generando ZIP…" : "Descargar formatos (ZIP)" }}</span>
       </AdminButton>
+      <AdminButton
+        v-if="canEditSource"
+        variant="secondary"
+        :disabled="sourceBusy"
+        @click="$emit('download-source')"
+      >
+        <font-awesome-icon icon="download" />
+        <span>Descargar código (LaTeX)</span>
+      </AdminButton>
+      <AdminButton
+        v-if="canEditSource"
+        variant="primary"
+        :disabled="sourceBusy"
+        @click="triggerSourceUpload"
+      >
+        <font-awesome-icon icon="rotate-right" />
+        <span>{{ sourceBusy ? "Verificando…" : "Subir código editado" }}</span>
+      </AdminButton>
+      <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" @change="onSourcePicked" />
       <AdminButton variant="outlineDanger" @click="$emit('close')">Cerrar</AdminButton>
     </template>
   </AdminModalShell>
@@ -122,6 +141,8 @@ const props = defineProps({
   displayRows: { type: Array, default: () => [] },
   relatedSections: { type: Array, default: () => [] },
   downloading: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false },
+  sourceBusy: { type: Boolean, default: false },
   formatRecordViewerValue: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
   getAvailableFormatBadgeStyle: { type: Function, required: true },
@@ -129,11 +150,22 @@ const props = defineProps({
   formatValueForTable: { type: Function, required: true }
 });
 
-defineEmits(["close", "download-archive"]);
+const emit = defineEmits(["close", "download-archive", "download-source", "upload-source"]);
 
 const canDownloadArchive = computed(() =>
   Boolean(props.recordViewerRow?.id) && ARCHIVE_DOWNLOADABLE_TABLES.has(props.recordViewerTable?.table)
 );
+// Edición de código (LaTeX) solo para admin y solo sobre paquetes de plantilla.
+const canEditSource = computed(() =>
+  props.isAdmin && Boolean(props.recordViewerRow?.id) && props.recordViewerTable?.table === "template_artifacts"
+);
+const sourceInputRef = ref(null);
+const triggerSourceUpload = () => sourceInputRef.value?.click();
+const onSourcePicked = (event) => {
+  const file = event?.target?.files?.[0];
+  if (file) emit("upload-source", file);
+  if (event?.target) event.target.value = "";
+};
 
 const modalRef = ref(null);
 

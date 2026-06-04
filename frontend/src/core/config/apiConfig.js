@@ -66,6 +66,7 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
   ADMIN_SQL_TEMPLATE_SEED_DOWNLOAD: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/download`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/download`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/source`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_SCHEMA: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/schema`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_STAGE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/stage`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/version`,

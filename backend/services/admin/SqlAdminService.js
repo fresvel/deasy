@@ -11,8 +11,10 @@ import {
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import bcrypt from "bcrypt";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import crypto from "crypto";
+import { spawn } from "child_process";
 import * as Minio from "minio";
 import { fileURLToPath } from "url";
 import yaml from "js-yaml";
@@ -321,6 +323,41 @@ const buildProtectedManifest = (dirPath) => {
     editable_prefixes: [EDITABLE_CONTENT_SUBPATH],
     protected: protectedHashes
   };
+};
+
+// Descomprime un ZIP a un directorio destino (usa el binario unzip).
+const unzipToDirectory = (zipPath, destDir) => new Promise((resolve, reject) => {
+  const proc = spawn("unzip", ["-o", "-qq", zipPath, "-d", destDir], { stdio: ["ignore", "ignore", "pipe"] });
+  let stderr = "";
+  proc.stderr.on("data", (chunk) => { stderr += String(chunk || ""); });
+  proc.on("error", reject);
+  proc.on("close", (code) => (code === 0 ? resolve(true) : reject(new Error(stderr.trim() || "No se pudo descomprimir el ZIP."))));
+});
+
+// Saneo anti-inyección del contenido LaTeX editable. Devuelve la lista de violaciones (vacía = OK).
+const sanitizeLatexSource = (relpath, text) => {
+  const violations = [];
+  const forbidden = [
+    [/\\write18/, "shell-escape (\\write18)"],
+    [/\\(directlua|latelua)\b/, "ejecución Lua (\\directlua/\\latelua)"],
+    [/\\openout\b/, "\\openout (escritura de archivos)"],
+    [/\\openin\b/, "\\openin (lectura de archivos)"],
+    [/\\special\s*\{\s*(?:dvips:\s*)?[!`|]/, "\\special con comando"],
+    [/\\ShellEscape\b/, "\\ShellEscape"],
+  ];
+  for (const [re, label] of forbidden) {
+    if (re.test(text)) violations.push(`${relpath}: ${label}`);
+  }
+  // \input/\include/\includegraphics/... con pipe, ruta absoluta o que escape del árbol (..)
+  const pathCmd = /\\(input|include|includegraphics|InputIfFileExists|import|subimport|usepackage)\b\s*(?:\[[^\]]*\])?\s*\{([^}]*)\}/g;
+  let match;
+  while ((match = pathCmd.exec(text)) !== null) {
+    const target = String(match[2] || "").trim();
+    if (/^[|`!]/.test(target) || target.startsWith("/") || target.includes("..") || /^[a-zA-Z]:[\\/]/.test(target)) {
+      violations.push(`${relpath}: ruta no permitida en \\${match[1]}{${target}}`);
+    }
+  }
+  return violations;
 };
 
 const slugify = (value) => String(value || "")
@@ -3822,6 +3859,16 @@ export default class SqlAdminService {
 
     const newSchemaKey = `${newPrefix}schema.json`;
     const newMetaKey = `${newPrefix}meta.yaml`;
+    // Re-mapea los entry_object_key de available_formats del prefijo viejo al nuevo (antes quedaban
+    // apuntando a la versión anterior).
+    const remappedFormats = parseAvailableFormats(artifact.available_formats);
+    for (const formats of Object.values(remappedFormats || {})) {
+      for (const entry of Object.values(formats || {})) {
+        if (entry?.entry_object_key && String(entry.entry_object_key).startsWith(oldPrefix)) {
+          entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
+        }
+      }
+    }
     const [result] = await this.pool.query(
       `INSERT INTO template_artifacts (
         template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
@@ -3839,7 +3886,7 @@ export default class SqlAdminService {
         nextStorageVersion,
         bucket,
         newPrefix,
-        typeof artifact.available_formats === "string" ? artifact.available_formats : JSON.stringify(artifact.available_formats || {}),
+        JSON.stringify(remappedFormats || {}),
         newSchemaKey,
         newMetaKey,
         artifact.content_hash,
@@ -3850,9 +3897,116 @@ export default class SqlAdminService {
       id: Number(result.insertId),
       template_code: templateCode,
       storage_version: nextStorageVersion,
+      base_object_prefix: newPrefix,
+      bucket,
       artifact_stage: "draft",
       __notice: `Nueva versión ${nextStorageVersion} creada en estado draft.`,
     };
+  }
+
+  // Aplica una re-subida de código (ZIP del subárbol process/jinja2/src) editado por el admin:
+  // verifica que los archivos protegidos no cambiaron (hash vs manifest), que solo se tocó Contenido/,
+  // sanea contra inyecciones LaTeX y, si todo es válido, crea una NUEVA versión con el contenido editado.
+  // Solo AdminSistema (gate también en la ruta).
+  async applyTemplateArtifactSource(artifactId, zipFilePath, actor = {}) {
+    this.ensurePool();
+    if (!Array.isArray(actor?.roleNames) || !actor.roleNames.includes("AdminSistema")) {
+      const error = new Error("Solo AdminSistema puede editar el código de la plantilla.");
+      error.statusCode = 403;
+      throw error;
+    }
+    const artifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+    const basePrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
+    const formats = parseAvailableFormats(artifact.available_formats);
+    const jinjaEntry = formats?.process?.jinja2?.entry_object_key;
+    if (!jinjaEntry) {
+      throw new Error("La plantilla no tiene un contrato process/jinja2 editable.");
+    }
+    const srcRelPrefix = String(jinjaEntry).startsWith(basePrefix)
+      ? String(jinjaEntry).slice(basePrefix.length)
+      : EDITABLE_CONTENT_SUBPATH.replace(/Contenido\/$/, "");
+    const editablePrefix = EDITABLE_CONTENT_SUBPATH.startsWith(srcRelPrefix)
+      ? EDITABLE_CONTENT_SUBPATH.slice(srcRelPrefix.length)
+      : "Contenido/";
+
+    let manifest;
+    try {
+      manifest = JSON.parse(await readMinioObjectAsText(bucket, `${basePrefix}manifest.json`));
+    } catch {
+      throw new Error("La plantilla no tiene manifest.json de integridad. Vuelve a generarla con el flujo actual.");
+    }
+    const protectedMap = manifest?.protected || {};
+
+    const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "tpl-source-"));
+    try {
+      await unzipToDirectory(zipFilePath, workDir);
+      const uploaded = walkFiles(workDir)
+        .map((abs) => ({ abs, rel: path.relative(workDir, abs).replace(/\\/g, "/") }))
+        .filter((entry) => !path.basename(entry.rel).startsWith("."));
+      if (!uploaded.length) {
+        throw new Error("El ZIP no contiene archivos.");
+      }
+
+      const violations = [];
+      const editedContent = [];
+      const seenProtected = new Set();
+      for (const entry of uploaded) {
+        if (entry.rel.includes("..") || entry.rel.startsWith("/")) {
+          violations.push(`Ruta no permitida: ${entry.rel}`);
+          continue;
+        }
+        const fullRel = `${srcRelPrefix}${entry.rel}`;
+        if (Object.prototype.hasOwnProperty.call(protectedMap, fullRel)) {
+          const hash = crypto.createHash("sha256").update(fs.readFileSync(entry.abs)).digest("hex");
+          if (hash !== protectedMap[fullRel]) {
+            violations.push(`Archivo protegido modificado: ${entry.rel}`);
+          }
+          seenProtected.add(fullRel);
+        } else if (entry.rel.startsWith(editablePrefix)) {
+          violations.push(...sanitizeLatexSource(entry.rel, fs.readFileSync(entry.abs, "utf8")));
+          editedContent.push(entry);
+        } else {
+          violations.push(`Archivo no permitido (solo se edita ${editablePrefix} y no se añaden archivos al contrato): ${entry.rel}`);
+        }
+      }
+      // No se permite borrar archivos protegidos del contrato (los que viven bajo el src).
+      for (const key of Object.keys(protectedMap)) {
+        if (key.startsWith(srcRelPrefix) && !seenProtected.has(key)) {
+          violations.push(`Falta un archivo protegido del contrato: ${key.slice(srcRelPrefix.length)}`);
+        }
+      }
+      if (violations.length) {
+        const error = new Error(`La re-subida no cumple el contrato:\n- ${violations.slice(0, 25).join("\n- ")}`);
+        error.statusCode = 422;
+        throw error;
+      }
+      if (!editedContent.length) {
+        throw new Error("No se detectaron cambios en el contenido editable (Contenido/).");
+      }
+
+      const version = await this.createTemplateArtifactVersion(artifactId);
+      for (const entry of editedContent) {
+        await putMinioObjectFromText(
+          bucket,
+          `${version.base_object_prefix}${srcRelPrefix}${entry.rel}`,
+          fs.readFileSync(entry.abs, "utf8"),
+          "text/plain"
+        );
+      }
+      return {
+        id: version.id,
+        storage_version: version.storage_version,
+        base_object_prefix: version.base_object_prefix,
+        edited_files: editedContent.length,
+        __notice: `Código verificado y actualizado en nueva versión ${version.storage_version} (draft). Archivos de contenido actualizados: ${editedContent.length}.`
+      };
+    } finally {
+      fs.rmSync(workDir, { recursive: true, force: true });
+    }
   }
 
   async getTemplateSeedPreview(seedId) {

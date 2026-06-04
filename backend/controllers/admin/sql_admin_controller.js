@@ -1,3 +1,7 @@
+import fs from "fs";
+import os from "os";
+import path from "path";
+import { randomUUID } from "crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
@@ -156,6 +160,71 @@ export const downloadTemplateSeedArchive = async (req, res) => {
       return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del seed." });
     }
     return res.end();
+  }
+};
+
+// Descarga el ZIP del código fuente editable (subárbol process/jinja2/src) de una plantilla. Solo admin.
+export const downloadTemplateArtifactSource = async (req, res) => {
+  const id = Number(req.params?.id);
+  if (!id || Number.isNaN(id)) {
+    return res.status(400).json({ message: "Identificador de plantilla invalido." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, template_code, available_formats FROM template_artifacts WHERE id = ? LIMIT 1",
+      [id]
+    );
+    const artifact = rows?.[0];
+    if (!artifact) {
+      return res.status(404).json({ message: "No se encontro el paquete de plantilla." });
+    }
+    const formats = parseAvailableFormats(artifact.available_formats);
+    const jinjaEntry = formats?.process?.jinja2?.entry_object_key;
+    if (!jinjaEntry) {
+      return res.status(404).json({ message: "La plantilla no tiene un contrato process/jinja2 editable." });
+    }
+    const resources = await collectPrefixResources(jinjaEntry, { bucket: TEMPLATES_BUCKET });
+    if (!resources.length) {
+      return res.status(404).json({ message: "El contrato no tiene archivos publicados en MinIO." });
+    }
+    return await sendResourcesAsZip(res, {
+      bucket: TEMPLATES_BUCKET,
+      resources,
+      fileBaseName: `${artifact.template_code || `plantilla-${id}`}-source`
+    });
+  } catch (error) {
+    console.error("Error al descargar el source de la plantilla:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: error.message || "No se pudo generar el ZIP del source." });
+    }
+    return res.end();
+  }
+};
+
+// Re-sube el código editado (ZIP) y, si cumple el contrato (hash de protegidos + saneo), crea nueva versión.
+export const applyTemplateArtifactSource = async (req, res) => {
+  const id = Number(req.params?.id);
+  if (!id || Number.isNaN(id)) {
+    return res.status(400).json({ message: "Identificador de plantilla invalido." });
+  }
+  const file = req.files?.source?.[0] || req.file || null;
+  if (!file?.buffer) {
+    return res.status(400).json({ message: "Debes adjuntar el ZIP del código editado (campo 'source')." });
+  }
+  const tmpPath = path.join(os.tmpdir(), `tpl-source-${randomUUID()}.zip`);
+  try {
+    fs.writeFileSync(tmpPath, file.buffer);
+    const result = await service.applyTemplateArtifactSource(id, tmpPath, buildArtifactDraftActor(req));
+    return res.json(result);
+  } catch (error) {
+    console.error("Error al aplicar el source de la plantilla:", error);
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  } finally {
+    fs.rmSync(tmpPath, { force: true });
   }
 };
 

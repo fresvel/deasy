@@ -7,6 +7,8 @@ import {
   getTemplateSeedPreview,
   downloadTemplateArtifactArchive,
   downloadTemplateSeedArchive,
+  downloadTemplateArtifactSource,
+  applyTemplateArtifactSource,
   createTemplateArtifactDraft,
   updateTemplateArtifactDraft,
   getTemplateArtifactSchema,
@@ -32,6 +34,14 @@ router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resou
 router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
 router.patch("/template_artifacts/:id/stage", requireSqlAdminPermission({ resource: "templates", action: "update" }), updateTemplateArtifactStage);
 router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
+// Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).
+router.get("/template_artifacts/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);
+router.post(
+  "/template_artifacts/:id/source",
+  requireAnyRole(["AdminSistema"]),
+  draftArtifactUpload.single("source"),
+  applyTemplateArtifactSource
+);
 router.post(
   "/template_artifacts/draft",
   requireSqlAdminPermission({ resource: "templates", action: "create" }),
