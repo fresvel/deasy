@@ -9,7 +9,7 @@ export const ROLE_CATALOG = [
   { name: "GestorProcesos", description: "Gestiona procesos base, definiciones, versiones, reglas y disparadores." },
   { name: "GestorPlantillas", description: "Gestiona seeds, artifacts y plantillas asociadas a procesos." },
   { name: "GestorEjecucionProcesos", description: "Gestiona corridas, tareas, entregables y asignaciones operativas." },
-  { name: "GestorDocumental", description: "Gestiona documentos, versiones y flujos de llenado documental." },
+  { name: "GestorDocumental", description: "Gestiona documentos, versiones y flujos de entrega documental." },
   { name: "GestorFirmas", description: "Gestiona flujos, solicitudes, estados y validacion operativa de firmas." },
   { name: "GestorContratacion", description: "Gestiona vacantes, postulaciones, ofertas, contratos y origenes contractuales." },
   { name: "Auditor", description: "Consulta informacion transversal sin permisos de escritura." },
@@ -27,7 +27,7 @@ export const RESOURCE_CATALOG = [
   { code: "process_execution", name: "Ejecucion de procesos", description: "Corridas, tareas, entregables y asignaciones." },
   { code: "templates", name: "Plantillas", description: "Seeds, artifacts y plantillas de procesos definidos." },
   { code: "documents", name: "Documentos", description: "Documentos, versiones y ciclo documental operativo." },
-  { code: "fill_flows", name: "Llenado documental", description: "Flujos, pasos, instancias y solicitudes de llenado." },
+  { code: "fill_flows", name: "Entrega documental", description: "Flujos, pasos, instancias y solicitudes de entrega." },
   { code: "signature_flows", name: "Firmas", description: "Flujos, solicitudes, estados y firmas documentales." },
   { code: "contracts", name: "Contratacion", description: "Vacantes, postulaciones, ofertas, contratos y origenes." }
 ];

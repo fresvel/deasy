@@ -620,10 +620,10 @@ const GESTION_INDEX_ITEMS = [
     tables: ["documents", "document_versions"]
   },
   {
-    key: "llenado",
-    label: "Llenado",
+    key: "entrega",
+    label: "Entrega",
     icon: "check-double",
-    description: "Gestiona flujos, pasos e instancias de llenado documental.",
+    description: "Gestiona flujos, pasos e instancias de entrega documental.",
     tables: [
       "fill_flow_templates",
       "fill_flow_steps",

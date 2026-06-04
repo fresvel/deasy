@@ -676,8 +676,8 @@ export const SQL_TABLES = [
   },
   {
     table: "fill_flow_templates",
-    label: "Plantillas de llenado",
-    category: "Llenado",
+    label: "Plantillas de entrega",
+    category: "Entrega",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -696,12 +696,12 @@ export const SQL_TABLES = [
   },
   {
     table: "fill_flow_steps",
-    label: "Pasos de llenado",
-    category: "Llenado",
+    label: "Pasos de entrega",
+    category: "Entrega",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "fill_flow_template_id", label: "Plantilla de llenado", type: "number", required: true },
+      { name: "fill_flow_template_id", label: "Plantilla de entrega", type: "number", required: true },
       { name: "step_order", label: "Orden", type: "number", required: true },
       {
         name: "resolver_type",
@@ -737,12 +737,12 @@ export const SQL_TABLES = [
   },
   {
     table: "document_fill_flows",
-    label: "Instancias de llenado",
-    category: "Llenado",
+    label: "Instancias de entrega",
+    category: "Entrega",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "fill_flow_template_id", label: "Plantilla de llenado", type: "number", required: true },
+      { name: "fill_flow_template_id", label: "Plantilla de entrega", type: "number", required: true },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
       {
         name: "status",
@@ -759,8 +759,8 @@ export const SQL_TABLES = [
   },
   {
     table: "fill_requests",
-    label: "Solicitudes de llenado",
-    category: "Llenado",
+    label: "Solicitudes de entrega",
+    category: "Entrega",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },

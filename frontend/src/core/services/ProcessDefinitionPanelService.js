@@ -183,7 +183,7 @@ class ProcessDefinitionPanelService {
 
   async approveFillRequest(fillRequestId, payload = {}) {
     if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de llenado.");
+      throw new Error("Se requiere la solicitud de entrega.");
     }
     const { data } = await axios.post(
       API_ROUTES.SIGN_FILL_REQUEST_APPROVE(fillRequestId),
@@ -199,7 +199,7 @@ class ProcessDefinitionPanelService {
 
   async startFillRequest(fillRequestId, payload = {}) {
     if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de llenado.");
+      throw new Error("Se requiere la solicitud de entrega.");
     }
     const { data } = await axios.post(
       API_ROUTES.SIGN_FILL_REQUEST_START(fillRequestId),
@@ -215,7 +215,7 @@ class ProcessDefinitionPanelService {
 
   async returnFillRequest(fillRequestId, payload = {}) {
     if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de llenado.");
+      throw new Error("Se requiere la solicitud de entrega.");
     }
     const { data } = await axios.post(
       API_ROUTES.SIGN_FILL_REQUEST_RETURN(fillRequestId),
@@ -231,7 +231,7 @@ class ProcessDefinitionPanelService {
 
   async rejectFillRequest(fillRequestId, payload = {}) {
     if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de llenado.");
+      throw new Error("Se requiere la solicitud de entrega.");
     }
     const { data } = await axios.post(
       API_ROUTES.SIGN_FILL_REQUEST_REJECT(fillRequestId),
@@ -247,7 +247,7 @@ class ProcessDefinitionPanelService {
 
   async cancelFillRequest(fillRequestId, payload = {}) {
     if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de llenado.");
+      throw new Error("Se requiere la solicitud de entrega.");
     }
     const { data } = await axios.post(
       API_ROUTES.SIGN_FILL_REQUEST_CANCEL(fillRequestId),

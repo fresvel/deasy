@@ -118,11 +118,11 @@ const assertFillActionAllowed = ({ action, currentStatus, assignedPersonId, curr
   const normalizedStatus = String(currentStatus || "").trim().toLowerCase();
 
   if (assignedPersonId && Number(assignedPersonId) !== Number(currentUserId)) {
-    throw new Error("No puedes operar una solicitud de llenado asignada a otro usuario.");
+    throw new Error("No puedes operar una solicitud de entrega asignada a otro usuario.");
   }
 
   if (!assignedPersonId && !isManual) {
-    throw new Error("La solicitud de llenado no tiene un responsable resoluble.");
+    throw new Error("La solicitud de entrega no tiene un responsable resoluble.");
   }
 
   const allowedByAction = {
@@ -148,14 +148,14 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
     const user = await getCurrentUser(req);
     const fillRequestId = Number(req.params?.requestId);
     if (!fillRequestId || Number.isNaN(fillRequestId)) {
-      return res.status(400).json({ error: "Solicitud de llenado inválida." });
+      return res.status(400).json({ error: "Solicitud de entrega inválida." });
     }
 
     await connection.beginTransaction();
     const context = await getFillRequestContext(connection, fillRequestId);
     if (!context) {
       await connection.rollback();
-      return res.status(404).json({ error: "Solicitud de llenado no encontrada." });
+      return res.status(404).json({ error: "Solicitud de entrega no encontrada." });
     }
 
     assertFillActionAllowed({
@@ -170,7 +170,7 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
       const requiresPdf = await requiresSignaturePdfForFinalFillApproval(connection, context);
       if (requiresPdf) {
         throw new Error(
-          "El último paso del flujo de llenado requiere un PDF en working para habilitar la firma."
+          "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
         );
       }
     }
@@ -212,7 +212,7 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
     await connection.commit();
 
     return res.json({
-      message: "Solicitud de llenado actualizada.",
+      message: "Solicitud de entrega actualizada.",
       fillRequestId,
       status: nextStatus,
       documentVersionId: progress?.documentVersionId ?? Number(context.document_version_id),
@@ -221,7 +221,7 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
   } catch (error) {
     await connection.rollback();
     console.error("[sign_workflow_controller] Error fill request:", error);
-    return res.status(500).json({ error: error.message || "No se pudo actualizar la solicitud de llenado." });
+    return res.status(500).json({ error: error.message || "No se pudo actualizar la solicitud de entrega." });
   } finally {
     connection.release();
   }

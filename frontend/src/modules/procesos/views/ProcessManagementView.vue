@@ -237,10 +237,10 @@ const PROCESS_INDEX_ITEMS = [
     tables: ["documents", "document_versions"]
   },
   {
-    key: "llenado",
-    label: "Llenado",
+    key: "entrega",
+    label: "Entrega",
     icon: "check-double",
-    description: "Gestiona flujos, pasos e instancias de llenado documental.",
+    description: "Gestiona flujos, pasos e instancias de entrega documental.",
     tables: ["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"]
   },
   {
@@ -366,7 +366,7 @@ const heroTitle = computed(() =>
 const heroDescription = computed(() =>
   showProcessCrudIndex.value
     ? selectedProcessItem.value?.description || "Gestiona tablas relacionadas al subgrupo."
-    : "Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos, llenado y firmas."
+    : "Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos, entrega y firmas."
 );
 
 const heroKicker = computed(() =>

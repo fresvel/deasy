@@ -47,16 +47,15 @@
           :model-value="draftArtifactForm.template_seed_id"
           @update:model-value="updateField('template_seed_id', $event)"
         >
-          <option value="">General (por defecto)</option>
           <option
             v-for="row in draftArtifactSeedOptions"
             :key="row.id"
             :value="String(row.id)"
           >
-            {{ row.display_name }}
+            {{ row.display_name }}{{ row.seed_code === DEFAULT_SEED_CODE ? " (por defecto)" : "" }}
           </option>
         </AdminSelectField>
-        <p class="m-0 mt-1 text-xs font-medium text-slate-500">Toda plantilla nace de una semilla; si no eliges una, se usa la general.</p>
+        <p class="m-0 mt-1 text-xs font-medium text-slate-500">Toda plantilla nace de una semilla; por defecto se usa la general.</p>
       </AdminFieldGroup>
       <AdminFieldGroup label="Version fuente" group-class="md:col-span-6">
         <AdminInputField
@@ -186,17 +185,17 @@
       </div>
     </div>
 
-    <!-- Pestaña: Flujo de LLENADO -->
-    <div v-show="activeTab === 'llenado'" class="mt-4">
+    <!-- Pestaña: Flujo de ENTREGA -->
+    <div v-show="activeTab === 'entrega'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de llenado</h4>
+          <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de entrega</h4>
           <p class="m-0 mt-0.5 text-xs font-medium text-slate-500">Pasos para completar el entregable (quién llena cada parte).</p>
         </div>
         <AdminButton variant="outlinePrimary" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
       <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-medium text-slate-500">
-        Sin pasos de llenado.
+        Sin pasos de entrega.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
         <div v-for="(step, index) in fillSteps" :key="index" class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
@@ -207,7 +206,7 @@
             </div>
             <div class="col-span-4">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Nombre</label>
-              <input :value="step.name" placeholder="ej. Llenado del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
+              <input :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-3">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Responsable</label>
@@ -323,7 +322,8 @@
       <AdminButton v-if="!isLastTab" variant="primary" @click="goNextTab">Siguiente →</AdminButton>
       <AdminButton
         variant="outlinePrimary"
-        :disabled="draftArtifactLoading"
+        :disabled="draftArtifactLoading || !canSubmit"
+        :title="canSubmit ? '' : 'Faltan: proceso destino, documento de referencia y al menos un paso de flujo de entrega.'"
         @click="$emit('submit')"
       >
         {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear artifact") }}
@@ -336,7 +336,6 @@
 import { ref, computed, watch, onMounted } from "vue";
 import axios from "axios";
 import { API_ROUTES } from "@/core/config/apiConfig";
-import { hasAnyRole } from "@/core/utils/accessControl.js";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
@@ -361,8 +360,8 @@ const loadProcessDefinitionOptions = async () => {
     processDefinitionOptions.value = [];
   }
 };
-// El usuario debe vincular obligatoriamente si NO es diseñador (admin / gestor de procesos).
-const requireProcessLink = computed(() => !hasAnyRole(["AdminSistema", "GestorProcesos"]));
+// Toda plantilla debe pertenecer a un proceso: el vínculo es obligatorio para todos los roles.
+const requireProcessLink = computed(() => true);
 onMounted(loadProcessDefinitionOptions);
 
 const props = defineProps({
@@ -381,6 +380,29 @@ const props = defineProps({
 const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-stage", "new-version", "create-process"]);
 const modalRef = ref(null);
 
+// Código de la semilla por defecto (debe coincidir con DEFAULT_TEMPLATE_SEED_CODE del backend).
+const DEFAULT_SEED_CODE = "latex/informe-general";
+
+// Al crear (sin editar), preselecciona la semilla por defecto (o la primera) en cuanto cargan las opciones,
+// para no mostrar una opción "General" separada que duplique a la semilla real.
+watch(
+  () => [props.draftArtifactSeedOptions, props.draftArtifactEditId, props.draftArtifactForm.template_seed_id],
+  () => {
+    if (props.draftArtifactEditId) {
+      return;
+    }
+    const options = props.draftArtifactSeedOptions || [];
+    if (!options.length || props.draftArtifactForm.template_seed_id) {
+      return;
+    }
+    const fallback = options.find((row) => row.seed_code === DEFAULT_SEED_CODE) || options[0];
+    if (fallback?.id) {
+      updateField("template_seed_id", String(fallback.id));
+    }
+  },
+  { immediate: true, deep: true }
+);
+
 // Al volver del wizard con un proceso nuevo: recarga opciones y selecciona el creado.
 watch(() => props.newProcessDefinitionId, async (id) => {
   if (!id) {
@@ -392,8 +414,8 @@ watch(() => props.newProcessDefinitionId, async (id) => {
 });
 
 // ── Pestañas ──
-// Flujo guiado: semilla/base → documento de referencia → llenado → firmas → campos del documento (schema).
-const TAB_KEYS = ["general", "formatos", "llenado", "firmas", "campos"];
+// Flujo guiado: semilla/base → documento de referencia → entrega → firmas → campos del documento (schema).
+const TAB_KEYS = ["general", "formatos", "entrega", "firmas", "campos"];
 const activeTab = ref("general");
 
 const isGeneralComplete = computed(() => {
@@ -410,17 +432,24 @@ const isFormatosComplete = computed(() => {
   return Boolean(props.draftArtifactEditId);
 });
 const isCamposComplete = computed(() => schemaFields.value.length > 0);
-const isLlenadoComplete = computed(() => fillSteps.value.length > 0);
+const isEntregaComplete = computed(() => fillSteps.value.length > 0);
 const isFirmasComplete = computed(() => signatureSteps.value.length > 0);
+
+// Requisitos para crear: proceso destino + documento de referencia + >=1 paso de entrega.
+// (Campos y firmas son opcionales). En edición no se bloquea el guardado.
+const canSubmit = computed(() => {
+  if (props.draftArtifactEditId) return true;
+  return isGeneralComplete.value && isFormatosComplete.value && isEntregaComplete.value;
+});
 
 const tabState = {
   general: isGeneralComplete,
   formatos: isFormatosComplete,
   campos: isCamposComplete,
-  llenado: isLlenadoComplete,
+  entrega: isEntregaComplete,
   firmas: isFirmasComplete,
 };
-const TAB_LABELS = { general: "General", formatos: "Formatos", llenado: "Llenado", firmas: "Firmas", campos: "Campos (documento)" };
+const TAB_LABELS = { general: "General", formatos: "Formatos", entrega: "Entrega", firmas: "Firmas", campos: "Campos (documento)" };
 const tabDescriptors = computed(() => TAB_KEYS.map((key) => ({
   key,
   label: `${TAB_LABELS[key]}${tabState[key].value ? " ✓" : ""}`,
@@ -472,7 +501,7 @@ const removeSchemaField = (index) => {
   commitSchemaFields(schemaFields.value.filter((_, i) => i !== index));
 };
 
-// ── Flujo de llenado ──
+// ── Flujo de entrega ──
 const fillSteps = computed(() => props.draftArtifactForm.fill_workflow?.steps || []);
 const commitFillSteps = (steps) => {
   emit("update:form", { ...props.draftArtifactForm, fill_workflow: { required: true, ...props.draftArtifactForm.fill_workflow, steps } });

@@ -1058,7 +1058,7 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "fill_flow_steps":
       if (!candidate.fill_flow_template_id) {
-        throw new Error("Selecciona la plantilla de llenado.");
+        throw new Error("Selecciona la plantilla de entrega.");
       }
       if (!candidate.step_order) {
         throw new Error("Define el orden del paso.");
@@ -1066,7 +1066,7 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "document_fill_flows":
       if (!candidate.fill_flow_template_id) {
-        throw new Error("Selecciona la plantilla de llenado.");
+        throw new Error("Selecciona la plantilla de entrega.");
       }
       if (!candidate.document_version_id) {
         throw new Error("Selecciona la version de documento.");
@@ -1074,10 +1074,10 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "fill_requests":
       if (!candidate.document_fill_flow_id) {
-        throw new Error("Selecciona la instancia de llenado.");
+        throw new Error("Selecciona la instancia de entrega.");
       }
       if (!candidate.fill_flow_step_id) {
-        throw new Error("Selecciona el paso de llenado.");
+        throw new Error("Selecciona el paso de entrega.");
       }
       break;
     case "signature_flow_templates":
@@ -2038,7 +2038,7 @@ export default class SqlAdminService {
       payload.process_definition_id = template.process_definition_id;
       await this.ensureDraftDefinitionContext(
         template.process_definition_id,
-        { entityLabel: "los flujos de llenado" }
+        { entityLabel: "los flujos de entrega" }
       );
       delete payload.process_definition_id;
     }
@@ -2046,7 +2046,7 @@ export default class SqlAdminService {
     if (tableName === "fill_flow_steps" && payload.fill_flow_template_id) {
       const fillFlowTemplate = await this.getFillFlowTemplate(payload.fill_flow_template_id);
       if (!fillFlowTemplate) {
-        throw new Error("La plantilla de llenado seleccionada no existe.");
+        throw new Error("La plantilla de entrega seleccionada no existe.");
       }
       const template = await this.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
       if (!template) {
@@ -2054,7 +2054,7 @@ export default class SqlAdminService {
       }
       await this.ensureDraftDefinitionContext(
         template.process_definition_id,
-        { entityLabel: "los pasos de llenado" }
+        { entityLabel: "los pasos de entrega" }
       );
     }
 
@@ -2433,7 +2433,7 @@ export default class SqlAdminService {
     if (tableName === "fill_flow_templates") {
       if (Object.prototype.hasOwnProperty.call(updates, "process_definition_template_id")) {
         if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un flujo de llenado.");
+          throw new Error("No se puede cambiar la plantilla asociada de un flujo de entrega.");
         }
         delete updates.process_definition_template_id;
       }
@@ -2441,14 +2441,14 @@ export default class SqlAdminService {
       if (template) {
         await this.ensureDraftDefinitionContext(
           template.process_definition_id,
-          { entityLabel: "los flujos de llenado" }
+          { entityLabel: "los flujos de entrega" }
         );
       }
     }
     if (tableName === "fill_flow_steps") {
       if (Object.prototype.hasOwnProperty.call(updates, "fill_flow_template_id")) {
         if (Number(updates.fill_flow_template_id) !== Number(existing.fill_flow_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un paso de llenado.");
+          throw new Error("No se puede cambiar la plantilla asociada de un paso de entrega.");
         }
         delete updates.fill_flow_template_id;
       }
@@ -2458,7 +2458,7 @@ export default class SqlAdminService {
         if (template) {
           await this.ensureDraftDefinitionContext(
             template.process_definition_id,
-            { entityLabel: "los pasos de llenado" }
+            { entityLabel: "los pasos de entrega" }
           );
         }
       }
@@ -3103,7 +3103,7 @@ export default class SqlAdminService {
     const normalizedSteps = syncEnabled
       ? normalizeFillSteps(workflow, { cargoCodeMap })
       : [];
-    const templateName = String(workflow?.name || "").trim() || `Flujo de llenado - ${displayName}`;
+    const templateName = String(workflow?.name || "").trim() || `Flujo de entrega - ${displayName}`;
     const templateDescription = buildArtifactSyncedFillDescription({
       artifactId,
       templateCode,
@@ -3787,8 +3787,8 @@ export default class SqlAdminService {
       throw new Error(`No se permite pasar de "${current}" a "${stage}".`);
     }
 
-    // Al publicar, exigir que la plantilla tenga al menos un paso de llenado definido en su meta.yaml
-    // (regla: las plantillas de proceso no se publican sin flujo de llenado). La firma puede ser ad-hoc.
+    // Al publicar, exigir que la plantilla tenga al menos un paso de entrega definido en su meta.yaml
+    // (regla: las plantillas de proceso no se publican sin flujo de entrega). La firma puede ser ad-hoc.
     if (stage === "published") {
       let fillSteps = 0;
       try {
@@ -3798,7 +3798,7 @@ export default class SqlAdminService {
         fillSteps = 0;
       }
       if (!fillSteps) {
-        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de llenado.");
+        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }
 
@@ -4124,9 +4124,9 @@ export default class SqlAdminService {
       }
     }
 
-    // Fail-fast: el ejecutor debe elegir proceso destino al crear, antes de subir nada a MinIO
-    // (el rollback solo borra la fila SQL; así evitamos objetos huérfanos por un envío inválido).
-    if (!isEdit && actor?.requireProcessLink && !(data.process_definition_id ? Number(data.process_definition_id) : null)) {
+    // Fail-fast (antes de subir nada a MinIO): TODA plantilla debe pertenecer a un proceso. Aplica a todos
+    // los roles (admin/gestor de procesos incluidos), no solo al ejecutor.
+    if (!isEdit && !(data.process_definition_id ? Number(data.process_definition_id) : null)) {
       throw new Error("Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla.");
     }
 
@@ -4149,6 +4149,14 @@ export default class SqlAdminService {
       const hasReferenceDoc = REFERENCE_DOC_FORMATS.some((format) => uploadedFiles[format]);
       if (!hasReferenceDoc) {
         throw new Error("Debes adjuntar al menos un documento de referencia (PDF, Word, Excel o PowerPoint).");
+      }
+      // Toda plantilla debe definir un flujo de entrega con al menos un paso (fail-fast antes del upload).
+      let fillWorkflowCheck = data.fill_workflow;
+      if (typeof fillWorkflowCheck === "string") {
+        try { fillWorkflowCheck = JSON.parse(fillWorkflowCheck); } catch { fillWorkflowCheck = null; }
+      }
+      if (!fillWorkflowCheck || !Array.isArray(fillWorkflowCheck.steps) || !fillWorkflowCheck.steps.length) {
+        throw new Error("Debes definir al menos un paso en el flujo de entrega.");
       }
     } else if (
       !templateSeedId
@@ -4476,7 +4484,7 @@ export default class SqlAdminService {
           const fillTpls = summary?.fill?.syncedTemplates || 0;
           const sigTpls = summary?.signatures?.syncedTemplates || 0;
           if (fillTpls || sigTpls) {
-            workflowNotice = ` Flujos sincronizados (llenado: ${fillTpls}, firmas: ${sigTpls}).`;
+            workflowNotice = ` Flujos sincronizados (entrega: ${fillTpls}, firmas: ${sigTpls}).`;
           }
         } catch (syncError) {
           console.warn("No se pudieron sincronizar los flujos del artifact:", syncError?.message);

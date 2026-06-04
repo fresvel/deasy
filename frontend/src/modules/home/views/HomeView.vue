@@ -1209,7 +1209,7 @@
               <ul class="m-0 pl-5 text-sm font-medium text-slate-600 flex flex-col gap-2">
                 <li>La tarea se creará en modo manual dentro de esta definición.</li>
                 <li>El backend generará entregables y documentos según los templates activos.</li>
-                <li>Los flujos de llenado y firma dependerán de la configuración actual de cada template.</li>
+                <li>Los flujos de entrega y firma dependerán de la configuración actual de cada template.</li>
               </ul>
             </article>
           </div>
@@ -1376,7 +1376,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
               <AppTag variant="neutral">{{ doc.document_status || 'Inicial' }}</AppTag>
-              <AppTag v-if="doc.pending_fill_count" variant="info">Llenado pendiente: {{ doc.pending_fill_count }}</AppTag>
+              <AppTag v-if="doc.pending_fill_count" variant="info">Entrega pendiente: {{ doc.pending_fill_count }}</AppTag>
               <AppTag v-if="doc.pending_signature_count" variant="warning">Firmas pendientes: {{ doc.pending_signature_count }}</AppTag>
             </div>
           </div>
@@ -1426,7 +1426,7 @@
             :class="getDeliverableWorkspaceTabClass('fill')"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
-            Flujo de llenado
+            Flujo de entrega
           </button>
           <button
             v-if="signatureFlowState.subject && shouldShowSignatureFlow(signatureFlowState.subject)"
@@ -1590,7 +1590,7 @@
                       {{ document.document_status || 'Inicial' }}
                     </AppTag>
                     <AppTag v-if="document.pending_fill_count" variant="info">
-                      Llenado: {{ document.pending_fill_count }}
+                      Entrega: {{ document.pending_fill_count }}
                     </AppTag>
                     <AppTag v-if="document.pending_signature_count" variant="warning">
                       Firmas: {{ document.pending_signature_count }}
@@ -1745,7 +1745,7 @@
                 <AppTag variant="muted">Vista operativa</AppTag>
               </div>
               <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-slate-500">
-                Este entregable todavía no tiene una secuencia de llenado visible.
+                Este entregable todavía no tiene una secuencia de entrega visible.
               </div>
               <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div
@@ -1762,7 +1762,7 @@
                       </span>
                       <div class="flex flex-col gap-1">
                         <strong class="text-sm font-bold text-slate-800">Paso {{ step.step_order }}</strong>
-                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Llenado</span>
+                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Entrega</span>
                       </div>
                     </div>
                     <div class="flex flex-wrap gap-2 justify-end">
@@ -1942,11 +1942,11 @@
           <div class="flex flex-col gap-5">
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
               <div class="flex items-center justify-between gap-2">
-                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Historial de llenado</h3>
+                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Historial de entrega</h3>
                 <AppTag variant="muted">{{ fillWorkflowNotes.length }} registro{{ fillWorkflowNotes.length === 1 ? '' : 's' }}</AppTag>
               </div>
               <div v-if="!fillWorkflowNotes.length" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
-                No hay notas ni respuestas registradas en el flujo de llenado.
+                No hay notas ni respuestas registradas en el flujo de entrega.
               </div>
               <div v-else class="mt-4 flex flex-col gap-3">
                 <div
@@ -2128,7 +2128,7 @@
     <AdminModalShell
       ref="fillWorkflowModal"
       labelled-by="fill-workflow-modal-title"
-      title="Flujo de llenado"
+      title="Flujo de entrega"
       size="lg"
       content-class="rounded-4 shadow border-0"
       body-class="pt-4"
@@ -2155,7 +2155,7 @@
           <div class="rounded-2xl border border-slate-200 bg-white p-4">
             <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Secuencia del flujo</h3>
             <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-slate-500">
-              Este entregable todavía no tiene una secuencia de llenado visible.
+              Este entregable todavía no tiene una secuencia de entrega visible.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
@@ -2172,7 +2172,7 @@
                     </span>
                     <div class="flex flex-col gap-1">
                       <strong class="text-sm font-bold text-slate-800">Paso {{ step.step_order }}</strong>
-                      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Llenado</span>
+                      <span class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Entrega</span>
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
@@ -3477,7 +3477,7 @@ const homeStats = computed(() => [
   {
     label: 'Documentos',
     value: homeDocumentCount.value,
-    detail: homePendingFillCount.value ? `${homePendingFillCount.value} pendiente(s) de llenado` : 'Centro documental al dia',
+    detail: homePendingFillCount.value ? `${homePendingFillCount.value} pendiente(s) de entrega` : 'Centro documental al dia',
     icon: IconFileDescription,
     tone: 'indigo'
   },
@@ -6682,7 +6682,7 @@ const handleDeliverableFutureAction = (action, payload) => {
     return;
   }
   const actionLabels = {
-    manage_fill: 'La gestión operativa del llenado',
+    manage_fill: 'La gestión operativa de la entrega',
     download_template: 'La descarga de la plantilla',
     upload_deliverable: 'La subida del archivo del entregable',
     review_signature_flow: 'La revisión del flujo de firmas',
@@ -6704,7 +6704,7 @@ const startDeliverableFlow = async (payload) => {
   const request = getCurrentFillWorkflowRequest(payload);
   const requestId = getFillRequestId(request);
   if (!requestId) {
-    setProcessActionInfo(`No se encontró una solicitud inicial de llenado para ${subject.title}.`, 'error');
+    setProcessActionInfo(`No se encontró una solicitud inicial de entrega para ${subject.title}.`, 'error');
     return;
   }
   try {
@@ -6754,29 +6754,29 @@ const completeDeliverableFill = async (payload) => {
   const subject = getDeliverableSubject(payload);
   const pendingFillRequest = (subject.workflow?.fill_requests || []).find((request) => !request.responded_at);
   if (!pendingFillRequest?.id) {
-    setProcessActionInfo(`No se encontró una solicitud de llenado pendiente para ${subject.title}.`, 'error');
+    setProcessActionInfo(`No se encontró una solicitud de entrega pendiente para ${subject.title}.`, 'error');
     return;
   }
   if (!subject.preloadFilePath) {
-    setProcessActionInfo(`Primero debes subir el archivo del entregable ${subject.title} antes de aprobar el llenado.`, 'error');
+    setProcessActionInfo(`Primero debes subir el archivo del entregable ${subject.title} antes de aprobar la entrega.`, 'error');
     return;
   }
   try {
     processingFillItemId.value = Number(subject.itemId || 0);
     openDeliverableOperationModal({
-      title: 'Gestionando llenado',
+      title: 'Gestionando entrega',
       type: 'info',
       message: `Validando el entregable ${subject.title}...`,
-      detail: 'Se está actualizando el estado del flujo de llenado.'
+      detail: 'Se está actualizando el estado del flujo de entrega.'
     });
     await processPanelService.approveFillRequest(pendingFillRequest.id, {
-      note: 'Llenado confirmado desde el panel del entregable.'
+      note: 'Entrega confirmado desde el panel del entregable.'
     });
-    setProcessActionInfo(`El llenado del entregable ${subject.title} fue aprobado correctamente.`, 'success');
+    setProcessActionInfo(`La entrega del entregable ${subject.title} fue aprobado correctamente.`, 'success');
     openDeliverableOperationModal({
-      title: 'Llenado actualizado',
+      title: 'Entrega actualizado',
       type: 'success',
-      message: `El flujo de llenado de ${subject.title} se actualizó correctamente.`,
+      message: `El flujo de entrega de ${subject.title} se actualizó correctamente.`,
       detail: subject.preloadPdfPath
         ? 'El entregable ya puede avanzar hacia firma cuando exista una solicitud pendiente.'
         : 'El archivo de trabajo quedó validado. Si aún no existe un PDF, la firma seguirá bloqueada.'
@@ -6788,11 +6788,11 @@ const completeDeliverableFill = async (payload) => {
     openDeliverableOperationModal({
       title: 'Error en llenado',
       type: 'error',
-      message: error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.',
+      message: error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.',
       detail: subject.title
     });
     setProcessActionInfo(
-      error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.',
+      error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.',
       'error'
     );
   } finally {
@@ -6805,11 +6805,11 @@ const submitFillWorkflowAction = async (action) => {
   const request = fillWorkflowState.value.request;
   const requestId = getFillRequestId(request);
   if (!subject || !requestId) {
-    fillWorkflowState.value.error = 'No se encontró una solicitud de llenado válida.';
+    fillWorkflowState.value.error = 'No se encontró una solicitud de entrega válida.';
     return;
   }
   if (action === 'approve' && !subject.preloadFilePath) {
-    fillWorkflowState.value.error = 'Primero debes cargar un archivo de trabajo para aprobar el llenado.';
+    fillWorkflowState.value.error = 'Primero debes cargar un archivo de trabajo para aprobar la entrega.';
     return;
   }
 
@@ -6825,7 +6825,7 @@ const submitFillWorkflowAction = async (action) => {
     fillWorkflowSubmitting.value = true;
     fillWorkflowState.value.error = '';
     openDeliverableOperationModal({
-      title: 'Actualizando flujo de llenado',
+      title: 'Actualizando flujo de entrega',
       type: 'info',
       message: `Procesando ${actionLabels[action] || 'acción'} para ${subject.title}...`,
       detail: `Paso ${request.step_order || 1}`
@@ -6843,26 +6843,26 @@ const submitFillWorkflowAction = async (action) => {
     } else if (action === 'cancel') {
       await processPanelService.cancelFillRequest(requestId, payload);
     } else {
-      throw new Error('Acción de llenado no soportada.');
+      throw new Error('Acción de entrega no soportada.');
     }
 
     openDeliverableOperationModal({
-      title: 'Flujo de llenado actualizado',
+      title: 'Flujo de entrega actualizado',
       type: 'success',
       message: `La ${actionLabels[action] || 'acción'} del entregable ${subject.title} se completó correctamente.`,
       detail: 'El panel se actualizará con el nuevo estado.'
     });
-    setProcessActionInfo(`El flujo de llenado de ${subject.title} se actualizó correctamente.`, 'success');
+    setProcessActionInfo(`El flujo de entrega de ${subject.title} se actualizó correctamente.`, 'success');
     fillWorkflowModalInstance?.hide();
     closeDeliverableWorkspaceModal();
     if (selectedProcessContext.value) {
       await refreshActiveProcessPanel();
     }
   } catch (error) {
-    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.';
+    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.';
     fillWorkflowState.value.error = message;
     openDeliverableOperationModal({
-      title: 'Error en flujo de llenado',
+      title: 'Error en flujo de entrega',
       type: 'error',
       message,
       detail: subject.title
@@ -6878,7 +6878,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
   const request = getCurrentFillWorkflowRequest(payload);
   const requestId = getFillRequestId(request);
   if (!subject || !requestId) {
-    setProcessActionInfo('No se encontró una solicitud de llenado válida.', 'error');
+    setProcessActionInfo('No se encontró una solicitud de entrega válida.', 'error');
     return;
   }
   if (action === 'approve' && !subject.preloadFilePath) {
@@ -6895,7 +6895,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
   try {
     fillWorkflowSubmitting.value = true;
     openDeliverableOperationModal({
-      title: 'Actualizando flujo de llenado',
+      title: 'Actualizando flujo de entrega',
       type: 'info',
       message: `Procesando ${actionLabels[action] || 'acción'} para ${subject.title}...`,
       detail: `Paso ${request.step_order || 1}`
@@ -6909,24 +6909,24 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
     } else if (action === 'reject') {
       await processPanelService.rejectFillRequest(requestId, requestPayload);
     } else {
-      throw new Error('Acción de llenado no soportada.');
+      throw new Error('Acción de entrega no soportada.');
     }
 
     openDeliverableOperationModal({
-      title: 'Flujo de llenado actualizado',
+      title: 'Flujo de entrega actualizado',
       type: 'success',
       message: `La ${actionLabels[action] || 'acción'} del entregable ${subject.title} se completó correctamente.`,
       detail: 'El panel se actualizará con el nuevo estado.'
     });
-    setProcessActionInfo(`El flujo de llenado de ${subject.title} se actualizó correctamente.`, 'success');
+    setProcessActionInfo(`El flujo de entrega de ${subject.title} se actualizó correctamente.`, 'success');
     deliverablePreviewModalInstance?.hide();
     if (selectedProcessContext.value) {
       await refreshActiveProcessPanel();
     }
   } catch (error) {
-    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de llenado.';
+    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.';
     openDeliverableOperationModal({
-      title: 'Error en flujo de llenado',
+      title: 'Error en flujo de entrega',
       type: 'error',
       message,
       detail: subject.title

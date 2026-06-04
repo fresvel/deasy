@@ -524,7 +524,7 @@ const shouldInferSignatureFlowForContext = (context) => {
 
   // usage_role attachment/support deprecado (toda adjunción ad-hoc va por document_attachments, que no
   // genera task_items); y el gate por artifact_origin también se deprecó. Todo entregable de proceso
-  // (siempre usage_role='primary') participa del ciclo de llenado/firma.
+  // (siempre usage_role='primary') participa del ciclo de entrega/firma.
   return true;
 };
 

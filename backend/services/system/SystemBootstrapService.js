@@ -241,7 +241,7 @@ const ensureBootstrapUnit = async (connection) => {
 // Proceso por defecto 'default': paraguas de tareas libres / no clasificadas.
 // Su plantilla base NACE DE UN SEED real (contrato latex/jinja2 + schema), empaquetado dentro del backend
 // en services/system/seeds/informe-general. El bootstrap lo publica a MinIO (catálogo Seeds/ + artifact
-// instanciado System/) y registra la fila template_seeds + template_artifacts. El flujo de llenado queda
+// instanciado System/) y registra la fila template_seeds + template_artifacts. El flujo de entrega queda
 // simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
 const DEFAULT_PROCESS_SLUG = "default";
 const DEFAULT_PROCESS_NAME = "Proceso por defecto";
@@ -284,7 +284,7 @@ workflows:
     steps:
       - order: 1
         code: "owner_fill"
-        name: "Llenado del responsable"
+        name: "Entrega del responsable"
         resolver:
           type: "document_owner"
           selection_mode: "auto_one"
@@ -504,7 +504,7 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const pdtId = Number(pdt.id);
 
-  // 6. flujo de llenado: 1 paso, el dueño del documento llena (universal).
+  // 6. flujo de entrega: 1 paso, el dueño del documento llena (universal).
   let fillTpl = await fetchOne(
     connection,
     "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ? LIMIT 1",
@@ -513,7 +513,7 @@ export const ensureDefaultProcess = async (connection) => {
   if (!fillTpl) {
     const [r] = await connection.query(
       "INSERT INTO fill_flow_templates (process_definition_template_id, name, description, is_active) VALUES (?, ?, ?, 1)",
-      [pdtId, "Llenado del responsable", "El responsable de la tarea completa el contenido."]
+      [pdtId, "Entrega del responsable", "El responsable de la tarea completa el contenido."]
     );
     fillTpl = { id: r.insertId };
     await connection.query(

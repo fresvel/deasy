@@ -237,7 +237,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
   const signatureOwnership = await getCurrentSignatureOwnership(connection, documentVersionId, userId);
   if (!fillOwnership && !signatureOwnership) {
     const error = new Error(
-      "Solo el responsable del paso actual de llenado o firma puede resetear este flujo."
+      "Solo el responsable del paso actual de entrega o firma puede resetear este flujo."
     );
     error.statusCode = 403;
     throw error;
