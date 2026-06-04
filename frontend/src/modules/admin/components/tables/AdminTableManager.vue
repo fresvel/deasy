@@ -24,13 +24,11 @@
       :table="table"
       :loading="loading"
       :is-template-seeds-table="isTemplateSeedsTable"
-      :is-template-artifacts-table="isTemplateArtifactsTable"
       :is-process-definitions-table="isProcessDefinitionFilterTable"
       :can-create="canCreateCurrentTable"
       :can-update="canUpdateCurrentTable"
       @go-back="handleGoBack"
       @sync-template-seeds="syncTemplateSeedsFromSource"
-      @sync-template-artifacts="syncTemplateArtifactsFromDist"
       @create="handlePrimaryCreateAction"
       @create-wizard="openProcessWizardFromScratch"
     />
@@ -2236,7 +2234,6 @@ const handleArtifactNewVersion = async () => {
 };
 
 const {
-  syncTemplateArtifactsFromDist,
   syncTemplateSeedsFromSource,
   applyUnitRelationDefaults
 } = useAdminSyncActions({

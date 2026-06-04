@@ -9,7 +9,6 @@ export function useAdminSyncActions({
   formData,
   fkDisplay,
   allTablesMap,
-  isTemplateArtifactsTable,
   isTemplateSeedsTable,
   fetchRows,
   loadDraftArtifactSeedOptions,
@@ -17,33 +16,6 @@ export function useAdminSyncActions({
   resolveDisplayField,
   setFkLabel
 }) {
-  const syncTemplateArtifactsFromDist = async () => {
-    if (!isTemplateArtifactsTable.value) {
-      return;
-    }
-    loading.value = true;
-    error.value = "";
-    try {
-      const response = await adminSqlService.syncTemplateArtifacts();
-      const { discovered = 0, outputs = 0, inserted = 0, updated = 0 } = response.data || {};
-      await fetchRows();
-      showFeedbackToast({
-        kind: "success",
-        title: "Sincronizacion completada",
-        message: `Paquetes: ${discovered}. Salidas detectadas: ${outputs}. Insertados: ${inserted}. Actualizados: ${updated}.`
-      });
-    } catch (err) {
-      error.value = err?.response?.data?.message || "No se pudo sincronizar template_artifacts.";
-      showFeedbackToast({
-        kind: "error",
-        title: "No se pudo sincronizar",
-        message: error.value,
-        duration: 7000
-      });
-    } finally {
-      loading.value = false;
-    }
-  };
 
   const syncTemplateSeedsFromSource = async () => {
     loading.value = true;
@@ -105,7 +77,6 @@ export function useAdminSyncActions({
   };
 
   return {
-    syncTemplateArtifactsFromDist,
     syncTemplateSeedsFromSource,
     applyUnitRelationDefaults
   };

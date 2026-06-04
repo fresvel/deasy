@@ -24,16 +24,6 @@
           Sincronizar seeds
         </AdminButton>
         <AdminButton
-          v-if="isTemplateArtifactsTable && canUpdate"
-          variant="secondary"
-          size="sm"
-          :disabled="!table || loading"
-          @click="$emit('sync-template-artifacts')"
-        >
-          <font-awesome-icon icon="rotate-right" class="mr-2" />
-          Sincronizar dist
-        </AdminButton>
-        <AdminButton
           v-if="isProcessDefinitionsTable && canCreate"
           variant="outlinePrimary"
           size="md"
@@ -91,10 +81,6 @@ defineProps({
     type: Boolean,
     default: false
   },
-  isTemplateArtifactsTable: {
-    type: Boolean,
-    default: false
-  },
   isProcessDefinitionsTable: {
     type: Boolean,
     default: false
@@ -112,7 +98,6 @@ defineProps({
 defineEmits([
   "go-back",
   "sync-template-seeds",
-  "sync-template-artifacts",
   "create",
   "create-wizard"
 ]);

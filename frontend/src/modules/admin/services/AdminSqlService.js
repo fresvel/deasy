@@ -29,10 +29,6 @@ export class AdminSqlService {
     });
   }
 
-  syncTemplateArtifacts() {
-    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACTS_SYNC);
-  }
-
   getTemplateArtifactSchema(artifactId) {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SCHEMA(artifactId));
   }
