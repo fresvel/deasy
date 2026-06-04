@@ -464,7 +464,6 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   owner_ref VARCHAR(180) NULL,
   source_version VARCHAR(20) NOT NULL,
   storage_version VARCHAR(20) NOT NULL,
-  artifact_origin ENUM('process','general') NOT NULL DEFAULT 'process',
   artifact_stage ENUM('draft','review','approved','published','archived') NOT NULL DEFAULT 'published',
   bucket VARCHAR(120) NOT NULL,
   base_object_prefix VARCHAR(255) NOT NULL,
@@ -477,7 +476,6 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version),
   INDEX idx_template_artifacts_seed (template_seed_id),
   INDEX idx_template_artifacts_owner_person (owner_person_id),
-  INDEX idx_template_artifacts_origin (artifact_origin),
   INDEX idx_template_artifacts_stage (artifact_stage),
   CONSTRAINT fk_template_artifacts_seed
     FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
@@ -1114,3 +1112,21 @@ SELECT
   level3_unit_id,
   COALESCE(level3_unit_id, level2_unit_id, unit_id) AS group_unit_id
 FROM org_tree;
+
+-- Estado de los jobs de firma masiva (POST /sign/batch/start). Persistido para sobrevivir reinicios del
+-- backend (antes vivía en un Map en memoria). `results` guarda el detalle por archivo como JSON.
+CREATE TABLE IF NOT EXISTS signature_batch_jobs (
+  job_id CHAR(36) PRIMARY KEY,
+  user_id BIGINT NULL,
+  sign_mode VARCHAR(40) NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'queued',
+  total INT NOT NULL DEFAULT 0,
+  processed INT NOT NULL DEFAULT 0,
+  success_count INT NOT NULL DEFAULT 0,
+  failed_count INT NOT NULL DEFAULT 0,
+  results JSON NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_signature_batch_jobs_user (user_id),
+  INDEX idx_signature_batch_jobs_status (status)
+);

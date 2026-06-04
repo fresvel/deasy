@@ -62,102 +62,80 @@ const ARTIFACT_WORKFLOW_CONTRACT = [
   "  data: []"
 ].join("\n");
 
-// Escapa un valor escalar para YAML entre comillas dobles.
-const yamlQuote = (value) => `"${String(value ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-
-// Genera el bloque YAML `workflows:` (fill + signatures) a partir de los flujos definidos
-// en el editor web. Produce la misma estructura que consumen normalizeFillSteps/normalizeSignatureSteps.
+// Genera el bloque `workflows:` (fill + signatures) + `dependencies:` a partir de los flujos definidos en
+// el editor web. Construye un objeto y lo serializa con yaml.dump (maneja saltos de línea/comillas/caracteres
+// especiales de forma segura). Produce la misma estructura que consumen normalizeFillSteps/normalizeSignatureSteps.
 const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
-  const lines = ["workflows:"];
-
   // ── Fill ──
   const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
-  const fillRequired = fillWorkflow?.required !== false;
-  lines.push("  fill:");
-  lines.push(`    required: ${fillRequired ? "true" : "false"}`);
-  lines.push('    source: "artifact"');
-  lines.push('    sync_mode: "artifact_to_db"');
-  if (!fillSteps.length) {
-    lines.push("    steps: []");
-  } else {
-    lines.push("    steps:");
-    fillSteps.forEach((step, index) => {
+  const fill = {
+    required: fillWorkflow?.required !== false,
+    source: "artifact",
+    sync_mode: "artifact_to_db",
+    steps: fillSteps.map((step, index) => {
       const order = Number(step?.order) || index + 1;
-      lines.push(`      - order: ${order}`);
-      if (step?.code) lines.push(`        code: ${yamlQuote(step.code)}`);
-      lines.push(`        name: ${yamlQuote(step?.name || `Paso ${order}`)}`);
-      lines.push("        resolver:");
-      lines.push(`          type: ${yamlQuote(step?.resolver_type || "task_assignee")}`);
-      lines.push(`          selection_mode: ${yamlQuote(step?.selection_mode || "auto_one")}`);
+      const resolver = {
+        type: step?.resolver_type || "task_assignee",
+        selection_mode: step?.selection_mode || "auto_one",
+      };
       if (step?.resolver_type === "cargo_in_scope") {
-        if (step?.cargo_code) lines.push(`          cargo_code: ${yamlQuote(step.cargo_code)}`);
-        lines.push(`          unit_scope_type: ${yamlQuote(step?.unit_scope_type || "unit_exact")}`);
+        if (step?.cargo_code) resolver.cargo_code = step.cargo_code;
+        resolver.unit_scope_type = step?.unit_scope_type || "unit_exact";
       }
       if (step?.resolver_type === "specific_person" && step?.person_id) {
-        lines.push(`          person_id: ${Number(step.person_id)}`);
+        resolver.person_id = Number(step.person_id);
       }
       if (step?.resolver_type === "position" && step?.position_id) {
-        lines.push(`          position_id: ${Number(step.position_id)}`);
+        resolver.position_id = Number(step.position_id);
       }
+      const out = { order };
+      if (step?.code) out.code = step.code;
+      out.name = step?.name || `Paso ${order}`;
+      out.resolver = resolver;
       const fieldRefs = Array.isArray(step?.field_refs) ? step.field_refs.filter(Boolean) : [];
-      if (fieldRefs.length) {
-        lines.push("        field_refs:");
-        fieldRefs.forEach((ref) => lines.push(`          - ${yamlQuote(ref)}`));
-      }
-      lines.push(`        required: ${step?.required === false ? "false" : "true"}`);
-      lines.push(`        can_reject: ${step?.can_reject === false ? "false" : "true"}`);
-    });
-  }
+      if (fieldRefs.length) out.field_refs = fieldRefs;
+      out.required = step?.required !== false;
+      out.can_reject = step?.can_reject !== false;
+      return out;
+    }),
+  };
 
   // ── Signatures ──
   const sigSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [];
-  const sigRequired = signatureWorkflow?.required === true && sigSteps.length > 0;
-  lines.push("  signatures:");
-  lines.push(`    required: ${sigRequired ? "true" : "false"}`);
-  lines.push('    source: "artifact"');
-  lines.push('    sync_mode: "artifact_to_db"');
-  // Anchors por token (cada anchor referencia un campo del schema que marca la posición).
-  const anchors = Array.isArray(signatureWorkflow?.anchors) ? signatureWorkflow.anchors : [];
-  if (anchors.length) {
-    lines.push("    anchors:");
-    anchors.forEach((anchor) => {
-      if (!anchor?.code || !anchor?.token_field_ref) return;
-      lines.push(`      - code: ${yamlQuote(anchor.code)}`);
-      lines.push("        placement:");
-      lines.push('          strategy: "token"');
-      lines.push(`          token_field_ref: ${yamlQuote(anchor.token_field_ref)}`);
-      lines.push("        size:");
-      lines.push(`          width: ${Number(anchor.width) || 124}`);
-      lines.push(`          height: ${Number(anchor.height) || 48}`);
-    });
-  }
-  if (!sigSteps.length) {
-    lines.push("    steps: []");
-  } else {
-    lines.push("    steps:");
-    sigSteps.forEach((step, index) => {
-      const order = Number(step?.order) || index + 1;
-      lines.push(`      - order: ${order}`);
-      if (step?.code) lines.push(`        code: ${yamlQuote(step.code)}`);
-      lines.push(`        name: ${yamlQuote(step?.name || `Firma ${order}`)}`);
-      lines.push(`        step_type_code: ${yamlQuote(step?.step_type_code || "electronic")}`);
-      if (step?.required_cargo_code) lines.push(`        required_cargo_code: ${yamlQuote(step.required_cargo_code)}`);
-      lines.push(`        selection_mode: ${yamlQuote(step?.selection_mode || "auto_all")}`);
-      lines.push(`        required_signers_min: ${Number(step?.required_signers_min) || 1}`);
-      lines.push(`        required_signers_max: ${Number(step?.required_signers_max) || 1}`);
-      lines.push(`        required: ${step?.required === false ? "false" : "true"}`);
-      const anchorRefs = Array.isArray(step?.anchor_refs) ? step.anchor_refs.filter(Boolean) : [];
-      if (anchorRefs.length) {
-        lines.push("        anchor_refs:");
-        anchorRefs.forEach((ref) => lines.push(`          - ${yamlQuote(ref)}`));
-      }
-    });
-  }
+  const anchors = (Array.isArray(signatureWorkflow?.anchors) ? signatureWorkflow.anchors : [])
+    .filter((anchor) => anchor?.code && anchor?.token_field_ref)
+    .map((anchor) => ({
+      code: anchor.code,
+      placement: { strategy: "token", token_field_ref: anchor.token_field_ref },
+      size: { width: Number(anchor.width) || 124, height: Number(anchor.height) || 48 },
+    }));
+  const signatures = {
+    required: signatureWorkflow?.required === true && sigSteps.length > 0,
+    source: "artifact",
+    sync_mode: "artifact_to_db",
+  };
+  if (anchors.length) signatures.anchors = anchors;
+  signatures.steps = sigSteps.map((step, index) => {
+    const order = Number(step?.order) || index + 1;
+    const out = { order };
+    if (step?.code) out.code = step.code;
+    out.name = step?.name || `Firma ${order}`;
+    out.step_type_code = step?.step_type_code || "electronic";
+    if (step?.required_cargo_code) out.required_cargo_code = step.required_cargo_code;
+    out.selection_mode = step?.selection_mode || "auto_all";
+    out.required_signers_min = Number(step?.required_signers_min) || 1;
+    out.required_signers_max = Number(step?.required_signers_max) || 1;
+    out.required = step?.required !== false;
+    const anchorRefs = Array.isArray(step?.anchor_refs) ? step.anchor_refs.filter(Boolean) : [];
+    if (anchorRefs.length) out.anchor_refs = anchorRefs;
+    return out;
+  });
 
-  lines.push("dependencies:");
-  lines.push("  templates: []");
-  lines.push("  data: []");
-  return lines.join("\n");
+  const doc = {
+    workflows: { fill, signatures },
+    dependencies: { templates: [], data: [] },
+  };
+  return yaml.dump(doc, { lineWidth: -1, noRefs: true });
 };
 
 // Componentes UI permitidos para los campos del schema editados desde la web.
@@ -427,6 +405,42 @@ const putMinioObjectFromText = (bucket, objectName, text, contentType = "text/pl
     resolve(etag);
   });
 });
+
+const statMinioObject = (bucket, objectName) => new Promise((resolve, reject) => {
+  getMinioClient().statObject(bucket, objectName, (error, stat) => (error ? reject(error) : resolve(stat)));
+});
+
+// Copia byte-a-byte preservando el content-type. Imprescindible para clonar versiones con binarios
+// (PNG/PDF/DOCX/XLSX/PPTX): una copia vía texto UTF-8 corrompe esos archivos.
+const copyMinioObjectBinary = async (bucket, sourceObject, targetObject) => {
+  let contentType;
+  try {
+    const stat = await statMinioObject(bucket, sourceObject);
+    contentType = stat?.metaData?.["content-type"] || stat?.metaData?.["Content-Type"];
+  } catch {
+    // El content-type es opcional; si no se puede leer, se sube sin él.
+  }
+  const buffer = await streamToBuffer(await getMinioObjectStream(bucket, sourceObject));
+  return new Promise((resolve, reject) => {
+    const meta = contentType ? { "Content-Type": contentType } : {};
+    getMinioClient().putObject(bucket, targetObject, buffer, buffer.length, meta, (error, etag) => (error ? reject(error) : resolve(etag)));
+  });
+};
+
+// Elimina todos los objetos bajo un prefijo (limpieza de huérfanos en MinIO, best-effort).
+const removeMinioPrefix = async (bucket, objectPrefix) => {
+  const objectNames = await listMinioObjects(bucket, objectPrefix, true);
+  for (const objectName of objectNames) {
+    await new Promise((resolve) => {
+      getMinioClient().removeObject(bucket, objectName, (error) => {
+        if (error) {
+          console.warn(`No se pudo eliminar objeto huérfano ${objectName}:`, error.message);
+        }
+        resolve();
+      });
+    });
+  }
+};
 
 // Transiciones de stage permitidas (lineal + reversas razonables + archivar desde cualquiera).
 const ARTIFACT_STAGE_TRANSITIONS = {
@@ -3772,8 +3786,8 @@ export default class SqlAdminService {
       if (!objectName.startsWith(oldPrefix)) continue;
       const relative = objectName.slice(oldPrefix.length);
       if (!relative) continue;
-      const text = await readMinioObjectAsText(bucket, objectName);
-      await putMinioObjectFromText(bucket, `${newPrefix}${relative}`, text);
+      // Copia binaria (preserva bytes y content-type); NO leer/escribir como texto (corrompe binarios).
+      await copyMinioObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
     }
 
     const newSchemaKey = `${newPrefix}schema.json`;
@@ -4132,9 +4146,11 @@ export default class SqlAdminService {
 
     const contentHash = hashDirectory(draftDir);
     let createdId = isEdit ? Number(existingArtifact.id) : null;
+    let uploadedToMinio = false;
 
     try {
       await uploadDirectoryToMinio(bucket, baseObjectPrefix, draftDir);
+      uploadedToMinio = true;
 
       if (isEdit) {
         await this.pool.query(
@@ -4239,6 +4255,7 @@ export default class SqlAdminService {
       // Si se definieron flujos y el artifact ya está vinculado a definiciones de proceso,
       // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
       let workflowNotice = "";
+      let workflowSyncFailed = false;
       if (hasCustomWorkflows && createdId) {
         try {
           const summary = await this.syncArtifactWorkflowsForTemplateArtifactId(createdId);
@@ -4249,7 +4266,8 @@ export default class SqlAdminService {
           }
         } catch (syncError) {
           console.warn("No se pudieron sincronizar los flujos del artifact:", syncError?.message);
-          workflowNotice = " Los flujos se guardaron en el meta.yaml pero no se pudieron sincronizar a la base de datos.";
+          workflowSyncFailed = true;
+          workflowNotice = " Los flujos se guardaron en el meta.yaml pero NO se pudieron sincronizar a la base de datos; vuelve a guardar o re-sincroniza.";
         }
       }
 
@@ -4271,13 +4289,22 @@ export default class SqlAdminService {
         meta_object_key: metaObjectKey,
         content_hash: contentHash,
         is_active: 1,
+        workflow_sync_failed: workflowSyncFailed,
+        __warning: workflowSyncFailed ? workflowNotice.trim() : undefined,
         __notice: (isEdit
           ? "El artifact general fue actualizado y cargado correctamente en MinIO."
           : "El artifact general fue cargado correctamente en MinIO y registrado en el sistema.") + workflowNotice
       };
     } catch (error) {
-      if (createdId && !isEdit) {
-        await this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [createdId]);
+      // Rollback en creación: borra la fila SQL y limpia los objetos huérfanos subidos a MinIO.
+      // En edición no se limpia MinIO (los objetos pertenecen a un artifact existente que se conserva).
+      if (!isEdit) {
+        if (createdId) {
+          await this.pool.query("DELETE FROM template_artifacts WHERE id = ?", [createdId]).catch(() => {});
+        }
+        if (uploadedToMinio) {
+          await removeMinioPrefix(bucket, baseObjectPrefix).catch(() => {});
+        }
       }
       throw error;
     } finally {

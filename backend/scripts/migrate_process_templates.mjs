@@ -319,7 +319,15 @@ const main = async () => {
   }
 };
 
-main().catch((error) => {
-  console.error(`❌ Error en migracion: ${error.message}`);
-  process.exitCode = 1;
-});
+// OBSOLETO (no-op): esta migración recreaba columnas (usage_role, UNIQUE legacy) que el modelo actual ya
+// eliminó (ver mariadb_initializer.js / mariadb_schema.sql). Ejecutarla rompería la cadena de migración.
+// Se conserva el cuerpo como referencia histórica, pero NO se ejecuta. Para reconstruir el esquema usar el
+// inicializador oficial. (Para forzarla puntualmente: RUN_LEGACY_MIGRATE_PROCESS_TEMPLATES=1.)
+if (process.env.RUN_LEGACY_MIGRATE_PROCESS_TEMPLATES === "1") {
+  main().catch((error) => {
+    console.error(`❌ Error en migracion: ${error.message}`);
+    process.exitCode = 1;
+  });
+} else {
+  console.log("migrate_process_templates.mjs: script OBSOLETO, no-op. El modelo actual no usa usage_role; usa el inicializador oficial.");
+}

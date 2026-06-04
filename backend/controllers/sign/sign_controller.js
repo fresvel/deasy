@@ -29,7 +29,6 @@ import {
 const userRepository = new UserRepository();
 const certificateRepository = new UserCertificateRepository();
 const pool = getMariaDBPool();
-const batchJobs = new Map();
 
 const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
 const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
@@ -406,10 +405,59 @@ const parseBatchDocumentContexts = (rawDocumentContexts) => {
 const asBoolean = (value) =>
   String(value ?? "").trim().toLowerCase() === "true" || String(value ?? "").trim() === "1";
 
-const createBatchJob = ({ userId, fileNames, signMode }) => {
-  const jobId = randomUUID();
+// Estado de los jobs de firma masiva PERSISTIDO en MariaDB (tabla signature_batch_jobs) para que
+// sobreviva reinicios del backend (antes vivía en un Map en memoria y se perdía al reiniciar).
+const rowToBatchJob = (row) => {
+  if (!row) return null;
+  let results = [];
+  if (row.results) {
+    try {
+      results = typeof row.results === "string" ? JSON.parse(row.results) : row.results;
+    } catch {
+      results = [];
+    }
+  }
+  return {
+    jobId: row.job_id,
+    userId: row.user_id,
+    signMode: row.sign_mode,
+    status: row.status,
+    total: row.total,
+    processed: row.processed,
+    successCount: row.success_count,
+    failedCount: row.failed_count,
+    results: Array.isArray(results) ? results : [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+};
+
+const persistBatchJob = async (job) => {
+  await pool.query(
+    `INSERT INTO signature_batch_jobs
+       (job_id, user_id, sign_mode, status, total, processed, success_count, failed_count, results)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       user_id = VALUES(user_id), sign_mode = VALUES(sign_mode), status = VALUES(status),
+       total = VALUES(total), processed = VALUES(processed), success_count = VALUES(success_count),
+       failed_count = VALUES(failed_count), results = VALUES(results)`,
+    [
+      job.jobId,
+      job.userId ?? null,
+      job.signMode ?? null,
+      job.status,
+      job.total ?? 0,
+      job.processed ?? 0,
+      job.successCount ?? 0,
+      job.failedCount ?? 0,
+      JSON.stringify(job.results || [])
+    ]
+  );
+};
+
+const createBatchJob = async ({ userId, fileNames, signMode }) => {
   const job = {
-    jobId,
+    jobId: randomUUID(),
     userId,
     signMode,
     status: "queued",
@@ -417,27 +465,25 @@ const createBatchJob = ({ userId, fileNames, signMode }) => {
     processed: 0,
     successCount: 0,
     failedCount: 0,
-    results: fileNames.map((fileName) => ({
-      fileName,
-      status: "pending"
-    })),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    results: fileNames.map((fileName) => ({ fileName, status: "pending" }))
   };
-  batchJobs.set(jobId, job);
+  await persistBatchJob(job);
   return job;
 };
 
-const updateBatchJob = (jobId, updater) => {
-  const current = batchJobs.get(jobId);
+const updateBatchJob = async (jobId, updater) => {
+  const [rows] = await pool.query("SELECT * FROM signature_batch_jobs WHERE job_id = ? LIMIT 1", [jobId]);
+  const current = rowToBatchJob(rows?.[0]);
   if (!current) return null;
   const next = typeof updater === "function" ? updater(current) : current;
-  next.updatedAt = new Date().toISOString();
-  batchJobs.set(jobId, next);
+  await persistBatchJob(next);
   return next;
 };
 
-const getBatchJob = (jobId) => batchJobs.get(jobId) || null;
+const getBatchJob = async (jobId) => {
+  const [rows] = await pool.query("SELECT * FROM signature_batch_jobs WHERE job_id = ? LIMIT 1", [jobId]);
+  return rowToBatchJob(rows?.[0]);
+};
 
 const streamMinioObjectToFile = async (bucket, objectName, destinationPath) => {
   const stream = await getMinioObjectStream(bucket, objectName);
@@ -558,52 +604,22 @@ export const validateSignedDocument = async (req, res) => {
   }
 };
 
+// DEPRECADO: el endpoint legacy POST /sign/batch firmaba de forma síncrona sin persistir evidencia de
+// workflow ni estado de job. Sustituido por POST /sign/batch/start (asíncrono, con job persistido y
+// evidencia de firma). Se conserva la ruta para devolver 410 Gone y guiar a los clientes legacy.
 export const requestSignBatch = async (req, res) => {
-  try {
-    const files = Array.isArray(req.files?.pdf) ? req.files.pdf : [];
-    if (!files.length) {
-      return res.status(400).json({ error: "Debes cargar al menos un PDF para la firma masiva." });
+  // Libera cualquier archivo subido por multer para no dejar temporales.
+  const files = Array.isArray(req.files?.pdf) ? req.files.pdf : [];
+  for (const file of files) {
+    if (file?.path) {
+      fs.unlink(file.path, () => {});
     }
-
-    const context = await buildSignContext(req);
-    const results = [];
-
-    for (const file of files) {
-      try {
-        const result = await processSinglePdfSigning({ file, context });
-        results.push({
-          fileName: file.originalname,
-          status: "success",
-          ...result
-        });
-      } catch (error) {
-        console.error("[sign_controller][batch] Error:", error);
-        if (file?.path) {
-          fs.unlink(file.path, () => {});
-        }
-        results.push({
-          fileName: file.originalname,
-          status: "error",
-          error: error.message || "No se pudo firmar el documento."
-        });
-      }
-    }
-
-    const successCount = results.filter((item) => item.status === "success").length;
-    const failedCount = results.length - successCount;
-
-    return res.json({
-      message: "Proceso batch de firma completado.",
-      signMode: context.signMode,
-      total: results.length,
-      successCount,
-      failedCount,
-      results
-    });
-  } catch (error) {
-    console.error("[sign_controller][batch] Error:", error);
-    return res.status(500).json({ error: error.message || "No se pudo ejecutar la firma masiva." });
   }
+  return res.status(410).json({
+    error: "Endpoint de firma masiva legacy retirado. Usa POST /sign/batch/start (procesa de forma asíncrona y persiste evidencia).",
+    code: "SIGN_BATCH_LEGACY_GONE",
+    use: "/sign/batch/start"
+  });
 };
 
 export const requestSignBatchStart = async (req, res) => {
@@ -616,13 +632,13 @@ export const requestSignBatchStart = async (req, res) => {
     const context = await buildSignContext(req);
     const batchDocumentFields = parseBatchDocumentFields(req.body.document_fields);
     const batchDocumentContexts = parseBatchDocumentContexts(req.body.document_contexts);
-    const job = createBatchJob({
+    const job = await createBatchJob({
       userId: context.user.id,
       fileNames: files.map((file) => file.originalname),
       signMode: context.signMode
     });
 
-    updateBatchJob(job.jobId, (current) => ({
+    await updateBatchJob(job.jobId, (current) => ({
       ...current,
       status: "processing"
     }));
@@ -631,7 +647,7 @@ export const requestSignBatchStart = async (req, res) => {
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index];
         try {
-          updateBatchJob(job.jobId, (current) => {
+          await updateBatchJob(job.jobId, (current) => {
             const results = [...current.results];
             results[index] = {
               ...results[index],
@@ -657,7 +673,7 @@ export const requestSignBatchStart = async (req, res) => {
           await assertSignContextBeforeSigning(documentContext);
           const result = await processSinglePdfSigning({ file, context: documentContext });
           const workflow = await persistSignatureWorkflowResult({ context: documentContext, result });
-          updateBatchJob(job.jobId, (current) => {
+          await updateBatchJob(job.jobId, (current) => {
             const results = [...current.results];
             results[index] = {
               fileName: file.originalname,
@@ -690,7 +706,7 @@ export const requestSignBatchStart = async (req, res) => {
           if (file?.path) {
             fs.unlink(file.path, () => {});
           }
-          updateBatchJob(job.jobId, (current) => {
+          await updateBatchJob(job.jobId, (current) => {
             const results = [...current.results];
             results[index] = {
               fileName: file.originalname,
@@ -727,7 +743,7 @@ export const getSignBatchStatus = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     const jobId = String(req.params?.jobId || "");
-    const job = getBatchJob(jobId);
+    const job = await getBatchJob(jobId);
     if (!job) {
       return res.status(404).json({ error: "Job batch no encontrado." });
     }
@@ -746,7 +762,7 @@ export const downloadSignBatch = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     const jobId = String(req.params?.jobId || "");
-    const job = getBatchJob(jobId);
+    const job = await getBatchJob(jobId);
     if (!job) {
       return res.status(404).json({ error: "Job batch no encontrado." });
     }

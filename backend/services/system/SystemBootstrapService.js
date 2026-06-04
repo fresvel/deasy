@@ -475,9 +475,17 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const artifactId = Number(artifact.id);
 
-  // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado
-  //       (idempotente, best-effort: no aborta el bootstrap si MinIO falla).
-  await publishBaseSeedAssets();
+  // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
+  //       Idempotente; si la publicación falla (MinIO caído, seed no empaquetado) se PROPAGA el error para
+  //       abortar/rollback el bootstrap: así no quedan filas SQL apuntando a objetos MinIO inexistentes.
+  //       'ya_existe' es éxito (re-ejecución idempotente).
+  const publishResult = await publishBaseSeedAssets();
+  if (!publishResult?.published && publishResult?.reason !== "ya_existe") {
+    throw new Error(
+      `No se pudieron publicar los objetos del seed base en MinIO (${publishResult?.reason || "desconocido"}). ` +
+      "Se aborta el bootstrap para no dejar plantillas apuntando a objetos inexistentes."
+    );
+  }
 
   // 5. vínculo definición↔plantilla (creates_task)
   let pdt = await fetchOne(

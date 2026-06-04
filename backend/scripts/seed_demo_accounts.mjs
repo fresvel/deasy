@@ -406,7 +406,6 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
       owner_ref: "demo",
       source_version: "1.0.0",
       storage_version: "1.0.0",
-      artifact_origin: "process",
       artifact_stage: "published",
       bucket: process.env.MINIO_TEMPLATES_BUCKET || "templates",
       base_object_prefix: "Seeds/demo-workflow",
@@ -421,7 +420,6 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
       "description",
       "owner_ref",
       "source_version",
-      "artifact_origin",
       "artifact_stage",
       "bucket",
       "base_object_prefix",
@@ -439,7 +437,6 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     {
       process_definition_id: definitionId,
       template_artifact_id: artifactId,
-      usage_role: "primary",
       instance_mode: "owner_many_documents",
       creates_task: 1,
       is_required: 1,
@@ -637,7 +634,6 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
       task_id: taskId,
       process_definition_template_id: processData.definitionTemplateId,
       template_artifact_id: processData.artifactId,
-      template_usage_role: "primary",
       sort_order: 1,
       responsible_position_id: positionId,
       assigned_person_id: personId,
@@ -646,7 +642,7 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
       user_started_at: null,
       status: "pendiente"
     },
-    ["template_artifact_id", "template_usage_role", "sort_order", "responsible_position_id", "assigned_person_id", "start_date", "end_date", "status"]
+    ["template_artifact_id", "sort_order", "responsible_position_id", "assigned_person_id", "start_date", "end_date", "status"]
   );
 
   await connection.query(
