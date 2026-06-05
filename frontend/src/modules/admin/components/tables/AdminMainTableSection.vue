@@ -205,6 +205,11 @@
                   <span v-else>—</span>
                 </div>
               </template>
+              <template v-else-if="isDefinitionStatusField(field) && row[field.name]">
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadge(row[field.name]).class">
+                  {{ definitionStatusBadge(row[field.name]).label }}
+                </span>
+              </template>
               <template v-else>
                 {{ formatCell(row[field.name], field, row) }}
               </template>
@@ -384,6 +389,20 @@ const resetGenericSearch = () => {
   emit("update:search-term", "");
   emit("fetch-rows");
 };
+
+// Badge de estado de la configuración: aplica al status de process_definition_versions y al estado de la
+// definición activa en la tabla de procesos. El resto de columnas 'status' siguen como texto plano.
+const DEFINITION_STATUS_BADGES = {
+  draft: { label: "Borrador", class: "bg-slate-200 text-slate-700" },
+  active: { label: "Activa", class: "bg-emerald-500 text-white" },
+  retired: { label: "Retirada", class: "bg-amber-200 text-amber-800" }
+};
+const isDefinitionStatusField = (field) =>
+  field?.name === "active_definition_status"
+  || (field?.name === "status" && props.table?.table === "process_definition_versions");
+const definitionStatusBadge = (value) =>
+  DEFINITION_STATUS_BADGES[String(value || "").toLowerCase()]
+  || { label: value, class: "bg-slate-200 text-slate-700" };
 
 defineExpose({ searchInputRef });
 </script>
