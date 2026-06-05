@@ -212,14 +212,14 @@ const PROCESS_INDEX_ITEMS = [
     key: "procesos",
     label: "Procesos",
     icon: "check-double",
-    description: "Gestiona procesos base, definiciones y reglas de alcance.",
+    description: "Gestiona procesos base, configuraciones y reglas de alcance.",
     tables: ["processes", "process_definition_series", "process_definition_versions", "process_definition_triggers", "process_target_rules"]
   },
   {
     key: "plantillas",
     label: "Plantillas",
     icon: "certificate",
-    description: "Gestiona seeds, artifacts y plantillas de definición.",
+    description: "Gestiona seeds, artifacts y plantillas de configuración.",
     tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
   },
   {
@@ -264,7 +264,7 @@ const PROCESS_INDEX_ITEMS = [
 const TABLE_TAB_LABEL_OVERRIDES = {
   template_seeds: "Seeds de plantilla",
   template_artifacts: "Paquetes de plantillas",
-  process_definition_templates: "Plantillas de procesos definidos"
+  process_definition_templates: "Documentos de la configuración"
 };
 
 const defaultPhoto = "/images/avatar.png";

@@ -37,11 +37,11 @@
     <div v-if="wizardError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ wizardError }}</div>
 
     <div v-if="definitionContext?.id && currentStep !== 'definition'" class="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800">
-      <strong>{{ definitionContext.name || `Definición #${definitionContext.id}` }}</strong>
+      <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
       <span class="ml-1 text-emerald-700/80">· {{ definitionContext.definition_version || "—" }} · {{ definitionContext.status || "draft" }}</span>
     </div>
 
-    <!-- Paso 1: Definición -->
+    <!-- Paso 1: Configuración -->
     <div v-show="currentStep === 'definition'">
       <p class="mb-3 text-sm text-slate-600">Define el proceso y su primera versión. Después agregarás paquetes, reglas y disparadores antes de activarla.</p>
       <div class="grid gap-3 md:grid-cols-12">
@@ -68,7 +68,7 @@
             </AdminButton>
           </div>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Nombre de la definición" group-class="md:col-span-6">
+        <AdminFieldGroup label="Nombre de la configuración" group-class="md:col-span-6">
           <AdminInputField :model-value="form.name" placeholder="ej. Informe de Investigación 2026" @update:model-value="updateForm('name', $event)" />
         </AdminFieldGroup>
         <AdminFieldGroup label="Origen de serie" group-class="md:col-span-6">
@@ -127,7 +127,7 @@
         variant="primary"
         :disabled="creatingDefinition"
         @click="$emit('create-definition')"
-      >{{ creatingDefinition ? 'Creando…' : (definitionContext?.id ? 'Continuar' : 'Crear definición →') }}</AdminButton>
+      >{{ creatingDefinition ? 'Creando…' : (definitionContext?.id ? 'Continuar' : 'Crear configuración →') }}</AdminButton>
       <AdminButton
         v-else-if="currentStep !== 'activate'"
         variant="primary"

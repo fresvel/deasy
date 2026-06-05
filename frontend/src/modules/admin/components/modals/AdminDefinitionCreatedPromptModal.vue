@@ -1,7 +1,7 @@
 <template>
-  <AdminModalShell ref="modalRef" labelled-by="definitionArtifactsPromptModalLabel" title="Definicion creada">
+  <AdminModalShell ref="modalRef" labelled-by="definitionArtifactsPromptModalLabel" title="Configuracion creada">
     <p class="mb-0 text-sm text-slate-700">
-      La definicion se creo correctamente.
+      La configuracion se creo correctamente.
       <span v-if="context?.name">
         <strong>{{ context.name }}</strong>.
       </span>

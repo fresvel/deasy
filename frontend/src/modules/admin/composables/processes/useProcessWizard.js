@@ -4,7 +4,7 @@ import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 // Pasos del wizard guiado de proceso (de la creación a la activación).
 export const PROCESS_WIZARD_STEPS = [
-  { key: "definition", label: "Definición" },
+  { key: "definition", label: "Configuración" },
   { key: "packages", label: "Paquetes" },
   { key: "rules", label: "Reglas" },
   { key: "triggers", label: "Disparadores" },
@@ -70,7 +70,7 @@ export function useProcessWizard() {
   };
 
   // Resuelve (reutiliza o crea) la serie del origen elegido. El modelo exige series por unit_type o cargo
-  // (las legacy no son válidas para definiciones nuevas) y deduplica por código de origen.
+  // (las legacy no son válidas para configuraciones nuevas) y deduplica por código de origen.
   const resolveSeriesId = async (form) => {
     const sourceType = form.series_source_type === "cargo" ? "cargo" : "unit_type";
     const fkKey = sourceType === "cargo" ? "cargo_id" : "unit_type_id";
@@ -132,7 +132,7 @@ export function useProcessWizard() {
   };
 
   const goToStep = (key) => {
-    // Los pasos posteriores a "definición" requieren una definición creada.
+    // Los pasos posteriores a "configuración" requieren una configuración creada.
     if (key !== "definition" && !definitionContext.value?.id) {
       return;
     }
@@ -146,7 +146,7 @@ export function useProcessWizard() {
       const form = definitionForm.value;
       const name = String(form.name || "").trim();
       if (!name) {
-        throw new Error("Ingresa el nombre de la definición.");
+        throw new Error("Ingresa el nombre de la configuración.");
       }
       let processId = form.process_id ? Number(form.process_id) : null;
       if (form.process_mode === "new") {
@@ -164,7 +164,7 @@ export function useProcessWizard() {
       }
       const seriesId = await resolveSeriesId(form);
       if (!seriesId) {
-        throw new Error("No se pudo resolver la serie de la definición.");
+        throw new Error("No se pudo resolver la serie de la configuración.");
       }
       const today = new Date().toISOString().slice(0, 10);
       const definitionRes = await adminSqlService.create("process_definition_versions", {
@@ -195,7 +195,7 @@ export function useProcessWizard() {
       currentStep.value = "packages";
       return definitionContext.value;
     } catch (error) {
-      wizardError.value = error?.response?.data?.message || error?.message || "No se pudo crear la definición.";
+      wizardError.value = error?.response?.data?.message || error?.message || "No se pudo crear la configuración.";
       return null;
     } finally {
       creatingDefinition.value = false;

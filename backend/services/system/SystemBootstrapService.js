@@ -408,7 +408,7 @@ export const ensureDefaultProcess = async (connection) => {
     series = { id: r.insertId };
   }
 
-  // 3. definición activa
+  // 3. configuración activa
   let definition = await fetchOne(
     connection,
     "SELECT id, status FROM process_definition_versions WHERE process_id = ? AND variation_key = ? AND definition_version = ? LIMIT 1",
@@ -487,7 +487,7 @@ export const ensureDefaultProcess = async (connection) => {
     );
   }
 
-  // 5. vínculo definición↔plantilla (creates_task)
+  // 5. vínculo configuración↔plantilla (creates_task)
   let pdt = await fetchOne(
     connection,
     "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",

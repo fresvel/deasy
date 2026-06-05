@@ -174,7 +174,7 @@ export const RELATED_RECORD_CONFIG = {
     { table: "contracts", label: "Contratos", foreignKey: "person_id", orderBy: "start_date", order: "desc" }
   ],
   processes: [
-    { table: "process_definition_versions", label: "Definiciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
+    { table: "process_definition_versions", label: "Configuraciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
   ],
   process_definition_versions: [
     { table: "process_definition_triggers", label: "Disparadores", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },

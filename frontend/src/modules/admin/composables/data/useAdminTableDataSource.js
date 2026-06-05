@@ -213,7 +213,7 @@ export function useAdminTableDataSource({
       );
     } catch {
       unassignedTemplateArtifactRows.value = [];
-      unassignedTemplateArtifactError.value = "No se pudo cargar los artifacts sin definicion.";
+      unassignedTemplateArtifactError.value = "No se pudo cargar los artifacts sin configuracion.";
     } finally {
       unassignedTemplateArtifactLoading.value = false;
     }

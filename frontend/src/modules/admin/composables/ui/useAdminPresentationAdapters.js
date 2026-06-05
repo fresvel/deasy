@@ -60,7 +60,7 @@ export function useAdminPresentationAdapters({
           expandedFields.push(
             { name: "__definition_series", label: "Serie", type: "text" },
             { name: "__definition_version", label: "Version", type: "text" },
-            { name: "__definition_status", label: "Estado de definicion", type: "text" }
+            { name: "__definition_status", label: "Estado de configuracion", type: "text" }
           );
         }
       });

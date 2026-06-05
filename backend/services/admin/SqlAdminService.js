@@ -948,18 +948,18 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "process_definition_versions":
       if (!candidate.process_id) {
-        throw new Error("Selecciona un proceso base para la definicion.");
+        throw new Error("Selecciona un proceso base para la configuracion.");
       }
       if (!candidate.series_id) {
-        throw new Error("Selecciona una serie de definicion.");
+        throw new Error("Selecciona una serie de configuracion.");
       }
       if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
-        throw new Error("La version de la definicion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
+        throw new Error("La version de la configuracion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
       }
       if (!candidate.effective_from) {
-        throw new Error("Selecciona la fecha de vigencia inicial de la definicion.");
+        throw new Error("Selecciona la fecha de vigencia inicial de la configuracion.");
       }
-      ensureDateOrder(candidate.effective_from, candidate.effective_to, "definiciones de proceso");
+      ensureDateOrder(candidate.effective_from, candidate.effective_to, "configuraciones de proceso");
       break;
     case "process_definition_series":
       if (!candidate.source_type || !["unit_type", "cargo", "legacy"].includes(String(candidate.source_type))) {
@@ -978,7 +978,7 @@ const validateTableRules = (tableName, candidate) => {
     case "process_target_rules":
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "reglas de alcance");
       if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una definicion de proceso.");
+        throw new Error("Selecciona una configuracion de proceso.");
       }
       if (candidate.recipient_policy === "exact_position" && !candidate.position_id) {
         throw new Error("La politica exact_position requiere un puesto exacto.");
@@ -994,7 +994,7 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "process_definition_triggers":
       if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una definicion de proceso.");
+        throw new Error("Selecciona una configuracion de proceso.");
       }
       if (!candidate.trigger_mode) {
         throw new Error("Selecciona un modo de disparo.");
@@ -1014,7 +1014,7 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "tasks":
       if (!candidate.process_definition_id) {
-        throw new Error("Selecciona una definicion de proceso.");
+        throw new Error("Selecciona una configuracion de proceso.");
       }
       if (!candidate.term_id) {
         throw new Error("Selecciona un periodo para la tarea.");
@@ -1035,7 +1035,7 @@ const validateTableRules = (tableName, candidate) => {
         throw new Error("Selecciona una tarea.");
       }
       if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso definido.");
+        throw new Error("Selecciona la plantilla de proceso configurado.");
       }
       if (!candidate.template_artifact_id) {
         throw new Error("Selecciona el paquete.");
@@ -1052,7 +1052,7 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "fill_flow_templates":
       if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso definido.");
+        throw new Error("Selecciona la plantilla de proceso configurado.");
       }
       break;
     case "fill_flow_steps":
@@ -1081,7 +1081,7 @@ const validateTableRules = (tableName, candidate) => {
       break;
     case "signature_flow_templates":
       if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso definido.");
+        throw new Error("Selecciona la plantilla de proceso configurado.");
       }
       break;
     case "task_assignments":
@@ -1219,7 +1219,7 @@ export default class SqlAdminService {
 
     const [rows] = await this.pool.query(query, params);
     if (rows?.length) {
-      throw new Error("Ya existe una definicion con esa serie y version para el proceso seleccionado.");
+      throw new Error("Ya existe una configuracion con esa serie y version para el proceso seleccionado.");
     }
   }
 
@@ -1227,7 +1227,7 @@ export default class SqlAdminService {
     this.ensurePool();
     const seriesId = Number(candidate?.series_id);
     if (!seriesId) {
-      throw new Error("Selecciona una serie valida para la definicion.");
+      throw new Error("Selecciona una serie valida para la configuracion.");
     }
     const [rows] = await connection.query(
       `SELECT id, source_type, unit_type_id, cargo_id, code, is_active
@@ -1244,7 +1244,7 @@ export default class SqlAdminService {
       throw new Error("La serie seleccionada esta inactiva.");
     }
     if (!allowLegacy && String(series.source_type) === "legacy") {
-      throw new Error("Las series heredadas no se pueden usar para nuevas definiciones. Crea una serie basada en tipo de unidad o cargo.");
+      throw new Error("Las series heredadas no se pueden usar para nuevas configuraciones. Crea una serie basada en tipo de unidad o cargo.");
     }
     return series;
   }
@@ -1581,10 +1581,10 @@ export default class SqlAdminService {
   async ensureDraftDefinitionContext(definitionId, { connection = this.pool, entityLabel = "registros asociados" } = {}) {
     const definition = await this.getProcessDefinitionVersion(definitionId, connection);
     if (!definition) {
-      throw new Error("La definicion de proceso seleccionada no existe.");
+      throw new Error("La configuracion de proceso seleccionada no existe.");
     }
     if (String(definition.status || "") !== "draft") {
-      throw new Error(`Solo se pueden modificar ${entityLabel} cuando la definicion esta en draft.`);
+      throw new Error(`Solo se pueden modificar ${entityLabel} cuando la configuracion esta en draft.`);
     }
     return definition;
   }
@@ -1605,10 +1605,10 @@ export default class SqlAdminService {
 
     const sourceDefinition = await this.getProcessDefinitionVersion(normalizedSourceId, connection);
     if (!sourceDefinition) {
-      throw new Error("La definicion origen para clonar no existe.");
+      throw new Error("La configuracion origen para clonar no existe.");
     }
     if (normalizedTargetProcessId && Number(sourceDefinition.process_id) !== normalizedTargetProcessId) {
-      throw new Error("Solo se puede clonar desde una definicion del mismo proceso.");
+      throw new Error("Solo se puede clonar desde una configuracion del mismo proceso.");
     }
 
     const [templateRows] = await connection.query(
@@ -1750,7 +1750,7 @@ export default class SqlAdminService {
     const total = Number(rows?.[0]?.total || 0);
     if (total < 1) {
       throw new Error(
-        "No se puede activar una definicion con documento si no tiene al menos un artifact vinculado en Plantillas de definicion."
+        "No se puede activar una configuracion con documento si no tiene al menos un artifact vinculado en Plantillas de configuracion."
       );
     }
   }
@@ -1772,7 +1772,7 @@ export default class SqlAdminService {
     const total = Number(rows?.[0]?.total || 0);
     if (total < 1) {
       throw new Error(
-        "No se puede activar una definicion si no tiene al menos una regla activa en Reglas de alcance."
+        "No se puede activar una configuracion si no tiene al menos una regla activa en Reglas de alcance."
       );
     }
   }
@@ -1794,7 +1794,7 @@ export default class SqlAdminService {
     const total = Number(rows?.[0]?.total || 0);
     if (total < 1) {
       throw new Error(
-        "No se puede activar una definicion si no tiene al menos un disparador activo en Disparadores de definiciones."
+        "No se puede activar una configuracion si no tiene al menos un disparador activo en Disparadores de configuraciones."
       );
     }
   }
@@ -1810,7 +1810,7 @@ export default class SqlAdminService {
     const normalizedLaunchMode = String(launchMode || "manual");
 
     if (!normalizedDefinitionId || !normalizedTermId) {
-      throw new Error("La tarea requiere una definicion y un periodo validos.");
+      throw new Error("La tarea requiere una configuracion y un periodo validos.");
     }
 
     const term = await this.getTermWithType(normalizedTermId, connection);
@@ -1850,12 +1850,12 @@ export default class SqlAdminService {
     const [rows] = await connection.query(triggerSql, triggerParams);
     if (!rows?.length) {
       if (triggerMode === "automatic_by_term_type") {
-        throw new Error("La definicion no tiene un disparador automatico activo para el tipo de periodo seleccionado.");
+        throw new Error("La configuracion no tiene un disparador automatico activo para el tipo de periodo seleccionado.");
       }
       if (triggerMode === "manual_custom_term") {
-        throw new Error("La definicion no tiene un disparador manual activo para periodos custom.");
+        throw new Error("La configuracion no tiene un disparador manual activo para periodos custom.");
       }
-      throw new Error("La definicion no tiene un disparador manual activo para el periodo seleccionado.");
+      throw new Error("La configuracion no tiene un disparador manual activo para el periodo seleccionado.");
     }
   }
 
@@ -1937,10 +1937,10 @@ export default class SqlAdminService {
         {
           entityLabel:
             tableName === "process_definition_templates"
-              ? "las plantillas de definicion"
+              ? "las plantillas de configuracion"
               : tableName === "process_target_rules"
                 ? "las reglas de alcance"
-                : "los disparadores de definicion"
+                : "los disparadores de configuracion"
         }
       );
     }
@@ -1948,7 +1948,7 @@ export default class SqlAdminService {
     if (tableName === "process_definition_triggers") {
       const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
       if (!definition) {
-        throw new Error("La definicion de proceso seleccionada no existe.");
+        throw new Error("La configuracion de proceso seleccionada no existe.");
       }
       if (String(payload.trigger_mode || "") !== "automatic_by_term_type") {
         payload.term_type_id = null;
@@ -1958,10 +1958,10 @@ export default class SqlAdminService {
     if (tableName === "tasks") {
       const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
       if (!definition) {
-        throw new Error("La definicion de proceso seleccionada no existe.");
+        throw new Error("La configuracion de proceso seleccionada no existe.");
       }
       if (String(definition.status || "") !== "active") {
-        throw new Error("Solo se pueden instanciar tareas desde definiciones activas.");
+        throw new Error("Solo se pueden instanciar tareas desde configuraciones activas.");
       }
       payload.launch_mode = String(payload.launch_mode || "manual");
       if (payload.launch_mode === "automatic") {
@@ -1979,7 +1979,7 @@ export default class SqlAdminService {
           throw new Error("La corrida de proceso seleccionada no existe.");
         }
         if (Number(processRun.process_definition_id) !== Number(payload.process_definition_id)) {
-          throw new Error("La corrida de proceso no pertenece a la definicion seleccionada.");
+          throw new Error("La corrida de proceso no pertenece a la configuracion seleccionada.");
         }
         if (Number(processRun.term_id || 0) !== Number(payload.term_id || 0)) {
           throw new Error("La corrida de proceso no pertenece al periodo seleccionado.");
@@ -1990,7 +1990,7 @@ export default class SqlAdminService {
     if (tableName === "task_items" && payload.process_definition_template_id) {
       const template = await this.getTaskTemplate(payload.process_definition_template_id);
       if (!template) {
-        throw new Error("La plantilla de proceso definido seleccionada no existe.");
+        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
       }
       if (!Number(template.creates_task)) {
         throw new Error("La plantilla seleccionada no esta marcada para generar items de tarea.");
@@ -2000,7 +2000,7 @@ export default class SqlAdminService {
         throw new Error("La tarea seleccionada no existe.");
       }
       if (Number(task.process_definition_id) !== Number(template.process_definition_id)) {
-        throw new Error("La plantilla seleccionada no pertenece a la definicion de proceso de la tarea.");
+        throw new Error("La plantilla seleccionada no pertenece a la configuracion de proceso de la tarea.");
       }
       payload.template_artifact_id = template.template_artifact_id;
       if (!payload.start_date) {
@@ -2032,7 +2032,7 @@ export default class SqlAdminService {
     if (tableName === "fill_flow_templates" && payload.process_definition_template_id) {
       const template = await this.getTaskTemplate(payload.process_definition_template_id);
       if (!template) {
-        throw new Error("La plantilla de proceso definido seleccionada no existe.");
+        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
       }
       payload.process_definition_id = template.process_definition_id;
       await this.ensureDraftDefinitionContext(
@@ -2073,7 +2073,7 @@ export default class SqlAdminService {
     if (tableName === "signature_flow_templates" && payload.process_definition_template_id) {
       const template = await this.getTaskTemplate(payload.process_definition_template_id);
       if (!template) {
-        throw new Error("La plantilla de proceso definido seleccionada no existe.");
+        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
       }
       await this.ensureDraftDefinitionContext(
         template.process_definition_id,
@@ -2098,7 +2098,7 @@ export default class SqlAdminService {
     if (tableName === "process_definition_versions") {
       const requestedStatus = String(payload.status || "draft");
       if (requestedStatus !== "draft") {
-        throw new Error("Las nuevas definiciones solo pueden crearse en estado draft.");
+        throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
       }
       const series = await this.resolveProcessDefinitionSeries(payload);
       payload.variation_key = String(series.code || "").trim();
@@ -2140,7 +2140,7 @@ export default class SqlAdminService {
             if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedTriggers) {
               createNotice =
                 `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
-                + ` y ${cloneSummary.clonedTriggers} disparadores desde la definicion origen.`;
+                + ` y ${cloneSummary.clonedTriggers} disparadores desde la configuracion origen.`;
             }
           }
 
@@ -2308,13 +2308,13 @@ export default class SqlAdminService {
         && error?.code === "ER_DUP_ENTRY"
         && String(error?.message || "").includes("uq_process_definition_one_active_series")
       ) {
-        throw new Error("Solo puede existir una definicion activa por serie dentro del mismo proceso.");
+        throw new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
       }
       if (
         tableName === "tasks"
         && error?.code === "ER_DUP_ENTRY"
       ) {
-        throw new Error("Ya existe una instancia de tarea con esa definicion, periodo y criterio de lanzamiento.");
+        throw new Error("Ya existe una instancia de tarea con esa configuracion, periodo y criterio de lanzamiento.");
       }
       throw error;
     }
@@ -2356,7 +2356,7 @@ export default class SqlAdminService {
         Object.prototype.hasOwnProperty.call(updates, "process_definition_id")
       ) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("No se puede cambiar la definicion de una tarea ya instanciada.");
+          throw new Error("No se puede cambiar la configuracion de una tarea ya instanciada.");
         }
         delete updates.process_definition_id;
       }
@@ -2422,7 +2422,7 @@ export default class SqlAdminService {
       }
       const template = await this.getTaskTemplate(existing.process_definition_template_id);
       if (!template) {
-        throw new Error("La plantilla de proceso definido asociada al flujo ya no existe.");
+        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
       }
       await this.ensureDraftDefinitionContext(
         template.process_definition_id,
@@ -2465,7 +2465,7 @@ export default class SqlAdminService {
     if (tableName === "process_definition_triggers") {
       if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("No se puede cambiar la definicion asociada de este disparador.");
+          throw new Error("No se puede cambiar la configuracion asociada de este disparador.");
         }
         delete updates.process_definition_id;
       }
@@ -2483,7 +2483,7 @@ export default class SqlAdminService {
     ) {
       if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("No se puede cambiar la definicion asociada de este registro.");
+          throw new Error("No se puede cambiar la configuracion asociada de este registro.");
         }
         delete updates.process_definition_id;
       }
@@ -2492,10 +2492,10 @@ export default class SqlAdminService {
         {
           entityLabel:
             tableName === "process_definition_templates"
-              ? "las plantillas de definicion"
+              ? "las plantillas de configuracion"
               : tableName === "process_target_rules"
                 ? "las reglas de alcance"
-                : "los disparadores de definicion"
+                : "los disparadores de configuracion"
         }
       );
     }
@@ -2587,25 +2587,25 @@ export default class SqlAdminService {
 
       if (Object.prototype.hasOwnProperty.call(updates, "definition_version")) {
         if (!isSameValue("definition_version", updates.definition_version, existing.definition_version)) {
-          throw new Error("No se puede modificar el numero de version de una definicion.");
+          throw new Error("No se puede modificar el numero de version de una configuracion.");
         }
         delete updates.definition_version;
       }
       if (Object.prototype.hasOwnProperty.call(updates, "process_id")) {
         if (!isSameValue("process_id", updates.process_id, existing.process_id)) {
-          throw new Error("No se puede cambiar el proceso de una definicion.");
+          throw new Error("No se puede cambiar el proceso de una configuracion.");
         }
         delete updates.process_id;
       }
       if (Object.prototype.hasOwnProperty.call(updates, "series_id")) {
         if (!isSameValue("series_id", updates.series_id, existing.series_id)) {
-          throw new Error("No se puede cambiar la serie de una definicion.");
+          throw new Error("No se puede cambiar la serie de una configuracion.");
         }
         delete updates.series_id;
       }
       if (Object.prototype.hasOwnProperty.call(updates, "variation_key")) {
         if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
-          throw new Error("No se puede cambiar la serie de una definicion.");
+          throw new Error("No se puede cambiar la serie de una configuracion.");
         }
         delete updates.variation_key;
       }
@@ -2628,7 +2628,7 @@ export default class SqlAdminService {
       };
       const currentAllowedTransitions = allowedTransitions[currentStatus] || new Set([currentStatus]);
       if (!currentAllowedTransitions.has(nextStatus)) {
-        throw new Error(`No se permite cambiar una definicion ${currentStatus} a ${nextStatus}.`);
+        throw new Error(`No se permite cambiar una configuracion ${currentStatus} a ${nextStatus}.`);
       }
 
       let allowed;
@@ -2642,13 +2642,13 @@ export default class SqlAdminService {
           "effective_from",
           "effective_to"
         ]);
-        errorMessage = "Una definicion en borrador solo permite cambios funcionales y de estado.";
+        errorMessage = "Una configuracion en borrador solo permite cambios funcionales y de estado.";
       } else if (currentStatus === "active") {
         allowed = new Set(["status", "effective_to"]);
-        errorMessage = "Una definicion activa solo permite cambiar estado o vigencia final.";
+        errorMessage = "Una configuracion activa solo permite cambiar estado o vigencia final.";
       } else {
         allowed = new Set();
-        errorMessage = "Una definicion retirada es de solo lectura.";
+        errorMessage = "Una configuracion retirada es de solo lectura.";
       }
 
       const disallowed = Object.keys(updates).filter((key) => !allowed.has(key));
@@ -2699,7 +2699,7 @@ export default class SqlAdminService {
           );
           await connection.commit();
           if (retiredCount > 0) {
-            processDefinitionActivationNotice = "La definicion activa anterior de la misma serie fue retirada automaticamente.";
+            processDefinitionActivationNotice = "La configuracion activa anterior de la misma serie fue retirada automaticamente.";
           }
         } catch (error) {
           await connection.rollback();
@@ -2826,7 +2826,7 @@ export default class SqlAdminService {
         && error?.code === "ER_DUP_ENTRY"
         && String(error?.message || "").includes("uq_process_definition_one_active_series")
       ) {
-        throw new Error("Solo puede existir una definicion activa por serie dentro del mismo proceso.");
+        throw new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
       }
       throw error;
     }
@@ -4197,7 +4197,7 @@ export default class SqlAdminService {
         }
       }
 
-      // Si se definieron flujos y el artifact ya está vinculado a definiciones de proceso,
+      // Si se definieron flujos y el artifact ya está vinculado a configuraciones de proceso,
       // sincroniza inmediatamente fill/signature flow templates desde el meta.yaml recién subido.
       let workflowNotice = "";
       let workflowSyncFailed = false;
@@ -4277,10 +4277,10 @@ export default class SqlAdminService {
         {
           entityLabel:
             tableName === "process_definition_templates"
-              ? "las plantillas de definicion"
+              ? "las plantillas de configuracion"
               : tableName === "process_target_rules"
                 ? "las reglas de alcance"
-                : "los disparadores de definicion"
+                : "los disparadores de configuracion"
         }
       );
     }
@@ -4292,7 +4292,7 @@ export default class SqlAdminService {
       }
       const template = await this.getTaskTemplate(existing.process_definition_template_id);
       if (!template) {
-        throw new Error("La plantilla de proceso definido asociada al flujo ya no existe.");
+        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
       }
       await this.ensureDraftDefinitionContext(
         template.process_definition_id,

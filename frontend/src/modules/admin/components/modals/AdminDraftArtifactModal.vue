@@ -344,7 +344,7 @@ import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 
-// Definiciones de proceso destino (para vincular la plantilla).
+// Configuraciones de proceso destino (para vincular la plantilla).
 const processDefinitionOptions = ref([]);
 const loadProcessDefinitionOptions = async () => {
   try {

@@ -158,7 +158,7 @@ export function useAdminSubmitFlow({
       if (
         props.table?.table === "process_definition_versions"
         && editorMode.value === "edit"
-        && responseMessage === "Una definicion activa solo permite cambiar estado o vigencia final."
+        && responseMessage === "Una configuracion activa solo permite cambiar estado o vigencia final."
       ) {
         processDefinitionActivationConfirmed.value = false;
         openProcessDefinitionVersioningModal();

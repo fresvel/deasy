@@ -8,7 +8,7 @@
     v-else
     ref="modalRef"
     labelled-by="definitionRulesModalLabel"
-    title="Reglas de la definicion"
+    title="Reglas de la configuracion"
     size="xl"
     close-action
     @close="$emit('close')"

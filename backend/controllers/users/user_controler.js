@@ -2437,7 +2437,7 @@ export const getUserProcessDefinitionPanel = async (req, res) => {
     const userId = getNumericUserId(req);
     const definitionId = Number(req.params?.definitionId);
     if (!userId || Number.isNaN(userId) || !definitionId || Number.isNaN(definitionId)) {
-      return res.status(400).json({ message: "Se requieren el usuario y la definicion del proceso." });
+      return res.status(400).json({ message: "Se requieren el usuario y la configuracion del proceso." });
     }
 
     const scopeUnitId = req.query?.scope_unit_id ? Number(req.query.scope_unit_id) : null;
@@ -2450,15 +2450,15 @@ export const getUserProcessDefinitionPanel = async (req, res) => {
     const panel = await buildUserProcessDefinitionPanel(pool, userId, definitionId, scopeUnitId);
     if (!panel) {
       return res.status(404).json({
-        message: "La definicion no esta activa o el usuario no tiene acceso operativo a ella."
+        message: "La configuracion no esta activa o el usuario no tiene acceso operativo a ella."
       });
     }
 
     res.json(panel);
   } catch (error) {
-    console.error("Error obteniendo panel operativo de la definicion:", error);
+    console.error("Error obteniendo panel operativo de la configuracion:", error);
     res.status(500).json({
-      message: "Error al obtener el panel operativo de la definicion",
+      message: "Error al obtener el panel operativo de la configuracion",
       error: error.message
     });
   }
@@ -2603,7 +2603,7 @@ export const createUserProcessTask = async (req, res) => {
   const userId = getNumericUserId(req);
   const definitionId = Number(req.params?.definitionId);
   if (!userId || Number.isNaN(userId) || !definitionId || Number.isNaN(definitionId)) {
-    return res.status(400).json({ message: "Se requieren el usuario y la definicion del proceso." });
+    return res.status(400).json({ message: "Se requieren el usuario y la configuracion del proceso." });
   }
 
   const pool = getMariaDBPool();
@@ -2614,7 +2614,7 @@ export const createUserProcessTask = async (req, res) => {
   const accessPanel = await buildUserProcessDefinitionPanel(pool, userId, definitionId);
   if (!accessPanel) {
     return res.status(404).json({
-      message: "La definicion no esta activa o el usuario no tiene acceso operativo a ella."
+      message: "La configuracion no esta activa o el usuario no tiene acceso operativo a ella."
     });
   }
 
@@ -2622,7 +2622,7 @@ export const createUserProcessTask = async (req, res) => {
   const canLaunchCustomTerm = accessPanel.permissions?.can_launch_custom_term;
   if (!canLaunchManual) {
     return res.status(400).json({
-      message: "Esta definicion no permite lanzar tareas manuales."
+      message: "Esta configuracion no permite lanzar tareas manuales."
     });
   }
 
@@ -2653,14 +2653,14 @@ export const createUserProcessTask = async (req, res) => {
         throw new Error("El periodo seleccionado no existe.");
       }
       if (!canLaunchCustomTerm && !canLaunchManual) {
-        throw new Error("La definicion no permite lanzar tareas manuales.");
+        throw new Error("La configuracion no permite lanzar tareas manuales.");
       }
       if (!canLaunchManual && term.term_type_code !== "CUS") {
-        throw new Error("Esta definicion solo permite tareas manuales con periodos personalizados.");
+        throw new Error("Esta configuracion solo permite tareas manuales con periodos personalizados.");
       }
     } else if (customTerm) {
       if (!canLaunchCustomTerm) {
-        throw new Error("Esta definicion no permite crear periodos personalizados.");
+        throw new Error("Esta configuracion no permite crear periodos personalizados.");
       }
       const customType = await getCustomTermType(connection);
       if (!customType) {
@@ -2734,12 +2734,12 @@ export const createUserProcessTask = async (req, res) => {
     if (error?.code === "ER_DUP_ENTRY") {
       const details = String(error?.sqlMessage || error?.message || "");
       if (details.includes("uq_tasks_manual_term_user")) {
-        message = "Ya existe una tarea manual de esta definicion para ese periodo creada por este usuario.";
+        message = "Ya existe una tarea manual de esta configuracion para ese periodo creada por este usuario.";
       } else if (details.includes("terms.name")) {
         message = "Ya existe un periodo con ese nombre. Usa otro nombre para el periodo personalizado.";
       }
     }
-    console.error("Error creando tarea manual de definicion:", error);
+    console.error("Error creando tarea manual de configuracion:", error);
     res.status(400).json({ message });
   } finally {
     connection.release();
@@ -2756,7 +2756,7 @@ export const createTaskItemDocumentInstance = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para crear una nueva instancia documental." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
   const pool = getMariaDBPool();
@@ -2818,7 +2818,7 @@ export const uploadDeliverablePdf = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para subir el entregable." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
   const uploadedFile = req.file;
   if (!uploadedFile) {
@@ -2912,7 +2912,7 @@ export const downloadDeliverableTemplate = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para descargar la plantilla." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
   const pool = getMariaDBPool();
@@ -3007,7 +3007,7 @@ export const downloadDeliverableFile = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para descargar el archivo del entregable." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
   const pool = getMariaDBPool();
@@ -3104,7 +3104,7 @@ export const resetDeliverableWorkflow = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para resetear el flujo del entregable." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
   const pool = getMariaDBPool();
@@ -3259,7 +3259,7 @@ export const listDeliverableAttachments = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para consultar los anexos." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
 
   const pool = getMariaDBPool();
@@ -3300,7 +3300,7 @@ export const uploadDeliverableAttachment = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para subir anexos." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la definición y el entregable." });
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
   }
   const uploadedFile = req.file;
   if (!uploadedFile) {
@@ -3403,7 +3403,7 @@ export const deleteDeliverableAttachment = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para eliminar anexos." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId) || !attachmentId || Number.isNaN(attachmentId)) {
-    return res.status(400).json({ message: "Se requieren la definición, el entregable y el anexo." });
+    return res.status(400).json({ message: "Se requieren la configuración, el entregable y el anexo." });
   }
 
   const pool = getMariaDBPool();
@@ -3457,7 +3457,7 @@ export const downloadDeliverableAttachment = async (req, res) => {
     return res.status(403).json({ message: "No autorizado para descargar el anexo." });
   }
   if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId) || !attachmentId || Number.isNaN(attachmentId)) {
-    return res.status(400).json({ message: "Se requieren la definición, el entregable y el anexo." });
+    return res.status(400).json({ message: "Se requieren la configuración, el entregable y el anexo." });
   }
 
   const pool = getMariaDBPool();
@@ -3649,7 +3649,7 @@ export const createGeneralTask = async (req, res) => {
     const taskId = Number(taskResult.insertId);
 
     // Materializa el task_item contenedor + documento + versión (para colgar anexos),
-    // asignando únicamente al creador (sin aplicar target rules de la definición).
+    // asignando únicamente al creador (sin aplicar target rules de la configuración).
     const hydrated = await hydrateGeneralTask({
       connection,
       taskId,

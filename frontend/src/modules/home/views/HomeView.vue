@@ -825,7 +825,7 @@
                   {{ selectedProcessPanel?.definition?.process_name || selectedProcessContext?.name || 'Proceso' }}
                 </p>
                 <h1 class="admin-page-header__title mt-1">
-                  {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Definición de proceso' }}
+                  {{ selectedProcessPanel?.definition?.name || selectedProcessContext?.name || 'Configuración de proceso' }}
                 </h1>
               </div>
               <div class="admin-page-header__actions">
@@ -843,7 +843,7 @@
             </div>
 
             <section v-if="processPanelLoading" class="bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl p-5 font-semibold text-sm animate-pulse">
-              Cargando la definición seleccionada...
+              Cargando la configuración seleccionada...
             </section>
 
             <section v-else-if="processPanelError" class="bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl p-5 shadow-sm">
@@ -916,7 +916,7 @@
                   </section>
 
                   <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
-                    No tienes tareas activas o históricas para esta definición.
+                    No tienes tareas activas o históricas para esta configuración.
                   </div>
 
                   <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
@@ -971,8 +971,8 @@
                 <!-- Dependencies (Full width) -->
                 <article class="lg:col-span-12 bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
                   <header class="flex flex-col gap-2">
-                    <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la definición</h2>
-                    <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta definición.</p>
+                    <h2 class="text-lg font-bold text-slate-800 m-0 leading-tight">Dependencias de la configuración</h2>
+                    <p class="text-slate-500 text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
@@ -1032,7 +1032,7 @@
       <template #title>
         <div>
           <div class="text-2xl font-bold tracking-tight text-slate-800">Crear tarea manual</div>
-          <p class="mt-1 mb-0 text-sm font-medium text-slate-500">{{ selectedProcessPanel?.definition?.name || 'Definición seleccionada' }}</p>
+          <p class="mt-1 mb-0 text-sm font-medium text-slate-500">{{ selectedProcessPanel?.definition?.name || 'Configuración seleccionada' }}</p>
         </div>
       </template>
 
@@ -1062,7 +1062,7 @@
               <AppTag variant="muted">{{ selectedProcessPanel?.definition?.access_source === 'flow' ? 'Acceso derivado' : 'Acceso directo' }}</AppTag>
             </div>
             <p class="mt-3 mb-0 text-sm font-medium text-slate-600">
-              Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta definición.
+              Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta configuración.
             </p>
           </div>
 
@@ -1116,7 +1116,7 @@
           <div class="rounded-xl border border-sky-200 bg-sky-50/70 p-5">
             <h3 class="m-0 text-base font-bold text-sky-900">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-sky-800/80">
-              Esta tarea se creará usando los templates activos de la definición. En este corte, Home informa el alcance documental real antes de confirmar la creación.
+              Esta tarea se creará usando los templates activos de la configuración. En este corte, Home informa el alcance documental real antes de confirmar la creación.
             </p>
           </div>
 
@@ -1130,7 +1130,7 @@
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
               </header>
               <div v-if="!taskLaunchSystemTemplates.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
-                Esta definición no tiene templates de proceso que generen tarea.
+                Esta configuración no tiene templates de proceso que generen tarea.
               </div>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2">
@@ -1185,7 +1185,7 @@
               <h3 class="m-0 text-base font-bold text-slate-800">Resumen operativo</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Definición</div>
+                  <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Configuración</div>
                   <div class="mt-2 text-sm font-bold text-slate-800">{{ selectedProcessPanel?.definition?.name || '—' }}</div>
                 </div>
                 <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
@@ -1207,7 +1207,7 @@
                 <AppTag variant="muted">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
               </div>
               <ul class="m-0 pl-5 text-sm font-medium text-slate-600 flex flex-col gap-2">
-                <li>La tarea se creará en modo manual dentro de esta definición.</li>
+                <li>La tarea se creará en modo manual dentro de esta configuración.</li>
                 <li>El backend generará entregables y documentos según los templates activos.</li>
                 <li>Los flujos de entrega y firma dependerán de la configuración actual de cada template.</li>
               </ul>
@@ -1357,7 +1357,7 @@
     >
       <div class="flex flex-col gap-4">
         <p class="text-sm text-slate-600 m-0">
-          Este espacio quedará para la consulta general de documentos con filtros. Por ahora muestra un resumen básico de los documentos generados en esta definición.
+          Este espacio quedará para la consulta general de documentos con filtros. Por ahora muestra un resumen básico de los documentos generados en esta configuración.
         </p>
         <div v-if="!selectedProcessPanel?.documents?.length" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-slate-500 bg-slate-50 text-center text-sm font-medium">
           No hay documentos generados todavía.
@@ -1887,7 +1887,7 @@
                 </AppTag>
               </div>
               <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
-                La definición todavía no tiene pasos de firma visibles.
+                La configuración todavía no tiene pasos de firma visibles.
               </div>
               <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div
@@ -2396,7 +2396,7 @@
               </AppTag>
             </div>
             <div v-if="!signatureFlowState.snapshot.signatureSteps?.length" class="text-sm text-slate-500">
-              La definición todavía no tiene pasos de firma visibles.
+              La configuración todavía no tiene pasos de firma visibles.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
@@ -4555,7 +4555,7 @@ const loadSelectedProcessPanel = async (process) => {
   const userId = currentUserId.value;
   const definitionId = Number(process?.process_definition_id);
   if (!userId || !definitionId) {
-    processPanelError.value = 'No se pudo identificar la definición del proceso seleccionada.';
+    processPanelError.value = 'No se pudo identificar la configuración del proceso seleccionada.';
     return;
   }
   processPanelLoading.value = true;
@@ -4581,10 +4581,10 @@ const loadSelectedProcessPanel = async (process) => {
     activeProcessUnitTab.value = 'all';
     resetTaskListFilters();
   } catch (error) {
-    console.error('Error al cargar el panel operativo de la definición:', error);
+    console.error('Error al cargar el panel operativo de la configuración:', error);
     selectedProcessPanel.value = null;
     selectedProcessPanels.value = [];
-    processPanelError.value = error?.response?.data?.message || 'No se pudo cargar la definición seleccionada.';
+    processPanelError.value = error?.response?.data?.message || 'No se pudo cargar la configuración seleccionada.';
   } finally {
     processPanelLoading.value = false;
   }
@@ -4909,7 +4909,7 @@ const submitTaskLaunch = async () => {
 
     processActionMessage.value = {
       type: 'success',
-      text: 'La tarea manual se creó correctamente para esta definición.'
+      text: 'La tarea manual se creó correctamente para esta configuración.'
     };
     closeTaskLaunchModal();
     await loadSelectedProcessPanel({

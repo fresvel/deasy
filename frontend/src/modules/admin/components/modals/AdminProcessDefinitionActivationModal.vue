@@ -2,7 +2,7 @@
   <AdminModalShell
     ref="modalRef"
     labelled-by="processDefinitionActivationModalLabel"
-    title="Activar definicion"
+    title="Activar configuracion"
     dialog-class="definition-activation-shell"
     close-action
     @close="$emit('cancel')"

@@ -101,7 +101,7 @@
         <strong>Checklist de activacion</strong>
         <span v-if="processDefinitionChecklistLoading" class="text-sm text-slate-500">Validando...</span>
         <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-slate-500">
-          Disponible despues de guardar la definicion.
+          Disponible despues de guardar la configuracion.
         </span>
       </div>
       <div class="definition-checklist-items">

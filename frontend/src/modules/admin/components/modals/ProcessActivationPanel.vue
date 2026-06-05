@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div v-if="checking" class="text-sm text-slate-500">Validando configuracion de la definicion...</div>
+    <div v-if="checking" class="text-sm text-slate-500">Validando configuracion de la configuracion...</div>
     <template v-else>
-      <p class="mb-2">Vas a activar una definicion en borrador.</p>
+      <p class="mb-2">Vas a activar una configuracion en borrador.</p>
       <div class="definition-activation-warning mt-3">
         Despues de activarla ya no podras modificar reglas, disparadores ni paquetes en esta misma version.
-        Si ya existe una definicion activa en esta misma serie, se retirara automaticamente.
+        Si ya existe una configuracion activa en esta misma serie, se retirara automaticamente.
       </div>
 
       <div class="definition-activation-checklist mt-3">
@@ -27,7 +27,7 @@
 
       <div class="definition-activation-panel mt-3">
         <div class="definition-activation-menu flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
-          <AdminButton variant="secondary" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Definicion</AdminButton>
+          <AdminButton variant="secondary" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Reglas</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Disparadores</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'artifacts' }" @click="$emit('update:view', 'artifacts')">Paquetes</AdminButton>

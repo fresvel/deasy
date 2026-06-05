@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="context" class="person-assignment-context mb-3">
-      <strong>{{ context.name || `Definicion #${context.id}` }}</strong>
+      <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-emerald-700/80">
         Serie {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
       </span>
@@ -9,7 +9,7 @@
 
     <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
     <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-      Esta definicion no esta en draft. Solo puedes gestionar reglas cuando la definicion este en draft.
+      Esta configuracion no esta en draft. Solo puedes gestionar reglas cuando la configuracion este en draft.
     </div>
     <div v-else-if="canManage && !canSubmit" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
       Completa el alcance requerido para habilitar el boton de guardar.

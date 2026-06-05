@@ -22,7 +22,7 @@ class ProcessDefinitionPanelService {
 
   async getPanel(userId, processDefinitionId, scopeUnitId = null) {
     if (!userId || !processDefinitionId) {
-      throw new Error("Se requiere usuario y definicion de proceso.");
+      throw new Error("Se requiere usuario y configuracion de proceso.");
     }
     const { data } = await axios.get(
       API_ROUTES.USERS_PROCESS_DEFINITION_PANEL(userId, processDefinitionId),
@@ -57,7 +57,7 @@ class ProcessDefinitionPanelService {
 
   async createTask(userId, processDefinitionId, payload) {
     if (!userId || !processDefinitionId) {
-      throw new Error("Se requiere usuario y definicion de proceso.");
+      throw new Error("Se requiere usuario y configuracion de proceso.");
     }
     const { data } = await axios.post(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASKS(userId, processDefinitionId),
@@ -80,7 +80,7 @@ class ProcessDefinitionPanelService {
 
   async createTaskItemDocument(userId, processDefinitionId, taskItemId, payload = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     const { data } = await axios.post(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_DOCUMENTS(userId, processDefinitionId, taskItemId),
@@ -96,7 +96,7 @@ class ProcessDefinitionPanelService {
 
   async uploadDeliverableFile(userId, processDefinitionId, taskItemId, file, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     if (!file) {
       throw new Error("Debes seleccionar un archivo.");
@@ -121,7 +121,7 @@ class ProcessDefinitionPanelService {
 
   async listDeliverableAttachments(userId, processDefinitionId, taskItemId, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     const { data } = await axios.get(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS(userId, processDefinitionId, taskItemId),
@@ -135,7 +135,7 @@ class ProcessDefinitionPanelService {
 
   async uploadDeliverableAttachment(userId, processDefinitionId, taskItemId, file, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     if (!file) {
       throw new Error("Debes seleccionar un archivo.");
@@ -157,7 +157,7 @@ class ProcessDefinitionPanelService {
 
   async deleteDeliverableAttachment(userId, processDefinitionId, taskItemId, attachmentId) {
     if (!userId || !processDefinitionId || !taskItemId || !attachmentId) {
-      throw new Error("Se requiere usuario, definición, entregable y anexo.");
+      throw new Error("Se requiere usuario, configuración, entregable y anexo.");
     }
     const { data } = await axios.delete(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT(userId, processDefinitionId, taskItemId, attachmentId),
@@ -168,7 +168,7 @@ class ProcessDefinitionPanelService {
 
   async downloadDeliverableAttachment(userId, processDefinitionId, taskItemId, attachmentId) {
     if (!userId || !processDefinitionId || !taskItemId || !attachmentId) {
-      throw new Error("Se requiere usuario, definición, entregable y anexo.");
+      throw new Error("Se requiere usuario, configuración, entregable y anexo.");
     }
     const response = await axios.get(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT_DOWNLOAD(userId, processDefinitionId, taskItemId, attachmentId),
@@ -263,7 +263,7 @@ class ProcessDefinitionPanelService {
 
   async downloadDeliverableTemplate(userId, processDefinitionId, taskItemId) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     const response = await axios.get(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_TEMPLATE_DOWNLOAD(userId, processDefinitionId, taskItemId),
@@ -283,7 +283,7 @@ class ProcessDefinitionPanelService {
 
   async downloadDeliverableFile(userId, processDefinitionId, taskItemId, kind = "best", options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     const response = await axios.get(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_FILE(userId, processDefinitionId, taskItemId),
@@ -303,7 +303,7 @@ class ProcessDefinitionPanelService {
 
   async resetDeliverableWorkflow(userId, processDefinitionId, taskItemId, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, definición y entregable.");
+      throw new Error("Se requiere usuario, configuración y entregable.");
     }
     const { data } = await axios.post(
       API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_RESET_WORKFLOW(userId, processDefinitionId, taskItemId),

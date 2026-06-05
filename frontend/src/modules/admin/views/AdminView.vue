@@ -595,14 +595,14 @@ const GESTION_INDEX_ITEMS = [
     key: "procesos",
     label: "Procesos",
     icon: "check-double",
-    description: "Gestiona procesos base, definiciones y reglas de alcance.",
+    description: "Gestiona procesos base, configuraciones y reglas de alcance.",
     tables: ["processes", "process_definition_series", "process_definition_versions", "process_definition_triggers", "process_target_rules"]
   },
   {
     key: "plantillas",
     label: "Plantillas",
     icon: "certificate",
-    description: "Gestiona seeds, artifacts y plantillas de definicion.",
+    description: "Gestiona seeds, artifacts y plantillas de configuracion.",
     tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
   },
   {
@@ -706,7 +706,7 @@ const SECURITY_INDEX_ITEMS = [
 const TABLE_TAB_LABEL_OVERRIDES = {
   template_seeds: "Seeds de plantilla",
   template_artifacts: "Paquetes de plantillas",
-  process_definition_templates: "Plantillas de procesos definidos"
+  process_definition_templates: "Documentos de la configuración"
 };
 
 const hiddenTables = new Set([]);
@@ -1054,7 +1054,7 @@ const tableIconMeta = (tableName = "") => resolveWorkspaceAdminTableIcon(tableNa
 
 const groupDescMap = {
   'estructura_academico': 'Administración de facultades, carreras, currículos y periodos académicos.',
-  'procesos': 'Definición y control de flujos de trabajo, tareas complejas y plantillas doc.',
+  'procesos': 'Configuración y control de flujos de trabajo, tareas complejas y plantillas doc.',
   'usuarios': 'Gestión de personas, perfiles, autenticación y cuenta de ingreso.',
   'contratacion': 'Manejo de requerimientos de vacantes, contratos y registros de origen.',
   'seguridad': 'Auditoría de roles, asignaciones de permisos, recursos y control de acceso.'

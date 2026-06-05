@@ -1456,11 +1456,11 @@ const positionAssignmentsTabs = computed(() => [
 
 const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "process_definition_templates");
 
-// Subpestañas de la vista de plantillas de procesos definidos (plantillas vinculadas / artifacts sin definicion).
+// Subpestañas de la vista de plantillas de procesos configurados (plantillas vinculadas / artifacts sin configuracion).
 const definitionTemplatesView = ref("plantillas");
 const definitionTemplatesTabs = computed(() => [
   { key: "plantillas", label: "Plantillas", count: rows.value?.length || 0 },
-  { key: "sin-vincular", label: "Artifacts sin definicion", count: unassignedTemplateArtifactRows.value?.length || 0 }
+  { key: "sin-vincular", label: "Artifacts sin configuracion", count: unassignedTemplateArtifactRows.value?.length || 0 }
 ]);
 
 watch(
@@ -1539,7 +1539,7 @@ const processDefinitionActivationPrimaryAction = computed(() => {
   if (processDefinitionActivationView.value === "definition") {
     return {
       type: "edit_definition",
-      label: "Editar definicion"
+      label: "Editar configuracion"
     };
   }
   if (processDefinitionActivationView.value === "rules") {
@@ -2755,7 +2755,7 @@ const handleProcessWizardGoToStep = async (key) => {
 };
 
 // Vinculación con el modal de plantilla: cuando el wizard se abre desde "Crear proceso", al crear la
-// definición se devuelve su id al modal para preseleccionarla.
+// configuración se devuelve su id al modal para preseleccionarla.
 const wizardFromDraft = ref(false);
 const draftNewProcessDefinitionId = ref("");
 

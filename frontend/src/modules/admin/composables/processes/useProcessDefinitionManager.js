@@ -292,7 +292,7 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionRules.value) {
-      definitionRulesError.value = "Solo puedes modificar reglas mientras la definicion este en draft.";
+      definitionRulesError.value = "Solo puedes modificar reglas mientras la configuracion este en draft.";
       return;
     }
     definitionRulesEditId.value = row.id ? String(row.id) : "";
@@ -320,11 +320,11 @@ export function useProcessDefinitionManager({
   const submitDefinitionRule = async () => {
     const definitionId = definitionRulesContext.value?.id;
     if (!definitionId) {
-      definitionRulesError.value = "No hay una definicion seleccionada.";
+      definitionRulesError.value = "No hay una configuracion seleccionada.";
       return;
     }
     if (!canManageDefinitionRules.value) {
-      definitionRulesError.value = "Solo puedes modificar reglas mientras la definicion este en draft.";
+      definitionRulesError.value = "Solo puedes modificar reglas mientras la configuracion este en draft.";
       return;
     }
     if (!canSubmitDefinitionRule.value) {
@@ -347,10 +347,10 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionRules.value) {
-      definitionRulesError.value = "Solo puedes modificar reglas mientras la definicion este en draft.";
+      definitionRulesError.value = "Solo puedes modificar reglas mientras la configuracion este en draft.";
       return;
     }
-    if (!window.confirm("¿Deseas eliminar esta regla de la definicion?")) {
+    if (!window.confirm("¿Deseas eliminar esta regla de la configuracion?")) {
       return;
     }
     definitionRulesError.value = "";
@@ -479,7 +479,7 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionTriggers.value) {
-      definitionTriggersError.value = "Solo puedes modificar disparadores mientras la definicion este en draft.";
+      definitionTriggersError.value = "Solo puedes modificar disparadores mientras la configuracion este en draft.";
       return;
     }
     definitionTriggersEditId.value = row.id ? String(row.id) : "";
@@ -498,11 +498,11 @@ export function useProcessDefinitionManager({
   const submitDefinitionTrigger = async () => {
     const definitionId = definitionTriggersContext.value?.id;
     if (!definitionId) {
-      definitionTriggersError.value = "No hay una definicion seleccionada.";
+      definitionTriggersError.value = "No hay una configuracion seleccionada.";
       return;
     }
     if (!canManageDefinitionTriggers.value) {
-      definitionTriggersError.value = "Solo puedes modificar disparadores mientras la definicion este en draft.";
+      definitionTriggersError.value = "Solo puedes modificar disparadores mientras la configuracion este en draft.";
       return;
     }
     if (!canSubmitDefinitionTrigger.value) {
@@ -530,10 +530,10 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionTriggers.value) {
-      definitionTriggersError.value = "Solo puedes modificar disparadores mientras la definicion este en draft.";
+      definitionTriggersError.value = "Solo puedes modificar disparadores mientras la configuracion este en draft.";
       return;
     }
-    if (!window.confirm("¿Deseas eliminar este disparador de la definicion?")) {
+    if (!window.confirm("¿Deseas eliminar este disparador de la configuracion?")) {
       return;
     }
     definitionTriggersError.value = "";
@@ -658,7 +658,7 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionArtifacts.value) {
-      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la definicion este en draft.";
+      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la configuracion este en draft.";
       return;
     }
     definitionArtifactsEditId.value = row.id ? String(row.id) : "";
@@ -679,11 +679,11 @@ export function useProcessDefinitionManager({
   const submitDefinitionArtifact = async () => {
     const definitionId = definitionArtifactsContext.value?.id;
     if (!definitionId) {
-      definitionArtifactsError.value = "No hay una definicion seleccionada.";
+      definitionArtifactsError.value = "No hay una configuracion seleccionada.";
       return;
     }
     if (!canManageDefinitionArtifacts.value) {
-      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la definicion este en draft.";
+      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la configuracion este en draft.";
       return;
     }
     if (!definitionArtifactsForm.value.template_artifact_id) {
@@ -706,10 +706,10 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionArtifacts.value) {
-      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la definicion este en draft.";
+      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la configuracion este en draft.";
       return;
     }
-    if (!window.confirm("¿Deseas eliminar este artifact de la definicion?")) {
+    if (!window.confirm("¿Deseas eliminar este artifact de la configuracion?")) {
       return;
     }
     definitionArtifactsError.value = "";

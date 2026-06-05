@@ -75,15 +75,15 @@ export const SQL_TABLES = [
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "active_definition_version", label: "Definicion activa", type: "text", readOnly: true, virtual: true },
-      { name: "active_definition_status", label: "Estado definicion", type: "text", readOnly: true, virtual: true },
+      { name: "active_definition_version", label: "Configuracion activa", type: "text", readOnly: true, virtual: true },
+      { name: "active_definition_status", label: "Estado configuracion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
   {
     table: "process_definition_versions",
-    label: "Definicion de procesos",
+    label: "Configuraciones de proceso",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -110,7 +110,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_series",
-    label: "Variantes de procesos definidos",
+    label: "Variantes de procesos configurados",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -138,7 +138,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
       {
         name: "unit_scope_type",
         label: "Alcance",
@@ -199,12 +199,12 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_triggers",
-    label: "Disparadores de definiciones",
+    label: "Disparadores de configuraciones",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
       {
         name: "trigger_mode",
         label: "Modo de disparo",
@@ -225,7 +225,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion de proceso", type: "number", required: true },
+      { name: "process_definition_id", label: "Configuracion de proceso", type: "number", required: true },
       { name: "term_id", label: "Periodo", type: "number" },
       {
         name: "run_mode",
@@ -258,7 +258,7 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
         name: "process_definition_id",
-        label: "Definicion de proceso",
+        label: "Configuracion de proceso",
         type: "number",
         required: true
       },
@@ -299,7 +299,7 @@ export const SQL_TABLES = [
       { name: "task_id", label: "Tarea", type: "number", required: true },
       {
         name: "process_definition_template_id",
-        label: "Plantilla de proceso definido",
+        label: "Plantilla de proceso configurado",
         type: "number",
         required: true
       },
@@ -397,12 +397,12 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_templates",
-    label: "Plantillas de procesos definidos",
+    label: "Documentos de la configuración",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
+      { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
       { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
         name: "instance_mode",
@@ -683,7 +683,7 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
         name: "process_definition_template_id",
-        label: "Plantilla de proceso definido",
+        label: "Plantilla de proceso configurado",
         type: "number",
         required: true
       },
@@ -835,7 +835,7 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
         name: "process_definition_template_id",
-        label: "Plantilla de proceso definido",
+        label: "Plantilla de proceso configurado",
         type: "number",
         required: true
       },
