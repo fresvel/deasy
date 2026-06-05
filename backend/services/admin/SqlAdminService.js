@@ -2082,7 +2082,7 @@ export default class SqlAdminService {
     }
 
     if (tableName === "template_artifacts") {
-      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de artifact general.");
+      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento.");
     }
 
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
@@ -4237,8 +4237,8 @@ export default class SqlAdminService {
         workflow_sync_failed: workflowSyncFailed,
         __warning: workflowSyncFailed ? workflowNotice.trim() : undefined,
         __notice: (isEdit
-          ? "El artifact general fue actualizado y cargado correctamente en MinIO."
-          : "El artifact general fue cargado correctamente en MinIO y registrado en el sistema.") + workflowNotice
+          ? "La plantilla de documento fue actualizada y cargada correctamente en MinIO."
+          : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.") + workflowNotice
       };
     } catch (error) {
       // Rollback en creación: borra la fila SQL y limpia los objetos huérfanos subidos a MinIO.

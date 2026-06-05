@@ -1163,7 +1163,7 @@
                 <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 flex items-center justify-between gap-3">
                   <div class="min-w-0">
                     <strong class="block truncate text-sm font-bold text-slate-800">{{ item.display_name }}</strong>
-                    <p class="mt-1 mb-0 text-xs font-medium text-slate-500">{{ item.description || 'Artifact general registrado por el usuario.' }}</p>
+                    <p class="mt-1 mb-0 text-xs font-medium text-slate-500">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
                   </div>
                   <AppTag variant="muted" class-name="shrink-0">{{ item.artifact_stage }}</AppTag>
                 </article>

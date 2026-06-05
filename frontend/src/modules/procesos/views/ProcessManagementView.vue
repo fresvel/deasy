@@ -126,9 +126,9 @@
               <AppNavCard
                 v-if="selectedProcessItem?.key === 'plantillas' && canCreateAdminTable('template_artifacts', currentUser)"
                 layout="stacked"
-                title="Nuevo artifact general"
+                title="Nueva plantilla de documento"
                 meta=""
-                description="Crear desde seed o archivos"
+                description="Crear desde una semilla o archivos"
                 :icon="IconPlus"
                 badge="Acción especial"
                 badge-variant="info"
@@ -262,9 +262,9 @@ const PROCESS_INDEX_ITEMS = [
 ];
 
 const TABLE_TAB_LABEL_OVERRIDES = {
-  template_seeds: "Seeds de plantilla",
-  template_artifacts: "Paquetes de plantillas",
-  process_definition_templates: "Documentos de la configuración"
+  template_seeds: "Semillas",
+  template_artifacts: "Plantillas de documento",
+  process_definition_templates: "Asignación de plantillas"
 };
 
 const defaultPhoto = "/images/avatar.png";

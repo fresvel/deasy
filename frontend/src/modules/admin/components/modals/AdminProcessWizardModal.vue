@@ -36,9 +36,14 @@
 
     <div v-if="wizardError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ wizardError }}</div>
 
-    <div v-if="definitionContext?.id && currentStep !== 'definition'" class="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800">
+    <div v-if="definitionContext?.id && currentStep !== 'definition'" class="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-2.5 text-sm text-emerald-800">
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
-      <span class="ml-1 text-emerald-700/80">· {{ definitionContext.definition_version || "—" }} · {{ definitionContext.status || "draft" }}</span>
+      <span class="inline-flex items-center rounded-md bg-white/70 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+        {{ definitionContext.definition_version || "—" }}
+      </span>
+      <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold" :class="definitionStatusBadgeClass">
+        {{ definitionStatusLabel }}
+      </span>
     </div>
 
     <!-- Paso 1: Configuración -->
@@ -164,6 +169,19 @@ const emit = defineEmits(["close", "go-to-step", "create-definition", "update:de
 const form = computed(() => props.definitionForm || {});
 
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
+
+// Estado de la configuración como badge (no como parte del nombre): label legible + color por estado.
+const DEFINITION_STATUS_META = {
+  draft: { label: "Borrador", class: "bg-slate-200 text-slate-700" },
+  active: { label: "Activa", class: "bg-emerald-500 text-white" },
+  retired: { label: "Retirada", class: "bg-amber-200 text-amber-800" }
+};
+const definitionStatusMeta = computed(() =>
+  DEFINITION_STATUS_META[String(props.definitionContext?.status || "draft").toLowerCase()]
+  || { label: props.definitionContext?.status || "—", class: "bg-slate-200 text-slate-700" }
+);
+const definitionStatusLabel = computed(() => definitionStatusMeta.value.label);
+const definitionStatusBadgeClass = computed(() => definitionStatusMeta.value.class);
 
 const updateForm = (field, value) => {
   emit("update:definitionForm", { ...props.definitionForm, [field]: value });

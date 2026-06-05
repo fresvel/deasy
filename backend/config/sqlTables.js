@@ -83,7 +83,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_versions",
-    label: "Configuraciones de proceso",
+    label: "Configuración de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -110,7 +110,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_series",
-    label: "Variantes de procesos configurados",
+    label: "Variación de procesos configurados",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -199,7 +199,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_triggers",
-    label: "Disparadores de configuraciones",
+    label: "Reglas de disparo",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -345,7 +345,7 @@ export const SQL_TABLES = [
   },
   {
     table: "template_seeds",
-    label: "Seeds de plantilla",
+    label: "Semillas",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
@@ -363,12 +363,12 @@ export const SQL_TABLES = [
   },
   {
     table: "template_artifacts",
-    label: "Paquetes de plantilla",
+    label: "Plantillas de documento",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "template_seed_id", label: "Seed", type: "number", readOnly: true },
+      { name: "template_seed_id", label: "Semilla", type: "number", readOnly: true },
       { name: "owner_person_id", label: "Persona propietaria", type: "number", readOnly: true },
       { name: "template_code", label: "Codigo", type: "text", required: true },
       { name: "display_name", label: "Nombre", type: "text", required: true },
@@ -389,7 +389,7 @@ export const SQL_TABLES = [
       { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
       { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
-      { name: "seed_display_name", label: "Nombre del seed", type: "text", readOnly: true, virtual: true },
+      { name: "seed_display_name", label: "Nombre de la semilla", type: "text", readOnly: true, virtual: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
@@ -397,7 +397,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_templates",
-    label: "Documentos de la configuración",
+    label: "Asignación de plantillas",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
