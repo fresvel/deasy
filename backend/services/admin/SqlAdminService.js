@@ -962,7 +962,7 @@ const validateTableRules = (tableName, candidate) => {
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "configuraciones de proceso");
       break;
     case "process_definition_series":
-      if (!candidate.source_type || !["unit_type", "cargo", "legacy"].includes(String(candidate.source_type))) {
+      if (!candidate.source_type || !["unit_type", "cargo", "default"].includes(String(candidate.source_type))) {
         throw new Error("Selecciona el origen de la serie.");
       }
       if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
@@ -971,7 +971,7 @@ const validateTableRules = (tableName, candidate) => {
       if (candidate.source_type === "cargo" && !candidate.cargo_id) {
         throw new Error("Una serie por cargo requiere seleccionar un cargo.");
       }
-      if (candidate.source_type !== "legacy" && candidate.unit_type_id && candidate.cargo_id) {
+      if (candidate.source_type !== "default" && candidate.unit_type_id && candidate.cargo_id) {
         throw new Error("La serie debe asociarse a un tipo de unidad o a un cargo, no a ambos.");
       }
       break;
@@ -1281,8 +1281,8 @@ export default class SqlAdminService {
     if (!Number(series.is_active)) {
       throw new Error("La serie seleccionada esta inactiva.");
     }
-    if (!allowLegacy && String(series.source_type) === "legacy") {
-      throw new Error("Las series heredadas no se pueden usar para nuevas configuraciones. Crea una serie basada en tipo de unidad o cargo.");
+    if (!allowLegacy && String(series.source_type) === "default") {
+      throw new Error("La serie por defecto no se puede usar para nuevas configuraciones. Crea una serie basada en tipo de unidad o cargo.");
     }
     return series;
   }
@@ -2540,8 +2540,8 @@ export default class SqlAdminService {
     if (tableName === "process_definition_series") {
       const candidateSeries = { ...existing, ...updates };
       const sourceType = String(candidateSeries.source_type || existing.source_type || "").trim();
-      if (sourceType === "legacy") {
-        throw new Error("Las series legacy no se editan manualmente.");
+      if (sourceType === "default") {
+        throw new Error("La serie por defecto del sistema no se edita manualmente.");
       }
       let code = "";
       if (sourceType === "unit_type") {

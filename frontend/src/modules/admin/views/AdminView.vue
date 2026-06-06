@@ -634,7 +634,7 @@ const GESTION_INDEX_ITEMS = [
   },
   {
     key: "plantillas",
-    label: "Biblioteca de plantillas",
+    label: "Modelos",
     icon: "certificate",
     description: "Gestiona semillas, plantillas y su asignación a procesos.",
     tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
@@ -1041,8 +1041,23 @@ const handleSiblingTabChange = (tableName) => {
 };
 
 const handleHeroBack = () => {
-  if (typeof window !== 'undefined' && window.history.length > 1) {
-    router.back();
+  // La navegación del panel es estado de componente (no rutas): subir un nivel en la jerarquía interna.
+  // Si hay un subgrupo (índice CRUD) abierto, volver al índice del grupo limpiando el item activo.
+  const itemRefs = [
+    selectedAcademyItem,
+    selectedGestionItem,
+    selectedUsuarioItem,
+    selectedContratoItem,
+    selectedSeguridadItem
+  ];
+  const activeItem = itemRefs.find((itemRef) => itemRef.value);
+  if (activeItem) {
+    activeItem.value = "";
+    return;
+  }
+  // Si hay un grupo/sección abierto, volver al panel principal de administración.
+  if (selectedSection.value) {
+    goAdminHome();
     return;
   }
   router.push('/home');

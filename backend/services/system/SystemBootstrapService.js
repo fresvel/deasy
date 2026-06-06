@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
+import { seedGenericCatalog } from "./genericCatalog.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
@@ -18,6 +19,7 @@ const BOOTSTRAP_UNIT_NAME = "Raiz del sistema";
 const BOOTSTRAP_UNIT_LABEL = "Sistema";
 const BOOTSTRAP_UNIT_SLUG = "root-system";
 const MANUAL_ROLE_SOURCE = "manual";
+const GESTOR_ROLE_NAME = "GestorProcesos";
 
 const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const TOKEN_LENGTH = 10;
@@ -402,7 +404,7 @@ export const ensureDefaultProcess = async (connection) => {
   let series = await fetchOne(connection, "SELECT id FROM process_definition_series WHERE code = ? LIMIT 1", [DEFAULT_SERIES_CODE]);
   if (!series) {
     const [r] = await connection.query(
-      "INSERT INTO process_definition_series (source_type, unit_type_id, cargo_id, code, is_active) VALUES ('legacy', NULL, NULL, ?, 1)",
+      "INSERT INTO process_definition_series (source_type, unit_type_id, cargo_id, code, is_active) VALUES ('default', NULL, NULL, ?, 1)",
       [DEFAULT_SERIES_CODE]
     );
     series = { id: r.insertId };
@@ -737,6 +739,10 @@ export default class SystemBootstrapService {
     }
 
     const adminPayload = validateAdminPayload(payload);
+    // Gestor por defecto OPCIONAL (mismos campos que el admin).
+    const gestorPayload = payload.gestor ? validateAdminPayload(payload.gestor) : null;
+    // Bloques de catálogos genéricos OPCIONALES a preconfigurar.
+    const preconfig = payload.preconfig && typeof payload.preconfig === "object" ? payload.preconfig : {};
     const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
@@ -748,7 +754,26 @@ export default class SystemBootstrapService {
         roleId: roleIds.get(ADMIN_ROLE_NAME),
         unitId
       });
+      // Gestor por defecto (opcional): persona + rol GestorProcesos.
+      let gestor = null;
+      if (gestorPayload) {
+        const gestorPerson = await upsertAdminPerson(connection, gestorPayload);
+        await ensureAdminRoleAssignment(connection, {
+          personId: gestorPerson.id,
+          roleId: roleIds.get(GESTOR_ROLE_NAME),
+          unitId
+        });
+        gestor = {
+          id: gestorPerson.id,
+          cedula: gestorPayload.cedula,
+          email: gestorPayload.email,
+          first_name: gestorPayload.first_name,
+          last_name: gestorPayload.last_name
+        };
+      }
       await ensureDefaultProcess(connection);
+      // Catálogos genéricos seleccionados (idempotente).
+      const seededCatalog = await seedGenericCatalog(connection, preconfig, roleIds);
       await connection.commit();
 
       return {
@@ -759,7 +784,9 @@ export default class SystemBootstrapService {
           email: adminPayload.email,
           first_name: adminPayload.first_name,
           last_name: adminPayload.last_name
-        }
+        },
+        gestor,
+        preconfig: seededCatalog
       };
     } catch (error) {
       await connection.rollback().catch(() => {});

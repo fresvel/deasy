@@ -251,7 +251,7 @@ const PROCESS_INDEX_ITEMS = [
   },
   {
     key: "plantillas",
-    label: "Biblioteca de plantillas",
+    label: "Modelos",
     icon: "certificate",
     description: "Gestiona semillas, plantillas y su asignación a procesos.",
     tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
@@ -481,11 +481,13 @@ const handleManagerGoBack = () => {
 };
 
 const handleHeroBack = () => {
-  if (showProcessCrudIndex.value) {
+  // Subir un nivel: si hay un subgrupo abierto (índice CRUD), volver al índice de procesos; si ya
+  // estamos en el índice, ir al home global.
+  if (selectedProcessItemKey.value) {
     goProcessHome();
     return;
   }
-  router.push({ name: "home" });
+  router.push("/home");
 };
 
 const openTemplateArtifactDraftFromHome = async () => {
