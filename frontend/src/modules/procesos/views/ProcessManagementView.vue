@@ -217,9 +217,9 @@ const PROCESS_INDEX_ITEMS = [
   },
   {
     key: "plantillas",
-    label: "Plantillas",
+    label: "Biblioteca de plantillas",
     icon: "certificate",
-    description: "Gestiona seeds, artifacts y plantillas de configuración.",
+    description: "Gestiona semillas, plantillas y su asignación a procesos.",
     tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
   },
   {
