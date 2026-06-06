@@ -110,7 +110,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_series",
-    label: "Variación de procesos configurados",
+    label: "Variaciones de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -363,7 +363,7 @@ export const SQL_TABLES = [
   },
   {
     table: "template_artifacts",
-    label: "Plantillas de documento",
+    label: "Plantillas",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
@@ -397,7 +397,7 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_templates",
-    label: "Asignación de plantillas",
+    label: "Procesos asignados",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [

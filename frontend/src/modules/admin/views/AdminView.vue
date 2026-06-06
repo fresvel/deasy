@@ -705,8 +705,8 @@ const SECURITY_INDEX_ITEMS = [
 
 const TABLE_TAB_LABEL_OVERRIDES = {
   template_seeds: "Semillas",
-  template_artifacts: "Plantillas de documento",
-  process_definition_templates: "Asignación de plantillas"
+  template_artifacts: "Plantillas",
+  process_definition_templates: "Procesos asignados"
 };
 
 const hiddenTables = new Set([]);
