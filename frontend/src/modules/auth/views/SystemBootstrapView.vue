@@ -1,233 +1,205 @@
 <template>
   <div class="deasy-auth-page">
     <div class="deasy-auth-center">
-      <div class="deasy-auth-card mx-auto grid max-w-5xl md:min-h-[38rem] md:grid-cols-[0.92fr_1.08fr]">
-        <div class="deasy-auth-visual">
-          <div class="relative z-10">
-            <AppLogo size="xl" :framed="true" class-name="mb-12" />
-            <div class="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
-              Primera instalación
+      <div class="deasy-auth-card mx-auto w-full max-w-2xl p-7 sm:p-10">
+        <div class="mb-7 flex flex-col items-center text-center">
+          <AppLogo size="lg" :framed="true" class-name="mb-4" />
+          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Primera instalación · {{ environmentLabel }}
+          </span>
+          <h1 class="deasy-auth-title mt-4">Bootstrap del sistema</h1>
+          <p class="deasy-auth-copy max-w-md">{{ copyText }}</p>
+        </div>
+
+        <div v-if="mode === 'bootstrap'" class="space-y-6" autocomplete="off">
+          <!-- Indicador de pasos -->
+          <ol class="flex items-center justify-center gap-1.5 text-xs font-semibold">
+            <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
+              <span
+                class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+                :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-400'"
+              >{{ i + 1 }}</span>
+              <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-slate-400'">{{ s.label }}</span>
+              <span v-if="i < steps.length - 1" class="mx-1 h-px w-5 bg-slate-200"></span>
+            </li>
+          </ol>
+
+          <!-- Paso 1: Administrador -->
+          <div v-show="step === 1" class="space-y-4">
+            <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+              <input v-model="useExampleAdmin" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleAdmin" />
+              Usar datos de ejemplo (rellena el formulario para crear rápido)
+            </label>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+                <input v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+                <input v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+                <input v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+                <input v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
+                <input v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
+              </div>
+              <div class="hidden md:block"></div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+                <input v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+                <input v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+              </div>
             </div>
-            <h2 class="mt-5 max-w-md text-4xl font-semibold leading-tight tracking-tight text-slate-950">
-              Configura el administrador raíz y la base del sistema.
-            </h2>
-            <p class="mt-4 max-w-sm text-sm font-medium leading-6 text-slate-500">
-              Este paso queda habilitado solo cuando la instancia aún no tiene un administrador activo.
-            </p>
           </div>
 
-          <div class="relative z-10 grid gap-3 text-sm">
-            <div class="rounded-xl border border-slate-200 bg-white p-4">
-              <p class="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Entorno</p>
-              <p class="mt-1 m-0 font-semibold text-slate-900">{{ environmentLabel }}</p>
+          <!-- Paso 2: Gestor por defecto (opcional) -->
+          <div v-show="step === 2" class="space-y-4">
+            <label class="flex items-center gap-3 rounded-xl border p-3.5 transition-colors" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+              <input v-model="gestorEnabled" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" />
+              <span>
+                <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
+                <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
+              </span>
+            </label>
+            <div v-if="gestorEnabled" class="space-y-4">
+              <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+                <input v-model="useExampleGestor" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleGestor" />
+                Usar datos de ejemplo
+              </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+                  <input v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+                  <input v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+                  <input v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+                  <input v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+                  <input v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+                  <input v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+                </div>
+              </div>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4">
-              <p class="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Estado</p>
-              <p class="mt-1 m-0 font-semibold text-slate-900">{{ statusLabel }}</p>
+          </div>
+
+          <!-- Paso 3: Catálogos genéricos -->
+          <div v-show="step === 3" class="space-y-2.5">
+            <p class="m-0 text-sm text-slate-500">
+              Selecciona los catálogos genéricos a preconfigurar. Son ejemplos reutilizables que puedes editar luego.
+            </p>
+            <label
+              v-for="b in catalogBlocks"
+              :key="b.key"
+              class="flex items-start gap-3 rounded-xl border p-3.5 transition-colors"
+              :class="preconfig[b.key] ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+            >
+              <input v-model="preconfig[b.key]" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
+              <span>
+                <span class="block text-sm font-semibold text-slate-700">{{ b.label }}</span>
+                <span class="block text-xs text-slate-500">{{ b.hint }}</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Paso 4: Resumen -->
+          <div v-show="step === 4" class="space-y-2.5 text-sm">
+            <div class="rounded-xl border border-slate-200 p-4">
+              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Administrador</p>
+              <p class="m-0 mt-1 font-semibold text-slate-700">{{ form.first_name }} {{ form.last_name }}</p>
+              <p class="m-0 text-slate-500">{{ form.email }}</p>
             </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Gestor por defecto</p>
+              <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Catálogos a preconfigurar</p>
+              <p class="m-0 mt-1 text-slate-500">{{ selectedCatalogLabels || 'Ninguno' }}</p>
+            </div>
+          </div>
+
+          <!-- Navegación -->
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-5" @click="prevStep">Atrás</button>
+            <span v-else></span>
+            <button v-if="step < steps.length" type="button" class="deasy-auth-button w-auto px-6" :disabled="!canAdvance" @click="nextStep">
+              Siguiente <IconArrowRight class="h-5 w-5" />
+            </button>
+            <button v-else type="button" class="deasy-auth-button w-auto px-6" :disabled="isSubmitting" @click="submitBootstrap">
+              <IconLoader2 v-if="isSubmitting" class="h-5 w-5 animate-spin" />
+              <template v-else>Crear sistema <IconArrowRight class="h-5 w-5" /></template>
+            </button>
           </div>
         </div>
 
-        <div class="deasy-auth-panel">
-          <div class="mb-7">
-            <h1 class="deasy-auth-title">Bootstrap del sistema</h1>
-            <p class="deasy-auth-copy">{{ copyText }}</p>
-          </div>
-
-          <div v-if="mode === 'bootstrap'" class="space-y-6" autocomplete="off">
-            <!-- Indicador de pasos -->
-            <ol class="flex items-center gap-1.5 text-xs font-semibold">
-              <li v-for="(s, i) in steps" :key="s.key" class="flex items-center gap-1.5">
-                <span
-                  class="flex h-6 w-6 items-center justify-center rounded-full"
-                  :class="step >= i + 1 ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-400'"
-                >{{ i + 1 }}</span>
-                <span class="hidden sm:inline" :class="step === i + 1 ? 'text-slate-800' : 'text-slate-400'">{{ s.label }}</span>
-                <span v-if="i < steps.length - 1" class="mx-0.5 h-px w-4 bg-slate-200"></span>
-              </li>
-            </ol>
-
-            <!-- Paso 1: Administrador -->
-            <div v-show="step === 1" class="space-y-5">
-              <div class="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label class="mb-2 block text-sm font-semibold text-slate-700">Cédula</label>
-                  <input v-model="form.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1234567890" />
-                </div>
-                <div>
-                  <label class="mb-2 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-                  <input v-model="form.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="admin@institucion.edu.ec" />
-                </div>
-              </div>
-              <div class="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label class="mb-2 block text-sm font-semibold text-slate-700">Nombres</label>
-                  <input v-model="form.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Administrador" />
-                </div>
-                <div>
-                  <label class="mb-2 block text-sm font-semibold text-slate-700">Apellidos</label>
-                  <input v-model="form.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Principal" />
-                </div>
-              </div>
-              <div>
-                <label class="mb-2 block text-sm font-semibold text-slate-700">WhatsApp (opcional)</label>
-                <input v-model="form.whatsapp" type="text" inputmode="tel" autocomplete="off" class="deasy-auth-field" placeholder="0990000000" />
-              </div>
-              <div class="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label class="mb-2 block text-sm font-semibold text-slate-700">Contraseña</label>
-                  <input v-model="form.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Nueva contraseña" />
-                </div>
-                <div>
-                  <label class="mb-2 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                  <input v-model="form.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Paso 2: Gestor por defecto (opcional) -->
-            <div v-show="step === 2" class="space-y-5">
-              <label class="flex items-center gap-3 rounded-xl border p-3" :class="gestorEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
-                <input v-model="gestorEnabled" type="checkbox" class="h-4 w-4" />
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">Crear un gestor por defecto</span>
-                  <span class="block text-xs text-slate-500">Persona con rol "Gestor de procesos". Opcional; puedes crear gestores luego.</span>
-                </span>
-              </label>
-              <div v-if="gestorEnabled" class="space-y-5">
-                <div class="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Cédula</label>
-                    <input v-model="gestorForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="0987654321" />
-                  </div>
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Correo electrónico</label>
-                    <input v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="gestor@institucion.edu.ec" />
-                  </div>
-                </div>
-                <div class="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Nombres</label>
-                    <input v-model="gestorForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Gestor" />
-                  </div>
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Apellidos</label>
-                    <input v-model="gestorForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Procesos" />
-                  </div>
-                </div>
-                <div class="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Contraseña</label>
-                    <input v-model="gestorForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del gestor" />
-                  </div>
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                    <input v-model="gestorForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Paso 3: Catálogos genéricos -->
-            <div v-show="step === 3" class="space-y-3">
-              <p class="m-0 text-sm text-slate-500">
-                Selecciona los catálogos genéricos a preconfigurar. Son ejemplos reutilizables que puedes editar
-                o ampliar luego desde el panel.
+        <div
+          v-else-if="mode === 'recovery_required'"
+          class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+        >
+          <div class="flex items-start gap-3">
+            <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <div class="space-y-2">
+              <p class="m-0 font-semibold">La instancia requiere recuperación administrativa.</p>
+              <p class="m-0">
+                Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Usa el comando
+                <code class="rounded bg-white/80 px-1.5 py-0.5 text-[13px]">node scripts/bootstrap_admin_recovery.mjs ...</code>
+                desde el backend.
               </p>
-              <label
-                v-for="b in catalogBlocks"
-                :key="b.key"
-                class="flex items-start gap-3 rounded-xl border p-3"
-                :class="preconfig[b.key] ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
-              >
-                <input v-model="preconfig[b.key]" type="checkbox" class="mt-1 h-4 w-4" />
-                <span>
-                  <span class="block text-sm font-semibold text-slate-700">{{ b.label }}</span>
-                  <span class="block text-xs text-slate-500">{{ b.hint }}</span>
-                </span>
-              </label>
-            </div>
-
-            <!-- Paso 4: Resumen -->
-            <div v-show="step === 4" class="space-y-3 text-sm">
-              <div class="rounded-xl border border-slate-200 p-4">
-                <p class="m-0 font-semibold text-slate-700">Administrador</p>
-                <p class="m-0 text-slate-500">{{ form.first_name }} {{ form.last_name }} · {{ form.email }}</p>
-              </div>
-              <div class="rounded-xl border border-slate-200 p-4">
-                <p class="m-0 font-semibold text-slate-700">Gestor por defecto</p>
-                <p class="m-0 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
-              </div>
-              <div class="rounded-xl border border-slate-200 p-4">
-                <p class="m-0 font-semibold text-slate-700">Catálogos a preconfigurar</p>
-                <p class="m-0 text-slate-500">{{ selectedCatalogLabels || 'Ninguno' }}</p>
-              </div>
-            </div>
-
-            <!-- Navegación -->
-            <div class="flex items-center justify-between gap-3 pt-1">
-              <button v-if="step > 1" type="button" class="deasy-auth-button deasy-auth-button--secondary" @click="prevStep">Atrás</button>
-              <span v-else></span>
-              <button v-if="step < steps.length" type="button" class="deasy-auth-button" :disabled="!canAdvance" @click="nextStep">
-                Siguiente <IconArrowRight class="h-5 w-5" />
-              </button>
-              <button v-else type="button" class="deasy-auth-button" :disabled="isSubmitting" @click="submitBootstrap">
-                <IconLoader2 v-if="isSubmitting" class="h-5 w-5 animate-spin" />
-                <template v-else>Crear sistema <IconArrowRight class="h-5 w-5" /></template>
-              </button>
             </div>
           </div>
+        </div>
+        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-600">
+          Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
+        </div>
 
+        <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="-translate-y-2 opacity-0"
+          enter-to-class="translate-y-0 opacity-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="translate-y-0 opacity-100"
+          leave-to-class="-translate-y-2 opacity-0"
+        >
           <div
-            v-else-if="mode === 'recovery_required'"
-            class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+            v-if="message"
+            :class="[
+              'mt-6 flex rounded-xl border p-4',
+              isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-700'
+            ]"
           >
-            <div class="flex items-start gap-3">
-              <IconAlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-              <div class="space-y-2">
-                <p class="m-0 font-semibold">La instancia requiere recuperación administrativa.</p>
-                <p class="m-0">
-                  Existen datos operativos en la base y ya no es seguro reinicializar desde la UI. Usa el comando
-                  <code class="rounded bg-white/80 px-1.5 py-0.5 text-[13px]">node scripts/bootstrap_admin_recovery.mjs ...</code>
-                  desde el backend.
-                </p>
-              </div>
-            </div>
+            <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />
+            <div class="flex-1 text-sm font-medium">{{ message }}</div>
           </div>
-          <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-            Esta instancia ya tiene un administrador activo. El bootstrap inicial ya no está disponible.
-          </div>
+        </Transition>
 
-          <Transition
-            enter-active-class="transition duration-300 ease-out"
-            enter-from-class="-translate-y-2 opacity-0"
-            enter-to-class="translate-y-0 opacity-100"
-            leave-active-class="transition duration-200 ease-in"
-            leave-from-class="translate-y-0 opacity-100"
-            leave-to-class="-translate-y-2 opacity-0"
-          >
-            <div
-              v-if="message"
-              :class="[
-                'mt-6 flex rounded-xl border p-4',
-                isError ? 'border-red-100 bg-red-50 text-red-600' : 'border-emerald-100 bg-emerald-50 text-emerald-700'
-              ]"
-            >
-              <component :is="isError ? IconAlertCircle : IconCheck" class="mr-3 mt-0.5 h-5 w-5 shrink-0" />
-              <div class="flex-1 text-sm font-medium">{{ message }}</div>
-            </div>
-          </Transition>
-
-          <div class="mt-8 flex justify-end">
-            <button
-              v-if="mode === 'normal'"
-              type="button"
-              class="deasy-auth-button deasy-auth-button--secondary"
-              @click="router.replace({ name: 'login' })"
-            >
-              Ir al login
-            </button>
-          </div>
+        <div v-if="mode === 'normal'" class="mt-8 flex justify-center">
+          <button type="button" class="deasy-auth-button deasy-auth-button--secondary w-auto px-6" @click="router.replace({ name: 'login' })">
+            Ir al login
+          </button>
         </div>
       </div>
     </div>
@@ -263,18 +235,32 @@ const steps = [
 ];
 
 const blankPerson = () => ({
-  cedula: "",
-  first_name: "",
-  last_name: "",
-  email: "",
-  whatsapp: "",
-  password: "",
-  confirm_password: ""
+  cedula: "", first_name: "", last_name: "", email: "", whatsapp: "", password: "", confirm_password: ""
 });
 
+const EXAMPLE_ADMIN = {
+  cedula: "1234567890", first_name: "Administrador", last_name: "Principal",
+  email: "admin@institucion.edu.ec", whatsapp: "0990000000", password: "Demo1234!", confirm_password: "Demo1234!"
+};
+const EXAMPLE_GESTOR = {
+  cedula: "0987654321", first_name: "Gestor", last_name: "Procesos",
+  email: "gestor@institucion.edu.ec", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!"
+};
+
 const form = reactive(blankPerson());
+const useExampleAdmin = ref(false);
+const toggleExampleAdmin = () => {
+  if (useExampleAdmin.value) Object.assign(form, EXAMPLE_ADMIN);
+  else Object.assign(form, blankPerson());
+};
+
 const gestorEnabled = ref(false);
 const gestorForm = reactive(blankPerson());
+const useExampleGestor = ref(false);
+const toggleExampleGestor = () => {
+  if (useExampleGestor.value) Object.assign(gestorForm, EXAMPLE_GESTOR);
+  else Object.assign(gestorForm, blankPerson());
+};
 
 const catalogBlocks = [
   { key: "unit_types", label: "Tipos de unidad", hint: "Prorrectorado, Coordinación, Dirección, Escuela, Carrera, Sede…" },
@@ -308,11 +294,6 @@ const prevStep = () => {
 };
 
 const environmentLabel = computed(() => environment.value);
-const statusLabel = computed(() => {
-  if (mode.value === "recovery_required") return "Recuperación requerida";
-  if (mode.value === "normal") return "Sistema inicializado";
-  return "Instancia virgen";
-});
 
 const copyText = computed(() => {
   if (mode.value === "recovery_required") {
