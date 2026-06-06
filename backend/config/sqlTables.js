@@ -275,7 +275,7 @@ export const SQL_TABLES = [
       { name: "parent_task_id", label: "Tarea padre (manual)", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
+      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text", readOnly: true },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       {
@@ -339,7 +339,7 @@ export const SQL_TABLES = [
         defaultValue: "pendiente"
       },
       { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
-      { name: "unassigned_at", label: "Desasignado", type: "datetime" }
+      { name: "unassigned_at", label: "Desasignado", type: "datetime", readOnly: true }
     ],
     searchFields: ["status"]
   },
@@ -564,7 +564,7 @@ export const SQL_TABLES = [
       { name: "cargo_id", label: "Cargo", type: "number", required: true },
       { name: "slot_no", label: "Plaza", type: "number", required: true },
       { name: "title", label: "Titulo", type: "text" },
-      { name: "profile_ref", label: "Perfil (Mongo)", type: "text" },
+      { name: "profile_ref", label: "Perfil (Mongo)", type: "text", readOnly: true },
       {
         name: "position_type",
         label: "Tipo de puesto",
@@ -621,7 +621,7 @@ export const SQL_TABLES = [
         options: [...DOCUMENT_STATUSES],
         defaultValue: "Inicial"
       },
-      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
+      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text", readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
@@ -637,13 +637,13 @@ export const SQL_TABLES = [
       { name: "document_id", label: "Documento", type: "number", required: true },
       { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
       { name: "template_artifact_id", label: "Artifact", type: "number" },
-      { name: "payload_mongo_id", label: "Payload legacy", type: "text" },
-      { name: "payload_hash", label: "Hash payload", type: "text" },
-      { name: "payload_object_path", label: "Ruta payload", type: "text" },
+      { name: "payload_mongo_id", label: "Payload legacy", type: "text", readOnly: true },
+      { name: "payload_hash", label: "Hash payload", type: "text", readOnly: true },
+      { name: "payload_object_path", label: "Ruta payload", type: "text", readOnly: true },
       { name: "working_file_path", label: "Ruta working", type: "text" },
       { name: "final_file_path", label: "Ruta final", type: "text" },
-      { name: "format", label: "Formato", type: "text" },
-      { name: "render_engine", label: "Motor de render", type: "text" },
+      { name: "format", label: "Formato", type: "text", readOnly: true },
+      { name: "render_engine", label: "Motor de render", type: "text", readOnly: true },
       {
         name: "status",
         label: "Estado",
@@ -932,7 +932,7 @@ export const SQL_TABLES = [
       { name: "status_id", label: "Estado", type: "number", required: true },
       { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
       { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
-      { name: "notified_at", label: "Notificado", type: "datetime" },
+      { name: "notified_at", label: "Notificado", type: "datetime", readOnly: true },
       { name: "responded_at", label: "Respondido", type: "datetime" }
     ],
     searchFields: []

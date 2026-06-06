@@ -59,7 +59,7 @@ COLLATE=utf8mb4_unicode_ci;
 const CREATE_PASSWORD_RESET_CODES_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS password_reset_codes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NULL,
   person_id INT NULL,
   code_hash VARCHAR(255) NOT NULL,
   expires_at DATETIME NOT NULL,
@@ -101,6 +101,12 @@ const ensurePasswordResetCodesPersonLink = async (connection) => {
       "ALTER TABLE password_reset_codes ADD COLUMN person_id INT NULL AFTER user_id"
     );
   }
+
+  // El flujo de recuperación ya inserta por person_id (no user_id); user_id pasa a NULLABLE
+  // para no violar NOT NULL. Idempotente (MODIFY se puede re-ejecutar sin efecto).
+  await connection.query(
+    "ALTER TABLE password_reset_codes MODIFY COLUMN user_id BIGINT UNSIGNED NULL"
+  );
 
   await connection.query(
     `UPDATE password_reset_codes prc
