@@ -36,6 +36,15 @@ export const getSqlMeta = (req, res) => {
   }
 };
 
+export const getOperationStats = async (_req, res) => {
+  try {
+    const stats = await service.getOperationStats();
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const syncTemplateSeeds = async (_req, res) => {
   try {
     const result = await service.syncTemplateSeedsFromSource();

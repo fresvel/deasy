@@ -143,6 +143,9 @@
             </template>
 
             <template v-else>
+              <div class="col-span-full">
+                <AdminOperationSummary :stats="operationStats" @open="openOperationTable" />
+              </div>
               <AppNavCard
                 v-for="item in processMenuItems"
                 :key="item.key"
@@ -198,6 +201,7 @@
           :sibling-tabs="currentSiblingTabs"
           :active-sibling-tab="selectedTable?.table || ''"
           :all-tables="tables"
+          :initial-filters="pendingTableFilters"
           @select-sibling-tab="handleSiblingTabChange"
           @go-back="handleManagerGoBack"
         />
@@ -223,6 +227,7 @@ import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
+import AdminOperationSummary from "@/modules/admin/components/tables/AdminOperationSummary.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import {
   canCreateAdminTable,
@@ -301,6 +306,8 @@ const loadingMeta = ref(false);
 const metaError = ref("");
 const tables = ref([]);
 const selectedTable = ref(null);
+const operationStats = ref(null);
+const pendingTableFilters = ref(null);
 const selectedProcessItemKey = ref("");
 const adminManager = ref(null);
 const currentUser = ref(getStoredUser());
@@ -448,9 +455,18 @@ const goProcessHome = () => {
   selectedProcessItemKey.value = "";
 };
 
-const selectTable = (table) => {
+const selectTable = (table, filters = null) => {
   if (!table) return;
+  pendingTableFilters.value = filters;
   selectedTable.value = table;
+};
+
+// Abre la tabla del dominio desde un chip del resumen de operación, con filtro de estado opcional.
+const openOperationTable = (tableName, filters = null) => {
+  const target = tableMap.value[tableName];
+  if (target) {
+    selectTable(target, filters);
+  }
 };
 
 const handleSiblingTabChange = (tableName) => {
@@ -461,6 +477,7 @@ const handleSiblingTabChange = (tableName) => {
 
 const handleManagerGoBack = () => {
   selectedTable.value = null;
+  pendingTableFilters.value = null;
 };
 
 const handleHeroBack = () => {
@@ -510,7 +527,18 @@ const fetchMeta = async () => {
   }
 };
 
+// Resumen de operación: conteos agregados (solo lectura). Si falla, el bloque no se muestra.
+const fetchOperationStats = async () => {
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_OPERATION_STATS);
+    operationStats.value = response.data || null;
+  } catch {
+    operationStats.value = null;
+  }
+};
+
 onMounted(() => {
   fetchMeta();
+  fetchOperationStats();
 });
 </script>

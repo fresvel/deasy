@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import {
   getSqlMeta,
+  getOperationStats,
   syncTemplateSeeds,
   getTemplateSeedPreview,
   downloadTemplateArtifactArchive,
@@ -25,6 +26,7 @@ const router = new Router();
 const draftArtifactUpload = multer({ storage: multer.memoryStorage() });
 
 router.get("/meta", requireAnyRole(MANAGEMENT_ROLES), getSqlMeta);
+router.get("/stats/operation", requireAnyRole(MANAGEMENT_ROLES), getOperationStats);
 router.post("/template_seeds/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateSeeds);
 router.get("/template_seeds/:id/preview", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateSeedPreview);
 router.get("/template_seeds/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateSeedArchive);

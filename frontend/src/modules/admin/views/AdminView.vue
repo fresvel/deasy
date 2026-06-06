@@ -273,6 +273,9 @@
                  </template>
 
                  <template v-else-if="showGestionesIndex">
+                    <div class="col-span-full">
+                      <AdminOperationSummary :stats="operationStats" @open="openOperationTable" />
+                    </div>
                     <AppNavCard
                       v-for="item in gestionMenuItems"
                       :key="item.key"
@@ -445,6 +448,7 @@
                :sibling-tabs="currentSiblingTabs"
                :active-sibling-tab="selectedTable?.table || ''"
                :all-tables="tables"
+               :initial-filters="pendingTableFilters"
                @select-sibling-tab="handleSiblingTabChange"
                @go-back="handleManagerGoBack"
              />
@@ -478,6 +482,7 @@ import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
+import AdminOperationSummary from "@/modules/admin/components/tables/AdminOperationSummary.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import {
@@ -497,6 +502,8 @@ const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
 const selectedTable = ref(null);
+const operationStats = ref(null);
+const pendingTableFilters = ref(null);
 const selectedSection = ref("");
 const selectedAcademyItem = ref("");
 const selectedGestionItem = ref("");
@@ -1202,11 +1209,12 @@ const onGroupTitleClick = (group) => {
   }
 };
 
-const selectTable = (table) => {
+const selectTable = (table, filters = null) => {
   isSigningView.value = false;
   if (!table) {
     return;
   }
+  pendingTableFilters.value = filters;
   selectedTable.value = table;
   const group = groupedTables.value.find((candidate) =>
     [...candidate.mainTables, ...candidate.supportTables].some((item) => item.table === table.table)
@@ -1405,6 +1413,7 @@ const handleManagerGoBack = () => {
     return;
   }
   selectedTable.value = null;
+  pendingTableFilters.value = null;
   if (!selectedSection.value) {
     goAdminHome();
   }
@@ -1467,6 +1476,24 @@ const fetchMeta = async () => {
   }
 };
 
+// Resumen de operación: conteos agregados (solo lectura). Si falla, el bloque simplemente no se muestra.
+const fetchOperationStats = async () => {
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_OPERATION_STATS);
+    operationStats.value = response.data || null;
+  } catch {
+    operationStats.value = null;
+  }
+};
+
+// Abre la tabla del dominio desde un chip del resumen, con filtro de estado opcional.
+const openOperationTable = (tableName, filters = null) => {
+  const target = tableMap.value[tableName];
+  if (target) {
+    selectTable(target, filters);
+  }
+};
+
 watch(
   () => route.meta?.managementSection,
   (section) => {
@@ -1489,6 +1516,7 @@ onMounted(() => {
     }
   }
   fetchMeta();
+  fetchOperationStats();
 });
 
 </script>

@@ -271,6 +271,14 @@ export function useAdminTableDataSource({
           }
         });
       }
+      // Filtros iniciales genéricos (p. ej. al abrir desde el resumen de operación). Aplica a cualquier tabla.
+      if (props.initialFilters) {
+        Object.entries(props.initialFilters).forEach(([key, value]) => {
+          if (value !== "" && value !== null && value !== undefined) {
+            filters[`filter_${key}`] = typeof value === "string" ? value.trim() : value;
+          }
+        });
+      }
 
       const baseParams = {
         q: searchTerm.value || undefined,

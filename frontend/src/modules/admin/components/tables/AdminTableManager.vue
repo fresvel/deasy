@@ -945,6 +945,11 @@ const props = defineProps({
   allTables: {
     type: Array,
     default: () => []
+  },
+  // Filtros iniciales (filter_<col>) al abrir una tabla desde un resumen de operación. Se limpian al cambiar de tabla.
+  initialFilters: {
+    type: Object,
+    default: null
   }
 });
 const emit = defineEmits(["go-back", "select-sibling-tab"]);

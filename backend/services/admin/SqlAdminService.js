@@ -1192,6 +1192,44 @@ export default class SqlAdminService {
     }
   }
 
+  // Conteos agregados (solo lectura) para los resúmenes de Operación. Cada dominio se calcula de forma
+  // independiente; si una consulta falla devuelve null y el frontend omite esa tarjeta.
+  async getOperationStats() {
+    this.ensurePool();
+    const groupByStatus = async (sql) => {
+      try {
+        const [rows] = await this.pool.query(sql);
+        return Object.fromEntries(rows.map((row) => [String(row.status), Number(row.c) || 0]));
+      } catch {
+        return null;
+      }
+    };
+    const scalar = async (sql) => {
+      try {
+        const [[row]] = await this.pool.query(sql);
+        return Number(row?.c) || 0;
+      } catch {
+        return null;
+      }
+    };
+    const [tasks, overdue, documents, deliveries, signatures] = await Promise.all([
+      groupByStatus("SELECT status, COUNT(*) AS c FROM tasks GROUP BY status"),
+      scalar("SELECT COUNT(*) AS c FROM tasks WHERE status NOT IN ('completada','cancelada') AND end_date IS NOT NULL AND end_date < CURDATE()"),
+      groupByStatus("SELECT status, COUNT(*) AS c FROM documents GROUP BY status"),
+      groupByStatus("SELECT status, COUNT(*) AS c FROM fill_requests GROUP BY status"),
+      groupByStatus(
+        "SELECT srs.code AS status, COUNT(*) AS c FROM signature_flow_instances sfi "
+        + "JOIN signature_request_statuses srs ON srs.id = sfi.status_id GROUP BY srs.code"
+      )
+    ]);
+    return {
+      tasks: tasks === null ? null : { byStatus: tasks, overdue: overdue ?? 0 },
+      documents: documents === null ? null : { byStatus: documents },
+      deliveries: deliveries === null ? null : { byStatus: deliveries },
+      signatures: signatures === null ? null : { byStatus: signatures }
+    };
+  }
+
   async ensureProcessDefinitionVersionAvailable(candidate, { excludeId = null } = {}) {
     this.ensurePool();
     const processId = Number(candidate?.process_id);

@@ -10,6 +10,10 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_TABLE(table), { params });
   }
 
+  getOperationStats() {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_OPERATION_STATS);
+  }
+
   create(table, payload, config = {}) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TABLE(table), payload, config);
   }
