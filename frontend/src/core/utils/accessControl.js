@@ -124,6 +124,22 @@ export const canWriteResource = (resource, user = getStoredUser()) =>
     canAccessResource(resource, action, user)
   );
 
+// Tablas runtime: registros materializados/actualizados por los flujos del sistema. Se agrupan aparte
+// (bloque "Trazabilidad y soporte") y sus acciones de escritura quedan restringidas (ver AdminTableManager).
+export const TRACEABILITY_TABLES = new Set([
+  "task_items",
+  "task_assignments",
+  "document_versions",
+  "document_fill_flows",
+  "fill_requests",
+  "signature_flow_instances",
+  "signature_requests",
+  "document_signatures"
+]);
+
+export const isTraceabilityTable = (tableName) =>
+  TRACEABILITY_TABLES.has(String(tableName || "").trim());
+
 export const resolveAdminTableResource = (tableName = "") =>
   ADMIN_TABLE_RESOURCE_MAP[String(tableName || "").trim()] || DEFAULT_ADMIN_RESOURCE;
 

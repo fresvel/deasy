@@ -284,6 +284,33 @@
                       class-name="min-h-[140px]"
                       @click="openGestionItem(item)"
                     />
+                    <div v-if="traceabilityTables.length" class="col-span-full mt-2">
+                      <button
+                        type="button"
+                        class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-100"
+                        @click="traceabilityOpen = !traceabilityOpen"
+                      >
+                        <span>
+                          <span class="block text-sm font-bold text-slate-700">Trazabilidad y soporte</span>
+                          <span class="block text-xs text-slate-500">Registros técnicos generados durante la ejecución de tareas, entregas y firmas. Disponibles para consulta, diagnóstico y soporte.</span>
+                        </span>
+                        <IconChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': traceabilityOpen }" />
+                      </button>
+                      <div v-show="traceabilityOpen" class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+                        <AppNavCard
+                          v-for="table in traceabilityTables"
+                          :key="table.table"
+                          layout="stacked"
+                          :title="table.label"
+                          meta="Consultar"
+                          :description="table.description || 'Registro técnico generado por el sistema durante la ejecución.'"
+                          :icon="tableIconMeta(table.table).icon"
+                          show-arrow
+                          class-name="min-h-[140px]"
+                          @click="selectTable(table)"
+                        />
+                      </div>
+                    </div>
                  </template>
 
                  <template v-else-if="showUsersCrudIndex">
@@ -459,7 +486,7 @@ import {
   resolveWorkspaceProfileMenuIcon,
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
-import { canCreateAdminTable, canReadAdminTable } from "@/core/utils/accessControl.js";
+import { canCreateAdminTable, canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
 
 const isClient = typeof window !== 'undefined';
 const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
@@ -609,39 +636,34 @@ const GESTION_INDEX_ITEMS = [
     key: "tareas",
     label: "Tareas",
     icon: "square-check",
-    description: "Administra corridas, tareas, entregables y asignaciones.",
-    tables: ["process_runs", "tasks", "task_items", "task_assignments"]
+    description: "Administra corridas y tareas del proceso.",
+    tables: ["process_runs", "tasks"]
   },
   {
     key: "documentos",
     label: "Documentos",
     icon: "info-circle",
-    description: "Administra documentos y versiones de documentos.",
-    tables: ["documents", "document_versions"]
+    description: "Consulta y administra documentos.",
+    tables: ["documents"]
   },
   {
     key: "entrega",
     label: "Entrega",
     icon: "check-double",
-    description: "Gestiona flujos, pasos e instancias de entrega documental.",
+    description: "Configura flujos y pasos de entrega documental.",
     tables: [
       "fill_flow_templates",
-      "fill_flow_steps",
-      "document_fill_flows",
-      "fill_requests"
+      "fill_flow_steps"
     ]
   },
   {
     key: "firmas",
     label: "Firmas",
     icon: "check",
-    description: "Gestiona flujos, solicitudes, estados y firmas documentales.",
+    description: "Configura flujos de firma y sus catálogos de estados.",
     tables: [
       "signature_flow_templates",
       "signature_flow_steps",
-      "signature_flow_instances",
-      "signature_requests",
-      "document_signatures",
       "signature_types",
       "signature_statuses",
       "signature_request_statuses"
@@ -863,6 +885,12 @@ const selectedGestionCrudItem = computed(() =>
 );
 const gestionCrudTables = computed(() =>
   selectedGestionCrudItem.value?.availableTables || []
+);
+// Tablas runtime (registros materializados por los flujos). Se muestran aparte, en el bloque colapsable
+// "Trazabilidad y soporte", ya filtradas por permiso de lectura (visibleTables).
+const traceabilityOpen = ref(false);
+const traceabilityTables = computed(() =>
+  visibleTables.value.filter((table) => isTraceabilityTable(table.table))
 );
 const showUsersIndex = computed(
   () => selectedSection.value === USERS_GROUP_KEY

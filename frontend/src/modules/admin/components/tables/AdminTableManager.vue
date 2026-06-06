@@ -51,6 +51,26 @@
       />
     </div>
 
+    <div v-if="table && isCurrentTableTraceability" class="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <p class="m-0 flex items-start gap-2 text-sm text-amber-800">
+          <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
+          <span>
+            <strong>Trazabilidad y soporte.</strong>
+            Registros técnicos generados por el sistema durante la ejecución; disponibles para consulta y
+            diagnóstico. Editarlos directamente puede afectar la consistencia del flujo.
+          </span>
+        </p>
+        <label v-if="isAdminUser" class="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-amber-900">
+          <input v-model="advancedRuntimeMode" type="checkbox" class="h-4 w-4 rounded border-amber-300 text-amber-600" />
+          Modo avanzado (edición directa)
+        </label>
+      </div>
+      <p v-if="isAdminUser && advancedRuntimeMode" class="m-0 mt-2 text-xs font-bold text-red-700">
+        Edición directa habilitada: puede afectar la consistencia del flujo. No reemplaza las validaciones del backend.
+      </p>
+    </div>
+
     <div v-if="!table" class="flex">
       <div class="w-full">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -847,7 +867,8 @@ import {
   canCreateAdminTable,
   canDeleteAdminTable,
   canUpdateAdminTable,
-  hasAnyRole
+  hasAnyRole,
+  isTraceabilityTable
 } from "@/core/utils/accessControl.js";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
@@ -1654,9 +1675,15 @@ const hasUnassignedTemplateArtifactFilters = computed(() =>
 );
 const table = computed(() => props.table);
 const currentTableName = computed(() => props.table?.table || "");
-const canCreateCurrentTable = computed(() => canCreateAdminTable(currentTableName.value));
-const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value));
-const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value));
+// Tablas runtime (Trazabilidad y soporte): la escritura directa se restringe a AdminSistema con modo avanzado
+// activo. Estado local de UI (advancedRuntimeMode), NO es un permiso ni se persiste; el backend valida igual.
+const advancedRuntimeMode = ref(false);
+const isCurrentTableTraceability = computed(() => isTraceabilityTable(currentTableName.value));
+const runtimeWriteAllowed = computed(() =>
+  !isCurrentTableTraceability.value || (isAdminUser.value && advancedRuntimeMode.value));
+const canCreateCurrentTable = computed(() => canCreateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
+const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
+const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
 const tableHeaderSubtitle = computed(() => {
   if (!props.table) {

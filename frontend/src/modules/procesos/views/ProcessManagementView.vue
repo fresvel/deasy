@@ -154,7 +154,34 @@
                 class-name="min-h-[140px]"
                 @click="openProcessItem(item)"
               />
-              <div v-if="!processMenuItems.length" class="col-span-full py-10 text-center text-slate-500 font-medium">
+              <div v-if="traceabilityTables.length" class="col-span-full mt-2">
+                <button
+                  type="button"
+                  class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-100"
+                  @click="traceabilityOpen = !traceabilityOpen"
+                >
+                  <span>
+                    <span class="block text-sm font-bold text-slate-700">Trazabilidad y soporte</span>
+                    <span class="block text-xs text-slate-500">Registros técnicos generados durante la ejecución de tareas, entregas y firmas. Disponibles para consulta, diagnóstico y soporte.</span>
+                  </span>
+                  <IconChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': traceabilityOpen }" />
+                </button>
+                <div v-show="traceabilityOpen" class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+                  <AppNavCard
+                    v-for="table in traceabilityTables"
+                    :key="table.table"
+                    layout="stacked"
+                    :title="table.label"
+                    meta="Consultar"
+                    :description="table.description || 'Registro técnico generado por el sistema durante la ejecución.'"
+                    :icon="tableIconMeta(table.table).icon"
+                    show-arrow
+                    class-name="min-h-[140px]"
+                    @click="selectTable(table)"
+                  />
+                </div>
+              </div>
+              <div v-if="!processMenuItems.length && !traceabilityTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">
                 No tienes permisos para gestionar procesos.
               </div>
             </template>
@@ -187,6 +214,7 @@ import { useRouter } from "vue-router";
 import axios from "axios";
 import {
   IconArrowLeft,
+  IconChevronDown,
   IconCircle,
   IconHome,
   IconPlus,
@@ -199,7 +227,8 @@ import { API_ROUTES } from "@/core/config/apiConfig";
 import {
   canCreateAdminTable,
   canReadAdminTable,
-  getStoredUser
+  getStoredUser,
+  isTraceabilityTable
 } from "@/core/utils/accessControl.js";
 import {
   resolveWorkspaceAdminGroupIcon,
@@ -226,34 +255,31 @@ const PROCESS_INDEX_ITEMS = [
     key: "tareas",
     label: "Tareas",
     icon: "square-check",
-    description: "Administra corridas, tareas, entregables y asignaciones.",
-    tables: ["process_runs", "tasks", "task_items", "task_assignments"]
+    description: "Administra corridas y tareas del proceso.",
+    tables: ["process_runs", "tasks"]
   },
   {
     key: "documentos",
     label: "Documentos",
     icon: "info-circle",
-    description: "Administra documentos y versiones de documentos.",
-    tables: ["documents", "document_versions"]
+    description: "Consulta y administra documentos.",
+    tables: ["documents"]
   },
   {
     key: "entrega",
     label: "Entrega",
     icon: "check-double",
-    description: "Gestiona flujos, pasos e instancias de entrega documental.",
-    tables: ["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"]
+    description: "Configura flujos y pasos de entrega documental.",
+    tables: ["fill_flow_templates", "fill_flow_steps"]
   },
   {
     key: "firmas",
     label: "Firmas",
     icon: "check",
-    description: "Gestiona flujos, solicitudes, estados y firmas documentales.",
+    description: "Configura flujos de firma y sus catálogos de estados.",
     tables: [
       "signature_flow_templates",
       "signature_flow_steps",
-      "signature_flow_instances",
-      "signature_requests",
-      "document_signatures",
       "signature_types",
       "signature_statuses",
       "signature_request_statuses"
@@ -324,6 +350,12 @@ const selectedProcessItem = computed(() =>
 );
 
 const processCrudTables = computed(() => selectedProcessItem.value?.availableTables || []);
+
+// Bloque secundario "Trazabilidad y soporte": tablas runtime ya filtradas por permiso de lectura.
+const traceabilityOpen = ref(false);
+const traceabilityTables = computed(() =>
+  visibleTables.value.filter((table) => isTraceabilityTable(table.table))
+);
 
 const showProcessCrudIndex = computed(() =>
   Boolean(selectedProcessItemKey.value) && !selectedTable.value
