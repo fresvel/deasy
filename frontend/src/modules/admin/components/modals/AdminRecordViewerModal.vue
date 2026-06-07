@@ -2,83 +2,153 @@
   <AdminModalShell
     ref="modalRef"
     labelled-by="recordViewerModalLabel"
-    :title="`Visualizar registro ${recordViewerTable?.label || ''}`"
-    size="xl"
-    dialog-class="items-start max-w-[min(92rem,calc(100vw-2rem))]"
+    :title="`Detalle de ${recordViewerTable?.label || 'registro'}`"
+    size="lg"
+    dialog-class="items-start"
     content-class="flex max-h-[calc(100vh-4rem)] flex-col"
-    body-class="min-h-0 overflow-y-auto bg-slate-50/70 p-0"
+    body-class="min-h-0 overflow-y-auto"
     footer-class="shrink-0"
     close-action
+    close-label="Cerrar"
     @close="$emit('close')"
   >
     <template #header>
-      <div class="min-w-0">
-        <p class="record-viewer-kicker">Detalle del registro</p>
-        <h5 id="recordViewerModalLabel" class="deasy-dialog-title admin-dialog-title">
-          Visualizar {{ recordViewerTable?.label || "registro" }}
-        </h5>
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 text-indigo-600">
+          <IconFileDescription class="h-5 w-5" />
+        </span>
+        <div class="min-w-0">
+          <p class="m-0 text-xs font-semibold text-slate-500">{{ recordViewerTable?.label || "Registro" }}</p>
+          <h5 id="recordViewerModalLabel" class="deasy-dialog-title admin-dialog-title truncate">
+            {{ primaryValue }}
+          </h5>
+        </div>
       </div>
     </template>
 
-    <div class="record-viewer-shell">
-      <div v-if="loading" class="record-viewer-state">Cargando informacion del registro...</div>
-      <div v-else-if="error" class="record-viewer-error">{{ error }}</div>
-      <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-5">
-        <section class="record-viewer-summary" aria-label="Informacion del registro">
-          <article v-for="row in displayRows" :key="row.id" class="record-viewer-field">
-            <dt class="record-viewer-label">{{ row.label }}</dt>
-            <dd class="record-viewer-value">
+    <div>
+      <div v-if="loading" class="flex min-h-40 items-center justify-center text-sm font-medium text-slate-500">
+        Cargando informacion del registro...
+      </div>
+      <div v-else-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        {{ error }}
+      </div>
+      <div v-else-if="recordViewerTable && recordViewerRow" class="space-y-7">
+        <section aria-labelledby="recordViewerGeneralTitle">
+          <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div>
+              <p class="m-0 text-xs font-semibold text-slate-500">Detalle del registro</p>
+              <h6 id="recordViewerGeneralTitle" class="m-0 mt-1 text-base font-bold text-slate-800">
+                Informacion general
+              </h6>
+            </div>
+            <span
+              v-if="activeValue"
+              class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-bold"
+              :class="activeValue === 'Si'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-slate-200 bg-slate-100 text-slate-600'"
+            >
+              <span class="h-1.5 w-1.5 rounded-full" :class="activeValue === 'Si' ? 'bg-emerald-500' : 'bg-slate-400'" />
+              {{ activeValue === "Si" ? "Activo" : "Inactivo" }}
+            </span>
+          </div>
+
+          <dl class="grid grid-cols-1 overflow-hidden border-y border-slate-200 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              v-for="row in summaryRows"
+              :key="row.id"
+              class="min-w-0 border-b border-slate-100 px-1 py-3.5 sm:px-4"
+            >
+              <dt class="mb-1 text-xs font-semibold text-slate-500">{{ row.label }}</dt>
+              <dd class="m-0 min-w-0 text-sm font-semibold leading-6 text-slate-800">
               <template v-if="row.field.name === 'available_formats'">
-                <div class="available-formats-viewer">
+                <div class="space-y-3">
                   <template v-if="getAvailableFormatSections(recordViewerRow[row.field.name]).length">
                     <div
                       v-for="section in getAvailableFormatSections(recordViewerRow[row.field.name])"
                       :key="section.mode"
-                      class="available-formats-viewer-section"
+                      class="space-y-2"
                     >
-                      <div class="available-formats-viewer-title">{{ section.label }}</div>
+                      <div class="text-xs font-bold text-slate-600">{{ section.label }}</div>
                       <div
                         v-for="entry in section.entries"
                         :key="`${section.mode}-${entry.format}`"
-                        class="available-formats-viewer-entry"
+                        class="flex min-w-0 flex-wrap items-center gap-2"
                       >
                         <span class="available-formats-badge is-viewer" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
                           {{ entry.formatLabel }}
                         </span>
-                        <code class="available-formats-path">{{ entry.entryObjectKey }}</code>
+                        <code class="min-w-0 break-all text-xs font-medium text-slate-500">{{ entry.entryObjectKey }}</code>
                       </div>
                     </div>
                   </template>
-                  <span v-else class="record-viewer-empty">-</span>
+                  <span v-else class="text-slate-400">-</span>
                 </div>
               </template>
-              <span v-else :class="{ 'record-viewer-value--long': isLongValue(row) }">
+              <span
+                v-else
+                class="block min-w-0 whitespace-pre-wrap break-words"
+                :class="isLongValue(row)
+                  ? 'max-h-48 overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs font-medium text-slate-600'
+                  : ''"
+              >
                 {{ getFormattedViewerValue(row) }}
               </span>
-            </dd>
-          </article>
+              </dd>
+            </div>
+          </dl>
         </section>
 
-        <section v-for="section in relatedSections" :key="section.key" class="record-viewer-related">
-          <header class="record-viewer-related-header">
-            <div>
-              <p class="record-viewer-kicker">Relacion</p>
-              <h6 class="record-viewer-related-title">
-                <font-awesome-icon icon="list-check" />
-                <span>{{ section.label }}</span>
-              </h6>
+        <section v-for="section in relatedSections" :key="section.key" class="border-t border-slate-200 pt-5">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+                <IconSettings class="h-4.5 w-4.5" />
+              </span>
+              <div class="min-w-0">
+                <p class="m-0 text-xs font-semibold text-slate-500">{{ sectionEyebrow(section) }}</p>
+                <h6 class="m-0 mt-0.5 flex items-center gap-2 text-base font-bold text-slate-800">
+                  <span>{{ sectionTitle(section) }}</span>
+                  <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-slate-100 px-1.5 text-xs font-bold text-slate-600">
+                    {{ section.rows.length }}
+                  </span>
+                </h6>
+              </div>
             </div>
-            <span class="record-viewer-count">{{ section.rows.length }}</span>
-          </header>
-          <div v-if="section.error" class="record-viewer-error">{{ section.error }}</div>
-          <div v-else-if="section.rows.length === 0" class="record-viewer-state">Sin registros relacionados.</div>
+            <AdminButton
+              v-if="isProcessConfigurationSection(section) && canCreateProcessConfiguration"
+              variant="primary"
+              size="sm"
+              @click="$emit('add-process-configuration')"
+            >
+              <IconPlus class="h-4 w-4" />
+              <span>Agregar configuracion</span>
+            </AdminButton>
+          </div>
+
+          <div v-if="section.error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {{ section.error }}
+          </div>
+          <div
+            v-else-if="section.rows.length === 0"
+            class="flex min-h-32 flex-col items-center justify-center border-y border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center"
+          >
+            <IconInbox class="mb-2 h-6 w-6 text-slate-400" />
+            <p class="m-0 text-sm font-semibold text-slate-600">
+              {{ isProcessConfigurationSection(section) ? "Este proceso aun no tiene configuraciones." : "Sin registros relacionados." }}
+            </p>
+            <p v-if="isProcessConfigurationSection(section)" class="m-0 mt-1 max-w-lg text-xs leading-5 text-slate-500">
+              Agrega una configuracion para definir su variacion, vigencia, reglas, paquetes y disparadores.
+            </p>
+          </div>
           <AdminDataTable
             v-else
             :fields="section.fields"
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="record-viewer-related-table"
+            responsive-class="overflow-x-auto rounded-lg border border-slate-200 bg-white"
             scroll-class=""
           >
             <template #cell="{ row: sectionRow, field }">
@@ -87,7 +157,9 @@
           </AdminDataTable>
         </section>
       </div>
-      <div v-else class="record-viewer-state">No hay informacion para visualizar.</div>
+      <div v-else class="flex min-h-40 items-center justify-center text-sm font-medium text-slate-500">
+        No hay informacion para visualizar.
+      </div>
     </div>
 
     <template #footer>
@@ -119,13 +191,19 @@
         <span>{{ sourceBusy ? "Verificando…" : "Subir código editado" }}</span>
       </AdminButton>
       <input ref="sourceInputRef" type="file" accept=".zip" class="hidden" @change="onSourcePicked" />
-      <AdminButton variant="outlineDanger" @click="$emit('close')">Cerrar</AdminButton>
+      <AdminButton variant="secondary" @click="$emit('close')">Cerrar</AdminButton>
     </template>
   </AdminModalShell>
 </template>
 
 <script setup>
 import { computed, ref } from "vue";
+import {
+  IconFileDescription,
+  IconInbox,
+  IconPlus,
+  IconSettings
+} from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
@@ -142,6 +220,7 @@ const props = defineProps({
   relatedSections: { type: Array, default: () => [] },
   downloading: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
+  canCreateProcessConfiguration: { type: Boolean, default: false },
   sourceBusy: { type: Boolean, default: false },
   formatRecordViewerValue: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
@@ -150,7 +229,13 @@ const props = defineProps({
   formatValueForTable: { type: Function, required: true }
 });
 
-const emit = defineEmits(["close", "download-archive", "download-source", "upload-source"]);
+const emit = defineEmits([
+  "close",
+  "download-archive",
+  "download-source",
+  "upload-source",
+  "add-process-configuration"
+]);
 
 const canDownloadArchive = computed(() =>
   Boolean(props.recordViewerRow?.id) && ARCHIVE_DOWNLOADABLE_TABLES.has(props.recordViewerTable?.table)
@@ -183,6 +268,49 @@ const getFormattedViewerValue = (row) => normalizeViewerValue(
   props.formatRecordViewerValue(row.field, props.recordViewerRow)
 );
 
+const primaryField = computed(() => {
+  const preferredNames = ["name", "title", "display_name", "email", "label", "code", "slug"];
+  return preferredNames
+    .map((name) => props.displayRows.find((row) => row.field?.name === name))
+    .find(Boolean) || null;
+});
+
+const primaryValue = computed(() => {
+  if (!props.recordViewerRow) {
+    return `Detalle de ${props.recordViewerTable?.label || "registro"}`;
+  }
+  if (primaryField.value) {
+    return getFormattedViewerValue(primaryField.value);
+  }
+  const id = props.recordViewerRow.id;
+  return id === null || id === undefined || id === ""
+    ? (props.recordViewerTable?.label || "Registro")
+    : `${props.recordViewerTable?.label || "Registro"} #${id}`;
+});
+
+const summaryRows = computed(() => props.displayRows.filter((row) => (
+  row.field?.name !== primaryField.value?.field?.name
+  && row.field?.name !== "is_active"
+)));
+
+const activeValue = computed(() => {
+  const activeRow = props.displayRows.find((row) => row.field?.name === "is_active");
+  return activeRow ? getFormattedViewerValue(activeRow) : "";
+});
+
+const isProcessConfigurationSection = (section) => (
+  props.recordViewerTable?.table === "processes"
+  && section?.key === "process_definition_versions"
+);
+
+const sectionEyebrow = (section) => (
+  isProcessConfigurationSection(section) ? "Configuraciones" : "Registros relacionados"
+);
+
+const sectionTitle = (section) => (
+  isProcessConfigurationSection(section) ? "Configuraciones del proceso" : section.label
+);
+
 const isLongValue = (row) => getFormattedViewerValue(row).length > 90;
 
 defineExpose({
@@ -191,139 +319,3 @@ defineExpose({
   }
 });
 </script>
-
-<style scoped>
-.record-viewer-shell {
-  padding: 1.25rem;
-}
-
-.record-viewer-kicker {
-  margin: 0 0 0.25rem;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.record-viewer-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  gap: 0.8rem;
-}
-
-.record-viewer-field {
-  min-width: 0;
-  margin: 0;
-  border: 1px solid #dbe3ef;
-  border-radius: 0.9rem;
-  background: #ffffff;
-  padding: 0.85rem 0.95rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.record-viewer-label {
-  margin: 0 0 0.35rem;
-  color: #64748b;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.record-viewer-value {
-  min-width: 0;
-  margin: 0;
-  color: #0f172a;
-  font-size: 0.92rem;
-  font-weight: 600;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.record-viewer-value--long {
-  display: block;
-  max-height: 12rem;
-  overflow: auto;
-  border-radius: 0.65rem;
-  background: #f8fafc;
-  padding: 0.55rem 0.65rem;
-  color: #334155;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.record-viewer-empty {
-  color: #94a3b8;
-}
-
-.record-viewer-related {
-  border: 1px solid #dbe3ef;
-  border-radius: 1rem;
-  background: #ffffff;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.record-viewer-related-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.85rem;
-}
-
-.record-viewer-related-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-  color: #0f172a;
-  font-size: 0.98rem;
-  font-weight: 800;
-}
-
-.record-viewer-count {
-  display: inline-flex;
-  min-width: 2rem;
-  height: 2rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #bfdbfe;
-  border-radius: 0.7rem;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.record-viewer-related-table {
-  overflow-x: auto;
-  border: 1px solid #dbe3ef;
-  border-radius: 0.85rem;
-  background: #ffffff;
-}
-
-.record-viewer-state,
-.record-viewer-error {
-  border-radius: 0.9rem;
-  padding: 1rem;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.record-viewer-state {
-  border: 1px solid #dbe3ef;
-  background: #ffffff;
-  color: #64748b;
-}
-
-.record-viewer-error {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
-}
-</style>

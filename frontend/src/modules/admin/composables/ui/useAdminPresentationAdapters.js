@@ -162,7 +162,7 @@ export function useAdminPresentationAdapters({
         return formatDateOnly(value);
       }
     }
-    if (["scope"].includes(fieldName)) {
+    if (["scope", "source_type"].includes(fieldName)) {
       return formatSelectOptionLabel(field, value);
     }
     if (fieldName === "available_formats") {

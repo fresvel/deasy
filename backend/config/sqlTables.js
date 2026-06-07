@@ -90,7 +90,7 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
       { name: "series_id", label: "Serie", type: "number", required: true },
-      { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "general" },
+      { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "" },
       { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
@@ -119,7 +119,7 @@ export const SQL_TABLES = [
         name: "source_type",
         label: "Origen de serie",
         type: "select",
-        options: ["unit_type", "cargo"],
+        options: ["unit_type", "cargo", "unit_type_cargo"],
         defaultValue: "",
         required: true
       },

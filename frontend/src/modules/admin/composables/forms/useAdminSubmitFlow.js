@@ -20,12 +20,13 @@ export function useAdminSubmitFlow({
   resetPersonAssignments,
   openPersonAssignments,
   openDefinitionArtifactsPrompt,
+  openProcessConfiguration,
   openProcessDefinitionActivationModal,
   openProcessDefinitionVersioningModal,
   showFeedbackToast,
   getDeleteInstance
 }) {
-  const submitForm = async () => {
+  const submitForm = async ({ openProcessConfigurationAfterCreate = false } = {}) => {
     if (!props.table) {
       return;
     }
@@ -66,6 +67,7 @@ export function useAdminSubmitFlow({
       const usesProcessDefinitionActivationConfirmation = processDefinitionActivationConfirmed.value;
       let createdPersonRow = null;
       let createdDefinitionRow = null;
+      let createdProcessRow = null;
       let createdTermRow = null;
       let responseNotice = "";
       if (editorMode.value === "create") {
@@ -78,6 +80,10 @@ export function useAdminSubmitFlow({
         if (props.table.table === "process_definition_versions") {
           const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
           createdDefinitionRow = { ...payload, ...responseRow };
+        }
+        if (props.table.table === "processes") {
+          const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
+          createdProcessRow = { ...payload, ...responseRow };
         }
         if (props.table.table === "terms") {
           const responseRow = response?.data && typeof response.data === "object" ? response.data : {};
@@ -131,6 +137,13 @@ export function useAdminSubmitFlow({
           };
         }
         openDefinitionArtifactsPrompt(selectedDefinition);
+      }
+      if (createdProcessRow && openProcessConfigurationAfterCreate) {
+        const selectedProcess = rows.value.find((row) => (
+          (createdProcessRow.id && String(row.id) === String(createdProcessRow.id))
+          || (createdProcessRow.slug && String(row.slug) === String(createdProcessRow.slug))
+        )) || createdProcessRow;
+        await openProcessConfiguration(selectedProcess);
       }
       if (createdTermRow?.id) {
         const shouldInstantiate = window.confirm("El periodo se creo correctamente. ¿Deseas instanciar ahora las tareas automaticas?");

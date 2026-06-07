@@ -144,7 +144,7 @@
 
             <template v-else>
               <div class="col-span-full">
-                <AdminOperationSummary :stats="operationStats" @open="openOperationTable" />
+                <AdminOperationSummary :stats="operationStats" />
               </div>
               <AppNavCard
                 v-for="item in processMenuItems"
@@ -459,14 +459,6 @@ const selectTable = (table, filters = null) => {
   if (!table) return;
   pendingTableFilters.value = filters;
   selectedTable.value = table;
-};
-
-// Abre la tabla del dominio desde un chip del resumen de operación, con filtro de estado opcional.
-const openOperationTable = (tableName, filters = null) => {
-  const target = tableMap.value[tableName];
-  if (target) {
-    selectTable(target, filters);
-  }
 };
 
 const handleSiblingTabChange = (tableName) => {

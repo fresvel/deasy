@@ -145,27 +145,36 @@ const ensurePasswordResetCodesPersonLink = async (connection) => {
   }
 };
 
-// Renombra el centinela de serie paraguas 'legacy' -> 'default' en process_definition_series. Idempotente:
-// amplía el enum, migra filas y deja el enum final sin 'legacy'.
-const ensureProcessSeriesDefaultSourceType = async (connection) => {
+// Mantiene el enum de series actualizado y migra el centinela historico 'legacy' -> 'default'.
+const ensureProcessSeriesSourceTypes = async (connection) => {
   const [cols] = await connection.query(
     `SELECT COLUMN_TYPE FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_definition_series' AND COLUMN_NAME = 'source_type'`
   );
   const columnType = String(cols?.[0]?.COLUMN_TYPE || "");
-  if (!columnType.includes("'legacy'")) {
-    return; // ya migrado (o tabla aún sin esa columna)
+  if (!columnType) {
+    return;
   }
+
+  const hasLegacy = columnType.includes("'legacy'");
+  const hasCombined = columnType.includes("'unit_type_cargo'");
+  if (!hasLegacy && hasCombined) {
+    return;
+  }
+
+  if (hasLegacy) {
+    await connection.query(
+      "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','unit_type_cargo','legacy','default') NOT NULL DEFAULT 'default'"
+    );
+    await connection.query(
+      "UPDATE process_definition_series SET source_type = 'default' WHERE source_type = 'legacy'"
+    );
+  }
+
   await connection.query(
-    "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','legacy','default') NOT NULL DEFAULT 'default'"
+    "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','unit_type_cargo','default') NOT NULL DEFAULT 'default'"
   );
-  await connection.query(
-    "UPDATE process_definition_series SET source_type = 'default' WHERE source_type = 'legacy'"
-  );
-  await connection.query(
-    "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','default') NOT NULL DEFAULT 'default'"
-  );
-  console.log("✅ process_definition_series.source_type 'legacy' -> 'default'");
+  console.log("✅ process_definition_series.source_type actualizado");
 };
 
 const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
@@ -330,7 +339,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     console.log("✅ Schema principal aplicado desde mariadb_schema.sql");
     await ensurePasswordResetCodesPersonLink(connection);
     console.log("✅ password_reset_codes alineada con persons");
-    await ensureProcessSeriesDefaultSourceType(connection);
+    await ensureProcessSeriesSourceTypes(connection);
 
     // 3. Migraciones sobre tablas del schema (ahora sí existen)
     const [columns] = await connection.query(

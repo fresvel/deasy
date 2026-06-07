@@ -145,7 +145,20 @@
         Paquetes
       </AdminButton>
       <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-      <AdminButton variant="primary" @click="$emit('submit')">Guardar</AdminButton>
+      <AdminButton
+        :variant="table?.table === 'processes' && editorMode === 'create' ? 'secondary' : 'primary'"
+        @click="$emit('submit')"
+      >
+        Guardar
+      </AdminButton>
+      <AdminButton
+        v-if="table?.table === 'processes' && editorMode === 'create'"
+        variant="primary"
+        @click="$emit('submit-and-configure')"
+      >
+        <font-awesome-icon icon="plus" />
+        Guardar y agregar configuracion
+      </AdminButton>
     </template>
   </AdminModalShell>
 </template>
@@ -193,6 +206,7 @@ const emit = defineEmits([
   "open-definition-rules",
   "open-definition-triggers",
   "open-definition-artifacts",
+  "submit-and-configure",
   "submit"
 ]);
 

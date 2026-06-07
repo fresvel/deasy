@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
-import { seedGenericCatalog } from "./genericCatalog.js";
+import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
@@ -722,7 +722,8 @@ export default class SystemBootstrapService {
       hasAnyAdmin,
       hasOperationalData,
       isVirginInstall,
-      environment: process.env.NODE_ENV || "development"
+      environment: process.env.NODE_ENV || "development",
+      catalogOptions: getGenericCatalogOptions()
     };
   }
 

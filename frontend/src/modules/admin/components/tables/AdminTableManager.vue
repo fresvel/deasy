@@ -282,6 +282,7 @@
       @open-definition-rules="openDefinitionRulesFromEditor"
       @open-definition-triggers="openDefinitionTriggersFromEditor"
       @open-definition-artifacts="openDefinitionArtifactsFromEditor"
+      @submit-and-configure="submitForm({ openProcessConfigurationAfterCreate: true })"
       @submit="submitForm"
     />
 
@@ -423,6 +424,8 @@
       :process-options="processWizardProcessOptions"
       :unit-type-options="processWizardUnitTypeOptions"
       :cargo-options="processWizardCargoOptions"
+      :series-options="processWizardSeriesOptions"
+      :series-code-preview="processWizardSeriesCodePreview"
       :creating-definition="processWizardCreating"
       :wizard-error="processWizardError"
       @update:definition-form="processWizardDefinitionForm = $event"
@@ -599,8 +602,10 @@
       :format-value-for-table="formatValueForTable"
       :downloading="recordArchiveDownloading"
       :is-admin="isAdminUser"
+      :can-create-process-configuration="canCreateProcessConfiguration"
       :source-busy="templateSourceBusy"
       @close="closeRecordViewer"
+      @add-process-configuration="openProcessConfigurationFromViewer"
       @download-archive="handleDownloadRecordArchive"
       @download-source="handleDownloadTemplateSource"
       @upload-source="handleUploadTemplateSource"
@@ -1273,6 +1278,27 @@ const formFields = computed(() => {
   return editableFields.value;
 });
 const visibleFormFields = computed(() => {
+  if (props.table?.table === "process_definition_series") {
+    const sourceType = String(formData.value?.source_type || "").trim();
+    const showUnitType = ["unit_type", "unit_type_cargo"].includes(sourceType);
+    const showCargo = ["cargo", "unit_type_cargo"].includes(sourceType);
+
+    return formFields.value
+      .filter((field) => {
+        if (field.name === "unit_type_id") {
+          return showUnitType;
+        }
+        if (field.name === "cargo_id") {
+          return showCargo;
+        }
+        return true;
+      })
+      .map((field) => (
+        ["unit_type_id", "cargo_id"].includes(field.name)
+          ? { ...field, required: true }
+          : field
+      ));
+  }
   if (!isProcessTable.value) {
     if (props.table?.table === "process_definition_versions") {
       return formFields.value.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
@@ -1687,6 +1713,7 @@ const isCurrentTableTraceability = computed(() => isTraceabilityTable(currentTab
 const runtimeWriteAllowed = computed(() =>
   !isCurrentTableTraceability.value || (isAdminUser.value && advancedRuntimeMode.value));
 const canCreateCurrentTable = computed(() => canCreateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
+const canCreateProcessConfiguration = computed(() => canCreateAdminTable("process_definition_versions"));
 const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
@@ -2750,6 +2777,8 @@ const {
   processOptions: processWizardProcessOptions,
   unitTypeOptions: processWizardUnitTypeOptions,
   cargoOptions: processWizardCargoOptions,
+  seriesOptions: processWizardSeriesOptions,
+  seriesCodePreview: processWizardSeriesCodePreview,
   creatingDefinition: processWizardCreating,
   wizardError: processWizardError,
   stepStatus: processWizardStepStatus,
@@ -2847,6 +2876,24 @@ const handleOpenWizardFromPrompt = async () => {
 // Punto de entrada para crear un proceso desde otros flujos (p.ej. el modal de plantilla).
 const openProcessWizardFromScratch = async () => {
   await openProcessWizard();
+};
+
+const openProcessConfiguration = async (processRow) => {
+  if (!processRow?.id || !canCreateProcessConfiguration.value) {
+    return;
+  }
+  await openProcessWizard({ processRow });
+};
+
+const openProcessConfigurationFromViewer = async () => {
+  const processRow = recordViewerTable.value?.table === "processes"
+    ? recordViewerRow.value
+    : null;
+  if (!processRow?.id) {
+    return;
+  }
+  closeRecordViewer();
+  await openProcessConfiguration(processRow);
 };
 
 const {
@@ -2983,6 +3030,7 @@ const {
   resetPersonAssignments,
   openPersonAssignments,
   openDefinitionArtifactsPrompt,
+  openProcessConfiguration,
   openProcessDefinitionActivationModal,
   openProcessDefinitionVersioningModal,
   showFeedbackToast,

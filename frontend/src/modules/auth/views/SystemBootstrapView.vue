@@ -107,20 +107,59 @@
           </div>
 
           <!-- Paso 3: Catálogos genéricos -->
-          <div v-show="step === 3" class="space-y-2.5">
+          <div v-show="step === 3" class="space-y-4">
             <p class="m-0 text-sm text-slate-500">
-              Selecciona los catálogos genéricos a preconfigurar. Son ejemplos reutilizables que puedes editar luego.
+              Selecciona únicamente los registros que quieras crear. Podrás completar o editar estos catálogos después.
             </p>
-            <label
-              v-for="b in catalogBlocks"
-              :key="b.key"
-              class="flex items-start gap-3 rounded-xl border p-3.5 transition-colors"
-              :class="preconfig[b.key] ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+            <fieldset
+              v-for="group in selectableCatalogGroups"
+              :key="group.key"
+              class="rounded-lg border border-slate-200 p-4"
             >
-              <input v-model="preconfig[b.key]" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
+              <legend class="sr-only">{{ group.label }}</legend>
+              <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p class="m-0 text-sm font-semibold text-slate-700">{{ group.label }}</p>
+                  <p class="m-0 mt-0.5 text-xs text-slate-500">{{ group.hint }}</p>
+                </div>
+                <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-600">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-slate-300 text-sky-600"
+                    :checked="isCatalogGroupFullySelected(group)"
+                    @change="toggleCatalogGroup(group, $event.target.checked)"
+                  />
+                  {{ preconfig[group.key].length }}/{{ group.options.length }}
+                </label>
+              </div>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <label
+                  v-for="option in group.options"
+                  :key="option.id"
+                  class="flex min-h-11 items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors"
+                  :class="preconfig[group.key].includes(option.id) ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-white'"
+                >
+                  <input
+                    v-model="preconfig[group.key]"
+                    type="checkbox"
+                    :value="option.id"
+                    class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600"
+                  />
+                  <span class="min-w-0">
+                    <span class="block text-sm font-medium text-slate-700">{{ option.label }}</span>
+                    <span v-if="option.description" class="block text-xs text-slate-500">{{ option.description }}</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+            <label
+              class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
+              :class="preconfig.relation_unit_types ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+            >
+              <input v-model="preconfig.relation_unit_types" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
               <span>
-                <span class="block text-sm font-semibold text-slate-700">{{ b.label }}</span>
-                <span class="block text-xs text-slate-500">{{ b.hint }}</span>
+                <span class="block text-sm font-semibold text-slate-700">Relación orgánica</span>
+                <span class="block text-xs text-slate-500">Crea el tipo de relación jerárquica entre unidades.</span>
               </span>
             </label>
           </div>
@@ -138,7 +177,13 @@
             </div>
             <div class="rounded-xl border border-slate-200 p-4">
               <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Catálogos a preconfigurar</p>
-              <p class="m-0 mt-1 text-slate-500">{{ selectedCatalogLabels || 'Ninguno' }}</p>
+              <ul v-if="selectedCatalogSummary.length" class="m-0 mt-2 space-y-2 p-0">
+                <li v-for="item in selectedCatalogSummary" :key="item.key" class="list-none text-slate-500">
+                  <span class="font-semibold text-slate-700">{{ item.label }}:</span>
+                  {{ item.value }}
+                </li>
+              </ul>
+              <p v-else class="m-0 mt-1 text-slate-500">Ninguno</p>
             </div>
           </div>
 
@@ -262,17 +307,74 @@ const toggleExampleGestor = () => {
   else Object.assign(gestorForm, blankPerson());
 };
 
-const catalogBlocks = [
-  { key: "unit_types", label: "Tipos de unidad", hint: "Prorrectorado, Coordinación, Dirección, Escuela, Carrera, Sede…" },
-  { key: "relation_unit_types", label: "Tipos de relación de unidad", hint: "Relación orgánica (jerárquica)." },
-  { key: "cargos", label: "Cargos", hint: "Coordinador, Docente, Director, Jefe… con su mapa a roles." },
-  { key: "term_types", label: "Periodos académicos", hint: "Semestre, Trimestre, Intensivo, Custom." }
+const catalogGroupMeta = [
+  { key: "unit_types", label: "Tipos de unidad", hint: "Estructuras organizacionales disponibles para crear unidades." },
+  { key: "cargos", label: "Cargos", hint: "Cargos base y sus asociaciones de rol cuando correspondan." },
+  { key: "term_types", label: "Tipos de periodo", hint: "Modalidades de periodos académicos u operativos." }
 ];
-const preconfig = reactive({ unit_types: true, relation_unit_types: true, cargos: true, term_types: true });
+const catalogOptions = reactive({ unit_types: [], cargos: [], term_types: [] });
+const preconfig = reactive({ unit_types: [], relation_unit_types: true, cargos: [], term_types: [] });
+const catalogSelectionInitialized = ref(false);
 
-const selectedCatalogLabels = computed(() =>
-  catalogBlocks.filter((b) => preconfig[b.key]).map((b) => b.label).join(", ")
+const selectableCatalogGroups = computed(() =>
+  catalogGroupMeta.map((group) => ({
+    ...group,
+    options: catalogOptions[group.key]
+  }))
 );
+
+const isCatalogGroupFullySelected = (group) =>
+  group.options.length > 0 && preconfig[group.key].length === group.options.length;
+
+const toggleCatalogGroup = (group, selected) => {
+  preconfig[group.key] = selected ? group.options.map((option) => option.id) : [];
+};
+
+const selectedCatalogSummary = computed(() => {
+  const summary = selectableCatalogGroups.value
+    .map((group) => {
+      const selectedIds = new Set(preconfig[group.key]);
+      const selectedLabels = group.options
+        .filter((option) => selectedIds.has(option.id))
+        .map((option) => option.label);
+      if (!selectedLabels.length) return null;
+      return {
+        key: group.key,
+        label: group.label,
+        value: selectedLabels.join(", ")
+      };
+    })
+    .filter(Boolean);
+
+  if (preconfig.relation_unit_types) {
+    summary.push({
+      key: "relation_unit_types",
+      label: "Relación de unidad",
+      value: "Orgánica"
+    });
+  }
+  return summary;
+});
+
+const applyCatalogOptions = (options = {}) => {
+  for (const group of catalogGroupMeta) {
+    const entries = Array.isArray(options[group.key]) ? options[group.key] : [];
+    catalogOptions[group.key] = entries
+      .map((entry) => ({
+        id: String(entry?.id || "").trim(),
+        label: String(entry?.label || "").trim(),
+        description: String(entry?.description || "").trim()
+      }))
+      .filter((entry) => entry.id && entry.label);
+  }
+
+  if (!catalogSelectionInitialized.value) {
+    for (const group of catalogGroupMeta) {
+      preconfig[group.key] = catalogOptions[group.key].map((option) => option.id);
+    }
+    catalogSelectionInitialized.value = true;
+  }
+};
 
 const isPersonComplete = (p) =>
   Boolean(p.cedula && p.cedula.trim().length >= 10
@@ -310,6 +412,7 @@ const loadStatus = async ({ force = false } = {}) => {
     const status = await SystemBootstrapService.getStatus({ force });
     mode.value = status.installationMode || "normal";
     environment.value = status.environment || "development";
+    applyCatalogOptions(status.catalogOptions);
     if (mode.value === "normal") {
       message.value = "La instancia ya fue inicializada. Puedes continuar con el login normal.";
       isError.value = false;

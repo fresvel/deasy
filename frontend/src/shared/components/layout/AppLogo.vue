@@ -1,8 +1,8 @@
 <template>
   <component :is="rootTag" v-bind="rootAttrs" :class="rootClasses">
     <img
-      src="/brand/deasy-logo.svg"
-      alt="DEASY"
+      src="/brand/deasy-logo.png"
+      alt="Logo de DEASY"
       :class="imageClasses"
       decoding="async"
       draggable="false"
@@ -42,10 +42,10 @@ const props = defineProps({
 });
 
 const sizeClasses = {
-  sm: "h-8 max-w-[8.5rem]",
-  md: "h-10 max-w-[11rem]",
-  lg: "h-12 max-w-[14rem]",
-  xl: "h-16 max-w-[18rem]"
+  sm: "h-8 max-w-8",
+  md: "h-12 max-w-12",
+  lg: "h-20 max-w-20",
+  xl: "h-24 max-w-24"
 };
 
 const rootTag = computed(() => (props.to ? RouterLink : "div"));

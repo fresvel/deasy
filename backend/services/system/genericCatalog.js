@@ -35,19 +35,62 @@ export const GENERIC_CATALOG = {
 // Bloques que el wizard puede ofrecer como opcionales (claves de preconfig).
 export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types"];
 
+const selectCatalogEntries = (selection, entries, getId) => {
+  if (selection === true) {
+    return entries;
+  }
+  if (!Array.isArray(selection)) {
+    return [];
+  }
+
+  const selectedIds = new Set(selection.map((value) => String(value || "").trim()).filter(Boolean));
+  return entries.filter((entry) => selectedIds.has(getId(entry)));
+};
+
+export const getGenericCatalogOptions = () => ({
+  unit_types: GENERIC_CATALOG.unit_types.map((name) => ({
+    id: name,
+    label: name
+  })),
+  cargos: GENERIC_CATALOG.cargos.map((cargo) => ({
+    id: cargo.code,
+    label: cargo.name
+  })),
+  term_types: GENERIC_CATALOG.term_types.map((termType) => ({
+    id: termType.code,
+    label: termType.name,
+    description: termType.description
+  }))
+});
+
 // Siembra idempotente de los bloques seleccionados. Reutiliza la conexión/transacción del bootstrap y el
 // mapa roleIds (name->id) ya producido por seedBaseRbacCatalog para resolver cargo_role_map.
 export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = new Map()) => {
   const seeded = {};
+  const selectedUnitTypes = selectCatalogEntries(
+    preconfig.unit_types,
+    GENERIC_CATALOG.unit_types,
+    (name) => name
+  );
+  const selectedCargos = selectCatalogEntries(
+    preconfig.cargos,
+    GENERIC_CATALOG.cargos,
+    (cargo) => cargo.code
+  );
+  const selectedTermTypes = selectCatalogEntries(
+    preconfig.term_types,
+    GENERIC_CATALOG.term_types,
+    (termType) => termType.code
+  );
 
-  if (preconfig.unit_types) {
-    for (const name of GENERIC_CATALOG.unit_types) {
+  if (selectedUnitTypes.length > 0) {
+    for (const name of selectedUnitTypes) {
       await connection.query(
         "INSERT INTO unit_types (name, is_active) SELECT ?, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM unit_types WHERE name = ?)",
         [name, name]
       );
     }
-    seeded.unit_types = GENERIC_CATALOG.unit_types.length;
+    seeded.unit_types = selectedUnitTypes.length;
   }
 
   if (preconfig.relation_unit_types) {
@@ -60,14 +103,16 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
     seeded.relation_unit_types = GENERIC_CATALOG.relation_unit_types.length;
   }
 
-  if (preconfig.cargos) {
-    for (const c of GENERIC_CATALOG.cargos) {
+  if (selectedCargos.length > 0) {
+    for (const c of selectedCargos) {
       await connection.query(
         "INSERT IGNORE INTO cargos (code, name, is_active) VALUES (?, ?, 1)",
         [c.code, c.name]
       );
     }
+    const selectedCargoNames = new Set(selectedCargos.map((cargo) => cargo.name));
     for (const m of GENERIC_CATALOG.cargo_role_map) {
+      if (!selectedCargoNames.has(m.cargo)) continue;
       const roleId = roleIds.get(m.role);
       if (!roleId) continue;
       const [cargoRows] = await connection.query("SELECT id FROM cargos WHERE name = ? LIMIT 1", [m.cargo]);
@@ -78,17 +123,17 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
         [cargoId, roleId]
       );
     }
-    seeded.cargos = GENERIC_CATALOG.cargos.length;
+    seeded.cargos = selectedCargos.length;
   }
 
-  if (preconfig.term_types) {
-    for (const t of GENERIC_CATALOG.term_types) {
+  if (selectedTermTypes.length > 0) {
+    for (const t of selectedTermTypes) {
       await connection.query(
         "INSERT IGNORE INTO term_types (code, name, description, is_active) VALUES (?, ?, ?, 1)",
         [t.code, t.name, t.description]
       );
     }
-    seeded.term_types = GENERIC_CATALOG.term_types.length;
+    seeded.term_types = selectedTermTypes.length;
   }
 
   return seeded;

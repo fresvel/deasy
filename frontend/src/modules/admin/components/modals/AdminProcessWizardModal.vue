@@ -6,6 +6,9 @@
     title="Crear proceso guiado"
     size="xl"
     dialog-class="max-w-6xl"
+    content-class="flex max-h-[calc(100vh-4rem)] flex-col"
+    body-class="min-h-0 overflow-y-auto"
+    footer-class="shrink-0"
     close-action
     @close="$emit('close')"
   >
@@ -76,23 +79,37 @@
         <AdminFieldGroup label="Nombre de la configuración" group-class="md:col-span-6">
           <AdminInputField :model-value="form.name" placeholder="ej. Informe de Investigación 2026" @update:model-value="updateForm('name', $event)" />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Origen de serie" group-class="md:col-span-6">
+        <AdminFieldGroup label="Variación del proceso" group-class="md:col-span-8">
+          <AdminSelectField :model-value="form.series_id" @update:model-value="updateForm('series_id', $event)">
+            <option value="">Selecciona una variación</option>
+            <option v-for="series in seriesOptions" :key="series.id" :value="String(series.id)">
+              {{ series.label || series.code }}
+            </option>
+            <option value="__new__">Nueva variación</option>
+          </AdminSelectField>
+        </AdminFieldGroup>
+        <AdminFieldGroup label="Código de variación" group-class="md:col-span-4">
+          <div class="flex min-h-10 items-center break-all rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700">
+            {{ seriesCodePreview || "Pendiente" }}
+          </div>
+        </AdminFieldGroup>
+        <AdminFieldGroup
+          v-if="isCreatingSeries"
+          label="Origen de serie"
+          group-class="md:col-span-4"
+        >
           <AdminSelectField :model-value="form.series_source_type" @update:model-value="updateForm('series_source_type', $event)">
             <option value="unit_type">Por tipo de unidad</option>
             <option value="cargo">Por cargo</option>
+            <option value="unit_type_cargo">Por tipo de unidad y cargo</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup :label="form.series_source_type === 'cargo' ? 'Cargo' : 'Tipo de unidad'" group-class="md:col-span-6">
+        <AdminFieldGroup
+          v-if="isCreatingSeries && form.series_source_type !== 'cargo'"
+          label="Tipo de unidad"
+          group-class="md:col-span-4"
+        >
           <AdminSelectField
-            v-if="form.series_source_type === 'cargo'"
-            :model-value="form.cargo_id"
-            @update:model-value="updateForm('cargo_id', $event)"
-          >
-            <option value="">Selecciona un cargo</option>
-            <option v-for="c in cargoOptions" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
-          </AdminSelectField>
-          <AdminSelectField
-            v-else
             :model-value="form.unit_type_id"
             @update:model-value="updateForm('unit_type_id', $event)"
           >
@@ -100,8 +117,18 @@
             <option v-for="u in unitTypeOptions" :key="u.id" :value="String(u.id)">{{ u.name }}</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Variación" group-class="md:col-span-4">
-          <AdminInputField :model-value="form.variation_key" placeholder="general" @update:model-value="updateForm('variation_key', $event)" />
+        <AdminFieldGroup
+          v-if="isCreatingSeries && form.series_source_type !== 'unit_type'"
+          label="Cargo"
+          group-class="md:col-span-4"
+        >
+          <AdminSelectField
+            :model-value="form.cargo_id"
+            @update:model-value="updateForm('cargo_id', $event)"
+          >
+            <option value="">Selecciona un cargo</option>
+            <option v-for="c in cargoOptions" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
+          </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup label="Versión" group-class="md:col-span-4">
           <AdminInputField :model-value="form.definition_version" placeholder="1.0.0" @update:model-value="updateForm('definition_version', $event)" />
@@ -160,6 +187,8 @@ const props = defineProps({
   processOptions: { type: Array, default: () => [] },
   unitTypeOptions: { type: Array, default: () => [] },
   cargoOptions: { type: Array, default: () => [] },
+  seriesOptions: { type: Array, default: () => [] },
+  seriesCodePreview: { type: String, default: "" },
   creatingDefinition: { type: Boolean, default: false },
   wizardError: { type: String, default: "" }
 });
@@ -167,6 +196,7 @@ const props = defineProps({
 const emit = defineEmits(["close", "go-to-step", "create-definition", "update:definitionForm"]);
 
 const form = computed(() => props.definitionForm || {});
+const isCreatingSeries = computed(() => form.value.series_id === "__new__");
 
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 
@@ -184,7 +214,18 @@ const definitionStatusLabel = computed(() => definitionStatusMeta.value.label);
 const definitionStatusBadgeClass = computed(() => definitionStatusMeta.value.class);
 
 const updateForm = (field, value) => {
-  emit("update:definitionForm", { ...props.definitionForm, [field]: value });
+  const nextForm = { ...props.definitionForm, [field]: value };
+  if (field === "series_source_type") {
+    if (value === "unit_type") {
+      nextForm.cargo_id = "";
+    } else if (value === "cargo") {
+      nextForm.unit_type_id = "";
+    } else if (value !== "unit_type_cargo") {
+      nextForm.unit_type_id = "";
+      nextForm.cargo_id = "";
+    }
+  }
+  emit("update:definitionForm", nextForm);
 };
 
 const toggleProcessMode = () => {

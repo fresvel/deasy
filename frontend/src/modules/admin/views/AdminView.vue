@@ -274,7 +274,7 @@
 
                  <template v-else-if="showGestionesIndex">
                     <div class="col-span-full">
-                      <AdminOperationSummary :stats="operationStats" @open="openOperationTable" />
+                      <AdminOperationSummary :stats="operationStats" />
                     </div>
                     <AppNavCard
                       v-for="item in gestionMenuItems"
@@ -552,6 +552,7 @@ const GROUP_DEFS = [
     label: "Gestiones",
     main: [
       "processes",
+      "process_definition_series",
       "process_definition_triggers",
       "process_definition_versions",
       "process_target_rules",
@@ -1498,14 +1499,6 @@ const fetchOperationStats = async () => {
     operationStats.value = response.data || null;
   } catch {
     operationStats.value = null;
-  }
-};
-
-// Abre la tabla del dominio desde un chip del resumen, con filtro de estado opcional.
-const openOperationTable = (tableName, filters = null) => {
-  const target = tableMap.value[tableName];
-  if (target) {
-    selectTable(target, filters);
   }
 };
 

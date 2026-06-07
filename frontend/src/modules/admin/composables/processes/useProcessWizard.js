@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { processDefinitionAdminService } from "@/modules/admin/services/ProcessDefinitionAdminService";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
@@ -11,7 +11,15 @@ export const PROCESS_WIZARD_STEPS = [
   { key: "activate", label: "Activar" },
 ];
 
-const slugify = (value) =>
+const NEW_SERIES_VALUE = "__new__";
+
+const SERIES_SOURCE_LABELS = {
+  unit_type: "Tipo de unidad",
+  cargo: "Cargo",
+  unit_type_cargo: "Tipo de unidad y cargo"
+};
+
+const slugify = (value, maxLength = 80) =>
   String(value || "")
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
@@ -19,16 +27,31 @@ const slugify = (value) =>
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+    .slice(0, maxLength);
+
+const buildSeriesCode = ({ sourceType, unitTypeId, unitTypeName, cargoId, cargoName }) => {
+  if (sourceType === "unit_type") {
+    return slugify(unitTypeName, 120);
+  }
+  if (sourceType === "cargo") {
+    return slugify(cargoName, 120);
+  }
+  if (sourceType === "unit_type_cargo" && unitTypeId && cargoId) {
+    const unitTypeSlug = slugify(unitTypeName, 40);
+    const cargoSlug = slugify(cargoName, 40);
+    return `unit-type-${unitTypeId}-${unitTypeSlug}-cargo-${cargoId}-${cargoSlug}`.slice(0, 120);
+  }
+  return "";
+};
 
 const newDefinitionForm = () => ({
   process_mode: "existing",
   process_id: "",
   new_process_name: "",
+  series_id: "",
   series_source_type: "unit_type",
   unit_type_id: "",
   cargo_id: "",
-  variation_key: "general",
   definition_version: "1.0.0",
   name: "",
   description: "",
@@ -46,6 +69,7 @@ export function useProcessWizard() {
   const processOptions = ref([]);
   const unitTypeOptions = ref([]);
   const cargoOptions = ref([]);
+  const seriesOptions = ref([]);
   const creatingDefinition = ref(false);
   const wizardError = ref("");
   const stepStatus = ref({ definition: false, packages: false, rules: false, triggers: false });
@@ -54,42 +78,121 @@ export function useProcessWizard() {
 
   const loadProcessOptions = async () => {
     try {
-      const [procRes, unitTypeRes, cargoRes] = await Promise.all([
+      const [procRes, unitTypeRes, cargoRes, seriesRes] = await Promise.all([
         adminSqlService.list("processes", { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("unit_types", { orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("cargos", { orderBy: "name", order: "asc", limit: 500 }),
+        adminSqlService.list("process_definition_series", { filter_is_active: 1, orderBy: "code", order: "asc", limit: 500 }),
       ]);
       processOptions.value = toRows(procRes.data).map((r) => ({ id: r.id, name: r.name || r.slug || `Proceso ${r.id}` }));
       unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
       cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, name: r.name || `Cargo ${r.id}` }));
+      const unitTypeNames = new Map(unitTypeOptions.value.map((row) => [Number(row.id), row.name]));
+      const cargoNames = new Map(cargoOptions.value.map((row) => [Number(row.id), row.name]));
+      seriesOptions.value = toRows(seriesRes.data)
+        .filter((row) => SERIES_SOURCE_LABELS[row?.source_type] && Number(row?.is_active))
+        .map((row) => {
+          const unitTypeName = unitTypeNames.get(Number(row.unit_type_id)) || "";
+          const cargoName = cargoNames.get(Number(row.cargo_id)) || "";
+          const sourceDetail = [unitTypeName, cargoName].filter(Boolean).join(" + ");
+          return {
+            ...row,
+            label: [
+              row.code,
+              sourceDetail
+                ? `${SERIES_SOURCE_LABELS[row.source_type]}: ${sourceDetail}`
+                : SERIES_SOURCE_LABELS[row.source_type]
+            ].filter(Boolean).join(" · ")
+          };
+        });
     } catch {
       processOptions.value = [];
       unitTypeOptions.value = [];
       cargoOptions.value = [];
+      seriesOptions.value = [];
     }
   };
 
-  // Resuelve (reutiliza o crea) la serie del origen elegido. El modelo exige series por unit_type o cargo
-  // (las legacy no son válidas para configuraciones nuevas) y deduplica por código de origen.
-  const resolveSeriesId = async (form) => {
-    const sourceType = form.series_source_type === "cargo" ? "cargo" : "unit_type";
-    const fkKey = sourceType === "cargo" ? "cargo_id" : "unit_type_id";
-    const fkId = Number(form[fkKey]);
-    if (!fkId) {
-      throw new Error(sourceType === "cargo" ? "Selecciona un cargo para la serie." : "Selecciona un tipo de unidad para la serie.");
+  const seriesCodePreview = computed(() => {
+    const form = definitionForm.value;
+    const selectedSeriesId = Number(form.series_id);
+    if (selectedSeriesId) {
+      return seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId)?.code || "";
     }
-    const listRes = await adminSqlService.list("process_definition_series", { [`filter_${fkKey}`]: fkId, limit: 50 });
+    if (form.series_id !== NEW_SERIES_VALUE) {
+      return "";
+    }
+    const unitType = unitTypeOptions.value.find((row) => Number(row.id) === Number(form.unit_type_id));
+    const cargo = cargoOptions.value.find((row) => Number(row.id) === Number(form.cargo_id));
+    return buildSeriesCode({
+      sourceType: String(form.series_source_type || ""),
+      unitTypeId: Number(form.unit_type_id) || null,
+      unitTypeName: unitType?.name || "",
+      cargoId: Number(form.cargo_id) || null,
+      cargoName: cargo?.name || ""
+    });
+  });
+
+  // Resuelve la variación existente o crea una nueva serie y devuelve su identidad persistida.
+  const resolveSeries = async (form) => {
+    const selectedSeriesId = Number(form.series_id);
+    if (selectedSeriesId) {
+      const selectedSeries = seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId);
+      if (!selectedSeries) {
+        throw new Error("La variación seleccionada no está disponible.");
+      }
+      return { id: selectedSeriesId, code: selectedSeries.code };
+    }
+    if (form.series_id !== NEW_SERIES_VALUE) {
+      throw new Error("Selecciona una variación existente o crea una nueva.");
+    }
+
+    const sourceType = String(form.series_source_type || "");
+    const validSourceTypes = new Set(["unit_type", "cargo", "unit_type_cargo"]);
+    if (!validSourceTypes.has(sourceType)) {
+      throw new Error("Selecciona un origen válido para la serie.");
+    }
+
+    const requiresUnitType = sourceType !== "cargo";
+    const requiresCargo = sourceType !== "unit_type";
+    const unitTypeId = requiresUnitType ? Number(form.unit_type_id) : null;
+    const cargoId = requiresCargo ? Number(form.cargo_id) : null;
+    if (requiresUnitType && !unitTypeId) {
+      throw new Error("Selecciona un tipo de unidad para la serie.");
+    }
+    if (requiresCargo && !cargoId) {
+      throw new Error("Selecciona un cargo para la serie.");
+    }
+
+    const filters = {
+      filter_source_type: sourceType,
+      ...(unitTypeId ? { filter_unit_type_id: unitTypeId } : {}),
+      ...(cargoId ? { filter_cargo_id: cargoId } : {}),
+      limit: 50
+    };
+    const listRes = await adminSqlService.list("process_definition_series", filters);
     const existing = toRows(listRes.data).find(
-      (r) => String(r.source_type) === sourceType && Number(r[fkKey]) === fkId
+      (row) => (
+        String(row.source_type) === sourceType
+        && (!requiresUnitType || Number(row.unit_type_id) === unitTypeId)
+        && (!requiresCargo || Number(row.cargo_id) === cargoId)
+      )
     );
     if (existing?.id) {
-      return existing.id;
+      return { id: existing.id, code: existing.code };
     }
-    const payload = sourceType === "cargo"
-      ? { source_type: "cargo", cargo_id: fkId, is_active: 1 }
-      : { source_type: "unit_type", unit_type_id: fkId, is_active: 1 };
+    const payload = {
+      source_type: sourceType,
+      unit_type_id: unitTypeId,
+      cargo_id: cargoId,
+      is_active: 1
+    };
     const seriesRes = await adminSqlService.create("process_definition_series", payload);
-    return resolveCreatedId(seriesRes);
+    const createdSeries = seriesRes?.data || {};
+    return {
+      id: resolveCreatedId(seriesRes),
+      code: createdSeries.code || seriesCodePreview.value
+    };
   };
 
   const refreshStepStatus = async () => {
@@ -111,7 +214,7 @@ export function useProcessWizard() {
     }
   };
 
-  const openWizard = async ({ definitionRow = null, step = null } = {}) => {
+  const openWizard = async ({ definitionRow = null, processRow = null, step = null } = {}) => {
     wizardError.value = "";
     definitionForm.value = newDefinitionForm();
     await loadProcessOptions();
@@ -123,6 +226,19 @@ export function useProcessWizard() {
       definitionContext.value = null;
       currentStep.value = "definition";
       stepStatus.value = { definition: false, packages: false, rules: false, triggers: false };
+      if (processRow?.id) {
+        if (!processOptions.value.some((option) => String(option.id) === String(processRow.id))) {
+          processOptions.value.push({
+            id: processRow.id,
+            name: processRow.name || processRow.slug || `Proceso ${processRow.id}`
+          });
+        }
+        definitionForm.value = {
+          ...definitionForm.value,
+          process_mode: "existing",
+          process_id: String(processRow.id)
+        };
+      }
     }
     wizardOpen.value = true;
   };
@@ -162,15 +278,14 @@ export function useProcessWizard() {
       if (!processId) {
         throw new Error("Selecciona o crea un proceso.");
       }
-      const seriesId = await resolveSeriesId(form);
-      if (!seriesId) {
+      const series = await resolveSeries(form);
+      if (!series.id) {
         throw new Error("No se pudo resolver la serie de la configuración.");
       }
       const today = new Date().toISOString().slice(0, 10);
       const definitionRes = await adminSqlService.create("process_definition_versions", {
         process_id: Number(processId),
-        series_id: Number(seriesId),
-        variation_key: form.variation_key || "general",
+        series_id: Number(series.id),
         definition_version: form.definition_version || "1.0.0",
         name,
         description: form.description ? String(form.description) : null,
@@ -182,14 +297,14 @@ export function useProcessWizard() {
       definitionContext.value = {
         id: resolveCreatedId(definitionRes),
         process_id: Number(processId),
-        series_id: Number(seriesId),
-        variation_key: form.variation_key || "general",
+        series_id: Number(series.id),
         definition_version: form.definition_version || "1.0.0",
         name,
         description: form.description || "",
         has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
         ...created,
+        variation_key: created.variation_key || series.code,
       };
       await refreshStepStatus();
       currentStep.value = "packages";
@@ -210,6 +325,8 @@ export function useProcessWizard() {
     processOptions,
     unitTypeOptions,
     cargoOptions,
+    seriesOptions,
+    seriesCodePreview,
     creatingDefinition,
     wizardError,
     stepStatus,

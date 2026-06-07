@@ -45,6 +45,14 @@ class AdminPresentationService {
   }
 
   formatSelectOptionLabel(field, value) {
+    if (field?.name === "source_type") {
+      return {
+        unit_type: "Tipo de unidad",
+        cargo: "Cargo",
+        unit_type_cargo: "Tipo de unidad y cargo",
+        default: "Predeterminada"
+      }[value] || value;
+    }
     if (field?.name === "instance_mode") {
       return {
         single_document: "Un documento",

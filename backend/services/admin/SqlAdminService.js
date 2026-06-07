@@ -27,6 +27,10 @@ import {
   syncDocumentProgressFromFillRequest,
   syncDocumentProgressFromSignatureRequest,
 } from "../documents/DocumentProgressService.js";
+import {
+  PROCESS_SERIES_SOURCE_TYPES,
+  resolveProcessDefinitionSeriesIdentity
+} from "./processDefinitionSeries.js";
 
 const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
@@ -962,7 +966,7 @@ const validateTableRules = (tableName, candidate) => {
       ensureDateOrder(candidate.effective_from, candidate.effective_to, "configuraciones de proceso");
       break;
     case "process_definition_series":
-      if (!candidate.source_type || !["unit_type", "cargo", "default"].includes(String(candidate.source_type))) {
+      if (!candidate.source_type || !PROCESS_SERIES_SOURCE_TYPES.has(String(candidate.source_type))) {
         throw new Error("Selecciona el origen de la serie.");
       }
       if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
@@ -971,8 +975,17 @@ const validateTableRules = (tableName, candidate) => {
       if (candidate.source_type === "cargo" && !candidate.cargo_id) {
         throw new Error("Una serie por cargo requiere seleccionar un cargo.");
       }
-      if (candidate.source_type !== "default" && candidate.unit_type_id && candidate.cargo_id) {
-        throw new Error("La serie debe asociarse a un tipo de unidad o a un cargo, no a ambos.");
+      if (candidate.source_type === "unit_type_cargo" && (!candidate.unit_type_id || !candidate.cargo_id)) {
+        throw new Error("Una serie combinada requiere seleccionar un tipo de unidad y un cargo.");
+      }
+      if (candidate.source_type === "unit_type" && candidate.cargo_id) {
+        throw new Error("Una serie por tipo de unidad no admite cargo.");
+      }
+      if (candidate.source_type === "cargo" && candidate.unit_type_id) {
+        throw new Error("Una serie por cargo no admite tipo de unidad.");
+      }
+      if (candidate.source_type === "default" && (candidate.unit_type_id || candidate.cargo_id)) {
+        throw new Error("La serie por defecto no admite tipo de unidad ni cargo.");
       }
       break;
     case "process_target_rules":
@@ -1190,6 +1203,13 @@ export default class SqlAdminService {
     if (!this.pool) {
       throw new Error("La conexion con MariaDB no esta disponible.");
     }
+  }
+
+  async resolveProcessDefinitionSeriesIdentity(candidate) {
+    return resolveProcessDefinitionSeriesIdentity(candidate, {
+      findUnitType: (id) => this.getByKeys("unit_types", { id }),
+      findCargo: (id) => this.getByKeys("cargos", { id })
+    });
   }
 
   // Conteos agregados (solo lectura) para los resúmenes de Operación. Cada dominio se calcula de forma
@@ -1917,37 +1937,18 @@ export default class SqlAdminService {
     }
 
     if (tableName === "process_definition_series") {
-      const sourceType = String(payload.source_type || "").trim();
-      payload.source_type = sourceType;
-      let code = "";
-      if (sourceType === "unit_type") {
-        const unitType = await this.getByKeys("unit_types", { id: payload.unit_type_id });
-        if (!unitType) {
-          throw new Error("El tipo de unidad seleccionado no existe.");
-        }
-        payload.cargo_id = null;
-        code = slugify(unitType.name);
-      } else if (sourceType === "cargo") {
-        const cargo = await this.getByKeys("cargos", { id: payload.cargo_id });
-        if (!cargo) {
-          throw new Error("El cargo seleccionado no existe.");
-        }
-        payload.unit_type_id = null;
-        code = slugify(cargo.name);
-      } else {
-        throw new Error("Selecciona un origen de serie valido.");
-      }
+      const identity = await this.resolveProcessDefinitionSeriesIdentity(payload);
+      Object.assign(payload, identity);
       const [dupRows] = await this.pool.query(
         `SELECT id
          FROM process_definition_series
          WHERE code = ?
          LIMIT 1`,
-        [code]
+        [identity.code]
       );
       if (dupRows?.length) {
         throw new Error("Ya existe una serie con ese origen.");
       }
-      payload.code = code;
     }
 
     if (tableName === "persons") {
@@ -2543,42 +2544,19 @@ export default class SqlAdminService {
       if (sourceType === "default") {
         throw new Error("La serie por defecto del sistema no se edita manualmente.");
       }
-      let code = "";
-      if (sourceType === "unit_type") {
-        if (!candidateSeries.unit_type_id) {
-          throw new Error("La serie requiere un tipo de unidad.");
-        }
-        const unitType = await this.getByKeys("unit_types", { id: candidateSeries.unit_type_id });
-        if (!unitType) {
-          throw new Error("El tipo de unidad seleccionado no existe.");
-        }
-        updates.cargo_id = null;
-        code = slugify(unitType.name);
-      } else if (sourceType === "cargo") {
-        if (!candidateSeries.cargo_id) {
-          throw new Error("La serie requiere un cargo.");
-        }
-        const cargo = await this.getByKeys("cargos", { id: candidateSeries.cargo_id });
-        if (!cargo) {
-          throw new Error("El cargo seleccionado no existe.");
-        }
-        updates.unit_type_id = null;
-        code = slugify(cargo.name);
-      } else {
-        throw new Error("El origen de serie no es valido.");
-      }
+      const identity = await this.resolveProcessDefinitionSeriesIdentity(candidateSeries);
+      Object.assign(updates, identity);
       const [dupRows] = await this.pool.query(
         `SELECT id
          FROM process_definition_series
          WHERE code = ?
            AND id <> ?
          LIMIT 1`,
-        [code, Number(existing.id)]
+        [identity.code, Number(existing.id)]
       );
       if (dupRows?.length) {
         throw new Error("Ya existe otra serie con ese origen.");
       }
-      updates.code = code;
     }
     if (tableName === "template_artifacts") {
       // Propiedad, no origen: las plantillas oficiales del sistema (sin owner_ref) se sincronizan desde
