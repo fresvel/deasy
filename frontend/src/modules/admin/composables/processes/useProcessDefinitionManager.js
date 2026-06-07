@@ -565,7 +565,7 @@ export function useProcessDefinitionManager({
       await prefetchFkLabelsForRows(definitionArtifactsRows.value, ["template_artifact_id"]);
     } catch {
       definitionArtifactsRows.value = [];
-      definitionArtifactsError.value = "No se pudieron cargar los artifacts vinculados.";
+      definitionArtifactsError.value = "No se pudieron cargar las plantillas vinculadas.";
     } finally {
       definitionArtifactsLoading.value = false;
     }
@@ -658,7 +658,7 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionArtifacts.value) {
-      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la configuracion este en draft.";
+      definitionArtifactsError.value = "Solo puedes modificar plantillas mientras la configuracion este en draft.";
       return;
     }
     definitionArtifactsEditId.value = row.id ? String(row.id) : "";
@@ -683,11 +683,11 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionArtifacts.value) {
-      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la configuracion este en draft.";
+      definitionArtifactsError.value = "Solo puedes modificar plantillas mientras la configuracion este en draft.";
       return;
     }
     if (!definitionArtifactsForm.value.template_artifact_id) {
-      definitionArtifactsError.value = "Selecciona un artifact.";
+      definitionArtifactsError.value = "Selecciona una plantilla.";
       return;
     }
     const payload = processDefinitionAdminService.buildArtifactPayload(definitionId, definitionArtifactsForm.value);
@@ -697,7 +697,7 @@ export function useProcessDefinitionManager({
       resetDefinitionArtifactsForm();
       await loadDefinitionArtifacts();
     } catch (error) {
-      definitionArtifactsError.value = error?.response?.data?.message || "No se pudo guardar el artifact.";
+      definitionArtifactsError.value = error?.response?.data?.message || "No se pudo guardar la plantilla.";
     }
   };
 
@@ -706,10 +706,10 @@ export function useProcessDefinitionManager({
       return;
     }
     if (!canManageDefinitionArtifacts.value) {
-      definitionArtifactsError.value = "Solo puedes modificar artifacts mientras la configuracion este en draft.";
+      definitionArtifactsError.value = "Solo puedes modificar plantillas mientras la configuracion este en draft.";
       return;
     }
-    if (!window.confirm("¿Deseas eliminar este artifact de la configuracion?")) {
+    if (!window.confirm("¿Deseas eliminar esta plantilla de la configuracion?")) {
       return;
     }
     definitionArtifactsError.value = "";
@@ -720,7 +720,7 @@ export function useProcessDefinitionManager({
       }
       await loadDefinitionArtifacts();
     } catch (error) {
-      definitionArtifactsError.value = error?.response?.data?.message || "No se pudo eliminar el artifact.";
+      definitionArtifactsError.value = error?.response?.data?.message || "No se pudo eliminar la plantilla.";
     }
   };
 

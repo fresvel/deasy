@@ -2,7 +2,7 @@
   <AdminModalShell
     ref="modalRef"
     labelled-by="sqlFkModalLabel"
-    :title="`Buscar referencia ${fkTable?.label || ''}`"
+    :title="modalTitle"
     :dialog-class="isFkTemplateArtifacts || isFkProcessDefinitions ? 'modal-xl' : 'modal-lg'"
   >
     <div class="grid gap-3 md:grid-cols-12 md:items-end mb-3">
@@ -290,7 +290,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
@@ -350,6 +350,13 @@ const emit = defineEmits([
 ]);
 
 const modalRef = ref(null);
+
+const modalTitle = computed(() => {
+  if (props.isFkTemplateArtifacts) {
+    return "Seleccionar plantilla";
+  }
+  return `Buscar referencia ${props.fkTable?.label || ""}`;
+});
 
 const updateFilter = (fieldName, value) => {
   emit("update:fkFilters", {

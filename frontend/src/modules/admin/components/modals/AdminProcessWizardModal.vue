@@ -79,6 +79,28 @@
         <AdminFieldGroup label="Nombre de la configuración" group-class="md:col-span-6">
           <AdminInputField :model-value="form.name" placeholder="ej. Informe de Investigación 2026" @update:model-value="updateForm('name', $event)" />
         </AdminFieldGroup>
+        <AdminFieldGroup
+          v-if="form.process_mode === 'new'"
+          label="Proceso padre"
+          group-class="md:col-span-6"
+        >
+          <AdminSelectField
+            :model-value="form.new_process_parent_id"
+            @update:model-value="updateForm('new_process_parent_id', $event)"
+          >
+            <option value="">Sin proceso padre</option>
+            <option v-for="proc in processOptions" :key="proc.id" :value="String(proc.id)">{{ proc.name }}</option>
+          </AdminSelectField>
+        </AdminFieldGroup>
+        <AdminFieldGroup
+          v-if="form.process_mode === 'new'"
+          label="Slug"
+          group-class="md:col-span-6"
+        >
+          <div class="flex min-h-10 items-center break-all rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700">
+            {{ processSlugPreview || "Pendiente" }}
+          </div>
+        </AdminFieldGroup>
         <AdminFieldGroup label="Variación del proceso" group-class="md:col-span-8">
           <AdminSelectField :model-value="form.series_id" @update:model-value="updateForm('series_id', $event)">
             <option value="">Selecciona una variación</option>
@@ -189,6 +211,7 @@ const props = defineProps({
   cargoOptions: { type: Array, default: () => [] },
   seriesOptions: { type: Array, default: () => [] },
   seriesCodePreview: { type: String, default: "" },
+  processSlugPreview: { type: String, default: "" },
   creatingDefinition: { type: Boolean, default: false },
   wizardError: { type: String, default: "" }
 });
@@ -223,6 +246,13 @@ const updateForm = (field, value) => {
     } else if (value !== "unit_type_cargo") {
       nextForm.unit_type_id = "";
       nextForm.cargo_id = "";
+    }
+  } else if (field === "process_mode") {
+    if (value === "existing") {
+      nextForm.new_process_name = "";
+      nextForm.new_process_parent_id = "";
+    } else {
+      nextForm.process_id = "";
     }
   }
   emit("update:definitionForm", nextForm);

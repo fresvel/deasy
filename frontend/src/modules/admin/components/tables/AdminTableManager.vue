@@ -30,7 +30,6 @@
       @go-back="handleGoBack"
       @sync-template-seeds="syncTemplateSeedsFromSource"
       @create="handlePrimaryCreateAction"
-      @create-wizard="openProcessWizardFromScratch"
     />
 
     <div v-if="table && isPositionAssignmentsTable" class="admin-related-tabs">
@@ -426,6 +425,7 @@
       :cargo-options="processWizardCargoOptions"
       :series-options="processWizardSeriesOptions"
       :series-code-preview="processWizardSeriesCodePreview"
+      :process-slug-preview="processWizardProcessSlugPreview"
       :creating-definition="processWizardCreating"
       :wizard-error="processWizardError"
       @update:definition-form="processWizardDefinitionForm = $event"
@@ -539,6 +539,7 @@
 
     <AdminFkBrowserModal
       ref="fkModal"
+      :style="{ zIndex: 1090 }"
       :fk-table="fkTable"
       :is-fk-units="isFkUnits"
       :is-fk-process-definitions="isFkProcessDefinitions"
@@ -613,6 +614,7 @@
 
     <AdminFkViewerModal
       ref="fkViewerModal"
+      :style="{ zIndex: 1100 }"
       :fk-table="fkTable"
       :fk-viewer-row="fkViewerRow"
       :summary-table-fields="fkViewerSummaryTableFields"
@@ -623,6 +625,7 @@
 
     <AdminFkFilterModal
       ref="fkFilterModal"
+      :style="{ zIndex: 1100 }"
       :fk-table="fkTable"
       :fk-filter-fields="fkFilterFields"
       :fk-filters="fkFilters"
@@ -637,6 +640,7 @@
 
     <AdminFkCreateModal
       ref="fkCreateModal"
+      :style="{ zIndex: 1100 }"
       :fk-table="fkTable"
       :fk-create-error="fkCreateError"
       :fk-create-fields="fkCreateFields"
@@ -2779,6 +2783,7 @@ const {
   cargoOptions: processWizardCargoOptions,
   seriesOptions: processWizardSeriesOptions,
   seriesCodePreview: processWizardSeriesCodePreview,
+  processSlugPreview: processWizardProcessSlugPreview,
   creatingDefinition: processWizardCreating,
   wizardError: processWizardError,
   stepStatus: processWizardStepStatus,
@@ -2913,6 +2918,7 @@ const {
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
   isTemplateArtifactsTable,
+  isProcessDefinitionFilterTable,
   isProcessDefinitionTemplatesTable,
   resetInlineFkState,
   closeProcessDefinitionVersioningModal: (...args) => closeProcessDefinitionVersioningModal(...args),
@@ -2921,6 +2927,7 @@ const {
   ensureEditorInstance,
   getEditorInstance,
   openDraftArtifactModal,
+  openProcessWizardFromScratch,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,

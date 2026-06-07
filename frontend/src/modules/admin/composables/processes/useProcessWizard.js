@@ -48,6 +48,7 @@ const newDefinitionForm = () => ({
   process_mode: "existing",
   process_id: "",
   new_process_name: "",
+  new_process_parent_id: "",
   series_id: "",
   series_source_type: "unit_type",
   unit_type_id: "",
@@ -84,7 +85,12 @@ export function useProcessWizard() {
         adminSqlService.list("cargos", { orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("process_definition_series", { filter_is_active: 1, orderBy: "code", order: "asc", limit: 500 }),
       ]);
-      processOptions.value = toRows(procRes.data).map((r) => ({ id: r.id, name: r.name || r.slug || `Proceso ${r.id}` }));
+      processOptions.value = toRows(procRes.data).map((r) => ({
+        id: r.id,
+        name: r.name || r.slug || `Proceso ${r.id}`,
+        slug: r.slug || "",
+        parent_id: r.parent_id ?? null
+      }));
       unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
       cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, name: r.name || `Cargo ${r.id}` }));
       const unitTypeNames = new Map(unitTypeOptions.value.map((row) => [Number(row.id), row.name]));
@@ -131,6 +137,34 @@ export function useProcessWizard() {
       cargoId: Number(form.cargo_id) || null,
       cargoName: cargo?.name || ""
     });
+  });
+
+  const resolveAvailableProcessSlug = (processName) => {
+    const baseSlug = slugify(processName, 170) || "proceso";
+    const existingSlugs = new Set(
+      processOptions.value
+        .map((row) => String(row.slug || "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+    if (!existingSlugs.has(baseSlug)) {
+      return baseSlug;
+    }
+    for (let suffix = 2; suffix < 1000; suffix += 1) {
+      const candidate = `${baseSlug}-${suffix}`.slice(0, 180);
+      if (!existingSlugs.has(candidate)) {
+        return candidate;
+      }
+    }
+    return `${baseSlug}-${Date.now()}`.slice(0, 180);
+  };
+
+  const processSlugPreview = computed(() => {
+    const form = definitionForm.value;
+    if (form.process_mode !== "new") {
+      return "";
+    }
+    const processName = String(form.new_process_name || "").trim();
+    return processName ? resolveAvailableProcessSlug(processName) : "";
   });
 
   // Resuelve la variación existente o crea una nueva serie y devuelve su identidad persistida.
@@ -270,8 +304,17 @@ export function useProcessWizard() {
         if (!processName) {
           throw new Error("Ingresa el nombre del nuevo proceso.");
         }
-        const slug = slugify(processName) || `proceso-${Date.now()}`;
-        const processRes = await adminSqlService.create("processes", { name: processName, slug, is_active: 1 });
+        const parentId = form.new_process_parent_id ? Number(form.new_process_parent_id) : null;
+        if (parentId && !processOptions.value.some((option) => Number(option.id) === parentId)) {
+          throw new Error("Selecciona un proceso padre válido.");
+        }
+        const slug = processSlugPreview.value || resolveAvailableProcessSlug(processName);
+        const processRes = await adminSqlService.create("processes", {
+          name: processName,
+          slug,
+          parent_id: parentId || null,
+          is_active: 1
+        });
         processId = resolveCreatedId(processRes);
         await loadProcessOptions();
       }
@@ -327,6 +370,7 @@ export function useProcessWizard() {
     cargoOptions,
     seriesOptions,
     seriesCodePreview,
+    processSlugPreview,
     creatingDefinition,
     wizardError,
     stepStatus,

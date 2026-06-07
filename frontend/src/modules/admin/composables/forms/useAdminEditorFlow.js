@@ -9,6 +9,7 @@ export function useAdminEditorFlow({
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
   isTemplateArtifactsTable,
+  isProcessDefinitionFilterTable,
   isProcessDefinitionTemplatesTable,
   resetInlineFkState,
   closeProcessDefinitionVersioningModal,
@@ -17,6 +18,7 @@ export function useAdminEditorFlow({
   ensureEditorInstance,
   getEditorInstance,
   openDraftArtifactModal,
+  openProcessWizardFromScratch,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,
@@ -51,6 +53,10 @@ export function useAdminEditorFlow({
   const handlePrimaryCreateAction = async () => {
     if (isTemplateArtifactsTable.value) {
       await openDraftArtifactModal();
+      return;
+    }
+    if (isProcessDefinitionFilterTable.value && typeof openProcessWizardFromScratch === "function") {
+      await openProcessWizardFromScratch();
       return;
     }
     await openCreate();

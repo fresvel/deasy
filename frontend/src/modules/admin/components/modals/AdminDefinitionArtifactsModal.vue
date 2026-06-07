@@ -8,7 +8,7 @@
     v-else
     ref="modalRef"
     labelled-by="definitionArtifactsModalLabel"
-    title="Artifacts de la configuracion"
+    title="Plantillas de la configuracion"
     size="xl"
     close-action
     @close="$emit('close')"

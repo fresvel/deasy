@@ -24,29 +24,17 @@
           Sincronizar seeds
         </AdminButton>
         <AdminButton
-          v-if="isProcessDefinitionsTable && canCreate"
-          variant="outlinePrimary"
-          size="md"
-          :disabled="!table"
-          title="Crear proceso guiado"
-          aria-label="Crear proceso guiado"
-          @click="$emit('create-wizard')"
-        >
-          <font-awesome-icon icon="list-check" class="mr-2" />
-          Crear proceso guiado
-        </AdminButton>
-        <AdminButton
           v-if="canCreate"
           variant="primary"
           size="md"
           class-name="admin-page-header__create"
           :disabled="!table"
-          title="Agregar"
-          aria-label="Agregar"
+          :title="isProcessDefinitionsTable ? 'Crear proceso guiado' : 'Agregar'"
+          :aria-label="isProcessDefinitionsTable ? 'Crear proceso guiado' : 'Agregar'"
           @click="$emit('create')"
         >
-          <font-awesome-icon icon="plus" class="mr-2" />
-          Agregar
+          <font-awesome-icon :icon="isProcessDefinitionsTable ? 'list-check' : 'plus'" class="mr-2" />
+          {{ isProcessDefinitionsTable ? "Crear proceso guiado" : "Agregar" }}
         </AdminButton>
       </div>
     </div>
@@ -98,7 +86,6 @@ defineProps({
 defineEmits([
   "go-back",
   "sync-template-seeds",
-  "create",
-  "create-wizard"
+  "create"
 ]);
 </script>

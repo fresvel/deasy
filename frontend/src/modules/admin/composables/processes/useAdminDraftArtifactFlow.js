@@ -218,7 +218,7 @@ export function useAdminDraftArtifactFlow({
       closeDraftArtifactModal();
       showFeedbackToast({
         kind: "success",
-        title: isEditingDraft ? "Artifact actualizado" : "Artifact creado",
+        title: isEditingDraft ? "Plantilla actualizada" : "Plantilla creada",
         message: response.data?.__notice || (isEditingDraft
           ? "La plantilla de documento fue actualizada correctamente."
           : "La plantilla de documento fue creada correctamente.")
