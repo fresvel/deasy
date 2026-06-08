@@ -82,7 +82,7 @@ export const processDefinitionActivationArtifactTableFields = [
 
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
-  { name: "template_artifact_id", label: "Artifact" },
+  { name: "template_artifact_id", label: "Plantilla" },
   { name: "instance_mode", label: "Modo de instancia" },
   { name: "creates_task", label: "Genera tarea" },
   { name: "is_required", label: "Requerido" },
@@ -108,11 +108,6 @@ export const definitionRulesTableFields = [
 ];
 
 export const recordViewerSummaryTableFields = [
-  { name: "label", label: "Campo" },
-  { name: "value", label: "Valor" }
-];
-
-export const fkViewerSummaryTableFields = [
   { name: "label", label: "Campo" },
   { name: "value", label: "Valor" }
 ];

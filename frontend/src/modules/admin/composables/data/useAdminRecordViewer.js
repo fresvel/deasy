@@ -3,6 +3,7 @@ import { adminRecordViewerService } from "@/modules/admin/services/AdminRecordVi
 export function useAdminRecordViewer({
   recordViewerTable,
   recordViewerRow,
+  recordViewerEditable,
   recordViewerLoading,
   recordViewerError,
   recordViewerRelatedSections,
@@ -29,7 +30,7 @@ export function useAdminRecordViewer({
     });
   };
 
-  const openRecordViewer = async (row, tableMeta) => {
+  const openRecordViewer = async (row, tableMeta, options = {}) => {
     if (!row || !tableMeta) {
       return;
     }
@@ -37,6 +38,9 @@ export function useAdminRecordViewer({
     hideParentModals();
     recordViewerTable.value = tableMeta;
     recordViewerRow.value = row;
+    if (recordViewerEditable) {
+      recordViewerEditable.value = Boolean(options?.editable);
+    }
     recordViewerError.value = "";
     recordViewerLoading.value = true;
     recordViewerRelatedSections.value = [];
@@ -60,6 +64,9 @@ export function useAdminRecordViewer({
   };
 
   const closeRecordViewer = () => {
+    if (recordViewerEditable) {
+      recordViewerEditable.value = false;
+    }
     getRecordViewerInstance()?.hide();
   };
 

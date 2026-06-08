@@ -19,6 +19,7 @@ export function useAdminEditorFlow({
   getEditorInstance,
   openDraftArtifactModal,
   openProcessWizardFromScratch,
+  openProcessDefinitionWizard,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,
@@ -76,6 +77,19 @@ export function useAdminEditorFlow({
     }
     if (props.table?.table === "template_artifacts") {
       await openDraftArtifactModal(row);
+      return { redirected: true };
+    }
+    if (props.table?.table === "process_definition_versions" && typeof openProcessDefinitionWizard === "function") {
+      resetInlineFkState();
+      closeProcessDefinitionVersioningModal();
+      processDefinitionCloneSourceId.value = "";
+      editorMode.value = "edit";
+      selectedRow.value = row;
+      modalError.value = "";
+      buildFormFromRow(row);
+      await refreshFormFkDisplayLabels();
+      await refreshProcessDefinitionChecklist(row);
+      await openProcessDefinitionWizard(row, { step: "definition", readonly: false });
       return { redirected: true };
     }
     resetInlineFkState();

@@ -20,7 +20,6 @@ export function useAdminShellHelpers({
   processDefinitionVersioningSource,
   ensureProcessDefinitionVersioningInstance,
   getProcessDefinitionVersioningInstance,
-  fkTable,
   recordViewerTable,
   formatValueForTable
 }) {
@@ -73,13 +72,6 @@ export function useAdminShellHelpers({
 
   const handleGoBack = () => {
     emit("go-back");
-  };
-
-  const formatFkViewerValue = (field, row) => {
-    if (!row || !field) {
-      return "—";
-    }
-    return formatValueForTable(fkTable.value, row[field.name], field, row);
   };
 
   const formatRecordViewerValue = (field, row) => {
@@ -144,7 +136,6 @@ export function useAdminShellHelpers({
     buildFkCreatePayload,
     buildKeys,
     handleGoBack,
-    formatFkViewerValue,
     formatRecordViewerValue,
     openDelete,
     openProcessDefinitionVersioningModal,

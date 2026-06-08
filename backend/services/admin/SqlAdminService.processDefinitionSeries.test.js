@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveProcessDefinitionSeriesIdentity } from "./processDefinitionSeries.js";
+import {
+  buildProcessDefinitionVersionName,
+  resolveProcessDefinitionSeriesIdentity
+} from "./processDefinitionSeries.js";
 
 const lookups = {
   findUnitType: async (id) => {
@@ -64,5 +67,34 @@ test("exige ambos campos en una variacion combinada", async () => {
       lookups
     ),
     /seleccionar un cargo/
+  );
+});
+
+test("genera el nombre de configuracion desde proceso y serie usando por", () => {
+  assert.equal(
+    buildProcessDefinitionVersionName({
+      processName: "Investigación Productiva",
+      series: {
+        source_type: "unit_type",
+        code: "carrera",
+        unit_type_name: "carrera"
+      }
+    }),
+    "Investigación Productiva por Carrera"
+  );
+});
+
+test("genera el nombre de configuracion combinando tipo de unidad y cargo", () => {
+  assert.equal(
+    buildProcessDefinitionVersionName({
+      processName: "Investigación Productiva",
+      series: {
+        source_type: "unit_type_cargo",
+        code: "unit-type-7-carrera-cargo-11-docente",
+        unit_type_name: "carrera",
+        cargo_name: "docente"
+      }
+    }),
+    "Investigación Productiva por Carrera y Docente"
   );
 });

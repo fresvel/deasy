@@ -130,7 +130,7 @@
       @clear-process-target-rule-inline-filters="clearProcessTargetRuleInlineFilters"
       @clear-template-artifact-inline-filters="clearTemplateArtifactInlineFilters"
       @fetch-rows="fetchRows"
-      @open-record-viewer="openRecordViewer($event, table)"
+      @open-record-viewer="handleOpenRecordViewer($event, table)"
       @open-edit="openEdit"
       @open-delete="openDelete"
       @start-process-definition-versioning="startProcessDefinitionVersioning"
@@ -262,6 +262,12 @@
       :process-definition-checklist-loading="processDefinitionChecklistLoading"
       :process-definition-checklist="processDefinitionChecklist"
       :requires-definition-artifacts="requiresDefinitionArtifacts"
+      :process-configuration-loading="processEditorConfigurationsLoading"
+      :process-configuration-error="processEditorConfigurationsError"
+      :process-configuration-rows="processEditorConfigurations"
+      :process-configuration-table-fields="processEditorConfigurationTableFields"
+      :can-create-process-configuration="canCreateProcessConfiguration"
+      :can-delete-process-configuration="canDeleteProcessConfiguration"
       :selected-row="selectedRow"
       :is-input-field="isInputField"
       :is-foreign-key-field="isForeignKeyField"
@@ -270,6 +276,8 @@
       :should-show-inline-fk-suggestions="shouldShowInlineFkSuggestions"
       :format-inline-fk-option="formatInlineFkOption"
       :format-select-option-label="formatSelectOptionLabel"
+      :format-process-configuration-cell="formatProcessEditorConfigurationCell"
+      :can-delete-process-configuration-row="canDeleteProcessConfigurationRow"
       @update:form-data="formData = $event"
       @update-inline-fk-display="updateInlineFkDisplay"
       @open-inline-fk-suggestions="openInlineFkSuggestions"
@@ -278,6 +286,8 @@
       @open-fk-search="openFkSearch"
       @select-inline-fk-suggestion="selectInlineFkSuggestion"
       @handle-select-change="handleSelectChange"
+      @add-process-configuration="openProcessConfigurationFromEditor"
+      @delete-process-configuration="deleteProcessEditorConfiguration"
       @open-definition-rules="openDefinitionRulesFromEditor"
       @open-definition-triggers="openDefinitionTriggersFromEditor"
       @open-definition-artifacts="openDefinitionArtifactsFromEditor"
@@ -314,12 +324,18 @@
       :format-cell="formatCell"
       :format-definition-rule-summary="formatDefinitionRuleSummary"
       @update:view="processDefinitionActivationView = $event"
+      @view-row="handleActivationViewRow"
       @cancel="cancelProcessDefinitionActivation"
       @primary-action="handleProcessDefinitionActivationPrimaryAction"
       @confirm="confirmProcessDefinitionActivation"
     />
 
     <AdminDeleteConfirmModal ref="deleteModal" @confirm="confirmDelete" />
+    <AdminDeleteConfirmModal
+      ref="processConfigurationDeleteModal"
+      :style="{ zIndex: 1090 }"
+      @confirm="confirmDeleteProcessEditorConfiguration"
+    />
 
     <AdminDefinitionCreatedPromptModal
       ref="definitionArtifactsPromptModal"
@@ -401,6 +417,7 @@
       :format-cell="formatDefinitionRuleCell"
       @update:form="definitionRulesForm = $event"
       @scope-change="handleDefinitionRuleScopeChange"
+      @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
       @clear-field="clearDefinitionRuleField"
       @open-fk-search="openDefinitionRuleFkSearch"
       @submit="submitDefinitionRule"
@@ -426,8 +443,10 @@
       :series-options="processWizardSeriesOptions"
       :series-code-preview="processWizardSeriesCodePreview"
       :process-slug-preview="processWizardProcessSlugPreview"
+      :definition-name-preview="processWizardDefinitionNamePreview"
       :creating-definition="processWizardCreating"
       :wizard-error="processWizardError"
+      :readonly="processWizardReadonly"
       @update:definition-form="processWizardDefinitionForm = $event"
       @go-to-step="handleProcessWizardGoToStep"
       @create-definition="handleProcessWizardCreateDefinition"
@@ -437,8 +456,8 @@
         <AdminDefinitionArtifactsPanel
           :context="definitionArtifactsContext"
           :error="definitionArtifactsError"
-          :can-manage="canManageDefinitionArtifacts"
-          :can-submit="canSubmitDefinitionArtifact"
+          :can-manage="!processWizardReadonly && canManageDefinitionArtifacts"
+          :can-submit="!processWizardReadonly && canSubmitDefinitionArtifact"
           :labels="definitionArtifactsLabels"
           :form="definitionArtifactsForm"
           :edit-id="definitionArtifactsEditId"
@@ -451,7 +470,7 @@
           @open-fk-search="openDefinitionArtifactFkSearch"
           @submit="wizardSubmitArtifact"
           @reset="resetDefinitionArtifactsForm"
-          @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
+          @view-row="handleWizardViewRow($event, allTablesMap.process_definition_templates)"
           @edit-row="startDefinitionArtifactEdit"
           @delete-row="deleteDefinitionArtifact"
         />
@@ -460,8 +479,8 @@
         <AdminDefinitionRulesPanel
           :context="definitionRulesContext"
           :error="definitionRulesError"
-          :can-manage="canManageDefinitionRules"
-          :can-submit="canSubmitDefinitionRule"
+          :can-manage="!processWizardReadonly && canManageDefinitionRules"
+          :can-submit="!processWizardReadonly && canSubmitDefinitionRule"
           :labels="definitionRulesLabels"
           :form="definitionRulesForm"
           :edit-id="definitionRulesEditId"
@@ -471,11 +490,12 @@
           :format-cell="formatDefinitionRuleCell"
           @update:form="definitionRulesForm = $event"
           @scope-change="handleDefinitionRuleScopeChange"
+          @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
           @clear-field="clearDefinitionRuleField"
           @open-fk-search="openDefinitionRuleFkSearch"
           @submit="wizardSubmitRule"
           @reset="resetDefinitionRulesForm"
-          @view-row="openRecordViewer($event, allTablesMap.process_target_rules)"
+          @view-row="handleWizardViewRow($event, allTablesMap.process_target_rules)"
           @edit-row="startDefinitionRuleEdit"
           @delete-row="deleteDefinitionRule"
         />
@@ -484,8 +504,8 @@
         <AdminDefinitionTriggersPanel
           :context="definitionTriggersContext"
           :error="definitionTriggersError"
-          :can-manage="canManageDefinitionTriggers"
-          :can-submit="canSubmitDefinitionTrigger"
+          :can-manage="!processWizardReadonly && canManageDefinitionTriggers"
+          :can-submit="!processWizardReadonly && canSubmitDefinitionTrigger"
           :requires-term-type="definitionTriggerRequiresTermType"
           :labels="definitionTriggersLabels"
           :form="definitionTriggersForm"
@@ -500,7 +520,7 @@
           @open-fk-search="openDefinitionTriggerFkSearch"
           @submit="wizardSubmitTrigger"
           @reset="resetDefinitionTriggersForm"
-          @view-row="openRecordViewer($event, allTablesMap.process_definition_triggers)"
+          @view-row="handleWizardViewRow($event, allTablesMap.process_definition_triggers)"
           @edit-row="startDefinitionTriggerEdit"
           @delete-row="deleteDefinitionTrigger"
         />
@@ -523,12 +543,14 @@
           :format-cell="formatCell"
           :format-definition-rule-summary="formatDefinitionRuleSummary"
           @update:view="processDefinitionActivationView = $event"
+          @view-row="handleActivationViewRow"
         />
         <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
           <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-amber-600">
             Completa los requisitos (reglas, disparadores{{ processDefinitionActivationRequiresArtifacts ? ', paquetes' : '' }}) para activar.
           </span>
           <AdminButton
+            v-if="!processWizardReadonly"
             variant="success"
             :disabled="processDefinitionActivationChecking || !allProcessDefinitionActivationRequirementsMet"
             @click="wizardConfirmActivation"
@@ -589,6 +611,7 @@
 
     <AdminRecordViewerModal
       ref="recordViewerModal"
+      :style="{ zIndex: 1100 }"
       :loading="recordViewerLoading"
       :error="recordViewerError"
       :record-viewer-table="recordViewerTable"
@@ -602,25 +625,16 @@
       :row-key-for-table="rowKeyForTable"
       :format-value-for-table="formatValueForTable"
       :downloading="recordArchiveDownloading"
+      :editable="recordViewerEditable"
       :is-admin="isAdminUser"
       :can-create-process-configuration="canCreateProcessConfiguration"
       :source-busy="templateSourceBusy"
       @close="closeRecordViewer"
       @add-process-configuration="openProcessConfigurationFromViewer"
+      @view-related-record="handleRecordViewerRelatedRecord"
       @download-archive="handleDownloadRecordArchive"
       @download-source="handleDownloadTemplateSource"
       @upload-source="handleUploadTemplateSource"
-    />
-
-    <AdminFkViewerModal
-      ref="fkViewerModal"
-      :style="{ zIndex: 1100 }"
-      :fk-table="fkTable"
-      :fk-viewer-row="fkViewerRow"
-      :summary-table-fields="fkViewerSummaryTableFields"
-      :display-rows="fkViewerDisplayRows"
-      :format-fk-viewer-value="formatFkViewerValue"
-      @close="closeFkViewer"
     />
 
     <AdminFkFilterModal
@@ -881,12 +895,12 @@ import {
 } from "@/core/utils/accessControl.js";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
+import { processDefinitionAdminService } from "@/modules/admin/services/ProcessDefinitionAdminService";
 import {
   definitionArtifactsTableFields,
   definitionRulesTableFields,
   definitionTriggersTableFields,
   FK_TABLE_MAP,
-  fkViewerSummaryTableFields,
   formatTemplateArtifactFieldLabel,
   personAssignmentSections,
   personCargoTableFields,
@@ -912,7 +926,6 @@ import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/Admi
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
-import AdminFkViewerModal from "@/modules/admin/components/modals/AdminFkViewerModal.vue";
 import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTableSection.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFkBrowserModal from "@/modules/admin/components/modals/AdminFkBrowserModal.vue";
@@ -937,6 +950,7 @@ import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
+import { Modal } from "@/shared/utils/modalController";
 
 const props = defineProps({
   table: {
@@ -992,6 +1006,11 @@ const formData = ref({});
 const selectedRow = ref(null);
 const modalError = ref("");
 const fkDisplay = ref({});
+const processEditorConfigurations = ref([]);
+const processEditorConfigurationsLoading = ref(false);
+const processEditorConfigurationsError = ref("");
+const processEditorContext = ref(null);
+const processConfigurationDeleteRow = ref(null);
 
 const editorModal = ref(null);
 const processDefinitionVersioningModal = ref(null);
@@ -1002,10 +1021,10 @@ const definitionArtifactsModal = ref(null);
 const definitionArtifactsPromptModal = ref(null);
 const draftArtifactModalRef = ref(null);
 const deleteModal = ref(null);
+const processConfigurationDeleteModal = ref(null);
 const recordViewerModal = ref(null);
 const personAssignmentsModal = ref(null);
 const fkModal = ref(null);
-const fkViewerModal = ref(null);
 const fkFilterModal = ref(null);
 const fkCreateModal = ref(null);
 const searchInput = ref(null);
@@ -1014,10 +1033,13 @@ const fkCreateExitTarget = ref("none");
 const fkNestedExitTarget = ref("none");
 const recordViewerTable = ref(null);
 const recordViewerRow = ref(null);
+const recordViewerEditable = ref(false);
 const recordViewerLoading = ref(false);
 const recordViewerError = ref("");
 const recordViewerRelatedSections = ref([]);
 const recordArchiveDownloading = ref(false);
+const processWizardReadonly = ref(false);
+const restoreProcessWizardAfterRecordViewer = ref(false);
 const processDefinitionVersioningSource = ref(null);
 const processDefinitionCloneSourceId = ref("");
 const processDefinitionActivationConfirmed = ref(false);
@@ -1126,7 +1148,6 @@ const fkError = ref("");
 const unitTypeByUnitId = ref({});
 const fkField = ref("");
 const fkSetter = ref(null);
-const fkViewerRow = ref(null);
 const fkFilters = ref({});
 const fkCreateForm = ref({});
 const fkCreateError = ref("");
@@ -1208,6 +1229,7 @@ const documentSearchModal = ref(null);
 const processSearchModal = ref(null);
 const unitPositionSearchModal = ref(null);
 const personEditorId = ref("");
+let processConfigurationDeleteInstance = null;
 const personCargoRows = ref([]);
 const positionMetaById = ref({});
 const personCargoUnitByPositionId = ref({});
@@ -1387,12 +1409,6 @@ const fkCreateFields = computed(() => {
   }
   return fkTable.value.fields.filter((field) => !field.readOnly && !field.virtual);
 });
-const fkViewerFields = computed(() => {
-  if (!fkTable.value?.fields) {
-    return [];
-  }
-  return fkTable.value.fields.filter((field) => !field.virtual);
-});
 const fkFilterFields = computed(() => {
   if (!fkTable.value?.fields) {
     return [];
@@ -1512,11 +1528,11 @@ const positionAssignmentsTabs = computed(() => [
 
 const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "process_definition_templates");
 
-// Subpestañas de la vista de plantillas de procesos configurados (plantillas vinculadas / artifacts sin configuracion).
+// Subpestañas de la vista de plantillas de procesos configurados (plantillas vinculadas / plantillas sin configuracion).
 const definitionTemplatesView = ref("plantillas");
 const definitionTemplatesTabs = computed(() => [
   { key: "plantillas", label: "Plantillas", count: rows.value?.length || 0 },
-  { key: "sin-vincular", label: "Artifacts sin configuracion", count: unassignedTemplateArtifactRows.value?.length || 0 }
+  { key: "sin-vincular", label: "Plantillas sin configuracion", count: unassignedTemplateArtifactRows.value?.length || 0 }
 ]);
 
 watch(
@@ -1562,11 +1578,15 @@ const canSubmitDefinitionRule = computed(() => {
     return false;
   }
   const scopeType = String(definitionRulesForm.value.unit_scope_type || "");
+  const recipientPolicy = String(definitionRulesForm.value.recipient_policy || "");
+  if (recipientPolicy === "exact_position") {
+    return Boolean(definitionRulesForm.value.position_id);
+  }
   if (scopeType === "unit_type") {
     return Boolean(definitionRulesForm.value.unit_type_id);
   }
   if (scopeType === "unit_exact" || scopeType === "unit_subtree") {
-    return Boolean(definitionRulesForm.value.unit_id || definitionRulesForm.value.position_id);
+    return Boolean(definitionRulesForm.value.unit_id);
   }
   if (scopeType === "all_units") {
     return true;
@@ -1718,8 +1738,16 @@ const runtimeWriteAllowed = computed(() =>
   !isCurrentTableTraceability.value || (isAdminUser.value && advancedRuntimeMode.value));
 const canCreateCurrentTable = computed(() => canCreateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const canCreateProcessConfiguration = computed(() => canCreateAdminTable("process_definition_versions"));
+const canDeleteProcessConfiguration = computed(() => canDeleteAdminTable("process_definition_versions"));
 const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
+const processEditorConfigurationTableFields = [
+  { name: "variation_key", label: "Variacion" },
+  { name: "definition_version", label: "Version" },
+  { name: "name", label: "Nombre" },
+  { name: "status", label: "Estado" },
+  { name: "effective_from", label: "Vigencia desde" }
+];
 const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
 const tableHeaderSubtitle = computed(() => {
   if (!props.table) {
@@ -1754,13 +1782,6 @@ const recordViewerFields = computed(() =>
 );
 const recordViewerDisplayRows = computed(() =>
   recordViewerFields.value.map((field) => ({
-    id: field.name,
-    field,
-    label: field.label || field.name
-  }))
-);
-const fkViewerDisplayRows = computed(() =>
-  fkViewerFields.value.map((field) => ({
     id: field.name,
     field,
     label: field.label || field.name
@@ -1882,7 +1903,6 @@ const {
   ensureDefinitionArtifactsPromptInstance,
   ensureFkInstance,
   ensureFkCreateInstance,
-  ensureFkViewerInstance,
   ensureFkFilterInstance,
   ensureProcessSearchInstance,
   ensureDocumentSearchInstance,
@@ -1897,7 +1917,6 @@ const {
   getDefinitionArtifactsPromptInstance,
   getRecordViewerInstance,
   getFkInstance,
-  getFkViewerInstance,
   getFkFilterInstance,
   getFkCreateInstance,
   getProcessDefinitionActivationInstance,
@@ -1926,7 +1945,6 @@ const {
   recordViewerModal,
   personAssignmentsModal,
   fkModal,
-  fkViewerModal,
   fkFilterModal,
   fkCreateModal,
   templateSearchModal,
@@ -1962,6 +1980,7 @@ const {
   definitionArtifactsPromptContext,
   refreshProcessDefinitionChecklist: (...args) => refreshProcessDefinitionChecklist(...args),
   openProcessDefinitionActivationModal: (...args) => openProcessDefinitionActivationModal(...args),
+  restoreProcessWizardFromRecordViewer: () => restoreProcessWizardFromRecordViewer(),
   resetDefinitionRulesForm: (...args) => resetDefinitionRulesForm(...args),
   resetDefinitionTriggersForm: (...args) => resetDefinitionTriggersForm(...args),
   resetDefinitionArtifactsForm: (...args) => resetDefinitionArtifactsForm(...args)
@@ -2078,6 +2097,46 @@ const formatFkOptionLabel = (tableName, row) =>
     (fkTableName, fkValue) => getFkCachedLabel(fkTableName, fkValue)
   );
 
+const processDefinitionVersionsTableMeta = computed(() =>
+  allTablesMap.value.process_definition_versions || {
+    table: "process_definition_versions",
+    fields: processEditorConfigurationTableFields
+  }
+);
+
+const formatProcessEditorConfigurationCell = (row, field) =>
+  formatValueForTable(processDefinitionVersionsTableMeta.value, row?.[field.name], field, row);
+
+const canDeleteProcessConfigurationRow = (row) =>
+  canDeleteProcessConfiguration.value
+  && String(row?.status || "").trim().toLowerCase() === "draft";
+
+const loadProcessEditorConfigurations = async (processId = selectedRow.value?.id) => {
+  if (!processId) {
+    processEditorConfigurations.value = [];
+    processEditorConfigurationsError.value = "";
+    processEditorConfigurationsLoading.value = false;
+    return;
+  }
+  processEditorConfigurationsLoading.value = true;
+  processEditorConfigurationsError.value = "";
+  try {
+    const response = await adminSqlService.list("process_definition_versions", {
+      filter_process_id: processId,
+      orderBy: "effective_from",
+      order: "desc",
+      limit: 100
+    });
+    processEditorConfigurations.value = response.data || [];
+    await prefetchFkLabelsForRows(processEditorConfigurations.value, ["series_id"]);
+  } catch {
+    processEditorConfigurations.value = [];
+    processEditorConfigurationsError.value = "No se pudieron cargar las configuraciones del proceso.";
+  } finally {
+    processEditorConfigurationsLoading.value = false;
+  }
+};
+
 const getFkTableField = (fieldName) => {
   if (!fkTable.value?.fields || !fieldName) {
     return null;
@@ -2183,7 +2242,6 @@ const {
   buildFkCreatePayload,
   buildKeys,
   handleGoBack,
-  formatFkViewerValue,
   formatRecordViewerValue,
   openDelete,
   openProcessDefinitionVersioningModal,
@@ -2208,7 +2266,6 @@ const {
   processDefinitionVersioningSource,
   ensureProcessDefinitionVersioningInstance,
   getProcessDefinitionVersioningInstance,
-  fkTable,
   recordViewerTable,
   formatValueForTable
 });
@@ -2277,7 +2334,7 @@ const handleArtifactStageChange = async (nextStage) => {
     const { data } = await adminSqlService.updateTemplateArtifactStage(id, nextStage);
     draftArtifactForm.value = { ...draftArtifactForm.value, artifact_stage: data?.artifact_stage || nextStage };
     await fetchRows();
-    showFeedbackToast({ kind: "success", title: "Estado actualizado", message: `El artifact pasó a estado "${data?.artifact_stage || nextStage}".` });
+    showFeedbackToast({ kind: "success", title: "Estado actualizado", message: `La plantilla pasó a estado "${data?.artifact_stage || nextStage}".` });
   } catch (err) {
     showFeedbackToast({ kind: "error", title: "No se pudo cambiar el estado", message: err?.response?.data?.message || "Error al actualizar el estado." });
   }
@@ -2332,7 +2389,6 @@ const {
   fkError,
   fkField,
   fkSetter,
-  fkViewerRow,
   fkCreateForm,
   fkCreateError,
   fkCreateExitTarget,
@@ -2342,6 +2398,7 @@ const {
   resetFkFilters,
   resetFkUnitPositionFilters,
   loadFkUnitTypeOptions,
+  loadFkUnitOptions,
   loadFkCargoOptions,
   loadFkProcessDefinitionProcessOptions,
   resolveFkTable,
@@ -2362,8 +2419,28 @@ const {
 });
 
 const {
+  openRecordViewer,
+  closeRecordViewer
+} = useAdminRecordViewer({
+  recordViewerTable,
+  recordViewerRow,
+  recordViewerEditable,
+  recordViewerLoading,
+  recordViewerError,
+  recordViewerRelatedSections,
+  allTablesMap,
+  getViewerFieldsForTable,
+  isForeignKeyField,
+  prefetchFkLabelsForRows,
+  prefetchProcessLabelsForDefinitionRows,
+  prefetchProcessDefinitionMeta,
+  ensureRecordViewerInstance,
+  getRecordViewerInstance,
+  hideParentModals: hideParentModalsForRecordViewer
+});
+
+const {
   openFkViewer,
-  closeFkViewer,
   openFkFilterModal,
   cancelFkFilter,
   clearFkFilters,
@@ -2387,34 +2464,13 @@ const {
   buildFkCreatePayload,
   applyFkSelection,
   fetchFkRows,
+  openRecordViewer,
   ensureFkInstance,
   getFkInstance,
-  ensureFkViewerInstance,
-  getFkViewerInstance,
   ensureFkFilterInstance,
   getFkFilterInstance,
   ensureFkCreateInstance,
   getFkCreateInstance
-});
-
-const {
-  openRecordViewer,
-  closeRecordViewer
-} = useAdminRecordViewer({
-  recordViewerTable,
-  recordViewerRow,
-  recordViewerLoading,
-  recordViewerError,
-  recordViewerRelatedSections,
-  allTablesMap,
-  getViewerFieldsForTable,
-  isForeignKeyField,
-  prefetchFkLabelsForRows,
-  prefetchProcessLabelsForDefinitionRows,
-  prefetchProcessDefinitionMeta,
-  ensureRecordViewerInstance,
-  getRecordViewerInstance,
-  hideParentModals: hideParentModalsForRecordViewer
 });
 
 // Descarga el ZIP de formatos del registro abierto en el visor (paquetes de plantilla o seeds).
@@ -2469,7 +2525,7 @@ const templateSourceBusy = ref(false);
 
 const handleDownloadTemplateSource = async () => {
   const row = recordViewerRow.value;
-  if (!row?.id || templateSourceBusy.value) return;
+  if (!recordViewerEditable.value || !row?.id || templateSourceBusy.value) return;
   templateSourceBusy.value = true;
   try {
     const response = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE(row.id), { responseType: "blob" });
@@ -2490,7 +2546,7 @@ const handleDownloadTemplateSource = async () => {
 
 const handleUploadTemplateSource = async (file) => {
   const row = recordViewerRow.value;
-  if (!row?.id || !file || templateSourceBusy.value) return;
+  if (!recordViewerEditable.value || !row?.id || !file || templateSourceBusy.value) return;
   templateSourceBusy.value = true;
   try {
     const form = new FormData();
@@ -2578,6 +2634,7 @@ const {
   resetDefinitionTriggersForm,
   formatDefinitionRuleSummary,
   handleDefinitionRuleScopeChange,
+  handleDefinitionRuleRecipientPolicyChange,
   refreshProcessDefinitionChecklist,
   loadDefinitionRules,
   openDefinitionRulesManager,
@@ -2784,6 +2841,7 @@ const {
   seriesOptions: processWizardSeriesOptions,
   seriesCodePreview: processWizardSeriesCodePreview,
   processSlugPreview: processWizardProcessSlugPreview,
+  definitionNamePreview: processWizardDefinitionNamePreview,
   creatingDefinition: processWizardCreating,
   wizardError: processWizardError,
   stepStatus: processWizardStepStatus,
@@ -2801,14 +2859,41 @@ const loadProcessWizardStep = async (key) => {
     return;
   }
   if (key === "packages") {
-    await openDefinitionArtifactsManager(def);
+    await openDefinitionArtifactsManager(def, { showModal: false });
   } else if (key === "rules") {
-    await openDefinitionRulesManager(def);
+    await openDefinitionRulesManager(def, { showModal: false });
   } else if (key === "triggers") {
-    await openDefinitionTriggersManager(def);
+    await openDefinitionTriggersManager(def, { showModal: false });
   } else if (key === "activate") {
     selectedRow.value = def;
-    await openProcessDefinitionActivationModal();
+    await loadProcessWizardActivationStep(def);
+  }
+};
+
+const loadProcessWizardActivationStep = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  processDefinitionActivationChecking.value = true;
+  processDefinitionActivationView.value = "activate";
+  processDefinitionActivationRequiresArtifacts.value = Number(definitionRow.has_document) === 1;
+  try {
+    const checklist = await processDefinitionAdminService.evaluateChecklist(definitionRow.id);
+    await loadProcessDefinitionActivationDetail(definitionRow.id);
+    processDefinitionActivationHasActiveRules.value = Boolean(checklist?.rules);
+    processDefinitionActivationHasActiveTriggers.value = Boolean(checklist?.triggers);
+    processDefinitionActivationHasRequiredArtifacts.value = processDefinitionActivationRequiresArtifacts.value
+      ? Boolean(checklist?.artifacts)
+      : true;
+  } catch {
+    processDefinitionActivationHasActiveRules.value = false;
+    processDefinitionActivationHasActiveTriggers.value = true;
+    processDefinitionActivationHasRequiredArtifacts.value = true;
+    processDefinitionActivationRules.value = [];
+    processDefinitionActivationTriggers.value = [];
+    processDefinitionActivationArtifacts.value = [];
+  } finally {
+    processDefinitionActivationChecking.value = false;
   }
 };
 
@@ -2841,14 +2926,20 @@ const handleProcessWizardCreateDefinition = async () => {
 
 const handleDraftCreateProcess = async () => {
   wizardFromDraft.value = true;
+  processWizardReadonly.value = false;
   await openProcessWizard();
 };
 
 const handleProcessWizardClose = async () => {
   closeProcessWizard();
   wizardFromDraft.value = false;
+  processWizardReadonly.value = false;
   if (props.table?.table === "process_definition_versions") {
     await fetchRows();
+  }
+  if (props.table?.table === "processes" && editorMode.value === "edit" && processEditorContext.value?.id) {
+    selectedRow.value = processEditorContext.value;
+    await loadProcessEditorConfigurations(processEditorContext.value.id);
   }
 };
 
@@ -2863,10 +2954,53 @@ const wizardSubmitArtifact = () => refreshWizardAfter(submitDefinitionArtifact);
 const wizardSubmitRule = () => refreshWizardAfter(submitDefinitionRule);
 const wizardSubmitTrigger = () => refreshWizardAfter(submitDefinitionTrigger);
 const wizardConfirmActivation = async () => {
-  await confirmProcessDefinitionActivation();
-  closeProcessWizard();
+  const definitionRow = processWizardDefinition.value;
+  if (!definitionRow?.id) {
+    return;
+  }
   if (props.table?.table === "process_definition_versions") {
+    await confirmProcessDefinitionActivation();
+    closeProcessWizard();
     await fetchRows();
+    return;
+  }
+  processDefinitionActivationChecking.value = true;
+  processWizardError.value = "";
+  try {
+    const response = await adminSqlService.update(
+      "process_definition_versions",
+      { id: Number(definitionRow.id) },
+      { status: "active" }
+    );
+    processWizardDefinition.value = {
+      ...definitionRow,
+      ...(response?.data && typeof response.data === "object" ? response.data : {}),
+      status: "active"
+    };
+    if (response?.data?.__notice) {
+      showFeedbackToast({
+        kind: "success",
+        title: "Configuracion activada",
+        message: response.data.__notice,
+        duration: 6200
+      });
+    } else {
+      showFeedbackToast({
+        kind: "success",
+        title: "Configuracion activada",
+        message: "La configuracion del proceso fue activada."
+      });
+    }
+    await handleProcessWizardClose();
+  } catch (error) {
+    processWizardError.value = error?.response?.data?.message || "No se pudo activar la configuracion.";
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo activar",
+      message: processWizardError.value
+    });
+  } finally {
+    processDefinitionActivationChecking.value = false;
   }
 };
 
@@ -2874,23 +3008,100 @@ const handleOpenWizardFromPrompt = async () => {
   const context = definitionArtifactsPromptContext.value;
   closeDefinitionArtifactsPrompt();
   if (context?.id) {
+    processWizardReadonly.value = false;
     await openProcessWizard({ definitionRow: context, step: "packages" });
   }
 };
 
 // Punto de entrada para crear un proceso desde otros flujos (p.ej. el modal de plantilla).
 const openProcessWizardFromScratch = async () => {
+  processWizardReadonly.value = false;
   await openProcessWizard();
+};
+
+const openProcessDefinitionWizard = async (row, { step = "definition", readonly = false } = {}) => {
+  if (!row?.id) {
+    return;
+  }
+  processWizardReadonly.value = Boolean(readonly);
+  selectedRow.value = row;
+  await openProcessWizard({ definitionRow: row, step });
+  if (step !== "definition") {
+    await loadProcessWizardStep(step);
+  }
+};
+
+const hideProcessWizardForRecordViewer = () => {
+  if (!processWizardOpen.value) {
+    return;
+  }
+  restoreProcessWizardAfterRecordViewer.value = true;
+  closeProcessWizard();
+};
+
+const restoreProcessWizardFromRecordViewer = () => {
+  if (!restoreProcessWizardAfterRecordViewer.value) {
+    return;
+  }
+  restoreProcessWizardAfterRecordViewer.value = false;
+  processWizardOpen.value = true;
+};
+
+const handleOpenRecordViewer = async (row, tableRef) => {
+  if (tableRef?.table === "process_definition_versions") {
+    if (isModalShown(recordViewerModal.value)) {
+      closeRecordViewer();
+    }
+    await openProcessDefinitionWizard(row, { step: "definition", readonly: true });
+    return;
+  }
+  await openRecordViewer(row, tableRef);
+};
+
+const handleWizardViewRow = async (row, tableMeta) => {
+  if (!row || !tableMeta) {
+    return;
+  }
+  hideProcessWizardForRecordViewer();
+  await handleOpenRecordViewer(row, tableMeta);
+};
+
+const handleRecordViewerRelatedRecord = async ({ row, tableMeta } = {}) => {
+  if (!row || !tableMeta) {
+    return;
+  }
+  await handleOpenRecordViewer(row, tableMeta);
+};
+
+const handleActivationViewRow = async ({ row, table } = {}) => {
+  const tableMeta = typeof table === "string" ? allTablesMap.value?.[table] : table;
+  if (!row || !tableMeta) {
+    return;
+  }
+  hideProcessWizardForRecordViewer();
+  await handleOpenRecordViewer(row, tableMeta);
 };
 
 const openProcessConfiguration = async (processRow) => {
   if (!processRow?.id || !canCreateProcessConfiguration.value) {
     return;
   }
+  processWizardReadonly.value = false;
   await openProcessWizard({ processRow });
 };
 
+const openProcessConfigurationFromEditor = async () => {
+  const processRow = processEditorContext.value || selectedRow.value;
+  if (props.table?.table !== "processes" || editorMode.value !== "edit" || !processRow?.id) {
+    return;
+  }
+  await openProcessConfiguration(processRow);
+};
+
 const openProcessConfigurationFromViewer = async () => {
+  if (!recordViewerEditable.value) {
+    return;
+  }
   const processRow = recordViewerTable.value?.table === "processes"
     ? recordViewerRow.value
     : null;
@@ -2901,10 +3112,59 @@ const openProcessConfigurationFromViewer = async () => {
   await openProcessConfiguration(processRow);
 };
 
+const ensureProcessConfigurationDeleteInstance = () => {
+  const modalElement = resolveModalElement(processConfigurationDeleteModal.value);
+  if (!processConfigurationDeleteInstance && modalElement) {
+    processConfigurationDeleteInstance = new Modal(modalElement);
+    modalElement.addEventListener("hidden.bs.modal", () => {
+      processConfigurationDeleteRow.value = null;
+    });
+  }
+};
+
+const deleteProcessEditorConfiguration = (row) => {
+  if (!row?.id || !canDeleteProcessConfigurationRow(row)) {
+    return;
+  }
+  processConfigurationDeleteRow.value = row;
+  ensureProcessConfigurationDeleteInstance();
+  processConfigurationDeleteInstance?.show();
+};
+
+const confirmDeleteProcessEditorConfiguration = async () => {
+  const row = processConfigurationDeleteRow.value;
+  if (!row?.id || !canDeleteProcessConfigurationRow(row)) {
+    return;
+  }
+  processEditorConfigurationsLoading.value = true;
+  processEditorConfigurationsError.value = "";
+  try {
+    await adminSqlService.remove("process_definition_versions", { id: Number(row.id) });
+    await loadProcessEditorConfigurations(processEditorContext.value?.id || selectedRow.value?.id);
+    await fetchRows();
+    processConfigurationDeleteInstance?.hide();
+    processConfigurationDeleteRow.value = null;
+    showFeedbackToast({
+      kind: "success",
+      title: "Configuracion eliminada",
+      message: "La configuracion en borrador fue eliminada del proceso."
+    });
+  } catch (error) {
+    processEditorConfigurationsError.value = error?.response?.data?.message || "No se pudo eliminar la configuracion.";
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo eliminar",
+      message: processEditorConfigurationsError.value
+    });
+  } finally {
+    processEditorConfigurationsLoading.value = false;
+  }
+};
+
 const {
-  openCreate,
-  handlePrimaryCreateAction,
-  openEdit,
+  openCreate: openCreateBase,
+  handlePrimaryCreateAction: handlePrimaryCreateActionBase,
+  openEdit: openEditBase,
   startProcessDefinitionTemplateFromArtifact,
   startProcessDefinitionVersioning
 } = useAdminEditorFlow({
@@ -2928,6 +3188,7 @@ const {
   getEditorInstance,
   openDraftArtifactModal,
   openProcessWizardFromScratch,
+  openProcessDefinitionWizard,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,
@@ -2936,6 +3197,37 @@ const {
   formatFkOptionLabel,
   getNextSemanticVersion
 });
+
+const resetProcessEditorConfigurationState = () => {
+  processEditorContext.value = null;
+  processEditorConfigurations.value = [];
+  processEditorConfigurationsError.value = "";
+  processEditorConfigurationsLoading.value = false;
+  processConfigurationDeleteRow.value = null;
+};
+
+const openCreate = async (...args) => {
+  resetProcessEditorConfigurationState();
+  return openCreateBase(...args);
+};
+
+const handlePrimaryCreateAction = async (...args) => {
+  resetProcessEditorConfigurationState();
+  return handlePrimaryCreateActionBase(...args);
+};
+
+const openEdit = async (row) => {
+  const result = await openEditBase(row);
+  if (props.table?.table === "processes" && !result?.blocked && !result?.redirected && row?.id) {
+    processEditorContext.value = { ...row };
+    await loadProcessEditorConfigurations(row.id);
+  } else if (props.table?.table !== "processes") {
+    processEditorContext.value = null;
+    processEditorConfigurations.value = [];
+    processEditorConfigurationsError.value = "";
+  }
+  return result;
+};
 
 const {
   openProcessSearch,

@@ -104,9 +104,24 @@ export function useProcessDefinitionManager({
     return cargoLabel ? `${primaryLabel} | ${cargoLabel}` : primaryLabel;
   };
 
-  const handleDefinitionRuleScopeChange = () => {
+  const handleDefinitionRuleScopeChange = (scopeType = "") => {
+    const form = scopeType
+      ? { ...definitionRulesForm.value, unit_scope_type: scopeType }
+      : definitionRulesForm.value;
     const nextState = processDefinitionAdminService.applyRuleScopeChange(
-      definitionRulesForm.value,
+      form,
+      definitionRulesLabels.value
+    );
+    definitionRulesForm.value = nextState.form;
+    definitionRulesLabels.value = nextState.labels;
+  };
+
+  const handleDefinitionRuleRecipientPolicyChange = (recipientPolicy = "") => {
+    const form = recipientPolicy
+      ? { ...definitionRulesForm.value, recipient_policy: recipientPolicy }
+      : definitionRulesForm.value;
+    const nextState = processDefinitionAdminService.applyRuleRecipientPolicyChange(
+      form,
       definitionRulesLabels.value
     );
     definitionRulesForm.value = nextState.form;
@@ -161,15 +176,17 @@ export function useProcessDefinitionManager({
     await refreshProcessDefinitionChecklist(definitionRulesContext.value);
   };
 
-  const openDefinitionRulesManager = async (definitionRow) => {
+  const openDefinitionRulesManager = async (definitionRow, { showModal = true } = {}) => {
     if (!definitionRow?.id) {
       return;
     }
     definitionRulesContext.value = { ...definitionRow };
     definitionRulesError.value = "";
     resetDefinitionRulesForm();
-    ensureDefinitionRulesInstance();
-    getDefinitionRulesInstance()?.show();
+    if (showModal) {
+      ensureDefinitionRulesInstance();
+      getDefinitionRulesInstance()?.show();
+    }
     await loadDefinitionRules();
   };
 
@@ -226,6 +243,13 @@ export function useProcessDefinitionManager({
     if (!fieldName) {
       return;
     }
+    const positionFilters = fieldName === "position_id"
+      ? {
+          unit_type_id: definitionRulesForm.value.unit_type_id || "",
+          unit_id: definitionRulesForm.value.unit_id || "",
+          cargo_id: definitionRulesForm.value.cargo_id || ""
+        }
+      : null;
     openFkSearch({ name: fieldName }, async (row) => {
       const idValue = row.id ?? "";
       definitionRulesForm.value = {
@@ -268,7 +292,7 @@ export function useProcessDefinitionManager({
           // Best-effort autofill.
         }
       }
-    });
+    }, { initialPositionFilters: positionFilters });
   };
 
   const clearDefinitionRuleField = (fieldName) => {
@@ -387,15 +411,17 @@ export function useProcessDefinitionManager({
     }
   };
 
-  const openDefinitionTriggersManager = async (definitionRow) => {
+  const openDefinitionTriggersManager = async (definitionRow, { showModal = true } = {}) => {
     if (!definitionRow?.id) {
       return;
     }
     definitionTriggersContext.value = { ...definitionRow };
     definitionTriggersError.value = "";
     resetDefinitionTriggersForm();
-    ensureDefinitionTriggersInstance();
-    getDefinitionTriggersInstance()?.show();
+    if (showModal) {
+      ensureDefinitionTriggersInstance();
+      getDefinitionTriggersInstance()?.show();
+    }
     await loadDefinitionTriggers();
   };
 
@@ -572,15 +598,17 @@ export function useProcessDefinitionManager({
     await refreshProcessDefinitionChecklist(definitionArtifactsContext.value);
   };
 
-  const openDefinitionArtifactsManager = async (definitionRow) => {
+  const openDefinitionArtifactsManager = async (definitionRow, { showModal = true } = {}) => {
     if (!definitionRow?.id) {
       return;
     }
     definitionArtifactsContext.value = { ...definitionRow };
     definitionArtifactsError.value = "";
     resetDefinitionArtifactsForm();
-    ensureDefinitionArtifactsInstance();
-    getDefinitionArtifactsInstance()?.show();
+    if (showModal) {
+      ensureDefinitionArtifactsInstance();
+      getDefinitionArtifactsInstance()?.show();
+    }
     await loadDefinitionArtifacts();
   };
 
@@ -730,6 +758,7 @@ export function useProcessDefinitionManager({
     resetDefinitionTriggersForm,
     formatDefinitionRuleSummary,
     handleDefinitionRuleScopeChange,
+    handleDefinitionRuleRecipientPolicyChange,
     refreshProcessDefinitionChecklist,
     loadDefinitionRules,
     openDefinitionRulesManager,

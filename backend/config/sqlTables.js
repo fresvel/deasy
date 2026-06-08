@@ -92,7 +92,7 @@ export const SQL_TABLES = [
       { name: "series_id", label: "Serie", type: "number", required: true },
       { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "" },
       { name: "definition_version", label: "Version", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "name", label: "Nombre generado", type: "text", readOnly: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       {

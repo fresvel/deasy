@@ -12,7 +12,10 @@
       Esta configuracion no esta en draft. Solo puedes gestionar reglas cuando la configuracion este en draft.
     </div>
     <div v-else-if="canManage && !canSubmit" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-      Completa el alcance requerido para habilitar el boton de guardar.
+      {{ requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar." }}
+    </div>
+    <div v-if="canManage" class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+      {{ ruleContextHint }}
     </div>
 
     <div class="person-assignment-form">
@@ -21,16 +24,30 @@
           <AdminSelectField
             :model-value="form.unit_scope_type"
             :disabled="!canManage"
-            @update:model-value="updateField('unit_scope_type', $event)"
-            @change="$emit('scope-change')"
+            @update:model-value="updateScopeType"
           >
-            <option value="unit_exact">unit_exact</option>
-            <option value="unit_subtree">unit_subtree</option>
-            <option value="unit_type">unit_type</option>
-            <option value="all_units">all_units</option>
+            <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-3">
+        <AdminFieldGroup label="Entrega" group-class="md:col-span-4">
+          <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateRecipientPolicy">
+            <option v-for="option in recipientPolicyOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </AdminSelectField>
+        </AdminFieldGroup>
+        <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
+          <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
+        </AdminFieldGroup>
+        <AdminFieldGroup label="Activo" group-class="md:col-span-3">
+          <AdminSelectField :model-value="form.is_active" :disabled="!canManage" @update:model-value="updateField('is_active', $event)">
+            <option value="1">Si</option>
+            <option value="0">No</option>
+          </AdminSelectField>
+        </AdminFieldGroup>
+        <div v-if="showUnitField" class="md:col-span-4">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
           <AdminLookupField
             :model-value="labels.unit_id"
@@ -44,7 +61,7 @@
             @search="$emit('open-fk-search', 'unit_id')"
           />
         </div>
-        <div class="md:col-span-3">
+        <div v-if="showUnitTypeField" class="md:col-span-4">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de unidad</label>
           <AdminLookupField
             :model-value="labels.unit_type_id"
@@ -58,7 +75,7 @@
             @search="$emit('open-fk-search', 'unit_type_id')"
           />
         </div>
-        <div class="md:col-span-3">
+        <div v-if="showCargoField" class="md:col-span-4">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Cargo</label>
           <AdminLookupField
             :model-value="labels.cargo_id"
@@ -72,7 +89,7 @@
             @search="$emit('open-fk-search', 'cargo_id')"
           />
         </div>
-        <div class="md:col-span-4">
+        <div v-if="showPositionField" class="md:col-span-4">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto exacto</label>
           <AdminLookupField
             :model-value="labels.position_id"
@@ -86,24 +103,7 @@
             @search="$emit('open-fk-search', 'position_id')"
           />
         </div>
-        <AdminFieldGroup label="Entrega" group-class="md:col-span-3">
-          <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateField('recipient_policy', $event)">
-            <option value="all_matches">all_matches</option>
-            <option value="one_per_unit">one_per_unit</option>
-            <option value="one_match_only">one_match_only</option>
-            <option value="exact_position">exact_position</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
-          <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Activo" group-class="md:col-span-3">
-          <AdminSelectField :model-value="form.is_active" :disabled="!canManage" @update:model-value="updateField('is_active', $event)">
-            <option value="1">Si</option>
-            <option value="0">No</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Incluye descendientes" group-class="md:col-span-3">
+        <AdminFieldGroup v-if="showDescendantsField" label="Incluye descendientes" group-class="md:col-span-4">
           <AdminSelectField :model-value="form.include_descendants" :disabled="!canManage" @update:model-value="updateField('include_descendants', $event)">
             <option value="1">Si</option>
             <option value="0">No</option>
@@ -161,6 +161,7 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
@@ -183,12 +184,90 @@ const props = defineProps({
   formatCell: { type: Function, required: true }
 });
 
-const emit = defineEmits(["update:form", "scope-change", "clear-field", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
+const emit = defineEmits([
+  "update:form",
+  "scope-change",
+  "recipient-policy-change",
+  "clear-field",
+  "open-fk-search",
+  "submit",
+  "reset",
+  "view-row",
+  "edit-row",
+  "delete-row"
+]);
+
+const scopeOptions = [
+  { value: "unit_exact", label: "Unidad exacta" },
+  { value: "unit_subtree", label: "Unidad y descendientes" },
+  { value: "unit_type", label: "Tipo de unidad" },
+  { value: "all_units", label: "Todas las unidades" }
+];
+
+const recipientPolicyOptions = [
+  { value: "all_matches", label: "Todos los puestos coincidentes" },
+  { value: "one_per_unit", label: "Un puesto por unidad" },
+  { value: "one_match_only", label: "Solo el primer puesto" },
+  { value: "exact_position", label: "Puesto exacto" }
+];
+
+const scopeType = computed(() => String(props.form.unit_scope_type || "unit_exact"));
+const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));
+const isExactPositionPolicy = computed(() => recipientPolicy.value === "exact_position");
+const showUnitField = computed(() =>
+  isExactPositionPolicy.value || scopeType.value === "unit_exact" || scopeType.value === "unit_subtree"
+);
+const showUnitTypeField = computed(() => !isExactPositionPolicy.value && scopeType.value === "unit_type");
+const showCargoField = computed(() => !isExactPositionPolicy.value);
+const showPositionField = computed(() => isExactPositionPolicy.value);
+const showDescendantsField = computed(() => !isExactPositionPolicy.value && scopeType.value === "unit_exact");
+
+const requirementMessage = computed(() => {
+  if (!props.canManage || props.canSubmit) {
+    return "";
+  }
+  if (isExactPositionPolicy.value) {
+    return "Selecciona un puesto exacto para guardar la regla.";
+  }
+  if (scopeType.value === "unit_type") {
+    return "Selecciona el tipo de unidad para guardar la regla.";
+  }
+  if (scopeType.value === "unit_exact" || scopeType.value === "unit_subtree") {
+    return "Selecciona la unidad base para guardar la regla.";
+  }
+  return "Completa el alcance requerido para habilitar el boton de guardar.";
+});
+
+const ruleContextHint = computed(() => {
+  if (isExactPositionPolicy.value) {
+    return "La regla se limitara a un unico puesto; el alcance se fija como unidad exacta.";
+  }
+  if (scopeType.value === "unit_subtree") {
+    return "El alcance incluye la unidad base y sus descendientes organizacionales.";
+  }
+  if (scopeType.value === "unit_type") {
+    return "El alcance se resolvera por todas las unidades del tipo seleccionado.";
+  }
+  if (scopeType.value === "all_units") {
+    return "El alcance cubre todas las unidades activas y puede acotarse por cargo.";
+  }
+  return "El alcance se aplica a la unidad seleccionada; puedes incluir sus descendientes si corresponde.";
+});
 
 const updateField = (fieldName, value) => {
   emit("update:form", {
     ...props.form,
     [fieldName]: value
   });
+};
+
+const updateScopeType = (value) => {
+  updateField("unit_scope_type", value);
+  emit("scope-change", value);
+};
+
+const updateRecipientPolicy = (value) => {
+  updateField("recipient_policy", value);
+  emit("recipient-policy-change", value);
 };
 </script>

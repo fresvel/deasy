@@ -25,8 +25,8 @@
         </div>
       </div>
 
-      <div class="definition-activation-panel mt-3">
-        <div class="definition-activation-menu flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
+      <div v-if="view !== 'activate'" class="definition-activation-panel mt-3">
+        <div v-if="showMenu" class="definition-activation-menu flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
           <AdminButton variant="secondary" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Reglas</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Disparadores</AdminButton>
@@ -64,6 +64,15 @@
                 {{ row[field.name] || "—" }}
               </template>
             </template>
+            <template #actions="{ row }">
+              <AdminTableActions
+                :show-edit="false"
+                :show-delete="false"
+                view-title="Ver regla"
+                view-label="Ver regla"
+                @view="$emit('view-row', { table: 'process_target_rules', row })"
+              />
+            </template>
           </AdminDataTable>
           <div v-else class="text-sm text-slate-500">Sin reglas registradas.</div>
         </div>
@@ -88,6 +97,15 @@
               <template v-else>
                 {{ row[field.name] || "—" }}
               </template>
+            </template>
+            <template #actions="{ row }">
+              <AdminTableActions
+                :show-edit="false"
+                :show-delete="false"
+                view-title="Ver disparador"
+                view-label="Ver disparador"
+                @view="$emit('view-row', { table: 'process_definition_triggers', row })"
+              />
             </template>
           </AdminDataTable>
           <div v-else class="text-sm text-slate-500">Sin disparadores registrados.</div>
@@ -114,8 +132,17 @@
                 {{ row[field.name] || "—" }}
               </template>
             </template>
+            <template #actions="{ row }">
+              <AdminTableActions
+                :show-edit="false"
+                :show-delete="false"
+                view-title="Ver plantilla vinculada"
+                view-label="Ver plantilla vinculada"
+                @view="$emit('view-row', { table: 'process_definition_templates', row })"
+              />
+            </template>
           </AdminDataTable>
-          <div v-else class="text-sm text-slate-500">Sin artifacts vinculados.</div>
+          <div v-else class="text-sm text-slate-500">Sin plantillas vinculadas.</div>
         </div>
       </div>
     </template>
@@ -125,6 +152,7 @@
 <script setup>
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 defineProps({
   checking: { type: Boolean, default: false },
@@ -141,7 +169,8 @@ defineProps({
   triggerTableFields: { type: Array, default: () => [] },
   artifactTableFields: { type: Array, default: () => [] },
   formatCell: { type: Function, required: true },
-  formatDefinitionRuleSummary: { type: Function, required: true }
+  formatDefinitionRuleSummary: { type: Function, required: true },
+  showMenu: { type: Boolean, default: true }
 });
-defineEmits(["update:view"]);
+defineEmits(["update:view", "view-row"]);
 </script>

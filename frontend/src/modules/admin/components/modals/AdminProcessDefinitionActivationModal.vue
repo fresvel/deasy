@@ -1,11 +1,16 @@
 <template>
-  <AdminModalShell
+  <AdminProcessWizardShell
     ref="modalRef"
     labelled-by="processDefinitionActivationModalLabel"
     title="Activar configuracion"
-    dialog-class="definition-activation-shell"
-    close-action
+    dialog-class="definition-activation-shell max-w-6xl"
+    :steps="activationSteps"
+    :current-step="view"
+    :step-status="activationStepStatus"
+    :definition-context="selectedRow"
+    :show-context-summary="true"
     @close="$emit('cancel')"
+    @go-to-step="$emit('update:view', $event)"
   >
     <ProcessActivationPanel
       :checking="checking"
@@ -23,23 +28,25 @@
       :artifact-table-fields="artifactTableFields"
       :format-cell="formatCell"
       :format-definition-rule-summary="formatDefinitionRuleSummary"
+      :show-menu="false"
       @update:view="$emit('update:view', $event)"
+      @view-row="$emit('view-row', $event)"
     />
     <template #footer>
       <AdminButton variant="cancel" @click="$emit('cancel')">Cancelar</AdminButton>
-      <AdminButton variant="outlinePrimary" :disabled="checking || !primaryAction" @click="$emit('primary-action')">{{ primaryActionLabel }}</AdminButton>
+      <AdminButton v-if="primaryAction" variant="outlinePrimary" :disabled="checking" @click="$emit('primary-action')">{{ primaryActionLabel }}</AdminButton>
       <AdminButton variant="success" :disabled="checking || !allRequirementsMet" @click="$emit('confirm')">Activar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AdminProcessWizardShell>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProcessWizardShell.vue";
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 
-defineProps({
+const props = defineProps({
   checking: { type: Boolean, default: false },
   hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
@@ -59,8 +66,24 @@ defineProps({
   formatCell: { type: Function, required: true },
   formatDefinitionRuleSummary: { type: Function, required: true }
 });
-defineEmits(["update:view", "cancel", "primary-action", "confirm"]);
+defineEmits(["update:view", "view-row", "cancel", "primary-action", "confirm"]);
 const modalRef = ref(null);
+
+const activationSteps = [
+  { key: "definition", label: "Configuración" },
+  { key: "rules", label: "Reglas" },
+  { key: "triggers", label: "Disparadores" },
+  { key: "artifacts", label: "Paquetes" },
+  { key: "activate", label: "Activar", hint: "Final" }
+];
+const activationStepStatus = computed(() => ({
+  definition: Boolean(props.selectedRow?.id),
+  rules: props.hasActiveRules,
+  triggers: props.hasActiveTriggers,
+  artifacts: props.hasRequiredArtifacts || !props.requiresArtifacts,
+  activate: props.allRequirementsMet
+}));
+
 defineExpose({
   get el() {
     return modalRef.value?.el ?? null;

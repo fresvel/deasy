@@ -59,6 +59,22 @@ class AdminPresentationService {
         owner_many_documents: "Multiples documentos del dueño"
       }[value] || value;
     }
+    if (field?.name === "unit_scope_type") {
+      return {
+        unit_exact: "Unidad exacta",
+        unit_subtree: "Unidad y descendientes",
+        unit_type: "Tipo de unidad",
+        all_units: "Todas las unidades"
+      }[value] || value;
+    }
+    if (field?.name === "recipient_policy") {
+      return {
+        all_matches: "Todos los puestos coincidentes",
+        one_per_unit: "Un puesto por unidad",
+        one_match_only: "Solo el primer puesto",
+        exact_position: "Puesto exacto"
+      }[value] || value;
+    }
     if (field?.name === "scope") {
       return {
         owner: "Propietario",

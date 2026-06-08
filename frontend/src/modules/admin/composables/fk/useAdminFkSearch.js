@@ -11,7 +11,6 @@ export function useAdminFkSearch({
   fkError,
   fkField,
   fkSetter,
-  fkViewerRow,
   fkCreateForm,
   fkCreateError,
   fkCreateExitTarget,
@@ -21,6 +20,7 @@ export function useAdminFkSearch({
   resetFkFilters,
   resetFkUnitPositionFilters,
   loadFkUnitTypeOptions,
+  loadFkUnitOptions,
   loadFkCargoOptions,
   loadFkProcessDefinitionProcessOptions,
   resolveFkTable,
@@ -183,7 +183,7 @@ export function useAdminFkSearch({
     }
   };
 
-  const openFkSearch = async (field, onSelect = null) => {
+  const openFkSearch = async (field, onSelect = null, options = {}) => {
     const tableName = resolveFkTable(field.name);
     if (!tableName) {
       return;
@@ -193,7 +193,6 @@ export function useAdminFkSearch({
     fkField.value = field.name;
     fkTable.value = allTablesMap.value[tableName] || null;
     unitTypeByUnitId.value = {};
-    fkViewerRow.value = null;
     resetFkFilters();
     fkCreateForm.value = {};
     fkCreateError.value = "";
@@ -201,11 +200,23 @@ export function useAdminFkSearch({
     fkNestedExitTarget.value = "none";
     fkSearch.value = "";
     resetFkUnitPositionFilters();
+    const initialPositionFilters = options?.initialPositionFilters || null;
+    if ((tableName === "unit_positions" || tableName === "units") && initialPositionFilters) {
+      fkPositionFilters.value = {
+        ...fkPositionFilters.value,
+        unit_type_id: initialPositionFilters.unit_type_id ? String(initialPositionFilters.unit_type_id) : "",
+        unit_id: initialPositionFilters.unit_id ? String(initialPositionFilters.unit_id) : "",
+        cargo_id: initialPositionFilters.cargo_id ? String(initialPositionFilters.cargo_id) : ""
+      };
+    }
     if (tableName === "unit_positions" || tableName === "units") {
       await loadFkUnitTypeOptions();
     }
     if (tableName === "unit_positions") {
       await loadFkCargoOptions();
+      if (fkPositionFilters.value.unit_type_id && typeof loadFkUnitOptions === "function") {
+        await loadFkUnitOptions();
+      }
     }
     if (tableName === "process_definition_versions") {
       await loadFkProcessDefinitionProcessOptions();

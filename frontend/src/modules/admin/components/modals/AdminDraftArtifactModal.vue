@@ -64,10 +64,10 @@
           @update:model-value="updateField('source_version', $event)"
         />
       </AdminFieldGroup>
-      <AdminFieldGroup label="Nombre del artifact" group-class="md:col-span-6">
+      <AdminFieldGroup label="Nombre de la plantilla" group-class="md:col-span-6">
         <AdminInputField
           :model-value="draftArtifactForm.display_name"
-          placeholder="Nombre del artifact"
+          placeholder="Nombre de la plantilla"
           @update:model-value="updateField('display_name', $event)"
         />
       </AdminFieldGroup>
@@ -326,7 +326,7 @@
         :title="canSubmit ? '' : 'Faltan: proceso destino, documento de referencia y al menos un paso de flujo de entrega.'"
         @click="$emit('submit')"
       >
-        {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear artifact") }}
+        {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear plantilla") }}
       </AdminButton>
     </template>
   </AdminModalShell>
@@ -424,7 +424,7 @@ const isGeneralComplete = computed(() => {
   return hasName && hasProcess;
 });
 // Al crear se exige al menos un documento de referencia (pdf/docx/xlsx/pptx); el seed ya no basta.
-// En edición se considera completo si ya hay formatos existentes en el artifact.
+// En edición se considera completo si ya hay formatos existentes en la plantilla.
 const isFormatosComplete = computed(() => {
   const labels = ["pdf", "docx", "xlsx", "pptx"].map((k) => props.getDraftArtifactFileLabel(k));
   const hasUploadedDoc = labels.some((l) => l && l !== "Sin archivo");

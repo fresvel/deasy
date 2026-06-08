@@ -4,7 +4,7 @@
           <div class="deasy-filter-shell deasy-filter-shell--embedded">
             <div class="deasy-filter-grid deasy-filter-grid--admin">
               <div class="md:col-span-4 lg:col-span-3">
-                <AdminInputField :model-value="searchTerm" input-class="deasy-filter-control" placeholder="Buscar artifacts sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+                <AdminInputField :model-value="searchTerm" input-class="deasy-filter-control" placeholder="Buscar plantillas sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
               </div>
               <div class="md:col-span-4 lg:col-span-2">
                 <AdminSelectField :model-value="filters.is_active" select-class="deasy-filter-control" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
@@ -37,9 +37,9 @@
             </div>
           </div>
 
-          <div v-if="loading" class="text-sm text-slate-500">Cargando artifacts sin configuracion...</div>
+          <div v-if="loading" class="text-sm text-slate-500">Cargando plantillas sin configuracion...</div>
           <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
-          <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `artifact-free-${row.id}`" empty-text="No hay artifacts sin configuracion.">
+          <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `artifact-free-${row.id}`" empty-text="No hay plantillas sin configuracion.">
             <template #cell="{ row, field }">
               <template v-if="field.name === 'available_formats'">
                 <div class="available-formats-cell">

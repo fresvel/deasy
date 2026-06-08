@@ -18,7 +18,6 @@ export function useAdminModalRegistry({
   recordViewerModal,
   personAssignmentsModal,
   fkModal,
-  fkViewerModal,
   fkFilterModal,
   fkCreateModal,
   templateSearchModal,
@@ -53,6 +52,7 @@ export function useAdminModalRegistry({
   definitionArtifactsPromptContext,
   refreshProcessDefinitionChecklist,
   openProcessDefinitionActivationModal,
+  restoreProcessWizardFromRecordViewer,
   resetDefinitionRulesForm,
   resetDefinitionTriggersForm,
   resetDefinitionArtifactsForm
@@ -68,7 +68,6 @@ export function useAdminModalRegistry({
   let recordViewerInstance = null;
   let personAssignmentsInstance = null;
   let fkInstance = null;
-  let fkViewerInstance = null;
   let fkFilterInstance = null;
   let fkCreateInstance = null;
   let templateSearchInstance = null;
@@ -111,6 +110,9 @@ export function useAdminModalRegistry({
     }
     if (returnModal === "definitionArtifacts" && definitionArtifactsInstance) {
       definitionArtifactsInstance.show();
+    }
+    if (returnModal === "fkSearch" && fkInstance) {
+      fkInstance.show();
     }
   };
 
@@ -204,6 +206,7 @@ export function useAdminModalRegistry({
       recordViewerInstance = new Modal(modalElement);
       modalElement.addEventListener("hidden.bs.modal", () => {
         restoreReturnModal();
+        restoreProcessWizardFromRecordViewer?.();
       });
     }
   };
@@ -274,20 +277,6 @@ export function useAdminModalRegistry({
     }
   };
 
-  const ensureFkViewerInstance = () => {
-    const modalElement = resolveModalElement(fkViewerModal.value);
-    if (!fkViewerInstance && modalElement) {
-      fkViewerInstance = new Modal(modalElement);
-      modalElement.addEventListener("hidden.bs.modal", () => {
-        if (fkNestedExitTarget.value === "search") {
-          ensureFkInstance();
-          fkInstance?.show();
-        }
-        fkNestedExitTarget.value = "none";
-      });
-    }
-  };
-
   const ensureFkFilterInstance = () => {
     const modalElement = resolveModalElement(fkFilterModal.value);
     if (!fkFilterInstance && modalElement) {
@@ -342,6 +331,14 @@ export function useAdminModalRegistry({
   };
 
   const hideParentModalsForRecordViewer = () => {
+    const fkSearchWasOpen = Boolean(resolveModalElement(fkModal.value)?.classList?.contains("show"));
+    if (fkSearchWasOpen) {
+      skipFkReturnRestore.value = true;
+      if (!hideAndRemember("fkSearch", fkInstance, fkModal.value)) {
+        skipFkReturnRestore.value = false;
+      }
+    }
+    hideAndRemember("definitionActivation", processDefinitionActivationInstance, processDefinitionActivationModal.value);
     hideAndRemember("personAssignments", personAssignmentsInstance, personAssignmentsModal.value);
     hideAndRemember("definitionRules", definitionRulesInstance, definitionRulesModal.value);
     hideAndRemember("definitionTriggers", definitionTriggersInstance, definitionTriggersModal.value);
@@ -361,7 +358,6 @@ export function useAdminModalRegistry({
     ensureDefinitionArtifactsPromptInstance,
     ensureFkInstance,
     ensureFkCreateInstance,
-    ensureFkViewerInstance,
     ensureFkFilterInstance,
     ensureProcessSearchInstance,
     ensureTemplateSearchInstance,
@@ -377,7 +373,6 @@ export function useAdminModalRegistry({
     getDefinitionArtifactsPromptInstance: () => definitionArtifactsPromptInstance,
     getRecordViewerInstance: () => recordViewerInstance,
     getFkInstance: () => fkInstance,
-    getFkViewerInstance: () => fkViewerInstance,
     getFkFilterInstance: () => fkFilterInstance,
     getFkCreateInstance: () => fkCreateInstance,
     getProcessDefinitionActivationInstance: () => processDefinitionActivationInstance,

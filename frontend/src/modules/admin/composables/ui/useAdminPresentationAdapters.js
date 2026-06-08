@@ -152,17 +152,15 @@ export function useAdminPresentationAdapters({
       }
       return row?.variation_key || value || "—";
     }
-    if (tableMeta?.table === "process_target_rules") {
-      if (["effective_from", "effective_to"].includes(fieldName)) {
-        return formatDateOnly(value);
-      }
+    if (["effective_from", "effective_to"].includes(fieldName)) {
+      return formatDateOnly(value);
     }
     if (tableMeta?.table === "position_assignments") {
       if (["start_date", "end_date"].includes(field?.name)) {
         return formatDateOnly(value);
       }
     }
-    if (["scope", "source_type"].includes(fieldName)) {
+    if (["scope", "source_type", "unit_scope_type", "recipient_policy"].includes(fieldName)) {
       return formatSelectOptionLabel(field, value);
     }
     if (fieldName === "available_formats") {

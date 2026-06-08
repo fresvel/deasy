@@ -62,13 +62,15 @@ export class ProcessDefinitionAdminService {
 
   applyRuleScopeChange(form, labels) {
     const scopeType = String(form.unit_scope_type || "");
+    const recipientPolicy = String(form.recipient_policy || "");
     if (scopeType === "unit_type") {
       return {
         form: {
           ...form,
           unit_id: "",
           position_id: "",
-          include_descendants: "0"
+          include_descendants: "0",
+          recipient_policy: recipientPolicy === "exact_position" ? "all_matches" : (form.recipient_policy || "all_matches")
         },
         labels: {
           ...labels,
@@ -84,7 +86,8 @@ export class ProcessDefinitionAdminService {
           unit_id: "",
           unit_type_id: "",
           position_id: "",
-          include_descendants: "0"
+          include_descendants: "0",
+          recipient_policy: recipientPolicy === "exact_position" ? "all_matches" : (form.recipient_policy || "all_matches")
         },
         labels: {
           ...labels,
@@ -94,28 +97,72 @@ export class ProcessDefinitionAdminService {
         }
       };
     }
+    const keepsExactPosition = recipientPolicy === "exact_position" && scopeType === "unit_exact";
     return {
       form: {
         ...form,
-        unit_type_id: ""
+        unit_type_id: "",
+        position_id: keepsExactPosition ? form.position_id : "",
+        include_descendants: scopeType === "unit_subtree" ? "1" : form.include_descendants,
+        recipient_policy: recipientPolicy === "exact_position" && !keepsExactPosition ? "all_matches" : (form.recipient_policy || "all_matches")
       },
       labels: {
         ...labels,
-        unit_type_id: ""
+        unit_type_id: "",
+        position_id: keepsExactPosition ? labels.position_id : ""
+      }
+    };
+  }
+
+  applyRuleRecipientPolicyChange(form, labels) {
+    const recipientPolicy = String(form.recipient_policy || "");
+    if (recipientPolicy === "exact_position") {
+      return {
+        form: {
+          ...form,
+          unit_scope_type: "unit_exact",
+          unit_type_id: "",
+          cargo_id: "",
+          include_descendants: "0"
+        },
+        labels: {
+          ...labels,
+          unit_type_id: "",
+          cargo_id: ""
+        }
+      };
+    }
+
+    return {
+      form: {
+        ...form,
+        position_id: ""
+      },
+      labels: {
+        ...labels,
+        position_id: ""
       }
     };
   }
 
   buildRulePayload(definitionId, form) {
+    const recipientPolicy = form.recipient_policy || "all_matches";
+    const scopeType = form.unit_scope_type || "unit_exact";
+    const usesExactPosition = recipientPolicy === "exact_position";
+    const usesUnitScope = scopeType === "unit_exact" || scopeType === "unit_subtree" || usesExactPosition;
+    const usesUnitTypeScope = scopeType === "unit_type" && !usesExactPosition;
+    const includeDescendants = scopeType === "unit_subtree"
+      || (scopeType === "unit_exact" && !usesExactPosition && Number(form.include_descendants) === 1);
+
     return {
       process_definition_id: Number(definitionId),
-      unit_scope_type: form.unit_scope_type || "unit_exact",
-      unit_id: form.unit_id ? Number(form.unit_id) : null,
-      unit_type_id: form.unit_type_id ? Number(form.unit_type_id) : null,
-      include_descendants: Number(form.include_descendants) === 1 ? 1 : 0,
-      cargo_id: form.cargo_id ? Number(form.cargo_id) : null,
-      position_id: form.position_id ? Number(form.position_id) : null,
-      recipient_policy: form.recipient_policy || "all_matches",
+      unit_scope_type: usesExactPosition ? "unit_exact" : scopeType,
+      unit_id: usesUnitScope && form.unit_id ? Number(form.unit_id) : null,
+      unit_type_id: usesUnitTypeScope && form.unit_type_id ? Number(form.unit_type_id) : null,
+      include_descendants: includeDescendants ? 1 : 0,
+      cargo_id: !usesExactPosition && form.cargo_id ? Number(form.cargo_id) : null,
+      position_id: usesExactPosition && form.position_id ? Number(form.position_id) : null,
+      recipient_policy: recipientPolicy,
       priority: Number(form.priority || 1) || 1,
       is_active: Number(form.is_active) === 1 ? 1 : 0,
       effective_from: form.effective_from || null,

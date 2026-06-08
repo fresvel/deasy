@@ -45,7 +45,20 @@ const props = defineProps({
   formatCell: { type: Function, required: true }
 });
 
-const emit = defineEmits(["update:form", "scope-change", "clear-field", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "close", "accept"]);
+const emit = defineEmits([
+  "update:form",
+  "scope-change",
+  "recipient-policy-change",
+  "clear-field",
+  "open-fk-search",
+  "submit",
+  "reset",
+  "view-row",
+  "edit-row",
+  "delete-row",
+  "close",
+  "accept"
+]);
 const modalRef = ref(null);
 
 const panelBindings = computed(() => ({
@@ -64,7 +77,8 @@ const panelBindings = computed(() => ({
 
 const panelListeners = {
   "update:form": (value) => emit("update:form", value),
-  "scope-change": () => emit("scope-change"),
+  "scope-change": (value) => emit("scope-change", value),
+  "recipient-policy-change": (value) => emit("recipient-policy-change", value),
   "clear-field": (field) => emit("clear-field", field),
   "open-fk-search": (field) => emit("open-fk-search", field),
   submit: () => emit("submit"),

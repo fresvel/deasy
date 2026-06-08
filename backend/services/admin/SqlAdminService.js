@@ -29,6 +29,7 @@ import {
 } from "../documents/DocumentProgressService.js";
 import {
   PROCESS_SERIES_SOURCE_TYPES,
+  buildProcessDefinitionVersionName,
   resolveProcessDefinitionSeriesIdentity
 } from "./processDefinitionSeries.js";
 
@@ -1288,9 +1289,19 @@ export default class SqlAdminService {
       throw new Error("Selecciona una serie valida para la configuracion.");
     }
     const [rows] = await connection.query(
-      `SELECT id, source_type, unit_type_id, cargo_id, code, is_active
-       FROM process_definition_series
-       WHERE id = ?
+      `SELECT
+         pds.id,
+         pds.source_type,
+         pds.unit_type_id,
+         pds.cargo_id,
+         pds.code,
+         pds.is_active,
+         ut.name AS unit_type_name,
+         c.name AS cargo_name
+       FROM process_definition_series pds
+       LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
+       LEFT JOIN cargos c ON c.id = pds.cargo_id
+       WHERE pds.id = ?
        LIMIT 1`,
       [seriesId]
     );
@@ -1305,6 +1316,92 @@ export default class SqlAdminService {
       throw new Error("La serie por defecto no se puede usar para nuevas configuraciones. Crea una serie basada en tipo de unidad o cargo.");
     }
     return series;
+  }
+
+  async resolveProcessDefinitionVersionName(processId, seriesId, { connection = this.pool } = {}) {
+    this.ensurePool();
+    const normalizedProcessId = Number(processId);
+    const normalizedSeriesId = Number(seriesId);
+    if (!normalizedProcessId || !normalizedSeriesId) {
+      throw new Error("Selecciona proceso y serie para calcular el nombre de la configuracion.");
+    }
+    const [rows] = await connection.query(
+      `SELECT
+         p.name AS process_name,
+         pds.source_type,
+         pds.code,
+         ut.name AS unit_type_name,
+         c.name AS cargo_name
+       FROM processes p
+       INNER JOIN process_definition_series pds ON pds.id = ?
+       LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
+       LEFT JOIN cargos c ON c.id = pds.cargo_id
+       WHERE p.id = ?
+       LIMIT 1`,
+      [normalizedSeriesId, normalizedProcessId]
+    );
+    const row = rows?.[0] || null;
+    if (!row) {
+      throw new Error("No se pudo calcular el nombre de la configuracion.");
+    }
+    const generatedName = buildProcessDefinitionVersionName({
+      processName: row.process_name,
+      series: row
+    });
+    if (!generatedName) {
+      throw new Error("No se pudo calcular el nombre de la configuracion.");
+    }
+    return generatedName;
+  }
+
+  async refreshProcessDefinitionVersionNames({ processId = null, seriesId = null, connection = this.pool } = {}) {
+    this.ensurePool();
+    const filters = [];
+    const params = [];
+    if (processId !== null && processId !== undefined && processId !== "") {
+      filters.push("pdv.process_id = ?");
+      params.push(Number(processId));
+    }
+    if (seriesId !== null && seriesId !== undefined && seriesId !== "") {
+      filters.push("pdv.series_id = ?");
+      params.push(Number(seriesId));
+    }
+    if (!filters.length) {
+      return 0;
+    }
+    const [rows] = await connection.query(
+      `SELECT
+         pdv.id,
+         pdv.name,
+         p.name AS process_name,
+         pds.source_type,
+         pds.code,
+         ut.name AS unit_type_name,
+         c.name AS cargo_name
+       FROM process_definition_versions pdv
+       INNER JOIN processes p ON p.id = pdv.process_id
+       INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+       LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
+       LEFT JOIN cargos c ON c.id = pds.cargo_id
+       WHERE ${filters.join(" AND ")}`,
+      params
+    );
+    let updated = 0;
+    for (const row of rows || []) {
+      const generatedName = buildProcessDefinitionVersionName({
+        processName: row.process_name,
+        series: row
+      });
+      if (!generatedName || String(row.name || "") === generatedName) {
+        continue;
+      }
+      await connection.query(
+        "UPDATE process_definition_versions SET name = ? WHERE id = ?",
+        [generatedName, Number(row.id)]
+      );
+      updated += 1;
+    }
+    return updated;
   }
 
   async retireActiveDefinitionsInSeries({ processId, variationKey, excludeId = null, connection = this.pool }) {
@@ -2124,6 +2221,18 @@ export default class SqlAdminService {
       throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento.");
     }
 
+    if (tableName === "process_definition_versions") {
+      const requestedStatus = String(payload.status || "draft");
+      if (requestedStatus !== "draft") {
+        throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
+      }
+      const series = await this.resolveProcessDefinitionSeries(payload);
+      payload.variation_key = String(series.code || "").trim();
+      payload.name = await this.resolveProcessDefinitionVersionName(payload.process_id, payload.series_id);
+      payload.status = "draft";
+      await this.ensureProcessDefinitionVersionAvailable(payload);
+    }
+
     const required = config.fields.filter((field) => field.required && !field.readOnly && !field.virtual);
     const missing = required.filter((field) => payload[field.name] === undefined || payload[field.name] === "");
 
@@ -2133,17 +2242,6 @@ export default class SqlAdminService {
 
     validateFieldTypes(config, payload);
     validateTableRules(tableName, payload);
-
-    if (tableName === "process_definition_versions") {
-      const requestedStatus = String(payload.status || "draft");
-      if (requestedStatus !== "draft") {
-        throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
-      }
-      const series = await this.resolveProcessDefinitionSeries(payload);
-      payload.variation_key = String(series.code || "").trim();
-      payload.status = "draft";
-      await this.ensureProcessDefinitionVersionAvailable(payload);
-    }
 
     if (tableName === "vacancies") {
       await this.ensureContractablePosition(payload.position_id ?? data?.position_id);
@@ -2625,6 +2723,9 @@ export default class SqlAdminService {
         }
         delete updates.variation_key;
       }
+      if (Object.prototype.hasOwnProperty.call(updates, "name")) {
+        delete updates.name;
+      }
 
       Object.keys(updates).forEach((key) => {
         if (isSameValue(key, updates[key], existing[key])) {
@@ -2650,6 +2751,10 @@ export default class SqlAdminService {
       let allowed;
       let errorMessage;
       if (currentStatus === "draft") {
+        const generatedName = await this.resolveProcessDefinitionVersionName(existing.process_id, existing.series_id);
+        if (generatedName && !isSameValue("name", generatedName, existing.name)) {
+          updates.name = generatedName;
+        }
         allowed = new Set([
           "name",
           "description",
@@ -2834,6 +2939,23 @@ export default class SqlAdminService {
              WHERE series_id = ?`,
             [updates.code, Number(existing.id)]
           );
+          await this.refreshProcessDefinitionVersionNames({ seriesId: Number(existing.id) });
+        }
+        if (tableName === "processes" && Object.prototype.hasOwnProperty.call(updates, "name")) {
+          await this.refreshProcessDefinitionVersionNames({ processId: Number(existing.id ?? keyPayload.id) });
+        }
+        if (
+          (tableName === "unit_types" || tableName === "cargos")
+          && Object.prototype.hasOwnProperty.call(updates, "name")
+        ) {
+          const foreignKey = tableName === "unit_types" ? "unit_type_id" : "cargo_id";
+          const [seriesRows] = await this.pool.query(
+            `SELECT id FROM process_definition_series WHERE ${foreignKey} = ?`,
+            [Number(existing.id ?? keyPayload.id)]
+          );
+          for (const seriesRow of seriesRows || []) {
+            await this.refreshProcessDefinitionVersionNames({ seriesId: Number(seriesRow.id) });
+          }
         }
       }
     } catch (error) {

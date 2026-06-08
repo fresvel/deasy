@@ -117,7 +117,7 @@
               </div>
             </div>
             <AdminButton
-              v-if="isProcessConfigurationSection(section) && canCreateProcessConfiguration"
+              v-if="canAddProcessConfiguration(section)"
               variant="primary"
               size="sm"
               @click="$emit('add-process-configuration')"
@@ -139,20 +139,30 @@
               {{ isProcessConfigurationSection(section) ? "Este proceso aun no tiene configuraciones." : "Sin registros relacionados." }}
             </p>
             <p v-if="isProcessConfigurationSection(section)" class="m-0 mt-1 max-w-lg text-xs leading-5 text-slate-500">
-              Agrega una configuracion para definir su variacion, vigencia, reglas, paquetes y disparadores.
+              {{ processConfigurationEmptyText }}
             </p>
           </div>
           <AdminDataTable
             v-else
-            :fields="section.fields"
+            :fields="relatedSectionFields(section)"
             :rows="section.rows"
             :row-key="(sectionRow) => rowKeyForTable(section.tableMeta, sectionRow)"
             table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
             responsive-class="overflow-x-auto rounded-lg border border-slate-200 bg-white"
             scroll-class=""
+            actions-label="Accion"
           >
             <template #cell="{ row: sectionRow, field }">
               {{ formatValueForTable(section.tableMeta, sectionRow[field.name], field, sectionRow) }}
+            </template>
+            <template #actions="{ row: sectionRow }">
+              <AdminTableActions
+                :show-edit="false"
+                :show-delete="false"
+                view-title="Ver detalle"
+                view-label="Ver detalle"
+                @view="$emit('view-related-record', { row: sectionRow, tableMeta: section.tableMeta })"
+              />
             </template>
           </AdminDataTable>
         </section>
@@ -207,8 +217,40 @@ import {
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "template_seeds"]);
+const MAX_RELATED_FIELDS = 6;
+const RELATED_FIELD_PRIORITY = {
+  process_definition_versions: ["series_id", "definition_version", "name", "has_document", "status", "effective_from"],
+  process_definition_templates: ["template_artifact_id", "instance_mode", "creates_task", "is_required", "sort_order"],
+  process_target_rules: ["unit_scope_type", "unit_id", "unit_type_id", "cargo_id", "position_id", "is_active"],
+  process_definition_triggers: ["trigger_mode", "term_type_id", "is_active"],
+  process_runs: ["status", "term_id", "started_at", "completed_at"],
+  tasks: ["title", "name", "status", "due_at", "created_at"],
+  task_items: ["process_definition_template_id", "status", "sort_order", "created_at"],
+  task_assignments: ["responsible_position_id", "status", "assigned_at"],
+  documents: ["title", "name", "status", "current_version_id", "created_at"],
+  document_versions: ["version_number", "status", "created_at"],
+  document_fill_flows: ["status", "created_at"],
+  signature_flow_instances: ["status", "created_at"],
+  position_assignments: ["position_id", "cargo_id", "start_date", "end_date", "is_active"],
+  role_assignments: ["role_id", "assigned_at", "is_active"],
+  contracts: ["contract_type", "start_date", "end_date", "is_active"]
+};
+const NOISY_RELATED_FIELDS = new Set([
+  "id",
+  "description",
+  "created_at",
+  "updated_at",
+  "deleted_at",
+  "created_by",
+  "created_by_user_id",
+  "updated_by",
+  "effective_to",
+  "metadata",
+  "payload"
+]);
 
 const props = defineProps({
   loading: { type: Boolean, default: false },
@@ -219,6 +261,7 @@ const props = defineProps({
   displayRows: { type: Array, default: () => [] },
   relatedSections: { type: Array, default: () => [] },
   downloading: { type: Boolean, default: false },
+  editable: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
   canCreateProcessConfiguration: { type: Boolean, default: false },
   sourceBusy: { type: Boolean, default: false },
@@ -234,15 +277,23 @@ const emit = defineEmits([
   "download-archive",
   "download-source",
   "upload-source",
-  "add-process-configuration"
+  "add-process-configuration",
+  "view-related-record"
 ]);
 
 const canDownloadArchive = computed(() =>
   Boolean(props.recordViewerRow?.id) && ARCHIVE_DOWNLOADABLE_TABLES.has(props.recordViewerTable?.table)
 );
-// Edición de código (LaTeX) solo para admin y solo sobre paquetes de plantilla.
+// Edición de código (LaTeX) solo cuando el visor fue abierto desde un flujo editable.
 const canEditSource = computed(() =>
-  props.isAdmin && Boolean(props.recordViewerRow?.id) && props.recordViewerTable?.table === "template_artifacts"
+  props.editable && props.isAdmin && Boolean(props.recordViewerRow?.id) && props.recordViewerTable?.table === "template_artifacts"
+);
+const canAddProcessConfiguration = (section) =>
+  props.editable && isProcessConfigurationSection(section) && props.canCreateProcessConfiguration;
+const processConfigurationEmptyText = computed(() =>
+  props.editable && props.canCreateProcessConfiguration
+    ? "Agrega una configuracion para definir su variacion, vigencia, reglas, paquetes y disparadores."
+    : "Las configuraciones se gestionan desde el modo editar."
 );
 const sourceInputRef = ref(null);
 const triggerSourceUpload = () => sourceInputRef.value?.click();
@@ -310,6 +361,22 @@ const sectionEyebrow = (section) => (
 const sectionTitle = (section) => (
   isProcessConfigurationSection(section) ? "Configuraciones del proceso" : section.label
 );
+
+const relatedSectionFields = (section) => {
+  const fields = Array.isArray(section?.fields) ? section.fields : [];
+  const tableName = section?.tableMeta?.table || section?.key || "";
+  const priority = RELATED_FIELD_PRIORITY[tableName] || [];
+  const byName = new Map(fields.map((field) => [field.name, field]));
+  const selected = priority
+    .map((fieldName) => byName.get(fieldName))
+    .filter(Boolean);
+  if (selected.length) {
+    return selected.slice(0, MAX_RELATED_FIELDS);
+  }
+  return fields
+    .filter((field) => field?.name && !NOISY_RELATED_FIELDS.has(field.name))
+    .slice(0, MAX_RELATED_FIELDS);
+};
 
 const isLongValue = (row) => getFormattedViewerValue(row).length > 90;
 

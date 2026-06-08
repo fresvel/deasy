@@ -96,6 +96,77 @@
         />
       </div>
     </form>
+    <section v-if="showProcessConfigurations" class="mt-5 border-t border-slate-200 pt-5">
+      <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Configuraciones</p>
+          <h6 class="m-0 mt-1 flex items-center gap-2 text-base font-extrabold text-slate-800">
+            <span>Configuraciones del proceso</span>
+            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-slate-100 px-1.5 text-xs font-bold text-slate-600">
+              {{ processConfigurationRows.length }}
+            </span>
+          </h6>
+          <p class="m-0 mt-1 text-xs font-medium leading-5 text-slate-500">
+            Agrega nuevas configuraciones y elimina borradores que aun no deben usarse en el proceso.
+          </p>
+        </div>
+        <AdminButton
+          v-if="canCreateProcessConfiguration"
+          variant="outlinePrimary"
+          @click="$emit('add-process-configuration')"
+        >
+          <font-awesome-icon icon="plus" />
+          <span>Agregar configuracion</span>
+        </AdminButton>
+      </div>
+      <div
+        v-if="processConfigurationError"
+        class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+      >
+        {{ processConfigurationError }}
+      </div>
+      <div v-if="processConfigurationLoading" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm font-medium text-slate-500">
+        Cargando configuraciones vinculadas...
+      </div>
+      <AdminDataTable
+        v-else
+        :fields="processConfigurationTableFields"
+        :rows="processConfigurationRows"
+        :row-key="(row) => row.id"
+        empty-text="Este proceso aun no tiene configuraciones."
+        table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
+        responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+        scroll-class=""
+      >
+        <template #cell="{ row, field }">
+          <span
+            v-if="field.name === 'status'"
+            class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold"
+            :class="processConfigurationStatusClass(row[field.name])"
+          >
+            {{ processConfigurationStatusLabel(row[field.name]) }}
+          </span>
+          <template v-else>
+            {{ formatProcessConfigurationCell(row, field) }}
+          </template>
+        </template>
+        <template #actions="{ row }">
+          <AdminTableActions
+            :show-view="false"
+            :show-edit="false"
+            :show-delete="canDeleteProcessConfigurationRow(row)"
+            delete-message="Eliminar configuracion"
+            @delete="$emit('delete-process-configuration', row)"
+          />
+        </template>
+      </AdminDataTable>
+      <p
+        v-if="canDeleteProcessConfiguration && processConfigurationRows.some((row) => !canDeleteProcessConfigurationRow(row))"
+        class="m-0 mt-2 text-xs font-medium text-slate-500"
+      >
+        Las configuraciones activas o retiradas no se eliminan desde este bloque; gestionalas con versionado o cambio de estado.
+      </p>
+    </section>
     <div v-if="table?.table === 'process_definition_versions'" class="definition-checklist mt-4">
       <div class="definition-checklist-head">
         <strong>Checklist de activacion</strong>
@@ -164,12 +235,14 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
 const props = defineProps({
   editorMode: { type: String, default: "create" },
@@ -184,6 +257,12 @@ const props = defineProps({
   processDefinitionChecklistLoading: { type: Boolean, default: false },
   processDefinitionChecklist: { type: Object, default: () => ({}) },
   requiresDefinitionArtifacts: { type: Boolean, default: false },
+  processConfigurationLoading: { type: Boolean, default: false },
+  processConfigurationError: { type: String, default: "" },
+  processConfigurationRows: { type: Array, default: () => [] },
+  processConfigurationTableFields: { type: Array, default: () => [] },
+  canCreateProcessConfiguration: { type: Boolean, default: false },
+  canDeleteProcessConfiguration: { type: Boolean, default: false },
   selectedRow: { type: Object, default: null },
   isInputField: { type: Function, required: true },
   isForeignKeyField: { type: Function, required: true },
@@ -191,7 +270,9 @@ const props = defineProps({
   inputType: { type: Function, required: true },
   shouldShowInlineFkSuggestions: { type: Function, required: true },
   formatInlineFkOption: { type: Function, required: true },
-  formatSelectOptionLabel: { type: Function, required: true }
+  formatSelectOptionLabel: { type: Function, required: true },
+  formatProcessConfigurationCell: { type: Function, required: true },
+  canDeleteProcessConfigurationRow: { type: Function, required: true }
 });
 
 const emit = defineEmits([
@@ -203,6 +284,8 @@ const emit = defineEmits([
   "open-fk-search",
   "select-inline-fk-suggestion",
   "handle-select-change",
+  "add-process-configuration",
+  "delete-process-configuration",
   "open-definition-rules",
   "open-definition-triggers",
   "open-definition-artifacts",
@@ -211,6 +294,24 @@ const emit = defineEmits([
 ]);
 
 const modalRef = ref(null);
+
+const showProcessConfigurations = computed(() =>
+  props.table?.table === "processes"
+  && props.editorMode === "edit"
+  && Boolean(props.selectedRow?.id)
+);
+
+const processConfigurationStatusLabel = (value) => ({
+  draft: "Borrador",
+  active: "Activa",
+  retired: "Retirada"
+}[String(value || "").trim().toLowerCase()] || (value || "—"));
+
+const processConfigurationStatusClass = (value) => ({
+  draft: "bg-slate-100 text-slate-700",
+  active: "bg-emerald-50 text-emerald-700",
+  retired: "bg-amber-50 text-amber-700"
+}[String(value || "").trim().toLowerCase()] || "bg-slate-100 text-slate-600");
 
 const updateFormField = (fieldName, value) => {
   emit("update:form-data", {

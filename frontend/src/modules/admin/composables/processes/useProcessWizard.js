@@ -44,6 +44,36 @@ const buildSeriesCode = ({ sourceType, unitTypeId, unitTypeName, cargoId, cargoN
   return "";
 };
 
+const capitalizeFirst = (value) => {
+  const normalized = String(value || "").trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return "";
+  }
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+};
+
+const prettifySeriesCode = (value) =>
+  capitalizeFirst(String(value || "").replace(/-/g, " "));
+
+const buildSeriesDisplayName = ({ sourceType, unitTypeName, cargoName, code } = {}) => {
+  const unitTypeLabel = capitalizeFirst(unitTypeName);
+  const cargoLabel = capitalizeFirst(cargoName);
+
+  if (sourceType === "unit_type" && unitTypeLabel) {
+    return unitTypeLabel;
+  }
+  if (sourceType === "cargo" && cargoLabel) {
+    return cargoLabel;
+  }
+  if (sourceType === "unit_type_cargo") {
+    const parts = [unitTypeLabel, cargoLabel].filter(Boolean);
+    if (parts.length) {
+      return parts.join(" y ");
+    }
+  }
+  return prettifySeriesCode(code || "general");
+};
+
 const newDefinitionForm = () => ({
   process_mode: "existing",
   process_id: "",
@@ -54,9 +84,18 @@ const newDefinitionForm = () => ({
   unit_type_id: "",
   cargo_id: "",
   definition_version: "1.0.0",
-  name: "",
   description: "",
   has_document: 1,
+});
+
+const definitionFormFromRow = (row = {}) => ({
+  ...newDefinitionForm(),
+  process_mode: "existing",
+  process_id: row.process_id ? String(row.process_id) : "",
+  series_id: row.series_id ? String(row.series_id) : "",
+  definition_version: row.definition_version || "1.0.0",
+  description: row.description || "",
+  has_document: Number(row.has_document) ? 1 : 0
 });
 
 const resolveCreatedId = (response) =>
@@ -101,8 +140,17 @@ export function useProcessWizard() {
           const unitTypeName = unitTypeNames.get(Number(row.unit_type_id)) || "";
           const cargoName = cargoNames.get(Number(row.cargo_id)) || "";
           const sourceDetail = [unitTypeName, cargoName].filter(Boolean).join(" + ");
+          const displayName = buildSeriesDisplayName({
+            sourceType: row.source_type,
+            unitTypeName,
+            cargoName,
+            code: row.code
+          });
           return {
             ...row,
+            displayName,
+            unit_type_name: row.unit_type_name || unitTypeName,
+            cargo_name: row.cargo_name || cargoName,
             label: [
               row.code,
               sourceDetail
@@ -118,6 +166,43 @@ export function useProcessWizard() {
       seriesOptions.value = [];
     }
   };
+
+  const selectedSeriesDisplayName = computed(() => {
+    const form = definitionForm.value;
+    const selectedSeriesId = Number(form.series_id);
+    if (selectedSeriesId) {
+      const selectedSeries = seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId);
+      if (!selectedSeries) {
+        return "";
+      }
+      return selectedSeries.displayName || buildSeriesDisplayName({
+        sourceType: selectedSeries.source_type,
+        unitTypeName: selectedSeries.unit_type_name,
+        cargoName: selectedSeries.cargo_name,
+        code: selectedSeries.code
+      });
+    }
+    if (form.series_id !== NEW_SERIES_VALUE) {
+      return "";
+    }
+    const unitType = unitTypeOptions.value.find((row) => Number(row.id) === Number(form.unit_type_id));
+    const cargo = cargoOptions.value.find((row) => Number(row.id) === Number(form.cargo_id));
+    if (form.series_source_type === "unit_type" && !unitType) {
+      return "";
+    }
+    if (form.series_source_type === "cargo" && !cargo) {
+      return "";
+    }
+    if (form.series_source_type === "unit_type_cargo" && (!unitType || !cargo)) {
+      return "";
+    }
+    return buildSeriesDisplayName({
+      sourceType: String(form.series_source_type || ""),
+      unitTypeName: unitType?.name || "",
+      cargoName: cargo?.name || "",
+      code: seriesCodePreview.value
+    });
+  });
 
   const seriesCodePreview = computed(() => {
     const form = definitionForm.value;
@@ -167,6 +252,24 @@ export function useProcessWizard() {
     return processName ? resolveAvailableProcessSlug(processName) : "";
   });
 
+  const selectedProcessName = computed(() => {
+    const form = definitionForm.value;
+    if (form.process_mode === "new") {
+      return String(form.new_process_name || "").trim();
+    }
+    const selectedProcess = processOptions.value.find((row) => Number(row.id) === Number(form.process_id));
+    return String(selectedProcess?.name || "").trim();
+  });
+
+  const definitionNamePreview = computed(() => {
+    const processName = capitalizeFirst(selectedProcessName.value);
+    const seriesName = selectedSeriesDisplayName.value;
+    if (!processName || !seriesName) {
+      return "";
+    }
+    return `${processName} por ${seriesName}`.slice(0, 180);
+  });
+
   // Resuelve la variación existente o crea una nueva serie y devuelve su identidad persistida.
   const resolveSeries = async (form) => {
     const selectedSeriesId = Number(form.series_id);
@@ -175,7 +278,7 @@ export function useProcessWizard() {
       if (!selectedSeries) {
         throw new Error("La variación seleccionada no está disponible.");
       }
-      return { id: selectedSeriesId, code: selectedSeries.code };
+      return { id: selectedSeriesId, code: selectedSeries.code, displayName: selectedSeries.displayName };
     }
     if (form.series_id !== NEW_SERIES_VALUE) {
       throw new Error("Selecciona una variación existente o crea una nueva.");
@@ -213,7 +316,16 @@ export function useProcessWizard() {
       )
     );
     if (existing?.id) {
-      return { id: existing.id, code: existing.code };
+      return {
+        id: existing.id,
+        code: existing.code,
+        displayName: buildSeriesDisplayName({
+          sourceType: existing.source_type,
+          unitTypeName: unitTypeOptions.value.find((row) => Number(row.id) === Number(existing.unit_type_id))?.name || "",
+          cargoName: cargoOptions.value.find((row) => Number(row.id) === Number(existing.cargo_id))?.name || "",
+          code: existing.code
+        })
+      };
     }
     const payload = {
       source_type: sourceType,
@@ -225,7 +337,8 @@ export function useProcessWizard() {
     const createdSeries = seriesRes?.data || {};
     return {
       id: resolveCreatedId(seriesRes),
-      code: createdSeries.code || seriesCodePreview.value
+      code: createdSeries.code || seriesCodePreview.value,
+      displayName: selectedSeriesDisplayName.value
     };
   };
 
@@ -254,6 +367,29 @@ export function useProcessWizard() {
     await loadProcessOptions();
     if (definitionRow?.id) {
       definitionContext.value = { ...definitionRow };
+      definitionForm.value = definitionFormFromRow(definitionRow);
+      if (
+        definitionRow.process_id
+        && !processOptions.value.some((option) => String(option.id) === String(definitionRow.process_id))
+      ) {
+        processOptions.value.push({
+          id: definitionRow.process_id,
+          name: definitionRow.process_name || definitionRow.process_label || `Proceso ${definitionRow.process_id}`,
+          slug: ""
+        });
+      }
+      if (
+        definitionRow.series_id
+        && !seriesOptions.value.some((option) => String(option.id) === String(definitionRow.series_id))
+      ) {
+        seriesOptions.value.push({
+          id: definitionRow.series_id,
+          code: definitionRow.variation_key || `serie-${definitionRow.series_id}`,
+          displayName: buildSeriesDisplayName({ code: definitionRow.variation_key || definitionRow.name || `Serie ${definitionRow.series_id}` }),
+          label: definitionRow.variation_key || `Serie ${definitionRow.series_id}`,
+          is_active: 1
+        });
+      }
       currentStep.value = step || "packages";
       await refreshStepStatus();
     } else {
@@ -294,10 +430,6 @@ export function useProcessWizard() {
     wizardError.value = "";
     try {
       const form = definitionForm.value;
-      const name = String(form.name || "").trim();
-      if (!name) {
-        throw new Error("Ingresa el nombre de la configuración.");
-      }
       let processId = form.process_id ? Number(form.process_id) : null;
       if (form.process_mode === "new") {
         const processName = String(form.new_process_name || "").trim();
@@ -330,7 +462,6 @@ export function useProcessWizard() {
         process_id: Number(processId),
         series_id: Number(series.id),
         definition_version: form.definition_version || "1.0.0",
-        name,
         description: form.description ? String(form.description) : null,
         has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
@@ -342,7 +473,7 @@ export function useProcessWizard() {
         process_id: Number(processId),
         series_id: Number(series.id),
         definition_version: form.definition_version || "1.0.0",
-        name,
+        name: created.name || definitionNamePreview.value,
         description: form.description || "",
         has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
@@ -371,6 +502,7 @@ export function useProcessWizard() {
     seriesOptions,
     seriesCodePreview,
     processSlugPreview,
+    definitionNamePreview,
     creatingDefinition,
     wizardError,
     stepStatus,

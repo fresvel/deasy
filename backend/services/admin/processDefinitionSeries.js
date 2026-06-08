@@ -19,6 +19,46 @@ const slugify = (value) => String(value || "")
   .replace(/^-+|-+$/g, "")
   .replace(/-{2,}/g, "-");
 
+const capitalizeFirst = (value) => {
+  const normalized = String(value || "").trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return "";
+  }
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+};
+
+const prettifySeriesCode = (value) =>
+  capitalizeFirst(String(value || "").replace(/-/g, " "));
+
+export const buildProcessDefinitionSeriesDisplayName = (series = {}) => {
+  const sourceType = String(series?.source_type || "").trim();
+  const unitTypeName = capitalizeFirst(series?.unit_type_name || series?.unitTypeName || "");
+  const cargoName = capitalizeFirst(series?.cargo_name || series?.cargoName || "");
+
+  if (sourceType === "unit_type" && unitTypeName) {
+    return unitTypeName;
+  }
+  if (sourceType === "cargo" && cargoName) {
+    return cargoName;
+  }
+  if (sourceType === "unit_type_cargo") {
+    const parts = [unitTypeName, cargoName].filter(Boolean);
+    if (parts.length) {
+      return parts.join(" y ");
+    }
+  }
+  return prettifySeriesCode(series?.code || "general");
+};
+
+export const buildProcessDefinitionVersionName = ({ processName, series } = {}) => {
+  const normalizedProcessName = capitalizeFirst(processName);
+  const seriesName = buildProcessDefinitionSeriesDisplayName(series);
+  if (!normalizedProcessName || !seriesName) {
+    return "";
+  }
+  return `${normalizedProcessName} por ${seriesName}`.slice(0, 180);
+};
+
 export const resolveProcessDefinitionSeriesIdentity = async (
   candidate,
   { findUnitType, findCargo }

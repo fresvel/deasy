@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
+import { buildProcessDefinitionVersionName } from "../admin/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
@@ -401,19 +402,27 @@ export const ensureDefaultProcess = async (connection) => {
   const processId = Number(process.id);
 
   // 2. serie
-  let series = await fetchOne(connection, "SELECT id FROM process_definition_series WHERE code = ? LIMIT 1", [DEFAULT_SERIES_CODE]);
+  let series = await fetchOne(
+    connection,
+    "SELECT id, source_type, code FROM process_definition_series WHERE code = ? LIMIT 1",
+    [DEFAULT_SERIES_CODE]
+  );
   if (!series) {
     const [r] = await connection.query(
       "INSERT INTO process_definition_series (source_type, unit_type_id, cargo_id, code, is_active) VALUES ('default', NULL, NULL, ?, 1)",
       [DEFAULT_SERIES_CODE]
     );
-    series = { id: r.insertId };
+    series = { id: r.insertId, source_type: "default", code: DEFAULT_SERIES_CODE };
   }
+  const defaultDefinitionName = buildProcessDefinitionVersionName({
+    processName: DEFAULT_PROCESS_NAME,
+    series: { source_type: "default", code: DEFAULT_VARIATION }
+  });
 
   // 3. configuración activa
   let definition = await fetchOne(
     connection,
-    "SELECT id, status FROM process_definition_versions WHERE process_id = ? AND variation_key = ? AND definition_version = ? LIMIT 1",
+    "SELECT id, status, name FROM process_definition_versions WHERE process_id = ? AND variation_key = ? AND definition_version = ? LIMIT 1",
     [processId, DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION]
   );
   if (!definition) {
@@ -422,11 +431,14 @@ export const ensureDefaultProcess = async (connection) => {
         (process_id, series_id, variation_key, definition_version, name, description, has_document, status, effective_from)
        VALUES (?, ?, ?, ?, ?, ?, 1, 'active', CURDATE())`,
       [processId, Number(series.id), DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION,
-       "Tarea por defecto", "Tareas libres y no clasificadas."]
+       defaultDefinitionName, "Tareas libres y no clasificadas."]
     );
-    definition = { id: r.insertId };
+    definition = { id: r.insertId, status: "active", name: defaultDefinitionName };
   } else if (definition.status !== "active") {
     await connection.query("UPDATE process_definition_versions SET status = 'active' WHERE id = ?", [definition.id]);
+  }
+  if (definition?.id && String(definition.name || "") !== defaultDefinitionName) {
+    await connection.query("UPDATE process_definition_versions SET name = ? WHERE id = ?", [defaultDefinitionName, definition.id]);
   }
   const definitionId = Number(definition.id);
 
