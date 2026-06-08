@@ -17,6 +17,15 @@
     <!-- Paso 1: Configuración -->
     <div v-show="currentStep === 'definition'">
       <p class="mb-3 text-sm text-slate-600">{{ definitionIntroText }}</p>
+      <div
+        v-if="duplicateDefinition?.id"
+        class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+      >
+        <span>Ya existe una configuración para esa variación y versión.</span>
+        <AdminButton variant="outline-primary" @click="$emit('edit-existing-definition', duplicateDefinition)">
+          Editar existente
+        </AdminButton>
+      </div>
       <div class="grid gap-3 md:grid-cols-12">
         <AdminFieldGroup label="Proceso" group-class="md:col-span-6">
           <div class="flex gap-2">
@@ -127,10 +136,10 @@
         <AdminFieldGroup label="Versión" group-class="md:col-span-4">
           <AdminInputField :model-value="form.definition_version" placeholder="1.0.0" :disabled="isDefinitionLocked" @update:model-value="updateForm('definition_version', $event)" />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Requiere documento" group-class="md:col-span-4">
+        <AdminFieldGroup label="Genera entregable documental" group-class="md:col-span-4">
           <AdminSelectField :model-value="String(form.has_document)" :disabled="isDefinitionLocked" @update:model-value="updateForm('has_document', Number($event))">
-            <option value="1">Sí (genera entregables)</option>
-            <option value="0">No</option>
+            <option value="1">Sí, con plantillas y entregas</option>
+            <option value="0">No, solo flujo operativo</option>
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup label="Descripción" group-class="md:col-span-12">
@@ -178,6 +187,7 @@ const props = defineProps({
   stepStatus: { type: Object, default: () => ({}) },
   definitionContext: { type: Object, default: null },
   definitionForm: { type: Object, default: () => ({}) },
+  duplicateDefinition: { type: Object, default: null },
   processOptions: { type: Array, default: () => [] },
   unitTypeOptions: { type: Array, default: () => [] },
   cargoOptions: { type: Array, default: () => [] },
@@ -190,7 +200,7 @@ const props = defineProps({
   readonly: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(["close", "go-to-step", "create-definition", "update:definitionForm"]);
+const emit = defineEmits(["close", "go-to-step", "create-definition", "edit-existing-definition", "update:definitionForm"]);
 
 const form = computed(() => props.definitionForm || {});
 const isCreatingSeries = computed(() => form.value.series_id === "__new__");

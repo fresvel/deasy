@@ -19,6 +19,12 @@ const SERIES_SOURCE_LABELS = {
   unit_type_cargo: "Tipo de unidad y cargo"
 };
 
+const SERIES_OPTION_PREFIXES = {
+  unit_type: "Por tipo de unidad",
+  cargo: "Por cargo",
+  unit_type_cargo: "Por tipo de unidad y cargo"
+};
+
 const slugify = (value, maxLength = 80) =>
   String(value || "")
     .normalize("NFKD")
@@ -110,6 +116,7 @@ export function useProcessWizard() {
   const unitTypeOptions = ref([]);
   const cargoOptions = ref([]);
   const seriesOptions = ref([]);
+  const duplicateDefinition = ref(null);
   const creatingDefinition = ref(false);
   const wizardError = ref("");
   const stepStatus = ref({ definition: false, packages: false, rules: false, triggers: false });
@@ -139,7 +146,6 @@ export function useProcessWizard() {
         .map((row) => {
           const unitTypeName = unitTypeNames.get(Number(row.unit_type_id)) || "";
           const cargoName = cargoNames.get(Number(row.cargo_id)) || "";
-          const sourceDetail = [unitTypeName, cargoName].filter(Boolean).join(" + ");
           const displayName = buildSeriesDisplayName({
             sourceType: row.source_type,
             unitTypeName,
@@ -152,11 +158,9 @@ export function useProcessWizard() {
             unit_type_name: row.unit_type_name || unitTypeName,
             cargo_name: row.cargo_name || cargoName,
             label: [
-              row.code,
-              sourceDetail
-                ? `${SERIES_SOURCE_LABELS[row.source_type]}: ${sourceDetail}`
-                : SERIES_SOURCE_LABELS[row.source_type]
-            ].filter(Boolean).join(" · ")
+              SERIES_OPTION_PREFIXES[row.source_type] || SERIES_SOURCE_LABELS[row.source_type],
+              displayName
+            ].filter(Boolean).join(": ")
           };
         });
     } catch {
@@ -165,6 +169,23 @@ export function useProcessWizard() {
       cargoOptions.value = [];
       seriesOptions.value = [];
     }
+  };
+
+  const findExistingDefinition = async ({ processId, seriesId, definitionVersion }) => {
+    if (!processId || !seriesId || !definitionVersion) {
+      return null;
+    }
+    const response = await adminSqlService.list("process_definition_versions", {
+      filter_process_id: Number(processId),
+      filter_series_id: Number(seriesId),
+      filter_definition_version: String(definitionVersion),
+      limit: 25
+    });
+    return toRows(response.data).find((row) => (
+      Number(row.process_id) === Number(processId)
+      && Number(row.series_id) === Number(seriesId)
+      && String(row.definition_version || "") === String(definitionVersion || "")
+    )) || null;
   };
 
   const selectedSeriesDisplayName = computed(() => {
@@ -363,6 +384,7 @@ export function useProcessWizard() {
 
   const openWizard = async ({ definitionRow = null, processRow = null, step = null } = {}) => {
     wizardError.value = "";
+    duplicateDefinition.value = null;
     definitionForm.value = newDefinitionForm();
     await loadProcessOptions();
     if (definitionRow?.id) {
@@ -428,6 +450,8 @@ export function useProcessWizard() {
   const createDefinition = async () => {
     creatingDefinition.value = true;
     wizardError.value = "";
+    duplicateDefinition.value = null;
+    let duplicateLookupParams = null;
     try {
       const form = definitionForm.value;
       let processId = form.process_id ? Number(form.process_id) : null;
@@ -457,11 +481,25 @@ export function useProcessWizard() {
       if (!series.id) {
         throw new Error("No se pudo resolver la serie de la configuración.");
       }
+      const definitionVersion = form.definition_version || "1.0.0";
+      duplicateLookupParams = {
+        processId,
+        seriesId: series.id,
+        definitionVersion
+      };
+      const existingDefinition = await findExistingDefinition({
+        ...duplicateLookupParams
+      });
+      if (existingDefinition?.id) {
+        duplicateDefinition.value = existingDefinition;
+        wizardError.value = "Ya existe una configuración con esa variación y versión para el proceso seleccionado.";
+        return null;
+      }
       const today = new Date().toISOString().slice(0, 10);
       const definitionRes = await adminSqlService.create("process_definition_versions", {
         process_id: Number(processId),
         series_id: Number(series.id),
-        definition_version: form.definition_version || "1.0.0",
+        definition_version: definitionVersion,
         description: form.description ? String(form.description) : null,
         has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
@@ -472,7 +510,7 @@ export function useProcessWizard() {
         id: resolveCreatedId(definitionRes),
         process_id: Number(processId),
         series_id: Number(series.id),
-        definition_version: form.definition_version || "1.0.0",
+        definition_version: definitionVersion,
         name: created.name || definitionNamePreview.value,
         description: form.description || "",
         has_document: Number(form.has_document) ? 1 : 0,
@@ -485,6 +523,17 @@ export function useProcessWizard() {
       return definitionContext.value;
     } catch (error) {
       wizardError.value = error?.response?.data?.message || error?.message || "No se pudo crear la configuración.";
+      if (
+        !duplicateDefinition.value?.id
+        && duplicateLookupParams
+        && String(wizardError.value || "").includes("Ya existe una configuracion")
+      ) {
+        try {
+          duplicateDefinition.value = await findExistingDefinition(duplicateLookupParams);
+        } catch {
+          duplicateDefinition.value = null;
+        }
+      }
       return null;
     } finally {
       creatingDefinition.value = false;
@@ -496,6 +545,7 @@ export function useProcessWizard() {
     currentStep,
     definitionContext,
     definitionForm,
+    duplicateDefinition,
     processOptions,
     unitTypeOptions,
     cargoOptions,

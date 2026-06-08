@@ -437,6 +437,7 @@
       :step-status="processWizardStepStatus"
       :definition-context="processWizardDefinition"
       :definition-form="processWizardDefinitionForm"
+      :duplicate-definition="processWizardDuplicateDefinition"
       :process-options="processWizardProcessOptions"
       :unit-type-options="processWizardUnitTypeOptions"
       :cargo-options="processWizardCargoOptions"
@@ -450,6 +451,7 @@
       @update:definition-form="processWizardDefinitionForm = $event"
       @go-to-step="handleProcessWizardGoToStep"
       @create-definition="handleProcessWizardCreateDefinition"
+      @edit-existing-definition="handleProcessWizardEditExistingDefinition"
       @close="handleProcessWizardClose"
     >
       <template #packages>
@@ -2835,6 +2837,7 @@ const {
   currentStep: processWizardStep,
   definitionContext: processWizardDefinition,
   definitionForm: processWizardDefinitionForm,
+  duplicateDefinition: processWizardDuplicateDefinition,
   processOptions: processWizardProcessOptions,
   unitTypeOptions: processWizardUnitTypeOptions,
   cargoOptions: processWizardCargoOptions,
@@ -2922,6 +2925,14 @@ const handleProcessWizardCreateDefinition = async () => {
     }
     await loadProcessWizardStep("packages");
   }
+};
+
+const handleProcessWizardEditExistingDefinition = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  processWizardReadonly.value = false;
+  await openProcessDefinitionWizard(definitionRow, { step: "definition", readonly: false });
 };
 
 const handleDraftCreateProcess = async () => {

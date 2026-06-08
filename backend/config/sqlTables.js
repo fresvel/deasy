@@ -94,7 +94,7 @@ export const SQL_TABLES = [
       { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre generado", type: "text", readOnly: true },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
+      { name: "has_document", label: "Genera entregable documental", type: "boolean", defaultValue: 1 },
       {
         name: "status",
         label: "Estado",
