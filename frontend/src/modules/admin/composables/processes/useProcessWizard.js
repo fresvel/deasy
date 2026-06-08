@@ -92,6 +92,7 @@ const newDefinitionForm = () => ({
   definition_version: "1.0.0",
   description: "",
   has_document: 1,
+  source_process_definition_id: "",
 });
 
 const definitionFormFromRow = (row = {}) => ({
@@ -407,8 +408,8 @@ export function useProcessWizard() {
         seriesOptions.value.push({
           id: definitionRow.series_id,
           code: definitionRow.variation_key || `serie-${definitionRow.series_id}`,
-          displayName: buildSeriesDisplayName({ code: definitionRow.variation_key || definitionRow.name || `Serie ${definitionRow.series_id}` }),
-          label: definitionRow.variation_key || `Serie ${definitionRow.series_id}`,
+          displayName: buildSeriesDisplayName({ code: definitionRow.variation_key || definitionRow.name || `Variación ${definitionRow.series_id}` }),
+          label: definitionRow.variation_key || `Variación ${definitionRow.series_id}`,
           is_active: 1
         });
       }
@@ -504,6 +505,7 @@ export function useProcessWizard() {
         has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
         effective_from: today,
+        source_process_definition_id: form.source_process_definition_id ? Number(form.source_process_definition_id) : null,
       });
       const created = definitionRes?.data || {};
       definitionContext.value = {

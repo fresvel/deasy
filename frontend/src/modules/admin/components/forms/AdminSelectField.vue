@@ -1,18 +1,33 @@
 <template>
-  <select
-    :value="modelValue"
-    class="admin-select-field w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-700 shadow-none transition-colors duration-150 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-    :class="selectClass"
-    :disabled="disabled"
-    @change="handleChange"
-    @focus="$emit('focus', $event)"
-    @blur="$emit('blur', $event)"
-  >
-    <slot />
-  </select>
+  <span class="admin-select-field-shell relative block w-full" :class="wrapperClass">
+    <select
+      v-bind="selectAttrs"
+      :value="modelValue"
+      class="admin-select-field block h-10 w-full appearance-none rounded-[10px] border border-[#d7deea] bg-white px-3.5 py-2 pr-11 text-sm font-medium text-[#343741] shadow-none outline-none transition-colors duration-150 focus:border-[#5e4eff] focus:ring-4 focus:ring-[#5e4eff]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+      :class="selectClass"
+      :disabled="disabled"
+      @change="handleChange"
+      @focus="$emit('focus', $event)"
+      @blur="$emit('blur', $event)"
+    >
+      <slot />
+    </select>
+    <span
+      class="pointer-events-none absolute inset-y-px right-px flex w-10 items-center justify-center rounded-r-[9px] border-l border-[#d7deea] bg-[#f8fafc] text-[#7a869a] transition-colors"
+      aria-hidden="true"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none">
+        <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+  </span>
 </template>
 
 <script setup>
+import { computed, useAttrs } from "vue";
+
+defineOptions({ inheritAttrs: false });
+
 const props = defineProps({
   modelValue: {
     type: [String, Number],
@@ -29,6 +44,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue", "change", "focus", "blur"]);
+const attrs = useAttrs();
+
+const wrapperClass = computed(() => attrs.class);
+const selectAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== "class"))
+);
 
 const handleChange = (event) => {
   emit("update:modelValue", event.target.value);

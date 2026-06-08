@@ -851,8 +851,8 @@
       @update:form="draftArtifactForm = $event"
       @file-change="handleDraftArtifactFileChange"
       @drop="handleDraftArtifactDrop"
-      @close="closeDraftArtifactModal"
-      @submit="submitDraftArtifact"
+      @close="handleDraftArtifactClose"
+      @submit="handleDraftArtifactSubmit"
       @change-stage="handleArtifactStageChange"
       @new-version="handleArtifactNewVersion"
       @create-process="handleDraftCreateProcess"
@@ -1141,6 +1141,7 @@ const draftArtifactFiles = ref({
   xlsx: null,
   pptx: null
 });
+const draftArtifactFkCreateMode = ref(false);
 
 const fkTable = ref(null);
 const fkRows = ref([]);
@@ -1488,7 +1489,9 @@ const fkSearchTableFields = computed(() => [
 ]);
 const canCreateFkReference = computed(() =>
   Boolean(fkTable.value)
-  && fkCreateFields.value.length > 0
+  && (fkTable.value.table === "template_artifacts"
+    ? canCreateAdminTable("template_artifacts")
+    : fkCreateFields.value.length > 0)
 );
 const canOpenFkFilterModal = computed(() =>
   Boolean(fkTable.value)
@@ -1744,7 +1747,7 @@ const canDeleteProcessConfiguration = computed(() => canDeleteAdminTable("proces
 const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const processEditorConfigurationTableFields = [
-  { name: "variation_key", label: "Variacion" },
+  { name: "variation_key", label: "Variación" },
   { name: "definition_version", label: "Version" },
   { name: "name", label: "Nombre" },
   { name: "status", label: "Estado" },
@@ -2447,7 +2450,7 @@ const {
   cancelFkFilter,
   clearFkFilters,
   applyFkFilters,
-  openFkCreate,
+  openFkCreate: openFkCreateBase,
   cancelFkCreate,
   submitFkCreate
 } = useAdminFkCrud({
@@ -2474,6 +2477,42 @@ const {
   ensureFkCreateInstance,
   getFkCreateInstance
 });
+
+const openFkCreate = async () => {
+  if (!canCreateFkReference.value) {
+    return;
+  }
+  if (isFkTemplateArtifacts.value) {
+    draftArtifactFkCreateMode.value = true;
+    fkCreateExitTarget.value = "none";
+    skipFkReturnRestore.value = true;
+    getFkInstance()?.hide();
+    await openDraftArtifactModal(null, { force: true });
+    return;
+  }
+  openFkCreateBase();
+};
+
+const handleDraftArtifactClose = () => {
+  const shouldReturnToFkSearch = draftArtifactFkCreateMode.value;
+  closeDraftArtifactModal();
+  if (shouldReturnToFkSearch) {
+    draftArtifactFkCreateMode.value = false;
+    ensureFkInstance();
+    getFkInstance()?.show();
+  }
+};
+
+const handleDraftArtifactSubmit = async () => {
+  const createdRow = await submitDraftArtifact();
+  if (!draftArtifactFkCreateMode.value || !createdRow?.id) {
+    return;
+  }
+  draftArtifactFkCreateMode.value = false;
+  applyFkSelection(createdRow);
+  await fetchFkRows();
+  restoreReturnModal();
+};
 
 // Descarga el ZIP de formatos del registro abierto en el visor (paquetes de plantilla o seeds).
 const handleDownloadRecordArchive = async () => {
@@ -2945,6 +2984,7 @@ const handleProcessWizardClose = async () => {
   closeProcessWizard();
   wizardFromDraft.value = false;
   processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = "";
   if (props.table?.table === "process_definition_versions") {
     await fetchRows();
   }
@@ -3027,6 +3067,7 @@ const handleOpenWizardFromPrompt = async () => {
 // Punto de entrada para crear un proceso desde otros flujos (p.ej. el modal de plantilla).
 const openProcessWizardFromScratch = async () => {
   processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = "";
   await openProcessWizard();
 };
 
@@ -3035,11 +3076,51 @@ const openProcessDefinitionWizard = async (row, { step = "definition", readonly 
     return;
   }
   processWizardReadonly.value = Boolean(readonly);
+  processDefinitionCloneSourceId.value = "";
   selectedRow.value = row;
   await openProcessWizard({ definitionRow: row, step });
   if (step !== "definition") {
     await loadProcessWizardStep(step);
   }
+};
+
+const openProcessDefinitionVersionWizard = async (row) => {
+  if (!row?.id) {
+    return;
+  }
+  const processId = row.process_id ?? "";
+  processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = row.id ? String(row.id) : "";
+  await openProcessWizard({
+    processRow: processId
+      ? {
+          id: processId,
+          name: row.process_name || row.process_label || `Proceso ${processId}`
+        }
+      : null
+  });
+  if (
+    row.series_id
+    && !processWizardSeriesOptions.value.some((option) => String(option.id) === String(row.series_id))
+  ) {
+    processWizardSeriesOptions.value.push({
+      id: row.series_id,
+      code: row.variation_key || `variacion-${row.series_id}`,
+      displayName: row.variation_key || `Variación ${row.series_id}`,
+      label: row.variation_key || `Variación ${row.series_id}`,
+      is_active: 1
+    });
+  }
+  processWizardDefinitionForm.value = {
+    ...processWizardDefinitionForm.value,
+    process_mode: "existing",
+    process_id: processId ? String(processId) : "",
+    series_id: row.series_id ? String(row.series_id) : "",
+    definition_version: getNextSemanticVersion(row.definition_version),
+    description: row.description || "",
+    has_document: Number(row.has_document) ? 1 : 0,
+    source_process_definition_id: row.id ? String(row.id) : ""
+  };
 };
 
 const hideProcessWizardForRecordViewer = () => {
@@ -3200,6 +3281,7 @@ const {
   openDraftArtifactModal,
   openProcessWizardFromScratch,
   openProcessDefinitionWizard,
+  openProcessDefinitionVersionWizard,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,

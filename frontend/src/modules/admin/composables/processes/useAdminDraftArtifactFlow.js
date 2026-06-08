@@ -78,8 +78,8 @@ export function useAdminDraftArtifactFlow({
     }
   };
 
-  const openDraftArtifactModal = async (row = null) => {
-    if (!props.table || props.table.table !== "template_artifacts") {
+  const openDraftArtifactModal = async (row = null, { force = false } = {}) => {
+    if (!force && (!props.table || props.table.table !== "template_artifacts")) {
       return;
     }
     draftArtifactError.value = "";
@@ -223,6 +223,7 @@ export function useAdminDraftArtifactFlow({
           ? "La plantilla de documento fue actualizada correctamente."
           : "La plantilla de documento fue creada correctamente.")
       });
+      return response?.data;
     } catch (err) {
       draftArtifactError.value = err?.response?.data?.message || (isEditingDraft
         ? "No se pudo actualizar la plantilla de documento."

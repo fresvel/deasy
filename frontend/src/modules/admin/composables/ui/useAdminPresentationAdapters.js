@@ -58,7 +58,7 @@ export function useAdminPresentationAdapters({
         expandedFields.push(field);
         if (field.name === "process_definition_id") {
           expandedFields.push(
-            { name: "__definition_series", label: "Serie", type: "text" },
+            { name: "__definition_series", label: "Variación", type: "text" },
             { name: "__definition_version", label: "Version", type: "text" },
             { name: "__definition_status", label: "Estado de configuracion", type: "text" }
           );

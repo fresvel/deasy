@@ -62,10 +62,10 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Serie" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Variación" label-class="text-slate-700" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkFilters.variation_key"
-            placeholder="Filtrar por serie"
+            placeholder="Filtrar por variación"
             @update:model-value="updateFilter('variation_key', $event)"
             @input="$emit('debounced-search')"
           />
@@ -277,10 +277,12 @@
       <AdminButton
         variant="outlinePrimary"
         :disabled="!canCreateFkReference"
+        :title="fkCreateActionLabel"
+        :aria-label="fkCreateActionLabel"
         @click="$emit('open-fk-create')"
       >
         <font-awesome-icon icon="plus" class="mr-2" />
-        Crear nuevo
+        {{ fkCreateActionLabel }}
       </AdminButton>
       <AdminButton variant="outlineDanger" data-modal-dismiss>
         Cerrar
@@ -357,6 +359,10 @@ const modalTitle = computed(() => {
   }
   return `Buscar referencia ${props.fkTable?.label || ""}`;
 });
+
+const fkCreateActionLabel = computed(() =>
+  props.isFkTemplateArtifacts ? "Crear plantilla" : "Crear nuevo"
+);
 
 const updateFilter = (fieldName, value) => {
   emit("update:fkFilters", {

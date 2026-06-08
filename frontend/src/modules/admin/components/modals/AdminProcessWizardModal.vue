@@ -80,7 +80,7 @@
             {{ processSlugPreview || "Pendiente" }}
           </div>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Variación del proceso" group-class="md:col-span-8">
+        <AdminFieldGroup label="Variación de proceso" group-class="md:col-span-8">
           <AdminSelectField :model-value="form.series_id" :disabled="isDefinitionLocked" @update:model-value="updateForm('series_id', $event)">
             <option value="">Selecciona una variación</option>
             <option v-for="series in seriesOptions" :key="series.id" :value="String(series.id)">

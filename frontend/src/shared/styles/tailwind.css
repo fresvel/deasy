@@ -249,6 +249,10 @@
         box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
     }
 
+    .admin-select-field.deasy-filter-control {
+        padding-right: 2.75rem;
+    }
+
     .deasy-filter-search-row {
         @apply flex items-center gap-2;
     }

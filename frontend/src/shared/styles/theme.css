@@ -1815,6 +1815,16 @@ html[data-environment="local-dev"] textarea {
   border-radius: 0.5rem;
 }
 
+html[data-environment="local-dev"] .admin-select-field {
+  border-color: #d7deea;
+  border-radius: 10px;
+}
+
+html[data-environment="local-dev"] .admin-select-field:focus {
+  border-color: #5e4eff;
+  box-shadow: 0 0 0 4px rgba(94, 78, 255, 0.1);
+}
+
 html[data-environment="local-dev"] .deasy-table thead tr,
 html[data-environment="local-dev"] .table thead th,
 html[data-environment="local-dev"] .table-institutional thead {

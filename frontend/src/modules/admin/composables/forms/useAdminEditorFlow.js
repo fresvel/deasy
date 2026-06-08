@@ -20,6 +20,7 @@ export function useAdminEditorFlow({
   openDraftArtifactModal,
   openProcessWizardFromScratch,
   openProcessDefinitionWizard,
+  openProcessDefinitionVersionWizard,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,
@@ -44,6 +45,10 @@ export function useAdminEditorFlow({
       artifacts: false
     };
     modalError.value = "";
+    if (props.table?.table === "process_definition_versions" && typeof openProcessWizardFromScratch === "function") {
+      await openProcessWizardFromScratch();
+      return { redirected: true };
+    }
     resetForm();
     fkDisplay.value = {};
     await applyUnitRelationDefaults();
@@ -141,6 +146,13 @@ export function useAdminEditorFlow({
   const startProcessDefinitionVersioning = async (row) => {
     if (!row) {
       return;
+    }
+    if (props.table?.table === "process_definition_versions" && typeof openProcessDefinitionVersionWizard === "function") {
+      resetInlineFkState();
+      closeProcessDefinitionVersioningModal();
+      modalError.value = "";
+      await openProcessDefinitionVersionWizard(row);
+      return { redirected: true };
     }
     resetInlineFkState();
     closeProcessDefinitionVersioningModal();
