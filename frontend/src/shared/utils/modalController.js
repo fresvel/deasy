@@ -1,5 +1,21 @@
 const modalRegistry = new WeakMap();
 
+// Apilamiento de modales: al mostrar un modal se coloca por encima del modal visible más alto
+// (sea con z-index estático inline o dinámico), de modo que un modal anidado siempre quede encima
+// y accesible. Se calcula sobre los modales realmente visibles, así no importa el esquema previo.
+const MODAL_BASE_Z = 1060;
+const topVisibleModalZIndex = (exclude) => {
+    if (typeof document === 'undefined') return MODAL_BASE_Z;
+    let max = MODAL_BASE_Z;
+    document.querySelectorAll('.deasy-dialog-root').forEach((el) => {
+        if (el === exclude) return;
+        if (getComputedStyle(el).display === 'none') return;
+        const z = parseInt(el.style.zIndex || getComputedStyle(el).zIndex, 10);
+        if (!Number.isNaN(z)) max = Math.max(max, z);
+    });
+    return max;
+};
+
 class ModalController {
     constructor(element) {
         this.element = element;
@@ -32,7 +48,9 @@ class ModalController {
         }
 
         this.dispatchLifecycleEvent('show.bs.modal');
+        const topZ = topVisibleModalZIndex(this.element);
         this.element.style.display = 'block';
+        this.element.style.zIndex = String(topZ + 1);
         this.element.removeAttribute('aria-hidden');
         this.element.setAttribute('aria-modal', 'true');
         this.element.setAttribute('role', 'dialog');
@@ -56,6 +74,7 @@ class ModalController {
         this.element.removeAttribute('aria-modal');
         this.element.removeAttribute('role');
         this.element.style.display = 'none';
+        this.element.style.zIndex = '';
 
         document.removeEventListener('keydown', this.boundOnKeydown);
 
