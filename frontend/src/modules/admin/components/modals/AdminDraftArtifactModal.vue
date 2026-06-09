@@ -349,13 +349,22 @@ const processDefinitionOptions = ref([]);
 const loadProcessDefinitionOptions = async () => {
   try {
     const { data } = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_versions"), {
-      params: { filter_status: "active", orderBy: "name", order: "asc", limit: 500 },
+      params: { orderBy: "name", order: "asc", limit: 500 },
     });
     const rows = Array.isArray(data) ? data : (data?.rows || data?.data || []);
-    processDefinitionOptions.value = rows.map((r) => ({
-      id: r.id,
-      label: `${r.name || r.variation_key || ("Def " + r.id)} (v${r.definition_version || "?"})`,
-    }));
+    const STATUS_LABEL = { draft: "borrador", active: "activa", retired: "retirada" };
+    // Se incluyen borrador + activa: una configuración nueva nace en borrador y necesita plantillas
+    // asignadas para poder activarse, así que debe poder elegirse aquí. Se excluyen las retiradas.
+    processDefinitionOptions.value = rows
+      .filter((r) => String(r.status || "").toLowerCase() !== "retired")
+      .map((r) => {
+        const status = String(r.status || "").toLowerCase();
+        const statusText = STATUS_LABEL[status] || status || "—";
+        return {
+          id: r.id,
+          label: `${r.name || r.variation_key || ("Def " + r.id)} (v${r.definition_version || "?"} · ${statusText})`,
+        };
+      });
   } catch {
     processDefinitionOptions.value = [];
   }
