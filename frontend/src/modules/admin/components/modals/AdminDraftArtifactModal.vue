@@ -94,9 +94,9 @@
               {{ proc.label }}
             </option>
           </AdminSelectField>
-          <AdminButton variant="cancel" @click="$emit('create-process')">+ Crear proceso</AdminButton>
+          <AdminButton variant="cancel" @click="$emit('create-process')">+ Nueva configuración</AdminButton>
         </div>
-        <p class="mt-1 text-xs text-slate-400">La plantilla quedará vinculada a este proceso (o 'default' para tareas libres). ¿No existe? Créalo con el wizard guiado.</p>
+        <p class="mt-1 text-xs text-slate-400">La plantilla quedará vinculada a esta configuración de proceso (o 'default' para tareas libres). ¿No existe? Créala con el wizard guiado.</p>
       </AdminFieldGroup>
     </div>
 
