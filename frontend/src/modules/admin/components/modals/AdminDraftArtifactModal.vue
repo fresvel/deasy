@@ -78,14 +78,14 @@
           @update:model-value="updateField('description', $event)"
         />
       </AdminFieldGroup>
-      <AdminFieldGroup label="Proceso destino" group-class="md:col-span-12">
+      <AdminFieldGroup label="Configuración destino" group-class="md:col-span-12">
         <div class="flex gap-2">
           <AdminSelectField
             class="flex-1"
             :model-value="draftArtifactForm.process_definition_id"
             @update:model-value="updateField('process_definition_id', $event)"
           >
-            <option value="">{{ requireProcessLink ? 'Selecciona un proceso (obligatorio)' : 'Sin vincular (opcional)' }}</option>
+            <option value="">{{ requireProcessLink ? 'Selecciona una configuración (obligatorio)' : 'Sin vincular (opcional)' }}</option>
             <option
               v-for="proc in processDefinitionOptions"
               :key="proc.id"
