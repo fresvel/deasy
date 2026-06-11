@@ -173,6 +173,23 @@
     </div>
 
     <template #footer>
+      <span
+        v-if="syncBadge"
+        class="mr-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1"
+        :class="syncBadge.class"
+        :title="syncStatus?.status === 'no_link' ? 'El flujo existe en la plantilla pero aún no está vinculado a ninguna configuración (no está activo).' : (syncStatus?.status === 'stale' ? 'La proyección del flujo en la base de datos no coincide con la versión actual de la plantilla.' : 'La proyección del flujo está al día con la plantilla.')"
+      >
+        {{ syncBadge.label }}
+      </span>
+      <AdminButton
+        v-if="canResyncWorkflows"
+        variant="outlinePrimary"
+        :disabled="syncBusy"
+        @click="$emit('resync-workflows')"
+      >
+        <font-awesome-icon icon="rotate-right" />
+        <span>{{ syncBusy ? "Sincronizando…" : "Re-sincronizar flujos" }}</span>
+      </AdminButton>
       <AdminButton
         v-if="canDownloadArchive"
         variant="outlinePrimary"
@@ -265,6 +282,8 @@ const props = defineProps({
   isAdmin: { type: Boolean, default: false },
   canCreateProcessConfiguration: { type: Boolean, default: false },
   sourceBusy: { type: Boolean, default: false },
+  syncStatus: { type: Object, default: null },
+  syncBusy: { type: Boolean, default: false },
   formatRecordViewerValue: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
   getAvailableFormatBadgeStyle: { type: Function, required: true },
@@ -278,8 +297,25 @@ const emit = defineEmits([
   "download-source",
   "upload-source",
   "add-process-configuration",
-  "view-related-record"
+  "view-related-record",
+  "resync-workflows"
 ]);
+
+// Indicador de sincronización del flujo (plantillas): synced / stale / no_link.
+const SYNC_BADGE_META = {
+  synced: { label: "Flujo sincronizado", class: "bg-emerald-100 text-emerald-700 ring-emerald-200" },
+  stale: { label: "Flujo desincronizado", class: "bg-amber-100 text-amber-800 ring-amber-200" },
+  no_link: { label: "Flujo sin vínculo", class: "bg-slate-100 text-slate-600 ring-slate-200" }
+};
+const syncBadge = computed(() => {
+  const status = props.syncStatus?.status;
+  if (!status || !SYNC_BADGE_META[status]) return null;
+  return SYNC_BADGE_META[status];
+});
+const canResyncWorkflows = computed(() =>
+  props.recordViewerTable?.table === "template_artifacts"
+  && props.syncStatus?.status === "stale"
+);
 
 const canDownloadArchive = computed(() =>
   Boolean(props.recordViewerRow?.id) && ARCHIVE_DOWNLOADABLE_TABLES.has(props.recordViewerTable?.table)

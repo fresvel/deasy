@@ -652,12 +652,15 @@
       :is-admin="isAdminUser"
       :can-create-process-configuration="canCreateProcessConfiguration"
       :source-busy="templateSourceBusy"
+      :sync-status="recordViewerSyncStatus"
+      :sync-busy="recordViewerSyncBusy"
       @close="closeRecordViewer"
       @add-process-configuration="openProcessConfigurationFromViewer"
       @view-related-record="handleRecordViewerRelatedRecord"
       @download-archive="handleDownloadRecordArchive"
       @download-source="handleDownloadTemplateSource"
       @upload-source="handleUploadTemplateSource"
+      @resync-workflows="handleResyncTemplateWorkflows"
     />
 
     <AdminFkFilterModal
@@ -2589,6 +2592,36 @@ const handleDownloadRecordArchive = async () => {
 const isAdminUser = computed(() => hasAnyRole(["AdminSistema"]));
 const templateSourceBusy = ref(false);
 
+// Estado de sincronización del flujo (synced/stale/no_link) de la plantilla abierta en el visor.
+const recordViewerSyncStatus = ref(null);
+const recordViewerSyncBusy = ref(false);
+
+const loadRecordViewerSyncStatus = async (artifactId) => {
+  recordViewerSyncStatus.value = null;
+  if (!artifactId) return;
+  try {
+    const { data } = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SYNC_STATUS(artifactId));
+    recordViewerSyncStatus.value = data;
+  } catch {
+    recordViewerSyncStatus.value = null;
+  }
+};
+
+const handleResyncTemplateWorkflows = async () => {
+  const row = recordViewerRow.value;
+  if (!row?.id || recordViewerSyncBusy.value) return;
+  recordViewerSyncBusy.value = true;
+  try {
+    const { data } = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_RESYNC(row.id));
+    recordViewerSyncStatus.value = data;
+    showFeedbackToast({ kind: "success", title: "Flujos sincronizados", message: "La proyección del flujo en la base de datos quedó al día." });
+  } catch (error) {
+    showFeedbackToast({ kind: "error", title: "No se pudo sincronizar", message: error?.response?.data?.message || "No se pudo re-sincronizar el flujo." });
+  } finally {
+    recordViewerSyncBusy.value = false;
+  }
+};
+
 const handleDownloadTemplateSource = async () => {
   const row = recordViewerRow.value;
   if (!recordViewerEditable.value || !row?.id || templateSourceBusy.value) return;
@@ -3175,6 +3208,9 @@ const handleOpenRecordViewer = async (row, tableRef) => {
     return;
   }
   await openRecordViewer(row, tableRef);
+  if (tableRef?.table === "template_artifacts") {
+    await loadRecordViewerSyncStatus(row?.id);
+  }
 };
 
 const handleWizardViewRow = async (row, tableMeta) => {

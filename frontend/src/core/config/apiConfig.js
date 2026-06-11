@@ -70,6 +70,8 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_ARTIFACT_SCHEMA: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/schema`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_STAGE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/stage`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/version`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_SYNC_STATUS: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/sync-status`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_RESYNC: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/resync`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
   SIGN: `${API_PREFIX}/sign`,
