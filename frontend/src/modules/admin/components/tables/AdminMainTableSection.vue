@@ -193,7 +193,7 @@
               <template v-if="field.name === 'available_formats'">
                 <div class="available-formats-cell">
                   <template v-if="getAvailableFormatSections(row[field.name]).length">
-                    <div v-for="section in getAvailableFormatSections(row[field.name])" :key="section.mode" class="available-formats-group" :class="{ 'is-inline': section.mode === 'general' }">
+                    <div v-for="section in getAvailableFormatSections(row[field.name])" :key="section.mode" class="available-formats-group" :class="{ 'is-inline': section.mode === 'reference' }">
                       <span class="available-formats-mode">{{ section.label }}</span>
                       <div class="available-formats-badges">
                         <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" class="available-formats-badge" :style="getAvailableFormatBadgeStyle(section.mode, entry)">

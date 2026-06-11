@@ -183,9 +183,9 @@ export const downloadTemplateArtifactSource = async (req, res) => {
       return res.status(404).json({ message: "No se encontro el paquete de plantilla." });
     }
     const formats = parseAvailableFormats(artifact.available_formats);
-    const jinjaEntry = formats?.process?.jinja2?.entry_object_key;
+    const jinjaEntry = formats?.jinja2?.entry_object_key;
     if (!jinjaEntry) {
-      return res.status(404).json({ message: "La plantilla no tiene un contrato process/jinja2 editable." });
+      return res.status(404).json({ message: "La plantilla no tiene un contrato jinja2 editable." });
     }
     const resources = await collectPrefixResources(jinjaEntry, { bucket: TEMPLATES_BUCKET });
     if (!resources.length) {

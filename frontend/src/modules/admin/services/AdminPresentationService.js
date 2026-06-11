@@ -122,40 +122,41 @@ class AdminPresentationService {
     return parsed;
   }
 
+  // El rol se deriva del formato (ya no se almacena el eje "mode"): jinja2 = contrato, latex = render,
+  // el resto = documento de referencia. Espejo de FORMAT_ROLE del backend.
+  formatRole(format) {
+    return { jinja2: "contract", latex: "render" }[String(format || "").toLowerCase()] || "reference";
+  }
+
   getAvailableFormatSections(value) {
     const parsed = this.normalizeAvailableFormats(value);
     if (!parsed) {
       return [];
     }
-    const modeLabels = {
-      process: "Proceso",
-      general: "General"
-    };
-    return Object.entries(parsed)
-      .map(([mode, formats]) => {
-        if (!formats || typeof formats !== "object" || Array.isArray(formats)) {
-          return null;
-        }
-        const entries = Object.entries(formats)
-          .map(([format, meta]) => ({
-            format,
-            formatLabel: this.prettifyFormatName(format),
-            entryObjectKey:
-              meta && typeof meta === "object" && !Array.isArray(meta)
-                ? meta.entry_object_key || meta.entryObjectKey || ""
-                : ""
-          }))
-          .filter((entry) => entry.format);
-        if (!entries.length) {
-          return null;
-        }
-        return {
-          mode,
-          label: modeLabels[mode] || mode,
-          entries
-        };
-      })
-      .filter(Boolean);
+    const roleLabels = { contract: "Contrato", reference: "Referencia", render: "Render" };
+    const roleOrder = ["contract", "reference", "render"];
+    // available_formats es plano: { <format>: { entry_object_key } }. Se agrupa por rol derivado.
+    const groups = {};
+    for (const [format, meta] of Object.entries(parsed)) {
+      if (!format || !meta || typeof meta !== "object" || Array.isArray(meta)) {
+        continue;
+      }
+      const role = this.formatRole(format);
+      (groups[role] = groups[role] || []).push({
+        format,
+        formatLabel: this.prettifyFormatName(format),
+        entryObjectKey: meta.entry_object_key || meta.entryObjectKey || ""
+      });
+    }
+    return roleOrder
+      .filter((role) => groups[role]?.length)
+      .map((role) => ({
+        // `mode` se conserva por compatibilidad con componentes que lo usan como clave/estilo: ahora es el rol.
+        mode: role,
+        role,
+        label: roleLabels[role] || role,
+        entries: groups[role]
+      }));
   }
 
   getAvailableFormatBadgeStyle(mode, entry) {
@@ -248,13 +249,14 @@ class AdminPresentationService {
   }
 
   getDefaultAvailableFormatColor(mode, format) {
+    // El color se determina por formato (el formato es único; el rol/"mode" ya no discrimina).
     return {
-      "process:jinja2": "#18b7a3",
-      "general:latex": "#8b5cf6",
-      "general:docx": "#2563eb",
-      "general:pdf": "#ef4444",
-      "general:xlsx": "#16a34a"
-    }[`${mode}:${format}`] || "#8a94a6";
+      jinja2: "#18b7a3",
+      latex: "#8b5cf6",
+      docx: "#2563eb",
+      pdf: "#ef4444",
+      xlsx: "#16a34a"
+    }[String(format || "").toLowerCase()] || "#8a94a6";
   }
 
   getFirstDefinedValue(...values) {

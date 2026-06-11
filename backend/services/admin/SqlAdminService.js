@@ -47,8 +47,14 @@ const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").
 const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
 // Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
 const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
+// Rol derivado del formato (sustituye al eje "mode" que ya no se almacena): jinja2 = contrato ejecutable,
+// latex = render derivable, el resto = documento de referencia. Es 1:1 con el formato, por eso es derivable.
+const FORMAT_ROLE = { jinja2: "contract", latex: "render" };
+const formatRole = (format) => FORMAT_ROLE[String(format || "").toLowerCase()] || "reference";
+// Formato del contrato ejecutable (único editable por el admin).
+const CONTRACT_FORMAT = "jinja2";
 // Único subárbol editable por el admin (contenido LaTeX). Todo lo demás del contrato es protegido (hash).
-const EDITABLE_CONTENT_SUBPATH = "template/modes/process/jinja2/src/Contenido/";
+const EDITABLE_CONTENT_SUBPATH = `template/${CONTRACT_FORMAT}/Contenido/`;
 const MINIO_TEMPLATES_SEEDS_PREFIX = (process.env.MINIO_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
 const TEMPLATE_USERS_PREFIX = (
   process.env.MINIO_TEMPLATES_USERS_PREFIX
@@ -780,15 +786,13 @@ const findPreferredPdfObject = (objectNames = []) => {
   return pdfCandidates[0];
 };
 
-const buildArtifactModeDir = (baseDir, mode, format) =>
-  path.join(baseDir, "template", "modes", mode, format, "src");
+// Layout aplanado por formato (sin eje "modes" ni "mode" ni "src"): template/<format>/...
+const buildArtifactFormatDir = (baseDir, format) =>
+  path.join(baseDir, "template", format);
 
-const setAvailableFormatEntry = (availableFormats, mode, format, baseObjectPrefix) => {
-  if (!availableFormats[mode]) {
-    availableFormats[mode] = {};
-  }
-  availableFormats[mode][format] = {
-    entry_object_key: `${baseObjectPrefix}template/modes/${mode}/${format}/src/`
+const setAvailableFormatEntry = (availableFormats, format, baseObjectPrefix) => {
+  availableFormats[format] = {
+    entry_object_key: `${baseObjectPrefix}template/${format}/`
   };
 };
 
@@ -809,12 +813,10 @@ const validatePackagedArtifactDraft = (draftDir, availableFormats) => {
   if (requiredMetaSections.some((pattern) => !pattern.test(metaContent))) {
     throw new Error("El artifact no cumple el contrato minimo de meta.yaml para workflows y dependencies.");
   }
-  for (const [mode, formats] of Object.entries(availableFormats || {})) {
-    for (const format of Object.keys(formats || {})) {
-      const dirPath = buildArtifactModeDir(draftDir, mode, format);
-      if (!hasVisibleFiles(dirPath)) {
-        throw new Error(`La salida ${mode}/${format} no cumple la estructura esperada en template/modes/${mode}/${format}/src/.`);
-      }
+  for (const format of Object.keys(availableFormats || {})) {
+    const dirPath = buildArtifactFormatDir(draftDir, format);
+    if (!hasVisibleFiles(dirPath)) {
+      throw new Error(`La salida ${format} no cumple la estructura esperada en template/${format}/.`);
     }
   }
 };
@@ -3723,11 +3725,9 @@ export default class SqlAdminService {
     // Re-mapea los entry_object_key de available_formats del prefijo viejo al nuevo (antes quedaban
     // apuntando a la versión anterior).
     const remappedFormats = parseAvailableFormats(artifact.available_formats);
-    for (const formats of Object.values(remappedFormats || {})) {
-      for (const entry of Object.values(formats || {})) {
-        if (entry?.entry_object_key && String(entry.entry_object_key).startsWith(oldPrefix)) {
-          entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
-        }
+    for (const entry of Object.values(remappedFormats || {})) {
+      if (entry?.entry_object_key && String(entry.entry_object_key).startsWith(oldPrefix)) {
+        entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
       }
     }
     const [result] = await this.pool.query(
@@ -3783,9 +3783,9 @@ export default class SqlAdminService {
     const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
     const basePrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const formats = parseAvailableFormats(artifact.available_formats);
-    const jinjaEntry = formats?.process?.jinja2?.entry_object_key;
+    const jinjaEntry = formats?.[CONTRACT_FORMAT]?.entry_object_key;
     if (!jinjaEntry) {
-      throw new Error("La plantilla no tiene un contrato process/jinja2 editable.");
+      throw new Error("La plantilla no tiene un contrato jinja2 editable.");
     }
     const srcRelPrefix = String(jinjaEntry).startsWith(basePrefix)
       ? String(jinjaEntry).slice(basePrefix.length)
@@ -4067,15 +4067,15 @@ export default class SqlAdminService {
 
     fs.rmSync(draftDir, { recursive: true, force: true });
     fs.mkdirSync(draftDir, { recursive: true });
-    fs.mkdirSync(path.join(draftDir, "template", "modes"), { recursive: true });
+    fs.mkdirSync(path.join(draftDir, "template"), { recursive: true });
     const availableFormats = {};
 
-    const preserveExistingFormat = async (mode, format) => {
-      const existingEntry = existingAvailableFormats?.[mode]?.[format];
+    const preserveExistingFormat = async (format) => {
+      const existingEntry = existingAvailableFormats?.[format];
       if (!existingEntry?.entry_object_key) {
         return false;
       }
-      const targetDir = buildArtifactModeDir(draftDir, mode, format);
+      const targetDir = buildArtifactFormatDir(draftDir, format);
       const existingObjectKey = String(existingEntry.entry_object_key);
       if (/\.[a-z0-9]+$/i.test(existingObjectKey)) {
         const fileName = path.basename(existingObjectKey);
@@ -4083,7 +4083,7 @@ export default class SqlAdminService {
       } else {
         await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
       }
-      setAvailableFormatEntry(availableFormats, mode, format, baseObjectPrefix);
+      setAvailableFormatEntry(availableFormats, format, baseObjectPrefix);
       return true;
     };
 
@@ -4096,9 +4096,9 @@ export default class SqlAdminService {
       await downloadMinioPrefixToDirectory(
         MINIO_TEMPLATES_BUCKET,
         `${seedRow.source_path}src/`,
-        buildArtifactModeDir(draftDir, "process", "jinja2")
+        buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
       );
-      setAvailableFormatEntry(availableFormats, "process", "jinja2", baseObjectPrefix);
+      setAvailableFormatEntry(availableFormats, CONTRACT_FORMAT, baseObjectPrefix);
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
         await copyMinioObjectToFile(
@@ -4109,25 +4109,25 @@ export default class SqlAdminService {
       } catch {
         // Optional for non-latex seeds.
       }
-      // El render compilado (general/latex) es opcional/derivable: si el seed no lo publica (p.ej. el seed
-      // base se empaqueta sin render/), se omite sin abortar. El contrato real es process/jinja2.
+      // El render compilado (formato latex) es opcional/derivable: si el seed no lo publica (p.ej. el seed
+      // base se empaqueta sin render/), se omite sin abortar. El contrato real es jinja2.
       if (String(seedRow.seed_type || "").toLowerCase() === "latex") {
         try {
           await downloadMinioPrefixToDirectory(
             MINIO_TEMPLATES_BUCKET,
             `${seedRow.source_path}render/`,
-            buildArtifactModeDir(draftDir, "general", "latex")
+            buildArtifactFormatDir(draftDir, "latex")
           );
-          setAvailableFormatEntry(availableFormats, "general", "latex", baseObjectPrefix);
+          setAvailableFormatEntry(availableFormats, "latex", baseObjectPrefix);
         } catch {
-          // Sin render/ publicado: se omite el formato general/latex.
+          // Sin render/ publicado: se omite el formato latex.
         }
       }
     }
 
     if (!seedRow) {
-      await preserveExistingFormat("process", "jinja2");
-      await preserveExistingFormat("general", "latex");
+      await preserveExistingFormat(CONTRACT_FORMAT);
+      await preserveExistingFormat("latex");
     }
 
     const fileFieldMap = {
@@ -4138,9 +4138,8 @@ export default class SqlAdminService {
     };
 
     for (const [format, file] of Object.entries(uploadedFiles)) {
-      const relativeDir = path.join("template", "modes", "general", fileFieldMap[format], "src");
-      const targetDir = path.join(draftDir, relativeDir);
-      const existingEntry = existingAvailableFormats?.general?.[fileFieldMap[format]];
+      const targetDir = buildArtifactFormatDir(draftDir, fileFieldMap[format]);
+      const existingEntry = existingAvailableFormats?.[fileFieldMap[format]];
 
       if (file) {
         const safeName = slugify(path.parse(file.originalname || format).name) || format;
@@ -4151,7 +4150,7 @@ export default class SqlAdminService {
           : fallbackFileName;
         fs.mkdirSync(targetDir, { recursive: true });
         fs.writeFileSync(path.join(targetDir, fileName), file.buffer);
-        setAvailableFormatEntry(availableFormats, "general", fileFieldMap[format], baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
         continue;
       }
 
@@ -4163,7 +4162,7 @@ export default class SqlAdminService {
         } else {
           await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
         }
-        setAvailableFormatEntry(availableFormats, "general", fileFieldMap[format], baseObjectPrefix);
+        setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
       }
     }
 

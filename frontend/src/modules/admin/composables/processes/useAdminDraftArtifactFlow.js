@@ -102,10 +102,10 @@ export function useAdminDraftArtifactFlow({
         schema_fields: []
       };
       draftArtifactExistingFiles.value = {
-        pdf: getFileNameFromObjectKey(availableFormats?.general?.pdf?.entry_object_key),
-        docx: getFileNameFromObjectKey(availableFormats?.general?.docx?.entry_object_key),
-        xlsx: getFileNameFromObjectKey(availableFormats?.general?.xlsx?.entry_object_key),
-        pptx: getFileNameFromObjectKey(availableFormats?.general?.pptx?.entry_object_key)
+        pdf: getFileNameFromObjectKey(availableFormats?.pdf?.entry_object_key),
+        docx: getFileNameFromObjectKey(availableFormats?.docx?.entry_object_key),
+        xlsx: getFileNameFromObjectKey(availableFormats?.xlsx?.entry_object_key),
+        pptx: getFileNameFromObjectKey(availableFormats?.pptx?.entry_object_key)
       };
       // Carga los campos y flujos actuales (desde MinIO) para edición.
       try {

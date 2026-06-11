@@ -132,38 +132,36 @@ const listMinioObjects = (bucket, prefix, recursive = true) =>
 
 const collectDeliverableTemplateResources = async (availableFormats) => {
   const resources = [];
-  for (const [mode, modeEntries] of Object.entries(availableFormats || {})) {
-    if (!modeEntries || typeof modeEntries !== "object" || Array.isArray(modeEntries)) {
+  // available_formats es plano: { <format>: { entry_object_key } }.
+  for (const [format, formatEntry] of Object.entries(availableFormats || {})) {
+    if (!formatEntry || typeof formatEntry !== "object" || Array.isArray(formatEntry)) {
       continue;
     }
-    for (const [format, formatEntry] of Object.entries(modeEntries)) {
-      const normalizedFormat = String(format || "").trim().toLowerCase();
-      if (!normalizedFormat || TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS.has(normalizedFormat)) {
+    const normalizedFormat = String(format || "").trim().toLowerCase();
+    if (!normalizedFormat || TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS.has(normalizedFormat)) {
+      continue;
+    }
+    const entryPrefix = String(formatEntry?.entry_object_key || "").trim().replace(/^\/+/, "");
+    if (!entryPrefix) {
+      continue;
+    }
+    const objectNames = await listMinioObjects(MINIO_TEMPLATES_BUCKET, entryPrefix, true);
+    for (const objectName of objectNames) {
+      const cleanObjectName = String(objectName || "").trim();
+      if (!cleanObjectName || cleanObjectName.endsWith("/")) {
         continue;
       }
-      const entryPrefix = String(formatEntry?.entry_object_key || "").trim().replace(/^\/+/, "");
-      if (!entryPrefix) {
+      const relativeName = cleanObjectName.startsWith(entryPrefix)
+        ? cleanObjectName.slice(entryPrefix.length).replace(/^\/+/, "")
+        : path.basename(cleanObjectName);
+      if (!relativeName || path.basename(relativeName).startsWith(".")) {
         continue;
       }
-      const objectNames = await listMinioObjects(MINIO_TEMPLATES_BUCKET, entryPrefix, true);
-      for (const objectName of objectNames) {
-        const cleanObjectName = String(objectName || "").trim();
-        if (!cleanObjectName || cleanObjectName.endsWith("/")) {
-          continue;
-        }
-        const relativeName = cleanObjectName.startsWith(entryPrefix)
-          ? cleanObjectName.slice(entryPrefix.length).replace(/^\/+/, "")
-          : path.basename(cleanObjectName);
-        if (!relativeName || path.basename(relativeName).startsWith(".")) {
-          continue;
-        }
-        resources.push({
-          mode,
-          format: normalizedFormat,
-          objectName: cleanObjectName,
-          archiveName: relativeName.replace(/\\/g, "/")
-        });
-      }
+      resources.push({
+        format: normalizedFormat,
+        objectName: cleanObjectName,
+        archiveName: relativeName.replace(/\\/g, "/")
+      });
     }
   }
   return resources;

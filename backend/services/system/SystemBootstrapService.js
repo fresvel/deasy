@@ -263,7 +263,7 @@ const BASE_SEED_DIR = path.join(__dirname, "seeds", BASE_SEED_NAME);
 const DEFAULT_TEMPLATE_CODE = "tpl_informe_general";
 const DEFAULT_TEMPLATE_BUCKET = "deasy-templates";
 const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/v0001/`;
-const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/modes/process/jinja2/src/`;
+const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/jinja2/`;
 const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
 
 // meta.yaml generado del artifact instanciado (descriptivo; el contrato de render vive en src/).
@@ -274,10 +274,9 @@ name: "${BASE_SEED_DISPLAY}"
 repository_stage: published
 version: 1.0.0
 storage_version: v0001
-modes:
-  process:
-    jinja2:
-      path: "modes/process/jinja2/src"
+formats:
+  jinja2:
+    path: "template/jinja2"
 origins: []
 workflows:
   fill:
@@ -466,7 +465,7 @@ export const ensureDefaultProcess = async (connection) => {
     [DEFAULT_TEMPLATE_CODE]
   );
   if (!artifact) {
-    const availableFormats = { process: { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } } };
+    const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
     const [r] = await connection.query(
       `INSERT INTO template_artifacts
         (template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
