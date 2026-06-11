@@ -135,6 +135,7 @@
       @open-delete="openDelete"
       @start-process-definition-versioning="startProcessDefinitionVersioning"
       @open-process-definition-activation-for-row="openProcessDefinitionActivationForRow"
+      @retire-process-definition="retireProcessDefinition"
       @open-person-assignments="openPersonAssignments"
     />
 
@@ -336,6 +337,26 @@
       :style="{ zIndex: 1090 }"
       @confirm="confirmDeleteProcessEditorConfiguration"
     />
+
+    <AdminModalShell
+      ref="retireDefinitionModal"
+      labelled-by="retireDefinitionModalLabel"
+      title="Retirar configuración"
+      :style="{ zIndex: 1090 }"
+    >
+      <p class="mb-2">
+        Vas a <strong>retirar</strong> la configuración
+        <strong>{{ retireDefinitionRow?.name || `#${retireDefinitionRow?.id}` }}</strong>.
+      </p>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Una configuración retirada deja de aplicarse a nuevos procesos y queda en <strong>solo lectura</strong>:
+        no podrás reactivarla. Si más adelante necesitas estos ajustes, crea una nueva versión a partir de ella.
+      </div>
+      <template #footer>
+        <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
+        <AdminButton variant="outlineDanger" @click="confirmRetireProcessDefinition">Retirar</AdminButton>
+      </template>
+    </AdminModalShell>
 
     <AdminDefinitionCreatedPromptModal
       ref="definitionArtifactsPromptModal"
@@ -3250,6 +3271,63 @@ const confirmDeleteProcessEditorConfiguration = async () => {
     });
   } finally {
     processEditorConfigurationsLoading.value = false;
+  }
+};
+
+// Retiro (desactivación) de una configuración activa. En el modelo, una configuración activa solo
+// admite retirarse (active -> retired); no puede volver a borrador ni editarse en su versión actual.
+const retireDefinitionModal = ref(null);
+const retireDefinitionRow = ref(null);
+let retireDefinitionInstance = null;
+
+const ensureRetireDefinitionInstance = () => {
+  const modalElement = resolveModalElement(retireDefinitionModal.value);
+  if (!retireDefinitionInstance && modalElement) {
+    retireDefinitionInstance = new Modal(modalElement);
+    modalElement.addEventListener("hidden.bs.modal", () => {
+      retireDefinitionRow.value = null;
+    });
+  }
+};
+
+const retireProcessDefinition = (row) => {
+  if (!row?.id || String(row.status || "").toLowerCase() !== "active") {
+    return;
+  }
+  retireDefinitionRow.value = { ...row };
+  ensureRetireDefinitionInstance();
+  retireDefinitionInstance?.show();
+};
+
+const confirmRetireProcessDefinition = async () => {
+  const row = retireDefinitionRow.value;
+  if (!row?.id) {
+    return;
+  }
+  try {
+    const payload = { status: "retired" };
+    if (!row.effective_to) {
+      payload.effective_to = new Date().toISOString().slice(0, 10);
+    }
+    await adminSqlService.update(
+      "process_definition_versions",
+      { id: Number(row.id) },
+      payload
+    );
+    retireDefinitionInstance?.hide();
+    retireDefinitionRow.value = null;
+    showFeedbackToast({
+      kind: "success",
+      title: "Configuración retirada",
+      message: "La configuración fue retirada y quedó en solo lectura."
+    });
+    await fetchRows();
+  } catch (error) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo retirar",
+      message: error?.response?.data?.message || "No se pudo retirar la configuración."
+    });
   }
 };
 

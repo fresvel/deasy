@@ -208,7 +208,7 @@ const isCreatingSeries = computed(() => form.value.series_id === "__new__");
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 const isDefinitionLocked = computed(() => props.readonly || hasDefinition.value);
 const modalTitle = computed(() =>
-  props.definitionContext?.id ? "Configuración de proceso" : "Crear proceso guiado"
+  props.definitionContext?.id ? "Configuración de proceso" : "Configurar nuevo proceso"
 );
 const showContextSummary = computed(() => Boolean(props.definitionContext?.id && props.currentStep !== "definition"));
 const definitionIntroText = computed(() =>

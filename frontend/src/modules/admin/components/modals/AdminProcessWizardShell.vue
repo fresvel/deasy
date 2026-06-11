@@ -103,7 +103,16 @@ const definitionStatusMeta = computed(() =>
 const definitionStatusLabel = computed(() => definitionStatusMeta.value.label);
 const definitionStatusBadgeClass = computed(() => definitionStatusMeta.value.class);
 
-const isStepComplete = (step) => Boolean(props.stepStatus?.[step.key]);
+const definitionStatus = computed(() => String(props.definitionContext?.status || "").toLowerCase());
+
+// El paso "Activar" refleja el estado real de la configuración: una configuración ya activa
+// (o retirada) no está "pendiente" de activación, sino completada/cerrada.
+const isStepComplete = (step) => {
+  if (step.key === "activate") {
+    return definitionStatus.value === "active" || definitionStatus.value === "retired";
+  }
+  return Boolean(props.stepStatus?.[step.key]);
+};
 const isStepLocked = (step, index) =>
   Boolean(step.locked || step.disabled || (props.lockAfterFirstUntilContext && index > 0 && !hasDefinition.value));
 
@@ -126,6 +135,10 @@ const stepHintClass = (step, index) => {
 };
 const stepHint = (step, index) => {
   if (step.hint) return step.hint;
+  if (step.key === "activate") {
+    if (definitionStatus.value === "active") return "Activa";
+    if (definitionStatus.value === "retired") return "Retirada";
+  }
   if (isStepComplete(step)) return "Completo";
   if (isStepLocked(step, index)) return "Bloqueado";
   if (step.key === props.currentStep) return "Pendiente";

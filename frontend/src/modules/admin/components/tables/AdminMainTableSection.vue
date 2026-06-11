@@ -217,8 +217,8 @@
             <template #actions="{ row }">
               <AdminTableActions
                 delete-message="Eliminar"
-                :show-edit="canUpdate"
-                :show-delete="canDelete"
+                :show-edit="canUpdate && isRowEditable(row)"
+                :show-delete="canDelete && isRowDeletable(row)"
                 @view="$emit('open-record-viewer', row)"
                 @edit="$emit('open-edit', row)"
                 @delete="$emit('open-delete', row)"
@@ -247,6 +247,18 @@
                     @click="$emit('open-process-definition-activation-for-row', row)"
                   >
                     <font-awesome-icon icon="check" />
+                  </AdminButton>
+                  <AdminButton
+                    v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
+                    variant="secondary"
+                    size="sm"
+                    icon-only
+                    class-name="hope-action-btn hope-action-retire"
+                    title="Retirar (desactivar)"
+                    aria-label="Retirar (desactivar)"
+                    @click="$emit('retire-process-definition', row)"
+                  >
+                    <font-awesome-icon icon="times-circle" />
                   </AdminButton>
                   <AdminButton
                     v-if="canUpdate && isPersonTable"
@@ -350,12 +362,21 @@ const emit = defineEmits([
   "open-delete",
   "start-process-definition-versioning",
   "open-process-definition-activation-for-row",
+  "retire-process-definition",
   "open-person-assignments"
 ]);
 
 const searchInputRef = ref(null);
 
 const showAdvancedFilters = ref(false);
+
+// Las configuraciones de proceso solo se editan/eliminan en borrador: activas y retiradas son
+// inmutables (las activas solo se pueden retirar; las retiradas son de solo lectura).
+const isProcessDefinitionVersionsTable = computed(() => props.table?.table === "process_definition_versions");
+const isRowEditable = (row) =>
+  !isProcessDefinitionVersionsTable.value || String(row?.status || "").toLowerCase() === "draft";
+const isRowDeletable = (row) =>
+  !isProcessDefinitionVersionsTable.value || String(row?.status || "").toLowerCase() === "draft";
 
 const searchColumnClass = computed(() => (
   props.isPositionFilterTable ? "lg:col-span-3" :

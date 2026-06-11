@@ -1,6 +1,18 @@
 <template>
   <div>
     <div v-if="checking" class="text-sm text-slate-500">Validando configuracion de la configuracion...</div>
+    <template v-else-if="status === 'active'">
+      <div class="definition-activation-warning mt-3">
+        Esta configuracion ya esta <strong>activa</strong>. No se puede modificar reglas, disparadores ni
+        paquetes en esta version: para introducir cambios crea una nueva version, o retirala para desactivarla.
+      </div>
+    </template>
+    <template v-else-if="status === 'retired'">
+      <div class="definition-activation-warning mt-3">
+        Esta configuracion esta <strong>retirada</strong> y es de solo lectura. Para reutilizarla crea una
+        nueva version a partir de ella.
+      </div>
+    </template>
     <template v-else>
       <p class="mb-2">Vas a activar una configuracion en borrador.</p>
       <div class="definition-activation-warning mt-3">
@@ -150,11 +162,12 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
-defineProps({
+const props = defineProps({
   checking: { type: Boolean, default: false },
   hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
@@ -173,4 +186,6 @@ defineProps({
   showMenu: { type: Boolean, default: true }
 });
 defineEmits(["update:view", "view-row"]);
+
+const status = computed(() => String(props.selectedRow?.status || "").toLowerCase());
 </script>
