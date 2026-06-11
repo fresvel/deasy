@@ -776,6 +776,98 @@ const parseArtifactSyncMarker = (description, prefix) => {
   };
 };
 
+// Resuelve un cargo del paso (por id o por código/alias) contra el catálogo, para validar referencias.
+const resolveStepCargoId = (resolver = {}, fallbackCode = "", cargoCodeMap = new Map()) => {
+  const direct = normalizeNumericId(resolver?.cargo_id);
+  if (direct) {
+    return direct;
+  }
+  const rawCode = String(resolver?.cargo_code || fallbackCode || "").trim().toLowerCase();
+  if (!rawCode) {
+    return null;
+  }
+  const normalized = slugify(CARGO_CODE_ALIASES.get(rawCode) || rawCode);
+  return cargoCodeMap.get(normalized) || null;
+};
+
+// Validación de contrato de flujo EN AUTORÍA (al guardar la plantilla), no solo al vincular: detecta
+// errores que de otro modo se "tragarían" silenciosamente en la normalización del sync (orden inválido/
+// duplicado, responsable/firmante desconocido, referencias faltantes). Devuelve lista de problemas.
+const collectAuthoredWorkflowIssues = ({
+  fillWorkflow,
+  signatureWorkflow,
+  cargoCodeMap = new Map(),
+  signatureTypeCodeMap = new Map()
+} = {}) => {
+  const issues = [];
+  const checkOrders = (steps, label) => {
+    const seen = new Set();
+    steps.forEach((step, index) => {
+      const order = Number(step?.order);
+      if (!Number.isInteger(order) || order < 1) {
+        issues.push(`${label} ${index + 1}: el orden debe ser un entero ≥ 1.`);
+      } else if (seen.has(order)) {
+        issues.push(`${label}: orden duplicado (${order}).`);
+      } else {
+        seen.add(order);
+      }
+    });
+  };
+  const checkResolverRefs = (resolver, type, label, fallbackCargoCode = "") => {
+    if (type === "specific_person" && !normalizeNumericId(resolver?.person_id)) {
+      issues.push(`${label}: "Persona específica" requiere person_id.`);
+    }
+    if (type === "position" && !normalizeNumericId(resolver?.position_id)) {
+      issues.push(`${label}: "Posición" requiere position_id.`);
+    }
+    if (type === "cargo_in_scope" && !resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap)) {
+      issues.push(`${label}: "Cargo en ámbito" requiere un cargo válido (cargo_id o cargo_code).`);
+    }
+  };
+
+  const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps.filter((s) => s && typeof s === "object") : [];
+  if (fillSteps.length) {
+    checkOrders(fillSteps, "Paso de entrega");
+    fillSteps.forEach((step, index) => {
+      const label = `Paso de entrega ${index + 1}`;
+      const type = String(step?.resolver?.type || "task_assignee");
+      if (!FILL_RESOLVER_TYPES.has(type)) {
+        issues.push(`${label}: responsable inválido (${type}).`);
+        return;
+      }
+      checkResolverRefs(step?.resolver, type, label);
+      const selection = step?.resolver?.selection_mode;
+      if (selection && !FILL_SELECTION_MODES.has(String(selection))) {
+        issues.push(`${label}: modo de selección inválido (${selection}).`);
+      }
+    });
+  }
+
+  const signatureSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps.filter((s) => s && typeof s === "object") : [];
+  if (signatureSteps.length) {
+    checkOrders(signatureSteps, "Paso de firma");
+    signatureSteps.forEach((step, index) => {
+      const label = `Paso de firma ${index + 1}`;
+      // Solo valida el tipo de firma si el catálogo está poblado (si no, el sync lo asegura más tarde).
+      if (signatureTypeCodeMap.size) {
+        const rawType = String(step.step_type_code || "electronic").trim().toLowerCase();
+        const normalizedType = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawType) || rawType);
+        if (!signatureTypeCodeMap.get(normalizedType)) {
+          issues.push(`${label}: tipo de firma desconocido (${step.step_type_code || "electronic"}).`);
+        }
+      }
+      const type = String(step?.resolver?.type || "cargo_in_scope");
+      if (!SIGNATURE_RESOLVER_TYPES.has(type)) {
+        issues.push(`${label}: firmante inválido (${type}).`);
+        return;
+      }
+      checkResolverRefs(step?.resolver, type, label, step.required_cargo_code);
+    });
+  }
+
+  return issues;
+};
+
 const isArtifactFillWorkflowSyncEnabled = (workflow = {}) =>
   String(workflow?.sync_mode || "").trim() === "artifact_to_db"
   && normalizeBooleanFlag(workflow?.required, false)
@@ -4333,6 +4425,25 @@ export default class SqlAdminService {
     const hasCustomWorkflows =
       (fillWorkflow && Array.isArray(fillWorkflow.steps) && fillWorkflow.steps.length)
       || (signatureWorkflow && Array.isArray(signatureWorkflow.steps) && signatureWorkflow.steps.length);
+    // Validación del contrato de flujo en autoría (no solo al vincular): falla rápido y claro antes de
+    // subir el meta.yaml, en vez de degradar silenciosamente en la normalización del sync.
+    if (hasCustomWorkflows) {
+      const [cargoCodeMap, signatureTypeCodeMap] = await Promise.all([
+        this.getCargoCodeMap(),
+        this.getSignatureTypeCodeMap()
+      ]);
+      const workflowIssues = collectAuthoredWorkflowIssues({
+        fillWorkflow,
+        signatureWorkflow,
+        cargoCodeMap,
+        signatureTypeCodeMap
+      });
+      if (workflowIssues.length) {
+        const error = new Error(`El flujo definido tiene errores:\n- ${workflowIssues.join("\n- ")}`);
+        error.statusCode = 422;
+        throw error;
+      }
+    }
     const workflowsYaml = hasCustomWorkflows
       ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })
       : ARTIFACT_WORKFLOW_CONTRACT;
