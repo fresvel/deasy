@@ -383,11 +383,30 @@ const props = defineProps({
   draftArtifactPreviewStatus: { type: String, default: "idle" },
   getDraftArtifactFileLabel: { type: Function, required: true },
   // Cuando el wizard crea un proceso desde este modal, se pasa su id para seleccionarlo y refrescar opciones.
-  newProcessDefinitionId: { type: [String, Number], default: "" }
+  newProcessDefinitionId: { type: [String, Number], default: "" },
+  // Configuración de origen al crear una plantilla desde el flujo de edición de configuración:
+  // se preselecciona en el select (y se refrescan las opciones para incluirla aunque sea borrador).
+  preselectProcessDefinitionId: { type: [String, Number], default: "" }
 });
 
 const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-stage", "new-version", "create-process"]);
 const modalRef = ref(null);
+
+// Cada vez que el modal se muestra, refresca las configuraciones (para incluir borradores recién creados)
+// y, si se abrió desde el flujo de edición de una configuración, la preselecciona en el select.
+const refreshDefinitionOptionsOnShow = async () => {
+  await loadProcessDefinitionOptions();
+  if (
+    !props.draftArtifactEditId
+    && props.preselectProcessDefinitionId
+    && !props.draftArtifactForm.process_definition_id
+  ) {
+    updateField("process_definition_id", String(props.preselectProcessDefinitionId));
+  }
+};
+onMounted(() => {
+  modalRef.value?.el?.addEventListener("shown.bs.modal", refreshDefinitionOptionsOnShow);
+});
 
 // Código de la semilla por defecto (debe coincidir con DEFAULT_TEMPLATE_SEED_CODE del backend).
 const DEFAULT_SEED_CODE = "latex/informe-general";

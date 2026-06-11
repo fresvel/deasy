@@ -869,6 +869,7 @@
       :draft-artifact-preview-status="draftArtifactPreviewStatus"
       :get-draft-artifact-file-label="getDraftArtifactFileLabel"
       :new-process-definition-id="draftNewProcessDefinitionId"
+      :preselect-process-definition-id="draftArtifactPreselectDefinitionId"
       @update:form="draftArtifactForm = $event"
       @file-change="handleDraftArtifactFileChange"
       @drop="handleDraftArtifactDrop"
@@ -2507,6 +2508,8 @@ const openFkCreate = async () => {
     draftArtifactFkCreateMode.value = true;
     fkCreateExitTarget.value = "none";
     skipFkReturnRestore.value = true;
+    // Si se está creando la plantilla desde la edición de una configuración, preselecciona esa config.
+    draftArtifactPreselectDefinitionId.value = String(definitionArtifactsContext.value?.id || "");
     getFkInstance()?.hide();
     await openDraftArtifactModal(null, { force: true });
     return;
@@ -2516,6 +2519,7 @@ const openFkCreate = async () => {
 
 const handleDraftArtifactClose = () => {
   const shouldReturnToFkSearch = draftArtifactFkCreateMode.value;
+  draftArtifactPreselectDefinitionId.value = "";
   closeDraftArtifactModal();
   if (shouldReturnToFkSearch) {
     draftArtifactFkCreateMode.value = false;
@@ -2972,6 +2976,8 @@ const handleProcessWizardGoToStep = async (key) => {
 // configuración se devuelve su id al modal para preseleccionarla.
 const wizardFromDraft = ref(false);
 const draftNewProcessDefinitionId = ref("");
+// Configuración de origen a preseleccionar cuando se crea una plantilla desde el flujo de edición.
+const draftArtifactPreselectDefinitionId = ref("");
 
 const handleProcessWizardCreateDefinition = async () => {
   if (processWizardDefinition.value?.id) {
