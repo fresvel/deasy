@@ -754,6 +754,28 @@ const buildArtifactSyncedFillDescription = ({ artifactId, templateCode, storageV
 const buildArtifactSyncedSignatureDescription = ({ artifactId, templateCode, storageVersion }) =>
   `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}${artifactId}:${templateCode}:${storageVersion}`;
 
+// Lee la marca de procedencia "<prefix><artifactId>:<templateCode>:<storageVersion>" para detectar drift:
+// si el storageVersion materializado en BD difiere del actual del artifact, la proyección está desfasada.
+// templateCode puede contener ':' improbable, pero artifactId (primer token) y storageVersion (último)
+// son inequívocos.
+const parseArtifactSyncMarker = (description, prefix) => {
+  const raw = String(description || "");
+  if (!raw.startsWith(prefix)) {
+    return null;
+  }
+  const body = raw.slice(prefix.length);
+  const firstColon = body.indexOf(":");
+  const lastColon = body.lastIndexOf(":");
+  if (firstColon < 0 || lastColon <= firstColon) {
+    return null;
+  }
+  return {
+    artifactId: Number(body.slice(0, firstColon)) || null,
+    templateCode: body.slice(firstColon + 1, lastColon),
+    storageVersion: body.slice(lastColon + 1)
+  };
+};
+
 const isArtifactFillWorkflowSyncEnabled = (workflow = {}) =>
   String(workflow?.sync_mode || "").trim() === "artifact_to_db"
   && normalizeBooleanFlag(workflow?.required, false)
@@ -3002,7 +3024,7 @@ export default class SqlAdminService {
 
   async getSyncedFillFlowTemplate(processDefinitionTemplateId, connection = this.pool) {
     const [rows] = await connection.query(
-      `SELECT id
+      `SELECT id, description, is_active
        FROM fill_flow_templates
        WHERE process_definition_template_id = ?
          AND description LIKE ?
@@ -3015,7 +3037,7 @@ export default class SqlAdminService {
 
   async getSyncedSignatureFlowTemplate(processDefinitionTemplateId, connection = this.pool) {
     const [rows] = await connection.query(
-      `SELECT id
+      `SELECT id, description, is_active
        FROM signature_flow_templates
        WHERE process_definition_template_id = ?
          AND description LIKE ?
@@ -3024,6 +3046,70 @@ export default class SqlAdminService {
       [processDefinitionTemplateId, `${ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX}%`]
     );
     return rows?.[0] || null;
+  }
+
+  // Estado de sincronización del flujo de un artifact: compara el storage_version materializado en BD
+  // (marca de procedencia) contra el actual del artifact, por cada vínculo a configuración. Devuelve
+  // 'no_link' | 'synced' | 'stale' a nivel global y el detalle por vínculo.
+  async getArtifactWorkflowSyncStatus(artifactId, connection = this.pool) {
+    this.ensurePool();
+    const artifact = await this.getTemplateArtifact(artifactId, connection);
+    if (!artifact?.id) {
+      return { artifact_id: Number(artifactId) || null, exists: false, status: "unknown", links: [] };
+    }
+    const currentVersion = String(artifact.storage_version || "");
+    let metaDocument = null;
+    try {
+      metaDocument = await this.loadTemplateArtifactMetaDocument(artifact, connection);
+    } catch {
+      metaDocument = null;
+    }
+    const fillEnabled = isArtifactFillWorkflowSyncEnabled(metaDocument?.workflows?.fill || {});
+    const signatureEnabled = isArtifactSignatureWorkflowSyncEnabled(metaDocument?.workflows?.signatures || {});
+    const links = await this.getProcessDefinitionTemplatesByArtifact(artifactId, connection);
+
+    // Estado por lado (fill/firmas): 'ok' | 'stale' | 'missing'.
+    const sideStatus = (synced, enabled, prefix) => {
+      if (!enabled) {
+        // No debe materializarse; si quedó activo, está desfasado (pendiente de desactivar).
+        return synced?.id && Number(synced.is_active) === 1 ? "stale" : "ok";
+      }
+      if (!synced?.id || Number(synced.is_active) !== 1) {
+        return "missing";
+      }
+      const marker = parseArtifactSyncMarker(synced.description, prefix);
+      return marker && String(marker.storageVersion) === currentVersion ? "ok" : "stale";
+    };
+
+    const severity = { missing: 3, stale: 2, ok: 1 };
+    const links_status = [];
+    for (const link of links) {
+      const fill = await this.getSyncedFillFlowTemplate(link.id, connection);
+      const signature = await this.getSyncedSignatureFlowTemplate(link.id, connection);
+      const fillState = sideStatus(fill, fillEnabled, ARTIFACT_SYNC_FILL_DESCRIPTION_PREFIX);
+      const signatureState = sideStatus(signature, signatureEnabled, ARTIFACT_SYNC_SIGNATURE_DESCRIPTION_PREFIX);
+      const worst = [fillState, signatureState].sort((a, b) => severity[b] - severity[a])[0];
+      links_status.push({
+        process_definition_template_id: link.id,
+        process_definition_id: link.process_definition_id,
+        process_definition_name: link.process_definition_name,
+        fill: fillState,
+        signatures: signatureState,
+        status: worst === "ok" ? "synced" : worst
+      });
+    }
+
+    const anyStale = links_status.some((entry) => entry.status !== "synced");
+    return {
+      artifact_id: Number(artifact.id),
+      exists: true,
+      storage_version: currentVersion,
+      has_workflow: fillEnabled || signatureEnabled,
+      fill_enabled: fillEnabled,
+      signature_enabled: signatureEnabled,
+      status: !links.length ? "no_link" : (anyStale ? "stale" : "synced"),
+      links: links_status
+    };
   }
 
   async getCargoCodeMap(connection = this.pool) {

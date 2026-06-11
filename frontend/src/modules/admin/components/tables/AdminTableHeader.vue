@@ -29,12 +29,12 @@
           size="md"
           class-name="admin-page-header__create"
           :disabled="!table"
-          :title="isProcessDefinitionsTable ? 'Crear proceso guiado' : 'Agregar'"
-          :aria-label="isProcessDefinitionsTable ? 'Crear proceso guiado' : 'Agregar'"
+          :title="isProcessDefinitionsTable ? 'Configurar proceso' : 'Agregar'"
+          :aria-label="isProcessDefinitionsTable ? 'Configurar proceso' : 'Agregar'"
           @click="$emit('create')"
         >
           <font-awesome-icon :icon="isProcessDefinitionsTable ? 'list-check' : 'plus'" class="mr-2" />
-          {{ isProcessDefinitionsTable ? "Crear proceso guiado" : "Agregar" }}
+          {{ isProcessDefinitionsTable ? "Configurar proceso" : "Agregar" }}
         </AdminButton>
       </div>
     </div>

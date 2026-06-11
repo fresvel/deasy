@@ -14,6 +14,8 @@ import {
   getTemplateArtifactSchema,
   updateTemplateArtifactStage,
   createTemplateArtifactVersion,
+  getTemplateArtifactSyncStatus,
+  resyncTemplateArtifactWorkflows,
   listSqlRows,
   createSqlRow,
   updateSqlRow,
@@ -34,6 +36,8 @@ router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resou
 router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
 router.patch("/template_artifacts/:id/stage", requireSqlAdminPermission({ resource: "templates", action: "update" }), updateTemplateArtifactStage);
 router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
+router.get("/template_artifacts/:id/sync-status", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSyncStatus);
+router.post("/template_artifacts/:id/resync", requireSqlAdminPermission({ resource: "templates", action: "update" }), resyncTemplateArtifactWorkflows);
 // Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).
 router.get("/template_artifacts/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);
 router.post(

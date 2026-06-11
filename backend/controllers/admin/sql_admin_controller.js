@@ -273,6 +273,27 @@ export const createTemplateArtifactVersion = async (req, res) => {
   }
 };
 
+// Estado de sincronización del flujo de un artifact (synced/stale/no_link) por vínculo a configuración.
+export const getTemplateArtifactSyncStatus = async (req, res) => {
+  try {
+    const result = await service.getArtifactWorkflowSyncStatus(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Re-sincroniza (materializa) los flujos del artifact desde su meta.yaml a las tablas operativas.
+export const resyncTemplateArtifactWorkflows = async (req, res) => {
+  try {
+    const summary = await service.syncArtifactWorkflowsForTemplateArtifactId(Number(req.params.id));
+    const status = await service.getArtifactWorkflowSyncStatus(req.params.id);
+    res.json({ ok: true, summary, ...status });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;
