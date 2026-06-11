@@ -3112,6 +3112,43 @@ export default class SqlAdminService {
     };
   }
 
+  // Job de reconciliación: re-sincroniza los artifacts vinculados cuya proyección en BD está desfasada
+  // (o todos si onlyStale=false). Best-effort por artifact: un fallo no aborta el resto. Sirve como
+  // auto-reparación al arranque y como acción admin a demanda (cierra la ventana de escritura dual).
+  async reconcileArtifactWorkflows({ onlyStale = true } = {}) {
+    this.ensurePool();
+    const [rows] = await this.pool.query(
+      `SELECT DISTINCT template_artifact_id AS id
+       FROM process_definition_templates
+       WHERE template_artifact_id IS NOT NULL`
+    );
+    const summary = { scanned: 0, stale: 0, resynced: 0, failed: 0, details: [] };
+    for (const row of rows || []) {
+      const artifactId = Number(row.id);
+      if (!artifactId) {
+        continue;
+      }
+      summary.scanned += 1;
+      try {
+        const before = await this.getArtifactWorkflowSyncStatus(artifactId);
+        if (onlyStale && before.status !== "stale") {
+          continue;
+        }
+        if (before.status === "stale") {
+          summary.stale += 1;
+        }
+        await this.syncArtifactWorkflowsForTemplateArtifactId(artifactId);
+        const after = await this.getArtifactWorkflowSyncStatus(artifactId);
+        summary.resynced += 1;
+        summary.details.push({ artifact_id: artifactId, before: before.status, after: after.status });
+      } catch (error) {
+        summary.failed += 1;
+        summary.details.push({ artifact_id: artifactId, error: error?.message || "error" });
+      }
+    }
+    return summary;
+  }
+
   async getCargoCodeMap(connection = this.pool) {
     const [rows] = await connection.query(
       `SELECT id, code, name

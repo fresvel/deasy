@@ -294,6 +294,17 @@ export const resyncTemplateArtifactWorkflows = async (req, res) => {
   }
 };
 
+// Reconcilia todos los artifacts vinculados cuya proyección de flujo está desfasada. ?all=1 fuerza todos.
+export const reconcileTemplateArtifactWorkflows = async (req, res) => {
+  try {
+    const onlyStale = String(req.query?.all || "") !== "1";
+    const summary = await service.reconcileArtifactWorkflows({ onlyStale });
+    res.json({ ok: true, ...summary });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;
