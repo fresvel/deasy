@@ -11,18 +11,28 @@
     <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
       Esta configuracion no esta en draft. Solo puedes gestionar reglas cuando la configuracion este en draft.
     </div>
-    <div
-      v-else-if="canManage"
-      class="flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm"
-      :class="canSubmit
-        ? 'border-slate-200 bg-white text-slate-600 shadow-sm'
-        : 'border-amber-200 bg-amber-50 text-amber-800'"
-    >
-      <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
-      <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
+    <!-- Por defecto solo se ve la lista; el formulario se abre con este botón -->
+    <div v-if="canManage && !formOpen" class="flex justify-end">
+      <AdminButton variant="outlinePrimary" @click="openForm">
+        <font-awesome-icon icon="plus" class="mr-2" />
+        Agregar regla
+      </AdminButton>
     </div>
 
-    <div class="person-assignment-form flex flex-col gap-5">
+    <!-- Formulario colapsable: alta o edición de una regla -->
+    <div v-if="canManage && formOpen" class="person-assignment-form flex flex-col gap-5">
+      <p class="m-0 text-sm font-bold text-slate-800">{{ editId ? "Editar regla" : "Nueva regla" }}</p>
+
+      <div
+        class="flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm"
+        :class="canSubmit
+          ? 'border-slate-200 bg-white text-slate-600'
+          : 'border-amber-200 bg-amber-50 text-amber-800'"
+      >
+        <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
+        <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
+      </div>
+
       <!-- Bloque 1: a quién va dirigida la regla -->
       <fieldset class="flex flex-col gap-2.5">
         <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-slate-400">Alcance y destinatarios</p>
@@ -119,17 +129,23 @@
       <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-slate-200 pt-4">
         <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-slate-400">Prioridad y vigencia</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
-          <AdminFieldGroup label="Prioridad" group-class="md:col-span-3">
+          <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
             <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
           </AdminFieldGroup>
-          <AdminFieldGroup label="Activo" group-class="md:col-span-3">
+          <AdminFieldGroup label="Activo" group-class="md:col-span-2">
             <AdminSelectField :model-value="form.is_active" :disabled="!canManage" @update:model-value="updateField('is_active', $event)">
               <option value="1">Si</option>
               <option value="0">No</option>
             </AdminSelectField>
           </AdminFieldGroup>
-          <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-3">
-            <AdminInputField :model-value="form.effective_from" type="date" :disabled="!canManage" @update:model-value="updateField('effective_from', $event)" />
+          <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-5">
+            <div class="flex items-stretch gap-2">
+              <AdminInputField class="flex-1" :model-value="form.effective_from" type="date" :disabled="!canManage" @update:model-value="updateField('effective_from', $event)" />
+              <AdminButton variant="secondary" :disabled="!canManage" title="Usar la fecha de hoy" @click="updateField('effective_from', todayIso)">Hoy</AdminButton>
+              <AdminButton variant="secondary" icon-only :disabled="!canManage || !form.effective_from" title="Quitar fecha" aria-label="Quitar fecha" @click="updateField('effective_from', '')">
+                <font-awesome-icon icon="times" />
+              </AdminButton>
+            </div>
           </AdminFieldGroup>
           <AdminFieldGroup label="Vigencia hasta" group-class="md:col-span-3">
             <AdminInputField :model-value="form.effective_to" type="date" :disabled="!canManage" @update:model-value="updateField('effective_to', $event)" />
@@ -140,10 +156,10 @@
       <AdminFormActions
         :primary-label="editId ? 'Guardar regla' : 'Agregar regla'"
         :primary-disabled="!canSubmit"
-        :show-cancel="Boolean(editId)"
-        cancel-label="Cancelar edicion"
-        @primary="$emit('submit')"
-        @cancel="$emit('reset')"
+        show-cancel
+        cancel-label="Cancelar"
+        @primary="handleSubmit"
+        @cancel="cancelForm"
       />
     </div>
 
@@ -182,7 +198,8 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
@@ -234,6 +251,54 @@ const recipientPolicyOptions = [
   { value: "one_match_only", label: "Solo el primer puesto" },
   { value: "exact_position", label: "Puesto exacto" }
 ];
+
+// Formulario colapsable: por defecto solo se ve la lista. Se abre con "Agregar regla" o al editar una fila,
+// y se colapsa al cancelar o cuando el guardado tiene éxito (alta = la lista crece; edición = editId se limpia).
+const formOpen = ref(false);
+const submitting = ref(false);
+
+const openForm = () => {
+  emit("reset");
+  formOpen.value = true;
+};
+const cancelForm = () => {
+  submitting.value = false;
+  formOpen.value = false;
+  emit("reset");
+};
+const handleSubmit = () => {
+  submitting.value = true;
+  emit("submit");
+};
+
+watch(() => props.editId, (val, old) => {
+  if (val) {
+    formOpen.value = true;
+    return;
+  }
+  if (old && submitting.value) {
+    formOpen.value = false;
+    submitting.value = false;
+  }
+});
+watch(() => props.rows.length, (len, old) => {
+  if (submitting.value && len > old) {
+    formOpen.value = false;
+    submitting.value = false;
+  }
+});
+watch(() => props.error, (val) => {
+  if (val) {
+    submitting.value = false;
+  }
+});
+
+// Fecha de hoy en formato YYYY-MM-DD respetando la zona horaria local (no UTC).
+const todayIso = computed(() => {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+});
 
 const scopeType = computed(() => String(props.form.unit_scope_type || "unit_exact"));
 const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));
