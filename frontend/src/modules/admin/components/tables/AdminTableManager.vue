@@ -3013,8 +3013,10 @@ const draftNewProcessDefinitionId = ref("");
 const draftArtifactPreselectDefinitionId = ref("");
 
 const handleProcessWizardCreateDefinition = async () => {
+  // Tras crear/confirmar la definición se avanza a Reglas (paso siguiente), que deben definirse antes
+  // que los Paquetes para que los ámbitos de contexto del flujo de entrega sean resolubles.
   if (processWizardDefinition.value?.id) {
-    await handleProcessWizardGoToStep("packages");
+    await handleProcessWizardGoToStep("rules");
     return;
   }
   const created = await runProcessWizardCreateDefinition();
@@ -3022,7 +3024,7 @@ const handleProcessWizardCreateDefinition = async () => {
     if (wizardFromDraft.value) {
       draftNewProcessDefinitionId.value = String(created.id);
     }
-    await loadProcessWizardStep("packages");
+    await loadProcessWizardStep("rules");
   }
 };
 

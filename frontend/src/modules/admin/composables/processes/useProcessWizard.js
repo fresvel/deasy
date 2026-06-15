@@ -3,10 +3,12 @@ import { processDefinitionAdminService } from "@/modules/admin/services/ProcessD
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 // Pasos del wizard guiado de proceso (de la creación a la activación).
+// Orden: Reglas ANTES que Paquetes. El flujo de entrega de las plantillas (ámbitos de contexto) depende
+// de las reglas objetivo del proceso, así que estas deben definirse primero.
 export const PROCESS_WIZARD_STEPS = [
   { key: "definition", label: "Configuración" },
-  { key: "packages", label: "Paquetes" },
   { key: "rules", label: "Reglas" },
+  { key: "packages", label: "Paquetes" },
   { key: "triggers", label: "Disparadores" },
   { key: "activate", label: "Activar" },
 ];
@@ -413,7 +415,7 @@ export function useProcessWizard() {
           is_active: 1
         });
       }
-      currentStep.value = step || "packages";
+      currentStep.value = step || "rules";
       await refreshStepStatus();
     } else {
       definitionContext.value = null;
@@ -521,7 +523,7 @@ export function useProcessWizard() {
         variation_key: created.variation_key || series.code,
       };
       await refreshStepStatus();
-      currentStep.value = "packages";
+      currentStep.value = "rules";
       return definitionContext.value;
     } catch (error) {
       wizardError.value = error?.response?.data?.message || error?.message || "No se pudo crear la configuración.";
