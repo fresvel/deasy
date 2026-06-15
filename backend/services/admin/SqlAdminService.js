@@ -819,8 +819,13 @@ const collectAuthoredWorkflowIssues = ({
   fillWorkflow,
   signatureWorkflow,
   cargoCodeMap = new Map(),
-  signatureTypeCodeMap = new Map()
+  signatureTypeCodeMap = new Map(),
+  referenceIds = {}
 } = {}) => {
+  const personIds = referenceIds?.personIds instanceof Set ? referenceIds.personIds : new Set();
+  const positionIds = referenceIds?.positionIds instanceof Set ? referenceIds.positionIds : new Set();
+  const unitIds = referenceIds?.unitIds instanceof Set ? referenceIds.unitIds : new Set();
+  const unitTypeIds = referenceIds?.unitTypeIds instanceof Set ? referenceIds.unitTypeIds : new Set();
   const issues = [];
   const checkOrders = (steps, label) => {
     const seen = new Set();
@@ -851,23 +856,45 @@ const collectAuthoredWorkflowIssues = ({
       selection_mode: step?.selection_mode ?? nested.selection_mode
     };
   };
+  // Valida existencia contra la DB solo si el set correspondiente está poblado (si no se pudo cargar,
+  // no se inventan falsos negativos; las FKs siguen siendo el último backstop al materializar).
   const checkResolverRefs = (resolver, type, label, fallbackCargoCode = "") => {
-    if (type === "specific_person" && !normalizeNumericId(resolver?.person_id)) {
-      issues.push(`${label}: "Persona específica" requiere seleccionar una persona.`);
+    if (type === "specific_person") {
+      const personId = normalizeNumericId(resolver?.person_id);
+      if (!personId) {
+        issues.push(`${label}: "Persona específica" requiere seleccionar una persona.`);
+      } else if (personIds.size && !personIds.has(personId)) {
+        issues.push(`${label}: la persona seleccionada (${personId}) no existe o está inactiva.`);
+      }
     }
-    if (type === "position" && !normalizeNumericId(resolver?.position_id)) {
-      issues.push(`${label}: "Posición" requiere seleccionar una posición.`);
+    if (type === "position") {
+      const positionId = normalizeNumericId(resolver?.position_id);
+      if (!positionId) {
+        issues.push(`${label}: "Posición" requiere seleccionar una posición.`);
+      } else if (positionIds.size && !positionIds.has(positionId)) {
+        issues.push(`${label}: la posición seleccionada (${positionId}) no existe o está inactiva.`);
+      }
     }
     if (type === "cargo_in_scope") {
       if (!resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap)) {
         issues.push(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
       }
       const scope = String(resolver?.unit_scope_type || "context_exact");
-      if ((scope === "unit_exact" || scope === "unit_subtree") && !normalizeNumericId(resolver?.unit_id)) {
-        issues.push(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
+      if (scope === "unit_exact" || scope === "unit_subtree") {
+        const unitId = normalizeNumericId(resolver?.unit_id);
+        if (!unitId) {
+          issues.push(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
+        } else if (unitIds.size && !unitIds.has(unitId)) {
+          issues.push(`${label}: la unidad seleccionada (${unitId}) no existe o está inactiva.`);
+        }
       }
-      if (scope === "unit_type" && !normalizeNumericId(resolver?.unit_type_id)) {
-        issues.push(`${label}: el ámbito "tipo de unidad" requiere seleccionar un tipo de unidad.`);
+      if (scope === "unit_type") {
+        const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
+        if (!unitTypeId) {
+          issues.push(`${label}: el ámbito "tipo de unidad" requiere seleccionar un tipo de unidad.`);
+        } else if (unitTypeIds.size && !unitTypeIds.has(unitTypeId)) {
+          issues.push(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
+        }
       }
     }
   };
@@ -3344,6 +3371,25 @@ export default class SqlAdminService {
     return map;
   }
 
+  // Sets de ids válidos (activos) para validar EN AUTORÍA que las referencias del flujo existen en la DB,
+  // antes de escribir el meta.yaml en MinIO (no solo confiar en el select del front ni en las FKs al
+  // materializar). Espejo de getCargoCodeMap para persona/posición/unidad/tipo de unidad.
+  async getWorkflowReferenceIdSets(connection = this.pool) {
+    const [persons, positions, units, unitTypes] = await Promise.all([
+      connection.query("SELECT id FROM persons WHERE is_active = 1"),
+      connection.query("SELECT id FROM unit_positions WHERE is_active = 1"),
+      connection.query("SELECT id FROM units WHERE is_active = 1"),
+      connection.query("SELECT id FROM unit_types WHERE is_active = 1")
+    ]);
+    const toSet = (result) => new Set((result?.[0] || []).map((row) => Number(row.id)));
+    return {
+      personIds: toSet(persons),
+      positionIds: toSet(positions),
+      unitIds: toSet(units),
+      unitTypeIds: toSet(unitTypes)
+    };
+  }
+
   async ensureSignatureTypeCatalog(connection = this.pool) {
     await connection.query(
       `INSERT INTO signature_types (code, name, description, is_active)
@@ -4478,15 +4524,17 @@ export default class SqlAdminService {
     // Validación del contrato de flujo en autoría (no solo al vincular): falla rápido y claro antes de
     // subir el meta.yaml, en vez de degradar silenciosamente en la normalización del sync.
     if (hasCustomWorkflows) {
-      const [cargoCodeMap, signatureTypeCodeMap] = await Promise.all([
+      const [cargoCodeMap, signatureTypeCodeMap, referenceIds] = await Promise.all([
         this.getCargoCodeMap(),
-        this.getSignatureTypeCodeMap()
+        this.getSignatureTypeCodeMap(),
+        this.getWorkflowReferenceIdSets()
       ]);
       const workflowIssues = collectAuthoredWorkflowIssues({
         fillWorkflow,
         signatureWorkflow,
         cargoCodeMap,
-        signatureTypeCodeMap
+        signatureTypeCodeMap,
+        referenceIds
       });
       if (workflowIssues.length) {
         const error = new Error(`El flujo definido tiene errores:\n- ${workflowIssues.join("\n- ")}`);
