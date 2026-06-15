@@ -17,6 +17,7 @@ import {
   getTemplateArtifactSyncStatus,
   resyncTemplateArtifactWorkflows,
   reconcileTemplateArtifactWorkflows,
+  getProcessTargetScope,
   listSqlRows,
   createSqlRow,
   updateSqlRow,
@@ -40,6 +41,7 @@ router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resou
 router.get("/template_artifacts/:id/sync-status", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSyncStatus);
 router.post("/template_artifacts/:id/resync", requireSqlAdminPermission({ resource: "templates", action: "update" }), resyncTemplateArtifactWorkflows);
 router.post("/template_artifacts/workflows/reconcile", requireAnyRole(["AdminSistema"]), reconcileTemplateArtifactWorkflows);
+router.get("/process_definitions/:id/target-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessTargetScope);
 // Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).
 router.get("/template_artifacts/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);
 router.post(

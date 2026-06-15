@@ -305,6 +305,17 @@ export const reconcileTemplateArtifactWorkflows = async (req, res) => {
   }
 };
 
+// Ámbito resoluble (unidades cubiertas por las reglas objetivo) de una definición de proceso.
+// Lo consume el editor de plantillas para habilitar/acotar los ámbitos del flujo de entrega.
+export const getProcessTargetScope = async (req, res) => {
+  try {
+    const result = await service.getProcessTargetScope(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

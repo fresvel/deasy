@@ -3390,6 +3390,71 @@ export default class SqlAdminService {
     };
   }
 
+  // Ámbito resoluble de un proceso a partir de sus reglas objetivo activas: la unión de unidades que
+  // las reglas pueden alcanzar (lo que en runtime fija la posición responsable → scope_unit_id). Se usa
+  // para (a) habilitar/validar los ámbitos de contexto del flujo y (b) acotar el select de unidades a
+  // las unidades realmente cubiertas. Sin reglas, los ámbitos de contexto resolverían null.
+  async getProcessTargetScope(processDefinitionId, connection = this.pool) {
+    const defId = normalizeNumericId(processDefinitionId);
+    if (!defId) {
+      return { has_rules: false, supports_context: false, all_units: false, unit_ids: [], cargo_ids: [] };
+    }
+    const [rules] = await connection.query(
+      `SELECT unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id
+         FROM process_target_rules
+        WHERE process_definition_id = ? AND is_active = 1`,
+      [defId]
+    );
+    if (!rules.length) {
+      return { has_rules: false, supports_context: false, all_units: false, unit_ids: [], cargo_ids: [] };
+    }
+    const unitIds = new Set();
+    const cargoIds = new Set();
+    let allUnits = false;
+    for (const rule of rules) {
+      if (rule.cargo_id) {
+        cargoIds.add(Number(rule.cargo_id));
+      }
+      const scope = String(rule.unit_scope_type || "unit_exact");
+      const useSubtree = scope === "unit_subtree"
+        || (scope === "unit_exact" && Number(rule.include_descendants) === 1);
+      if (scope === "all_units") {
+        allUnits = true;
+        continue;
+      }
+      if (useSubtree && rule.unit_id) {
+        const [rows] = await connection.query(
+          `WITH RECURSIVE scoped_units AS (
+             SELECT id FROM units WHERE id = ?
+             UNION ALL
+             SELECT ur.child_unit_id
+               FROM unit_relations ur
+               INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+               INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
+           )
+           SELECT id FROM units WHERE id IN (SELECT id FROM scoped_units) AND is_active = 1`,
+          [rule.unit_id]
+        );
+        rows.forEach((row) => unitIds.add(Number(row.id)));
+      } else if (scope === "unit_exact" && rule.unit_id) {
+        unitIds.add(Number(rule.unit_id));
+      } else if (scope === "unit_type" && rule.unit_type_id) {
+        const [rows] = await connection.query(
+          "SELECT id FROM units WHERE unit_type_id = ? AND is_active = 1",
+          [rule.unit_type_id]
+        );
+        rows.forEach((row) => unitIds.add(Number(row.id)));
+      }
+    }
+    return {
+      has_rules: true,
+      supports_context: true,
+      all_units: allUnits,
+      unit_ids: Array.from(unitIds),
+      cargo_ids: Array.from(cargoIds)
+    };
+  }
+
   async ensureSignatureTypeCatalog(connection = this.pool) {
     await connection.query(
       `INSERT INTO signature_types (code, name, description, is_active)
