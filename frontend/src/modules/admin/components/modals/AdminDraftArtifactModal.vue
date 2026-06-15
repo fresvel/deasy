@@ -219,7 +219,7 @@
                 <option value="manual_pick">Selección manual</option>
               </select>
             </div>
-            <div class="col-span-2">
+            <div v-if="fillStepShowsMode(step)" class="col-span-2">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Modo</label>
               <select :value="step.selection_mode" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
                 <option value="auto_one">Auto (uno)</option>
@@ -227,29 +227,70 @@
                 <option value="manual">Manual</option>
               </select>
             </div>
-            <div class="col-span-1 flex items-center justify-center pb-1.5">
-              <label class="inline-flex flex-col items-center gap-0.5 text-[0.55rem] font-semibold text-slate-400">Rechazo
-                <input type="checkbox" :checked="step.can_reject" class="h-4 w-4" @change="updateFillStep(index, 'can_reject', $event.target.checked)" />
-              </label>
+            <div class="col-span-1 flex flex-col items-center justify-end pb-1.5">
+              <span class="mb-1 block text-[0.55rem] font-semibold uppercase tracking-wide text-slate-400">Rechazo</span>
+              <span
+                class="text-sm leading-none"
+                :class="Number(step.order) > 1 ? 'text-emerald-600' : 'text-slate-300'"
+                :title="Number(step.order) > 1 ? 'Puede devolver al paso anterior' : 'El primer paso no puede devolver: no hay paso previo'"
+              >{{ Number(step.order) > 1 ? "↩" : "—" }}</span>
             </div>
             <div class="col-span-1 flex items-center justify-end pb-1">
               <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar paso" @click="removeFillStep(index)">✕</button>
             </div>
           </div>
-          <div v-if="step.resolver_type === 'cargo_in_scope'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Código de cargo</label>
-              <input :value="step.cargo_code" placeholder="ej. responsable" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'cargo_code', $event.target.value)" />
-            </div>
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ámbito</label>
-              <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_scope_type', $event.target.value)">
-                <option value="unit_exact">Unidad exacta</option>
-                <option value="unit_subtree">Unidad y subárbol</option>
-                <option value="unit_type">Tipo de unidad</option>
-                <option value="all_units">Todas las unidades</option>
+          <div v-if="fillStepNeedsDetail(step)" class="mt-2 grid grid-cols-12 gap-2">
+            <!-- Persona específica -->
+            <div v-if="step.resolver_type === 'specific_person'" class="col-span-6">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
+              <select :value="step.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
+                <option value="">— Selecciona persona —</option>
+                <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}{{ p.cedula ? ` — ${p.cedula}` : "" }}</option>
               </select>
             </div>
+            <!-- Posición concreta del organigrama -->
+            <div v-else-if="step.resolver_type === 'position'" class="col-span-6">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Posición</label>
+              <select :value="step.position_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'position_id', Number($event.target.value) || null)">
+                <option value="">— Selecciona posición —</option>
+                <option v-for="p in positionOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
+              </select>
+            </div>
+            <!-- Cargo (rol) resuelto dentro de un ámbito de unidades -->
+            <template v-else-if="step.resolver_type === 'cargo_in_scope'">
+              <div class="col-span-4">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
+                <select :value="step.cargo_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
+                  <option value="">— Selecciona cargo —</option>
+                  <option v-for="c in cargoOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+              <div class="col-span-4">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ámbito</label>
+                <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_scope_type', $event.target.value)">
+                  <option value="context_exact">Unidad del proceso</option>
+                  <option value="context_subtree">Unidad del proceso y subárbol</option>
+                  <option value="unit_exact">Unidad específica</option>
+                  <option value="unit_subtree">Unidad específica y subárbol</option>
+                  <option value="unit_type">Tipo de unidad</option>
+                  <option value="all_units">Todas las unidades</option>
+                </select>
+              </div>
+              <div v-if="fillStepNeedsUnit(step)" class="col-span-4">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
+                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
+                  <option value="">— Selecciona unidad —</option>
+                  <option v-for="u in unitOptions" :key="u.id" :value="u.id">{{ u.name }}</option>
+                </select>
+              </div>
+              <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
+                <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_type_id', Number($event.target.value) || null)">
+                  <option value="">— Selecciona tipo —</option>
+                  <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+                </select>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -373,6 +414,52 @@ const loadProcessDefinitionOptions = async () => {
 const requireProcessLink = computed(() => true);
 onMounted(loadProcessDefinitionOptions);
 
+// ── Catálogos para resolver el responsable/ámbito de cada paso (controlados contra la DB) ──
+// Se cargan desde el endpoint genérico de tablas; así la UI solo permite referenciar entidades existentes.
+const cargoOptions = ref([]);
+const unitOptions = ref([]);
+const unitTypeOptions = ref([]);
+const positionOptions = ref([]);
+const personOptions = ref([]);
+const workflowCatalogsLoaded = ref(false);
+const toRows = (data) => (Array.isArray(data) ? data : (data?.rows || data?.data || []));
+const loadWorkflowCatalogs = async () => {
+  if (workflowCatalogsLoaded.value) {
+    return;
+  }
+  try {
+    const [cargoRes, unitRes, unitTypeRes, positionRes, personRes] = await Promise.all([
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("cargos"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 } }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 1000 } }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_types"), { params: { orderBy: "name", order: "asc", limit: 500 } }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), { params: { filter_is_active: 1, orderBy: "id", order: "asc", limit: 2000 } }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("persons"), { params: { filter_is_active: 1, orderBy: "last_name", order: "asc", limit: 2000 } }),
+    ]);
+    cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, code: r.code || "", name: r.name || r.code || `Cargo ${r.id}` }));
+    unitOptions.value = toRows(unitRes.data).map((r) => ({ id: r.id, name: r.label || r.name || `Unidad ${r.id}`, unit_type_id: r.unit_type_id ?? null }));
+    unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
+    const cargoNames = new Map(cargoOptions.value.map((c) => [Number(c.id), c.name]));
+    const unitNames = new Map(unitOptions.value.map((u) => [Number(u.id), u.name]));
+    positionOptions.value = toRows(positionRes.data).map((r) => {
+      const cargoName = cargoNames.get(Number(r.cargo_id)) || r.title || `Posición ${r.id}`;
+      const unitName = unitNames.get(Number(r.unit_id)) || `Unidad ${r.unit_id}`;
+      return { id: r.id, name: `${cargoName} — ${unitName}` };
+    });
+    personOptions.value = toRows(personRes.data).map((r) => ({
+      id: r.id,
+      name: [r.first_name, r.last_name].filter(Boolean).join(" ").trim() || r.email || `Persona ${r.id}`,
+      cedula: r.cedula || "",
+    }));
+    workflowCatalogsLoaded.value = true;
+  } catch {
+    cargoOptions.value = [];
+    unitOptions.value = [];
+    unitTypeOptions.value = [];
+    positionOptions.value = [];
+    personOptions.value = [];
+  }
+};
+
 const props = defineProps({
   draftArtifactEditId: { type: String, default: "" },
   draftArtifactError: { type: String, default: "" },
@@ -406,6 +493,7 @@ const refreshDefinitionOptionsOnShow = async () => {
 };
 onMounted(() => {
   modalRef.value?.el?.addEventListener("shown.bs.modal", refreshDefinitionOptionsOnShow);
+  modalRef.value?.el?.addEventListener("shown.bs.modal", loadWorkflowCatalogs);
 });
 
 // Código de la semilla por defecto (debe coincidir con DEFAULT_TEMPLATE_SEED_CODE del backend).
@@ -535,7 +623,21 @@ const commitFillSteps = (steps) => {
   emit("update:form", { ...props.draftArtifactForm, fill_workflow: { required: true, ...props.draftArtifactForm.fill_workflow, steps } });
 };
 const addFillStep = () => {
-  commitFillSteps([...fillSteps.value, { order: fillSteps.value.length + 1, name: "", resolver_type: "document_owner", selection_mode: "auto_one", cargo_code: "", unit_scope_type: "unit_exact", field_refs: [], required: true, can_reject: true }]);
+  commitFillSteps([...fillSteps.value, {
+    order: fillSteps.value.length + 1,
+    name: "",
+    resolver_type: "document_owner",
+    selection_mode: "auto_one",
+    cargo_id: null,
+    cargo_code: "",
+    unit_scope_type: "context_exact",
+    unit_id: null,
+    unit_type_id: null,
+    person_id: null,
+    position_id: null,
+    field_refs: [],
+    required: true
+  }]);
 };
 const updateFillStep = (index, prop, value) => {
   commitFillSteps(fillSteps.value.map((s, i) => (i === index ? { ...s, [prop]: value } : s)));
@@ -543,6 +645,13 @@ const updateFillStep = (index, prop, value) => {
 const removeFillStep = (index) => {
   commitFillSteps(fillSteps.value.filter((_, i) => i !== index));
 };
+// El "Modo" (uno/todos/manual) solo aplica cuando el responsable puede resolver varias personas.
+const FILL_MULTI_RESOLVERS = new Set(["position", "cargo_in_scope"]);
+const fillStepShowsMode = (step) => FILL_MULTI_RESOLVERS.has(String(step?.resolver_type || ""));
+// Los tipos de un solo destinatario no necesitan campos extra.
+const fillStepNeedsDetail = (step) => ["specific_person", "position", "cargo_in_scope"].includes(String(step?.resolver_type || ""));
+const fillStepNeedsUnit = (step) => ["unit_exact", "unit_subtree"].includes(String(step?.unit_scope_type || ""));
+const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "unit_type";
 
 // ── Flujo de firmas ──
 const signatureSteps = computed(() => props.draftArtifactForm.signature_workflow?.steps || []);
