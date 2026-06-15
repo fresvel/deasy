@@ -781,7 +781,7 @@ CREATE TABLE IF NOT EXISTS fill_flow_steps (
   resolver_type ENUM('task_assignee', 'document_owner', 'specific_person', 'position', 'cargo_in_scope', 'manual_pick')
     NOT NULL DEFAULT 'task_assignee',
   assigned_person_id INT NULL,
-  unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units') NOT NULL DEFAULT 'unit_exact',
+  unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact', 'context_subtree', 'context_ancestor_type') NOT NULL DEFAULT 'unit_exact',
   unit_id INT NULL,
   unit_type_id INT NULL,
   cargo_id INT NULL,

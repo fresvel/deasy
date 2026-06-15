@@ -12554,7 +12554,7 @@
         "step_order": "int(11)",
         "resolver_type": "enum('task_assignee','document_owner','specific_person','position','cargo_in_scope','manual_pick')",
         "assigned_person_id": "int(11)",
-        "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units')",
+        "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units','context_exact','context_subtree','context_ancestor_type')",
         "unit_id": "int(11)",
         "unit_type_id": "int(11)",
         "cargo_id": "int(11)",
