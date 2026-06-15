@@ -12,6 +12,7 @@
 <script setup>
 import { computed } from "vue";
 import {
+  IconAlertTriangle,
   IconArrowDown,
   IconArrowLeft,
   IconArrowUp,
@@ -60,6 +61,8 @@ const props = defineProps({
 });
 
 const iconMap = {
+  "alert-triangle": IconAlertTriangle,
+  "triangle-exclamation": IconAlertTriangle,
   "arrow-down": IconArrowDown,
   "arrow-up": IconArrowUp,
   backward: IconArrowLeft,

@@ -1,6 +1,9 @@
 <template>
-  <div>
-    <div v-if="context" class="person-assignment-context mb-3">
+  <AdminWizardSection
+    title="Reglas objetivo"
+    subtitle="A quién le toca el proceso: el alcance (qué unidades) y la entrega (cuántos destinatarios por unidad)."
+  >
+    <div v-if="!embedded && context" class="person-assignment-context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-emerald-700/80">
         Variación {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
@@ -11,11 +14,15 @@
     <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
       Esta configuracion no esta en draft. Solo puedes gestionar reglas cuando la configuracion este en draft.
     </div>
-    <div v-else-if="canManage && !canSubmit" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-      {{ requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar." }}
-    </div>
-    <div v-if="canManage" class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-      {{ ruleContextHint }}
+    <div
+      v-else-if="canManage"
+      class="flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm"
+      :class="canSubmit
+        ? 'border-slate-200 bg-white text-slate-600 shadow-sm'
+        : 'border-amber-200 bg-amber-50 text-amber-800'"
+    >
+      <font-awesome-icon :icon="canSubmit ? 'info-circle' : 'triangle-exclamation'" class="mt-0.5 shrink-0" />
+      <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
     </div>
 
     <div class="person-assignment-form">
@@ -132,7 +139,7 @@
       />
     </div>
 
-    <div v-if="loading" class="mt-3 text-sm text-slate-500">Cargando reglas vinculadas...</div>
+    <div v-if="loading" class="text-sm text-slate-500">Cargando reglas vinculadas...</div>
     <AdminDataTable
       v-else
       :fields="tableFields"
@@ -140,7 +147,7 @@
       :row-key="(row) => row.id"
       empty-text="Sin reglas vinculadas."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">
@@ -163,12 +170,13 @@
         />
       </template>
     </AdminDataTable>
-  </div>
+  </AdminWizardSection>
 </template>
 
 <script setup>
 import { computed } from "vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
@@ -188,6 +196,8 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   seriesScope: { type: Object, default: null },
+  // En el wizard el encabezado del proceso ya lo muestra el shell; evita el banner de contexto duplicado.
+  embedded: { type: Boolean, default: false },
   formatCell: { type: Function, required: true }
 });
 

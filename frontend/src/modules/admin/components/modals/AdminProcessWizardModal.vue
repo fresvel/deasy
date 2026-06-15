@@ -16,10 +16,10 @@
   >
     <!-- Paso 1: Configuración -->
     <div v-show="currentStep === 'definition'">
-      <p class="mb-3 text-sm text-slate-600">{{ definitionIntroText }}</p>
+      <AdminWizardSection title="Configuración base" :subtitle="definitionIntroText">
       <div
         v-if="duplicateDefinition?.id"
-        class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
       >
         <span>Ya existe una configuración para esa variación y versión.</span>
         <AdminButton variant="outline-primary" @click="$emit('edit-existing-definition', duplicateDefinition)">
@@ -146,6 +146,7 @@
           <AdminInputField :model-value="form.description" placeholder="Descripción breve del proceso" :disabled="isDefinitionLocked" @update:model-value="updateForm('description', $event)" />
         </AdminFieldGroup>
       </div>
+      </AdminWizardSection>
     </div>
 
     <!-- Pasos 2-5: contenido inyectado por el padre (paneles embebidos) -->
@@ -179,6 +180,7 @@ import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vu
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProcessWizardShell.vue";
+import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 
 const props = defineProps({
   open: { type: Boolean, default: false },

@@ -1,6 +1,9 @@
 <template>
-  <div>
-    <div v-if="context" class="person-assignment-context mb-3">
+  <AdminWizardSection
+    title="Disparadores"
+    subtitle="Cuándo y cómo se lanza el proceso: automático por tipo de periodo o manual."
+  >
+    <div v-if="!embedded && context" class="person-assignment-context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-emerald-700/80">
         Variación {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
@@ -21,9 +24,9 @@
             @update:model-value="updateField('trigger_mode', $event)"
             @change="$emit('trigger-mode-change')"
           >
-            <option value="automatic_by_term_type">automatic_by_term_type</option>
-            <option value="manual_only">manual_only</option>
-            <option value="manual_custom_term">manual_custom_term</option>
+            <option value="automatic_by_term_type">Automático por tipo de periodo</option>
+            <option value="manual_only">Manual</option>
+            <option value="manual_custom_term">Manual con periodo a medida</option>
           </AdminSelectField>
         </AdminFieldGroup>
         <div class="md:col-span-4">
@@ -57,7 +60,7 @@
       />
     </div>
 
-    <div v-if="loading" class="mt-3 text-sm text-slate-500">Cargando disparadores vinculados...</div>
+    <div v-if="loading" class="text-sm text-slate-500">Cargando disparadores vinculados...</div>
     <AdminDataTable
       v-else
       :fields="tableFields"
@@ -65,12 +68,15 @@
       :row-key="(row) => row.id"
       empty-text="Sin disparadores vinculados."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
-      responsive-class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
+      responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
       scroll-class=""
     >
       <template #cell="{ row, field }">
         <template v-if="field.name === 'term_type_id'">
           {{ formatCell(row.term_type_id, { name: 'term_type_id' }) }}
+        </template>
+        <template v-else-if="field.name === 'trigger_mode'">
+          {{ TRIGGER_MODE_LABELS[row.trigger_mode] || row.trigger_mode || "—" }}
         </template>
         <template v-else-if="field.name === 'is_active'">
           {{ Number(row.is_active) === 1 ? "Si" : "No" }}
@@ -91,7 +97,7 @@
         />
       </template>
     </AdminDataTable>
-  </div>
+  </AdminWizardSection>
 </template>
 
 <script setup>
@@ -101,6 +107,13 @@ import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
+
+const TRIGGER_MODE_LABELS = {
+  automatic_by_term_type: "Automático por tipo de periodo",
+  manual_only: "Manual",
+  manual_custom_term: "Manual con periodo a medida"
+};
 
 const props = defineProps({
   context: { type: Object, default: null },
@@ -114,6 +127,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
+  embedded: { type: Boolean, default: false },
   formatCell: { type: Function, required: true }
 });
 

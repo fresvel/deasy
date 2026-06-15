@@ -1,6 +1,9 @@
 <template>
-  <div>
-    <div v-if="context" class="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+  <AdminWizardSection
+    title="Paquetes (plantillas)"
+    subtitle="Documentos que se generan al ejecutar el proceso y cómo se instancian."
+  >
+    <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-emerald-950">{{ context.name || `Configuracion #${context.id}` }}</strong>
         <span class="inline-flex items-center rounded-md bg-white/80 px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
@@ -17,7 +20,7 @@
       Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
     </div>
 
-    <div class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
           <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Plantilla</p>
@@ -83,10 +86,10 @@
       />
     </div>
 
-    <div v-if="loading" class="mt-3 text-sm text-slate-500">Cargando plantillas vinculadas...</div>
+    <div v-if="loading" class="text-sm text-slate-500">Cargando plantillas vinculadas...</div>
     <AdminDataTable
       v-else
-      class="mt-3 person-assignment-table"
+      class="person-assignment-table"
       :fields="displayTableFields"
       :rows="rows"
       :row-key="(row) => row.id"
@@ -118,7 +121,7 @@
         />
       </template>
     </AdminDataTable>
-  </div>
+  </AdminWizardSection>
 </template>
 
 <script setup>
@@ -130,6 +133,7 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 
 const props = defineProps({
   context: { type: Object, default: null },
@@ -142,6 +146,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
+  embedded: { type: Boolean, default: false },
   formatCell: { type: Function, required: true }
 });
 
