@@ -76,18 +76,24 @@
           />
         </div>
         <div v-if="showCargoField" class="md:col-span-4">
-          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Cargo</label>
+          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+            Cargo
+            <span v-if="cargoLockedBySeries" class="text-[0.7rem] font-medium text-slate-400">(fijado por la serie)</span>
+          </label>
           <AdminLookupField
-            :model-value="labels.cargo_id"
+            :model-value="cargoLockedBySeries ? seriesFixedCargoName : labels.cargo_id"
             placeholder="Selecciona un cargo"
             readonly
             prevent-input-interaction
-            :disabled="!canManage"
-            :clear-disabled="!canManage || !form.cargo_id"
-            :search-disabled="!canManage"
+            :disabled="!canManage || cargoLockedBySeries"
+            :clear-disabled="!canManage || cargoLockedBySeries || !form.cargo_id"
+            :search-disabled="!canManage || cargoLockedBySeries"
             @clear="$emit('clear-field', 'cargo_id')"
             @search="$emit('open-fk-search', 'cargo_id')"
           />
+          <p v-if="cargoLockedBySeries" class="mt-1 text-[0.7rem] text-slate-500">
+            El cargo lo decide la serie del proceso; la regla solo define alcance y entrega.
+          </p>
         </div>
         <div v-if="showPositionField" class="md:col-span-4">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto exacto</label>
@@ -181,6 +187,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
+  seriesScope: { type: Object, default: null },
   formatCell: { type: Function, required: true }
 });
 
@@ -214,6 +221,15 @@ const recipientPolicyOptions = [
 const scopeType = computed(() => String(props.form.unit_scope_type || "unit_exact"));
 const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));
 const isExactPositionPolicy = computed(() => recipientPolicy.value === "exact_position");
+
+// La serie del proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad. Cuando
+// es así, la regla no vuelve a decidirlos: el cargo queda bloqueado y se muestra el de la serie.
+const seriesFixedCargoId = computed(() => {
+  const id = props.seriesScope?.cargo_id;
+  return id ? Number(id) : null;
+});
+const seriesFixedCargoName = computed(() => props.seriesScope?.cargo_name || "");
+const cargoLockedBySeries = computed(() => Boolean(seriesFixedCargoId.value) && !isExactPositionPolicy.value);
 const showUnitField = computed(() =>
   isExactPositionPolicy.value || scopeType.value === "unit_exact" || scopeType.value === "unit_subtree"
 );

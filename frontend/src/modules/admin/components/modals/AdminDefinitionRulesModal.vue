@@ -42,6 +42,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
+  seriesScope: { type: Object, default: null },
   formatCell: { type: Function, required: true }
 });
 
@@ -72,6 +73,7 @@ const panelBindings = computed(() => ({
   loading: props.loading,
   rows: props.rows,
   tableFields: props.tableFields,
+  seriesScope: props.seriesScope,
   formatCell: props.formatCell
 }));
 

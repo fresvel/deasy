@@ -2289,6 +2289,10 @@ export default class SqlAdminService {
       );
     }
 
+    if (tableName === "process_target_rules") {
+      await this.applyTargetRuleSeriesConstraints(payload.process_definition_id, payload);
+    }
+
     if (tableName === "process_definition_triggers") {
       const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
       if (!definition) {
@@ -2843,6 +2847,15 @@ export default class SqlAdminService {
                 : "los disparadores de configuracion"
         }
       );
+    }
+    if (tableName === "process_target_rules") {
+      const mergedRule = { ...existing, ...updates };
+      await this.applyTargetRuleSeriesConstraints(existing.process_definition_id, mergedRule);
+      for (const key of ["cargo_id", "unit_type_id"]) {
+        if (mergedRule[key] != null && Number(mergedRule[key]) !== Number(existing[key])) {
+          updates[key] = mergedRule[key];
+        }
+      }
     }
     if (tableName === "process_definition_series") {
       const candidateSeries = { ...existing, ...updates };
@@ -3470,6 +3483,74 @@ export default class SqlAdminService {
       unit_ids: Array.from(unitIds),
       cargo_ids: Array.from(cargoIds)
     };
+  }
+
+  // La serie de un proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad
+  // objetivo. La regla NO debe volver a decidirlos: se siembran desde la serie y se blindan para que no
+  // puedan contradecirla. Así el cargo se decide una sola vez (en la serie) y la regla solo añade el
+  // alcance (unidad) y la entrega (recipient_policy).
+  async getProcessDefinitionSeriesScope(processDefinitionId, connection = this.pool) {
+    const defId = normalizeNumericId(processDefinitionId);
+    if (!defId) {
+      return null;
+    }
+    const [rows] = await connection.query(
+      `SELECT pds.source_type, pds.cargo_id, pds.unit_type_id,
+              c.name AS cargo_name, ut.name AS unit_type_name
+         FROM process_definition_versions pdv
+         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+         LEFT JOIN cargos c ON c.id = pds.cargo_id
+         LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
+        WHERE pdv.id = ?
+        LIMIT 1`,
+      [defId]
+    );
+    return rows?.[0] || null;
+  }
+
+  async applyTargetRuleSeriesConstraints(processDefinitionId, candidate, connection = this.pool) {
+    const series = await this.getProcessDefinitionSeriesScope(processDefinitionId, connection);
+    if (!series) {
+      return;
+    }
+    const seriesCargoId = normalizeNumericId(series.cargo_id);
+    const seriesUnitTypeId = normalizeNumericId(series.unit_type_id);
+    const policy = String(candidate.recipient_policy || "all_matches");
+
+    // Cargo: lo fija la serie. Con exact_position el cargo lo aporta el puesto, así que solo validamos
+    // que el puesto pertenezca al cargo de la serie; en el resto, sembramos o blindamos el cargo.
+    if (seriesCargoId) {
+      if (policy === "exact_position") {
+        const positionId = normalizeNumericId(candidate.position_id);
+        if (positionId) {
+          const [posRows] = await connection.query(
+            "SELECT cargo_id FROM unit_positions WHERE id = ? LIMIT 1",
+            [positionId]
+          );
+          const positionCargoId = normalizeNumericId(posRows?.[0]?.cargo_id);
+          if (positionCargoId && positionCargoId !== seriesCargoId) {
+            throw new Error("El puesto exacto no corresponde al cargo de la serie del proceso.");
+          }
+        }
+      } else {
+        const candidateCargoId = normalizeNumericId(candidate.cargo_id);
+        if (!candidateCargoId) {
+          candidate.cargo_id = seriesCargoId;
+        } else if (candidateCargoId !== seriesCargoId) {
+          throw new Error("El cargo de la regla debe coincidir con el cargo de la serie del proceso.");
+        }
+      }
+    }
+
+    // Tipo de unidad: si la serie lo fija y el alcance es por tipo, se siembra o se blinda.
+    if (seriesUnitTypeId && String(candidate.unit_scope_type) === "unit_type") {
+      const candidateUnitTypeId = normalizeNumericId(candidate.unit_type_id);
+      if (!candidateUnitTypeId) {
+        candidate.unit_type_id = seriesUnitTypeId;
+      } else if (candidateUnitTypeId !== seriesUnitTypeId) {
+        throw new Error("El tipo de unidad de la regla debe coincidir con el tipo de unidad de la serie del proceso.");
+      }
+    }
   }
 
   async ensureSignatureTypeCatalog(connection = this.pool) {

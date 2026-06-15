@@ -14,6 +14,7 @@ export function useProcessDefinitionManager({
   definitionRulesEditId,
   definitionRulesForm,
   definitionRulesLabels,
+  definitionRulesSeriesScope,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
@@ -74,10 +75,35 @@ export function useProcessDefinitionManager({
     typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
   );
 
+  // La serie del proceso fija el cargo objetivo; al crear una regla nueva lo sembramos para que el cargo
+  // se decida una sola vez (en la serie) y la regla solo añada alcance y entrega.
   const resetDefinitionRulesForm = () => {
     definitionRulesEditId.value = "";
-    definitionRulesForm.value = processDefinitionAdminService.createRuleForm();
-    definitionRulesLabels.value = processDefinitionAdminService.createRuleLabels();
+    const form = processDefinitionAdminService.createRuleForm();
+    const labels = processDefinitionAdminService.createRuleLabels();
+    const scope = definitionRulesSeriesScope?.value;
+    if (scope?.cargo_id) {
+      form.cargo_id = String(scope.cargo_id);
+      labels.cargo_id = scope.cargo_name || String(scope.cargo_id);
+    }
+    definitionRulesForm.value = form;
+    definitionRulesLabels.value = labels;
+  };
+
+  const loadDefinitionRulesSeriesScope = async (definitionId) => {
+    if (!definitionRulesSeriesScope) {
+      return;
+    }
+    if (!definitionId) {
+      definitionRulesSeriesScope.value = null;
+      return;
+    }
+    try {
+      const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_SERIES_SCOPE(definitionId));
+      definitionRulesSeriesScope.value = data && Object.keys(data).length ? data : null;
+    } catch {
+      definitionRulesSeriesScope.value = null;
+    }
   };
 
   const resetDefinitionTriggersForm = () => {
@@ -182,6 +208,7 @@ export function useProcessDefinitionManager({
     }
     definitionRulesContext.value = { ...definitionRow };
     definitionRulesError.value = "";
+    await loadDefinitionRulesSeriesScope(definitionRow.id);
     resetDefinitionRulesForm();
     if (showModal) {
       ensureDefinitionRulesInstance();

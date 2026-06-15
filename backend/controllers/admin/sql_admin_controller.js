@@ -316,6 +316,17 @@ export const getProcessTargetScope = async (req, res) => {
   }
 };
 
+// Cargo/tipo de unidad que la serie del proceso fija. Lo consume el panel de reglas para precargar y
+// bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).
+export const getProcessDefinitionSeriesScope = async (req, res) => {
+  try {
+    const result = await service.getProcessDefinitionSeriesScope(req.params.id);
+    res.json(result || {});
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

@@ -190,7 +190,7 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de entrega</h4>
-          <p class="m-0 mt-0.5 text-xs font-medium text-slate-500">Pasos para completar el entregable (quién llena cada parte).</p>
+          <p class="m-0 mt-0.5 text-xs font-medium text-slate-500">Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</p>
         </div>
         <AdminButton variant="outlinePrimary" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
@@ -212,14 +212,18 @@
               <input :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
             </div>
             <div class="col-span-3">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Responsable</label>
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
               <select :value="step.resolver_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'resolver_type', $event.target.value)">
-                <option value="document_owner">Dueño del documento</option>
-                <option value="task_assignee">Asignado de la tarea</option>
-                <option value="cargo_in_scope">Cargo en ámbito</option>
-                <option value="specific_person">Persona específica</option>
-                <option value="position">Posición</option>
-                <option value="manual_pick">Selección manual</option>
+                <optgroup label="Responsable de la tarea">
+                  <option value="task_assignee">Responsable de la tarea (por defecto)</option>
+                  <option value="document_owner">Dueño del documento</option>
+                </optgroup>
+                <optgroup label="Otra persona (avanzado)">
+                  <option value="cargo_in_scope">Cargo en ámbito</option>
+                  <option value="position">Posición exacta</option>
+                  <option value="specific_person">Persona específica</option>
+                  <option value="manual_pick">Selección manual</option>
+                </optgroup>
               </select>
             </div>
             <div v-if="fillStepShowsMode(step)" class="col-span-2">
@@ -631,7 +635,7 @@ const addFillStep = () => {
   commitFillSteps([...fillSteps.value, {
     order: fillSteps.value.length + 1,
     name: "",
-    resolver_type: "document_owner",
+    resolver_type: "task_assignee",
     selection_mode: "auto_one",
     cargo_id: null,
     cargo_code: "",

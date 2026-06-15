@@ -435,6 +435,7 @@
       :loading="definitionRulesLoading"
       :rows="definitionRulesRows"
       :table-fields="definitionRulesTableFields"
+      :series-scope="definitionRulesSeriesScope"
       :format-cell="formatDefinitionRuleCell"
       @update:form="definitionRulesForm = $event"
       @scope-change="handleDefinitionRuleScopeChange"
@@ -510,6 +511,7 @@
           :loading="definitionRulesLoading"
           :rows="definitionRulesRows"
           :table-fields="definitionRulesTableFields"
+          :series-scope="definitionRulesSeriesScope"
           :format-cell="formatDefinitionRuleCell"
           @update:form="definitionRulesForm = $event"
           @scope-change="handleDefinitionRuleScopeChange"
@@ -1091,6 +1093,8 @@ const definitionRulesRows = ref([]);
 const definitionRulesLoading = ref(false);
 const definitionRulesError = ref("");
 const definitionRulesEditId = ref("");
+// Cargo/tipo de unidad que la serie del proceso fija; bloquea el cargo en el panel de reglas.
+const definitionRulesSeriesScope = ref(null);
 const definitionRulesForm = ref({
   unit_scope_type: "unit_exact",
   unit_id: "",
@@ -2786,6 +2790,7 @@ const {
   definitionRulesEditId,
   definitionRulesForm,
   definitionRulesLabels,
+  definitionRulesSeriesScope,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
