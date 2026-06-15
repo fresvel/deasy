@@ -1,8 +1,5 @@
 <template>
-  <AdminWizardSection
-    title="Reglas objetivo"
-    subtitle="A quién le toca el proceso: el alcance (qué unidades) y la entrega (cuántos destinatarios por unidad)."
-  >
+  <div class="flex flex-col gap-4">
     <div v-if="!embedded && context" class="person-assignment-context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-emerald-700/80">
@@ -25,110 +22,121 @@
       <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
     </div>
 
-    <div class="person-assignment-form">
-      <div class="grid gap-3 md:grid-cols-12">
-        <AdminFieldGroup label="Alcance" group-class="md:col-span-3">
-          <AdminSelectField
-            :model-value="form.unit_scope_type"
-            :disabled="!canManage"
-            @update:model-value="updateScopeType"
-          >
-            <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Entrega" group-class="md:col-span-4">
-          <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateRecipientPolicy">
-            <option v-for="option in recipientPolicyOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
-          <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Activo" group-class="md:col-span-3">
-          <AdminSelectField :model-value="form.is_active" :disabled="!canManage" @update:model-value="updateField('is_active', $event)">
-            <option value="1">Si</option>
-            <option value="0">No</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <div v-if="showUnitField" class="md:col-span-4">
-          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
-          <AdminLookupField
-            :model-value="labels.unit_id"
-            placeholder="Selecciona una unidad"
-            readonly
-            prevent-input-interaction
-            :disabled="!canManage"
-            :clear-disabled="!canManage || !form.unit_id"
-            :search-disabled="!canManage"
-            @clear="$emit('clear-field', 'unit_id')"
-            @search="$emit('open-fk-search', 'unit_id')"
-          />
+    <div class="person-assignment-form flex flex-col gap-5">
+      <!-- Bloque 1: a quién va dirigida la regla -->
+      <fieldset class="flex flex-col gap-2.5">
+        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-slate-400">Alcance y destinatarios</p>
+        <div class="grid items-start gap-3 md:grid-cols-12">
+          <AdminFieldGroup label="Alcance" group-class="md:col-span-4">
+            <AdminSelectField
+              :model-value="form.unit_scope_type"
+              :disabled="!canManage"
+              @update:model-value="updateScopeType"
+            >
+              <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </AdminSelectField>
+          </AdminFieldGroup>
+          <AdminFieldGroup label="Entrega" group-class="md:col-span-4">
+            <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateRecipientPolicy">
+              <option v-for="option in recipientPolicyOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </AdminSelectField>
+          </AdminFieldGroup>
+          <AdminFieldGroup v-if="showUnitField" label="Unidad" group-class="md:col-span-4">
+            <AdminLookupField
+              :model-value="labels.unit_id"
+              placeholder="Selecciona una unidad"
+              readonly
+              prevent-input-interaction
+              :disabled="!canManage"
+              :clear-disabled="!canManage || !form.unit_id"
+              :search-disabled="!canManage"
+              @clear="$emit('clear-field', 'unit_id')"
+              @search="$emit('open-fk-search', 'unit_id')"
+            />
+          </AdminFieldGroup>
+          <AdminFieldGroup v-if="showUnitTypeField" label="Tipo de unidad" group-class="md:col-span-4">
+            <AdminLookupField
+              :model-value="labels.unit_type_id"
+              placeholder="Selecciona un tipo"
+              readonly
+              prevent-input-interaction
+              :disabled="!canManage"
+              :clear-disabled="!canManage || !form.unit_type_id"
+              :search-disabled="!canManage"
+              @clear="$emit('clear-field', 'unit_type_id')"
+              @search="$emit('open-fk-search', 'unit_type_id')"
+            />
+          </AdminFieldGroup>
+          <AdminFieldGroup v-if="showCargoField" group-class="md:col-span-4">
+            <template #default>
+              <label class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+                Cargo
+                <span v-if="cargoLockedBySeries" class="text-[0.7rem] font-medium text-slate-400">(fijado por la serie)</span>
+              </label>
+              <AdminLookupField
+                :model-value="cargoLockedBySeries ? seriesFixedCargoName : labels.cargo_id"
+                placeholder="Selecciona un cargo"
+                readonly
+                prevent-input-interaction
+                :disabled="!canManage || cargoLockedBySeries"
+                :clear-disabled="!canManage || cargoLockedBySeries || !form.cargo_id"
+                :search-disabled="!canManage || cargoLockedBySeries"
+                @clear="$emit('clear-field', 'cargo_id')"
+                @search="$emit('open-fk-search', 'cargo_id')"
+              />
+              <p v-if="cargoLockedBySeries" class="mt-1 text-[0.7rem] text-slate-500">
+                Lo decide la serie del proceso; la regla solo define alcance y entrega.
+              </p>
+            </template>
+          </AdminFieldGroup>
+          <AdminFieldGroup v-if="showPositionField" label="Puesto exacto" group-class="md:col-span-4">
+            <AdminLookupField
+              :model-value="labels.position_id"
+              placeholder="Selecciona un puesto"
+              readonly
+              prevent-input-interaction
+              :disabled="!canManage"
+              :clear-disabled="!canManage || !form.position_id"
+              :search-disabled="!canManage"
+              @clear="$emit('clear-field', 'position_id')"
+              @search="$emit('open-fk-search', 'position_id')"
+            />
+          </AdminFieldGroup>
+          <AdminFieldGroup v-if="showDescendantsField" label="Incluye descendientes" group-class="md:col-span-4">
+            <AdminSelectField :model-value="form.include_descendants" :disabled="!canManage" @update:model-value="updateField('include_descendants', $event)">
+              <option value="1">Si</option>
+              <option value="0">No</option>
+            </AdminSelectField>
+          </AdminFieldGroup>
         </div>
-        <div v-if="showUnitTypeField" class="md:col-span-4">
-          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de unidad</label>
-          <AdminLookupField
-            :model-value="labels.unit_type_id"
-            placeholder="Selecciona un tipo"
-            readonly
-            prevent-input-interaction
-            :disabled="!canManage"
-            :clear-disabled="!canManage || !form.unit_type_id"
-            :search-disabled="!canManage"
-            @clear="$emit('clear-field', 'unit_type_id')"
-            @search="$emit('open-fk-search', 'unit_type_id')"
-          />
+      </fieldset>
+
+      <!-- Bloque 2: prioridad, estado y vigencia -->
+      <fieldset class="flex flex-col gap-2.5 border-t border-dashed border-slate-200 pt-4">
+        <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-slate-400">Prioridad y vigencia</p>
+        <div class="grid items-start gap-3 md:grid-cols-12">
+          <AdminFieldGroup label="Prioridad" group-class="md:col-span-3">
+            <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
+          </AdminFieldGroup>
+          <AdminFieldGroup label="Activo" group-class="md:col-span-3">
+            <AdminSelectField :model-value="form.is_active" :disabled="!canManage" @update:model-value="updateField('is_active', $event)">
+              <option value="1">Si</option>
+              <option value="0">No</option>
+            </AdminSelectField>
+          </AdminFieldGroup>
+          <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-3">
+            <AdminInputField :model-value="form.effective_from" type="date" :disabled="!canManage" @update:model-value="updateField('effective_from', $event)" />
+          </AdminFieldGroup>
+          <AdminFieldGroup label="Vigencia hasta" group-class="md:col-span-3">
+            <AdminInputField :model-value="form.effective_to" type="date" :disabled="!canManage" @update:model-value="updateField('effective_to', $event)" />
+          </AdminFieldGroup>
         </div>
-        <div v-if="showCargoField" class="md:col-span-4">
-          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
-            Cargo
-            <span v-if="cargoLockedBySeries" class="text-[0.7rem] font-medium text-slate-400">(fijado por la serie)</span>
-          </label>
-          <AdminLookupField
-            :model-value="cargoLockedBySeries ? seriesFixedCargoName : labels.cargo_id"
-            placeholder="Selecciona un cargo"
-            readonly
-            prevent-input-interaction
-            :disabled="!canManage || cargoLockedBySeries"
-            :clear-disabled="!canManage || cargoLockedBySeries || !form.cargo_id"
-            :search-disabled="!canManage || cargoLockedBySeries"
-            @clear="$emit('clear-field', 'cargo_id')"
-            @search="$emit('open-fk-search', 'cargo_id')"
-          />
-          <p v-if="cargoLockedBySeries" class="mt-1 text-[0.7rem] text-slate-500">
-            El cargo lo decide la serie del proceso; la regla solo define alcance y entrega.
-          </p>
-        </div>
-        <div v-if="showPositionField" class="md:col-span-4">
-          <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Puesto exacto</label>
-          <AdminLookupField
-            :model-value="labels.position_id"
-            placeholder="Selecciona un puesto"
-            readonly
-            prevent-input-interaction
-            :disabled="!canManage"
-            :clear-disabled="!canManage || !form.position_id"
-            :search-disabled="!canManage"
-            @clear="$emit('clear-field', 'position_id')"
-            @search="$emit('open-fk-search', 'position_id')"
-          />
-        </div>
-        <AdminFieldGroup v-if="showDescendantsField" label="Incluye descendientes" group-class="md:col-span-4">
-          <AdminSelectField :model-value="form.include_descendants" :disabled="!canManage" @update:model-value="updateField('include_descendants', $event)">
-            <option value="1">Si</option>
-            <option value="0">No</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-3">
-          <AdminInputField :model-value="form.effective_from" type="date" :disabled="!canManage" @update:model-value="updateField('effective_from', $event)" />
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Vigencia hasta" group-class="md:col-span-3">
-          <AdminInputField :model-value="form.effective_to" type="date" :disabled="!canManage" @update:model-value="updateField('effective_to', $event)" />
-        </AdminFieldGroup>
-      </div>
+      </fieldset>
+
       <AdminFormActions
         :primary-label="editId ? 'Guardar regla' : 'Agregar regla'"
         :primary-disabled="!canSubmit"
@@ -170,13 +178,12 @@
         />
       </template>
     </AdminDataTable>
-  </AdminWizardSection>
+  </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";

@@ -1,8 +1,5 @@
 <template>
-  <AdminWizardSection
-    title="Paquetes (plantillas)"
-    subtitle="Documentos que se generan al ejecutar el proceso y cómo se instancian."
-  >
+  <div class="flex flex-col gap-4">
     <div v-if="!embedded && context" class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-emerald-950">{{ context.name || `Configuracion #${context.id}` }}</strong>
@@ -121,7 +118,7 @@
         />
       </template>
     </AdminDataTable>
-  </AdminWizardSection>
+  </div>
 </template>
 
 <script setup>
@@ -133,7 +130,6 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 
 const props = defineProps({
   context: { type: Object, default: null },

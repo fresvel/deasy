@@ -1,8 +1,5 @@
 <template>
-  <AdminWizardSection
-    title="Disparadores"
-    subtitle="Cuándo y cómo se lanza el proceso: automático por tipo de periodo o manual."
-  >
+  <div class="flex flex-col gap-4">
     <div v-if="!embedded && context" class="person-assignment-context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-emerald-700/80">
@@ -97,7 +94,7 @@
         />
       </template>
     </AdminDataTable>
-  </AdminWizardSection>
+  </div>
 </template>
 
 <script setup>
@@ -107,7 +104,6 @@ import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
-import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 
 const TRIGGER_MODE_LABELS = {
   automatic_by_term_type: "Automático por tipo de periodo",

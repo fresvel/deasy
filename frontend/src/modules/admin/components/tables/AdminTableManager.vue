@@ -554,10 +554,6 @@
         />
       </template>
       <template #activate>
-        <AdminWizardSection
-          title="Activación"
-          subtitle="Revisa los requisitos y activa esta versión del proceso."
-        >
         <ProcessActivationPanel
           :checking="processDefinitionActivationChecking"
           :has-active-rules="processDefinitionActivationHasActiveRules"
@@ -588,7 +584,6 @@
             @click="wizardConfirmActivation"
           >Activar proceso</AdminButton>
         </div>
-        </AdminWizardSection>
       </template>
     </AdminProcessWizardModal>
 
@@ -975,7 +970,6 @@ import AdminProcessDefinitionActivationModal from "@/modules/admin/components/mo
 import AdminProcessDefinitionVersioningModal from "@/modules/admin/components/modals/AdminProcessDefinitionVersioningModal.vue";
 import AdminProcessWizardModal from "@/modules/admin/components/modals/AdminProcessWizardModal.vue";
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
-import AdminWizardSection from "@/modules/admin/components/modals/AdminWizardSection.vue";
 import AdminRecordViewerModal from "@/modules/admin/components/modals/AdminRecordViewerModal.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableHeader from "@/modules/admin/components/tables/AdminTableHeader.vue";
