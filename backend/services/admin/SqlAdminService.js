@@ -97,8 +97,18 @@ const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
         selection_mode: step?.selection_mode || "auto_one",
       };
       if (step?.resolver_type === "cargo_in_scope") {
+        // El cargo se referencia por id (controlado contra la DB); se conserva cargo_code legible si viene.
+        if (step?.cargo_id) resolver.cargo_id = Number(step.cargo_id);
         if (step?.cargo_code) resolver.cargo_code = step.cargo_code;
-        resolver.unit_scope_type = step?.unit_scope_type || "unit_exact";
+        const scopeType = step?.unit_scope_type || "context_exact";
+        resolver.unit_scope_type = scopeType;
+        // Ámbitos estáticos requieren fijar la unidad/tipo; los context_* la derivan del proceso en runtime.
+        if ((scopeType === "unit_exact" || scopeType === "unit_subtree") && step?.unit_id) {
+          resolver.unit_id = Number(step.unit_id);
+        }
+        if (scopeType === "unit_type" && step?.unit_type_id) {
+          resolver.unit_type_id = Number(step.unit_type_id);
+        }
       }
       if (step?.resolver_type === "specific_person" && step?.person_id) {
         resolver.person_id = Number(step.person_id);
@@ -113,7 +123,9 @@ const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
       const fieldRefs = Array.isArray(step?.field_refs) ? step.field_refs.filter(Boolean) : [];
       if (fieldRefs.length) out.field_refs = fieldRefs;
       out.required = step?.required !== false;
-      out.can_reject = step?.can_reject !== false;
+      // La capacidad de devolver se deriva del orden: solo a partir del 2º paso hay un paso previo
+      // al que regresar. El 1º (entrega del dueño) nunca puede devolver.
+      out.can_reject = order > 1;
       return out;
     }),
   };
@@ -213,7 +225,15 @@ const FILL_RESOLVER_TYPES = new Set([
   "cargo_in_scope",
   "manual_pick"
 ]);
-const FILL_UNIT_SCOPE_TYPES = new Set(["unit_exact", "unit_subtree", "unit_type", "all_units"]);
+const FILL_UNIT_SCOPE_TYPES = new Set([
+  "unit_exact",
+  "unit_subtree",
+  "unit_type",
+  "all_units",
+  // Ámbitos relativos al contexto del proceso (la unidad se resuelve en runtime, sin fijarla en autoría).
+  "context_exact",
+  "context_subtree"
+]);
 const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 const SIGNATURE_RESOLVER_TYPES = new Set([
@@ -639,8 +659,9 @@ const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) =>
       const selectionMode = String(step?.resolver?.selection_mode || "auto_one");
       const rawCargoCode = String(step?.resolver?.cargo_code || "").trim().toLowerCase();
       const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+      const stepOrder = Number(step.order) || index + 1;
       return {
-        stepOrder: Number(step.order) || index + 1,
+        stepOrder,
         resolverType: FILL_RESOLVER_TYPES.has(resolverType) ? resolverType : "manual_pick",
         assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
         unitScopeType: FILL_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "unit_exact",
@@ -650,7 +671,8 @@ const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) =>
         positionId: normalizeNumericId(step?.resolver?.position_id),
         selectionMode: FILL_SELECTION_MODES.has(selectionMode) ? selectionMode : "manual",
         isRequired: normalizeBooleanFlag(step?.required, true) ? 1 : 0,
-        canReject: normalizeBooleanFlag(step?.can_reject, true) ? 1 : 0
+        // Capacidad de devolver derivada del orden (solo desde el 2º paso); no se lee del input.
+        canReject: stepOrder > 1 ? 1 : 0
       };
     })
     .sort((left, right) => left.stepOrder - right.stepOrder);
@@ -813,15 +835,40 @@ const collectAuthoredWorkflowIssues = ({
       }
     });
   };
+  // El formulario web envía los campos del responsable de forma PLANA (step.resolver_type, step.person_id…),
+  // igual que los lee buildWorkflowsYaml; se admite también la forma anidada (step.resolver.*) por robustez.
+  const getStepResolver = (step) => {
+    const nested = (step && typeof step.resolver === "object" && step.resolver) ? step.resolver : {};
+    return {
+      type: step?.resolver_type || nested.type,
+      person_id: step?.person_id ?? nested.person_id,
+      position_id: step?.position_id ?? nested.position_id,
+      cargo_id: step?.cargo_id ?? nested.cargo_id,
+      cargo_code: step?.cargo_code ?? nested.cargo_code,
+      unit_scope_type: step?.unit_scope_type ?? nested.unit_scope_type,
+      unit_id: step?.unit_id ?? nested.unit_id,
+      unit_type_id: step?.unit_type_id ?? nested.unit_type_id,
+      selection_mode: step?.selection_mode ?? nested.selection_mode
+    };
+  };
   const checkResolverRefs = (resolver, type, label, fallbackCargoCode = "") => {
     if (type === "specific_person" && !normalizeNumericId(resolver?.person_id)) {
-      issues.push(`${label}: "Persona específica" requiere person_id.`);
+      issues.push(`${label}: "Persona específica" requiere seleccionar una persona.`);
     }
     if (type === "position" && !normalizeNumericId(resolver?.position_id)) {
-      issues.push(`${label}: "Posición" requiere position_id.`);
+      issues.push(`${label}: "Posición" requiere seleccionar una posición.`);
     }
-    if (type === "cargo_in_scope" && !resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap)) {
-      issues.push(`${label}: "Cargo en ámbito" requiere un cargo válido (cargo_id o cargo_code).`);
+    if (type === "cargo_in_scope") {
+      if (!resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap)) {
+        issues.push(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
+      }
+      const scope = String(resolver?.unit_scope_type || "context_exact");
+      if ((scope === "unit_exact" || scope === "unit_subtree") && !normalizeNumericId(resolver?.unit_id)) {
+        issues.push(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
+      }
+      if (scope === "unit_type" && !normalizeNumericId(resolver?.unit_type_id)) {
+        issues.push(`${label}: el ámbito "tipo de unidad" requiere seleccionar un tipo de unidad.`);
+      }
     }
   };
 
@@ -830,13 +877,14 @@ const collectAuthoredWorkflowIssues = ({
     checkOrders(fillSteps, "Paso de entrega");
     fillSteps.forEach((step, index) => {
       const label = `Paso de entrega ${index + 1}`;
-      const type = String(step?.resolver?.type || "task_assignee");
+      const resolver = getStepResolver(step);
+      const type = String(resolver.type || "task_assignee");
       if (!FILL_RESOLVER_TYPES.has(type)) {
         issues.push(`${label}: responsable inválido (${type}).`);
         return;
       }
-      checkResolverRefs(step?.resolver, type, label);
-      const selection = step?.resolver?.selection_mode;
+      checkResolverRefs(resolver, type, label);
+      const selection = resolver.selection_mode;
       if (selection && !FILL_SELECTION_MODES.has(String(selection))) {
         issues.push(`${label}: modo de selección inválido (${selection}).`);
       }
@@ -3800,13 +3848,15 @@ export default class SqlAdminService {
           name: s?.name || "",
           resolver_type: s?.resolver?.type || "task_assignee",
           selection_mode: s?.resolver?.selection_mode || "auto_one",
+          cargo_id: s?.resolver?.cargo_id || null,
           cargo_code: s?.resolver?.cargo_code || "",
-          unit_scope_type: s?.resolver?.unit_scope_type || "unit_exact",
+          unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
+          unit_id: s?.resolver?.unit_id || null,
+          unit_type_id: s?.resolver?.unit_type_id || null,
           person_id: s?.resolver?.person_id || null,
           position_id: s?.resolver?.position_id || null,
           field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
           required: s?.required !== false,
-          can_reject: s?.can_reject !== false,
         })),
       };
       const sig = meta?.workflows?.signatures || {};
