@@ -1102,7 +1102,6 @@ const definitionRulesForm = ref({
   unit_scope_type: "unit_exact",
   unit_id: "",
   unit_type_id: "",
-  include_descendants: "0",
   cargo_id: "",
   position_id: "",
   recipient_policy: "all_matches",

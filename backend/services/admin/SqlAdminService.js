@@ -2011,7 +2011,6 @@ export default class SqlAdminService {
       `SELECT unit_scope_type,
               unit_id,
               unit_type_id,
-              include_descendants,
               cargo_id,
               position_id,
               recipient_policy,
@@ -2032,7 +2031,6 @@ export default class SqlAdminService {
           unit_scope_type,
           unit_id,
           unit_type_id,
-          include_descendants,
           cargo_id,
           position_id,
           recipient_policy,
@@ -2040,13 +2038,12 @@ export default class SqlAdminService {
           is_active,
           effective_from,
           effective_to
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.unit_scope_type,
           row.unit_id,
           row.unit_type_id,
-          row.include_descendants,
           row.cargo_id,
           row.position_id,
           row.recipient_policy,
@@ -3430,7 +3427,7 @@ export default class SqlAdminService {
       return { has_rules: false, supports_context: false, all_units: false, unit_ids: [], cargo_ids: [] };
     }
     const [rules] = await connection.query(
-      `SELECT unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id
+      `SELECT unit_scope_type, unit_id, unit_type_id, cargo_id, position_id
          FROM process_target_rules
         WHERE process_definition_id = ? AND is_active = 1`,
       [defId]
@@ -3446,8 +3443,7 @@ export default class SqlAdminService {
         cargoIds.add(Number(rule.cargo_id));
       }
       const scope = String(rule.unit_scope_type || "unit_exact");
-      const useSubtree = scope === "unit_subtree"
-        || (scope === "unit_exact" && Number(rule.include_descendants) === 1);
+      const useSubtree = scope === "unit_subtree";
       if (scope === "all_units") {
         allUnits = true;
         continue;

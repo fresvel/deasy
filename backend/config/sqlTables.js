@@ -148,7 +148,6 @@ export const SQL_TABLES = [
       },
       { name: "unit_id", label: "Unidad", type: "number" },
       { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "include_descendants", label: "Incluye descendientes", type: "boolean", defaultValue: 0 },
       { name: "cargo_id", label: "Cargo", type: "number" },
       { name: "position_id", label: "Puesto exacto", type: "number" },
       {

@@ -10,7 +10,6 @@ export class ProcessDefinitionAdminService {
       unit_scope_type: "unit_exact",
       unit_id: "",
       unit_type_id: "",
-      include_descendants: "0",
       cargo_id: "",
       position_id: "",
       recipient_policy: "all_matches",
@@ -69,7 +68,6 @@ export class ProcessDefinitionAdminService {
           ...form,
           unit_id: "",
           position_id: "",
-          include_descendants: "0",
           recipient_policy: recipientPolicy === "exact_position" ? "all_matches" : (form.recipient_policy || "all_matches")
         },
         labels: {
@@ -86,7 +84,6 @@ export class ProcessDefinitionAdminService {
           unit_id: "",
           unit_type_id: "",
           position_id: "",
-          include_descendants: "0",
           recipient_policy: recipientPolicy === "exact_position" ? "all_matches" : (form.recipient_policy || "all_matches")
         },
         labels: {
@@ -103,7 +100,6 @@ export class ProcessDefinitionAdminService {
         ...form,
         unit_type_id: "",
         position_id: keepsExactPosition ? form.position_id : "",
-        include_descendants: scopeType === "unit_subtree" ? "1" : form.include_descendants,
         recipient_policy: recipientPolicy === "exact_position" && !keepsExactPosition ? "all_matches" : (form.recipient_policy || "all_matches")
       },
       labels: {
@@ -122,8 +118,7 @@ export class ProcessDefinitionAdminService {
           ...form,
           unit_scope_type: "unit_exact",
           unit_type_id: "",
-          cargo_id: "",
-          include_descendants: "0"
+          cargo_id: ""
         },
         labels: {
           ...labels,
@@ -151,15 +146,12 @@ export class ProcessDefinitionAdminService {
     const usesExactPosition = recipientPolicy === "exact_position";
     const usesUnitScope = scopeType === "unit_exact" || scopeType === "unit_subtree" || usesExactPosition;
     const usesUnitTypeScope = scopeType === "unit_type" && !usesExactPosition;
-    const includeDescendants = scopeType === "unit_subtree"
-      || (scopeType === "unit_exact" && !usesExactPosition && Number(form.include_descendants) === 1);
 
     return {
       process_definition_id: Number(definitionId),
       unit_scope_type: usesExactPosition ? "unit_exact" : scopeType,
       unit_id: usesUnitScope && form.unit_id ? Number(form.unit_id) : null,
       unit_type_id: usesUnitTypeScope && form.unit_type_id ? Number(form.unit_type_id) : null,
-      include_descendants: includeDescendants ? 1 : 0,
       cargo_id: !usesExactPosition && form.cargo_id ? Number(form.cargo_id) : null,
       position_id: usesExactPosition && form.position_id ? Number(form.position_id) : null,
       recipient_policy: recipientPolicy,

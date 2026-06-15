@@ -55,7 +55,6 @@ const getTargetRulesMap = async (connection, termStart, termEnd) => {
        unit_scope_type,
        unit_id,
        unit_type_id,
-       include_descendants,
        cargo_id,
        position_id,
        recipient_policy,
@@ -844,8 +843,7 @@ const getPositionsForRule = async (connection, rule) => {
       params.push(rule.cargo_id);
     }
 
-    const useSubtree = rule.unit_scope_type === "unit_subtree"
-      || (rule.unit_scope_type === "unit_exact" && Number(rule.include_descendants) === 1);
+    const useSubtree = rule.unit_scope_type === "unit_subtree";
 
     if (useSubtree) {
       if (!rule.unit_id) {

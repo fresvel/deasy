@@ -476,13 +476,7 @@ const doesPositionMatchRule = (position, rule, getUnitSubtree) => {
       if (!rule.unit_id) {
         return false;
       }
-      if (Number(position.unit_id) === Number(rule.unit_id)) {
-        return true;
-      }
-      if (Number(rule.include_descendants) === 1) {
-        return getUnitSubtree(Number(rule.unit_id)).has(Number(position.unit_id));
-      }
-      return false;
+      return Number(position.unit_id) === Number(rule.unit_id);
   }
 };
 
@@ -529,7 +523,6 @@ const getActiveDefinitionRules = async (pool, definitionId) => {
        ptr.unit_scope_type,
        ptr.unit_id,
        ptr.unit_type_id,
-       ptr.include_descendants,
        ptr.cargo_id,
        ptr.position_id,
        ptr.recipient_policy,
@@ -2185,7 +2178,6 @@ export const getUserMenu = async (req, res) => {
          ptr.unit_scope_type,
          ptr.unit_id,
          ptr.unit_type_id,
-         ptr.include_descendants,
          ptr.cargo_id,
          ptr.position_id,
          ptr.recipient_policy
@@ -2259,13 +2251,7 @@ export const getUserMenu = async (req, res) => {
           if (!rule.unit_id) {
             return false;
           }
-          if (Number(position.unit_id) === Number(rule.unit_id)) {
-            return true;
-          }
-          if (Number(rule.include_descendants) === 1) {
-            return getUnitSubtree(Number(rule.unit_id)).has(Number(position.unit_id));
-          }
-          return false;
+          return Number(position.unit_id) === Number(rule.unit_id);
       }
     };
 

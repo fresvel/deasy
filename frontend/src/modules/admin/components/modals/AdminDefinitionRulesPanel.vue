@@ -116,12 +116,6 @@
               @search="$emit('open-fk-search', 'position_id')"
             />
           </AdminFieldGroup>
-          <AdminFieldGroup v-if="showDescendantsField" label="Incluye descendientes" group-class="md:col-span-4">
-            <AdminSelectField :model-value="form.include_descendants" :disabled="!canManage" @update:model-value="updateField('include_descendants', $event)">
-              <option value="1">Si</option>
-              <option value="0">No</option>
-            </AdminSelectField>
-          </AdminFieldGroup>
         </div>
       </fieldset>
 
@@ -318,7 +312,6 @@ const showUnitField = computed(() =>
 const showUnitTypeField = computed(() => !isExactPositionPolicy.value && scopeType.value === "unit_type");
 const showCargoField = computed(() => !isExactPositionPolicy.value);
 const showPositionField = computed(() => isExactPositionPolicy.value);
-const showDescendantsField = computed(() => !isExactPositionPolicy.value && scopeType.value === "unit_exact");
 
 const requirementMessage = computed(() => {
   if (!props.canManage || props.canSubmit) {

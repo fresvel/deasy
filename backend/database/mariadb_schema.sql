@@ -417,7 +417,6 @@ CREATE TABLE IF NOT EXISTS process_target_rules (
   unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units') NOT NULL DEFAULT 'unit_exact',
   unit_id INT NULL,
   unit_type_id INT NULL,
-  include_descendants TINYINT(1) NOT NULL DEFAULT 0,
   cargo_id INT NULL,
   position_id INT NULL,
   recipient_policy ENUM('all_matches', 'one_per_unit', 'one_match_only', 'exact_position')

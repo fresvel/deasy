@@ -351,7 +351,6 @@ export function useProcessDefinitionManager({
       unit_scope_type: row.unit_scope_type || "unit_exact",
       unit_id: row.unit_id ? String(row.unit_id) : "",
       unit_type_id: row.unit_type_id ? String(row.unit_type_id) : "",
-      include_descendants: Number(row.include_descendants) === 1 ? "1" : "0",
       cargo_id: row.cargo_id ? String(row.cargo_id) : "",
       position_id: row.position_id ? String(row.position_id) : "",
       recipient_policy: row.recipient_policy || "all_matches",

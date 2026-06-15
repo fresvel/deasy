@@ -1044,6 +1044,28 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     }
 
+    // - process_target_rules.include_descendants (2026-06): redundante con unit_scope_type='unit_subtree'
+    //   (unit_exact + include_descendants=1 resolvía idéntico al subárbol). Antes de eliminar la columna,
+    //   se promueven esas reglas a 'unit_subtree' para no perder su alcance.
+    {
+      const [hasIncludeDescendants] = await connection.query(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_target_rules' AND COLUMN_NAME = 'include_descendants'`
+      );
+      if (hasIncludeDescendants.length) {
+        try {
+          await connection.query(
+            `UPDATE process_target_rules
+                SET unit_scope_type = 'unit_subtree'
+              WHERE unit_scope_type = 'unit_exact' AND include_descendants = 1`
+          );
+        } catch (error) {
+          console.warn("⚠️  No se pudo migrar process_target_rules.include_descendants:", error.message);
+        }
+      }
+    }
+    await dropDeprecatedColumn("process_target_rules", "include_descendants");
+
     // CHECK legacy que referenciaba processes.unit_id/program_id (ya eliminadas). En un schema nuevo
     // no existe; solo se elimina si está presente (evita un warning falso por código de error variable
     // entre MariaDB/MySQL al hacer DROP de una constraint inexistente).
