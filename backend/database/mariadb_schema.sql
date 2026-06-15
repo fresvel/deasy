@@ -419,7 +419,7 @@ CREATE TABLE IF NOT EXISTS process_target_rules (
   unit_type_id INT NULL,
   cargo_id INT NULL,
   position_id INT NULL,
-  recipient_policy ENUM('all_matches', 'one_per_unit', 'one_match_only', 'exact_position')
+  recipient_policy ENUM('all_matches', 'one_per_unit', 'exact_position')
     NOT NULL DEFAULT 'all_matches',
   priority INT NOT NULL DEFAULT 1,
   is_active TINYINT(1) NOT NULL DEFAULT 1,

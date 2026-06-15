@@ -242,7 +242,6 @@ const scopeOptions = [
 const recipientPolicyOptions = [
   { value: "all_matches", label: "Todos los puestos coincidentes" },
   { value: "one_per_unit", label: "Un puesto por unidad" },
-  { value: "one_match_only", label: "Solo el primer puesto" },
   { value: "exact_position", label: "Puesto exacto" }
 ];
 

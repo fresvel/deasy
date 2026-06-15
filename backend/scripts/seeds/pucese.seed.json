@@ -4352,7 +4352,7 @@
         "unit_type_id": "int(11)",
         "cargo_id": "int(11)",
         "position_id": "int(11)",
-        "recipient_policy": "enum('all_matches','one_per_unit','one_match_only','exact_position')",
+        "recipient_policy": "enum('all_matches','one_per_unit','exact_position')",
         "priority": "int(11)",
         "is_active": "tinyint(1)",
         "effective_from": "date",

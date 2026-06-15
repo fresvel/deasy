@@ -797,9 +797,6 @@ const applyRecipientPolicy = (rows, recipientPolicy, exactPositionId = null) => 
   if (recipientPolicy === "exact_position" || exactPositionId) {
     return rows.slice(0, 1);
   }
-  if (recipientPolicy === "one_match_only") {
-    return rows.slice(0, 1);
-  }
   if (recipientPolicy === "one_per_unit") {
     const seen = new Set();
     return rows.filter((row) => {

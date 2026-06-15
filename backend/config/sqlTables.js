@@ -154,7 +154,7 @@ export const SQL_TABLES = [
         name: "recipient_policy",
         label: "Entrega",
         type: "select",
-        options: ["all_matches", "one_per_unit", "one_match_only", "exact_position"],
+        options: ["all_matches", "one_per_unit", "exact_position"],
         defaultValue: "all_matches"
       },
       { name: "priority", label: "Prioridad", type: "number", defaultValue: 1 },

@@ -71,7 +71,6 @@ class AdminPresentationService {
       return {
         all_matches: "Todos los puestos coincidentes",
         one_per_unit: "Un puesto por unidad",
-        one_match_only: "Solo el primer puesto",
         exact_position: "Puesto exacto"
       }[value] || value;
     }
