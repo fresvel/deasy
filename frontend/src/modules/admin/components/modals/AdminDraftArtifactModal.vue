@@ -194,6 +194,9 @@
         </div>
         <AdminButton variant="outlinePrimary" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
+      <div v-if="draftArtifactForm.process_definition_id && !processHasRules && !processScopeLoading" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-700">
+        El proceso vinculado aún no tiene <strong>reglas objetivo</strong>. Los ámbitos “Unidad del proceso” quedan deshabilitados (resolverían a nadie); define primero las reglas o usa una unidad específica.
+      </div>
       <div v-if="!fillSteps.length" class="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-medium text-slate-500">
         Sin pasos de entrega.
       </div>
@@ -268,8 +271,8 @@
               <div class="col-span-4">
                 <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ámbito</label>
                 <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_scope_type', $event.target.value)">
-                  <option value="context_exact">Unidad del proceso{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}</option>
-                  <option value="context_subtree">Unidad del proceso y subárbol{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}</option>
+                  <option value="context_exact" :disabled="!processHasRules">Unidad del proceso{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}{{ processHasRules ? "" : " — requiere reglas" }}</option>
+                  <option value="context_subtree" :disabled="!processHasRules">Unidad del proceso y subárbol{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}{{ processHasRules ? "" : " — requiere reglas" }}</option>
                   <option value="unit_exact">Unidad específica</option>
                   <option value="unit_subtree">Unidad específica y subárbol</option>
                   <option value="unit_type">Tipo de unidad</option>
@@ -280,7 +283,7 @@
                 <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
                 <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
                   <option value="">— Selecciona unidad —</option>
-                  <option v-for="u in unitOptions" :key="u.id" :value="u.id">{{ u.name }}</option>
+                  <option v-for="u in scopedUnitOptions" :key="u.id" :value="u.id">{{ u.name }}</option>
                 </select>
               </div>
               <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
@@ -660,6 +663,38 @@ const selectedProcessName = computed(() => {
   const id = props.draftArtifactForm.process_definition_id;
   if (!id) return "";
   return processDefinitionOptions.value.find((o) => String(o.id) === String(id))?.name || "";
+});
+
+// Ámbito resoluble del proceso vinculado (sus reglas objetivo): habilita los ámbitos de contexto y
+// acota el select de unidades. Sin reglas, los ámbitos de contexto resolverían a nadie.
+const processScope = ref(null);
+const processScopeLoading = ref(false);
+const loadProcessScope = async (definitionId) => {
+  if (!definitionId) {
+    processScope.value = null;
+    return;
+  }
+  processScopeLoading.value = true;
+  try {
+    const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_TARGET_SCOPE(definitionId));
+    processScope.value = data || null;
+  } catch {
+    processScope.value = null;
+  } finally {
+    processScopeLoading.value = false;
+  }
+};
+watch(() => props.draftArtifactForm.process_definition_id, (id) => { loadProcessScope(id); }, { immediate: true });
+const processHasRules = computed(() => Boolean(processScope.value?.has_rules));
+const processSupportsContext = computed(() => Boolean(processScope.value?.supports_context));
+// Unidades ofrecidas para ámbitos estáticos: acotadas a las que cubren las reglas del proceso.
+const scopedUnitOptions = computed(() => {
+  const scope = processScope.value;
+  if (!scope || scope.all_units || !Array.isArray(scope.unit_ids) || !scope.unit_ids.length) {
+    return unitOptions.value;
+  }
+  const allowed = new Set(scope.unit_ids.map((id) => Number(id)));
+  return unitOptions.value.filter((u) => allowed.has(Number(u.id)));
 });
 
 // ── Flujo de firmas ──
