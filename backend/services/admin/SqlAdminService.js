@@ -820,12 +820,20 @@ const collectAuthoredWorkflowIssues = ({
   signatureWorkflow,
   cargoCodeMap = new Map(),
   signatureTypeCodeMap = new Map(),
-  referenceIds = {}
+  referenceIds = {},
+  processScope = null
 } = {}) => {
   const personIds = referenceIds?.personIds instanceof Set ? referenceIds.personIds : new Set();
   const positionIds = referenceIds?.positionIds instanceof Set ? referenceIds.positionIds : new Set();
   const unitIds = referenceIds?.unitIds instanceof Set ? referenceIds.unitIds : new Set();
   const unitTypeIds = referenceIds?.unitTypeIds instanceof Set ? referenceIds.unitTypeIds : new Set();
+  // Ámbito resoluble del proceso vinculado (reglas objetivo). Si no se pasó, no se aplican estas reglas.
+  const hasProcessScope = processScope && typeof processScope === "object";
+  const scopeHasRules = hasProcessScope ? Boolean(processScope.has_rules) : null;
+  const scopeAllUnits = hasProcessScope ? Boolean(processScope.all_units) : false;
+  const scopeUnitIds = hasProcessScope && Array.isArray(processScope.unit_ids)
+    ? new Set(processScope.unit_ids.map((id) => Number(id)))
+    : new Set();
   const issues = [];
   const checkOrders = (steps, label) => {
     const seen = new Set();
@@ -880,12 +888,21 @@ const collectAuthoredWorkflowIssues = ({
         issues.push(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
       }
       const scope = String(resolver?.unit_scope_type || "context_exact");
+      if (scope === "context_exact" || scope === "context_subtree") {
+        // Los ámbitos de contexto resuelven la unidad del proceso vía la posición responsable; si el
+        // proceso no tiene reglas objetivo, no se genera posición responsable → resolución null garantizada.
+        if (scopeHasRules === false) {
+          issues.push(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
+        }
+      }
       if (scope === "unit_exact" || scope === "unit_subtree") {
         const unitId = normalizeNumericId(resolver?.unit_id);
         if (!unitId) {
           issues.push(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
         } else if (unitIds.size && !unitIds.has(unitId)) {
           issues.push(`${label}: la unidad seleccionada (${unitId}) no existe o está inactiva.`);
+        } else if (scopeHasRules && !scopeAllUnits && scopeUnitIds.size && !scopeUnitIds.has(unitId)) {
+          issues.push(`${label}: la unidad seleccionada (${unitId}) está fuera del ámbito de las reglas objetivo del proceso.`);
         }
       }
       if (scope === "unit_type") {
@@ -4589,17 +4606,28 @@ export default class SqlAdminService {
     // Validación del contrato de flujo en autoría (no solo al vincular): falla rápido y claro antes de
     // subir el meta.yaml, en vez de degradar silenciosamente en la normalización del sync.
     if (hasCustomWorkflows) {
-      const [cargoCodeMap, signatureTypeCodeMap, referenceIds] = await Promise.all([
+      // Proceso vinculado: en creación llega en el form; en edición se busca el vínculo existente.
+      let linkedDefinitionId = normalizeNumericId(data.process_definition_id);
+      if (!linkedDefinitionId && isEdit && existingArtifact?.id) {
+        const [linkRows] = await this.pool.query(
+          "SELECT process_definition_id FROM process_definition_templates WHERE template_artifact_id = ? LIMIT 1",
+          [Number(existingArtifact.id)]
+        );
+        linkedDefinitionId = normalizeNumericId(linkRows?.[0]?.process_definition_id);
+      }
+      const [cargoCodeMap, signatureTypeCodeMap, referenceIds, processScope] = await Promise.all([
         this.getCargoCodeMap(),
         this.getSignatureTypeCodeMap(),
-        this.getWorkflowReferenceIdSets()
+        this.getWorkflowReferenceIdSets(),
+        this.getProcessTargetScope(linkedDefinitionId)
       ]);
       const workflowIssues = collectAuthoredWorkflowIssues({
         fillWorkflow,
         signatureWorkflow,
         cargoCodeMap,
         signatureTypeCodeMap,
-        referenceIds
+        referenceIds,
+        processScope
       });
       if (workflowIssues.length) {
         const error = new Error(`El flujo definido tiene errores:\n- ${workflowIssues.join("\n- ")}`);
