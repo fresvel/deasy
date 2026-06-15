@@ -268,8 +268,8 @@
               <div class="col-span-4">
                 <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ámbito</label>
                 <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_scope_type', $event.target.value)">
-                  <option value="context_exact">Unidad del proceso</option>
-                  <option value="context_subtree">Unidad del proceso y subárbol</option>
+                  <option value="context_exact">Unidad del proceso{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}</option>
+                  <option value="context_subtree">Unidad del proceso y subárbol{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}</option>
                   <option value="unit_exact">Unidad específica</option>
                   <option value="unit_subtree">Unidad específica y subárbol</option>
                   <option value="unit_type">Tipo de unidad</option>
@@ -401,9 +401,11 @@ const loadProcessDefinitionOptions = async () => {
       .map((r) => {
         const status = String(r.status || "").toLowerCase();
         const statusText = STATUS_LABEL[status] || status || "—";
+        const name = r.name || r.variation_key || `Def ${r.id}`;
         return {
           id: r.id,
-          label: `${r.name || r.variation_key || ("Def " + r.id)} (v${r.definition_version || "?"} · ${statusText})`,
+          name,
+          label: `${name} (v${r.definition_version || "?"} · ${statusText})`,
         };
       });
   } catch {
@@ -652,6 +654,13 @@ const fillStepShowsMode = (step) => FILL_MULTI_RESOLVERS.has(String(step?.resolv
 const fillStepNeedsDetail = (step) => ["specific_person", "position", "cargo_in_scope"].includes(String(step?.resolver_type || ""));
 const fillStepNeedsUnit = (step) => ["unit_exact", "unit_subtree"].includes(String(step?.unit_scope_type || ""));
 const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "unit_type";
+// Los ámbitos de contexto resuelven la unidad del proceso destino; se muestra su nombre para dejar
+// explícito a qué proceso se refiere "Unidad del proceso".
+const selectedProcessName = computed(() => {
+  const id = props.draftArtifactForm.process_definition_id;
+  if (!id) return "";
+  return processDefinitionOptions.value.find((o) => String(o.id) === String(id))?.name || "";
+});
 
 // ── Flujo de firmas ──
 const signatureSteps = computed(() => props.draftArtifactForm.signature_workflow?.steps || []);
