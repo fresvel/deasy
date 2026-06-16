@@ -415,7 +415,7 @@
       @open-fk-search="openDefinitionTriggerFkSearch"
       @submit="submitDefinitionTrigger"
       @reset="resetDefinitionTriggersForm"
-      @view-row="openRecordViewer($event, allTablesMap.process_definition_triggers)"
+      @view-row="openRecordViewer($event, allTablesMap.process_definition_period_types)"
       @edit-row="startDefinitionTriggerEdit"
       @delete-row="deleteDefinitionTrigger"
       @close="closeDefinitionTriggersManager"
@@ -548,7 +548,7 @@
           @open-fk-search="openDefinitionTriggerFkSearch"
           @submit="wizardSubmitTrigger"
           @reset="resetDefinitionTriggersForm"
-          @view-row="handleWizardViewRow($event, allTablesMap.process_definition_triggers)"
+          @view-row="handleWizardViewRow($event, allTablesMap.process_definition_period_types)"
           @edit-row="startDefinitionTriggerEdit"
           @delete-row="deleteDefinitionTrigger"
         />
@@ -1122,7 +1122,6 @@ const definitionTriggersLoading = ref(false);
 const definitionTriggersError = ref("");
 const definitionTriggersEditId = ref("");
 const definitionTriggersForm = ref({
-  trigger_mode: "automatic_by_term_type",
   term_type_id: "",
   is_active: "1"
 });
@@ -1628,17 +1627,13 @@ const canSubmitDefinitionRule = computed(() => {
   }
   return false;
 });
-const definitionTriggerRequiresTermType = computed(() =>
-  String(definitionTriggersForm.value.trigger_mode || "") === "automatic_by_term_type"
-);
+// El tipo de periodo siempre es obligatorio: el proceso corre en uno o varios tipos de periodo.
+const definitionTriggerRequiresTermType = computed(() => true);
 const canSubmitDefinitionTrigger = computed(() => {
   if (!canManageDefinitionTriggers.value) {
     return false;
   }
-  if (definitionTriggerRequiresTermType.value) {
-    return Boolean(definitionTriggersForm.value.term_type_id);
-  }
-  return true;
+  return Boolean(definitionTriggersForm.value.term_type_id);
 });
 const requiresDefinitionArtifacts = computed(() =>
   Number(selectedRow.value?.has_document) === 1 || Number(formData.value?.has_document) === 1

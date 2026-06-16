@@ -1213,24 +1213,12 @@ const validateTableRules = (tableName, candidate) => {
         throw new Error("El alcance por tipo requiere un tipo de unidad.");
       }
       break;
-    case "process_definition_triggers":
+    case "process_definition_period_types":
       if (!candidate.process_definition_id) {
         throw new Error("Selecciona una configuracion de proceso.");
       }
-      if (!candidate.trigger_mode) {
-        throw new Error("Selecciona un modo de disparo.");
-      }
-      if (
-        candidate.trigger_mode === "automatic_by_term_type"
-        && !candidate.term_type_id
-      ) {
-        throw new Error("El disparo automatico requiere un tipo de periodo.");
-      }
-      if (
-        ["manual_only", "manual_custom_term"].includes(String(candidate.trigger_mode))
-        && candidate.term_type_id
-      ) {
-        throw new Error("Los disparos manuales no deben fijar un tipo de periodo.");
+      if (!candidate.term_type_id) {
+        throw new Error("Selecciona el tipo de periodo en que corre el proceso.");
       }
       break;
     case "tasks":
@@ -1957,7 +1945,7 @@ export default class SqlAdminService {
     const normalizedTargetProcessId = Number(targetProcessId);
 
     if (!normalizedSourceId || !normalizedTargetId) {
-      return { clonedTemplates: 0, clonedRules: 0, clonedTriggers: 0 };
+      return { clonedTemplates: 0, clonedRules: 0, clonedPeriodTypes: 0 };
     }
 
     const sourceDefinition = await this.getProcessDefinitionVersion(normalizedSourceId, connection);
@@ -2047,27 +2035,24 @@ export default class SqlAdminService {
       );
     }
 
-    const [triggerRows] = await connection.query(
-      `SELECT trigger_mode,
-              term_type_id,
+    const [periodTypeRows] = await connection.query(
+      `SELECT term_type_id,
               is_active
-       FROM process_definition_triggers
+       FROM process_definition_period_types
        WHERE process_definition_id = ?
        ORDER BY id ASC`,
       [normalizedSourceId]
     );
 
-    for (const row of triggerRows) {
+    for (const row of periodTypeRows) {
       await connection.query(
-        `INSERT INTO process_definition_triggers (
+        `INSERT INTO process_definition_period_types (
           process_definition_id,
-          trigger_mode,
           term_type_id,
           is_active
-        ) VALUES (?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?)`,
         [
           normalizedTargetId,
-          row.trigger_mode,
           row.term_type_id,
           row.is_active
         ]
@@ -2077,7 +2062,7 @@ export default class SqlAdminService {
     return {
       clonedTemplates: templateRows.length,
       clonedRules: ruleRows.length,
-      clonedTriggers: triggerRows.length
+      clonedPeriodTypes: periodTypeRows.length
     };
   }
 
@@ -2129,7 +2114,7 @@ export default class SqlAdminService {
     }
   }
 
-  async ensureDefinitionHasActiveTriggersForActivation(definitionId, connection = this.pool) {
+  async ensureDefinitionHasActivePeriodTypesForActivation(definitionId, connection = this.pool) {
     const normalizedDefinitionId = Number(definitionId);
     if (!normalizedDefinitionId) {
       return;
@@ -2137,7 +2122,7 @@ export default class SqlAdminService {
 
     const [rows] = await connection.query(
       `SELECT COUNT(*) AS total
-       FROM process_definition_triggers
+       FROM process_definition_period_types
        WHERE process_definition_id = ?
          AND is_active = 1`,
       [normalizedDefinitionId]
@@ -2146,20 +2131,17 @@ export default class SqlAdminService {
     const total = Number(rows?.[0]?.total || 0);
     if (total < 1) {
       throw new Error(
-        "No se puede activar una configuracion si no tiene al menos un disparador activo en Disparadores de configuraciones."
+        "No se puede activar una configuracion si no tiene al menos un tipo de periodo activo en Periodos del proceso."
       );
     }
   }
 
-  async ensureDefinitionTriggerAllowsTaskLaunch(
-    definitionId,
-    termId,
-    launchMode,
-    connection = this.pool
-  ) {
+  // Valida que la configuracion corra en el tipo de periodo del term indicado: debe existir un
+  // vinculo activo en process_definition_period_types. Reemplaza la antigua validacion por
+  // trigger_mode (automatic/manual_only/manual_custom_term, ya deprecada).
+  async ensureDefinitionRunsInTermPeriodType(definitionId, termId, connection = this.pool) {
     const normalizedDefinitionId = Number(definitionId);
     const normalizedTermId = Number(termId);
-    const normalizedLaunchMode = String(launchMode || "manual");
 
     if (!normalizedDefinitionId || !normalizedTermId) {
       throw new Error("La tarea requiere una configuracion y un periodo validos.");
@@ -2170,44 +2152,17 @@ export default class SqlAdminService {
       throw new Error("El periodo seleccionado no existe.");
     }
 
-    let triggerMode;
-    let triggerParams;
-    if (normalizedLaunchMode === "automatic") {
-      triggerMode = "automatic_by_term_type";
-      triggerParams = [normalizedDefinitionId, triggerMode, Number(term.term_type_id)];
-    } else if (String(term.term_type_code || "").toUpperCase() === "CUS") {
-      triggerMode = "manual_custom_term";
-      triggerParams = [normalizedDefinitionId, triggerMode];
-    } else {
-      triggerMode = "manual_only";
-      triggerParams = [normalizedDefinitionId, triggerMode];
-    }
-
-    const triggerSql =
-      triggerMode === "automatic_by_term_type"
-        ? `SELECT id
-           FROM process_definition_triggers
-           WHERE process_definition_id = ?
-             AND trigger_mode = ?
-             AND term_type_id = ?
-             AND is_active = 1
-           LIMIT 1`
-        : `SELECT id
-           FROM process_definition_triggers
-           WHERE process_definition_id = ?
-             AND trigger_mode = ?
-             AND is_active = 1
-           LIMIT 1`;
-
-    const [rows] = await connection.query(triggerSql, triggerParams);
+    const [rows] = await connection.query(
+      `SELECT id
+       FROM process_definition_period_types
+       WHERE process_definition_id = ?
+         AND term_type_id = ?
+         AND is_active = 1
+       LIMIT 1`,
+      [normalizedDefinitionId, Number(term.term_type_id)]
+    );
     if (!rows?.length) {
-      if (triggerMode === "automatic_by_term_type") {
-        throw new Error("La configuracion no tiene un disparador automatico activo para el tipo de periodo seleccionado.");
-      }
-      if (triggerMode === "manual_custom_term") {
-        throw new Error("La configuracion no tiene un disparador manual activo para periodos custom.");
-      }
-      throw new Error("La configuracion no tiene un disparador manual activo para el periodo seleccionado.");
+      throw new Error("La configuracion no corre en el tipo de periodo seleccionado (revisa Periodos del proceso).");
     }
   }
 
@@ -2263,7 +2218,7 @@ export default class SqlAdminService {
     if (
       tableName === "process_definition_templates"
       || tableName === "process_target_rules"
-      || tableName === "process_definition_triggers"
+      || tableName === "process_definition_period_types"
     ) {
       await this.ensureDraftDefinitionContext(
         payload.process_definition_id,
@@ -2273,7 +2228,7 @@ export default class SqlAdminService {
               ? "las plantillas de configuracion"
               : tableName === "process_target_rules"
                 ? "las reglas de alcance"
-                : "los disparadores de configuracion"
+                : "los periodos del proceso"
         }
       );
     }
@@ -2282,13 +2237,10 @@ export default class SqlAdminService {
       await this.applyTargetRuleSeriesConstraints(payload.process_definition_id, payload);
     }
 
-    if (tableName === "process_definition_triggers") {
+    if (tableName === "process_definition_period_types") {
       const definition = await this.getProcessDefinitionVersion(payload.process_definition_id);
       if (!definition) {
         throw new Error("La configuracion de proceso seleccionada no existe.");
-      }
-      if (String(payload.trigger_mode || "") !== "automatic_by_term_type") {
-        payload.term_type_id = null;
       }
     }
 
@@ -2300,10 +2252,9 @@ export default class SqlAdminService {
       if (String(definition.status || "") !== "active") {
         throw new Error("Solo se pueden instanciar tareas desde configuraciones activas.");
       }
-      await this.ensureDefinitionTriggerAllowsTaskLaunch(
+      await this.ensureDefinitionRunsInTermPeriodType(
         payload.process_definition_id,
-        payload.term_id,
-        "manual"
+        payload.term_id
       );
 
       if (payload.process_run_id) {
@@ -2471,10 +2422,10 @@ export default class SqlAdminService {
               targetProcessId: payload.process_id,
               connection
             });
-            if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedTriggers) {
+            if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedPeriodTypes) {
               createNotice =
                 `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
-                + ` y ${cloneSummary.clonedTriggers} disparadores desde la configuracion origen.`;
+                + ` y ${cloneSummary.clonedPeriodTypes} periodos del proceso desde la configuracion origen.`;
             }
           }
 
@@ -2793,24 +2744,10 @@ export default class SqlAdminService {
         }
       }
     }
-    if (tableName === "process_definition_triggers") {
-      if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
-        if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
-          throw new Error("No se puede cambiar la configuracion asociada de este disparador.");
-        }
-        delete updates.process_definition_id;
-      }
-      if (
-        Object.prototype.hasOwnProperty.call(updates, "trigger_mode")
-        && String(updates.trigger_mode || "") !== "automatic_by_term_type"
-      ) {
-        updates.term_type_id = null;
-      }
-    }
     if (
       tableName === "process_definition_templates"
       || tableName === "process_target_rules"
-      || tableName === "process_definition_triggers"
+      || tableName === "process_definition_period_types"
     ) {
       if (Object.prototype.hasOwnProperty.call(updates, "process_definition_id")) {
         if (Number(updates.process_definition_id) !== Number(existing.process_definition_id)) {
@@ -2826,7 +2763,7 @@ export default class SqlAdminService {
               ? "las plantillas de configuracion"
               : tableName === "process_target_rules"
                 ? "las reglas de alcance"
-                : "los disparadores de configuracion"
+                : "los periodos del proceso"
         }
       );
     }
@@ -3011,7 +2948,7 @@ export default class SqlAdminService {
         try {
           await connection.beginTransaction();
           await this.ensureDefinitionHasActiveRulesForActivation(existing.id ?? keyPayload.id, connection);
-          await this.ensureDefinitionHasActiveTriggersForActivation(existing.id ?? keyPayload.id, connection);
+          await this.ensureDefinitionHasActivePeriodTypesForActivation(existing.id ?? keyPayload.id, connection);
           await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, candidate, connection);
           const retiredCount = await this.retireActiveDefinitionsInSeries({
             ...processDefinitionSeriesContext,
@@ -4901,7 +4838,7 @@ export default class SqlAdminService {
     if (
       tableName === "process_definition_templates"
       || tableName === "process_target_rules"
-      || tableName === "process_definition_triggers"
+      || tableName === "process_definition_period_types"
     ) {
       const existing = await this.getByKeys(tableName, keyPayload);
       if (!existing) {
@@ -4915,7 +4852,7 @@ export default class SqlAdminService {
               ? "las plantillas de configuracion"
               : tableName === "process_target_rules"
                 ? "las reglas de alcance"
-                : "los disparadores de configuracion"
+                : "los periodos del proceso"
         }
       );
     }

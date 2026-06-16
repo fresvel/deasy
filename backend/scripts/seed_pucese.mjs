@@ -157,7 +157,7 @@ const SEED_TABLE_ORDER = [
   "processes",
   "process_definition_series",
   "process_definition_versions",
-  "process_definition_triggers",
+  "process_definition_period_types",
   "process_target_rules",
   "term_types",
   "terms",

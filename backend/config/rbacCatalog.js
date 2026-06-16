@@ -208,7 +208,7 @@ export const TABLE_RESOURCE_MAP = {
   position_assignments: "people",
   process_definition_series: "process_definitions",
   process_definition_templates: "templates",
-  process_definition_triggers: "process_definitions",
+  process_definition_period_types: "process_definitions",
   process_definition_versions: "process_definitions",
   process_runs: "process_execution",
   process_target_rules: "process_definitions",

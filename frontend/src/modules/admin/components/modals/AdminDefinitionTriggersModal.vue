@@ -8,7 +8,7 @@
     v-else
     ref="modalRef"
     labelled-by="definitionTriggersModalLabel"
-    title="Disparadores de la configuracion"
+    title="Periodos del proceso"
     size="xl"
     close-action
     @close="$emit('close')"

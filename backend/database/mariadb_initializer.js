@@ -305,7 +305,7 @@ const DROP_TABLES = [
   "process_runs",
   "terms",
   "term_types",
-  "process_definition_triggers",
+  "process_definition_period_types",
   "process_target_rules",
   "process_definition_versions",
   "process_definition_series",

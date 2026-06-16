@@ -71,7 +71,7 @@ export function useProcessDefinitionActivationFlow({
           limit: 100
         }
       }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_period_types"), {
         params: {
           filter_process_definition_id: definitionId,
           orderBy: "created_at",

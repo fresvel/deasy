@@ -9,7 +9,7 @@ export const PROCESS_WIZARD_STEPS = [
   { key: "definition", label: "Configuración" },
   { key: "rules", label: "Reglas" },
   { key: "packages", label: "Paquetes" },
-  { key: "triggers", label: "Disparadores" },
+  { key: "triggers", label: "Periodos" },
   { key: "activate", label: "Activar" },
 ];
 

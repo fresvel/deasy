@@ -62,7 +62,7 @@ const main = async () => {
       BEGIN
         DECLARE linked_template_count INT DEFAULT 0;
         DECLARE active_rule_count INT DEFAULT 0;
-        DECLARE active_trigger_count INT DEFAULT 0;
+        DECLARE active_period_type_count INT DEFAULT 0;
 
         IF NEW.status = 'active' AND OLD.status <> 'active' THEN
           SELECT COUNT(*)
@@ -79,14 +79,14 @@ const main = async () => {
 
         IF NEW.status = 'active' AND OLD.status <> 'active' THEN
           SELECT COUNT(*)
-            INTO active_trigger_count
-          FROM process_definition_triggers
+            INTO active_period_type_count
+          FROM process_definition_period_types
           WHERE process_definition_id = NEW.id
             AND is_active = 1;
 
-          IF active_trigger_count < 1 THEN
+          IF active_period_type_count < 1 THEN
             SIGNAL SQLSTATE '45000'
-              SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un disparador activo en Disparadores de definiciones.';
+              SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un tipo de periodo activo en Periodos del proceso.';
           END IF;
         END IF;
 

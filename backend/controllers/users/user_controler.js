@@ -568,20 +568,19 @@ const buildRuleDisplayLabel = (rule) => {
   return parts.join(" | ") || `Regla #${rule.id}`;
 };
 
-const getActiveDefinitionTriggers = async (pool, definitionId) => {
+const getActiveDefinitionPeriodTypes = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
-       pdt.id,
-       pdt.trigger_mode,
-       pdt.term_type_id,
-       pdt.is_active,
+       pdp.id,
+       pdp.term_type_id,
+       pdp.is_active,
        tt.code AS term_type_code,
        tt.name AS term_type_name
-     FROM process_definition_triggers pdt
-     LEFT JOIN term_types tt ON tt.id = pdt.term_type_id
-     WHERE pdt.process_definition_id = ?
-       AND pdt.is_active = 1
-     ORDER BY pdt.trigger_mode ASC, pdt.id ASC`,
+     FROM process_definition_period_types pdp
+     LEFT JOIN term_types tt ON tt.id = pdp.term_type_id
+     WHERE pdp.process_definition_id = ?
+       AND pdp.is_active = 1
+     ORDER BY tt.code ASC, pdp.id ASC`,
     [definitionId]
   );
   return rows;
@@ -1550,7 +1549,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
     return null;
   }
 
-  const triggers = await getActiveDefinitionTriggers(pool, definitionId);
+  const periodTypes = await getActiveDefinitionPeriodTypes(pool, definitionId);
   const templates = await getDefinitionTemplates(pool, definitionId);
   const terms = await getAvailableTerms(pool);
   const userPackages = await getUserOwnedTemplateArtifacts(pool, userId);
@@ -1885,8 +1884,10 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
     };
   });
 
-  const canLaunchManual = triggers.some((trigger) => trigger.trigger_mode === "manual_only");
-  const canLaunchCustom = triggers.some((trigger) => trigger.trigger_mode === "manual_custom_term");
+  // En el modelo nuevo "poder lanzar" = la configuracion corre en al menos un tipo de periodo.
+  // Ya no hay modos manual_only/manual_custom_term; los periodos custom dejaron de crearse aqui
+  // (las fechas de vencimiento viven en los entregables).
+  const canLaunch = periodTypes.length > 0;
 
   return {
     definition: {
@@ -1894,7 +1895,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       rules_count: rules.length,
       matching_rules_count: matchingRules.length,
       templates_count: templates.length,
-      triggers_count: triggers.length,
+      period_types_count: periodTypes.length,
       chat_context: {
         process_id: Number(definition.process_id),
         accessible_scope_unit_ids: Array.from(
@@ -1916,9 +1917,9 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       user_packages_total: userPackages.length
     },
     permissions: {
-      can_launch_manual: canLaunchManual || canLaunchCustom,
-      can_launch_custom_term: canLaunchCustom,
-      can_use_existing_term: canLaunchManual || canLaunchCustom,
+      can_launch_manual: canLaunch,
+      can_launch_custom_term: false,
+      can_use_existing_term: canLaunch,
       has_document: Number(definition.has_document) === 1
     },
     tasks: enrichedTasks,
@@ -1930,7 +1931,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         ...rule,
         display_label: buildRuleDisplayLabel(rule)
       })),
-      triggers,
+      period_types: periodTypes,
       templates
     },
     user_packages: userPackages,

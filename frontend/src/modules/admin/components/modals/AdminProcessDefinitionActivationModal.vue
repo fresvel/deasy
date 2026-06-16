@@ -72,7 +72,7 @@ const modalRef = ref(null);
 const activationSteps = [
   { key: "definition", label: "Configuración" },
   { key: "rules", label: "Reglas" },
-  { key: "triggers", label: "Disparadores" },
+  { key: "triggers", label: "Periodos" },
   { key: "artifacts", label: "Paquetes" },
   { key: "activate", label: "Activar", hint: "Final" }
 ];

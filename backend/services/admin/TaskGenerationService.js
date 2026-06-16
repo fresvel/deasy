@@ -35,11 +35,10 @@ const getActiveAutomaticDefinitions = async (connection, term) => {
          AND pdv.effective_from <= ?
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= ?)
      ) AS ranked
-     INNER JOIN process_definition_triggers pdt
-       ON pdt.process_definition_id = ranked.id
-      AND pdt.is_active = 1
-      AND pdt.trigger_mode = 'automatic_by_term_type'
-      AND pdt.term_type_id = ?
+     INNER JOIN process_definition_period_types pdp
+       ON pdp.process_definition_id = ranked.id
+      AND pdp.is_active = 1
+      AND pdp.term_type_id = ?
      WHERE ranked.rn = 1
      ORDER BY ranked.process_id ASC, ranked.variation_key ASC`,
     [term.end_date, term.start_date, term.term_type_id]
@@ -144,22 +143,20 @@ export const ensureProcessRun = async ({
     ? null
     : Number(sourceRunId);
 
-  let selectQuery = `
-    SELECT id
-    FROM process_runs
-    WHERE process_definition_id = ?
-      AND term_id <=> ?
-      AND run_mode = ?`;
-  const selectParams = [normalizedProcessDefinitionId, normalizedTermId, runMode];
-
-  if (runMode === "manual") {
-    selectQuery += "\n      AND created_by_user_id <=> ?";
-    selectParams.push(normalizedCreatedBy);
-  }
-
-  selectQuery += "\n    ORDER BY id DESC LIMIT 1";
-
-  const [existingRows] = await connection.query(selectQuery, selectParams);
+  // Primer lanzamiento / auto-disparo: reusa la corrida ACTIVA de (proceso, periodo) si ya existe
+  // (idempotente; evita doble disparo). El relanzamiento es una corrida nueva y NO pasa por aquí
+  // (lo maneja la lógica de lanzamiento explícito en Fase 2). Por eso no se deduplica por usuario
+  // ni por run_mode: a lo sumo hay una corrida activa por (proceso, periodo).
+  const [existingRows] = await connection.query(
+    `SELECT id
+     FROM process_runs
+     WHERE process_definition_id = ?
+       AND term_id <=> ?
+       AND status = 'active'
+     ORDER BY id DESC
+     LIMIT 1`,
+    [normalizedProcessDefinitionId, normalizedTermId]
+  );
   if (existingRows?.length) {
     return Number(existingRows[0].id);
   }
@@ -1587,7 +1584,7 @@ export const generateTasksForTerm = async (termId) => {
         connection,
         processDefinitionId: definition.id,
         termId: term.id,
-        runMode: "automatic_term",
+        runMode: "automatic",
         status: "active"
       });
 

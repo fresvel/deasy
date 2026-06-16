@@ -251,6 +251,12 @@ const DEFAULT_PROCESS_NAME = "Proceso por defecto";
 const DEFAULT_SERIES_CODE = "default";
 const DEFAULT_VARIATION = "general";
 const DEFAULT_DEFINITION_VERSION = "1.0.0";
+// Periodo sentinela "de todos los tiempos": ancla los procesos sin ciclo de periodo
+// (p. ej. memorandos) y las tareas sueltas. Obligatorio: se crea en el bootstrap.
+const PERMANENT_TERM_TYPE_CODE = "PERM";
+const PERMANENT_TERM_NAME = "Permanente";
+const PERMANENT_TERM_START = "1900-01-01";
+const PERMANENT_TERM_END = "9999-12-31";
 
 // Seed base empaquetado en el backend (copia de tools/templates/seeds/latex/informe-general, sin render/).
 const BASE_SEED_TYPE = "latex";
@@ -538,16 +544,38 @@ export const ensureDefaultProcess = async (connection) => {
   }
   // Firma: ad-hoc (no se predefine para tareas libres).
 
-  // 7. trigger manual + regla all_units
-  const trigger = await fetchOne(
+  // 7. periodo sentinela "Permanente" + vínculo de tipo de periodo (corre en Permanente) + regla all_units
+  const permanentTermType = await fetchOne(
     connection,
-    "SELECT id FROM process_definition_triggers WHERE process_definition_id = ? AND trigger_mode = 'manual_custom_term' AND normalized_term_type_id = 0 LIMIT 1",
-    [definitionId]
+    "SELECT id FROM term_types WHERE code = ? LIMIT 1",
+    [PERMANENT_TERM_TYPE_CODE]
   );
-  if (!trigger) {
+  if (!permanentTermType) {
+    throw new Error("No existe el tipo de periodo 'Permanente' (PERM). Revisa el schema/seed de term_types.");
+  }
+  const permanentTermTypeId = Number(permanentTermType.id);
+  let permanentTerm = await fetchOne(
+    connection,
+    "SELECT id FROM terms WHERE term_type_id = ? AND name = ? LIMIT 1",
+    [permanentTermTypeId, PERMANENT_TERM_NAME]
+  );
+  if (!permanentTerm) {
+    const [r] = await connection.query(
+      "INSERT INTO terms (name, term_type_id, start_date, end_date, is_active) VALUES (?, ?, ?, ?, 1)",
+      [PERMANENT_TERM_NAME, permanentTermTypeId, PERMANENT_TERM_START, PERMANENT_TERM_END]
+    );
+    permanentTerm = { id: r.insertId };
+  }
+
+  const periodType = await fetchOne(
+    connection,
+    "SELECT id FROM process_definition_period_types WHERE process_definition_id = ? AND term_type_id = ? LIMIT 1",
+    [definitionId, permanentTermTypeId]
+  );
+  if (!periodType) {
     await connection.query(
-      "INSERT INTO process_definition_triggers (process_definition_id, trigger_mode, term_type_id, is_active) VALUES (?, 'manual_custom_term', NULL, 1)",
-      [definitionId]
+      "INSERT INTO process_definition_period_types (process_definition_id, term_type_id, is_active) VALUES (?, ?, 1)",
+      [definitionId, permanentTermTypeId]
     );
   }
   const rule = await fetchOne(

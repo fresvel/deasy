@@ -987,13 +987,13 @@
                       </ul>
                     </section>
                     <section class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200">
-                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-slate-400"/> Disparadores</h3>
-                      <div v-if="!selectedProcessPanel.dependencies.triggers.length" class="text-sm text-slate-500 font-medium italic">
-                        Sin disparadores activos.
+                      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><IconGlobe class="w-4 h-4 text-slate-400"/> Periodos del proceso</h3>
+                      <div v-if="!selectedProcessPanel.dependencies.period_types.length" class="text-sm text-slate-500 font-medium italic">
+                        Sin tipos de periodo activos.
                       </div>
                       <ul v-else class="flex flex-col gap-2.5 m-0 p-0 list-none">
-                        <li v-for="trigger in selectedProcessPanel.dependencies.triggers" :key="trigger.id" class="text-sm font-medium text-slate-600 flex items-start gap-2">
-                          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(trigger) }}
+                        <li v-for="periodType in selectedProcessPanel.dependencies.period_types" :key="periodType.id" class="text-sm font-medium text-slate-600 flex items-start gap-2">
+                          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0"></span> {{ formatTriggerLabel(periodType) }}
                         </li>
                       </ul>
                     </section>
@@ -1201,7 +1201,7 @@
               <h3 class="m-0 text-base font-bold text-slate-800">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
-                <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.triggers?.length || 0 }} disparadores activos</AppTag>
+                <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.period_types?.length || 0 }} tipos de periodo activos</AppTag>
                 <AppTag variant="muted">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
               </div>
               <ul class="m-0 pl-5 text-sm font-medium text-slate-600 flex flex-col gap-2">
@@ -4417,15 +4417,9 @@ const getSignatureStepAccentClass = (step, requests = [], currentStepOrder = nul
   }
 };
 
-const formatTriggerLabel = (trigger) => {
-  if (!trigger) return 'Disparador';
-  if (trigger.trigger_mode === 'automatic_by_term_type') {
-    return `Automatico por ${trigger.term_type_name || 'tipo de periodo'}`;
-  }
-  if (trigger.trigger_mode === 'manual_custom_term') {
-    return 'Manual con periodo custom';
-  }
-  return 'Manual sobre periodo existente';
+const formatTriggerLabel = (periodType) => {
+  if (!periodType) return 'Periodo';
+  return periodType.term_type_name || periodType.term_type_code || 'Tipo de periodo';
 };
 
 const getDeliverableProcessLabel = (_task = null, item = null) =>

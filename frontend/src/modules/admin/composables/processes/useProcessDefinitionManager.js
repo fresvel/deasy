@@ -490,16 +490,8 @@ export function useProcessDefinitionManager({
     }
   };
 
-  const handleDefinitionTriggerModeChange = () => {
-    if (!definitionTriggerRequiresTermType.value) {
-      definitionTriggersForm.value = {
-        ...processDefinitionAdminService.createTriggerForm(),
-        trigger_mode: definitionTriggersForm.value.trigger_mode,
-        is_active: definitionTriggersForm.value.is_active
-      };
-      definitionTriggersLabels.value = processDefinitionAdminService.createTriggerLabels();
-    }
-  };
+  // El proceso siempre corre en un tipo de periodo; ya no hay "modo de disparo" que limpiar.
+  const handleDefinitionTriggerModeChange = () => {};
 
   const openDefinitionTriggerFkSearch = () => {
     openFkSearch({ name: "term_type_id" }, (row) => {
@@ -536,7 +528,6 @@ export function useProcessDefinitionManager({
     }
     definitionTriggersEditId.value = row.id ? String(row.id) : "";
     definitionTriggersForm.value = {
-      trigger_mode: row.trigger_mode || "automatic_by_term_type",
       term_type_id: row.term_type_id ? String(row.term_type_id) : "",
       is_active: Number(row.is_active) === 1 ? "1" : "0"
     };
@@ -563,8 +554,7 @@ export function useProcessDefinitionManager({
     }
     const payload = processDefinitionAdminService.buildTriggerPayload(
       definitionId,
-      definitionTriggersForm.value,
-      definitionTriggerRequiresTermType.value
+      definitionTriggersForm.value
     );
     definitionTriggersError.value = "";
     try {

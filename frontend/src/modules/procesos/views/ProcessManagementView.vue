@@ -247,7 +247,7 @@ const PROCESS_INDEX_ITEMS = [
     label: "Procesos",
     icon: "check-double",
     description: "Gestiona procesos base, configuraciones y reglas de alcance.",
-    tables: ["processes", "process_definition_series", "process_definition_versions", "process_definition_triggers", "process_target_rules"]
+    tables: ["processes", "process_definition_series", "process_definition_versions", "process_definition_period_types", "process_target_rules"]
   },
   {
     key: "plantillas",

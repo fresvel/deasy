@@ -182,7 +182,7 @@
         </div>
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.triggers }">
           <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
-          <span>Al menos un disparador activo</span>
+          <span>Al menos un tipo de periodo activo</span>
         </div>
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts }">
           <font-awesome-icon :icon="(processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts) ? 'check' : 'times'" />
@@ -205,7 +205,7 @@
         @click="$emit('open-definition-triggers')"
       >
         <font-awesome-icon icon="sitemap" />
-        Disparadores
+        Periodos
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"

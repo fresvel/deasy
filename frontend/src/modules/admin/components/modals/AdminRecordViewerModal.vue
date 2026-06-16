@@ -242,7 +242,7 @@ const RELATED_FIELD_PRIORITY = {
   process_definition_versions: ["series_id", "definition_version", "name", "has_document", "status", "effective_from"],
   process_definition_templates: ["template_artifact_id", "instance_mode", "creates_task", "sort_order"],
   process_target_rules: ["unit_scope_type", "unit_id", "unit_type_id", "cargo_id", "position_id", "is_active"],
-  process_definition_triggers: ["trigger_mode", "term_type_id", "is_active"],
+  process_definition_period_types: ["term_type_id", "is_active"],
   process_runs: ["status", "term_id", "started_at", "completed_at"],
   tasks: ["title", "name", "status", "due_at", "created_at"],
   task_items: ["process_definition_template_id", "status", "sort_order", "created_at"],

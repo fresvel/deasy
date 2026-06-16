@@ -376,23 +376,28 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
   } else {
     await connection.query(
       `INSERT INTO process_target_rules
-       (process_definition_id, unit_scope_type, unit_id, unit_type_id, include_descendants, cargo_id, position_id, recipient_policy, priority, is_active, effective_from, effective_to)
-       VALUES (?, 'all_units', NULL, NULL, 0, NULL, NULL, 'all_matches', 1, 1, '2026-01-01', NULL)`,
+       (process_definition_id, unit_scope_type, unit_id, unit_type_id, cargo_id, position_id, recipient_policy, priority, is_active, effective_from, effective_to)
+       VALUES (?, 'all_units', NULL, NULL, NULL, NULL, 'all_matches', 1, 1, '2026-01-01', NULL)`,
       [definitionId]
     );
   }
 
-  await upsertByUnique(
+  const permTermType = await fetchOne(
     connection,
-    "process_definition_triggers",
-    {
-      process_definition_id: definitionId,
-      trigger_mode: "manual_only",
-      term_type_id: null,
-      is_active: 1
-    },
-    ["is_active"]
+    "SELECT id FROM term_types WHERE code = 'PERM' LIMIT 1"
   );
+  if (permTermType?.id) {
+    await upsertByUnique(
+      connection,
+      "process_definition_period_types",
+      {
+        process_definition_id: definitionId,
+        term_type_id: Number(permTermType.id),
+        is_active: 1
+      },
+      ["is_active"]
+    );
+  }
 
   const artifactId = await upsertByUnique(
     connection,

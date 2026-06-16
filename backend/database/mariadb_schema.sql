@@ -514,26 +514,29 @@ VALUES
   (1, 'SEM', 'Semestre', 'Periodo academico semestral', 1),
   (2, 'TRI', 'Trimestre', 'Periodo academico trimestral', 1),
   (3, 'INT', 'Intensivo', 'Periodo academico intensivo', 1),
-  (4, 'CUS', 'Custom', 'Periodo operativo personalizado', 1)
+  (4, 'CUS', 'Custom', 'Periodo operativo personalizado', 1),
+  (5, 'PERM', 'Permanente', 'Periodo sentinela de todos los tiempos', 1)
 ON DUPLICATE KEY UPDATE
   code = VALUES(code),
   name = VALUES(name),
   description = VALUES(description),
   is_active = VALUES(is_active);
 
-CREATE TABLE IF NOT EXISTS process_definition_triggers (
+-- Tipos de periodo en que corre una configuracion de proceso (M:N). Reemplaza a la antigua
+-- process_definition_triggers: ya no hay "modo de disparo"; un proceso simplemente se vincula
+-- a uno o varios term_types (incluido el sentinela 'Permanente') en los que puede lanzarse.
+CREATE TABLE IF NOT EXISTS process_definition_period_types (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_id INT NOT NULL,
-  trigger_mode ENUM('automatic_by_term_type', 'manual_only', 'manual_custom_term') NOT NULL,
-  term_type_id INT NULL,
-  normalized_term_type_id INT AS (IFNULL(term_type_id, 0)) PERSISTENT,
+  term_type_id INT NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_definition_triggers (process_definition_id, trigger_mode, normalized_term_type_id),
-  INDEX idx_process_definition_triggers_lookup (process_definition_id, trigger_mode, is_active),
-  CONSTRAINT fk_process_definition_triggers_definition
+  UNIQUE KEY uq_process_definition_period_types (process_definition_id, term_type_id),
+  INDEX idx_process_definition_period_types_lookup (process_definition_id, is_active),
+  INDEX idx_process_definition_period_types_term_type (term_type_id),
+  CONSTRAINT fk_process_definition_period_types_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
-  CONSTRAINT fk_process_definition_triggers_term_type
+  CONSTRAINT fk_process_definition_period_types_term_type
     FOREIGN KEY (term_type_id) REFERENCES term_types(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -552,14 +555,16 @@ CREATE TABLE IF NOT EXISTS process_runs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_id INT NOT NULL,
   term_id INT NULL,
-  run_mode ENUM('automatic_term', 'manual', 'reinstanced', 'repair') NOT NULL DEFAULT 'manual',
+  -- Origen de esta corrida: 'automatic' (auto-disparada al instanciar el periodo) o 'manual'
+  -- (lanzada con una accion explicita). El relanzamiento se identifica por source_run_id, no por
+  -- un valor de enum. Puede haber varias corridas por (proceso, periodo): el historial de relanzamientos.
+  run_mode ENUM('automatic', 'manual') NOT NULL DEFAULT 'manual',
   source_run_id INT NULL,
   created_by_user_id INT NULL,
   reason VARCHAR(255) NULL,
   status ENUM('pending', 'active', 'completed', 'cancelled') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_process_runs_automatic_term (process_definition_id, term_id, run_mode),
   INDEX idx_process_runs_definition (process_definition_id, status),
   INDEX idx_process_runs_term (term_id),
   CONSTRAINT fk_process_runs_definition
@@ -873,7 +878,7 @@ FOR EACH ROW
 BEGIN
   DECLARE linked_template_count INT DEFAULT 0;
   DECLARE active_rule_count INT DEFAULT 0;
-  DECLARE active_trigger_count INT DEFAULT 0;
+  DECLARE active_period_type_count INT DEFAULT 0;
 
   IF NEW.status = 'active' AND OLD.status <> 'active' THEN
     SELECT COUNT(*)
@@ -890,14 +895,14 @@ BEGIN
 
   IF NEW.status = 'active' AND OLD.status <> 'active' THEN
     SELECT COUNT(*)
-      INTO active_trigger_count
-    FROM process_definition_triggers
+      INTO active_period_type_count
+    FROM process_definition_period_types
     WHERE process_definition_id = NEW.id
       AND is_active = 1;
 
-    IF active_trigger_count < 1 THEN
+    IF active_period_type_count < 1 THEN
       SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un disparador activo en Disparadores de definiciones.';
+        SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un tipo de periodo activo en Periodos del proceso.';
     END IF;
   END IF;
 

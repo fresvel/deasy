@@ -197,25 +197,18 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
-    table: "process_definition_triggers",
-    label: "Reglas de disparo",
+    table: "process_definition_period_types",
+    label: "Periodos del proceso",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
-      {
-        name: "trigger_mode",
-        label: "Modo de disparo",
-        type: "select",
-        options: ["automatic_by_term_type", "manual_only", "manual_custom_term"],
-        required: true
-      },
-      { name: "term_type_id", label: "Tipo de periodo", type: "number" },
+      { name: "term_type_id", label: "Tipo de periodo", type: "number", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["trigger_mode"]
+    searchFields: []
   },
   {
     table: "process_runs",
@@ -228,9 +221,9 @@ export const SQL_TABLES = [
       { name: "term_id", label: "Periodo", type: "number" },
       {
         name: "run_mode",
-        label: "Modo de corrida",
+        label: "Origen de corrida",
         type: "select",
-        options: ["automatic_term", "manual", "reinstanced", "repair"],
+        options: ["automatic", "manual"],
         defaultValue: "manual"
       },
       { name: "source_run_id", label: "Corrida origen", type: "number" },

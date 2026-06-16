@@ -69,7 +69,6 @@ export const processDefinitionActivationRuleTableFields = [
 ];
 
 export const processDefinitionActivationTriggerTableFields = [
-  { name: "trigger_mode", label: "Modo" },
   { name: "term_type_id", label: "Tipo de periodo" },
   { name: "is_active", label: "Activo" }
 ];
@@ -90,7 +89,6 @@ export const definitionArtifactsTableFields = [
 
 export const definitionTriggersTableFields = [
   { name: "id", label: "ID" },
-  { name: "trigger_mode", label: "Modo" },
   { name: "term_type_id", label: "Tipo de periodo" },
   { name: "is_active", label: "Activo" }
 ];
@@ -170,7 +168,7 @@ export const RELATED_RECORD_CONFIG = {
     { table: "process_definition_versions", label: "Configuraciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
   ],
   process_definition_versions: [
-    { table: "process_definition_triggers", label: "Disparadores", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
+    { table: "process_definition_period_types", label: "Periodos del proceso", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
     { table: "process_definition_templates", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
     { table: "process_runs", label: "Corridas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },

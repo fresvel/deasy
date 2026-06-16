@@ -9,33 +9,21 @@
 
     <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
     <div v-if="context && !canManage" class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-      Esta configuracion no esta en draft. Solo puedes gestionar disparadores cuando la configuracion este en draft.
+      Esta configuracion no esta en draft. Solo puedes gestionar los periodos del proceso cuando la configuracion este en draft.
     </div>
 
     <div class="person-assignment-form">
       <div class="grid gap-3 md:grid-cols-12">
-        <AdminFieldGroup label="Modo de disparo" group-class="md:col-span-4">
-          <AdminSelectField
-            :model-value="form.trigger_mode"
-            :disabled="!canManage"
-            @update:model-value="updateField('trigger_mode', $event)"
-            @change="$emit('trigger-mode-change')"
-          >
-            <option value="automatic_by_term_type">Automático por tipo de periodo</option>
-            <option value="manual_only">Manual</option>
-            <option value="manual_custom_term">Manual con periodo a medida</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <div class="md:col-span-4">
+        <div class="md:col-span-8">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de periodo</label>
           <AdminLookupField
             :model-value="labels.term_type_id"
-            placeholder="Selecciona un tipo"
+            placeholder="Selecciona el tipo de periodo en que corre el proceso"
             readonly
             prevent-input-interaction
-            :disabled="!canManage || !requiresTermType"
-            :clear-disabled="!canManage || !form.term_type_id || !requiresTermType"
-            :search-disabled="!canManage || !requiresTermType"
+            :disabled="!canManage"
+            :clear-disabled="!canManage || !form.term_type_id"
+            :search-disabled="!canManage"
             @clear="$emit('clear-term-type')"
             @search="$emit('open-fk-search')"
           />
@@ -48,7 +36,7 @@
         </AdminFieldGroup>
       </div>
       <AdminFormActions
-        :primary-label="editId ? 'Guardar disparador' : 'Agregar disparador'"
+        :primary-label="editId ? 'Guardar periodo' : 'Agregar periodo'"
         :primary-disabled="!canSubmit"
         :show-cancel="Boolean(editId)"
         cancel-label="Cancelar edicion"
@@ -57,13 +45,13 @@
       />
     </div>
 
-    <div v-if="loading" class="text-sm text-slate-500">Cargando disparadores vinculados...</div>
+    <div v-if="loading" class="text-sm text-slate-500">Cargando periodos del proceso...</div>
     <AdminDataTable
       v-else
       :fields="tableFields"
       :rows="rows"
       :row-key="(row) => row.id"
-      empty-text="Sin disparadores vinculados."
+      empty-text="Sin periodos vinculados."
       table-class="admin-data-table min-w-full border-separate border-spacing-0 text-sm"
       responsive-class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm person-assignment-table"
       scroll-class=""
@@ -71,9 +59,6 @@
       <template #cell="{ row, field }">
         <template v-if="field.name === 'term_type_id'">
           {{ formatCell(row.term_type_id, { name: 'term_type_id' }) }}
-        </template>
-        <template v-else-if="field.name === 'trigger_mode'">
-          {{ TRIGGER_MODE_LABELS[row.trigger_mode] || row.trigger_mode || "—" }}
         </template>
         <template v-else-if="field.name === 'is_active'">
           {{ Number(row.is_active) === 1 ? "Si" : "No" }}
@@ -84,8 +69,8 @@
       </template>
       <template #actions="{ row }">
         <AdminTableActions
-          edit-tooltip="Editar disparador"
-          delete-message="Eliminar disparador"
+          edit-tooltip="Editar periodo"
+          delete-message="Eliminar periodo"
           :show-edit="canManage"
           :show-delete="canManage"
           @view="$emit('view-row', row)"
@@ -104,12 +89,6 @@ import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
-
-const TRIGGER_MODE_LABELS = {
-  automatic_by_term_type: "Automático por tipo de periodo",
-  manual_only: "Manual",
-  manual_custom_term: "Manual con periodo a medida"
-};
 
 const props = defineProps({
   context: { type: Object, default: null },

@@ -5,12 +5,12 @@
       <span v-if="context?.name">
         <strong>{{ context.name }}</strong>.
       </span>
-      ¿Deseas agregar reglas o paquetes ahora? Recuerda registrar disparadores antes de activarla.
+      ¿Deseas agregar reglas o paquetes ahora? Recuerda registrar periodos del proceso antes de activarla.
     </p>
     <template #footer>
       <AdminButton variant="secondary" @click="$emit('close')">Ahora no</AdminButton>
       <AdminButton variant="outlinePrimary" @click="$emit('open-rules')">Reglas</AdminButton>
-      <AdminButton variant="outlinePrimary" @click="$emit('open-triggers')">Disparadores</AdminButton>
+      <AdminButton variant="outlinePrimary" @click="$emit('open-triggers')">Periodos</AdminButton>
       <AdminButton variant="outlinePrimary" @click="$emit('open-artifacts')">Paquetes</AdminButton>
       <AdminButton variant="primary" @click="$emit('open-wizard')">Continuar guiado →</AdminButton>
     </template>

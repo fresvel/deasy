@@ -31,7 +31,6 @@ export class ProcessDefinitionAdminService {
 
   createTriggerForm() {
     return {
-      trigger_mode: "automatic_by_term_type",
       term_type_id: "",
       is_active: "1"
     };
@@ -161,13 +160,10 @@ export class ProcessDefinitionAdminService {
     };
   }
 
-  buildTriggerPayload(definitionId, form, requiresTermType) {
+  buildTriggerPayload(definitionId, form) {
     return {
       process_definition_id: Number(definitionId),
-      trigger_mode: form.trigger_mode || "automatic_by_term_type",
-      term_type_id: requiresTermType && form.term_type_id
-        ? Number(form.term_type_id)
-        : null,
+      term_type_id: form.term_type_id ? Number(form.term_type_id) : null,
       is_active: Number(form.is_active) === 1 ? 1 : 0
     };
   }
@@ -212,7 +208,7 @@ export class ProcessDefinitionAdminService {
   }
 
   listTriggers(processDefinitionId) {
-    return this.sqlService.list("process_definition_triggers", {
+    return this.sqlService.list("process_definition_period_types", {
       filter_process_definition_id: processDefinitionId,
       orderBy: "created_at",
       order: "desc",
@@ -222,18 +218,18 @@ export class ProcessDefinitionAdminService {
 
   saveTrigger(triggerId, payload) {
     if (triggerId) {
-      return this.sqlService.update("process_definition_triggers", { id: Number(triggerId) }, payload);
+      return this.sqlService.update("process_definition_period_types", { id: Number(triggerId) }, payload);
     }
 
-    return this.sqlService.create("process_definition_triggers", payload);
+    return this.sqlService.create("process_definition_period_types", payload);
   }
 
   deleteTrigger(triggerId) {
-    return this.sqlService.remove("process_definition_triggers", { id: Number(triggerId) });
+    return this.sqlService.remove("process_definition_period_types", { id: Number(triggerId) });
   }
 
   hasActiveTriggers(processDefinitionId) {
-    return this.sqlService.list("process_definition_triggers", {
+    return this.sqlService.list("process_definition_period_types", {
       filter_process_definition_id: processDefinitionId,
       filter_is_active: 1,
       limit: 1
