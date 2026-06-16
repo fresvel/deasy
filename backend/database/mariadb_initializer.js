@@ -193,52 +193,6 @@ const addColumnIfMissing = async (connection, tableName, columnName, definition)
   }
 };
 
-const dropColumnIfExists = async (connection, tableName, columnName) => {
-  const columnNames = await getColumnNames(connection, tableName);
-  if (!columnNames.has(columnName)) {
-    return;
-  }
-  try {
-    await connection.query(`ALTER TABLE \`${tableName}\` DROP COLUMN \`${columnName}\``);
-  } catch (error) {
-    console.warn(`⚠️  No se pudo eliminar ${tableName}.${columnName}:`, error.message);
-  }
-};
-
-const dropIndexIfExists = async (connection, tableName, indexName) => {
-  const [rows] = await connection.query(
-    `SELECT INDEX_NAME FROM information_schema.STATISTICS
-     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?
-     LIMIT 1`,
-    [tableName, indexName]
-  );
-  if (!rows.length) {
-    return;
-  }
-  try {
-    await connection.query(`ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``);
-  } catch (error) {
-    console.warn(`⚠️  No se pudo eliminar índice ${tableName}.${indexName}:`, error.message);
-  }
-};
-
-const dropForeignKeysForColumns = async (connection, tableName, columnNames) => {
-  const [rows] = await connection.query(
-    `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = ?
-       AND COLUMN_NAME IN (${columnNames.map(() => "?").join(",")})
-       AND REFERENCED_TABLE_NAME IS NOT NULL`,
-    [tableName, ...columnNames]
-  );
-  for (const row of rows) {
-    try {
-      await connection.query(`ALTER TABLE \`${tableName}\` DROP FOREIGN KEY \`${row.CONSTRAINT_NAME}\``);
-    } catch (error) {
-      console.warn(`⚠️  No se pudo eliminar FK ${row.CONSTRAINT_NAME} de ${tableName}:`, error.message);
-    }
-  }
-};
 
 const addIndexIgnoringDuplicate = async (connection, tableName, indexSql, label) => {
   try {
@@ -640,7 +594,6 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
         "ALTER TABLE process_definition_templates ADD COLUMN instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document' AFTER template_artifact_id"
       );
     }
-    await dropColumnIfExists(connection, "process_definition_templates", "is_required");
 
     const [cargoColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -822,109 +775,44 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "FK tasks.scope_unit_id"
     );
 
+    // Asigna una corrida manual a tareas que se crearon sin process_run_id
+    // (p. ej. tareas sueltas del proceso default creadas desde Home).
     try {
-      const refreshedTaskColumns = await getColumnNames(connection, "tasks");
-      if (refreshedTaskColumns.has("launch_mode")) {
-        await connection.query(
-          `INSERT INTO process_runs (
-             process_definition_id,
-             term_id,
-             run_mode,
-             created_by_user_id,
-             status
-           )
-           SELECT DISTINCT
-             t.process_definition_id,
-             t.term_id,
-             CASE
-               WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
-               ELSE 'manual'
-             END,
-             CASE
-               WHEN t.launch_mode = 'manual' THEN t.created_by_user_id
-               ELSE NULL
-             END,
-             'active'
-           FROM tasks t
-           LEFT JOIN process_runs pr
-             ON pr.process_definition_id = t.process_definition_id
-            AND pr.term_id <=> t.term_id
-            AND pr.run_mode = CASE
-              WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
-              ELSE 'manual'
-            END
-            AND (
-              t.launch_mode <> 'manual'
-              OR pr.created_by_user_id <=> t.created_by_user_id
-            )
-           WHERE t.process_run_id IS NULL
-             AND pr.id IS NULL`
-        );
+      await connection.query(
+        `INSERT INTO process_runs (
+           process_definition_id,
+           term_id,
+           run_mode,
+           created_by_user_id,
+           status
+         )
+         SELECT DISTINCT
+           t.process_definition_id,
+           t.term_id,
+           'manual',
+           t.created_by_user_id,
+           'active'
+         FROM tasks t
+         LEFT JOIN process_runs pr
+           ON pr.process_definition_id = t.process_definition_id
+          AND pr.term_id <=> t.term_id
+          AND pr.run_mode = 'manual'
+         WHERE t.process_run_id IS NULL
+           AND pr.id IS NULL`
+      );
 
-        await connection.query(
-          `UPDATE tasks t
-           INNER JOIN process_runs pr
-             ON pr.process_definition_id = t.process_definition_id
-            AND pr.term_id <=> t.term_id
-            AND pr.run_mode = CASE
-              WHEN t.launch_mode = 'automatic' THEN 'automatic_term'
-              ELSE 'manual'
-            END
-            AND (
-              t.launch_mode <> 'manual'
-              OR pr.created_by_user_id <=> t.created_by_user_id
-            )
-           SET t.process_run_id = pr.id
-           WHERE t.process_run_id IS NULL`
-        );
-      } else {
-        await connection.query(
-          `INSERT INTO process_runs (
-             process_definition_id,
-             term_id,
-             run_mode,
-             created_by_user_id,
-             status
-           )
-           SELECT DISTINCT
-             t.process_definition_id,
-             t.term_id,
-             'manual',
-             t.created_by_user_id,
-             'active'
-           FROM tasks t
-           LEFT JOIN process_runs pr
-             ON pr.process_definition_id = t.process_definition_id
-            AND pr.term_id <=> t.term_id
-            AND pr.run_mode = 'manual'
-           WHERE t.process_run_id IS NULL
-             AND pr.id IS NULL`
-        );
-
-        await connection.query(
-          `UPDATE tasks t
-           INNER JOIN process_runs pr
-             ON pr.process_definition_id = t.process_definition_id
-            AND pr.term_id <=> t.term_id
-            AND pr.run_mode = 'manual'
-           SET t.process_run_id = pr.id
-           WHERE t.process_run_id IS NULL`
-        );
-      }
+      await connection.query(
+        `UPDATE tasks t
+         INNER JOIN process_runs pr
+           ON pr.process_definition_id = t.process_definition_id
+          AND pr.term_id <=> t.term_id
+          AND pr.run_mode = 'manual'
+         SET t.process_run_id = pr.id
+         WHERE t.process_run_id IS NULL`
+      );
     } catch (error) {
       console.warn("⚠️  No se pudo backfillear tasks.process_run_id:", error.message);
     }
-
-    await dropIndexIfExists(connection, "tasks", "uq_tasks_automatic_term");
-    await dropIndexIfExists(connection, "tasks", "uq_tasks_automatic_term_unit");
-    await dropIndexIfExists(connection, "tasks", "uq_tasks_manual_term_user");
-    await dropIndexIfExists(connection, "tasks", "uq_tasks_manual_term_user_unit");
-    await dropIndexIfExists(connection, "tasks", "idx_tasks_launch");
-    await dropForeignKeysForColumns(connection, "tasks", ["parent_task_id"]);
-    await dropColumnIfExists(connection, "tasks", "automatic_flag");
-    await dropColumnIfExists(connection, "tasks", "manual_user_flag");
-    await dropColumnIfExists(connection, "tasks", "parent_task_id");
-    await dropColumnIfExists(connection, "tasks", "launch_mode");
 
     const [taskItemColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -1020,7 +908,6 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     } catch (error) {
       console.warn("⚠️  No se pudo backfillear metadata de task_items:", error.message);
     }
-    await dropIndexIfExists(connection, "task_items", "uq_task_items_task_template");
     await addIndexIgnoringDuplicate(
       connection,
       "task_items",

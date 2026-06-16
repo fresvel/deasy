@@ -5,8 +5,7 @@ import {
   ensureDocumentsForTask,
   ensureDocumentForTaskItem,
   ensureFillFlowForDocumentVersion,
-  ensureSignatureFlowForDocumentVersion,
-  updateParentTaskStatusForTask
+  ensureSignatureFlowForDocumentVersion
 } from "./TaskGenerationService.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
 import bcrypt from "bcrypt";
@@ -3171,10 +3170,6 @@ export default class SqlAdminService {
         throw new Error("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
       }
       throw error;
-    }
-    if (tableName === "tasks" && Object.prototype.hasOwnProperty.call(updates, "status")) {
-      const taskId = existing.id ?? keyPayload.id;
-      await updateParentTaskStatusForTask(taskId);
     }
     const updatedRow = sanitizePersonRow(tableName, { ...keyPayload, ...updates });
     if (processDefinitionActivationNotice) {

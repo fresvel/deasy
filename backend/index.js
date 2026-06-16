@@ -8,7 +8,6 @@ import cors from "cors"
 import "./database/mongoose.js"
 import { assertMariaDBConnection } from "./config/mariadb.js";
 import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
-import { migrateTasksToPerUnit } from "./services/admin/TaskGenerationService.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -1284,7 +1283,6 @@ const initializeMariaDBWithRetry = async () => {
       await assertMariaDBConnection();
       await ensureMariaDBSchema({ reset: shouldResetSchema });
       console.log("✅ MariaDB inicializada correctamente");
-      await migrateTasksToPerUnit();
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxAttempts;
