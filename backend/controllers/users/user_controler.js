@@ -10,6 +10,7 @@ import RbacService from "../../services/auth/RbacService.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   createDocumentInstanceForTaskItem,
+  ensureDocumentForTaskItem,
   hydrateTaskFromDefinition,
   hydrateGeneralTask,
   resolveOriginUnitIdForTaskItem,
@@ -592,7 +593,6 @@ const getDefinitionTemplates = async (pool, definitionId) => {
        pdt.id,
        pdt.instance_mode,
        pdt.creates_task,
-       pdt.is_required,
        pdt.sort_order,
        tar.id AS template_artifact_id,
        tar.display_name AS template_artifact_name,
@@ -608,7 +608,6 @@ const getDefinitionTemplates = async (pool, definitionId) => {
        pdt.id,
        pdt.instance_mode,
        pdt.creates_task,
-       pdt.is_required,
        pdt.sort_order,
        tar.id,
        tar.display_name,
@@ -659,20 +658,20 @@ const getUserOwnedTemplateArtifacts = async (pool, userId) => {
 
 const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, scopeUnitId = null) => {
   const unitFilter = scopeUnitId
-    ? `AND EXISTS (
-         SELECT 1 FROM unit_positions up_scope
+    ? `AND COALESCE(t.scope_unit_id, (
+         SELECT up_scope.unit_id
+         FROM unit_positions up_scope
          WHERE up_scope.id = t.responsible_position_id
-           AND up_scope.unit_id = ${Number(scopeUnitId)}
-       )`
+         LIMIT 1
+       )) = ${Number(scopeUnitId)}`
     : "";
 
   const [rows] = await pool.query(
     `SELECT
        t.id,
        t.term_id,
-       t.launch_mode,
        t.created_by_user_id,
-       t.parent_task_id,
+       t.scope_unit_id,
        t.responsible_position_id,
        t.description,
        t.start_date,
@@ -683,7 +682,7 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, s
        tt.code AS term_type_code,
        tt.name AS term_type_name,
        rp.title AS responsible_position_title,
-       rp.unit_id AS responsible_unit_id,
+       COALESCE(t.scope_unit_id, rp.unit_id) AS responsible_unit_id,
        COALESCE(ru.label, ru.name) AS responsible_unit_label
      FROM tasks t
      INNER JOIN terms trm ON trm.id = t.term_id
@@ -698,7 +697,10 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, s
            SELECT 1
            FROM task_items ti_owner
            WHERE ti_owner.task_id = t.id
-             AND ti_owner.assigned_person_id = ?
+             AND (
+               ti_owner.assigned_person_id = ?
+               OR ti_owner.target_person_id = ?
+             )
          )
          OR EXISTS (
            SELECT 1
@@ -735,7 +737,7 @@ const getUserAccessibleTasksForDefinition = async (pool, userId, definitionId, s
          )
        )
      ORDER BY t.start_date DESC, t.id DESC`,
-    [definitionId, userId, userId, userId, userId, userId, userId, userId]
+    [definitionId, userId, userId, userId, userId, userId, userId, userId, userId]
   );
   return rows;
 };
@@ -751,12 +753,18 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.task_id,
        ti.process_definition_template_id,
        ti.template_artifact_id,
+       ti.origin_kind,
+       ti.title,
        tar.template_seed_id,
        pdt.instance_mode,
        ti.sort_order,
        ti.responsible_position_id,
        ti.assigned_person_id,
+       ti.target_unit_id,
+       ti.target_position_id,
+       ti.target_person_id,
        COALESCE(
+         ti.target_person_id,
          ti.assigned_person_id,
          (
            SELECT ta.assigned_person_id
@@ -782,11 +790,15 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.user_started_at,
        ti.status,
        tar.display_name AS template_artifact_name,
-       rp.title AS responsible_position_title
+       rp.title AS responsible_position_title,
+       COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
+       target_pos.title AS target_position_title
      FROM task_items ti
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
+     LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
+     LEFT JOIN unit_positions target_pos ON target_pos.id = ti.target_position_id
      WHERE ti.task_id IN (${placeholders})
      ORDER BY ti.task_id ASC, ti.sort_order ASC, ti.id ASC`,
     taskIds
@@ -901,6 +913,10 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
        ti.process_definition_template_id,
        pdt.instance_mode,
        ti.template_artifact_id,
+       ti.origin_kind,
+       ti.target_unit_id,
+       ti.target_position_id,
+       ti.target_person_id,
        ti.start_date,
        ti.end_date,
        ti.user_started_at,
@@ -910,6 +926,7 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
        COALESCE(
+         ti.target_person_id,
          ti.assigned_person_id,
          (
            SELECT ta.assigned_person_id
@@ -930,12 +947,12 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
            LIMIT 1
          )
        ) AS resolved_owner_person_id,
-       COALESCE(task_pos.unit_id, responsible_pos.unit_id) AS scope_unit_id
+       COALESCE(ti.target_unit_id, t.scope_unit_id, task_pos.unit_id, responsible_pos.unit_id) AS scope_unit_id
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN terms trm ON trm.id = t.term_id
-     INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
      LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
@@ -943,6 +960,8 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
        AND t.process_definition_id = ?
        AND (
          t.created_by_user_id = ?
+         OR ti.target_person_id = ?
+         OR ti.assigned_person_id = ?
          OR EXISTS (
            SELECT 1
            FROM task_assignments ta
@@ -974,9 +993,9 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
            WHERE d.task_item_id = ti.id
              AND sr.assigned_person_id = ?
          )
-       )
+     )
      LIMIT 1`,
-    [taskItemId, definitionId, userId, userId, userId, userId, userId, userId, userId]
+    [taskItemId, definitionId, userId, userId, userId, userId, userId, userId, userId, userId]
   );
   return rows?.[0] || null;
 };
@@ -2613,6 +2632,14 @@ export const createUserProcessTask = async (req, res) => {
 
   const termId = req.body?.term_id ? Number(req.body.term_id) : null;
   const customTerm = req.body?.custom_term ?? null;
+  const requestedScopeUnitId = req.body?.scope_unit_id ? Number(req.body.scope_unit_id) : null;
+  const accessibleScopeUnitIds = Array.isArray(accessPanel.definition?.chat_context?.accessible_scope_unit_ids)
+    ? accessPanel.definition.chat_context.accessible_scope_unit_ids.map((value) => Number(value)).filter(Boolean)
+    : [];
+  const scopeUnitId = requestedScopeUnitId || accessibleScopeUnitIds[0] || null;
+  if (requestedScopeUnitId && accessibleScopeUnitIds.length && !accessibleScopeUnitIds.includes(requestedScopeUnitId)) {
+    return res.status(403).json({ message: "No tienes acceso al alcance seleccionado." });
+  }
 
   const connection = await pool.getConnection();
   try {
@@ -2675,23 +2702,28 @@ export const createUserProcessTask = async (req, res) => {
       throw new Error("Debes seleccionar un periodo o crear uno personalizado.");
     }
 
+    const responsiblePositionId = scopeUnitId
+      ? await resolveUserPositionInUnit(connection, userId, scopeUnitId)
+      : null;
+
     const [result] = await connection.query(
       `INSERT INTO tasks (
          process_definition_id,
          term_id,
-         launch_mode,
+         scope_unit_id,
          created_by_user_id,
-         parent_task_id,
          responsible_position_id,
          description,
          start_date,
          end_date,
          status
-       ) VALUES (?, ?, 'manual', ?, NULL, NULL, ?, ?, ?, 'pendiente')`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
       [
         definitionId,
         term.id,
+        scopeUnitId,
         userId,
+        responsiblePositionId,
         req.body?.description ? String(req.body.description) : null,
         term.start_date,
         term.end_date || null
@@ -2919,6 +2951,7 @@ export const downloadDeliverableTemplate = async (req, res) => {
          AND t.process_definition_id = ?
          AND (
            t.created_by_user_id = ?
+           OR ti.target_person_id = ?
            OR ti.assigned_person_id = ?
            OR EXISTS (
              SELECT 1
@@ -2935,7 +2968,16 @@ export const downloadDeliverableTemplate = async (req, res) => {
            )
          )
        LIMIT 1`,
-      [taskItemId, definitionId, authenticatedUserId, authenticatedUserId, authenticatedUserId, authenticatedUserId, authenticatedUserId]
+      [
+        taskItemId,
+        definitionId,
+        authenticatedUserId,
+        authenticatedUserId,
+        authenticatedUserId,
+        authenticatedUserId,
+        authenticatedUserId,
+        authenticatedUserId
+      ]
     );
     const target = rows?.[0];
     if (!target) {
@@ -3499,10 +3541,9 @@ export const downloadDeliverableAttachment = async (req, res) => {
 };
 
 // ──────────────────────────────────────────────────────────────────────────
-// Fase B: tareas libres (proceso General) y derivadas de un entregable.
-// - Libre (3c): tarea del proceso General, periodo custom, asignada al creador.
-// - Derivada (3b): igual pero parent_task_id = tarea del entregable origen,
-//   heredando la unidad/contexto de ese entregable.
+// Fase B: tareas sueltas (proceso default) y entregables agregados.
+// - Libre: tarea del proceso default, periodo custom, asignada al creador.
+// - Derivada: agrega un task_item.user_added en la tarea origen; no crea tarea hija.
 // ──────────────────────────────────────────────────────────────────────────
 
 const GENERAL_PROCESS_SLUG = "default";
@@ -3546,14 +3587,17 @@ export const createGeneralTask = async (req, res) => {
   const title = String(req.body?.title || "").trim();
   const description = String(req.body?.description || "").trim() || null;
   const customTerm = req.body?.custom_term ?? null;
-  const parentTaskId = req.body?.parent_task_id ? Number(req.body.parent_task_id) : null;
+  const sourceTaskId = req.body?.source_task_id
+    ? Number(req.body.source_task_id)
+    : (req.body?.parent_task_id ? Number(req.body.parent_task_id) : null);
+  const sourceTaskItemId = req.body?.source_task_item_id ? Number(req.body.source_task_item_id) : null;
   const requestedUnitId = req.body?.unit_id ? Number(req.body.unit_id) : null;
 
   if (!title) {
     return res.status(400).json({ message: "Debes indicar un título para la tarea." });
   }
-  if (mode === "derived" && (!parentTaskId || Number.isNaN(parentTaskId))) {
-    return res.status(400).json({ message: "Se requiere la tarea de origen para una tarea derivada." });
+  if (mode === "derived" && (!sourceTaskId || Number.isNaN(sourceTaskId))) {
+    return res.status(400).json({ message: "Se requiere la tarea de origen para agregar el entregable." });
   }
 
   const pool = getMariaDBPool();
@@ -3570,24 +3614,121 @@ export const createGeneralTask = async (req, res) => {
       throw new Error("El proceso General no está disponible. Ejecuta el seed correspondiente.");
     }
 
-    // Resolver unidad de contexto.
-    let unitId = requestedUnitId;
     if (mode === "derived") {
-      // Hereda la unidad de la tarea/entregable de origen.
-      const [parentRows] = await connection.query(
-        `SELECT t.id, rp.unit_id AS responsible_unit_id
+      const [sourceRows] = await connection.query(
+        `SELECT
+           t.id,
+           t.process_definition_id,
+           t.term_id,
+           COALESCE(t.scope_unit_id, rp.unit_id) AS scope_unit_id,
+           t.responsible_position_id,
+           t.start_date,
+           t.end_date
          FROM tasks t
          LEFT JOIN unit_positions rp ON rp.id = t.responsible_position_id
          WHERE t.id = ?
          LIMIT 1`,
-        [parentTaskId]
+        [sourceTaskId]
       );
-      const parent = parentRows?.[0];
-      if (!parent) {
+      const sourceTask = sourceRows?.[0];
+      if (!sourceTask) {
         throw new Error("La tarea de origen no existe.");
       }
-      unitId = parent.responsible_unit_id || requestedUnitId || null;
+
+      const sourceUnitId = sourceTask.scope_unit_id || requestedUnitId || null;
+      const responsiblePositionId = await resolveUserPositionInUnit(connection, authenticatedUserId, sourceUnitId);
+      if (!responsiblePositionId) {
+        throw new Error("No tienes una posición vigente en la unidad de la tarea origen.");
+      }
+
+      const [defaultTemplateRows] = await connection.query(
+        `SELECT pdt.id, pdt.template_artifact_id
+         FROM process_definition_templates pdt
+         WHERE pdt.process_definition_id = ?
+           AND pdt.creates_task = 1
+         ORDER BY pdt.sort_order ASC, pdt.id ASC
+         LIMIT 1`,
+        [definitionId]
+      );
+      const defaultTemplateArtifactId = defaultTemplateRows?.[0]?.template_artifact_id
+        ? Number(defaultTemplateRows[0].template_artifact_id)
+        : null;
+      const defaultDefinitionTemplateId = defaultTemplateRows?.[0]?.id
+        ? Number(defaultTemplateRows[0].id)
+        : null;
+      if (!defaultTemplateArtifactId || !defaultDefinitionTemplateId) {
+        throw new Error("El proceso default no tiene una plantilla base para entregables agregados.");
+      }
+
+      const [itemResult] = await connection.query(
+        `INSERT INTO task_items (
+           task_id,
+           process_definition_template_id,
+           template_artifact_id,
+           origin_kind,
+           title,
+           sort_order,
+           created_by_person_id,
+           source_task_item_id,
+           target_unit_id,
+           target_position_id,
+           target_person_id,
+           responsible_position_id,
+           assigned_person_id,
+           start_date,
+           end_date,
+           status
+         ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+        [
+          sourceTaskId,
+          defaultDefinitionTemplateId,
+          defaultTemplateArtifactId,
+          description ? `${title}\n\n${description}` : title,
+          authenticatedUserId,
+          sourceTaskItemId || null,
+          sourceUnitId,
+          responsiblePositionId,
+          authenticatedUserId,
+          responsiblePositionId,
+          authenticatedUserId,
+          sourceTask.start_date,
+          sourceTask.end_date || null
+        ]
+      );
+
+      const taskItemId = Number(itemResult.insertId);
+      const [taskItemRows] = await connection.query(
+        `SELECT
+           ti.id,
+           ti.task_id,
+           ti.template_artifact_id,
+           ti.assigned_person_id,
+           ti.target_unit_id,
+           ti.target_person_id,
+           ti.responsible_position_id,
+           COALESCE(ti.title, tar.display_name) AS template_artifact_name
+         FROM task_items ti
+         LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+         WHERE ti.id = ?
+         LIMIT 1`,
+        [taskItemId]
+      );
+      await ensureDocumentForTaskItem(connection, taskItemRows[0]);
+      await connection.commit();
+
+      return res.json({
+        result: "ok",
+        mode,
+        task_id: sourceTaskId,
+        task_item_id: taskItemId,
+        definition_id: sourceTask.process_definition_id,
+        unit_id: sourceUnitId,
+        responsible_position_id: responsiblePositionId,
+      });
     }
+
+    // Resolver unidad de contexto para tarea suelta.
+    let unitId = requestedUnitId;
 
     // Posición del creador en la unidad (responsable de la nueva tarea).
     const responsiblePositionId = await resolveUserPositionInUnit(connection, authenticatedUserId, unitId);
@@ -3617,14 +3758,14 @@ export const createGeneralTask = async (req, res) => {
 
     const [taskResult] = await connection.query(
       `INSERT INTO tasks (
-         process_definition_id, term_id, launch_mode, created_by_user_id,
-         parent_task_id, responsible_position_id, description, start_date, end_date, status
-       ) VALUES (?, ?, 'manual', ?, ?, ?, ?, ?, ?, 'pendiente')`,
+         process_definition_id, term_id, scope_unit_id, created_by_user_id,
+         responsible_position_id, description, start_date, end_date, status
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
       [
         definitionId,
         termId,
+        unitId,
         authenticatedUserId,
-        mode === "derived" ? parentTaskId : null,
         responsiblePositionId,
         description ? `${title}\n\n${description}` : title,
         startDate,

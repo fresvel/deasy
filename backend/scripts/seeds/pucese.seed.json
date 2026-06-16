@@ -4365,7 +4365,8 @@
           "process_definition_id": 6,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": null,          "cargo_id": 1,
+          "unit_type_id": null,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4379,7 +4380,8 @@
           "process_definition_id": 8,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 2,
+          "unit_type_id": 6,
+          "cargo_id": 2,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4393,7 +4395,8 @@
           "process_definition_id": 17,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": null,
+          "unit_type_id": 6,
+          "cargo_id": null,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4407,7 +4410,8 @@
           "process_definition_id": 18,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4421,7 +4425,8 @@
           "process_definition_id": 19,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4435,7 +4440,8 @@
           "process_definition_id": 20,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4449,7 +4455,8 @@
           "process_definition_id": 21,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4463,7 +4470,8 @@
           "process_definition_id": 22,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4477,7 +4485,8 @@
           "process_definition_id": 23,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4491,7 +4500,8 @@
           "process_definition_id": 24,
           "unit_scope_type": "unit_exact",
           "unit_id": 12,
-          "unit_type_id": null,          "cargo_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4505,7 +4515,8 @@
           "process_definition_id": 25,
           "unit_scope_type": "unit_type",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4519,7 +4530,8 @@
           "process_definition_id": 25,
           "unit_scope_type": "unit_type",
           "unit_id": null,
-          "unit_type_id": 7,          "cargo_id": 1,
+          "unit_type_id": 7,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4533,7 +4545,8 @@
           "process_definition_id": 26,
           "unit_scope_type": "unit_type",
           "unit_id": null,
-          "unit_type_id": 6,          "cargo_id": 1,
+          "unit_type_id": 6,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4547,7 +4560,8 @@
           "process_definition_id": 26,
           "unit_scope_type": "unit_type",
           "unit_id": null,
-          "unit_type_id": 7,          "cargo_id": 1,
+          "unit_type_id": 7,
+          "cargo_id": 1,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4561,7 +4575,8 @@
           "process_definition_id": 28,
           "unit_scope_type": "all_units",
           "unit_id": null,
-          "unit_type_id": null,          "cargo_id": null,
+          "unit_type_id": null,
+          "cargo_id": null,
           "position_id": null,
           "recipient_policy": "all_matches",
           "priority": 1,
@@ -4788,6 +4803,7 @@
         "source_version",
         "storage_version",
         "artifact_stage",
+        "template_scope",
         "bucket",
         "base_object_prefix",
         "available_formats",
@@ -4815,7 +4831,8 @@
         "meta_object_key": "varchar(255)",
         "content_hash": "varchar(64)",
         "is_active": "tinyint(1)",
-        "created_at": "datetime"
+        "created_at": "datetime",
+        "template_scope": "enum(official,user_reusable,ad_hoc)"
       },
       "rows": [
         {
@@ -4836,7 +4853,8 @@
           "meta_object_key": "System/tpl_investigación_formativa_informe_carrera/v0001/meta.yaml",
           "content_hash": "8fdac6ac75f7d1815d45b32db6b21fb7fb536568e62dceb2d05c116c862817a5",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 2,
@@ -4856,7 +4874,8 @@
           "meta_object_key": "System/tpl_investigación_formativa_informe_docente/v0001/meta.yaml",
           "content_hash": "bad01a018afa5deff1766fe980bef57b8a91c1d31b812020febf51f9ecb3f4c6",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 3,
@@ -4876,7 +4895,8 @@
           "meta_object_key": "System/tpl_investigación_formativa_informe_estudiantes/v0001/meta.yaml",
           "content_hash": "06c6f9354e280c4ba49ead8ec07952cbc2774280821f86cd64668f687d69ca9d",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 4,
@@ -4896,7 +4916,8 @@
           "meta_object_key": "System/tpl_investigación_formativa_plan_carrera/v0001/meta.yaml",
           "content_hash": "a668c175d0e24092745b7ca9f7987a0e0d2e1c5adb1c0edf81566b6e0e53b9fd",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 5,
@@ -4916,7 +4937,8 @@
           "meta_object_key": "System/tpl_investigación_formativa_plan_docente/v0001/meta.yaml",
           "content_hash": "fac452a4dfa4bab07813e64609da0d75227918baafbe17894b558b8905c840d4",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 6,
@@ -4936,7 +4958,8 @@
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_planes_trabajo_uic/v0001/meta.yaml",
           "content_hash": "f1c9e6f6f74e7e1c64894d3493076421e8d05de3373b5f5334a97599c7b8b50e",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 7,
@@ -4956,7 +4979,8 @@
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_ieee/v0001/meta.yaml",
           "content_hash": "ee75422aa14d9e0dde98fb06d7876174095d02f5dfb63e6b6f939c4f07964436",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 8,
@@ -4976,7 +5000,8 @@
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_mdpi/v0001/meta.yaml",
           "content_hash": "1a436a3599a7fa6d12fdaad14d2b863ff7e0eb312e56f4a6332047bb25413126",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 9,
@@ -4996,7 +5021,8 @@
           "meta_object_key": "System/tpl_investigación_integración_artículos_académicos_revistas_springer/v0001/meta.yaml",
           "content_hash": "f45ae5589fc2b017589f3f1f9bd31553a4d5656dd787ad8c4f6d3daa362832e8",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 10,
@@ -5016,7 +5042,8 @@
           "meta_object_key": "System/tpl_investigación_productiva_informe_carrera/v0001/meta.yaml",
           "content_hash": "95c07d5e49f43d9e8282818efc0cb2b4fc6a9da82794b05934707d24632b9fa0",
           "is_active": 1,
-          "created_at": "2026-03-01 13:06:25"
+          "created_at": "2026-03-01 13:06:25",
+          "template_scope": "official"
         },
         {
           "id": 11,
@@ -5036,7 +5063,8 @@
           "meta_object_key": "System/tpl_investigación_productiva_informe_docente/v0001/meta.yaml",
           "content_hash": "147c457f67c07bf080455887b43c5d3875d93751d875a7f9c43a45a1e0a793a8",
           "is_active": 1,
-          "created_at": "2026-03-01 19:07:59"
+          "created_at": "2026-03-01 19:07:59",
+          "template_scope": "official"
         },
         {
           "id": 12,
@@ -5056,7 +5084,8 @@
           "meta_object_key": "System/tpl_talento_humano_requerimiento/v0001/meta.yaml",
           "content_hash": "ec843dafbc258abe566ecc50cff6020bc892728b176a82537480a3e7dfebfd39",
           "is_active": 1,
-          "created_at": "2026-04-04 15:38:39"
+          "created_at": "2026-04-04 15:38:39",
+          "template_scope": "official"
         },
         {
           "id": 13,
@@ -5076,7 +5105,8 @@
           "meta_object_key": "System/tpl_talento_humano_requerimiento_docente/v0001/meta.yaml",
           "content_hash": "1bc48b98be39d038b440db9b54fd257994bc4c333270ffdbafb43e5b6debf0d1",
           "is_active": 1,
-          "created_at": "2026-04-04 15:40:18"
+          "created_at": "2026-04-04 15:40:18",
+          "template_scope": "official"
         },
         {
           "id": 14,
@@ -5096,7 +5126,8 @@
           "meta_object_key": "System/tpl_talento_humano_requerimiento_administrativo/v0001/meta.yaml",
           "content_hash": "6c3e99130030a42a28b6ff62200e6b1424ae5032ff17a943abd42d3de37bf7dc",
           "is_active": 1,
-          "created_at": "2026-04-04 15:46:13"
+          "created_at": "2026-04-04 15:46:13",
+          "template_scope": "official"
         },
         {
           "id": 22,
@@ -5116,7 +5147,8 @@
           "meta_object_key": "System/tpl_default_memo/v0001/meta.yaml",
           "content_hash": null,
           "is_active": 1,
-          "created_at": "2026-06-02 15:58:11"
+          "created_at": "2026-06-02 15:58:11",
+          "template_scope": "official"
         }
       ]
     },
@@ -5128,7 +5160,6 @@
         "template_artifact_id",
         "instance_mode",
         "creates_task",
-        "is_required",
         "sort_order",
         "created_at"
       ],
@@ -5138,7 +5169,6 @@
         "template_artifact_id": "int(11)",
         "instance_mode": "enum('single_document','owner_many_documents')",
         "creates_task": "tinyint(1)",
-        "is_required": "tinyint(1)",
         "sort_order": "int(11)",
         "created_at": "datetime"
       },
@@ -5149,7 +5179,6 @@
           "template_artifact_id": 4,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:11:38"
         },
@@ -5159,7 +5188,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:11:52"
         },
@@ -5169,7 +5197,6 @@
           "template_artifact_id": 4,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:20:55"
         },
@@ -5179,7 +5206,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:20:55"
         },
@@ -5189,7 +5215,6 @@
           "template_artifact_id": 4,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 22:43:19"
         },
@@ -5199,7 +5224,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 22:43:19"
         },
@@ -5209,7 +5233,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:46:49"
         },
@@ -5219,7 +5242,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:50:29"
         },
@@ -5229,7 +5251,6 @@
           "template_artifact_id": 4,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:58:33"
         },
@@ -5239,7 +5260,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:58:33"
         },
@@ -5249,7 +5269,6 @@
           "template_artifact_id": 4,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:00:51"
         },
@@ -5259,7 +5278,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:00:51"
         },
@@ -5269,7 +5287,6 @@
           "template_artifact_id": 4,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:01:43"
         },
@@ -5279,7 +5296,6 @@
           "template_artifact_id": 10,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:01:43"
         },
@@ -5289,7 +5305,6 @@
           "template_artifact_id": 13,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-04-04 18:16:46"
         },
@@ -5299,7 +5314,6 @@
           "template_artifact_id": 13,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-04-05 02:54:24"
         },
@@ -5309,7 +5323,6 @@
           "template_artifact_id": 13,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-04-05 02:58:57"
         },
@@ -5319,7 +5332,6 @@
           "template_artifact_id": 22,
           "instance_mode": "single_document",
           "creates_task": 1,
-          "is_required": 1,
           "sort_order": 1,
           "created_at": "2026-06-02 15:58:11"
         }
@@ -5332,11 +5344,8 @@
         "process_definition_id",
         "process_run_id",
         "term_id",
-        "launch_mode",
         "created_by_user_id",
-        "automatic_flag",
-        "manual_user_flag",
-        "parent_task_id",
+        "scope_unit_id",
         "responsible_position_id",
         "description",
         "comments_thread_ref",
@@ -5350,18 +5359,15 @@
         "process_definition_id": "int(11)",
         "process_run_id": "int(11)",
         "term_id": "int(11)",
-        "launch_mode": "enum('automatic','manual')",
         "created_by_user_id": "int(11)",
-        "automatic_flag": "tinyint(1)",
-        "manual_user_flag": "int(11)",
-        "parent_task_id": "int(11)",
         "responsible_position_id": "int(11)",
         "description": "text",
         "comments_thread_ref": "varchar(64)",
         "start_date": "date",
         "end_date": "date",
         "status": "varchar(30)",
-        "created_at": "datetime"
+        "created_at": "datetime",
+        "scope_unit_id": "int(11)"
       },
       "rows": [
         {
@@ -5369,1080 +5375,900 @@
           "process_definition_id": 18,
           "process_run_id": 1,
           "term_id": 2,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-03-02 00:05:12"
+          "created_at": "2026-03-02 00:05:12",
+          "scope_unit_id": 1
         },
         {
           "id": 2,
           "process_definition_id": 20,
           "process_run_id": 2,
           "term_id": 4,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-03-23",
           "status": "pendiente",
-          "created_at": "2026-03-02 00:55:56"
+          "created_at": "2026-03-02 00:55:56",
+          "scope_unit_id": 1
         },
         {
           "id": 3,
           "process_definition_id": 20,
           "process_run_id": 3,
           "term_id": 5,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-03-02 00:59:50"
+          "created_at": "2026-03-02 00:59:50",
+          "scope_unit_id": 1
         },
         {
           "id": 4,
           "process_definition_id": 20,
           "process_run_id": 4,
           "term_id": 6,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-03-02 01:02:46"
+          "created_at": "2026-03-02 01:02:46",
+          "scope_unit_id": 1
         },
         {
           "id": 5,
           "process_definition_id": 21,
           "process_run_id": 5,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-03-02 01:05:39"
+          "created_at": "2026-03-02 01:05:39",
+          "scope_unit_id": 1
         },
         {
           "id": 6,
           "process_definition_id": 20,
           "process_run_id": 6,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-03-02 01:05:39"
+          "created_at": "2026-03-02 01:05:39",
+          "scope_unit_id": 1
         },
         {
           "id": 7,
           "process_definition_id": 21,
           "process_run_id": 7,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-03-02 01:07:31"
+          "created_at": "2026-03-02 01:07:31",
+          "scope_unit_id": 1
         },
         {
           "id": 8,
           "process_definition_id": 20,
           "process_run_id": 8,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-03-02 01:07:31"
+          "created_at": "2026-03-02 01:07:31",
+          "scope_unit_id": 1
         },
         {
           "id": 9,
           "process_definition_id": 21,
           "process_run_id": 9,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-03-04 17:14:56"
+          "created_at": "2026-03-04 17:14:56",
+          "scope_unit_id": 1
         },
         {
           "id": 10,
           "process_definition_id": 20,
           "process_run_id": 10,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-03-04 17:14:56"
+          "created_at": "2026-03-04 17:14:56",
+          "scope_unit_id": 1
         },
         {
           "id": 11,
           "process_definition_id": 21,
           "process_run_id": 11,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "scope_unit_id": 1
         },
         {
           "id": 12,
           "process_definition_id": 20,
           "process_run_id": 12,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "scope_unit_id": 1
         },
         {
           "id": 13,
           "process_definition_id": 24,
           "process_run_id": 13,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 20,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "scope_unit_id": 12
         },
         {
           "id": 14,
           "process_definition_id": 21,
           "process_run_id": 14,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "scope_unit_id": 1
         },
         {
           "id": 15,
           "process_definition_id": 20,
           "process_run_id": 15,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "scope_unit_id": 1
         },
         {
           "id": 16,
           "process_definition_id": 26,
           "process_run_id": 16,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 3,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "scope_unit_id": 1
         },
         {
           "id": 61,
           "process_definition_id": 18,
           "process_run_id": 1,
           "term_id": 2,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 62,
           "process_definition_id": 18,
           "process_run_id": 1,
           "term_id": 2,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 63,
           "process_definition_id": 18,
           "process_run_id": 1,
           "term_id": 2,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 64,
           "process_definition_id": 20,
           "process_run_id": 2,
           "term_id": 4,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-03-23",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 65,
           "process_definition_id": 20,
           "process_run_id": 2,
           "term_id": 4,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-03-23",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 66,
           "process_definition_id": 20,
           "process_run_id": 2,
           "term_id": 4,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-03-23",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 67,
           "process_definition_id": 20,
           "process_run_id": 3,
           "term_id": 5,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 68,
           "process_definition_id": 20,
           "process_run_id": 3,
           "term_id": 5,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 69,
           "process_definition_id": 20,
           "process_run_id": 3,
           "term_id": 5,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-02-23",
           "end_date": "2026-04-05",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 70,
           "process_definition_id": 20,
           "process_run_id": 4,
           "term_id": 6,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 71,
           "process_definition_id": 20,
           "process_run_id": 4,
           "term_id": 6,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 72,
           "process_definition_id": 20,
           "process_run_id": 4,
           "term_id": 6,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-01",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 73,
           "process_definition_id": 21,
           "process_run_id": 5,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 74,
           "process_definition_id": 21,
           "process_run_id": 5,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 75,
           "process_definition_id": 21,
           "process_run_id": 5,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 76,
           "process_definition_id": 20,
           "process_run_id": 6,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 77,
           "process_definition_id": 20,
           "process_run_id": 6,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 78,
           "process_definition_id": 20,
           "process_run_id": 6,
           "term_id": 7,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-05",
           "end_date": "2026-03-13",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 79,
           "process_definition_id": 21,
           "process_run_id": 7,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 80,
           "process_definition_id": 21,
           "process_run_id": 7,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 81,
           "process_definition_id": 21,
           "process_run_id": 7,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 82,
           "process_definition_id": 20,
           "process_run_id": 8,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 83,
           "process_definition_id": 20,
           "process_run_id": 8,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 84,
           "process_definition_id": 20,
           "process_run_id": 8,
           "term_id": 8,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-02",
           "end_date": "2026-03-02",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 85,
           "process_definition_id": 21,
           "process_run_id": 9,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 86,
           "process_definition_id": 21,
           "process_run_id": 9,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 87,
           "process_definition_id": 21,
           "process_run_id": 9,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 88,
           "process_definition_id": 20,
           "process_run_id": 10,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 89,
           "process_definition_id": 20,
           "process_run_id": 10,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 90,
           "process_definition_id": 20,
           "process_run_id": 10,
           "term_id": 9,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-03-04",
           "end_date": "2026-03-29",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 91,
           "process_definition_id": 21,
           "process_run_id": 11,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 2
         },
         {
           "id": 92,
           "process_definition_id": 21,
           "process_run_id": 11,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 3
         },
         {
           "id": 93,
           "process_definition_id": 21,
           "process_run_id": 11,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "scope_unit_id": 7
         },
         {
           "id": 94,
           "process_definition_id": 20,
           "process_run_id": 12,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 2
         },
         {
           "id": 95,
           "process_definition_id": 20,
           "process_run_id": 12,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 3
         },
         {
           "id": 96,
           "process_definition_id": 20,
           "process_run_id": 12,
           "term_id": 11,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-06-11",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 7
         },
         {
           "id": 97,
           "process_definition_id": 21,
           "process_run_id": 14,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 2
         },
         {
           "id": 98,
           "process_definition_id": 21,
           "process_run_id": 14,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 3
         },
         {
           "id": 99,
           "process_definition_id": 21,
           "process_run_id": 14,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 7
         },
         {
           "id": 100,
           "process_definition_id": 20,
           "process_run_id": 15,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 2
         },
         {
           "id": 101,
           "process_definition_id": 20,
           "process_run_id": 15,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 3
         },
         {
           "id": 102,
           "process_definition_id": 20,
           "process_run_id": 15,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 6,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 7
         },
         {
           "id": 103,
           "process_definition_id": 26,
           "process_run_id": 16,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 4,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 2
         },
         {
           "id": 104,
           "process_definition_id": 26,
           "process_run_id": 16,
           "term_id": 12,
-          "launch_mode": "automatic",
           "created_by_user_id": null,
-          "automatic_flag": 1,
-          "manual_user_flag": null,
-          "parent_task_id": null,
           "responsible_position_id": 2,
           "description": null,
           "comments_thread_ref": null,
           "start_date": "2026-04-04",
           "end_date": "2026-05-10",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "scope_unit_id": 3
         }
       ]
     },
@@ -6453,9 +6279,16 @@
         "task_id",
         "process_definition_template_id",
         "template_artifact_id",
+        "origin_kind",
+        "title",
         "sort_order",
         "responsible_position_id",
         "assigned_person_id",
+        "created_by_person_id",
+        "source_task_item_id",
+        "target_unit_id",
+        "target_position_id",
+        "target_person_id",
         "start_date",
         "end_date",
         "user_started_at",
@@ -6474,7 +6307,14 @@
         "end_date": "date",
         "user_started_at": "datetime",
         "status": "varchar(30)",
-        "created_at": "datetime"
+        "created_at": "datetime",
+        "origin_kind": "enum(process_defined,user_added,system_added,imported)",
+        "title": "varchar(180)",
+        "created_by_person_id": "int(11)",
+        "source_task_item_id": "int(11)",
+        "target_unit_id": "int(11)",
+        "target_position_id": "int(11)",
+        "target_person_id": "int(11)"
       },
       "rows": [
         {
@@ -6489,7 +6329,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 00:05:12"
+          "created_at": "2026-03-02 00:05:12",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 2,
@@ -6503,7 +6350,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 00:05:12"
+          "created_at": "2026-03-02 00:05:12",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 3,
@@ -6517,7 +6371,14 @@
           "end_date": "2026-03-23",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 00:55:56"
+          "created_at": "2026-03-02 00:55:56",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 4,
@@ -6531,7 +6392,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 00:59:50"
+          "created_at": "2026-03-02 00:59:50",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 5,
@@ -6545,7 +6413,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:02:46"
+          "created_at": "2026-03-02 01:02:46",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 6,
@@ -6559,7 +6434,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:05:39"
+          "created_at": "2026-03-02 01:05:39",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 7,
@@ -6573,7 +6455,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:05:39"
+          "created_at": "2026-03-02 01:05:39",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 8,
@@ -6587,7 +6476,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:05:39"
+          "created_at": "2026-03-02 01:05:39",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 9,
@@ -6601,7 +6497,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:07:31"
+          "created_at": "2026-03-02 01:07:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 10,
@@ -6615,7 +6518,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:07:31"
+          "created_at": "2026-03-02 01:07:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 11,
@@ -6629,7 +6539,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-02 01:07:31"
+          "created_at": "2026-03-02 01:07:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 12,
@@ -6643,7 +6560,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-04 17:14:56"
+          "created_at": "2026-03-04 17:14:56",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 13,
@@ -6657,7 +6581,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-04 17:14:56"
+          "created_at": "2026-03-04 17:14:56",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 14,
@@ -6671,7 +6602,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-03-04 17:14:56"
+          "created_at": "2026-03-04 17:14:56",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 15,
@@ -6685,7 +6623,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 16,
@@ -6699,7 +6644,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 17,
@@ -6713,7 +6665,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 18,
@@ -6727,7 +6686,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 00:05:36"
+          "created_at": "2026-04-05 00:05:36",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 19,
@@ -6741,7 +6707,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 20,
@@ -6755,7 +6728,14 @@
           "end_date": "2026-05-10",
           "user_started_at": "2026-06-01 22:00:53",
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 21,
@@ -6769,7 +6749,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 22,
@@ -6783,7 +6770,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-04-05 03:53:42"
+          "created_at": "2026-04-05 03:53:42",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 85,
@@ -6797,7 +6791,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 86,
@@ -6811,7 +6812,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 87,
@@ -6825,7 +6833,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 88,
@@ -6839,7 +6854,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 89,
@@ -6853,7 +6875,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 90,
@@ -6867,7 +6896,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 91,
@@ -6881,7 +6917,14 @@
           "end_date": "2026-03-23",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 92,
@@ -6895,7 +6938,14 @@
           "end_date": "2026-03-23",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 93,
@@ -6909,7 +6959,14 @@
           "end_date": "2026-03-23",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 94,
@@ -6923,7 +6980,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 95,
@@ -6937,7 +7001,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 96,
@@ -6951,7 +7022,14 @@
           "end_date": "2026-04-05",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 97,
@@ -6965,7 +7043,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 98,
@@ -6979,7 +7064,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 99,
@@ -6993,7 +7085,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 100,
@@ -7007,7 +7106,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 101,
@@ -7021,7 +7127,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 102,
@@ -7035,7 +7148,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 103,
@@ -7049,7 +7169,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 104,
@@ -7063,7 +7190,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 105,
@@ -7077,7 +7211,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 106,
@@ -7091,7 +7232,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 107,
@@ -7105,7 +7253,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 108,
@@ -7119,7 +7274,14 @@
           "end_date": "2026-03-13",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 109,
@@ -7133,7 +7295,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 110,
@@ -7147,7 +7316,14 @@
           "end_date": "2026-03-02",
           "user_started_at": "2026-06-01 04:00:19",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 111,
@@ -7161,7 +7337,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 112,
@@ -7175,7 +7358,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 113,
@@ -7189,7 +7379,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 114,
@@ -7203,7 +7400,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 115,
@@ -7217,7 +7421,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 116,
@@ -7231,7 +7442,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 117,
@@ -7245,7 +7463,14 @@
           "end_date": "2026-03-02",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 118,
@@ -7259,7 +7484,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 119,
@@ -7273,7 +7505,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 120,
@@ -7287,7 +7526,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 121,
@@ -7301,7 +7547,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 122,
@@ -7315,7 +7568,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 123,
@@ -7329,7 +7589,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 124,
@@ -7343,7 +7610,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 125,
@@ -7357,7 +7631,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 126,
@@ -7371,7 +7652,14 @@
           "end_date": "2026-03-29",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 127,
@@ -7385,7 +7673,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 128,
@@ -7399,7 +7694,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 129,
@@ -7413,7 +7715,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 130,
@@ -7427,7 +7736,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 131,
@@ -7441,7 +7757,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 132,
@@ -7455,7 +7778,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:31"
+          "created_at": "2026-06-01 03:56:31",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 133,
@@ -7469,7 +7799,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 134,
@@ -7483,7 +7820,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 135,
@@ -7497,7 +7841,14 @@
           "end_date": "2026-06-11",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 136,
@@ -7511,7 +7862,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 137,
@@ -7525,7 +7883,14 @@
           "end_date": "2026-05-10",
           "user_started_at": "2026-06-01 22:09:48",
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 138,
@@ -7539,7 +7904,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 139,
@@ -7553,7 +7925,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 140,
@@ -7567,7 +7946,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 141,
@@ -7581,7 +7967,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 142,
@@ -7595,7 +7988,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 143,
@@ -7609,7 +8009,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 144,
@@ -7623,7 +8030,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 145,
@@ -7637,7 +8051,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         },
         {
           "id": 146,
@@ -7651,7 +8072,14 @@
           "end_date": "2026-05-10",
           "user_started_at": null,
           "status": "pendiente",
-          "created_at": "2026-06-01 03:56:32"
+          "created_at": "2026-06-01 03:56:32",
+          "origin_kind": "process_defined",
+          "title": null,
+          "created_by_person_id": null,
+          "source_task_item_id": null,
+          "target_unit_id": null,
+          "target_position_id": null,
+          "target_person_id": null
         }
       ]
     },

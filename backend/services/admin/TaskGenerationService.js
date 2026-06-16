@@ -99,12 +99,11 @@ const getExecutableTemplatesMap = async (connection) => {
 
 const getExistingAutomaticTasksMap = async (connection, termId) => {
   const [rows] = await connection.query(
-    `SELECT t.id, t.process_definition_id, t.process_run_id, t.parent_task_id,
-            up.unit_id AS responsible_unit_id
+    `SELECT t.id, t.process_definition_id, t.process_run_id,
+            COALESCE(t.scope_unit_id, up.unit_id) AS responsible_unit_id
      FROM tasks t
      LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
-     WHERE t.term_id = ?
-       AND t.launch_mode = 'automatic'`,
+     WHERE t.term_id = ?`,
     [termId]
   );
   // Map<def_id, Map<unit_id, task>>  (unit_id=0 for legacy tasks with no responsible position)
@@ -119,7 +118,6 @@ const getExistingAutomaticTasksMap = async (connection, termId) => {
       byUnit.set(unitKey, {
         id: row.id,
         process_run_id: row.process_run_id,
-        parent_task_id: row.parent_task_id,
         process_definition_id: row.process_definition_id
       });
     }
@@ -204,14 +202,16 @@ const getDocumentVersionFillContext = async (connection, documentVersionId) => {
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.created_by_user_id AS task_created_by_user_id,
        t.responsible_position_id AS task_responsible_position_id,
-       COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
-       COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
+       COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id, up_task.unit_id) AS scope_unit_id,
+       COALESCE(u_target.unit_type_id, u_item.unit_type_id, u_task_scope.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
      INNER JOIN documents d ON d.id = dv.document_id
      LEFT JOIN task_items ti ON ti.id = d.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id
+     LEFT JOIN units u_target ON u_target.id = ti.target_unit_id
+     LEFT JOIN units u_task_scope ON u_task_scope.id = t.scope_unit_id
      LEFT JOIN unit_positions up_task ON up_task.id = t.responsible_position_id
      LEFT JOIN units u_task ON u_task.id = up_task.unit_id
      WHERE dv.id = ?
@@ -235,8 +235,8 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        t.responsible_position_id,
-       COALESCE(up_item.unit_id, up_task.unit_id) AS scope_unit_id,
-       COALESCE(u_item.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
+       COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id, up_task.unit_id) AS scope_unit_id,
+       COALESCE(u_target.unit_type_id, u_item.unit_type_id, u_task_scope.unit_type_id, u_task.unit_type_id) AS scope_unit_type_id
      FROM document_versions dv
      INNER JOIN documents d ON d.id = dv.document_id
      LEFT JOIN task_items ti ON ti.id = d.task_item_id
@@ -245,6 +245,8 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
      LEFT JOIN template_artifacts tar ON tar.id = dv.template_artifact_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id
+     LEFT JOIN units u_target ON u_target.id = ti.target_unit_id
+     LEFT JOIN units u_task_scope ON u_task_scope.id = t.scope_unit_id
      LEFT JOIN unit_positions up_task ON up_task.id = t.responsible_position_id
      LEFT JOIN units u_task ON u_task.id = up_task.unit_id
      WHERE dv.id = ?
@@ -882,25 +884,35 @@ const getPositionsForRule = async (connection, rule) => {
   return applyRecipientPolicy(rows, rule.recipient_policy, rule.position_id);
 };
 
-const getTaskById = async (connection, taskId) => {
-  const [rows] = await connection.query(
-    `SELECT id, process_definition_id, term_id, start_date, end_date
-     FROM tasks
-     WHERE id = ?
-     LIMIT 1`,
-    [taskId]
-  );
-  return rows[0] || null;
-};
-
 const getExistingTaskItemTemplateIds = async (connection, taskId) => {
   const [rows] = await connection.query(
     `SELECT process_definition_template_id
      FROM task_items
-     WHERE task_id = ?`,
+     WHERE task_id = ?
+       AND origin_kind = 'process_defined'
+       AND target_position_id IS NULL
+       AND target_person_id IS NULL`,
     [taskId]
   );
   return new Set(rows.map((row) => Number(row.process_definition_template_id)));
+};
+
+const getExistingTaskItemTargetKeys = async (connection, taskId) => {
+  const [rows] = await connection.query(
+    `SELECT
+       process_definition_template_id,
+       COALESCE(target_position_id, 0) AS target_position_id,
+       COALESCE(target_person_id, 0) AS target_person_id
+     FROM task_items
+     WHERE task_id = ?
+       AND origin_kind = 'process_defined'`,
+    [taskId]
+  );
+  return new Set(rows.map((row) => [
+    Number(row.process_definition_template_id || 0),
+    Number(row.target_position_id || 0),
+    Number(row.target_person_id || 0)
+  ].join(":")));
 };
 
 const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
@@ -911,6 +923,9 @@ const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
        ti.process_definition_template_id,
        ti.template_artifact_id,
        ti.assigned_person_id,
+       ti.target_unit_id,
+       ti.target_position_id,
+       ti.target_person_id,
        t.responsible_position_id,
        tar.display_name AS template_artifact_name,
        pdt.instance_mode
@@ -926,6 +941,10 @@ const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
 };
 
 export const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
+  if (taskItem?.target_person_id) {
+    return Number(taskItem.target_person_id);
+  }
+
   if (taskItem?.assigned_person_id) {
     return Number(taskItem.assigned_person_id);
   }
@@ -965,6 +984,10 @@ export const resolveOwnerPersonIdForTaskItem = async (connection, taskItem) => {
 };
 
 export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, ownerPersonId = null) => {
+  if (taskItem?.target_unit_id) {
+    return Number(taskItem.target_unit_id);
+  }
+
   // 1. Posición explícita del task_item (más específica)
   if (taskItem?.responsible_position_id) {
     const [rows] = await connection.query(
@@ -977,10 +1000,10 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, owner
   // 2. Posición del task padre (contexto de la unidad que generó el task)
   if (taskItem?.task_id) {
     const [rows] = await connection.query(
-      `SELECT up.unit_id
+      `SELECT COALESCE(t.scope_unit_id, up.unit_id) AS unit_id
        FROM tasks t
-       INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-       WHERE t.id = ? AND up.unit_id IS NOT NULL
+       LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
+       WHERE t.id = ? AND COALESCE(t.scope_unit_id, up.unit_id) IS NOT NULL
        LIMIT 1`,
       [taskItem.task_id]
     );
@@ -1207,11 +1230,12 @@ const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, e
         task_id,
         process_definition_template_id,
         template_artifact_id,
+        origin_kind,
         sort_order,
         start_date,
         end_date,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?)`,
       [
         taskId,
         template.id,
@@ -1228,6 +1252,106 @@ const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, e
   return {
     inserted,
     total: templates.length
+  };
+};
+
+const ensureTaskItemsForTaskTargets = async (
+  connection,
+  taskId,
+  processDefinitionId,
+  executableTemplatesMap,
+  targetPositions = [],
+  startDate = null,
+  endDate = null
+) => {
+  const templates = executableTemplatesMap.get(processDefinitionId) || [];
+  if (!templates.length) {
+    return { inserted: 0, total: 0 };
+  }
+
+  const normalizedTargets = targetPositions
+    .map((position) => ({
+      unit_id: Number(position.unit_id || 0) || null,
+      position_id: Number(position.position_id || 0) || null,
+      person_id: Number(position.person_id || position.assigned_person_id || 0) || null
+    }))
+    .filter((position) => position.position_id || position.person_id);
+
+  if (!normalizedTargets.length) {
+    return await ensureTaskItemsForTask(
+      connection,
+      taskId,
+      processDefinitionId,
+      executableTemplatesMap,
+      startDate,
+      endDate
+    );
+  }
+
+  let resolvedStart = startDate;
+  let resolvedEnd = endDate;
+  if (resolvedStart === null && resolvedEnd === null) {
+    const [taskRows] = await connection.query(
+      `SELECT start_date, end_date FROM tasks WHERE id = ? LIMIT 1`,
+      [taskId]
+    );
+    resolvedStart = taskRows?.[0]?.start_date ?? null;
+    resolvedEnd = taskRows?.[0]?.end_date ?? null;
+  }
+
+  const existingTargetKeys = await getExistingTaskItemTargetKeys(connection, taskId);
+  let inserted = 0;
+
+  for (const template of templates) {
+    for (const target of normalizedTargets) {
+      const key = [
+        Number(template.id || 0),
+        Number(target.position_id || 0),
+        Number(target.person_id || 0)
+      ].join(":");
+      if (existingTargetKeys.has(key)) {
+        continue;
+      }
+
+      await connection.query(
+        `INSERT INTO task_items (
+           task_id,
+           process_definition_template_id,
+           template_artifact_id,
+           origin_kind,
+           sort_order,
+           target_unit_id,
+           target_position_id,
+           target_person_id,
+           responsible_position_id,
+           assigned_person_id,
+           start_date,
+           end_date,
+           status
+         ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          taskId,
+          template.id,
+          template.template_artifact_id,
+          template.sort_order ?? 1,
+          target.unit_id,
+          target.position_id,
+          target.person_id,
+          target.position_id,
+          target.person_id,
+          resolvedStart,
+          resolvedEnd ?? null,
+          "pendiente"
+        ]
+      );
+      existingTargetKeys.add(key);
+      inserted += 1;
+    }
+  }
+
+  return {
+    inserted,
+    total: templates.length * normalizedTargets.length
   };
 };
 
@@ -1248,7 +1372,19 @@ const ensureTaskAssignmentsForDefinition = async (connection, taskId, processDef
     positions.push(...matched);
   }
 
-  if (!positions.length) {
+  const [taskScopeRows] = await connection.query(
+    `SELECT scope_unit_id
+     FROM tasks
+     WHERE id = ?
+     LIMIT 1`,
+    [taskId]
+  );
+  const scopeUnitId = Number(taskScopeRows?.[0]?.scope_unit_id || 0) || null;
+  const scopedPositions = scopeUnitId
+    ? positions.filter((position) => Number(position.unit_id || 0) === scopeUnitId)
+    : positions;
+
+  if (!scopedPositions.length) {
     return {
       created: 0,
       hasRules: true,
@@ -1257,7 +1393,7 @@ const ensureTaskAssignmentsForDefinition = async (connection, taskId, processDef
     };
   }
 
-  const values = positions.map((row) => [taskId, row.position_id, row.person_id ?? null]);
+  const values = scopedPositions.map((row) => [taskId, row.position_id, row.person_id ?? null]);
   const placeholders = values.map(() => "(?, ?, ?)").join(", ");
   const flatValues = values.flat();
   const [insertResult] = await connection.query(
@@ -1266,7 +1402,7 @@ const ensureTaskAssignmentsForDefinition = async (connection, taskId, processDef
     flatValues
   );
 
-  const responsiblePositionId = positions[0]?.position_id || null;
+  const responsiblePositionId = scopedPositions[0]?.position_id || null;
   if (responsiblePositionId) {
     await connection.query(
       `UPDATE tasks
@@ -1301,6 +1437,21 @@ const ensureUnitTaskAssignments = async (connection, taskId, positions, responsi
   return result?.affectedRows || 0;
 };
 
+const getTaskAssignmentTargets = async (connection, taskId) => {
+  const [rows] = await connection.query(
+    `SELECT
+       ta.position_id,
+       ta.assigned_person_id AS person_id,
+       up.unit_id
+     FROM task_assignments ta
+     INNER JOIN unit_positions up ON up.id = ta.position_id
+     WHERE ta.task_id = ?
+     ORDER BY up.unit_id ASC, ta.position_id ASC, ta.assigned_person_id ASC`,
+    [taskId]
+  );
+  return rows;
+};
+
 export const hydrateTaskFromDefinition = async ({
   connection,
   taskId,
@@ -1317,8 +1468,15 @@ export const hydrateTaskFromDefinition = async ({
   const templatesMap = executableTemplatesMap || await getExecutableTemplatesMap(connection);
   const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
 
-  const taskItems = await ensureTaskItemsForTask(connection, taskId, processDefinitionId, templatesMap);
   const assignments = await ensureTaskAssignmentsForDefinition(connection, taskId, processDefinitionId, rulesMap);
+  const targets = await getTaskAssignmentTargets(connection, taskId);
+  const taskItems = await ensureTaskItemsForTaskTargets(
+    connection,
+    taskId,
+    processDefinitionId,
+    templatesMap,
+    targets
+  );
   await ensureDocumentsForTask(connection, taskId);
 
   return {
@@ -1443,10 +1601,10 @@ export const generateTasksForTerm = async (termId) => {
         if (!task) {
           const [result] = await connection.query(
             `INSERT INTO tasks
-             (process_definition_id, process_run_id, term_id, launch_mode,
-              parent_task_id, responsible_position_id, start_date, end_date, status)
-             VALUES (?, ?, ?, 'automatic', NULL, ?, ?, ?, 'pendiente')`,
-            [definition.id, processRunId, term.id, responsiblePositionId,
+             (process_definition_id, process_run_id, term_id, scope_unit_id,
+              responsible_position_id, start_date, end_date, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+            [definition.id, processRunId, term.id, unitId, responsiblePositionId,
              term.start_date, term.end_date]
           );
           task = {
@@ -1464,9 +1622,14 @@ export const generateTasksForTerm = async (termId) => {
           task.process_run_id = processRunId;
         }
 
-        const items = await ensureTaskItemsForTask(
-          connection, task.id, definition.id, executableTemplatesMap,
-          term.start_date, term.end_date
+        const items = await ensureTaskItemsForTaskTargets(
+          connection,
+          task.id,
+          definition.id,
+          executableTemplatesMap,
+          unitPositions,
+          term.start_date,
+          term.end_date
         );
         taskItemsCreated += items.inserted;
         if (items.total < 1) definitionsWithoutTaskItems.push(definition.id);
@@ -1503,63 +1666,10 @@ export const generateTasksForTerm = async (termId) => {
 };
 
 export const updateParentTaskStatusForTask = async (taskId, externalConnection = null) => {
-  const pool = getMariaDBPool();
-  if (!pool) {
-    throw new Error("La conexion con MariaDB no esta disponible.");
-  }
-  const connection = externalConnection || pool;
-  let currentTaskId = taskId;
-
-  while (currentTaskId) {
-    const task = await getTaskById(connection, currentTaskId);
-    if (!task) {
-      break;
-    }
-    const parentId = task.parent_task_id;
-    if (!parentId) {
-      break;
-    }
-
-    const [childRows] = await connection.query(
-      `SELECT status, COUNT(*) AS count
-       FROM tasks
-       WHERE parent_task_id = ? AND term_id = ?
-       GROUP BY status`,
-      [parentId, task.term_id]
-    );
-
-    if (!childRows.length) {
-      currentTaskId = parentId;
-      continue;
-    }
-
-    const statusCounts = new Map();
-    let total = 0;
-    childRows.forEach((row) => {
-      statusCounts.set(row.status, Number(row.count));
-      total += Number(row.count);
-    });
-
-    let nextStatus = "pendiente";
-    if ((statusCounts.get("en_proceso") || 0) > 0) {
-      nextStatus = "en_proceso";
-    } else if ((statusCounts.get("pendiente") || 0) > 0) {
-      nextStatus = "pendiente";
-    } else if ((statusCounts.get("completada") || 0) === total) {
-      nextStatus = "completada";
-    } else if ((statusCounts.get("cancelada") || 0) === total) {
-      nextStatus = "cancelada";
-    } else {
-      nextStatus = "en_proceso";
-    }
-
-    await connection.query(
-      "UPDATE tasks SET status = ? WHERE id = ? AND status <> ?",
-      [nextStatus, parentId, nextStatus]
-    );
-
-    currentTaskId = parentId;
-  }
+  // Modelo 2026-06: los entregables derivados ya no crean tareas hijas.
+  // La función queda como compatibilidad de import; no debe tocar estado.
+  void taskId;
+  void externalConnection;
 };
 
 // ---------------------------------------------------------------------------
@@ -1573,24 +1683,14 @@ export const migrateTasksToPerUnit = async () => {
   try {
     await connection.beginTransaction();
 
-    // 1. Actualizar constraint para permitir un task por (definition, term, responsible_position)
-    await connection.query(
-      `ALTER TABLE tasks DROP INDEX IF EXISTS uq_tasks_automatic_term`
-    );
-    await connection.query(
-      `ALTER TABLE tasks ADD UNIQUE KEY IF NOT EXISTS uq_tasks_automatic_term_unit
-       (process_definition_id, term_id, responsible_position_id, automatic_flag)`
-    );
-
-    // 2. Obtener tasks automáticos con assignments en más de una unidad
+    // Obtener tasks con assignments en más de una unidad y separarlos por scope_unit_id.
     const [multiUnitTasks] = await connection.query(
       `SELECT t.id AS task_id, t.process_definition_id, t.term_id,
               t.process_run_id, t.start_date, t.end_date, t.status,
-              up.unit_id AS current_responsible_unit
+              COALESCE(t.scope_unit_id, up.unit_id) AS current_responsible_unit
        FROM tasks t
        LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
-       WHERE t.launch_mode = 'automatic'
-         AND (
+       WHERE (
            SELECT COUNT(DISTINCT ta_up.unit_id)
            FROM task_assignments ta
            JOIN unit_positions ta_up ON ta_up.id = ta.position_id
@@ -1627,8 +1727,11 @@ export const migrateTasksToPerUnit = async () => {
         if (unitId === task.current_responsible_unit) {
           // Este es el task original — solo asegurarnos que responsible_position esté correcto
           await connection.query(
-            `UPDATE tasks SET responsible_position_id = ? WHERE id = ?`,
-            [responsiblePositionId, task.task_id]
+            `UPDATE tasks
+             SET responsible_position_id = ?,
+                 scope_unit_id = COALESCE(scope_unit_id, ?)
+             WHERE id = ?`,
+            [responsiblePositionId, unitId, task.task_id]
           );
           continue;
         }
@@ -1637,10 +1740,11 @@ export const migrateTasksToPerUnit = async () => {
         let newTaskId;
         const [existing] = await connection.query(
           `SELECT id FROM tasks
-           WHERE process_definition_id = ? AND term_id = ? AND responsible_position_id = ?
-             AND launch_mode = 'automatic'
+           WHERE process_definition_id = ?
+             AND term_id = ?
+             AND scope_unit_id = ?
            LIMIT 1`,
-          [task.process_definition_id, task.term_id, responsiblePositionId]
+          [task.process_definition_id, task.term_id, unitId]
         );
 
         if (existing.length) {
@@ -1648,11 +1752,11 @@ export const migrateTasksToPerUnit = async () => {
         } else {
           const [result] = await connection.query(
             `INSERT INTO tasks
-             (process_definition_id, process_run_id, term_id, launch_mode,
-              parent_task_id, responsible_position_id, start_date, end_date, status)
-             VALUES (?, ?, ?, 'automatic', NULL, ?, ?, ?, ?)`,
+             (process_definition_id, process_run_id, term_id, scope_unit_id,
+              responsible_position_id, start_date, end_date, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [task.process_definition_id, task.process_run_id, task.term_id,
-             responsiblePositionId, task.start_date, task.end_date, task.status]
+             unitId, responsiblePositionId, task.start_date, task.end_date, task.status]
           );
           newTaskId = result.insertId;
           tasksCreated++;
@@ -1673,9 +1777,14 @@ export const migrateTasksToPerUnit = async () => {
         assignmentsMoved += unitAssignments.length;
 
         // Copiar task_items al nuevo task y crear documentos
-        await ensureTaskItemsForTask(
-          connection, newTaskId, task.process_definition_id, executableTemplatesMap,
-          task.start_date, task.end_date
+        await ensureTaskItemsForTaskTargets(
+          connection,
+          newTaskId,
+          task.process_definition_id,
+          executableTemplatesMap,
+          unitAssignments,
+          task.start_date,
+          task.end_date
         );
         await ensureDocumentsForTask(connection, newTaskId);
       }
@@ -1683,13 +1792,16 @@ export const migrateTasksToPerUnit = async () => {
 
     // Corregir origin_unit_id de documentos existentes usando la posición del task
     const [wrongDocs] = await connection.query(
-      `SELECT d.id AS doc_id, up.unit_id AS correct_unit_id
+      `SELECT d.id AS doc_id, COALESCE(ti.target_unit_id, t.scope_unit_id, up.unit_id) AS correct_unit_id
        FROM documents d
        INNER JOIN task_items ti ON ti.id = d.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
-       INNER JOIN unit_positions up ON up.id = t.responsible_position_id
-       WHERE d.origin_unit_id IS NULL
-          OR d.origin_unit_id <> up.unit_id`
+       LEFT JOIN unit_positions up ON up.id = t.responsible_position_id
+       WHERE COALESCE(ti.target_unit_id, t.scope_unit_id, up.unit_id) IS NOT NULL
+         AND (
+           d.origin_unit_id IS NULL
+           OR d.origin_unit_id <> COALESCE(ti.target_unit_id, t.scope_unit_id, up.unit_id)
+         )`
     );
     let docsFixed = 0;
     for (const row of wrongDocs) {

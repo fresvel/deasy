@@ -1137,7 +1137,6 @@ const definitionArtifactsEditId = ref("");
 const definitionArtifactsForm = ref({
   template_artifact_id: "",
   creates_task: "1",
-  is_required: "1",
   sort_order: "1"
 });
 const definitionArtifactsLabels = ref({

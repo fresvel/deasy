@@ -439,10 +439,9 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
       template_artifact_id: artifactId,
       instance_mode: "owner_many_documents",
       creates_task: 1,
-      is_required: 1,
       sort_order: 1
     },
-    ["instance_mode", "creates_task", "is_required", "sort_order"]
+    ["instance_mode", "creates_task", "sort_order"]
   );
 
   for (const cargoId of cargoIds) {
@@ -607,6 +606,12 @@ const getOrCreateSignatureFlowTemplate = async (connection, definitionTemplateId
 };
 
 const seedUserWorkflow = async (connection, { user, personId, positionId, processData, termId, fillFlow, signatureFlow }) => {
+  const positionRow = await fetchOne(
+    connection,
+    "SELECT unit_id FROM unit_positions WHERE id = ? LIMIT 1",
+    [positionId]
+  );
+  const scopeUnitId = positionRow?.unit_id ? Number(positionRow.unit_id) : null;
   const taskId = await upsertByUnique(
     connection,
     "tasks",
@@ -614,9 +619,8 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
       process_definition_id: processData.definitionId,
       process_run_id: null,
       term_id: termId,
-      launch_mode: "manual",
       created_by_user_id: personId,
-      parent_task_id: null,
+      scope_unit_id: scopeUnitId,
       responsible_position_id: positionId,
       description: `Tarea demo para ${user.first_name} ${user.last_name}`,
       comments_thread_ref: null,
@@ -634,15 +638,35 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
       task_id: taskId,
       process_definition_template_id: processData.definitionTemplateId,
       template_artifact_id: processData.artifactId,
+      origin_kind: "process_defined",
+      title: `Entregable demo para ${user.first_name} ${user.last_name}`,
       sort_order: 1,
       responsible_position_id: positionId,
       assigned_person_id: personId,
+      created_by_person_id: personId,
+      target_unit_id: scopeUnitId,
+      target_position_id: positionId,
+      target_person_id: personId,
       start_date: "2026-01-01",
       end_date: "2026-12-31",
       user_started_at: null,
       status: "pendiente"
     },
-    ["template_artifact_id", "sort_order", "responsible_position_id", "assigned_person_id", "start_date", "end_date", "status"]
+    [
+      "template_artifact_id",
+      "origin_kind",
+      "title",
+      "sort_order",
+      "responsible_position_id",
+      "assigned_person_id",
+      "created_by_person_id",
+      "target_unit_id",
+      "target_position_id",
+      "target_person_id",
+      "start_date",
+      "end_date",
+      "status"
+    ]
   );
 
   await connection.query(

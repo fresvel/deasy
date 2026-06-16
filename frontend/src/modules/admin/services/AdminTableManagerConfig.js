@@ -75,17 +75,16 @@ export const processDefinitionActivationTriggerTableFields = [
 ];
 
 export const processDefinitionActivationArtifactTableFields = [
-  { name: "template_artifact_id", label: "Paquete" },
+  { name: "template_artifact_id", label: "Plantilla documental" },
   { name: "instance_mode", label: "Modo de instancia" },
-  { name: "creates_task", label: "Genera tarea" }
+  { name: "creates_task", label: "Materializa entregable" }
 ];
 
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
-  { name: "template_artifact_id", label: "Plantilla" },
+  { name: "template_artifact_id", label: "Plantilla documental" },
   { name: "instance_mode", label: "Modo de instancia" },
-  { name: "creates_task", label: "Genera tarea" },
-  { name: "is_required", label: "Requerido" },
+  { name: "creates_task", label: "Materializa entregable" },
   { name: "sort_order", label: "Orden" }
 ];
 
@@ -114,7 +113,6 @@ export const recordViewerSummaryTableFields = [
 
 export const FK_TABLE_MAP = {
   parent_id: "processes",
-  parent_task_id: "tasks",
   process_id: "processes",
   series_id: "process_definition_series",
   process_definition_id: "process_definition_versions",

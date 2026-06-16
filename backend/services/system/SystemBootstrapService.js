@@ -469,9 +469,9 @@ export const ensureDefaultProcess = async (connection) => {
     const [r] = await connection.query(
       `INSERT INTO template_artifacts
         (template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
-         source_version, storage_version, artifact_stage, bucket, base_object_prefix,
+         source_version, storage_version, artifact_stage, template_scope, bucket, base_object_prefix,
          available_formats, schema_object_key, meta_object_key, is_active)
-       VALUES (?, NULL, ?, ?, ?, NULL, '1.0.0', 'v0001', 'published', ?, ?, ?, ?, ?, 1)`,
+       VALUES (?, NULL, ?, ?, ?, NULL, '1.0.0', 'v0001', 'published', 'official', ?, ?, ?, ?, ?, 1)`,
       [
         templateSeedId,
         DEFAULT_TEMPLATE_CODE,
@@ -509,8 +509,8 @@ export const ensureDefaultProcess = async (connection) => {
   if (!pdt) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_templates
-        (process_definition_id, template_artifact_id, instance_mode, creates_task, is_required, sort_order)
-       VALUES (?, ?, 'single_document', 1, 1, 1)`,
+        (process_definition_id, template_artifact_id, instance_mode, creates_task, sort_order)
+       VALUES (?, ?, 'single_document', 1, 1)`,
       [definitionId, artifactId]
     );
     pdt = { id: r.insertId };

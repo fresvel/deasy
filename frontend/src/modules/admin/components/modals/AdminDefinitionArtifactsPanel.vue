@@ -58,14 +58,8 @@
             <option value="owner_many_documents">Varios documentos por responsable</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Genera tarea" group-class="md:col-span-2">
+        <AdminFieldGroup label="Materializa entregable" group-class="md:col-span-4">
           <AdminSelectField :model-value="form.creates_task" :disabled="!canManage" @update:model-value="updateField('creates_task', $event)">
-            <option value="1">Si</option>
-            <option value="0">No</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Requerido" group-class="md:col-span-2">
-          <AdminSelectField :model-value="form.is_required" :disabled="!canManage" @update:model-value="updateField('is_required', $event)">
             <option value="1">Si</option>
             <option value="0">No</option>
           </AdminSelectField>
@@ -99,7 +93,7 @@
         <template v-if="field.name === 'template_artifact_id'">
           {{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }) }}
         </template>
-        <template v-else-if="['creates_task', 'is_required'].includes(field.name)">
+        <template v-else-if="field.name === 'creates_task'">
           {{ Number(row[field.name]) === 1 ? "Si" : "No" }}
         </template>
         <template v-else>

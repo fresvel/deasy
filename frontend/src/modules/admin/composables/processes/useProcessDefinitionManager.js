@@ -720,7 +720,6 @@ export function useProcessDefinitionManager({
       template_artifact_id: row.template_artifact_id ? String(row.template_artifact_id) : "",
       instance_mode: row.instance_mode || "single_document",
       creates_task: Number(row.creates_task) === 1 ? "1" : "0",
-      is_required: Number(row.is_required) === 1 ? "1" : "0",
       sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : "1"
     };
     definitionArtifactsLabels.value = {

@@ -464,6 +464,7 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   source_version VARCHAR(20) NOT NULL,
   storage_version VARCHAR(20) NOT NULL,
   artifact_stage ENUM('draft','review','approved','published','archived') NOT NULL DEFAULT 'published',
+  template_scope ENUM('official','user_reusable','ad_hoc') NOT NULL DEFAULT 'official',
   bucket VARCHAR(120) NOT NULL,
   base_object_prefix VARCHAR(255) NOT NULL,
   available_formats JSON NOT NULL,
@@ -476,6 +477,7 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   INDEX idx_template_artifacts_seed (template_seed_id),
   INDEX idx_template_artifacts_owner_person (owner_person_id),
   INDEX idx_template_artifacts_stage (artifact_stage),
+  INDEX idx_template_artifacts_scope (template_scope),
   CONSTRAINT fk_template_artifacts_seed
     FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
   CONSTRAINT fk_template_artifacts_owner_person
@@ -488,7 +490,6 @@ CREATE TABLE IF NOT EXISTS process_definition_templates (
   template_artifact_id INT NOT NULL,
   instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document',
   creates_task TINYINT(1) NOT NULL DEFAULT 1,
-  is_required TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id),
@@ -576,11 +577,9 @@ CREATE TABLE IF NOT EXISTS tasks (
   process_definition_id INT NOT NULL,
   process_run_id INT NULL,
   term_id INT NOT NULL,
-  launch_mode ENUM('automatic', 'manual') NOT NULL DEFAULT 'manual',
+  scope_unit_id INT NULL,
+  normalized_scope_unit_id INT AS (IFNULL(scope_unit_id, 0)) PERSISTENT,
   created_by_user_id INT NULL,
-  automatic_flag TINYINT(1) AS (IF(launch_mode = 'automatic', 1, NULL)) PERSISTENT,
-  manual_user_flag INT AS (IF(launch_mode = 'manual', created_by_user_id, NULL)) PERSISTENT,
-  parent_task_id INT NULL,
   responsible_position_id INT NULL,
   description TEXT NULL,
   comments_thread_ref VARCHAR(64) NULL,
@@ -588,27 +587,36 @@ CREATE TABLE IF NOT EXISTS tasks (
   end_date DATE NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_tasks_automatic_term (process_definition_id, term_id, automatic_flag),
-  UNIQUE KEY uq_tasks_manual_term_user (process_definition_id, term_id, manual_user_flag),
+  UNIQUE KEY uq_tasks_definition_term_scope (process_definition_id, term_id, normalized_scope_unit_id),
   INDEX idx_tasks_definition_term (process_definition_id, term_id),
   INDEX idx_tasks_process_run (process_run_id),
-  INDEX idx_tasks_launch (launch_mode, created_by_user_id),
+  INDEX idx_tasks_scope_unit (scope_unit_id),
   CONSTRAINT fk_tasks_process_definition
     FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
   CONSTRAINT fk_tasks_process_run
     FOREIGN KEY (process_run_id) REFERENCES process_runs(id),
   CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
   CONSTRAINT fk_tasks_created_by_user FOREIGN KEY (created_by_user_id) REFERENCES persons(id),
-  CONSTRAINT fk_tasks_parent FOREIGN KEY (parent_task_id) REFERENCES tasks(id),
+  CONSTRAINT fk_tasks_scope_unit FOREIGN KEY (scope_unit_id) REFERENCES units(id),
   CONSTRAINT fk_tasks_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS task_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   task_id INT NOT NULL,
-  process_definition_template_id INT NOT NULL,
+  process_definition_template_id INT NULL,
   template_artifact_id INT NOT NULL,
+  origin_kind ENUM('process_defined','user_added') NOT NULL DEFAULT 'process_defined',
+  title VARCHAR(180) NULL,
   sort_order INT NOT NULL DEFAULT 1,
+  created_by_person_id INT NULL,
+  source_task_item_id INT NULL,
+  target_unit_id INT NULL,
+  target_position_id INT NULL,
+  target_person_id INT NULL,
+  process_definition_template_key INT AS (IF(origin_kind = 'process_defined', process_definition_template_id, NULL)) PERSISTENT,
+  target_position_key INT AS (IF(origin_kind = 'process_defined', IFNULL(target_position_id, 0), NULL)) PERSISTENT,
+  target_person_key INT AS (IF(origin_kind = 'process_defined', IFNULL(target_person_id, 0), NULL)) PERSISTENT,
   responsible_position_id INT NULL,
   assigned_person_id INT NULL,
   start_date DATE NOT NULL,
@@ -616,9 +624,16 @@ CREATE TABLE IF NOT EXISTS task_items (
   user_started_at DATETIME NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_task_items_task_template (task_id, process_definition_template_id),
+  UNIQUE KEY uq_task_items_defined_target (task_id, process_definition_template_key, target_position_key, target_person_key),
   INDEX idx_task_items_task (task_id, sort_order),
+  INDEX idx_task_items_origin (origin_kind),
+  INDEX idx_task_items_definition_template (process_definition_template_id),
   INDEX idx_task_items_artifact (template_artifact_id),
+  INDEX idx_task_items_created_by (created_by_person_id),
+  INDEX idx_task_items_source (source_task_item_id),
+  INDEX idx_task_items_target_unit (target_unit_id),
+  INDEX idx_task_items_target_position (target_position_id),
+  INDEX idx_task_items_target_person (target_person_id),
   INDEX idx_task_items_dates (start_date, end_date),
   INDEX idx_task_items_user_started (user_started_at),
   CONSTRAINT fk_task_items_task
@@ -627,6 +642,16 @@ CREATE TABLE IF NOT EXISTS task_items (
     FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
   CONSTRAINT fk_task_items_template_artifact
     FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id),
+  CONSTRAINT fk_task_items_created_by
+    FOREIGN KEY (created_by_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_task_items_source
+    FOREIGN KEY (source_task_item_id) REFERENCES task_items(id),
+  CONSTRAINT fk_task_items_target_unit
+    FOREIGN KEY (target_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_task_items_target_position
+    FOREIGN KEY (target_position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_task_items_target_person
+    FOREIGN KEY (target_person_id) REFERENCES persons(id),
   CONSTRAINT fk_task_items_responsible_position
     FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id),
   CONSTRAINT fk_task_items_assigned_person
@@ -1052,6 +1077,35 @@ CREATE TABLE IF NOT EXISTS signature_requests (
   CONSTRAINT fk_signature_requests_step FOREIGN KEY (step_id) REFERENCES signature_flow_steps(id),
   CONSTRAINT fk_signature_requests_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id),
   CONSTRAINT fk_signature_requests_status FOREIGN KEY (status_id) REFERENCES signature_request_statuses(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS document_workflow_observations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_item_id INT NOT NULL,
+  document_version_id INT NOT NULL,
+  fill_request_id INT NULL,
+  signature_request_id INT NULL,
+  phase ENUM('review','signature') NOT NULL,
+  kind ENUM('observation','return_reason','rejection_reason','internal_note') NOT NULL DEFAULT 'observation',
+  message TEXT NOT NULL,
+  author_person_id INT NOT NULL,
+  target_person_id INT NULL,
+  resolved_by_person_id INT NULL,
+  resolved_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_document_workflow_observations_item (task_item_id, created_at),
+  INDEX idx_document_workflow_observations_version (document_version_id, created_at),
+  INDEX idx_document_workflow_observations_fill_request (fill_request_id),
+  INDEX idx_document_workflow_observations_signature_request (signature_request_id),
+  INDEX idx_document_workflow_observations_author (author_person_id),
+  INDEX idx_document_workflow_observations_target (target_person_id),
+  CONSTRAINT fk_document_workflow_observations_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
+  CONSTRAINT fk_document_workflow_observations_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
+  CONSTRAINT fk_document_workflow_observations_fill_request FOREIGN KEY (fill_request_id) REFERENCES fill_requests(id),
+  CONSTRAINT fk_document_workflow_observations_signature_request FOREIGN KEY (signature_request_id) REFERENCES signature_requests(id),
+  CONSTRAINT fk_document_workflow_observations_author FOREIGN KEY (author_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_document_workflow_observations_target FOREIGN KEY (target_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_document_workflow_observations_resolver FOREIGN KEY (resolved_by_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS document_signatures (

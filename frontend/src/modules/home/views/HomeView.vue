@@ -1140,9 +1140,7 @@
                   </div>
                   <div class="flex flex-wrap gap-2">
                     <AppTag variant="neutral">{{ template.signature_flow_count ? `Firmas: ${template.signature_flow_count}` : 'Sin flujo de firma activo' }}</AppTag>
-                    <AppTag :variant="template.is_required ? 'warning' : 'muted'">
-                      {{ template.is_required ? 'Requerido' : 'Opcional' }}
-                    </AppTag>
+                    <AppTag variant="warning">Entregable requerido</AppTag>
                   </div>
                 </article>
               </div>
@@ -2059,7 +2057,7 @@
       </div>
       <template #footer>
         <AppButton v-if="deliverableWorkspaceSubject" variant="softPrimary" @click="openDerivedTaskFromWorkspace">
-          Derivar tarea
+          Agregar entregable
         </AppButton>
         <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
@@ -2078,8 +2076,8 @@
       <div class="flex flex-col gap-4">
         <p class="m-0 text-sm font-medium text-slate-500">
           {{ generalTaskForm.mode === 'derived'
-            ? 'Crea una tarea derivada del entregable seleccionado. Heredará su unidad de contexto.'
-            : 'Crea una tarea libre (sin proceso predefinido). Podrás adjuntar archivos una vez creada.' }}
+            ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
+            : 'Crea una tarea técnica en la configuración default. Podrás adjuntar entregables una vez creada.' }}
         </p>
 
         <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
@@ -2120,7 +2118,7 @@
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>Cancelar</AppButton>
         <AppButton variant="primary" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="submitGeneralTask">
-          {{ generalTaskSubmitting ? 'Creando…' : 'Crear tarea' }}
+          {{ generalTaskSubmitting ? 'Creando…' : (generalTaskForm.mode === 'derived' ? 'Crear entregable' : 'Crear tarea') }}
         </AppButton>
       </template>
     </AdminModalShell>
@@ -2913,7 +2911,7 @@ const generalTaskForm = ref({
   title: '',
   description: '',
   unitId: null,
-  parentTaskId: null,
+  sourceTaskId: null,
   termName: '',
   startDate: '',
   endDate: '',
@@ -4809,7 +4807,7 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
     unitId: mode === 'free'
       ? (activeConsolidatedUnitTab.value || unitsPanelData.value[0]?.id || null)
       : (context.unitId || null),
-    parentTaskId: context.parentTaskId || null,
+    sourceTaskId: context.sourceTaskId || null,
     termName: '',
     startDate: today,
     endDate: '',
@@ -4826,7 +4824,7 @@ const openDerivedTaskFromWorkspace = () => {
   }
   deliverableWorkspaceModalInstance?.hide();
   openGeneralTaskModal('derived', {
-    parentTaskId: subject.taskId,
+    sourceTaskId: subject.taskId,
     unitId: subject.scopeUnitId || subject.originUnitId || null,
   });
 };
@@ -4850,7 +4848,7 @@ const submitGeneralTask = async () => {
       title: form.title.trim(),
       description: form.description.trim() || null,
       unit_id: form.unitId || null,
-      parent_task_id: form.parentTaskId || null,
+      source_task_id: form.sourceTaskId || null,
       custom_term: {
         name: form.termName.trim() || form.title.trim(),
         start_date: form.startDate || null,

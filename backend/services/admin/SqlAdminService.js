@@ -1241,26 +1241,20 @@ const validateTableRules = (tableName, candidate) => {
       if (!candidate.term_id) {
         throw new Error("Selecciona un periodo para la tarea.");
       }
-      if (!candidate.launch_mode || !["automatic", "manual"].includes(String(candidate.launch_mode))) {
-        throw new Error("Selecciona un modo de lanzamiento valido.");
-      }
-      if (candidate.launch_mode === "manual" && !candidate.created_by_user_id) {
-        throw new Error("Las tareas manuales requieren indicar quien las crea.");
-      }
-      if (candidate.launch_mode === "automatic" && candidate.created_by_user_id) {
-        throw new Error("Las tareas automaticas no deben indicar usuario creador.");
-      }
       ensureDateOrder(candidate.start_date, candidate.end_date, "tareas");
       break;
     case "task_items":
       if (!candidate.task_id) {
         throw new Error("Selecciona una tarea.");
       }
-      if (!candidate.process_definition_template_id) {
-        throw new Error("Selecciona la plantilla de proceso configurado.");
+      if (
+        String(candidate.origin_kind || "process_defined") === "process_defined"
+        && !candidate.process_definition_template_id
+      ) {
+        throw new Error("Selecciona el entregable definido por proceso.");
       }
       if (!candidate.template_artifact_id) {
-        throw new Error("Selecciona el paquete.");
+        throw new Error("Selecciona la plantilla documental.");
       }
       ensureDateOrder(candidate.start_date, candidate.end_date, "items de tarea");
       break;
@@ -1822,6 +1816,7 @@ export default class SqlAdminService {
          template_code,
          display_name,
          storage_version,
+         template_scope,
          bucket,
          meta_object_key
        FROM template_artifacts
@@ -1975,7 +1970,7 @@ export default class SqlAdminService {
     }
 
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, instance_mode, creates_task, is_required, sort_order
+      `SELECT template_artifact_id, instance_mode, creates_task, sort_order
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -1989,15 +1984,13 @@ export default class SqlAdminService {
           template_artifact_id,
           instance_mode,
           creates_task,
-          is_required,
           sort_order
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.template_artifact_id,
           row.instance_mode || "single_document",
           row.creates_task,
-          row.is_required,
           row.sort_order
         ]
       );
@@ -2308,14 +2301,10 @@ export default class SqlAdminService {
       if (String(definition.status || "") !== "active") {
         throw new Error("Solo se pueden instanciar tareas desde configuraciones activas.");
       }
-      payload.launch_mode = String(payload.launch_mode || "manual");
-      if (payload.launch_mode === "automatic") {
-        payload.created_by_user_id = null;
-      }
       await this.ensureDefinitionTriggerAllowsTaskLaunch(
         payload.process_definition_id,
         payload.term_id,
-        payload.launch_mode
+        "manual"
       );
 
       if (payload.process_run_id) {
@@ -2506,8 +2495,8 @@ export default class SqlAdminService {
               connection,
               processDefinitionId: Number(payload.process_definition_id),
               termId: Number(payload.term_id),
-              runMode: payload.launch_mode === "automatic" ? "automatic_term" : "manual",
-              createdByUserId: payload.launch_mode === "manual" ? payload.created_by_user_id : null,
+              runMode: "manual",
+              createdByUserId: payload.created_by_user_id || null,
               status: "active"
             });
           }
@@ -2713,9 +2702,6 @@ export default class SqlAdminService {
         delete updates.term_id;
       }
       if (Object.prototype.hasOwnProperty.call(updates, "launch_mode")) {
-        if (String(updates.launch_mode) !== String(existing.launch_mode)) {
-          throw new Error("No se puede cambiar el modo de lanzamiento de una tarea existente.");
-        }
         delete updates.launch_mode;
       }
       if (Object.prototype.hasOwnProperty.call(updates, "created_by_user_id")) {
@@ -4203,9 +4189,9 @@ export default class SqlAdminService {
     const [result] = await this.pool.query(
       `INSERT INTO template_artifacts (
         template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
-        source_version, storage_version, artifact_stage, bucket, base_object_prefix,
+        source_version, storage_version, artifact_stage, template_scope, bucket, base_object_prefix,
         available_formats, schema_object_key, meta_object_key, content_hash, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         artifact.template_seed_id,
         artifact.owner_person_id,
@@ -4215,6 +4201,7 @@ export default class SqlAdminService {
         artifact.owner_ref,
         artifact.source_version,
         nextStorageVersion,
+        artifact.template_scope || "user_reusable",
         bucket,
         newPrefix,
         JSON.stringify(remappedFormats || {}),
@@ -4229,6 +4216,7 @@ export default class SqlAdminService {
       template_code: templateCode,
       storage_version: nextStorageVersion,
       base_object_prefix: newPrefix,
+      template_scope: artifact.template_scope || "user_reusable",
       bucket,
       artifact_stage: "draft",
       __notice: `Nueva versión ${nextStorageVersion} creada en estado draft.`,
@@ -4524,7 +4512,15 @@ export default class SqlAdminService {
     const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
     const storageVersion = existingArtifact?.storage_version || await this.getNextStorageVersionForTemplateCode(templateCode);
     const bucket = String(existingArtifact?.bucket || MINIO_TEMPLATES_BUCKET);
-    const baseObjectPrefix = String(existingArtifact?.base_object_prefix || `${TEMPLATE_USERS_PREFIX}/${ownerRef}/${templateCode}/${storageVersion}/`);
+    const requestedTemplateScope = String(data.template_scope || existingArtifact?.template_scope || "user_reusable").trim();
+    const templateScope = ["user_reusable", "ad_hoc"].includes(requestedTemplateScope)
+      ? requestedTemplateScope
+      : "user_reusable";
+    const adHocToken = sanitizeStorageSegment(data.task_item_id || data.draft_token || randomUUID(), "draft");
+    const defaultBaseObjectPrefix = templateScope === "ad_hoc"
+      ? `${TEMPLATE_USERS_PREFIX}/${ownerRef}/AdHoc/${adHocToken}/${templateCode}/${storageVersion}/`
+      : `${TEMPLATE_USERS_PREFIX}/${ownerRef}/Reusable/${templateCode}/${storageVersion}/`;
+    const baseObjectPrefix = String(existingArtifact?.base_object_prefix || defaultBaseObjectPrefix);
     const artifactStage = String(existingArtifact?.artifact_stage || "draft");
     const draftDir = path.join(
       BACKEND_STORAGE_ROOT,
@@ -4746,6 +4742,7 @@ export default class SqlAdminService {
                owner_ref = ?,
                source_version = ?,
                artifact_stage = ?,
+               template_scope = ?,
                bucket = ?,
                base_object_prefix = ?,
                available_formats = ?,
@@ -4762,6 +4759,7 @@ export default class SqlAdminService {
             ownerRef,
             sourceVersion,
             artifactStage,
+            templateScope,
             bucket,
             baseObjectPrefix,
             JSON.stringify(availableFormats),
@@ -4783,6 +4781,7 @@ export default class SqlAdminService {
             source_version,
             storage_version,
             artifact_stage,
+            template_scope,
             bucket,
             base_object_prefix,
             available_formats,
@@ -4790,7 +4789,7 @@ export default class SqlAdminService {
             meta_object_key,
             content_hash,
             is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, 1)`,
           [
             templateSeedId,
             ownerPersonId,
@@ -4800,6 +4799,7 @@ export default class SqlAdminService {
             ownerRef,
             sourceVersion,
             storageVersion,
+            templateScope,
             bucket,
             baseObjectPrefix,
             JSON.stringify(availableFormats),
@@ -4829,8 +4829,8 @@ export default class SqlAdminService {
         if (!existingLink?.length) {
           await this.pool.query(
             `INSERT INTO process_definition_templates
-              (process_definition_id, template_artifact_id, instance_mode, creates_task, is_required, sort_order)
-             VALUES (?, ?, 'single_document', 1, 1, 1)`,
+              (process_definition_id, template_artifact_id, instance_mode, creates_task, sort_order)
+             VALUES (?, ?, 'single_document', 1, 1)`,
             [requestedProcessDefinitionId, createdId]
           );
         }
@@ -4866,6 +4866,7 @@ export default class SqlAdminService {
         source_version: sourceVersion,
         storage_version: storageVersion,
         artifact_stage: artifactStage,
+        template_scope: templateScope,
         bucket,
         base_object_prefix: baseObjectPrefix,
         available_formats: availableFormats,

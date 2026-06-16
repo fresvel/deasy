@@ -263,15 +263,8 @@ export const SQL_TABLES = [
       },
       { name: "process_run_id", label: "Corrida de proceso", type: "number" },
       { name: "term_id", label: "Periodo", type: "number", required: true },
-      {
-        name: "launch_mode",
-        label: "Modo de lanzamiento",
-        type: "select",
-        options: ["automatic", "manual"],
-        defaultValue: "manual"
-      },
+      { name: "scope_unit_id", label: "Unidad de alcance", type: "number" },
       { name: "created_by_user_id", label: "Creada por", type: "number" },
-      { name: "parent_task_id", label: "Tarea padre (manual)", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text", readOnly: true },
@@ -290,7 +283,7 @@ export const SQL_TABLES = [
   },
   {
     table: "task_items",
-    label: "Items de tareas",
+    label: "Entregables",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
@@ -298,12 +291,24 @@ export const SQL_TABLES = [
       { name: "task_id", label: "Tarea", type: "number", required: true },
       {
         name: "process_definition_template_id",
-        label: "Plantilla de proceso configurado",
-        type: "number",
-        required: true
+        label: "Entregable definido por proceso",
+        type: "number"
       },
-      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
+      { name: "template_artifact_id", label: "Plantilla documental", type: "number", required: true },
+      {
+        name: "origin_kind",
+        label: "Origen",
+        type: "select",
+        options: ["process_defined", "user_added"],
+        defaultValue: "process_defined"
+      },
+      { name: "title", label: "Titulo", type: "text" },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
+      { name: "created_by_person_id", label: "Creado por", type: "number" },
+      { name: "source_task_item_id", label: "Entregable origen", type: "number" },
+      { name: "target_unit_id", label: "Unidad destino", type: "number" },
+      { name: "target_position_id", label: "Cargo/puesto destino", type: "number" },
+      { name: "target_person_id", label: "Persona destino", type: "number" },
       { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
       { name: "assigned_person_id", label: "Responsable", type: "number" },
       { name: "start_date", label: "Inicio entregable", type: "date", required: true },
@@ -362,7 +367,7 @@ export const SQL_TABLES = [
   },
   {
     table: "template_artifacts",
-    label: "Plantillas",
+    label: "Plantillas documentales",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
@@ -382,6 +387,13 @@ export const SQL_TABLES = [
         options: ["draft", "review", "approved", "published", "archived"],
         defaultValue: "published"
       },
+      {
+        name: "template_scope",
+        label: "Alcance de plantilla",
+        type: "select",
+        options: ["official", "user_reusable", "ad_hoc"],
+        defaultValue: "official"
+      },
       { name: "bucket", label: "Bucket", type: "text", required: true },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
@@ -396,13 +408,13 @@ export const SQL_TABLES = [
   },
   {
     table: "process_definition_templates",
-    label: "Procesos asignados",
+    label: "Entregables del proceso",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
-      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
+      { name: "template_artifact_id", label: "Plantilla documental", type: "number", required: true },
       {
         name: "instance_mode",
         label: "Modo de instancia",
@@ -410,8 +422,7 @@ export const SQL_TABLES = [
         options: ["single_document", "owner_many_documents"],
         defaultValue: "single_document"
       },
-      { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
-      { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
+      { name: "creates_task", label: "Materializa entregable", type: "boolean", defaultValue: 1 },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
