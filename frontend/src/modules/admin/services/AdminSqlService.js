@@ -64,6 +64,14 @@ export class AdminSqlService {
   generateTermTasks(termId) {
     return this.httpClient.post(API_ROUTES.ADMIN_GENERATE_TERM_TASKS(termId));
   }
+
+  getTermLaunchStatus(termId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_TERM_LAUNCH_STATUS(termId));
+  }
+
+  launchProcessDefinition(definitionId, payload = {}) {
+    return this.httpClient.post(API_ROUTES.ADMIN_LAUNCH_PROCESS_DEFINITION(definitionId), payload);
+  }
 }
 
 export const adminSqlService = new AdminSqlService();

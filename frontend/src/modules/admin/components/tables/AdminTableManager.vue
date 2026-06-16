@@ -8,6 +8,12 @@
       @close="hideFeedbackToast"
     />
 
+    <ProcessLaunchModal
+      ref="processLaunchModal"
+      @notify="showFeedbackToast"
+      @changed="fetchRows"
+    />
+
     <div v-if="table && siblingTabs.length" class="admin-related-tabs">
       <ProfileSubsectionTabs
         :model-value="activeSiblingTab"
@@ -957,6 +963,7 @@ import AdminDefinitionTriggersModal from "@/modules/admin/components/modals/Admi
 import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/AdminDefinitionTriggersPanel.vue";
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
+import ProcessLaunchModal from "@/modules/admin/components/modals/ProcessLaunchModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
 import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTableSection.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
@@ -1012,6 +1019,7 @@ const emit = defineEmits(["go-back", "select-sibling-tab"]);
 const rows = ref([]);
 const loading = ref(false);
 const error = ref("");
+const processLaunchModal = ref(null);
 const feedbackToast = ref({
   visible: false,
   kind: "success",
@@ -3248,6 +3256,12 @@ const openProcessConfiguration = async (processRow) => {
   await openProcessWizard({ processRow });
 };
 
+// Abre el modal de lanzamiento de procesos para un periodo (term).
+const openProcessLaunch = async (termRow) => {
+  if (!termRow?.id) return;
+  await processLaunchModal.value?.openModal(termRow);
+};
+
 const openProcessConfigurationFromEditor = async () => {
   const processRow = processEditorContext.value || selectedRow.value;
   if (props.table?.table !== "processes" || editorMode.value !== "edit" || !processRow?.id) {
@@ -3548,6 +3562,7 @@ const {
   openProcessConfiguration,
   openProcessDefinitionActivationModal,
   openProcessDefinitionVersioningModal,
+  openProcessLaunch,
   showFeedbackToast,
   getDeleteInstance
 });

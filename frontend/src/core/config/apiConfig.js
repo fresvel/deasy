@@ -76,6 +76,8 @@ export const API_ROUTES = {
   ADMIN_SQL_PROCESS_SERIES_SCOPE: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/series-scope`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
+  ADMIN_TERM_LAUNCH_STATUS: (termId) => `${API_PREFIX}/admin/terms/${termId}/launch-status`,
+  ADMIN_LAUNCH_PROCESS_DEFINITION: (definitionId) => `${API_PREFIX}/admin/process-definitions/${definitionId}/launch`,
   SIGN: `${API_PREFIX}/sign`,
   SIGN_VALIDATE: `${API_PREFIX}/sign/validate`,
   SIGN_BATCH_START: `${API_PREFIX}/sign/batch/start`,

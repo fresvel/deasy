@@ -1,0 +1,196 @@
+<template>
+  <AppModalShell
+    controlled
+    :open="open"
+    labelled-by="processLaunchModalLabel"
+    title="Lanzar procesos del periodo"
+    size="lg"
+    @close="close"
+  >
+    <div class="flex flex-col gap-4">
+      <div v-if="term" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <span class="font-semibold text-slate-700">Periodo:</span>
+        <span class="ml-1 text-slate-600">{{ term.name || `#${term.id}` }}</span>
+      </div>
+
+      <div v-if="loading" class="text-sm text-slate-500">Cargando estado de lanzamiento...</div>
+
+      <template v-else>
+        <div v-if="!definitions.length" class="text-sm text-slate-500 italic">
+          No hay configuraciones de proceso activas vinculadas al tipo de periodo de este periodo.
+        </div>
+
+        <div v-else class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">
+              {{ pendingCount }} pendiente(s) · {{ definitions.length }} configuracion(es)
+            </span>
+            <AppButton
+              v-if="pendingCount > 0"
+              variant="outlinePrimary"
+              :disabled="busy"
+              @click="launchAllPending"
+            >
+              Lanzar pendientes
+            </AppButton>
+          </div>
+
+          <ul class="flex flex-col gap-2 m-0 p-0 list-none">
+            <li
+              v-for="def in definitions"
+              :key="def.definition_id"
+              class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex flex-col">
+                  <span class="text-sm font-semibold text-slate-700">{{ def.name }}</span>
+                  <span class="text-xs" :class="statusClass(def)">{{ statusLabel(def) }}</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <AppButton
+                    v-if="!def.launched"
+                    variant="success"
+                    :disabled="busy"
+                    @click="launch(def, false)"
+                  >
+                    Lanzar
+                  </AppButton>
+                  <AppButton
+                    v-else
+                    variant="secondary"
+                    :disabled="busy"
+                    @click="toggleRelaunch(def.definition_id)"
+                  >
+                    Relanzar
+                  </AppButton>
+                </div>
+              </div>
+
+              <div v-if="relaunchOpenId === def.definition_id" class="flex flex-col gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                <label class="text-xs font-semibold text-slate-600">Motivo del relanzamiento (opcional)</label>
+                <input
+                  v-model="relaunchReason"
+                  type="text"
+                  class="h-10 rounded-xl border border-slate-200 px-3 text-sm"
+                  placeholder="Ej. se agregaron nuevos destinatarios"
+                />
+                <div class="flex justify-end gap-2">
+                  <AppButton variant="cancel" :disabled="busy" @click="relaunchOpenId = null">Cancelar</AppButton>
+                  <AppButton variant="success" :disabled="busy" @click="launch(def, true)">Confirmar relanzamiento</AppButton>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </template>
+    </div>
+
+    <template #footer>
+      <AppButton variant="outlineDanger" :disabled="busy" @click="close">Cerrar</AppButton>
+    </template>
+  </AppModalShell>
+</template>
+
+<script setup>
+import { computed, ref } from "vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
+
+const emit = defineEmits(["notify", "changed"]);
+
+const open = ref(false);
+const term = ref(null);
+const loading = ref(false);
+const busy = ref(false);
+const definitions = ref([]);
+const relaunchOpenId = ref(null);
+const relaunchReason = ref("");
+
+const pendingCount = computed(() => definitions.value.filter((d) => !d.launched).length);
+
+const statusLabel = (def) => {
+  if (def.relaunched) return `Relanzado · ${def.run_count} corridas`;
+  if (def.launched) return "Lanzado";
+  return "Pendiente";
+};
+const statusClass = (def) => {
+  if (def.relaunched) return "text-amber-600 font-medium";
+  if (def.launched) return "text-emerald-600 font-medium";
+  return "text-slate-400 font-medium";
+};
+
+const loadStatus = async () => {
+  if (!term.value?.id) return;
+  loading.value = true;
+  try {
+    const response = await adminSqlService.getTermLaunchStatus(term.value.id);
+    definitions.value = response?.data?.definitions || [];
+  } catch (error) {
+    emit("notify", {
+      kind: "error",
+      title: "No se pudo cargar el estado",
+      message: error?.response?.data?.error || error?.response?.data?.message || "Error al consultar el estado de lanzamiento."
+    });
+    definitions.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openModal = async (termRow) => {
+  term.value = termRow || null;
+  relaunchOpenId.value = null;
+  relaunchReason.value = "";
+  open.value = true;
+  await loadStatus();
+};
+
+const close = () => {
+  open.value = false;
+};
+
+const toggleRelaunch = (definitionId) => {
+  relaunchReason.value = "";
+  relaunchOpenId.value = relaunchOpenId.value === definitionId ? null : definitionId;
+};
+
+const launch = async (def, relaunch) => {
+  if (!term.value?.id || busy.value) return;
+  busy.value = true;
+  try {
+    const response = await adminSqlService.launchProcessDefinition(def.definition_id, {
+      term_id: term.value.id,
+      relaunch,
+      reason: relaunch ? (relaunchReason.value || null) : null
+    });
+    const result = response?.data || {};
+    relaunchOpenId.value = null;
+    relaunchReason.value = "";
+    emit("notify", {
+      kind: "success",
+      title: relaunch ? "Proceso relanzado" : "Proceso lanzado",
+      message: `${def.name}: ${result.tasks_created ?? 0} tarea(s), ${result.task_items_created ?? 0} entregable(s).`
+    });
+    emit("changed");
+    await loadStatus();
+  } catch (error) {
+    emit("notify", {
+      kind: "error",
+      title: relaunch ? "No se pudo relanzar" : "No se pudo lanzar",
+      message: error?.response?.data?.error || error?.response?.data?.message || "Error al lanzar la configuracion."
+    });
+  } finally {
+    busy.value = false;
+  }
+};
+
+const launchAllPending = async () => {
+  const pending = definitions.value.filter((d) => !d.launched);
+  for (const def of pending) {
+    await launch(def, false);
+  }
+};
+
+defineExpose({ openModal, close });
+</script>

@@ -23,6 +23,7 @@ export function useAdminSubmitFlow({
   openProcessConfiguration,
   openProcessDefinitionActivationModal,
   openProcessDefinitionVersioningModal,
+  openProcessLaunch,
   showFeedbackToast,
   getDeleteInstance
 }) {
@@ -145,26 +146,10 @@ export function useAdminSubmitFlow({
         )) || createdProcessRow;
         await openProcessConfiguration(selectedProcess);
       }
-      if (createdTermRow?.id) {
-        const shouldInstantiate = window.confirm("El periodo se creo correctamente. ¿Deseas instanciar ahora las tareas automaticas?");
-        if (shouldInstantiate) {
-          try {
-            const generationResponse = await adminSqlService.generateTermTasks(createdTermRow.id);
-            const result = generationResponse?.data || {};
-            showFeedbackToast({
-              kind: "success",
-              title: "Instanciacion completada",
-              message: `Tareas: ${result.tasks_created ?? 0}. Items: ${result.task_items_created ?? 0}. Asignaciones: ${result.assignments_created ?? 0}.`,
-              duration: 6200
-            });
-          } catch (generationError) {
-            showFeedbackToast({
-              kind: "error",
-              title: "No se pudo instanciar",
-              message: generationError?.response?.data?.error || generationError?.response?.data?.message || "No se pudieron generar las tareas del periodo."
-            });
-          }
-        }
+      if (createdTermRow?.id && typeof openProcessLaunch === "function") {
+        // En vez de un confirm nativo, se abre el modal de lanzamiento del periodo: muestra los
+        // procesos vinculados a su tipo (pendientes/lanzados) y permite lanzar/relanzar.
+        await openProcessLaunch(createdTermRow);
       }
     } catch (err) {
       const responseMessage = err?.response?.data?.message || "";
