@@ -4901,7 +4901,7 @@ const submitTaskLaunch = async () => {
 
     processActionMessage.value = {
       type: 'success',
-      text: 'La tarea manual se creó correctamente para esta configuración.'
+      text: 'El proceso se lanzó correctamente para el periodo seleccionado.'
     };
     closeTaskLaunchModal();
     await loadSelectedProcessPanel({

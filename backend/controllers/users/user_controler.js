@@ -11,8 +11,8 @@ import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   createDocumentInstanceForTaskItem,
   ensureDocumentForTaskItem,
-  hydrateTaskFromDefinition,
   hydrateGeneralTask,
+  launchProcessDefinitionInTerm,
   resolveOriginUnitIdForTaskItem,
   resolveOwnerPersonIdForTaskItem
 } from "../../services/admin/TaskGenerationService.js";
@@ -2623,144 +2623,33 @@ export const createUserProcessTask = async (req, res) => {
     });
   }
 
-  const canLaunchManual = accessPanel.permissions?.can_launch_manual;
-  const canLaunchCustomTerm = accessPanel.permissions?.can_launch_custom_term;
-  if (!canLaunchManual) {
+  if (!accessPanel.permissions?.can_launch_manual) {
     return res.status(400).json({
-      message: "Esta configuracion no permite lanzar tareas manuales."
+      message: "Esta configuracion no permite lanzarse manualmente (revisa Periodos del proceso)."
     });
   }
 
+  // Modelo 2026-06: lanzar manualmente = misma corrida/reparto que el automático. Se delega en
+  // launchProcessDefinitionInTerm (process_run + una task por unidad + task_items por destino);
+  // relanzar crea una corrida nueva superseiendo la activa (Opción X). Los periodos custom se
+  // deprecaron: el lanzamiento siempre es contra un periodo existente del tipo del proceso.
   const termId = req.body?.term_id ? Number(req.body.term_id) : null;
-  const customTerm = req.body?.custom_term ?? null;
-  const requestedScopeUnitId = req.body?.scope_unit_id ? Number(req.body.scope_unit_id) : null;
-  const accessibleScopeUnitIds = Array.isArray(accessPanel.definition?.chat_context?.accessible_scope_unit_ids)
-    ? accessPanel.definition.chat_context.accessible_scope_unit_ids.map((value) => Number(value)).filter(Boolean)
-    : [];
-  const scopeUnitId = requestedScopeUnitId || accessibleScopeUnitIds[0] || null;
-  if (requestedScopeUnitId && accessibleScopeUnitIds.length && !accessibleScopeUnitIds.includes(requestedScopeUnitId)) {
-    return res.status(403).json({ message: "No tienes acceso al alcance seleccionado." });
+  if (!termId || Number.isNaN(termId)) {
+    return res.status(400).json({ message: "Debes seleccionar un periodo para lanzar el proceso." });
   }
+  const relaunch = Boolean(req.body?.relaunch);
+  const reason = req.body?.reason ? String(req.body.reason) : null;
 
-  const connection = await pool.getConnection();
   try {
-    await connection.beginTransaction();
-
-    let term = null;
-    if (termId && !Number.isNaN(termId)) {
-      const [rows] = await connection.query(
-        `SELECT
-           t.id,
-           t.name,
-           t.start_date,
-           t.end_date,
-           tt.code AS term_type_code
-         FROM terms t
-         INNER JOIN term_types tt ON tt.id = t.term_type_id
-         WHERE t.id = ?
-         LIMIT 1`,
-        [termId]
-      );
-      term = rows[0] || null;
-      if (!term) {
-        throw new Error("El periodo seleccionado no existe.");
-      }
-      if (!canLaunchCustomTerm && !canLaunchManual) {
-        throw new Error("La configuracion no permite lanzar tareas manuales.");
-      }
-      if (!canLaunchManual && term.term_type_code !== "CUS") {
-        throw new Error("Esta configuracion solo permite tareas manuales con periodos personalizados.");
-      }
-    } else if (customTerm) {
-      if (!canLaunchCustomTerm) {
-        throw new Error("Esta configuracion no permite crear periodos personalizados.");
-      }
-      const customType = await getCustomTermType(connection);
-      if (!customType) {
-        throw new Error("No existe el tipo de periodo Custom.");
-      }
-
-      const customName = String(customTerm.name || "").trim();
-      const startDate = String(customTerm.start_date || "").trim();
-      const endDate = String(customTerm.end_date || "").trim();
-      if (!customName || !startDate || !endDate) {
-        throw new Error("Debes completar nombre, fecha inicial y fecha final del periodo personalizado.");
-      }
-
-      const [insertResult] = await connection.query(
-        `INSERT INTO terms (name, term_type_id, start_date, end_date, is_active)
-         VALUES (?, ?, ?, ?, 1)`,
-        [customName, customType.id, startDate, endDate]
-      );
-      term = {
-        id: insertResult.insertId,
-        name: customName,
-        start_date: startDate,
-        end_date: endDate,
-        term_type_code: customType.code
-      };
-    } else {
-      throw new Error("Debes seleccionar un periodo o crear uno personalizado.");
-    }
-
-    const responsiblePositionId = scopeUnitId
-      ? await resolveUserPositionInUnit(connection, userId, scopeUnitId)
-      : null;
-
-    const [result] = await connection.query(
-      `INSERT INTO tasks (
-         process_definition_id,
-         term_id,
-         scope_unit_id,
-         created_by_user_id,
-         responsible_position_id,
-         description,
-         start_date,
-         end_date,
-         status
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
-      [
-        definitionId,
-        term.id,
-        scopeUnitId,
-        userId,
-        responsiblePositionId,
-        req.body?.description ? String(req.body.description) : null,
-        term.start_date,
-        term.end_date || null
-      ]
-    );
-
-    const hydrated = await hydrateTaskFromDefinition({
-      connection,
-      taskId: result.insertId,
-      processDefinitionId: definitionId,
-      termId: term.id
+    const result = await launchProcessDefinitionInTerm(definitionId, termId, {
+      createdByUserId: userId,
+      relaunch,
+      reason
     });
-
-    await connection.commit();
-
-    res.json({
-      result: "ok",
-      task_id: result.insertId,
-      term_id: term.id,
-      hydration: hydrated
-    });
+    return res.json({ result: "ok", ...result });
   } catch (error) {
-    await connection.rollback();
-    let message = error.message;
-    if (error?.code === "ER_DUP_ENTRY") {
-      const details = String(error?.sqlMessage || error?.message || "");
-      if (details.includes("uq_tasks_manual_term_user")) {
-        message = "Ya existe una tarea manual de esta configuracion para ese periodo creada por este usuario.";
-      } else if (details.includes("terms.name")) {
-        message = "Ya existe un periodo con ese nombre. Usa otro nombre para el periodo personalizado.";
-      }
-    }
-    console.error("Error creando tarea manual de configuracion:", error);
-    res.status(400).json({ message });
-  } finally {
-    connection.release();
+    console.error("Error lanzando la configuracion de proceso:", error);
+    return res.status(400).json({ message: error.message || "No se pudo lanzar el proceso." });
   }
 };
 
