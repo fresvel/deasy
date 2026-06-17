@@ -4748,7 +4748,7 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
 const openDerivedTaskFromWorkspace = () => {
   const subject = deliverableWorkspaceSubject.value ? getDeliverableSubject(deliverableWorkspaceSubject.value) : null;
   if (!subject?.taskId) {
-    setProcessActionInfo('No se pudo resolver la tarea de origen para derivar.', 'error');
+    setProcessActionInfo('No se pudo resolver la tarea de origen para agregar el entregable.', 'error');
     return;
   }
   deliverableWorkspaceModalInstance?.hide();
