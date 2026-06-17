@@ -7,6 +7,9 @@ import {
   getUserDocumentCenter,
   getUserGlobalSignatureCenter,
   createUserProcessTask,
+  listTaskItemObservations,
+  addTaskItemObservation,
+  resolveTaskItemObservation,
   getMyProfile,
   updateMyProfile,
   uploadDeliverablePdf,
@@ -156,6 +159,27 @@ router.post(
   requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
   uploadDeliverable.single('file'),
   uploadDeliverablePdf
+);
+router.get(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/observations',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "read", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  listTaskItemObservations
+);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/observations',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  addTaskItemObservation
+);
+router.post(
+  '/:id/process-definitions/:definitionId/task-items/:taskItemId/observations/:observationId/resolve',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "documents", action: "update", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
+  resolveTaskItemObservation
 );
 router.get(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/attachments',

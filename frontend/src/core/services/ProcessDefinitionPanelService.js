@@ -78,6 +78,41 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async listTaskItemObservations(userId, processDefinitionId, taskItemId) {
+    if (!userId || !processDefinitionId || !taskItemId) {
+      throw new Error("Se requiere usuario, configuración y entregable.");
+    }
+    const { data } = await axios.get(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATIONS(userId, processDefinitionId, taskItemId),
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
+  async addTaskItemObservation(userId, processDefinitionId, taskItemId, payload = {}) {
+    if (!userId || !processDefinitionId || !taskItemId) {
+      throw new Error("Se requiere usuario, configuración y entregable.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATIONS(userId, processDefinitionId, taskItemId),
+      payload,
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
+  async resolveTaskItemObservation(userId, processDefinitionId, taskItemId, observationId) {
+    if (!userId || !processDefinitionId || !taskItemId || !observationId) {
+      throw new Error("Se requiere usuario, configuración, entregable y observación.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATION_RESOLVE(userId, processDefinitionId, taskItemId, observationId),
+      {},
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
   async uploadDeliverableFile(userId, processDefinitionId, taskItemId, file, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, configuración y entregable.");

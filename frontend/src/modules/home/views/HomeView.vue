@@ -1543,6 +1543,73 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
               <div class="flex items-center justify-between gap-2">
                 <div>
+                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Observaciones</h3>
+                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Hilo de revisión y firma: devoluciones, rechazos y notas del entregable.</p>
+                </div>
+              </div>
+              <div v-if="observationsLoading" class="mt-4 text-sm text-slate-500">Cargando observaciones...</div>
+              <template v-else>
+                <div
+                  v-if="!deliverableObservations.length"
+                  class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-5 text-sm font-medium text-slate-500"
+                >
+                  Sin observaciones registradas.
+                </div>
+                <ul v-else class="mt-4 flex flex-col gap-2.5 m-0 p-0 list-none">
+                  <li
+                    v-for="observation in deliverableObservations"
+                    :key="`obs-${observation.id}`"
+                    class="rounded-2xl border px-4 py-3"
+                    :class="observation.resolved_at ? 'border-slate-100 bg-slate-50/60' : 'border-slate-200 bg-white'"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <AppTag :variant="observation.phase === 'signature' ? 'warning' : 'info'">{{ observation.phase === 'signature' ? 'Firma' : 'Revisión' }}</AppTag>
+                        <AppTag variant="neutral">{{ observationKindLabel(observation.kind) }}</AppTag>
+                        <span class="text-xs font-medium text-slate-500">{{ observation.author_name || 'Sistema' }} · {{ (observation.created_at || '').toString().slice(0, 16).replace('T', ' ') }}</span>
+                      </div>
+                      <span v-if="observation.resolved_at" class="text-xs font-semibold text-emerald-600">Resuelta</span>
+                    </div>
+                    <p class="m-0 mt-2 text-sm text-slate-700 whitespace-pre-line">{{ observation.message }}</p>
+                    <div v-if="observation.resolved_at" class="mt-1 text-xs text-slate-400">
+                      Resuelta por {{ observation.resolved_by_name || '—' }}
+                    </div>
+                    <div v-else-if="observation.can_resolve" class="mt-2 flex justify-end">
+                      <AppButton
+                        variant="secondary"
+                        size="sm"
+                        :disabled="resolvingObservationId === observation.id"
+                        @click="resolveDeliverableObservation(observation)"
+                      >
+                        {{ resolvingObservationId === observation.id ? 'Resolviendo...' : 'Marcar resuelta' }}
+                      </AppButton>
+                    </div>
+                  </li>
+                </ul>
+                <div v-if="observationsCanAdd" class="mt-4 flex flex-col gap-2">
+                  <textarea
+                    v-model="newObservationMessage"
+                    rows="2"
+                    class="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Escribe una observación para el hilo..."
+                  ></textarea>
+                  <div class="flex justify-end">
+                    <AppButton
+                      variant="outlinePrimary"
+                      size="sm"
+                      :disabled="!newObservationMessage.trim() || submittingObservation"
+                      @click="submitDeliverableObservation"
+                    >
+                      {{ submittingObservation ? 'Agregando...' : 'Agregar observación' }}
+                    </AppButton>
+                  </div>
+                </div>
+              </template>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex items-center justify-between gap-2">
+                <div>
                   <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones esenciales</h3>
                   <p class="m-0 mt-1 text-xs font-medium text-slate-500">Las acciones menos frecuentes quedaron movidas a este resumen y al historial.</p>
                 </div>
@@ -2867,6 +2934,12 @@ const signatureFlowSignerRef = ref(null);
 const pendingDeliverableUploadTarget = ref(null);
 const selectedDeliverableUploadFile = ref(null);
 const isUploadingDeliverable = ref(false);
+const deliverableObservations = ref([]);
+const observationsLoading = ref(false);
+const observationsCanAdd = ref(false);
+const newObservationMessage = ref('');
+const submittingObservation = ref(false);
+const resolvingObservationId = ref(null);
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
 const collapsedDeliverableIds = ref(new Set());
@@ -7028,11 +7101,88 @@ const handleEmbeddedWorkflowSigned = async (payload = {}) => {
   });
 };
 
+const observationContext = (payload) => {
+  const subject = getDeliverableSubject(payload);
+  const userId = currentUserId.value;
+  const definitionId = Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value);
+  const taskItemId = Number(subject?.itemId || 0);
+  return { userId, definitionId, taskItemId };
+};
+
+const loadDeliverableObservations = async (payload) => {
+  const { userId, definitionId, taskItemId } = observationContext(payload);
+  deliverableObservations.value = [];
+  observationsCanAdd.value = false;
+  newObservationMessage.value = '';
+  if (!userId || !definitionId || !taskItemId) {
+    return;
+  }
+  observationsLoading.value = true;
+  try {
+    const data = await processPanelService.listTaskItemObservations(userId, definitionId, taskItemId);
+    deliverableObservations.value = Array.isArray(data?.observations) ? data.observations : [];
+    observationsCanAdd.value = Boolean(data?.can_add);
+  } catch (error) {
+    deliverableObservations.value = [];
+    observationsCanAdd.value = false;
+  } finally {
+    observationsLoading.value = false;
+  }
+};
+
+const submitDeliverableObservation = async () => {
+  const message = newObservationMessage.value.trim();
+  if (!message || submittingObservation.value) {
+    return;
+  }
+  const { userId, definitionId, taskItemId } = observationContext(deliverableWorkspaceSubject.value);
+  if (!userId || !definitionId || !taskItemId) {
+    return;
+  }
+  submittingObservation.value = true;
+  try {
+    await processPanelService.addTaskItemObservation(userId, definitionId, taskItemId, { message });
+    newObservationMessage.value = '';
+    await loadDeliverableObservations(deliverableWorkspaceSubject.value);
+  } catch (error) {
+    setProcessActionInfo(error?.response?.data?.message || 'No se pudo agregar la observación.', 'error');
+  } finally {
+    submittingObservation.value = false;
+  }
+};
+
+const resolveDeliverableObservation = async (observation) => {
+  if (!observation?.id || resolvingObservationId.value) {
+    return;
+  }
+  const { userId, definitionId, taskItemId } = observationContext(deliverableWorkspaceSubject.value);
+  if (!userId || !definitionId || !taskItemId) {
+    return;
+  }
+  resolvingObservationId.value = observation.id;
+  try {
+    await processPanelService.resolveTaskItemObservation(userId, definitionId, taskItemId, observation.id);
+    await loadDeliverableObservations(deliverableWorkspaceSubject.value);
+  } catch (error) {
+    setProcessActionInfo(error?.response?.data?.message || 'No se pudo resolver la observación.', 'error');
+  } finally {
+    resolvingObservationId.value = null;
+  }
+};
+
+const observationKindLabel = (kind) => ({
+  observation: 'Observación',
+  return_reason: 'Devolución',
+  rejection_reason: 'Rechazo',
+  internal_note: 'Nota interna'
+}[kind] || 'Observación');
+
 const openDeliverableWorkspaceModal = async (payload) => {
   const canManageFill = shouldShowManageFill(payload);
   const canReviewSignatureFlow = shouldShowSignatureFlow(payload);
 
   loadFillWorkflowState(payload);
+  loadDeliverableObservations(payload);
   deliverableWorkspaceState.value = {
     tab: resolveDeliverableWorkspaceTab(payload)
   };

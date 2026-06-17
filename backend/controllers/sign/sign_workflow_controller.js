@@ -2,6 +2,7 @@ import UserRepository from "../../services/auth/UserRepository.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import { FILL_REQUEST_STATUS } from "../../services/documents/DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "../../services/documents/DocumentProgressService.js";
+import { addDocumentObservation } from "../../services/documents/DocumentObservationService.js";
 
 const userRepository = new UserRepository();
 const pool = getMariaDBPool();
@@ -196,6 +197,19 @@ const updateFillRequestStatus = async ({ req, res, action, nextStatus }) => {
 
     if (action === "return") {
       await reactivatePreviousFillStepIfNeeded(connection, context);
+    }
+
+    // Auto-captura: una devolución/rechazo de revisión con motivo queda como observación del hilo.
+    if ((action === "return" || action === "reject") && note && context.task_item_id) {
+      await addDocumentObservation(connection, {
+        taskItemId: context.task_item_id,
+        documentVersionId: context.document_version_id,
+        fillRequestId,
+        phase: "review",
+        kind: action === "reject" ? "rejection_reason" : "return_reason",
+        message: note,
+        authorPersonId: user.id
+      });
     }
 
     if (action === "start" && context.task_item_id && !context.user_started_at) {

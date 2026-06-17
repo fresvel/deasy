@@ -2,6 +2,7 @@ import {
   normalizeDocumentVersionStatus,
   transitionDocumentVersionState,
 } from "./DocumentStateService.js";
+import { addDocumentObservation } from "./DocumentObservationService.js";
 import {
   SIGNATURE_REQUEST_STATUS,
   SIGNATURE_STATUS,
@@ -833,6 +834,18 @@ export const registerSignatureEvidence = async ({ connection, context, result })
   );
 
   await syncDocumentProgressFromDocumentSignature(connection, Number(insertResult.insertId));
+
+  // Auto-captura: un rechazo de firma queda como observación del hilo (fase 'signature').
+  if (!DOC_SIGNATURE_SUCCESS.has(signatureStatusCode)) {
+    await addDocumentObservation(connection, {
+      documentVersionId,
+      signatureRequestId: signatureRequest?.id ? Number(signatureRequest.id) : null,
+      phase: "signature",
+      kind: "rejection_reason",
+      message: noteShort || "Firma rechazada.",
+      authorPersonId: context.user.id
+    });
+  }
 
   return {
     documentSignatureId: Number(insertResult.insertId),

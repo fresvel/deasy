@@ -33,6 +33,10 @@ export const API_ROUTES = {
   USERS_SIGNATURE_CENTER: (userId) => `${API_PREFIX}/users/${userId}/signature-center`,
   USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
   USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATIONS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/observations`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATION_RESOLVE: (userId, definitionId, taskItemId, observationId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/observations/${observationId}/resolve`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_UPLOAD_FILE: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/upload-file`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_TEMPLATE_DOWNLOAD: (userId, definitionId, taskItemId) =>

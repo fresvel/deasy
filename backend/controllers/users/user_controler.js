@@ -15,6 +15,13 @@ import {
   resolveOriginUnitIdForTaskItem,
   resolveOwnerPersonIdForTaskItem
 } from "../../services/admin/TaskGenerationService.js";
+import {
+  addDocumentObservation,
+  listDocumentObservations,
+  getObservationById,
+  resolveDocumentObservation,
+  isUserInTaskItemChain
+} from "../../services/documents/DocumentObservationService.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
 import { generateUniqueToken } from "../../utils/tokenGenerator.js";
 import {
@@ -2627,6 +2634,137 @@ export const createUserProcessTask = async (req, res) => {
   } catch (error) {
     console.error("Error lanzando la configuracion de proceso:", error);
     return res.status(400).json({ message: error.message || "No se pudo lanzar el proceso." });
+  }
+};
+
+// --- Observaciones del entregable (hilo compartido revisión/firma) ---
+
+export const listTaskItemObservations = async (req, res) => {
+  const userId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  if (!userId || !definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  try {
+    const taskItem = await getAccessibleTaskItemForUser(pool, userId, definitionId, taskItemId);
+    if (!taskItem) {
+      return res.status(404).json({ message: "No se encontró el entregable solicitado." });
+    }
+    const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
+    const inChain = await isUserInTaskItemChain(pool, userId, taskItem.task_item_id);
+    const observations = await listDocumentObservations(taskItem.task_item_id, pool);
+    return res.json({
+      task_item_id: taskItem.task_item_id,
+      can_add: isOwner || inChain,
+      observations: observations.map((observation) => ({
+        ...observation,
+        can_resolve: !observation.resolved_at
+          && (Number(observation.author_person_id) === Number(userId) || isOwner)
+      }))
+    });
+  } catch (error) {
+    console.error("Error listando observaciones del entregable:", error);
+    return res.status(500).json({ message: "No se pudieron obtener las observaciones.", error: error.message });
+  }
+};
+
+export const addTaskItemObservation = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const userId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  if (!authenticatedUserId || !userId || authenticatedUserId !== userId) {
+    return res.status(403).json({ message: "No autorizado." });
+  }
+  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
+    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
+  }
+  const message = String(req.body?.message || "").trim();
+  if (!message) {
+    return res.status(400).json({ message: "Escribe el contenido de la observación." });
+  }
+  const phase = String(req.body?.phase || "review").trim();
+  const kind = String(req.body?.kind || "observation").trim();
+  const targetPersonId = req.body?.target_person_id ? Number(req.body.target_person_id) : null;
+
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  const connection = await pool.getConnection();
+  try {
+    const taskItem = await getAccessibleTaskItemForUser(connection, userId, definitionId, taskItemId);
+    if (!taskItem) {
+      return res.status(404).json({ message: "No se encontró el entregable solicitado." });
+    }
+    const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
+    const inChain = await isUserInTaskItemChain(connection, userId, taskItem.task_item_id);
+    if (!isOwner && !inChain) {
+      return res.status(403).json({ message: "Solo el dueño o los responsables de la cadena pueden agregar observaciones." });
+    }
+    await connection.beginTransaction();
+    const observationId = await addDocumentObservation(connection, {
+      taskItemId: taskItem.task_item_id,
+      phase,
+      kind,
+      message,
+      authorPersonId: userId,
+      targetPersonId
+    });
+    await connection.commit();
+    if (!observationId) {
+      return res.status(400).json({ message: "No se pudo registrar la observación (el entregable no tiene versión documental)." });
+    }
+    return res.status(201).json({ id: observationId });
+  } catch (error) {
+    await connection.rollback().catch(() => {});
+    console.error("Error agregando observación del entregable:", error);
+    return res.status(400).json({ message: error.message || "No se pudo agregar la observación." });
+  } finally {
+    connection.release();
+  }
+};
+
+export const resolveTaskItemObservation = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const userId = getNumericUserId(req);
+  const definitionId = Number(req.params?.definitionId);
+  const taskItemId = Number(req.params?.taskItemId);
+  const observationId = Number(req.params?.observationId);
+  if (!authenticatedUserId || !userId || authenticatedUserId !== userId) {
+    return res.status(403).json({ message: "No autorizado." });
+  }
+  if (!definitionId || !taskItemId || !observationId || Number.isNaN(observationId)) {
+    return res.status(400).json({ message: "Parámetros inválidos." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  try {
+    const taskItem = await getAccessibleTaskItemForUser(pool, userId, definitionId, taskItemId);
+    if (!taskItem) {
+      return res.status(404).json({ message: "No se encontró el entregable solicitado." });
+    }
+    const observation = await getObservationById(observationId, pool);
+    if (!observation || Number(observation.task_item_id) !== Number(taskItem.task_item_id)) {
+      return res.status(404).json({ message: "Observación no encontrada." });
+    }
+    const isOwner = Number(taskItem.resolved_owner_person_id || 0) === Number(userId);
+    const isAuthor = Number(observation.author_person_id) === Number(userId);
+    if (!isOwner && !isAuthor) {
+      return res.status(403).json({ message: "Solo el autor o el dueño del entregable pueden resolver la observación." });
+    }
+    await resolveDocumentObservation(observationId, userId, pool);
+    return res.json({ resolved: true, id: observationId });
+  } catch (error) {
+    console.error("Error resolviendo observación del entregable:", error);
+    return res.status(500).json({ message: "No se pudo resolver la observación.", error: error.message });
   }
 };
 
