@@ -1183,9 +1183,6 @@ const validateTableRules = (tableName, candidate) => {
       if (candidate.source_type === "cargo" && !candidate.cargo_id) {
         throw new Error("Una serie por cargo requiere seleccionar un cargo.");
       }
-      if (candidate.source_type === "unit_type_cargo" && (!candidate.unit_type_id || !candidate.cargo_id)) {
-        throw new Error("Una serie combinada requiere seleccionar un tipo de unidad y un cargo.");
-      }
       if (candidate.source_type === "unit_type" && candidate.cargo_id) {
         throw new Error("Una serie por tipo de unidad no admite cargo.");
       }
@@ -3426,14 +3423,20 @@ export default class SqlAdminService {
       }
     }
 
-    // Tipo de unidad: si la serie lo fija y el alcance es por tipo, se siembra o se blinda.
-    if (seriesUnitTypeId && String(candidate.unit_scope_type) === "unit_type") {
+    // Tipo de unidad: la variación por tipo fija el alcance de la regla a ese tipo; la regla solo añade
+    // el cargo y la entrega. El despliegue por tipo ya cubre todas las unidades de ese tipo.
+    if (seriesUnitTypeId) {
+      const requestedScope = candidate.unit_scope_type ? String(candidate.unit_scope_type) : "";
+      if (requestedScope && requestedScope !== "unit_type") {
+        throw new Error("El alcance de la regla lo fija la serie por tipo de unidad; no puede cambiarse.");
+      }
       const candidateUnitTypeId = normalizeNumericId(candidate.unit_type_id);
-      if (!candidateUnitTypeId) {
-        candidate.unit_type_id = seriesUnitTypeId;
-      } else if (candidateUnitTypeId !== seriesUnitTypeId) {
+      if (candidateUnitTypeId && candidateUnitTypeId !== seriesUnitTypeId) {
         throw new Error("El tipo de unidad de la regla debe coincidir con el tipo de unidad de la serie del proceso.");
       }
+      candidate.unit_scope_type = "unit_type";
+      candidate.unit_type_id = seriesUnitTypeId;
+      candidate.unit_id = null;
     }
   }
 

@@ -145,7 +145,8 @@ const ensurePasswordResetCodesPersonLink = async (connection) => {
   }
 };
 
-// Mantiene el enum de series actualizado y migra el centinela historico 'legacy' -> 'default'.
+// Mantiene el enum de series actualizado. Migra el centinela historico 'legacy' -> 'default' y colapsa las
+// variaciones combinadas 'unit_type_cargo' -> 'unit_type' (el cargo lo aporta ahora la regla, no la serie).
 const ensureProcessSeriesSourceTypes = async (connection) => {
   const [cols] = await connection.query(
     `SELECT COLUMN_TYPE FROM information_schema.COLUMNS
@@ -158,21 +159,26 @@ const ensureProcessSeriesSourceTypes = async (connection) => {
 
   const hasLegacy = columnType.includes("'legacy'");
   const hasCombined = columnType.includes("'unit_type_cargo'");
-  if (!hasLegacy && hasCombined) {
+  if (!hasLegacy && !hasCombined) {
     return;
   }
 
+  // Amplia el enum temporalmente para poder reasignar las filas existentes.
+  await connection.query(
+    "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','unit_type_cargo','legacy','default') NOT NULL DEFAULT 'default'"
+  );
   if (hasLegacy) {
-    await connection.query(
-      "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','unit_type_cargo','legacy','default') NOT NULL DEFAULT 'default'"
-    );
     await connection.query(
       "UPDATE process_definition_series SET source_type = 'default' WHERE source_type = 'legacy'"
     );
   }
+  // Combinadas -> por tipo de unidad; se descarta el cargo de la serie (lo establece la regla).
+  await connection.query(
+    "UPDATE process_definition_series SET source_type = 'unit_type', cargo_id = NULL WHERE source_type = 'unit_type_cargo'"
+  );
 
   await connection.query(
-    "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','unit_type_cargo','default') NOT NULL DEFAULT 'default'"
+    "ALTER TABLE process_definition_series MODIFY COLUMN source_type ENUM('unit_type','cargo','default') NOT NULL DEFAULT 'default'"
   );
   console.log("✅ process_definition_series.source_type actualizado");
 };

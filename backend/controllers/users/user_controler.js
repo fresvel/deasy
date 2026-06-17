@@ -505,7 +505,6 @@ const getDefinitionContext = async (pool, definitionId) => {
        CASE
          WHEN pds.source_type = 'unit_type' THEN ut.name
          WHEN pds.source_type = 'cargo' THEN c.name
-         WHEN pds.source_type = 'unit_type_cargo' THEN CONCAT_WS(' · ', ut.name, c.name)
          ELSE NULL
        END AS series_source_name
      FROM process_definition_versions pdv

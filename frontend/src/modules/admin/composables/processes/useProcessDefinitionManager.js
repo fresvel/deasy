@@ -83,8 +83,15 @@ export function useProcessDefinitionManager({
     const labels = processDefinitionAdminService.createRuleLabels();
     const scope = definitionRulesSeriesScope?.value;
     if (scope?.cargo_id) {
+      // Variación por cargo: la serie fija el cargo; la regla solo define unidades y entrega.
       form.cargo_id = String(scope.cargo_id);
       labels.cargo_id = scope.cargo_name || String(scope.cargo_id);
+    }
+    if (scope?.source_type === "unit_type" && scope?.unit_type_id) {
+      // Variación por tipo de unidad: la serie fija el alcance al tipo; la regla solo define el cargo.
+      form.unit_scope_type = "unit_type";
+      form.unit_type_id = String(scope.unit_type_id);
+      labels.unit_type_id = scope.unit_type_name || String(scope.unit_type_id);
     }
     definitionRulesForm.value = form;
     definitionRulesLabels.value = labels;

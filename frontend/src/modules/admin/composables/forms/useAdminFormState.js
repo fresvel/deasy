@@ -76,10 +76,10 @@ export function useAdminFormState({
     if (props.table?.table === "process_definition_series") {
       const sourceType = String(formData.value?.source_type || "").trim();
       if (field.name === "unit_type_id") {
-        return !["unit_type", "unit_type_cargo"].includes(sourceType);
+        return sourceType !== "unit_type";
       }
       if (field.name === "cargo_id") {
-        return !["cargo", "unit_type_cargo"].includes(sourceType);
+        return sourceType !== "cargo";
       }
     }
     if (
@@ -131,9 +131,6 @@ export function useAdminFormState({
         ...fkDisplay.value,
         unit_type_id: ""
       };
-      return;
-    }
-    if (sourceType === "unit_type_cargo") {
       return;
     }
     formData.value = {

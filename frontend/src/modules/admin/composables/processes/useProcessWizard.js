@@ -17,14 +17,12 @@ const NEW_SERIES_VALUE = "__new__";
 
 const SERIES_SOURCE_LABELS = {
   unit_type: "Tipo de unidad",
-  cargo: "Cargo",
-  unit_type_cargo: "Tipo de unidad y cargo"
+  cargo: "Cargo"
 };
 
 const SERIES_OPTION_PREFIXES = {
   unit_type: "Por tipo de unidad",
-  cargo: "Por cargo",
-  unit_type_cargo: "Por tipo de unidad y cargo"
+  cargo: "Por cargo"
 };
 
 const slugify = (value, maxLength = 80) =>
@@ -37,17 +35,12 @@ const slugify = (value, maxLength = 80) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, maxLength);
 
-const buildSeriesCode = ({ sourceType, unitTypeId, unitTypeName, cargoId, cargoName }) => {
+const buildSeriesCode = ({ sourceType, unitTypeName, cargoName }) => {
   if (sourceType === "unit_type") {
     return slugify(unitTypeName, 120);
   }
   if (sourceType === "cargo") {
     return slugify(cargoName, 120);
-  }
-  if (sourceType === "unit_type_cargo" && unitTypeId && cargoId) {
-    const unitTypeSlug = slugify(unitTypeName, 40);
-    const cargoSlug = slugify(cargoName, 40);
-    return `unit-type-${unitTypeId}-${unitTypeSlug}-cargo-${cargoId}-${cargoSlug}`.slice(0, 120);
   }
   return "";
 };
@@ -72,12 +65,6 @@ const buildSeriesDisplayName = ({ sourceType, unitTypeName, cargoName, code } = 
   }
   if (sourceType === "cargo" && cargoLabel) {
     return cargoLabel;
-  }
-  if (sourceType === "unit_type_cargo") {
-    const parts = [unitTypeLabel, cargoLabel].filter(Boolean);
-    if (parts.length) {
-      return parts.join(" y ");
-    }
   }
   return prettifySeriesCode(code || "general");
 };
@@ -215,9 +202,6 @@ export function useProcessWizard() {
     if (form.series_source_type === "cargo" && !cargo) {
       return "";
     }
-    if (form.series_source_type === "unit_type_cargo" && (!unitType || !cargo)) {
-      return "";
-    }
     return buildSeriesDisplayName({
       sourceType: String(form.series_source_type || ""),
       unitTypeName: unitType?.name || "",
@@ -239,9 +223,7 @@ export function useProcessWizard() {
     const cargo = cargoOptions.value.find((row) => Number(row.id) === Number(form.cargo_id));
     return buildSeriesCode({
       sourceType: String(form.series_source_type || ""),
-      unitTypeId: Number(form.unit_type_id) || null,
       unitTypeName: unitType?.name || "",
-      cargoId: Number(form.cargo_id) || null,
       cargoName: cargo?.name || ""
     });
   });
@@ -307,7 +289,7 @@ export function useProcessWizard() {
     }
 
     const sourceType = String(form.series_source_type || "");
-    const validSourceTypes = new Set(["unit_type", "cargo", "unit_type_cargo"]);
+    const validSourceTypes = new Set(["unit_type", "cargo"]);
     if (!validSourceTypes.has(sourceType)) {
       throw new Error("Selecciona un origen válido para la serie.");
     }

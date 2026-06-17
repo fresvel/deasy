@@ -37,16 +37,25 @@
       <fieldset class="flex flex-col gap-2.5">
         <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-slate-400">Alcance y destinatarios</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
-          <AdminFieldGroup label="Alcance" group-class="md:col-span-4">
-            <AdminSelectField
-              :model-value="form.unit_scope_type"
-              :disabled="!canManage"
-              @update:model-value="updateScopeType"
-            >
-              <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </AdminSelectField>
+          <AdminFieldGroup group-class="md:col-span-4">
+            <template #default>
+              <label class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+                Alcance
+                <span v-if="unitTypeLockedBySeries" class="text-[0.7rem] font-medium text-slate-400">(fijado por la serie)</span>
+              </label>
+              <AdminSelectField
+                :model-value="form.unit_scope_type"
+                :disabled="!canManage || unitTypeLockedBySeries"
+                @update:model-value="updateScopeType"
+              >
+                <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </AdminSelectField>
+              <p v-if="unitTypeLockedBySeries" class="mt-1 text-[0.7rem] text-slate-500">
+                Lo decide la serie del proceso (por tipo de unidad); la regla solo define el cargo y la entrega.
+              </p>
+            </template>
           </AdminFieldGroup>
           <AdminFieldGroup label="Entrega" group-class="md:col-span-4">
             <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateRecipientPolicy">
@@ -70,13 +79,13 @@
           </AdminFieldGroup>
           <AdminFieldGroup v-if="showUnitTypeField" label="Tipo de unidad" group-class="md:col-span-4">
             <AdminLookupField
-              :model-value="labels.unit_type_id"
+              :model-value="unitTypeLockedBySeries ? seriesFixedUnitTypeName : labels.unit_type_id"
               placeholder="Selecciona un tipo"
               readonly
               prevent-input-interaction
-              :disabled="!canManage"
-              :clear-disabled="!canManage || !form.unit_type_id"
-              :search-disabled="!canManage"
+              :disabled="!canManage || unitTypeLockedBySeries"
+              :clear-disabled="!canManage || unitTypeLockedBySeries || !form.unit_type_id"
+              :search-disabled="!canManage || unitTypeLockedBySeries"
               @clear="$emit('clear-field', 'unit_type_id')"
               @search="$emit('open-fk-search', 'unit_type_id')"
             />
@@ -305,6 +314,13 @@ const seriesFixedCargoId = computed(() => {
 });
 const seriesFixedCargoName = computed(() => props.seriesScope?.cargo_name || "");
 const cargoLockedBySeries = computed(() => Boolean(seriesFixedCargoId.value) && !isExactPositionPolicy.value);
+// Variación por tipo de unidad: la serie fija el alcance (tipo); la regla solo decide el cargo.
+const seriesFixedUnitTypeName = computed(() => props.seriesScope?.unit_type_name || "");
+const unitTypeLockedBySeries = computed(() =>
+  String(props.seriesScope?.source_type || "") === "unit_type"
+  && Boolean(props.seriesScope?.unit_type_id)
+  && !isExactPositionPolicy.value
+);
 const showUnitField = computed(() =>
   isExactPositionPolicy.value || scopeType.value === "unit_exact" || scopeType.value === "unit_subtree"
 );

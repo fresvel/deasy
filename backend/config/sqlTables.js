@@ -118,7 +118,7 @@ export const SQL_TABLES = [
         name: "source_type",
         label: "Origen de serie",
         type: "select",
-        options: ["unit_type", "cargo", "unit_type_cargo"],
+        options: ["unit_type", "cargo"],
         defaultValue: "",
         required: true
       },

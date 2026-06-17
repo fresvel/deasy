@@ -101,7 +101,6 @@
           <AdminSelectField :model-value="form.series_source_type" :disabled="isDefinitionLocked" @update:model-value="updateForm('series_source_type', $event)">
             <option value="unit_type">Por tipo de unidad</option>
             <option value="cargo">Por cargo</option>
-            <option value="unit_type_cargo">Por tipo de unidad y cargo</option>
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup
@@ -220,7 +219,7 @@ const updateForm = (field, value) => {
       nextForm.cargo_id = "";
     } else if (value === "cargo") {
       nextForm.unit_type_id = "";
-    } else if (value !== "unit_type_cargo") {
+    } else {
       nextForm.unit_type_id = "";
       nextForm.cargo_id = "";
     }

@@ -49,7 +49,6 @@ class AdminPresentationService {
       return {
         unit_type: "Tipo de unidad",
         cargo: "Cargo",
-        unit_type_cargo: "Tipo de unidad y cargo",
         default: "Predeterminada"
       }[value] || value;
     }

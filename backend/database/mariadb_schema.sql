@@ -374,7 +374,7 @@ CREATE TABLE IF NOT EXISTS processes (
 
 CREATE TABLE IF NOT EXISTS process_definition_series (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  source_type ENUM('unit_type', 'cargo', 'unit_type_cargo', 'default') NOT NULL DEFAULT 'default',
+  source_type ENUM('unit_type', 'cargo', 'default') NOT NULL DEFAULT 'default',
   unit_type_id INT NULL,
   cargo_id INT NULL,
   code VARCHAR(120) NOT NULL,

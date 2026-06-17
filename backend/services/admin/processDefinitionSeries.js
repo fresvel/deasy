@@ -1,14 +1,12 @@
 export const PROCESS_SERIES_SOURCE_TYPES = new Set([
   "unit_type",
   "cargo",
-  "unit_type_cargo",
   "default"
 ]);
 
 export const MANUAL_PROCESS_SERIES_SOURCE_TYPES = new Set([
   "unit_type",
-  "cargo",
-  "unit_type_cargo"
+  "cargo"
 ]);
 
 const slugify = (value) => String(value || "")
@@ -41,12 +39,6 @@ export const buildProcessDefinitionSeriesDisplayName = (series = {}) => {
   if (sourceType === "cargo" && cargoName) {
     return cargoName;
   }
-  if (sourceType === "unit_type_cargo") {
-    const parts = [unitTypeName, cargoName].filter(Boolean);
-    if (parts.length) {
-      return parts.join(" y ");
-    }
-  }
   return prettifySeriesCode(series?.code || "general");
 };
 
@@ -68,8 +60,8 @@ export const resolveProcessDefinitionSeriesIdentity = async (
     throw new Error("Selecciona un origen de serie valido.");
   }
 
-  const requiresUnitType = sourceType === "unit_type" || sourceType === "unit_type_cargo";
-  const requiresCargo = sourceType === "cargo" || sourceType === "unit_type_cargo";
+  const requiresUnitType = sourceType === "unit_type";
+  const requiresCargo = sourceType === "cargo";
   const unitTypeId = requiresUnitType ? Number(candidate?.unit_type_id) : null;
   const cargoId = requiresCargo ? Number(candidate?.cargo_id) : null;
 
@@ -97,12 +89,8 @@ export const resolveProcessDefinitionSeriesIdentity = async (
   let code = "";
   if (sourceType === "unit_type") {
     code = slugify(unitType.name).slice(0, 120);
-  } else if (sourceType === "cargo") {
-    code = slugify(cargo.name).slice(0, 120);
   } else {
-    const unitTypeSlug = slugify(unitType.name).slice(0, 40);
-    const cargoSlug = slugify(cargo.name).slice(0, 40);
-    code = `unit-type-${unitTypeId}-${unitTypeSlug}-cargo-${cargoId}-${cargoSlug}`.slice(0, 120);
+    code = slugify(cargo.name).slice(0, 120);
   }
 
   return {

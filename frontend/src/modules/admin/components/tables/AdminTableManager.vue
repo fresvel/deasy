@@ -1349,8 +1349,8 @@ const formFields = computed(() => {
 const visibleFormFields = computed(() => {
   if (props.table?.table === "process_definition_series") {
     const sourceType = String(formData.value?.source_type || "").trim();
-    const showUnitType = ["unit_type", "unit_type_cargo"].includes(sourceType);
-    const showCargo = ["cargo", "unit_type_cargo"].includes(sourceType);
+    const showUnitType = sourceType === "unit_type";
+    const showCargo = sourceType === "cargo";
 
     return formFields.value
       .filter((field) => {

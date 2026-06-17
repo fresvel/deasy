@@ -20,25 +20,7 @@ const lookups = {
   }
 };
 
-test("resuelve una variacion combinada por tipo de unidad y cargo", async () => {
-  const identity = await resolveProcessDefinitionSeriesIdentity(
-    {
-      source_type: "unit_type_cargo",
-      unit_type_id: "7",
-      cargo_id: "11"
-    },
-    lookups
-  );
-
-  assert.deepEqual(identity, {
-    source_type: "unit_type_cargo",
-    unit_type_id: 7,
-    cargo_id: 11,
-    code: "unit-type-7-facultad-cargo-11-coordinador"
-  });
-});
-
-test("normaliza las variaciones simples y descarta el campo que no aplica", async () => {
+test("resuelve una variacion por tipo de unidad y descarta el cargo", async () => {
   const identity = await resolveProcessDefinitionSeriesIdentity(
     {
       source_type: "unit_type",
@@ -56,12 +38,44 @@ test("normaliza las variaciones simples y descarta el campo que no aplica", asyn
   });
 });
 
-test("exige ambos campos en una variacion combinada", async () => {
+test("resuelve una variacion por cargo y descarta el tipo de unidad", async () => {
+  const identity = await resolveProcessDefinitionSeriesIdentity(
+    {
+      source_type: "cargo",
+      unit_type_id: "7",
+      cargo_id: "11"
+    },
+    lookups
+  );
+
+  assert.deepEqual(identity, {
+    source_type: "cargo",
+    unit_type_id: null,
+    cargo_id: 11,
+    code: "coordinador"
+  });
+});
+
+test("rechaza la variacion combinada (ya no es un origen valido)", async () => {
   await assert.rejects(
     resolveProcessDefinitionSeriesIdentity(
       {
         source_type: "unit_type_cargo",
         unit_type_id: "7",
+        cargo_id: "11"
+      },
+      lookups
+    ),
+    /origen de serie valido/
+  );
+});
+
+test("exige el cargo en una variacion por cargo", async () => {
+  await assert.rejects(
+    resolveProcessDefinitionSeriesIdentity(
+      {
+        source_type: "cargo",
+        unit_type_id: "",
         cargo_id: ""
       },
       lookups
@@ -84,17 +98,16 @@ test("genera el nombre de configuracion desde proceso y serie usando por", () =>
   );
 });
 
-test("genera el nombre de configuracion combinando tipo de unidad y cargo", () => {
+test("genera el nombre de configuracion para una variacion por cargo", () => {
   assert.equal(
     buildProcessDefinitionVersionName({
-      processName: "Investigación Productiva",
+      processName: "Informe Anual",
       series: {
-        source_type: "unit_type_cargo",
-        code: "unit-type-7-carrera-cargo-11-docente",
-        unit_type_name: "carrera",
+        source_type: "cargo",
+        code: "docente",
         cargo_name: "docente"
       }
     }),
-    "Investigación Productiva por Carrera y Docente"
+    "Informe Anual por Docente"
   );
 });
