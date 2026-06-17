@@ -396,7 +396,6 @@ CREATE TABLE IF NOT EXISTS process_definition_versions (
   definition_version VARCHAR(20) NOT NULL,
   name VARCHAR(180) NOT NULL,
   description VARCHAR(255) NULL,
-  has_document TINYINT(1) NOT NULL DEFAULT 1,
   status ENUM('draft', 'active', 'retired') NOT NULL DEFAULT 'draft',
   active_series_flag TINYINT(1) AS (IF(status = 'active', 1, NULL)) PERSISTENT,
   effective_from DATE NOT NULL,
@@ -873,7 +872,6 @@ CREATE TRIGGER trg_process_definition_versions_before_update
 BEFORE UPDATE ON process_definition_versions
 FOR EACH ROW
 BEGIN
-  DECLARE linked_template_count INT DEFAULT 0;
   DECLARE active_rule_count INT DEFAULT 0;
   DECLARE active_period_type_count INT DEFAULT 0;
 
@@ -900,18 +898,6 @@ BEGIN
     IF active_period_type_count < 1 THEN
       SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'No se puede activar una definicion si no tiene al menos un tipo de periodo activo en Periodos del proceso.';
-    END IF;
-  END IF;
-
-  IF NEW.status = 'active' AND OLD.status <> 'active' AND NEW.has_document = 1 THEN
-    SELECT COUNT(*)
-      INTO linked_template_count
-    FROM process_definition_templates
-    WHERE process_definition_id = NEW.id;
-
-    IF linked_template_count < 1 THEN
-      SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No se puede activar una definicion con documento si no tiene al menos un artifact vinculado en Plantillas de definicion.';
     END IF;
   END IF;
 END //

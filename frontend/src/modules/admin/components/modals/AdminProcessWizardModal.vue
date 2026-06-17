@@ -135,12 +135,6 @@
         <AdminFieldGroup label="Versión" group-class="md:col-span-4">
           <AdminInputField :model-value="form.definition_version" placeholder="1.0.0" :disabled="isDefinitionLocked" @update:model-value="updateForm('definition_version', $event)" />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Genera entregable documental" group-class="md:col-span-4">
-          <AdminSelectField :model-value="String(form.has_document)" :disabled="isDefinitionLocked" @update:model-value="updateForm('has_document', Number($event))">
-            <option value="1">Sí, con plantillas y entregas</option>
-            <option value="0">No, solo flujo operativo</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
         <AdminFieldGroup label="Descripción" group-class="md:col-span-12">
           <AdminInputField :model-value="form.description" placeholder="Descripción breve del proceso" :disabled="isDefinitionLocked" @update:model-value="updateForm('description', $event)" />
         </AdminFieldGroup>

@@ -33,8 +33,6 @@ export function useAdminModalRegistry({
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationRules,
   processDefinitionActivationTriggers,
@@ -149,8 +147,6 @@ export function useAdminModalRegistry({
         processDefinitionActivationChecking.value = false;
         processDefinitionActivationHasActiveRules.value = true;
         processDefinitionActivationHasActiveTriggers.value = true;
-        processDefinitionActivationHasRequiredArtifacts.value = true;
-        processDefinitionActivationRequiresArtifacts.value = false;
         processDefinitionActivationView.value = "definition";
         processDefinitionActivationRules.value = [];
         processDefinitionActivationTriggers.value = [];

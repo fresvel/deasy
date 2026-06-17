@@ -184,10 +184,6 @@
           <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
           <span>Al menos un tipo de periodo activo</span>
         </div>
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts }">
-          <font-awesome-icon :icon="(processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts) ? 'check' : 'times'" />
-          <span>{{ requiresDefinitionArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}</span>
-        </div>
       </div>
     </div>
     <template #footer>
@@ -256,7 +252,6 @@ const props = defineProps({
   formData: { type: Object, default: () => ({}) },
   processDefinitionChecklistLoading: { type: Boolean, default: false },
   processDefinitionChecklist: { type: Object, default: () => ({}) },
-  requiresDefinitionArtifacts: { type: Boolean, default: false },
   processConfigurationLoading: { type: Boolean, default: false },
   processConfigurationError: { type: String, default: "" },
   processConfigurationRows: { type: Array, default: () => [] },

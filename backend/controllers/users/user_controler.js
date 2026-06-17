@@ -495,7 +495,6 @@ const getDefinitionContext = async (pool, definitionId) => {
        pdv.definition_version,
        pdv.name,
        pdv.description,
-       pdv.has_document,
        pdv.status,
        pdv.effective_from,
        pdv.effective_to,
@@ -1906,7 +1905,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       can_launch_manual: canLaunch,
       can_launch_custom_term: false,
       can_use_existing_term: canLaunch,
-      has_document: Number(definition.has_document) === 1
+      has_document: templates.length > 0
     },
     tasks: enrichedTasks,
     documents,

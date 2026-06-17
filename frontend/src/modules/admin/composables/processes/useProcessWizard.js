@@ -93,7 +93,6 @@ const newDefinitionForm = () => ({
   cargo_id: "",
   definition_version: "1.0.0",
   description: "",
-  has_document: 1,
   source_process_definition_id: "",
 });
 
@@ -103,8 +102,7 @@ const definitionFormFromRow = (row = {}) => ({
   process_id: row.process_id ? String(row.process_id) : "",
   series_id: row.series_id ? String(row.series_id) : "",
   definition_version: row.definition_version || "1.0.0",
-  description: row.description || "",
-  has_document: Number(row.has_document) ? 1 : 0
+  description: row.description || ""
 });
 
 const resolveCreatedId = (response) =>
@@ -504,7 +502,6 @@ export function useProcessWizard() {
         series_id: Number(series.id),
         definition_version: definitionVersion,
         description: form.description ? String(form.description) : null,
-        has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
         effective_from: today,
         source_process_definition_id: form.source_process_definition_id ? Number(form.source_process_definition_id) : null,
@@ -517,7 +514,6 @@ export function useProcessWizard() {
         definition_version: definitionVersion,
         name: created.name || definitionNamePreview.value,
         description: form.description || "",
-        has_document: Number(form.has_document) ? 1 : 0,
         status: "draft",
         ...created,
         variation_key: created.variation_key || series.code,

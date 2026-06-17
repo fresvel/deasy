@@ -433,8 +433,8 @@ export const ensureDefaultProcess = async (connection) => {
   if (!definition) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_versions
-        (process_id, series_id, variation_key, definition_version, name, description, has_document, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, ?, 1, 'active', CURDATE())`,
+        (process_id, series_id, variation_key, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, ?, 'active', CURDATE())`,
       [processId, Number(series.id), DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION,
        defaultDefinitionName, "Tareas libres y no clasificadas."]
     );

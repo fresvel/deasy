@@ -276,7 +276,6 @@
       :form-data="formData"
       :process-definition-checklist-loading="processDefinitionChecklistLoading"
       :process-definition-checklist="processDefinitionChecklist"
-      :requires-definition-artifacts="requiresDefinitionArtifacts"
       :process-configuration-loading="processEditorConfigurationsLoading"
       :process-configuration-error="processEditorConfigurationsError"
       :process-configuration-rows="processEditorConfigurations"
@@ -323,8 +322,6 @@
       :checking="processDefinitionActivationChecking"
       :has-active-rules="processDefinitionActivationHasActiveRules"
       :has-active-triggers="processDefinitionActivationHasActiveTriggers"
-      :has-required-artifacts="processDefinitionActivationHasRequiredArtifacts"
-      :requires-artifacts="processDefinitionActivationRequiresArtifacts"
       :view="processDefinitionActivationView"
       :selected-row="selectedRow"
       :rules="processDefinitionActivationRules"
@@ -572,8 +569,6 @@
           :checking="processDefinitionActivationChecking"
           :has-active-rules="processDefinitionActivationHasActiveRules"
           :has-active-triggers="processDefinitionActivationHasActiveTriggers"
-          :has-required-artifacts="processDefinitionActivationHasRequiredArtifacts"
-          :requires-artifacts="processDefinitionActivationRequiresArtifacts"
           :view="processDefinitionActivationView"
           :selected-row="processWizardDefinition"
           :rules="processDefinitionActivationRules"
@@ -589,7 +584,7 @@
         />
         <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
           <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-amber-600">
-            Completa los requisitos (reglas, disparadores{{ processDefinitionActivationRequiresArtifacts ? ', paquetes' : '' }}) para activar.
+            Completa los requisitos (reglas, disparadores) para activar.
           </span>
           <AdminButton
             v-if="!processWizardReadonly"
@@ -1097,8 +1092,6 @@ const processDefinitionActivationFromEditor = ref(false);
 const processDefinitionActivationChecking = ref(false);
 const processDefinitionActivationHasActiveRules = ref(true);
 const processDefinitionActivationHasActiveTriggers = ref(true);
-const processDefinitionActivationHasRequiredArtifacts = ref(true);
-const processDefinitionActivationRequiresArtifacts = ref(false);
 const processDefinitionActivationView = ref("definition");
 const processDefinitionActivationRules = ref([]);
 const processDefinitionActivationTriggers = ref([]);
@@ -1653,9 +1646,6 @@ const canSubmitDefinitionTrigger = computed(() => {
   }
   return Boolean(definitionTriggersForm.value.term_type_id);
 });
-const requiresDefinitionArtifacts = computed(() =>
-  Number(selectedRow.value?.has_document) === 1 || Number(formData.value?.has_document) === 1
-);
 const processDefinitionActivationPrimaryAction = computed(() => {
   if (processDefinitionActivationChecking.value) {
     return null;
@@ -1692,7 +1682,6 @@ const processDefinitionActivationPrimaryActionLabel = computed(() =>
 const allProcessDefinitionActivationRequirementsMet = computed(() =>
   processDefinitionActivationHasActiveRules.value
   && processDefinitionActivationHasActiveTriggers.value
-  && processDefinitionActivationHasRequiredArtifacts.value
 );
 // El preview del seed se descarga por axios (responseType blob) para que lleve el header Bearer del
 // interceptor; un <iframe src="..."> con la URL cruda no manda el token → backend responde "Token requerido".
@@ -2008,8 +1997,6 @@ const {
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
@@ -2922,8 +2909,6 @@ const {
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
@@ -2995,19 +2980,14 @@ const loadProcessWizardActivationStep = async (definitionRow) => {
   }
   processDefinitionActivationChecking.value = true;
   processDefinitionActivationView.value = "activate";
-  processDefinitionActivationRequiresArtifacts.value = Number(definitionRow.has_document) === 1;
   try {
     const checklist = await processDefinitionAdminService.evaluateChecklist(definitionRow.id);
     await loadProcessDefinitionActivationDetail(definitionRow.id);
     processDefinitionActivationHasActiveRules.value = Boolean(checklist?.rules);
     processDefinitionActivationHasActiveTriggers.value = Boolean(checklist?.triggers);
-    processDefinitionActivationHasRequiredArtifacts.value = processDefinitionActivationRequiresArtifacts.value
-      ? Boolean(checklist?.artifacts)
-      : true;
   } catch {
     processDefinitionActivationHasActiveRules.value = false;
     processDefinitionActivationHasActiveTriggers.value = true;
-    processDefinitionActivationHasRequiredArtifacts.value = true;
     processDefinitionActivationRules.value = [];
     processDefinitionActivationTriggers.value = [];
     processDefinitionActivationArtifacts.value = [];
@@ -3199,7 +3179,6 @@ const openProcessDefinitionVersionWizard = async (row) => {
     series_id: row.series_id ? String(row.series_id) : "",
     definition_version: getNextSemanticVersion(row.definition_version),
     description: row.description || "",
-    has_document: Number(row.has_document) ? 1 : 0,
     source_process_definition_id: row.id ? String(row.id) : ""
   };
 };

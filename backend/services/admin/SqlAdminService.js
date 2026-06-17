@@ -2064,32 +2064,6 @@ export default class SqlAdminService {
     };
   }
 
-  async ensureDefinitionHasArtifactsForActivation(definitionId, candidate = null, connection = this.pool) {
-    const normalizedDefinitionId = Number(definitionId);
-    if (!normalizedDefinitionId) {
-      return;
-    }
-
-    const requiresDocument = Number(candidate?.has_document ?? 0) === 1;
-    if (!requiresDocument) {
-      return;
-    }
-
-    const [rows] = await connection.query(
-      `SELECT COUNT(*) AS total
-       FROM process_definition_templates
-       WHERE process_definition_id = ?`,
-      [normalizedDefinitionId]
-    );
-
-    const total = Number(rows?.[0]?.total || 0);
-    if (total < 1) {
-      throw new Error(
-        "No se puede activar una configuracion con documento si no tiene al menos un artifact vinculado en Plantillas de configuracion."
-      );
-    }
-  }
-
   async ensureDefinitionHasActiveRulesForActivation(definitionId, connection = this.pool) {
     const normalizedDefinitionId = Number(definitionId);
     if (!normalizedDefinitionId) {
@@ -2896,7 +2870,6 @@ export default class SqlAdminService {
         allowed = new Set([
           "name",
           "description",
-          "has_document",
           "status",
           "effective_from",
           "effective_to"
@@ -2947,7 +2920,6 @@ export default class SqlAdminService {
           await connection.beginTransaction();
           await this.ensureDefinitionHasActiveRulesForActivation(existing.id ?? keyPayload.id, connection);
           await this.ensureDefinitionHasActivePeriodTypesForActivation(existing.id ?? keyPayload.id, connection);
-          await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, candidate, connection);
           const retiredCount = await this.retireActiveDefinitionsInSeries({
             ...processDefinitionSeriesContext,
             connection

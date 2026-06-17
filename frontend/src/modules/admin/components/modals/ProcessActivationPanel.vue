@@ -30,10 +30,6 @@
             <font-awesome-icon :icon="hasActiveTriggers ? 'check' : 'times'" />
             <span>Al menos un tipo de periodo activo</span>
           </div>
-          <div class="definition-checklist-item" :class="{ 'is-complete': hasRequiredArtifacts || !requiresArtifacts }">
-            <font-awesome-icon :icon="(hasRequiredArtifacts || !requiresArtifacts) ? 'check' : 'times'" />
-            <span>{{ requiresArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}</span>
-          </div>
         </div>
       </div>
 
@@ -171,8 +167,6 @@ const props = defineProps({
   checking: { type: Boolean, default: false },
   hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
-  hasRequiredArtifacts: { type: Boolean, default: false },
-  requiresArtifacts: { type: Boolean, default: false },
   view: { type: String, default: "definition" },
   selectedRow: { type: Object, default: null },
   rules: { type: Array, default: () => [] },

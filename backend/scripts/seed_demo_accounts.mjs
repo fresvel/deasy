@@ -351,12 +351,11 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
       definition_version: "1.0.0",
       name: "Flujo demo de cuenta",
       description: "Proceso de prueba para revisar home, documentos, llenado y firma.",
-      has_document: 1,
       status: "active",
       effective_from: "2026-01-01",
       effective_to: null
     },
-    ["series_id", "name", "description", "has_document", "status", "effective_from", "effective_to"]
+    ["series_id", "name", "description", "status", "effective_from", "effective_to"]
   );
 
   const existingRule = await fetchOne(

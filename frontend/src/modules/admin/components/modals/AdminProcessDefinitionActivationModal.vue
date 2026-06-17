@@ -16,8 +16,6 @@
       :checking="checking"
       :has-active-rules="hasActiveRules"
       :has-active-triggers="hasActiveTriggers"
-      :has-required-artifacts="hasRequiredArtifacts"
-      :requires-artifacts="requiresArtifacts"
       :view="view"
       :selected-row="selectedRow"
       :rules="rules"
@@ -50,8 +48,6 @@ const props = defineProps({
   checking: { type: Boolean, default: false },
   hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
-  hasRequiredArtifacts: { type: Boolean, default: false },
-  requiresArtifacts: { type: Boolean, default: false },
   view: { type: String, default: "definition" },
   selectedRow: { type: Object, default: null },
   rules: { type: Array, default: () => [] },
@@ -80,7 +76,7 @@ const activationStepStatus = computed(() => ({
   definition: Boolean(props.selectedRow?.id),
   rules: props.hasActiveRules,
   triggers: props.hasActiveTriggers,
-  artifacts: props.hasRequiredArtifacts || !props.requiresArtifacts,
+  artifacts: true,
   activate: props.allRequirementsMet
 }));
 

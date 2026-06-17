@@ -9,7 +9,6 @@ export function useProcessDefinitionActivationFlow({
   editorMode,
   selectedRow,
   modalError,
-  editorModal,
   getEditorInstance,
   processDefinitionVersioningSource,
   processDefinitionCloneSourceId,
@@ -20,15 +19,12 @@ export function useProcessDefinitionActivationFlow({
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
   clearModalOrigins,
-  isModalShown,
   ensureProcessDefinitionActivationInstance,
   getProcessDefinitionActivationInstance,
   buildFormFromRow,
@@ -100,29 +96,18 @@ export function useProcessDefinitionActivationFlow({
     processDefinitionActivationChecking.value = true;
     processDefinitionActivationHasActiveRules.value = true;
     processDefinitionActivationHasActiveTriggers.value = true;
-    processDefinitionActivationHasRequiredArtifacts.value = true;
     processDefinitionActivationView.value = "definition";
-    processDefinitionActivationRequiresArtifacts.value = Boolean(
-      resolveEditorInstance()
-      && isModalShown(editorModal.value)
-      && props.table?.table === "process_definition_versions"
-        ? Number(formData.value?.has_document) === 1
-        : Number(selectedRow.value?.has_document) === 1
-    );
     ensureProcessDefinitionActivationInstance();
     getProcessDefinitionActivationInstance()?.show();
     try {
       const definitionId = selectedRow.value?.id;
-      const requiresArtifacts = processDefinitionActivationRequiresArtifacts.value;
       const checklist = await processDefinitionAdminService.evaluateChecklist(definitionId);
       await loadProcessDefinitionActivationDetail(definitionId);
       processDefinitionActivationHasActiveRules.value = checklist.rules;
       processDefinitionActivationHasActiveTriggers.value = checklist.triggers;
-      processDefinitionActivationHasRequiredArtifacts.value = requiresArtifacts ? checklist.artifacts : true;
     } catch {
       processDefinitionActivationHasActiveRules.value = false;
       processDefinitionActivationHasActiveTriggers.value = true;
-      processDefinitionActivationHasRequiredArtifacts.value = true;
       processDefinitionActivationRules.value = [];
       processDefinitionActivationTriggers.value = [];
       processDefinitionActivationArtifacts.value = [];

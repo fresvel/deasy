@@ -239,7 +239,7 @@ import AdminTableActions from "@/modules/admin/components/tables/AdminTableActio
 const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "template_seeds"]);
 const MAX_RELATED_FIELDS = 6;
 const RELATED_FIELD_PRIORITY = {
-  process_definition_versions: ["series_id", "definition_version", "name", "has_document", "status", "effective_from"],
+  process_definition_versions: ["series_id", "definition_version", "name", "status", "effective_from"],
   process_definition_templates: ["template_artifact_id", "creates_task", "sort_order"],
   process_target_rules: ["unit_scope_type", "unit_id", "unit_type_id", "cargo_id", "position_id", "is_active"],
   process_definition_period_types: ["term_type_id", "is_active"],
