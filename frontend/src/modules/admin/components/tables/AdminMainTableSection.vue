@@ -261,6 +261,18 @@
                     <font-awesome-icon icon="times-circle" />
                   </AdminButton>
                   <AdminButton
+                    v-if="canUpdate && table?.table === 'terms'"
+                    variant="secondary"
+                    size="sm"
+                    icon-only
+                    class-name="hope-action-btn hope-action-launch"
+                    title="Lanzar procesos del periodo"
+                    aria-label="Lanzar procesos del periodo"
+                    @click="$emit('launch-term', row)"
+                  >
+                    <font-awesome-icon icon="rocket" />
+                  </AdminButton>
+                  <AdminButton
                     v-if="canUpdate && isPersonTable"
                     variant="secondary"
                     size="sm"
@@ -363,7 +375,8 @@ const emit = defineEmits([
   "start-process-definition-versioning",
   "open-process-definition-activation-for-row",
   "retire-process-definition",
-  "open-person-assignments"
+  "open-person-assignments",
+  "launch-term"
 ]);
 
 const searchInputRef = ref(null);

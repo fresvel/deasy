@@ -143,6 +143,7 @@
       @open-process-definition-activation-for-row="openProcessDefinitionActivationForRow"
       @retire-process-definition="retireProcessDefinition"
       @open-person-assignments="openPersonAssignments"
+      @launch-term="openProcessLaunch"
     />
 
     <AdminVacantPositionsSection
@@ -1665,7 +1666,7 @@ const processDefinitionActivationPrimaryAction = computed(() => {
   if (processDefinitionActivationView.value === "triggers") {
     return {
       type: "triggers",
-      label: processDefinitionActivationTriggers.value.length ? "Editar disparadores" : "Agregar disparadores"
+      label: processDefinitionActivationTriggers.value.length ? "Editar periodos" : "Agregar periodos"
     };
   }
   if (processDefinitionActivationView.value === "artifacts") {
