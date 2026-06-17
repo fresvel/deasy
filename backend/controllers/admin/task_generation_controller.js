@@ -1,7 +1,8 @@
 import {
   generateTasksForTerm,
   launchProcessDefinitionInTerm,
-  getTermLaunchStatus
+  getTermLaunchStatus,
+  getDefinitionLaunchInfo
 } from "../../services/admin/TaskGenerationService.js";
 
 export const generateTasksForTermController = async (req, res) => {
@@ -44,6 +45,23 @@ export const launchProcessDefinitionController = async (req, res) => {
   } catch (error) {
     return res.status(400).json({
       message: "Error al lanzar la configuracion en el periodo.",
+      error: error.message
+    });
+  }
+};
+
+// Info de lanzamiento de una configuración (periodos disponibles + historial de corridas).
+export const getDefinitionLaunchInfoController = async (req, res) => {
+  try {
+    const definitionId = Number(req.params.definitionId);
+    if (!definitionId || Number.isNaN(definitionId)) {
+      return res.status(400).json({ message: "definitionId invalido." });
+    }
+    const result = await getDefinitionLaunchInfo(definitionId);
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error al obtener la informacion de lanzamiento de la configuracion.",
       error: error.message
     });
   }

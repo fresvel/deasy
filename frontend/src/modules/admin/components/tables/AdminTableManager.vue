@@ -14,6 +14,12 @@
       @changed="fetchRows"
     />
 
+    <ProcessDefinitionLaunchModal
+      ref="processDefinitionLaunchModal"
+      @notify="showFeedbackToast"
+      @changed="fetchRows"
+    />
+
     <div v-if="table && siblingTabs.length" class="admin-related-tabs">
       <ProfileSubsectionTabs
         :model-value="activeSiblingTab"
@@ -144,6 +150,7 @@
       @retire-process-definition="retireProcessDefinition"
       @open-person-assignments="openPersonAssignments"
       @launch-term="openProcessLaunch"
+      @launch-definition="openProcessDefinitionLaunch"
     />
 
     <AdminVacantPositionsSection
@@ -965,6 +972,7 @@ import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/Admi
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
 import ProcessLaunchModal from "@/modules/admin/components/modals/ProcessLaunchModal.vue";
+import ProcessDefinitionLaunchModal from "@/modules/admin/components/modals/ProcessDefinitionLaunchModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
 import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTableSection.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
@@ -1021,6 +1029,7 @@ const rows = ref([]);
 const loading = ref(false);
 const error = ref("");
 const processLaunchModal = ref(null);
+const processDefinitionLaunchModal = ref(null);
 const feedbackToast = ref({
   visible: false,
   kind: "success",
@@ -3261,6 +3270,12 @@ const openProcessConfiguration = async (processRow) => {
 const openProcessLaunch = async (termRow) => {
   if (!termRow?.id) return;
   await processLaunchModal.value?.openModal(termRow);
+};
+
+// Abre el modal de lanzamiento desde una configuración de proceso (elegir periodo + historial).
+const openProcessDefinitionLaunch = async (definitionRow) => {
+  if (!definitionRow?.id) return;
+  await processDefinitionLaunchModal.value?.openModal(definitionRow);
 };
 
 const openProcessConfigurationFromEditor = async () => {

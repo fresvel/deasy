@@ -273,6 +273,18 @@
                     <font-awesome-icon icon="rocket" />
                   </AdminButton>
                   <AdminButton
+                    v-if="canUpdate && table?.table === 'process_definition_versions' && String(row?.status || '') === 'active'"
+                    variant="secondary"
+                    size="sm"
+                    icon-only
+                    class-name="hope-action-btn hope-action-launch"
+                    title="Lanzar en un periodo"
+                    aria-label="Lanzar en un periodo"
+                    @click="$emit('launch-definition', row)"
+                  >
+                    <font-awesome-icon icon="rocket" />
+                  </AdminButton>
+                  <AdminButton
                     v-if="canUpdate && isPersonTable"
                     variant="secondary"
                     size="sm"
@@ -376,7 +388,8 @@ const emit = defineEmits([
   "open-process-definition-activation-for-row",
   "retire-process-definition",
   "open-person-assignments",
-  "launch-term"
+  "launch-term",
+  "launch-definition"
 ]);
 
 const searchInputRef = ref(null);

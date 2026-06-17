@@ -78,6 +78,7 @@ export const API_ROUTES = {
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
   ADMIN_TERM_LAUNCH_STATUS: (termId) => `${API_PREFIX}/admin/terms/${termId}/launch-status`,
   ADMIN_LAUNCH_PROCESS_DEFINITION: (definitionId) => `${API_PREFIX}/admin/process-definitions/${definitionId}/launch`,
+  ADMIN_PROCESS_DEFINITION_LAUNCH_INFO: (definitionId) => `${API_PREFIX}/admin/process-definitions/${definitionId}/launch-info`,
   SIGN: `${API_PREFIX}/sign`,
   SIGN_VALIDATE: `${API_PREFIX}/sign/validate`,
   SIGN_BATCH_START: `${API_PREFIX}/sign/batch/start`,

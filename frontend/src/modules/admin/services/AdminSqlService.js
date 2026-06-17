@@ -72,6 +72,10 @@ export class AdminSqlService {
   launchProcessDefinition(definitionId, payload = {}) {
     return this.httpClient.post(API_ROUTES.ADMIN_LAUNCH_PROCESS_DEFINITION(definitionId), payload);
   }
+
+  getProcessDefinitionLaunchInfo(definitionId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_PROCESS_DEFINITION_LAUNCH_INFO(definitionId));
+  }
 }
 
 export const adminSqlService = new AdminSqlService();

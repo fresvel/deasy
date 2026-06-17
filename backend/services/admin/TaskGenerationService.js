@@ -1878,3 +1878,61 @@ export const getTermLaunchStatus = async (termId) => {
   }
 };
 
+// Info de lanzamiento de UNA configuración (vista process-centric): tipos de periodo en que corre,
+// periodos disponibles de esos tipos (con marca de si ya tienen corrida) e historial de corridas.
+export const getDefinitionLaunchInfo = async (definitionId) => {
+  const pool = getMariaDBPool();
+  if (!pool) throw new Error("La conexion con MariaDB no esta disponible.");
+
+  const connection = await pool.getConnection();
+  try {
+    const [[definition]] = await connection.query(
+      "SELECT id, name, status FROM process_definition_versions WHERE id = ? LIMIT 1",
+      [definitionId]
+    );
+    if (!definition) throw new Error("La configuracion de proceso no existe.");
+
+    const [periodTypes] = await connection.query(
+      `SELECT pdp.term_type_id, tt.code AS term_type_code, tt.name AS term_type_name
+       FROM process_definition_period_types pdp
+       INNER JOIN term_types tt ON tt.id = pdp.term_type_id
+       WHERE pdp.process_definition_id = ? AND pdp.is_active = 1
+       ORDER BY tt.code ASC`,
+      [definitionId]
+    );
+    const typeIds = periodTypes.map((p) => p.term_type_id);
+
+    // Corridas de la configuración (historial), con periodo.
+    const [runs] = await connection.query(
+      `SELECT pr.id, pr.term_id, t.name AS term_name, pr.run_mode, pr.status,
+              pr.source_run_id, pr.reason, pr.created_at
+       FROM process_runs pr
+       LEFT JOIN terms t ON t.id = pr.term_id
+       WHERE pr.process_definition_id = ?
+       ORDER BY pr.id DESC`,
+      [definitionId]
+    );
+    const activeTermIds = new Set(
+      runs.filter((r) => r.status === "active" && r.term_id != null).map((r) => Number(r.term_id))
+    );
+
+    // Periodos disponibles de los tipos en que corre la configuración.
+    let terms = [];
+    if (typeIds.length) {
+      const placeholders = typeIds.map(() => "?").join(",");
+      const [termRows] = await connection.query(
+        `SELECT t.id, t.name, t.term_type_id, t.start_date, t.end_date
+         FROM terms t
+         WHERE t.term_type_id IN (${placeholders}) AND t.is_active = 1
+         ORDER BY t.start_date DESC, t.id DESC`,
+        typeIds
+      );
+      terms = termRows.map((t) => ({ ...t, launched: activeTermIds.has(Number(t.id)) }));
+    }
+
+    return { definition, period_types: periodTypes, terms, runs };
+  } finally {
+    connection.release();
+  }
+};
+
