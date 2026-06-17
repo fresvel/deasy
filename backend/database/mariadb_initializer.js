@@ -485,9 +485,6 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
         "ALTER TABLE documents ADD COLUMN origin_type ENUM('task_item', 'standalone', 'imported', 'generated') NOT NULL DEFAULT 'task_item' AFTER origin_unit_id"
       );
     }
-    if (!documentColumnNames.includes("instance_no")) {
-      await connection.query("ALTER TABLE documents ADD COLUMN instance_no INT NULL AFTER task_item_id");
-    }
     if (!documentColumnNames.includes("title")) {
       await connection.query("ALTER TABLE documents ADD COLUMN title VARCHAR(180) NULL AFTER origin_type");
     }
@@ -496,66 +493,11 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     } catch (error) {
       console.warn("⚠️  No se pudo ajustar documents.task_item_id a nullable:", error.message);
     }
-    try {
-      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_owner_person (owner_person_id)");
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear índice de documents.owner_person_id:", error.message);
-      }
-    }
-    try {
-      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_origin_unit (origin_unit_id)");
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear índice de documents.origin_unit_id:", error.message);
-      }
-    }
-    try {
-      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_origin_type (origin_type)");
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear índice de documents.origin_type:", error.message);
-      }
-    }
-    try {
-      await connection.query("ALTER TABLE documents ADD INDEX idx_documents_task_item (task_item_id)");
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear índice de documents.task_item_id:", error.message);
-      }
-    }
-    try {
-      await connection.query(
-        `UPDATE documents d
-         INNER JOIN (
-           SELECT id,
-                  ROW_NUMBER() OVER (PARTITION BY task_item_id ORDER BY created_at ASC, id ASC) AS row_no
-           FROM documents
-           WHERE task_item_id IS NOT NULL
-         ) seq ON seq.id = d.id
-         SET d.instance_no = seq.row_no
-         WHERE d.task_item_id IS NOT NULL
-           AND d.instance_no IS NULL`
-      );
-    } catch (error) {
-      console.warn("⚠️  No se pudo poblar documents.instance_no:", error.message);
-    }
-    try {
-      await connection.query("ALTER TABLE documents DROP INDEX uq_documents_task_item");
-    } catch (error) {
-      if (error?.code !== "ER_CANT_DROP_FIELD_OR_KEY" && error?.code !== "ER_DROP_INDEX_FK") {
-        console.warn("⚠️  No se pudo eliminar índice único legacy de documents.task_item_id:", error.message);
-      }
-    }
-    try {
-      await connection.query(
-        "ALTER TABLE documents ADD CONSTRAINT uq_documents_task_item_instance UNIQUE (task_item_id, instance_no)"
-      );
-    } catch (error) {
-      if (error?.code !== "ER_DUP_KEYNAME") {
-        console.warn("⚠️  No se pudo crear índice único compuesto de documents:", error.message);
-      }
-    }
+    await addIndexIgnoringDuplicate(connection, "documents", "INDEX idx_documents_owner_person (owner_person_id)", "índice documents.owner_person_id");
+    await addIndexIgnoringDuplicate(connection, "documents", "INDEX idx_documents_origin_unit (origin_unit_id)", "índice documents.origin_unit_id");
+    await addIndexIgnoringDuplicate(connection, "documents", "INDEX idx_documents_origin_type (origin_type)", "índice documents.origin_type");
+    // Un documento principal por entregable (task_item).
+    await addIndexIgnoringDuplicate(connection, "documents", "UNIQUE KEY uq_documents_task_item (task_item_id)", "unique documents un-documento-por-entregable");
 
     await addColumnIfMissing(
       connection,
@@ -583,17 +525,6 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "INDEX idx_template_artifacts_scope (template_scope)",
       "índice template_artifacts.template_scope"
     );
-
-    const [processDefinitionTemplateColumns] = await connection.query(
-      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'process_definition_templates'`
-    );
-    const processDefinitionTemplateColumnNames = processDefinitionTemplateColumns.map((col) => col.COLUMN_NAME);
-    if (!processDefinitionTemplateColumnNames.includes("instance_mode")) {
-      await connection.query(
-        "ALTER TABLE process_definition_templates ADD COLUMN instance_mode ENUM('single_document', 'owner_many_documents') NOT NULL DEFAULT 'single_document' AFTER template_artifact_id"
-      );
-    }
 
     const [cargoColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS

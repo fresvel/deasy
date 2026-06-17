@@ -5120,7 +5120,6 @@
         "id",
         "process_definition_id",
         "template_artifact_id",
-        "instance_mode",
         "creates_task",
         "sort_order",
         "created_at"
@@ -5129,7 +5128,6 @@
         "id": "int(11)",
         "process_definition_id": "int(11)",
         "template_artifact_id": "int(11)",
-        "instance_mode": "enum('single_document','owner_many_documents')",
         "creates_task": "tinyint(1)",
         "sort_order": "int(11)",
         "created_at": "datetime"
@@ -5139,7 +5137,6 @@
           "id": 1,
           "process_definition_id": 12,
           "template_artifact_id": 4,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:11:38"
@@ -5148,7 +5145,6 @@
           "id": 2,
           "process_definition_id": 12,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:11:52"
@@ -5157,7 +5153,6 @@
           "id": 3,
           "process_definition_id": 17,
           "template_artifact_id": 4,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:20:55"
@@ -5166,7 +5161,6 @@
           "id": 4,
           "process_definition_id": 17,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 19:20:55"
@@ -5175,7 +5169,6 @@
           "id": 5,
           "process_definition_id": 18,
           "template_artifact_id": 4,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 22:43:19"
@@ -5184,7 +5177,6 @@
           "id": 6,
           "process_definition_id": 18,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-01 22:43:19"
@@ -5193,7 +5185,6 @@
           "id": 7,
           "process_definition_id": 19,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:46:49"
@@ -5202,7 +5193,6 @@
           "id": 8,
           "process_definition_id": 20,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:50:29"
@@ -5211,7 +5201,6 @@
           "id": 9,
           "process_definition_id": 21,
           "template_artifact_id": 4,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:58:33"
@@ -5220,7 +5209,6 @@
           "id": 10,
           "process_definition_id": 21,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-02 00:58:33"
@@ -5229,7 +5217,6 @@
           "id": 11,
           "process_definition_id": 22,
           "template_artifact_id": 4,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:00:51"
@@ -5238,7 +5225,6 @@
           "id": 12,
           "process_definition_id": 22,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:00:51"
@@ -5247,7 +5233,6 @@
           "id": 13,
           "process_definition_id": 23,
           "template_artifact_id": 4,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:01:43"
@@ -5256,7 +5241,6 @@
           "id": 14,
           "process_definition_id": 23,
           "template_artifact_id": 10,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-03-03 21:01:43"
@@ -5265,7 +5249,6 @@
           "id": 15,
           "process_definition_id": 24,
           "template_artifact_id": 13,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-04-04 18:16:46"
@@ -5274,7 +5257,6 @@
           "id": 16,
           "process_definition_id": 25,
           "template_artifact_id": 13,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-04-05 02:54:24"
@@ -5283,7 +5265,6 @@
           "id": 17,
           "process_definition_id": 26,
           "template_artifact_id": 13,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-04-05 02:58:57"
@@ -5292,7 +5273,6 @@
           "id": 19,
           "process_definition_id": 28,
           "template_artifact_id": 22,
-          "instance_mode": "single_document",
           "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-06-02 15:58:11"
@@ -8622,7 +8602,6 @@
       "columns": [
         "id",
         "task_item_id",
-        "instance_no",
         "owner_person_id",
         "origin_unit_id",
         "origin_type",
@@ -8635,7 +8614,6 @@
       "column_types": {
         "id": "int(11)",
         "task_item_id": "int(11)",
-        "instance_no": "int(11)",
         "owner_person_id": "int(11)",
         "origin_unit_id": "int(11)",
         "origin_type": "enum('task_item','standalone','imported','generated')",
@@ -8649,7 +8627,6 @@
         {
           "id": 1,
           "task_item_id": 1,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8662,7 +8639,6 @@
         {
           "id": 2,
           "task_item_id": 2,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8675,7 +8651,6 @@
         {
           "id": 3,
           "task_item_id": 3,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8688,7 +8663,6 @@
         {
           "id": 4,
           "task_item_id": 4,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8701,7 +8675,6 @@
         {
           "id": 5,
           "task_item_id": 5,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8714,7 +8687,6 @@
         {
           "id": 6,
           "task_item_id": 6,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8727,7 +8699,6 @@
         {
           "id": 7,
           "task_item_id": 7,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8740,7 +8711,6 @@
         {
           "id": 8,
           "task_item_id": 8,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8753,7 +8723,6 @@
         {
           "id": 9,
           "task_item_id": 9,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8766,7 +8735,6 @@
         {
           "id": 10,
           "task_item_id": 10,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8779,7 +8747,6 @@
         {
           "id": 11,
           "task_item_id": 11,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8792,7 +8759,6 @@
         {
           "id": 12,
           "task_item_id": 12,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8805,7 +8771,6 @@
         {
           "id": 13,
           "task_item_id": 13,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8818,7 +8783,6 @@
         {
           "id": 14,
           "task_item_id": 14,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8831,7 +8795,6 @@
         {
           "id": 15,
           "task_item_id": 15,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8844,7 +8807,6 @@
         {
           "id": 16,
           "task_item_id": 16,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8857,7 +8819,6 @@
         {
           "id": 17,
           "task_item_id": 17,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8870,7 +8831,6 @@
         {
           "id": 18,
           "task_item_id": 18,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 12,
           "origin_type": "task_item",
@@ -8883,7 +8843,6 @@
         {
           "id": 19,
           "task_item_id": 19,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8896,7 +8855,6 @@
         {
           "id": 20,
           "task_item_id": 20,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8909,7 +8867,6 @@
         {
           "id": 21,
           "task_item_id": 21,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8922,7 +8879,6 @@
         {
           "id": 22,
           "task_item_id": 22,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 1,
           "origin_type": "task_item",
@@ -8935,7 +8891,6 @@
         {
           "id": 85,
           "task_item_id": 85,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -8948,7 +8903,6 @@
         {
           "id": 86,
           "task_item_id": 86,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -8961,7 +8915,6 @@
         {
           "id": 87,
           "task_item_id": 87,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -8974,7 +8927,6 @@
         {
           "id": 88,
           "task_item_id": 88,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -8987,7 +8939,6 @@
         {
           "id": 89,
           "task_item_id": 89,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9000,7 +8951,6 @@
         {
           "id": 90,
           "task_item_id": 90,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9013,7 +8963,6 @@
         {
           "id": 91,
           "task_item_id": 91,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9026,7 +8975,6 @@
         {
           "id": 92,
           "task_item_id": 92,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9039,7 +8987,6 @@
         {
           "id": 93,
           "task_item_id": 93,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9052,7 +8999,6 @@
         {
           "id": 94,
           "task_item_id": 94,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9065,7 +9011,6 @@
         {
           "id": 95,
           "task_item_id": 95,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9078,7 +9023,6 @@
         {
           "id": 96,
           "task_item_id": 96,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9091,7 +9035,6 @@
         {
           "id": 97,
           "task_item_id": 97,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9104,7 +9047,6 @@
         {
           "id": 98,
           "task_item_id": 98,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9117,7 +9059,6 @@
         {
           "id": 99,
           "task_item_id": 99,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9130,7 +9071,6 @@
         {
           "id": 100,
           "task_item_id": 100,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9143,7 +9083,6 @@
         {
           "id": 101,
           "task_item_id": 101,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9156,7 +9095,6 @@
         {
           "id": 102,
           "task_item_id": 102,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9169,7 +9107,6 @@
         {
           "id": 103,
           "task_item_id": 103,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9182,7 +9119,6 @@
         {
           "id": 104,
           "task_item_id": 104,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9195,7 +9131,6 @@
         {
           "id": 105,
           "task_item_id": 105,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9208,7 +9143,6 @@
         {
           "id": 106,
           "task_item_id": 106,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9221,7 +9155,6 @@
         {
           "id": 107,
           "task_item_id": 107,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9234,7 +9167,6 @@
         {
           "id": 108,
           "task_item_id": 108,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9247,7 +9179,6 @@
         {
           "id": 109,
           "task_item_id": 109,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9260,7 +9191,6 @@
         {
           "id": 110,
           "task_item_id": 110,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9273,7 +9203,6 @@
         {
           "id": 111,
           "task_item_id": 111,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9286,7 +9215,6 @@
         {
           "id": 112,
           "task_item_id": 112,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9299,7 +9227,6 @@
         {
           "id": 113,
           "task_item_id": 113,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9312,7 +9239,6 @@
         {
           "id": 114,
           "task_item_id": 114,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9325,7 +9251,6 @@
         {
           "id": 115,
           "task_item_id": 115,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9338,7 +9263,6 @@
         {
           "id": 116,
           "task_item_id": 116,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9351,7 +9275,6 @@
         {
           "id": 117,
           "task_item_id": 117,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9364,7 +9287,6 @@
         {
           "id": 118,
           "task_item_id": 118,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9377,7 +9299,6 @@
         {
           "id": 119,
           "task_item_id": 119,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9390,7 +9311,6 @@
         {
           "id": 120,
           "task_item_id": 120,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9403,7 +9323,6 @@
         {
           "id": 121,
           "task_item_id": 121,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9416,7 +9335,6 @@
         {
           "id": 122,
           "task_item_id": 122,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9429,7 +9347,6 @@
         {
           "id": 123,
           "task_item_id": 123,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9442,7 +9359,6 @@
         {
           "id": 124,
           "task_item_id": 124,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9455,7 +9371,6 @@
         {
           "id": 125,
           "task_item_id": 125,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9468,7 +9383,6 @@
         {
           "id": 126,
           "task_item_id": 126,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9481,7 +9395,6 @@
         {
           "id": 127,
           "task_item_id": 127,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9494,7 +9407,6 @@
         {
           "id": 128,
           "task_item_id": 128,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9507,7 +9419,6 @@
         {
           "id": 129,
           "task_item_id": 129,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9520,7 +9431,6 @@
         {
           "id": 130,
           "task_item_id": 130,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9533,7 +9443,6 @@
         {
           "id": 131,
           "task_item_id": 131,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9546,7 +9455,6 @@
         {
           "id": 132,
           "task_item_id": 132,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9559,7 +9467,6 @@
         {
           "id": 133,
           "task_item_id": 133,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9572,7 +9479,6 @@
         {
           "id": 134,
           "task_item_id": 134,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9585,7 +9491,6 @@
         {
           "id": 135,
           "task_item_id": 135,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9598,7 +9503,6 @@
         {
           "id": 136,
           "task_item_id": 136,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9611,7 +9515,6 @@
         {
           "id": 137,
           "task_item_id": 137,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9624,7 +9527,6 @@
         {
           "id": 138,
           "task_item_id": 138,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9637,7 +9539,6 @@
         {
           "id": 139,
           "task_item_id": 139,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9650,7 +9551,6 @@
         {
           "id": 140,
           "task_item_id": 140,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9663,7 +9563,6 @@
         {
           "id": 141,
           "task_item_id": 141,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9676,7 +9575,6 @@
         {
           "id": 142,
           "task_item_id": 142,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9689,7 +9587,6 @@
         {
           "id": 143,
           "task_item_id": 143,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",
@@ -9702,7 +9599,6 @@
         {
           "id": 144,
           "task_item_id": 144,
-          "instance_no": 1,
           "owner_person_id": null,
           "origin_unit_id": 7,
           "origin_type": "task_item",
@@ -9715,7 +9611,6 @@
         {
           "id": 145,
           "task_item_id": 145,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 2,
           "origin_type": "task_item",
@@ -9728,7 +9623,6 @@
         {
           "id": 146,
           "task_item_id": 146,
-          "instance_no": 1,
           "owner_person_id": 1,
           "origin_unit_id": 3,
           "origin_type": "task_item",

@@ -708,7 +708,6 @@ export function useProcessDefinitionManager({
     definitionArtifactsEditId.value = row.id ? String(row.id) : "";
     definitionArtifactsForm.value = {
       template_artifact_id: row.template_artifact_id ? String(row.template_artifact_id) : "",
-      instance_mode: row.instance_mode || "single_document",
       creates_task: Number(row.creates_task) === 1 ? "1" : "0",
       sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : "1"
     };

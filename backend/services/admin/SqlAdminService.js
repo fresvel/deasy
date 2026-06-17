@@ -1786,7 +1786,7 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, template_artifact_id, instance_mode, sort_order, creates_task
+      `SELECT id, process_definition_id, template_artifact_id, sort_order, creates_task
        FROM process_definition_templates
        WHERE id = ?
        LIMIT 1`,
@@ -1957,7 +1957,7 @@ export default class SqlAdminService {
     }
 
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, instance_mode, creates_task, sort_order
+      `SELECT template_artifact_id, creates_task, sort_order
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -1969,14 +1969,12 @@ export default class SqlAdminService {
         `INSERT INTO process_definition_templates (
           process_definition_id,
           template_artifact_id,
-          instance_mode,
           creates_task,
           sort_order
-        ) VALUES (?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.template_artifact_id,
-          row.instance_mode || "single_document",
           row.creates_task,
           row.sort_order
         ]
@@ -4761,8 +4759,8 @@ export default class SqlAdminService {
         if (!existingLink?.length) {
           await this.pool.query(
             `INSERT INTO process_definition_templates
-              (process_definition_id, template_artifact_id, instance_mode, creates_task, sort_order)
-             VALUES (?, ?, 'single_document', 1, 1)`,
+              (process_definition_id, template_artifact_id, creates_task, sort_order)
+             VALUES (?, ?, 1, 1)`,
             [requestedProcessDefinitionId, createdId]
           );
         }

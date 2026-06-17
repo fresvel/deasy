@@ -957,11 +957,9 @@ const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
        ti.target_position_id,
        ti.target_person_id,
        t.responsible_position_id,
-       tar.display_name AS template_artifact_name,
-       pdt.instance_mode
+       tar.display_name AS template_artifact_name
      FROM task_items ti
      LEFT JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      WHERE ti.task_id = ?
      ORDER BY ti.sort_order ASC, ti.id ASC`,
@@ -1142,89 +1140,10 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   return documentId;
 };
 
-const getNextTaskItemDocumentInstanceNo = async (connection, taskItemId) => {
-  const [rows] = await connection.query(
-    `SELECT COALESCE(MAX(instance_no), 0) AS max_instance_no
-     FROM documents
-     WHERE task_item_id = ?`,
-    [taskItemId]
-  );
-  return Number(rows?.[0]?.max_instance_no || 0) + 1;
-};
-
-export const createDocumentInstanceForTaskItem = async (
-  connection,
-  taskItem,
-  {
-    title = null,
-    forceOwnerPersonId = null,
-  } = {}
-) => {
-  if (!taskItem?.id) {
-    throw new Error("Se requiere un task_item válido para crear la instancia documental.");
-  }
-
-  const ownerPersonId = Number(forceOwnerPersonId || 0) || await resolveOwnerPersonIdForTaskItem(connection, taskItem);
-  const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, ownerPersonId);
-  const instanceNo = await getNextTaskItemDocumentInstanceNo(connection, taskItem.id);
-  const normalizedTitle = String(title || taskItem.template_artifact_name || `Documento ${taskItem.id}`).trim();
-
-  const [insertResult] = await connection.query(
-    `INSERT INTO documents (
-       task_item_id,
-       instance_no,
-       owner_person_id,
-       origin_unit_id,
-       origin_type,
-       title,
-       status
-     ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      taskItem.id,
-      instanceNo,
-      ownerPersonId || null,
-      originUnitId || null,
-      "task_item",
-      normalizedTitle,
-      "Inicial"
-    ]
-  );
-  const documentId = Number(insertResult.insertId);
-
-  const [versionInsertResult] = await connection.query(
-    `INSERT INTO document_versions (
-       document_id,
-       version,
-       template_artifact_id,
-       status
-     ) VALUES (?, ?, ?, ?)`,
-    [
-      documentId,
-      0.1,
-      taskItem.template_artifact_id ?? null,
-      "Borrador"
-    ]
-  );
-  const documentVersionId = Number(versionInsertResult.insertId);
-  await ensureFillFlowForDocumentVersion(connection, documentVersionId);
-
-  return {
-    document_id: documentId,
-    document_version_id: documentVersionId,
-    instance_no: instanceNo,
-    owner_person_id: ownerPersonId || null,
-    origin_unit_id: originUnitId || null,
-    title: normalizedTitle,
-  };
-};
-
 export const ensureDocumentsForTask = async (connection, taskId) => {
   const taskItems = await getTaskItemsForDocumentMaterialization(connection, taskId);
   let createdOrEnsured = 0;
   for (const taskItem of taskItems) {
-    if (String(taskItem.instance_mode || "single_document") === "owner_many_documents") {
-      continue;
-    }
     await ensureDocumentForTaskItem(connection, taskItem);
     createdOrEnsured += 1;
   }

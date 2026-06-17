@@ -442,11 +442,10 @@ const ensureDemoProcess = async (connection, { cargoIds }) => {
     {
       process_definition_id: definitionId,
       template_artifact_id: artifactId,
-      instance_mode: "owner_many_documents",
       creates_task: 1,
       sort_order: 1
     },
-    ["instance_mode", "creates_task", "sort_order"]
+    ["creates_task", "sort_order"]
   );
 
   for (const cargoId of cargoIds) {
@@ -680,43 +679,22 @@ const seedUserWorkflow = async (connection, { user, personId, positionId, proces
     [taskId, positionId, personId]
   );
 
-  const documentDefinitions = [
-    {
-      instanceNo: 1,
-      title: `Ficha de informacion - ${user.role}`,
-      documentStatus: "Pendiente",
-      versionStatus: "Pendiente de llenado",
-      workingPath: null,
-      finalPath: null,
-      flow: "fill"
-    },
-    {
-      instanceNo: 2,
-      title: `Solicitud de firma - ${user.role}`,
-      documentStatus: "En revision",
-      versionStatus: "Pendiente de firma",
-      workingPath: `users/${user.cedula}/demo/solicitud-firma.pdf`,
-      finalPath: `users/${user.cedula}/demo/solicitud-firma.pdf`,
-      flow: "signature"
-    },
-    {
-      instanceNo: 3,
-      title: `Documento completado - ${user.role}`,
-      documentStatus: "Completado",
-      versionStatus: "Borrador",
-      workingPath: `users/${user.cedula}/demo/documento-completado.docx`,
-      finalPath: `users/${user.cedula}/demo/documento-completado.pdf`,
-      flow: null
-    }
-  ];
+  // Un documento principal por entregable (task_item): el demo deja el entregable en estado de llenado.
+  const definition = {
+    title: `Ficha de informacion - ${user.role}`,
+    documentStatus: "Pendiente",
+    versionStatus: "Pendiente de llenado",
+    workingPath: null,
+    finalPath: null,
+    flow: "fill"
+  };
 
-  for (const definition of documentDefinitions) {
+  {
     const documentId = await upsertByUnique(
       connection,
       "documents",
       {
         task_item_id: taskItemId,
-        instance_no: definition.instanceNo,
         owner_person_id: personId,
         origin_unit_id: null,
         origin_type: "task_item",

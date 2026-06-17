@@ -408,13 +408,6 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
       { name: "template_artifact_id", label: "Plantilla documental", type: "number", required: true },
-      {
-        name: "instance_mode",
-        label: "Modo de instancia",
-        type: "select",
-        options: ["single_document", "owner_many_documents"],
-        defaultValue: "single_document"
-      },
       { name: "creates_task", label: "Materializa entregable", type: "boolean", defaultValue: 1 },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }

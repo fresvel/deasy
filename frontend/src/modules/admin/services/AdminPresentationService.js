@@ -53,12 +53,6 @@ class AdminPresentationService {
         default: "Predeterminada"
       }[value] || value;
     }
-    if (field?.name === "instance_mode") {
-      return {
-        single_document: "Un documento",
-        owner_many_documents: "Multiples documentos del dueño"
-      }[value] || value;
-    }
     if (field?.name === "unit_scope_type") {
       return {
         unit_exact: "Unidad exacta",

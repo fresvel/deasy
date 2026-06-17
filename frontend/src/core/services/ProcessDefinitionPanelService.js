@@ -78,22 +78,6 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async createTaskItemDocument(userId, processDefinitionId, taskItemId, payload = {}) {
-    if (!userId || !processDefinitionId || !taskItemId) {
-      throw new Error("Se requiere usuario, configuración y entregable.");
-    }
-    const { data } = await axios.post(
-      API_ROUTES.USERS_PROCESS_DEFINITION_TASK_ITEM_DOCUMENTS(userId, processDefinitionId, taskItemId),
-      payload,
-      {
-        headers: {
-          ...this.getAuthHeaders(),
-        },
-      }
-    );
-    return data;
-  }
-
   async uploadDeliverableFile(userId, processDefinitionId, taskItemId, file, options = {}) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, configuración y entregable.");

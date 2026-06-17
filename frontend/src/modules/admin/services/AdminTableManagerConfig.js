@@ -75,14 +75,12 @@ export const processDefinitionActivationTriggerTableFields = [
 
 export const processDefinitionActivationArtifactTableFields = [
   { name: "template_artifact_id", label: "Plantilla documental" },
-  { name: "instance_mode", label: "Modo de instancia" },
   { name: "creates_task", label: "Materializa entregable" }
 ];
 
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
   { name: "template_artifact_id", label: "Plantilla documental" },
-  { name: "instance_mode", label: "Modo de instancia" },
   { name: "creates_task", label: "Materializa entregable" },
   { name: "sort_order", label: "Orden" }
 ];

@@ -515,8 +515,8 @@ export const ensureDefaultProcess = async (connection) => {
   if (!pdt) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_templates
-        (process_definition_id, template_artifact_id, instance_mode, creates_task, sort_order)
-       VALUES (?, ?, 'single_document', 1, 1)`,
+        (process_definition_id, template_artifact_id, creates_task, sort_order)
+       VALUES (?, ?, 1, 1)`,
       [definitionId, artifactId]
     );
     pdt = { id: r.insertId };

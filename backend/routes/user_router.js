@@ -7,7 +7,6 @@ import {
   getUserDocumentCenter,
   getUserGlobalSignatureCenter,
   createUserProcessTask,
-  createTaskItemDocumentInstance,
   getMyProfile,
   updateMyProfile,
   uploadDeliverablePdf,
@@ -149,13 +148,6 @@ router.post(
   loadAccessContext,
   requireRouteUserAccess({ resource: "process_execution", action: "create" }),
   createGeneralTask
-);
-router.post(
-  '/:id/process-definitions/:definitionId/task-items/:taskItemId/documents',
-  authMiddleware,
-  loadAccessContext,
-  requireRouteUserAccess({ resource: "documents", action: "create", elevatedRoles: ["AdminSistema", "GestorEjecucionProcesos", "GestorDocumental"] }),
-  createTaskItemDocumentInstance
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',

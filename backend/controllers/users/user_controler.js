@@ -9,7 +9,6 @@ import UserRepository from "../../services/auth/UserRepository.js";
 import RbacService from "../../services/auth/RbacService.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
-  createDocumentInstanceForTaskItem,
   ensureDocumentForTaskItem,
   hydrateGeneralTask,
   launchProcessDefinitionInTerm,
@@ -238,7 +237,6 @@ const getUserDocumentCenterRows = async (pool, userId) => {
     `SELECT DISTINCT
        d.id AS document_id,
        d.task_item_id,
-       d.instance_no,
        d.owner_person_id,
        d.status AS document_status,
        dv.id AS document_version_id,
@@ -352,7 +350,6 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        st.name AS signature_type_name,
        d.id AS document_id,
        d.task_item_id,
-       d.instance_no,
        d.status AS document_status,
        dv.id AS document_version_id,
        dv.version AS document_version,
@@ -590,7 +587,6 @@ const getDefinitionTemplates = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
        pdt.id,
-       pdt.instance_mode,
        pdt.creates_task,
        pdt.sort_order,
        tar.id AS template_artifact_id,
@@ -605,7 +601,6 @@ const getDefinitionTemplates = async (pool, definitionId) => {
      WHERE pdt.process_definition_id = ?
      GROUP BY
        pdt.id,
-       pdt.instance_mode,
        pdt.creates_task,
        pdt.sort_order,
        tar.id,
@@ -755,7 +750,6 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.origin_kind,
        ti.title,
        tar.template_seed_id,
-       pdt.instance_mode,
        ti.sort_order,
        ti.responsible_position_id,
        ti.assigned_person_id,
@@ -814,7 +808,6 @@ const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
     `SELECT
        d.id AS document_id,
        d.task_item_id,
-       d.instance_no,
        d.owner_person_id,
        d.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
@@ -856,7 +849,7 @@ const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
        GROUP BY sfi.document_version_id
      ) sig ON sig.document_version_id = dv.id
      WHERE d.task_item_id IN (${placeholders})
-     ORDER BY d.task_item_id ASC, COALESCE(d.instance_no, 0) DESC, d.id DESC`,
+     ORDER BY d.task_item_id ASC, d.id DESC`,
     taskItemIds
   );
   return rows;
@@ -910,7 +903,6 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
        t.id AS task_id,
        t.term_id,
        ti.process_definition_template_id,
-       pdt.instance_mode,
        ti.template_artifact_id,
        ti.origin_kind,
        ti.target_unit_id,
@@ -1021,7 +1013,6 @@ const getAccessibleTaskItemDocumentForUser = async (
     `SELECT
        d.id AS document_id,
        d.task_item_id,
-       d.instance_no,
        d.owner_person_id,
        d.origin_unit_id,
        COALESCE(origin_unit.label, origin_unit.name) AS origin_unit_label,
@@ -1049,7 +1040,7 @@ const getAccessibleTaskItemDocumentForUser = async (
       AND latest.max_version = dv.version
      WHERE d.task_item_id = ?
        ${documentFilter}
-     ORDER BY COALESCE(d.instance_no, 0) DESC, d.id DESC`,
+     ORDER BY d.id DESC`,
     params
   );
 
@@ -1058,12 +1049,7 @@ const getAccessibleTaskItemDocumentForUser = async (
   return {
     ...taskItem,
     document_count: documentRows.length,
-    requires_document_selection:
-      !documentId
-      && String(taskItem.instance_mode || "single_document") === "owner_many_documents"
-      && documentRows.length > 1,
     document_id: selectedDocument?.document_id || null,
-    instance_no: selectedDocument?.instance_no || null,
     owner_person_id: selectedDocument?.owner_person_id || null,
     origin_unit_id: selectedDocument?.origin_unit_id || null,
     origin_unit_label: selectedDocument?.origin_unit_label || null,
@@ -1729,13 +1715,11 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         document_id: item.document_id,
         task_id: taskItem?.task_id || null,
         task_item_id: item.task_item_id,
-        instance_no: item.instance_no,
         owner_person_id: item.owner_person_id || null,
         origin_unit_id: item.origin_unit_id,
         unit_label: item.origin_unit_label || null,
         template_artifact_id: taskItem?.template_artifact_id || null,
         template_artifact_name: taskItem?.template_artifact_name || null,
-        instance_mode: taskItem?.instance_mode || "single_document",
         start_date: taskItem?.start_date || null,
         end_date: taskItem?.end_date || null,
         user_started_at: taskItem?.user_started_at || null,
@@ -1815,9 +1799,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         fillWorkflow,
         signatureRequests: relatedSignatureRequests,
       });
-      const isOwnerManyDocuments = String(item.instance_mode || "single_document") === "owner_many_documents";
       const fallbackActions = {
-        can_upload_deliverable: canUploadDeliverable && !isOwnerManyDocuments,
+        can_upload_deliverable: canUploadDeliverable,
         can_download_template: Boolean(item.template_artifact_id),
         can_manage_fill: canManageFill,
         can_review_signature_flow: Boolean(
@@ -1825,7 +1808,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
           || Number(item.total_signature_count || 0) > 0
           || relatedSignatureRequests.length
         ),
-        can_sign: canSign && !isOwnerManyDocuments,
+        can_sign: canSign,
         can_reset_workflow: canResetWorkflow,
         can_open_process_chat: true,
         implemented: {
@@ -1838,9 +1821,7 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
           process_chat: true
         }
       };
-      const actions = isOwnerManyDocuments
-        ? fallbackActions
-        : (relatedDocument?.actions || fallbackActions);
+      const actions = relatedDocument?.actions || fallbackActions;
       return {
         ...item,
         start_date: relatedDocument?.start_date ?? item.start_date ?? null,
@@ -1848,11 +1829,9 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         user_started_at: relatedDocument?.user_started_at ?? item.user_started_at ?? null,
         origin_unit_id: relatedDocument?.origin_unit_id ?? item.origin_unit_id ?? task.responsible_unit_id ?? null,
         unit_label: relatedDocument?.unit_label ?? item.origin_unit_label ?? item.unit_label ?? task.responsible_unit_label ?? null,
-        instance_mode: item.instance_mode || "single_document",
         document_count: relatedDocuments.length,
         attachments: relatedDocument?.attachments || [],
         attachment_count: relatedDocument?.attachment_count ?? (relatedDocument?.attachments?.length || 0),
-        can_create_document_instance: isOwnerManyDocuments && Number(item.resolved_owner_person_id || 0) === Number(userId),
         participation: participationByTaskItemId.get(Number(item.id)) || {
           has_past_fill: false,
           has_past_signature: false,
@@ -2506,7 +2485,6 @@ export const getUserDocumentCenter = async (req, res) => {
         term_name: row.term_name || null,
         term_type_name: row.term_type_name || null,
         term_year: row.term_year ? Number(row.term_year) : null,
-        instance_no: row.instance_no ? Number(row.instance_no) : null,
         document_version_id: row.document_version_id ? Number(row.document_version_id) : null,
         document_version: row.document_version || null,
         document_status: row.document_status || null,
@@ -2572,7 +2550,6 @@ export const getUserGlobalSignatureCenter = async (req, res) => {
         term_name: row.term_name || null,
         term_type_name: row.term_type_name || null,
         term_year: row.term_year ? Number(row.term_year) : null,
-        instance_no: row.instance_no ? Number(row.instance_no) : null,
         document_version_id: row.document_version_id ? Number(row.document_version_id) : null,
         document_version: row.document_version || null,
         document_status: row.document_status || null,
@@ -2650,68 +2627,6 @@ export const createUserProcessTask = async (req, res) => {
   } catch (error) {
     console.error("Error lanzando la configuracion de proceso:", error);
     return res.status(400).json({ message: error.message || "No se pudo lanzar el proceso." });
-  }
-};
-
-export const createTaskItemDocumentInstance = async (req, res) => {
-  const authenticatedUserId = getAuthenticatedUserId(req);
-  const routeUserId = getNumericUserId(req);
-  const definitionId = Number(req.params?.definitionId);
-  const taskItemId = Number(req.params?.taskItemId);
-
-  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
-    return res.status(403).json({ message: "No autorizado para crear una nueva instancia documental." });
-  }
-  if (!definitionId || Number.isNaN(definitionId) || !taskItemId || Number.isNaN(taskItemId)) {
-    return res.status(400).json({ message: "Se requieren la configuración y el entregable." });
-  }
-
-  const pool = getMariaDBPool();
-  if (!pool) {
-    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
-  }
-
-  const connection = await pool.getConnection();
-  try {
-    const taskItem = await getAccessibleTaskItemForUser(connection, authenticatedUserId, definitionId, taskItemId);
-    if (!taskItem) {
-      return res.status(404).json({ message: "No se encontró el entregable solicitado." });
-    }
-    if (String(taskItem.instance_mode || "single_document") !== "owner_many_documents") {
-      return res.status(400).json({ message: "Este entregable no permite crear múltiples instancias documentales." });
-    }
-    if (Number(taskItem.resolved_owner_person_id || 0) !== Number(authenticatedUserId)) {
-      return res.status(403).json({ message: "Solo el dueño actual del entregable puede crear nuevas instancias." });
-    }
-
-    await connection.beginTransaction();
-    const created = await createDocumentInstanceForTaskItem(connection, {
-      id: Number(taskItem.task_item_id),
-      task_id: Number(taskItem.task_id),
-      template_artifact_id: taskItem.template_artifact_id,
-      template_artifact_name: taskItem.template_artifact_name,
-      assigned_person_id: taskItem.resolved_owner_person_id,
-      responsible_position_id: null,
-    });
-    await connection.commit();
-
-    return res.status(201).json({
-      message: "Se creó una nueva instancia documental en borrador.",
-      task_item_id: Number(taskItem.task_item_id),
-      document_id: created.document_id,
-      document_version_id: created.document_version_id,
-      instance_no: created.instance_no,
-      title: created.title,
-    });
-  } catch (error) {
-    await connection.rollback().catch(() => {});
-    console.error("Error creando instancia documental del entregable:", error);
-    return res.status(500).json({
-      message: "No se pudo crear la instancia documental.",
-      error: error.message
-    });
-  } finally {
-    connection.release();
   }
 };
 
