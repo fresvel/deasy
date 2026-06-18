@@ -232,20 +232,11 @@
             <div v-if="fillStepShowsMode(step)" class="col-span-2">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Modo</label>
               <select :value="step.selection_mode" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
-                <option value="auto_one">Auto (uno)</option>
-                <option value="auto_all">Auto (todos)</option>
-                <option value="manual">Manual</option>
+                <option value="auto_one">Uno cualquiera</option>
+                <option value="auto_all">Todas</option>
               </select>
             </div>
-            <div class="col-span-1 flex flex-col items-center justify-end pb-1.5">
-              <span class="mb-1 block text-[0.55rem] font-semibold uppercase tracking-wide text-slate-400">Rechazo</span>
-              <span
-                class="text-sm leading-none"
-                :class="Number(step.order) > 1 ? 'text-emerald-600' : 'text-slate-300'"
-                :title="Number(step.order) > 1 ? 'Puede devolver al paso anterior' : 'El primer paso no puede devolver: no hay paso previo'"
-              >{{ Number(step.order) > 1 ? "↩" : "—" }}</span>
-            </div>
-            <div class="col-span-1 flex items-center justify-end pb-1">
+            <div class="col-span-2 flex items-center justify-end pb-1">
               <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar paso" @click="removeFillStep(index)">✕</button>
             </div>
           </div>
@@ -703,7 +694,7 @@ const onUnitTypeScopeChange = (index, value) => {
   patchFillStep(index, { unit_type_id: value, cargo_id: null });
   if (value) loadResolvableCargos({ unitTypeId: value });
 };
-// El "Modo" (uno/todos/manual) solo aplica con cargo (puede resolver varias personas).
+// El "Modo" (uno cualquiera / todas) solo aplica con cargo (puede resolver varias personas).
 const fillStepShowsMode = (step) => String(step?.resolver_type || "") === "cargo_in_scope";
 const fillStepNeedsUnit = (step) => String(step?.unit_scope_type || "") === "unit_exact";
 const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "unit_type";

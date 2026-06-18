@@ -258,6 +258,9 @@ const FILL_UNIT_SCOPE_TYPES = new Set([
   "context_ancestor_type"
 ]);
 const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
+// Autoría web de ENTREGA: 'manual' no está implementado en el resolvedor de llenado (se comporta como 'todas')
+// → se excluye para no engañar. El enum/runtime mantiene 'manual' por compatibilidad de seeds.
+const WEB_FILL_SELECTION_MODES = new Set(["auto_one", "auto_all"]);
 const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 const SIGNATURE_RESOLVER_TYPES = new Set([
   "task_assignee",
@@ -1001,8 +1004,10 @@ const collectAuthoredWorkflowIssues = ({
       }
       checkResolverRefs(resolver, type, label);
       const selection = resolver.selection_mode;
-      if (selection && !FILL_SELECTION_MODES.has(String(selection))) {
-        issues.push(`${label}: modo de selección inválido (${selection}).`);
+      // En autoría de ENTREGA solo "uno cualquiera" / "todas". 'manual' no está implementado en entrega (el
+      // resolvedor lo trata como 'todas') → se rechaza para no engañar. (Firmas sí soporta 'manual' aparte.)
+      if (selection && !WEB_FILL_SELECTION_MODES.has(String(selection))) {
+        issues.push(`${label}: modo no permitido en entrega. Usa "Uno cualquiera" o "Todas".`);
       }
     });
   }
