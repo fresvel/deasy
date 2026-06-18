@@ -3398,28 +3398,37 @@ export default class SqlAdminService {
     const seriesUnitTypeId = normalizeNumericId(series.unit_type_id);
     const policy = String(candidate.recipient_policy || "all_matches");
 
-    // Cargo: lo fija la serie. Con exact_position el cargo lo aporta el puesto, así que solo validamos
-    // que el puesto pertenezca al cargo de la serie; en el resto, sembramos o blindamos el cargo.
+    // Puesto exacto: el puesto define por sí mismo unidad y cargo, así que no se siembra ningún eje;
+    // solo validamos que el puesto pertenezca al eje (cargo o tipo de unidad) que fija la serie.
+    if (policy === "exact_position") {
+      const positionId = normalizeNumericId(candidate.position_id);
+      if (positionId && (seriesCargoId || seriesUnitTypeId)) {
+        const [posRows] = await connection.query(
+          `SELECT up.cargo_id, u.unit_type_id
+             FROM unit_positions up
+             INNER JOIN units u ON u.id = up.unit_id
+            WHERE up.id = ? LIMIT 1`,
+          [positionId]
+        );
+        const positionCargoId = normalizeNumericId(posRows?.[0]?.cargo_id);
+        const positionUnitTypeId = normalizeNumericId(posRows?.[0]?.unit_type_id);
+        if (seriesCargoId && positionCargoId && positionCargoId !== seriesCargoId) {
+          throw new Error("El puesto exacto no corresponde al cargo de la serie del proceso.");
+        }
+        if (seriesUnitTypeId && positionUnitTypeId && positionUnitTypeId !== seriesUnitTypeId) {
+          throw new Error("El puesto exacto no pertenece al tipo de unidad de la serie del proceso.");
+        }
+      }
+      return;
+    }
+
+    // Cargo: lo fija la serie; se siembra si la regla no lo trae, o se blinda si difiere.
     if (seriesCargoId) {
-      if (policy === "exact_position") {
-        const positionId = normalizeNumericId(candidate.position_id);
-        if (positionId) {
-          const [posRows] = await connection.query(
-            "SELECT cargo_id FROM unit_positions WHERE id = ? LIMIT 1",
-            [positionId]
-          );
-          const positionCargoId = normalizeNumericId(posRows?.[0]?.cargo_id);
-          if (positionCargoId && positionCargoId !== seriesCargoId) {
-            throw new Error("El puesto exacto no corresponde al cargo de la serie del proceso.");
-          }
-        }
-      } else {
-        const candidateCargoId = normalizeNumericId(candidate.cargo_id);
-        if (!candidateCargoId) {
-          candidate.cargo_id = seriesCargoId;
-        } else if (candidateCargoId !== seriesCargoId) {
-          throw new Error("El cargo de la regla debe coincidir con el cargo de la serie del proceso.");
-        }
+      const candidateCargoId = normalizeNumericId(candidate.cargo_id);
+      if (!candidateCargoId) {
+        candidate.cargo_id = seriesCargoId;
+      } else if (candidateCargoId !== seriesCargoId) {
+        throw new Error("El cargo de la regla debe coincidir con el cargo de la serie del proceso.");
       }
     }
 

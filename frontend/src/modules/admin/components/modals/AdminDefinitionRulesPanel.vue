@@ -33,29 +33,32 @@
         <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
       </div>
 
+      <!-- Lo que ya fija la serie se muestra como contexto, no como campos editables. -->
+      <div v-if="seriesFixedChips.length" class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="font-semibold uppercase tracking-wide text-slate-400">Fijado por la serie</span>
+        <span
+          v-for="chip in seriesFixedChips"
+          :key="chip.label"
+          class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600 ring-1 ring-slate-200"
+        >
+          {{ chip.label }}: <strong class="font-bold text-slate-700">{{ chip.value }}</strong>
+        </span>
+      </div>
+
       <!-- Bloque 1: a quién va dirigida la regla -->
       <fieldset class="flex flex-col gap-2.5">
         <p class="m-0 text-[0.7rem] font-bold uppercase tracking-wide text-slate-400">Alcance y destinatarios</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
-          <AdminFieldGroup group-class="md:col-span-4">
-            <template #default>
-              <label class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
-                Alcance
-                <span v-if="unitTypeLockedBySeries" class="text-[0.7rem] font-medium text-slate-400">(fijado por la serie)</span>
-              </label>
-              <AdminSelectField
-                :model-value="form.unit_scope_type"
-                :disabled="!canManage || unitTypeLockedBySeries"
-                @update:model-value="updateScopeType"
-              >
-                <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </AdminSelectField>
-              <p v-if="unitTypeLockedBySeries" class="mt-1 text-[0.7rem] text-slate-500">
-                Lo decide la serie del proceso (por tipo de unidad); la regla solo define el cargo y la entrega.
-              </p>
-            </template>
+          <AdminFieldGroup v-if="showScopeField" label="Alcance" group-class="md:col-span-4">
+            <AdminSelectField
+              :model-value="form.unit_scope_type"
+              :disabled="!canManage"
+              @update:model-value="updateScopeType"
+            >
+              <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </AdminSelectField>
           </AdminFieldGroup>
           <AdminFieldGroup label="Entrega" group-class="md:col-span-4">
             <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateRecipientPolicy">
@@ -79,38 +82,29 @@
           </AdminFieldGroup>
           <AdminFieldGroup v-if="showUnitTypeField" label="Tipo de unidad" group-class="md:col-span-4">
             <AdminLookupField
-              :model-value="unitTypeLockedBySeries ? seriesFixedUnitTypeName : labels.unit_type_id"
+              :model-value="labels.unit_type_id"
               placeholder="Selecciona un tipo"
               readonly
               prevent-input-interaction
-              :disabled="!canManage || unitTypeLockedBySeries"
-              :clear-disabled="!canManage || unitTypeLockedBySeries || !form.unit_type_id"
-              :search-disabled="!canManage || unitTypeLockedBySeries"
+              :disabled="!canManage"
+              :clear-disabled="!canManage || !form.unit_type_id"
+              :search-disabled="!canManage"
               @clear="$emit('clear-field', 'unit_type_id')"
               @search="$emit('open-fk-search', 'unit_type_id')"
             />
           </AdminFieldGroup>
-          <AdminFieldGroup v-if="showCargoField" group-class="md:col-span-4">
-            <template #default>
-              <label class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
-                Cargo
-                <span v-if="cargoLockedBySeries" class="text-[0.7rem] font-medium text-slate-400">(fijado por la serie)</span>
-              </label>
-              <AdminLookupField
-                :model-value="cargoLockedBySeries ? seriesFixedCargoName : labels.cargo_id"
-                placeholder="Selecciona un cargo"
-                readonly
-                prevent-input-interaction
-                :disabled="!canManage || cargoLockedBySeries"
-                :clear-disabled="!canManage || cargoLockedBySeries || !form.cargo_id"
-                :search-disabled="!canManage || cargoLockedBySeries"
-                @clear="$emit('clear-field', 'cargo_id')"
-                @search="$emit('open-fk-search', 'cargo_id')"
-              />
-              <p v-if="cargoLockedBySeries" class="mt-1 text-[0.7rem] text-slate-500">
-                Lo decide la serie del proceso; la regla solo define alcance y entrega.
-              </p>
-            </template>
+          <AdminFieldGroup v-if="showCargoField" label="Cargo" group-class="md:col-span-4">
+            <AdminLookupField
+              :model-value="labels.cargo_id"
+              placeholder="Selecciona un cargo"
+              readonly
+              prevent-input-interaction
+              :disabled="!canManage"
+              :clear-disabled="!canManage || !form.cargo_id"
+              :search-disabled="!canManage"
+              @clear="$emit('clear-field', 'cargo_id')"
+              @search="$emit('open-fk-search', 'cargo_id')"
+            />
           </AdminFieldGroup>
           <AdminFieldGroup v-if="showPositionField" label="Puesto exacto" group-class="md:col-span-4">
             <AdminLookupField
@@ -313,19 +307,34 @@ const seriesFixedCargoId = computed(() => {
   return id ? Number(id) : null;
 });
 const seriesFixedCargoName = computed(() => props.seriesScope?.cargo_name || "");
-const cargoLockedBySeries = computed(() => Boolean(seriesFixedCargoId.value) && !isExactPositionPolicy.value);
+const cargoLockedBySeries = computed(() => Boolean(seriesFixedCargoId.value));
 // Variación por tipo de unidad: la serie fija el alcance (tipo); la regla solo decide el cargo.
 const seriesFixedUnitTypeName = computed(() => props.seriesScope?.unit_type_name || "");
 const unitTypeLockedBySeries = computed(() =>
   String(props.seriesScope?.source_type || "") === "unit_type"
   && Boolean(props.seriesScope?.unit_type_id)
-  && !isExactPositionPolicy.value
 );
+// Resumen compacto de lo que la serie ya fija: se muestra como contexto en vez de campos bloqueados.
+const seriesFixedChips = computed(() => {
+  const chips = [];
+  if (unitTypeLockedBySeries.value) {
+    chips.push({ label: "Alcance", value: `Tipo de unidad · ${seriesFixedUnitTypeName.value}` });
+  }
+  if (cargoLockedBySeries.value) {
+    chips.push({ label: "Cargo", value: seriesFixedCargoName.value });
+  }
+  return chips;
+});
+// "Puesto exacto" es un modo cerrado: el puesto define unidad y cargo, así que el formulario se reduce a
+// elegir el puesto (alcance, unidad, tipo y cargo se ocultan). El resto de entregas usa el alcance.
+const showScopeField = computed(() => !isExactPositionPolicy.value && !unitTypeLockedBySeries.value);
 const showUnitField = computed(() =>
-  isExactPositionPolicy.value || scopeType.value === "unit_exact" || scopeType.value === "unit_subtree"
+  !isExactPositionPolicy.value && (scopeType.value === "unit_exact" || scopeType.value === "unit_subtree")
 );
-const showUnitTypeField = computed(() => !isExactPositionPolicy.value && scopeType.value === "unit_type");
-const showCargoField = computed(() => !isExactPositionPolicy.value);
+const showUnitTypeField = computed(() =>
+  !isExactPositionPolicy.value && scopeType.value === "unit_type" && !unitTypeLockedBySeries.value
+);
+const showCargoField = computed(() => !isExactPositionPolicy.value && !cargoLockedBySeries.value);
 const showPositionField = computed(() => isExactPositionPolicy.value);
 
 const requirementMessage = computed(() => {

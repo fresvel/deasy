@@ -75,26 +75,39 @@ export function useProcessDefinitionManager({
     typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
   );
 
-  // La serie del proceso fija el cargo objetivo; al crear una regla nueva lo sembramos para que el cargo
-  // se decida una sola vez (en la serie) y la regla solo añada alcance y entrega.
+  // La serie del proceso fija un eje (cargo o tipo de unidad). Lo re-sembramos sobre el formulario tras
+  // cualquier cambio para que no quede estado obsoleto (p. ej. al alternar la entrega). En "puesto exacto"
+  // el puesto define unidad y cargo, así que no se siembra (el guard del backend valida el puesto).
+  const applyRuleSeriesSeed = (form, labels) => {
+    const scope = definitionRulesSeriesScope?.value;
+    if (!scope) {
+      return { form, labels };
+    }
+    const isExact = String(form.recipient_policy || "") === "exact_position";
+    const nextForm = { ...form };
+    const nextLabels = { ...labels };
+    if (scope.cargo_id && !isExact) {
+      nextForm.cargo_id = String(scope.cargo_id);
+      nextLabels.cargo_id = scope.cargo_name || String(scope.cargo_id);
+    }
+    if (scope.source_type === "unit_type" && scope.unit_type_id && !isExact) {
+      nextForm.unit_scope_type = "unit_type";
+      nextForm.unit_type_id = String(scope.unit_type_id);
+      nextForm.unit_id = "";
+      nextLabels.unit_type_id = scope.unit_type_name || String(scope.unit_type_id);
+      nextLabels.unit_id = "";
+    }
+    return { form: nextForm, labels: nextLabels };
+  };
+
   const resetDefinitionRulesForm = () => {
     definitionRulesEditId.value = "";
-    const form = processDefinitionAdminService.createRuleForm();
-    const labels = processDefinitionAdminService.createRuleLabels();
-    const scope = definitionRulesSeriesScope?.value;
-    if (scope?.cargo_id) {
-      // Variación por cargo: la serie fija el cargo; la regla solo define unidades y entrega.
-      form.cargo_id = String(scope.cargo_id);
-      labels.cargo_id = scope.cargo_name || String(scope.cargo_id);
-    }
-    if (scope?.source_type === "unit_type" && scope?.unit_type_id) {
-      // Variación por tipo de unidad: la serie fija el alcance al tipo; la regla solo define el cargo.
-      form.unit_scope_type = "unit_type";
-      form.unit_type_id = String(scope.unit_type_id);
-      labels.unit_type_id = scope.unit_type_name || String(scope.unit_type_id);
-    }
-    definitionRulesForm.value = form;
-    definitionRulesLabels.value = labels;
+    const seeded = applyRuleSeriesSeed(
+      processDefinitionAdminService.createRuleForm(),
+      processDefinitionAdminService.createRuleLabels()
+    );
+    definitionRulesForm.value = seeded.form;
+    definitionRulesLabels.value = seeded.labels;
   };
 
   const loadDefinitionRulesSeriesScope = async (definitionId) => {
@@ -145,8 +158,9 @@ export function useProcessDefinitionManager({
       form,
       definitionRulesLabels.value
     );
-    definitionRulesForm.value = nextState.form;
-    definitionRulesLabels.value = nextState.labels;
+    const seeded = applyRuleSeriesSeed(nextState.form, nextState.labels);
+    definitionRulesForm.value = seeded.form;
+    definitionRulesLabels.value = seeded.labels;
   };
 
   const handleDefinitionRuleRecipientPolicyChange = (recipientPolicy = "") => {
@@ -157,8 +171,9 @@ export function useProcessDefinitionManager({
       form,
       definitionRulesLabels.value
     );
-    definitionRulesForm.value = nextState.form;
-    definitionRulesLabels.value = nextState.labels;
+    const seeded = applyRuleSeriesSeed(nextState.form, nextState.labels);
+    definitionRulesForm.value = seeded.form;
+    definitionRulesLabels.value = seeded.labels;
   };
 
   const refreshProcessDefinitionChecklist = async (definitionRow = selectedRow.value) => {
