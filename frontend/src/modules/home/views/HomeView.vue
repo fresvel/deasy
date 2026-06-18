@@ -110,6 +110,8 @@
 
         <template v-if="isDocumentCenterRoute">
           <section class="flex flex-col gap-6">
+            <!-- Panel de supervisión (solo visible si el usuario encabeza alguna unidad). -->
+            <SupervisorStuckPanel />
             <section class="bg-white rounded-xl shadow-xl shadow-slate-200/40 p-5 md:p-6 border border-slate-100 flex flex-col gap-5">
               <div class="deasy-filter-shell">
               <div class="deasy-filter-grid">
@@ -2771,6 +2773,7 @@ import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue';
 import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
+import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
 import {
   resolveWorkspaceCargoIcon,
   resolveWorkspaceProcessIcon,

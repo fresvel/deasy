@@ -568,6 +568,7 @@ export const SQL_TABLES = [
         defaultValue: "real"
       },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "is_unit_head", label: "Jefe de la unidad", type: "boolean", defaultValue: 0 },
       { name: "deactivated_at", label: "Desactivado", type: "datetime" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }

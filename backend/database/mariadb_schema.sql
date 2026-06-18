@@ -131,10 +131,15 @@ CREATE TABLE IF NOT EXISTS unit_positions (
   position_type ENUM('real','promocion','simbolico') NOT NULL DEFAULT 'real',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   deactivated_at DATETIME NULL,
+  -- Jefatura: el puesto cabeza de la unidad (su ocupante es jefe de todos los de la unidad). Máximo uno por
+  -- unidad (vía head_flag + UNIQUE). Debe ser un puesto ocupable (real/promocion) — validado por trigger.
+  is_unit_head TINYINT(1) NOT NULL DEFAULT 0,
+  head_flag TINYINT(1) AS (IF(is_unit_head = 1, 1, NULL)) PERSISTENT,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   cargo_id INT NOT NULL,
   UNIQUE KEY uq_unit_cargo_slot (unit_id, cargo_id, slot_no),
+  UNIQUE KEY uq_unit_head (unit_id, head_flag),
   INDEX idx_positions_unit_cargo_active (unit_id, cargo_id, is_active),
   CONSTRAINT fk_unit_positions_unit FOREIGN KEY (unit_id) REFERENCES units(id),
   CONSTRAINT fk_unit_positions_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id)
@@ -870,6 +875,23 @@ CREATE TABLE IF NOT EXISTS fill_requests (
     FOREIGN KEY (assigned_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Asiento de auditoría del TRASPASO (handover) de un entregable: conserva la trazabilidad de por qué/quién
+-- movió el responsable del MISMO task_item (no se duplica el entregable; las versiones/firmas viven aparte).
+CREATE TABLE IF NOT EXISTS task_item_handovers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_item_id INT NOT NULL,
+  from_person_id INT NULL,
+  to_person_id INT NULL,
+  reason VARCHAR(255) NULL,
+  trigger_kind ENUM('occupancy_end','position_deactivated','manual') NOT NULL DEFAULT 'manual',
+  performed_by_user_id BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_task_item_handovers_item (task_item_id),
+  CONSTRAINT fk_task_item_handovers_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
+  CONSTRAINT fk_task_item_handovers_from FOREIGN KEY (from_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_task_item_handovers_to FOREIGN KEY (to_person_id) REFERENCES persons(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DELIMITER //
 
 DROP TRIGGER IF EXISTS trg_process_definition_versions_before_update //
@@ -973,6 +995,12 @@ BEGIN
        AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
   END IF;
 END //
+
+-- (Sin guard de desactivación: se quitó la fricción de "resolver al desactivar". Al desactivar un puesto, sus
+-- tareas abiertas afloran en el PANEL DEL JEFE como atascadas y se resuelven ahí, sin bloqueo. La validación
+-- "la cabeza debe ser real/promoción" vive en la capa de aplicación.) Se dropean por si existían de antes.
+DROP TRIGGER IF EXISTS trg_unit_positions_before_insert //
+DROP TRIGGER IF EXISTS trg_unit_positions_before_update //
 
 DROP TRIGGER IF EXISTS trg_persons_after_update //
 CREATE TRIGGER trg_persons_after_update

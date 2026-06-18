@@ -2208,10 +2208,21 @@ export default class SqlAdminService {
     }
   }
 
+  // F-C: la cabeza de unidad debe ser un puesto OCUPABLE (real/promoción); un simbólico no resolvería a una
+  // persona. Se valida en la capa de app (no en trigger, para no acoplar el schema a una columna nueva).
+  assertUnitHeadAllowed(isHead, positionType) {
+    if (Number(isHead) === 1 && !["real", "promocion"].includes(String(positionType))) {
+      throw new Error("La cabeza de la unidad debe ser un puesto real o de promoción.");
+    }
+  }
+
   async create(tableName, data) {
     this.ensurePool();
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
+    if (tableName === "unit_positions") {
+      this.assertUnitHeadAllowed(payload.is_unit_head, payload.position_type || "real");
+    }
     const cloneSourceDefinitionId = (
       tableName === "process_definition_versions"
       && data?.source_process_definition_id !== undefined
@@ -2665,6 +2676,12 @@ export default class SqlAdminService {
     const existing = await this.getByKeys(tableName, keyPayload);
     if (!existing) {
       throw new Error("Registro no encontrado.");
+    }
+
+    if (tableName === "unit_positions") {
+      const effHead = updates.is_unit_head !== undefined ? updates.is_unit_head : existing.is_unit_head;
+      const effType = updates.position_type !== undefined ? updates.position_type : existing.position_type;
+      this.assertUnitHeadAllowed(effHead, effType);
     }
 
     if (tableName === "persons" && Object.prototype.hasOwnProperty.call(data, "password")) {
@@ -3536,6 +3553,194 @@ export default class SqlAdminService {
       params
     );
     return { reconciled: result?.affectedRows ?? 0 };
+  }
+
+  // F-C (handover): traspasa el MISMO entregable a otra persona (NO duplica). Mueve el responsable del task_item
+  // y, si ya está iniciado, el dueño del documento; deja asiento de auditoría. Conserva versiones/firmas/historial.
+  // No traspasa entregables cerrados (trazabilidad intacta).
+  async handoverTaskItem(taskItemId, { toPersonId, reason = null, triggerKind = "manual", performedByUserId = null } = {}, connection = this.pool) {
+    const tiId = normalizeNumericId(taskItemId);
+    const toId = normalizeNumericId(toPersonId);
+    if (!tiId) throw new Error("Entregable (task_item) inválido.");
+    if (!toId) throw new Error("Debes indicar la persona destino del traspaso.");
+    const [rows] = await connection.query(
+      "SELECT id, assigned_person_id, status FROM task_items WHERE id = ? LIMIT 1",
+      [tiId]
+    );
+    if (!rows.length) throw new Error("El entregable no existe.");
+    const TERMINAL = ["completed", "completado", "cancelled", "cancelado", "finalizado", "entregado", "rechazado"];
+    if (TERMINAL.includes(String(rows[0].status))) {
+      throw new Error("El entregable ya está cerrado; no se puede traspasar.");
+    }
+    const fromId = rows[0].assigned_person_id ? Number(rows[0].assigned_person_id) : null;
+    if (fromId === toId) {
+      return { task_item_id: tiId, from_person_id: fromId, to_person_id: toId, unchanged: true };
+    }
+    const [personRows] = await connection.query("SELECT id FROM persons WHERE id = ? LIMIT 1", [toId]);
+    if (!personRows.length) throw new Error("La persona destino no existe.");
+    await connection.query("UPDATE task_items SET assigned_person_id = ? WHERE id = ?", [toId, tiId]);
+    // Si ya está iniciado (tiene documento), su dueño también se mueve al nuevo responsable.
+    await connection.query("UPDATE documents SET owner_person_id = ? WHERE task_item_id = ?", [toId, tiId]);
+    const kind = ["occupancy_end", "position_deactivated", "manual"].includes(triggerKind) ? triggerKind : "manual";
+    await connection.query(
+      `INSERT INTO task_item_handovers (task_item_id, from_person_id, to_person_id, reason, trigger_kind, performed_by_user_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [tiId, fromId, toId, reason || null, kind, normalizeNumericId(performedByUserId) || null]
+    );
+    return { task_item_id: tiId, from_person_id: fromId, to_person_id: toId };
+  }
+
+  // F-C (lista de atascados): task_items ABIERTOS que requieren atención — por persona (los que tiene asignados),
+  // por puesto, por unidad, o (sin filtros) los huérfanos (sin persona). Marca `started` (tiene documento).
+  async listStuckTaskItems({ personId = null, positionId = null, unitId = null } = {}, connection = this.pool) {
+    const filters = ["ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')"];
+    const params = [];
+    const pid = normalizeNumericId(personId);
+    const posId = normalizeNumericId(positionId);
+    const uId = normalizeNumericId(unitId);
+    if (pid) { filters.push("ti.assigned_person_id = ?"); params.push(pid); }
+    if (posId) { filters.push("ti.responsible_position_id = ?"); params.push(posId); }
+    if (uId) { filters.push("up.unit_id = ?"); params.push(uId); }
+    if (!pid && !posId && !uId) { filters.push("ti.assigned_person_id IS NULL AND ti.responsible_position_id IS NOT NULL"); }
+    const [rows] = await connection.query(
+      `SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id, ti.status,
+              up.unit_id, c.name AS cargo_name, u.name AS unit_name,
+              EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
+         FROM task_items ti
+         LEFT JOIN unit_positions up ON up.id = ti.responsible_position_id
+         LEFT JOIN units u ON u.id = up.unit_id
+         LEFT JOIN cargos c ON c.id = up.cargo_id
+        WHERE ${filters.join(" AND ")}
+        ORDER BY ti.id ASC
+        LIMIT 500`,
+      params
+    );
+    return rows.map((r) => ({
+      id: Number(r.id),
+      task_id: Number(r.task_id),
+      assigned_person_id: r.assigned_person_id ? Number(r.assigned_person_id) : null,
+      responsible_position_id: r.responsible_position_id ? Number(r.responsible_position_id) : null,
+      status: r.status,
+      unit_id: r.unit_id ? Number(r.unit_id) : null,
+      unit_name: r.unit_name || null,
+      cargo_name: r.cargo_name || null,
+      started: Number(r.started) > 0
+    }));
+  }
+
+  // F-C (jefe inmediato): sube por la jerarquía de unidades (relación, org por defecto) y devuelve el ocupante
+  // vigente del PUESTO CABEZA más cercano que no sea la propia persona. Sirve para SUGERIR destino del traspaso.
+  async resolveImmediateBoss({ positionId = null, unitId = null, relationCode = "org" } = {}, connection = this.pool) {
+    let startUnit = normalizeNumericId(unitId);
+    let selfPersonId = null;
+    const posId = normalizeNumericId(positionId);
+    if (posId && !startUnit) {
+      const [pr] = await connection.query(
+        `SELECT up.unit_id, pa.person_id
+           FROM unit_positions up
+           LEFT JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1
+          WHERE up.id = ? LIMIT 1`,
+        [posId]
+      );
+      startUnit = pr?.[0]?.unit_id ? Number(pr[0].unit_id) : null;
+      selfPersonId = pr?.[0]?.person_id ? Number(pr[0].person_id) : null;
+    }
+    if (!startUnit) return { boss_person_id: null };
+    const [rel] = await connection.query("SELECT id FROM relation_unit_types WHERE code = ? LIMIT 1", [relationCode || "org"]);
+    const relId = rel?.[0]?.id ? Number(rel[0].id) : null;
+    if (!relId) return { boss_person_id: null };
+    const [rows] = await connection.query(
+      `WITH RECURSIVE chain AS (
+         SELECT ? AS unit_id, 0 AS depth
+         UNION ALL
+         SELECT ur.parent_unit_id, c.depth + 1
+           FROM unit_relations ur INNER JOIN chain c ON c.unit_id = ur.child_unit_id
+          WHERE ur.relation_type_id = ?
+       )
+       SELECT pa.person_id, head.unit_id, c.depth
+         FROM chain c
+         INNER JOIN unit_positions head ON head.unit_id = c.unit_id AND head.is_unit_head = 1 AND head.is_active = 1
+         INNER JOIN position_assignments pa ON pa.position_id = head.id AND pa.is_current = 1 AND pa.person_id IS NOT NULL
+        WHERE (? IS NULL OR pa.person_id <> ?)
+        ORDER BY c.depth ASC
+        LIMIT 1`,
+      [startUnit, relId, selfPersonId, selfPersonId]
+    );
+    const r = rows?.[0];
+    return r
+      ? { boss_person_id: Number(r.person_id), unit_id: Number(r.unit_id), depth: Number(r.depth) }
+      : { boss_person_id: null };
+  }
+
+  // F-C (scope por jefe): para el usuario/persona dado, resuelve las unidades que ENCABEZA (is_unit_head con
+  // ocupación vigente) + sus descendientes orgánicos, y devuelve los task_items ABIERTOS ATASCADOS ahí: sin
+  // persona (huérfanos) o cuyo asignado ya NO ocupa el puesto responsable (titular que se fue). `is_supervisor`
+  // indica si encabeza alguna unidad (para mostrar/ocultar el panel aunque no haya atascados).
+  async listSupervisorStuckTaskItems(personId, connection = this.pool) {
+    const pid = normalizeNumericId(personId);
+    if (!pid) return { is_supervisor: false, items: [] };
+    const [headRows] = await connection.query(
+      `SELECT COUNT(*) AS n
+         FROM unit_positions up
+         INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1 AND pa.person_id = ?
+        WHERE up.is_unit_head = 1 AND up.is_active = 1`,
+      [pid]
+    );
+    if (Number(headRows?.[0]?.n || 0) === 0) {
+      return { is_supervisor: false, items: [] };
+    }
+    const [rows] = await connection.query(
+      `WITH RECURSIVE headed AS (
+         SELECT up.unit_id AS unit_id
+           FROM unit_positions up
+           INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1 AND pa.person_id = ?
+          WHERE up.is_unit_head = 1 AND up.is_active = 1
+       ),
+       scope AS (
+         SELECT unit_id FROM headed
+         UNION
+         SELECT ur.child_unit_id
+           FROM unit_relations ur
+           INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+           INNER JOIN scope s ON s.unit_id = ur.parent_unit_id
+       )
+       SELECT ti.id, ti.task_id, ti.assigned_person_id, ti.responsible_position_id, ti.status,
+              up.unit_id, u.name AS unit_name, c.name AS cargo_name,
+              EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id) AS started
+         FROM task_items ti
+         INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
+         INNER JOIN units u ON u.id = up.unit_id
+         LEFT JOIN cargos c ON c.id = up.cargo_id
+        WHERE up.unit_id IN (SELECT unit_id FROM scope)
+          AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+          AND (
+            ti.assigned_person_id IS NULL
+            OR NOT EXISTS (
+              SELECT 1 FROM position_assignments pa2
+               WHERE pa2.position_id = ti.responsible_position_id
+                 AND pa2.is_current = 1
+                 AND pa2.person_id = ti.assigned_person_id
+            )
+          )
+        ORDER BY up.unit_id ASC, ti.id ASC
+        LIMIT 500`,
+      [pid]
+    );
+    return {
+      is_supervisor: true,
+      items: rows.map((r) => ({
+        id: Number(r.id),
+        task_id: Number(r.task_id),
+        assigned_person_id: r.assigned_person_id ? Number(r.assigned_person_id) : null,
+        responsible_position_id: r.responsible_position_id ? Number(r.responsible_position_id) : null,
+        status: r.status,
+        unit_id: r.unit_id ? Number(r.unit_id) : null,
+        unit_name: r.unit_name || null,
+        cargo_name: r.cargo_name || null,
+        started: Number(r.started) > 0,
+        reason: r.assigned_person_id ? "titular_se_fue" : "sin_responsable"
+      }))
+    };
   }
 
   // La serie de un proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad

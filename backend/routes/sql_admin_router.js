@@ -20,6 +20,9 @@ import {
   getProcessTargetScope,
   listResolvableCargos,
   reconcileTaskItemAssignments,
+  handoverTaskItem,
+  listStuckTaskItems,
+  getImmediateBoss,
   getProcessDefinitionSeriesScope,
   listSqlRows,
   createSqlRow,
@@ -47,6 +50,9 @@ router.post("/template_artifacts/workflows/reconcile", requireAnyRole(["AdminSis
 router.get("/process_definitions/:id/target-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessTargetScope);
 router.get("/process_definitions/:id/resolvable-cargos", requireSqlAdminPermission({ resource: "templates", action: "read" }), listResolvableCargos);
 router.post("/task-items/reconcile-assignments", requireAnyRole(["AdminSistema"]), reconcileTaskItemAssignments);
+router.get("/task-items/stuck", requireSqlAdminPermission({ resource: "templates", action: "read" }), listStuckTaskItems);
+router.post("/task-items/:id/handover", requireSqlAdminPermission({ resource: "templates", action: "update" }), handoverTaskItem);
+router.get("/positions/:id/immediate-boss", requireSqlAdminPermission({ resource: "templates", action: "read" }), getImmediateBoss);
 router.get("/process_definitions/:id/series-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessDefinitionSeriesScope);
 // Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).
 router.get("/template_artifacts/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);

@@ -343,6 +343,48 @@ export const reconcileTaskItemAssignments = async (req, res) => {
   }
 };
 
+// F-C handover: traspasa el MISMO entregable a otra persona (no duplica) + asiento de auditoría.
+export const handoverTaskItem = async (req, res) => {
+  try {
+    const result = await service.handoverTaskItem(req.params.id, {
+      toPersonId: req.body?.to_person_id ?? null,
+      reason: req.body?.reason ?? null,
+      triggerKind: req.body?.trigger_kind ?? "manual",
+      performedByUserId: req.user?.uid ?? null
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// F-C lista de atascados: task_items abiertos por persona/puesto/unidad, o huérfanos (sin persona).
+export const listStuckTaskItems = async (req, res) => {
+  try {
+    const result = await service.listStuckTaskItems({
+      personId: req.query.person_id || null,
+      positionId: req.query.position_id || null,
+      unitId: req.query.unit_id || null
+    });
+    res.json({ items: result });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// F-C jefe inmediato: ocupante del puesto cabeza más cercano subiendo por la jerarquía de unidades. Sugiere destino.
+export const getImmediateBoss = async (req, res) => {
+  try {
+    const result = await service.resolveImmediateBoss({
+      positionId: req.params.id,
+      relationCode: req.query.relation_code || "org"
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Cargo/tipo de unidad que la serie del proceso fija. Lo consume el panel de reglas para precargar y
 // bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).
 export const getProcessDefinitionSeriesScope = async (req, res) => {

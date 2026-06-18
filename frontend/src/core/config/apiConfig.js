@@ -16,6 +16,7 @@ export const API_ROUTES = {
   PROGRAMS: `${API_PREFIX}/units`,
   AREAS: `${API_PREFIX}/area`,
   TAREAS_PENDIENTES: (usuario) => `${API_PREFIX}/tarea/pendiente?usuario=${usuario}`,
+  TAREA_SUPERVISED_STUCK: `${API_PREFIX}/tarea/supervised-stuck`,
   USERS: `${API_PREFIX}/users`,
   VERIFY_EMAIL: `${API_PREFIX}/email/verify`,
   USERS_RECOVER_PASSWORD: `${API_PREFIX}/reset-password/request`,

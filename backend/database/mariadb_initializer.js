@@ -562,6 +562,27 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "índice template_artifacts.template_scope"
     );
 
+    // Jefatura por puesto (F-C): cabeza de unidad + máximo una por unidad (head_flag + UNIQUE). Para DBs
+    // existentes (el CREATE TABLE IF NOT EXISTS no altera columnas).
+    await addColumnIfMissing(
+      connection,
+      "unit_positions",
+      "is_unit_head",
+      "is_unit_head TINYINT(1) NOT NULL DEFAULT 0 AFTER deactivated_at"
+    );
+    await addColumnIfMissing(
+      connection,
+      "unit_positions",
+      "head_flag",
+      "head_flag TINYINT(1) AS (IF(is_unit_head = 1, 1, NULL)) PERSISTENT AFTER is_unit_head"
+    );
+    await addIndexIgnoringDuplicate(
+      connection,
+      "unit_positions",
+      "UNIQUE KEY uq_unit_head (unit_id, head_flag)",
+      "unique una-cabeza-por-unidad"
+    );
+
     const [cargoColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cargos'`
