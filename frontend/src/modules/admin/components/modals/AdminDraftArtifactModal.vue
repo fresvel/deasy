@@ -252,37 +252,27 @@
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
               <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepUbicacion(index, $event.target.value)">
                 <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
-                <option value="context_ancestor_type" :disabled="!processHasRules">En un ancestro (vía relación)…{{ processHasRules ? "" : " — requiere reglas" }}</option>
                 <option value="unit_exact">En una unidad específica…</option>
               </select>
             </div>
-            <!-- Ancestro: por qué relación subir (NULL = jerarquía orgánica) + tipo de unidad tope opcional. -->
-            <template v-if="fillStepIsAncestor(step)">
+            <!-- Unidad fija (ruteo a una oficina concreta; puede estar fuera del alcance del proceso). Filtro
+                 opcional por tipo de unidad para acortar la lista. El paso guarda la unidad fija (unit_id). -->
+            <template v-if="fillStepNeedsUnit(step)">
               <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Vía relación</label>
-                <select :value="step.relation_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onAncestorChange(index, 'relation_type_id', Number($event.target.value) || null)">
-                  <option value="">Jerarquía orgánica (por defecto)</option>
-                  <option v-for="r in relationTypeOptions" :key="r.id" :value="r.id">{{ r.name }}</option>
-                </select>
-              </div>
-              <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Hasta el tipo (opcional)</label>
-                <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onAncestorChange(index, 'unit_type_id', Number($event.target.value) || null)">
-                  <option value="">Padre directo</option>
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo (filtro)</label>
+                <select :value="step.filter_unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeFilterChange(index, Number($event.target.value) || null)">
+                  <option value="">Todos los tipos</option>
                   <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                 </select>
               </div>
-              <div class="col-span-12 text-[0.7rem] text-slate-500">
-                <span class="font-semibold text-slate-600">Resolvería:</span> {{ ancestorPreviewText(step) || "elige relación para previsualizar" }}
+              <div class="col-span-8">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
+                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
+                  <option value="">— Selecciona unidad —</option>
+                  <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
+                </select>
               </div>
             </template>
-            <div v-else-if="fillStepNeedsUnit(step)" class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
-              <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
-                <option value="">— Selecciona unidad —</option>
-                <option v-for="u in scopedUnitOptions" :key="u.id" :value="u.id">{{ u.name }}</option>
-              </select>
-            </div>
           </div>
         </div>
       </div>
@@ -413,7 +403,6 @@ onMounted(loadProcessDefinitionOptions);
 const cargoOptions = ref([]);
 const unitOptions = ref([]);
 const unitTypeOptions = ref([]);
-const relationTypeOptions = ref([]);
 const workflowCatalogsLoaded = ref(false);
 const toRows = (data) => (Array.isArray(data) ? data : (data?.rows || data?.data || []));
 const loadWorkflowCatalogs = async () => {
@@ -421,22 +410,19 @@ const loadWorkflowCatalogs = async () => {
     return;
   }
   try {
-    const [cargoRes, unitRes, unitTypeRes, relationRes] = await Promise.all([
+    const [cargoRes, unitRes, unitTypeRes] = await Promise.all([
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("cargos"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 1000 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_types"), { params: { orderBy: "name", order: "asc", limit: 500 } }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("relation_unit_types"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 200 } }),
     ]);
     cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, code: r.code || "", name: r.name || r.code || `Cargo ${r.id}` }));
     unitOptions.value = toRows(unitRes.data).map((r) => ({ id: r.id, name: r.label || r.name || `Unidad ${r.id}`, unit_type_id: r.unit_type_id ?? null }));
     unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
-    relationTypeOptions.value = toRows(relationRes.data).map((r) => ({ id: r.id, code: r.code || "", name: r.name || r.code || `Relación ${r.id}` }));
     workflowCatalogsLoaded.value = true;
   } catch {
     cargoOptions.value = [];
     unitOptions.value = [];
     unitTypeOptions.value = [];
-    relationTypeOptions.value = [];
   }
 };
 
@@ -613,7 +599,7 @@ const addFillStep = () => {
     unit_scope_type: "context_exact",
     unit_id: null,
     unit_type_id: null,
-    relation_type_id: null,
+    filter_unit_type_id: null,
     person_id: null,
     position_id: null,
     field_refs: [],
@@ -630,8 +616,8 @@ const removeFillStep = (index) => {
   commitFillSteps(fillSteps.value.filter((_, i) => i !== index));
 };
 // "Quién hace el paso": dos modos. 'task_assignee' = el responsable del entregable; 'scope' = un cargo
-// resuelto por ubicación (misma unidad / ancestro de cierto tipo / unidad específica). La revisión sube por
-// la jerarquía o se queda; nunca baja → sin subárbol ni "todas" (eso es distribución, vive en las reglas).
+// resuelto por ubicación (misma unidad del entregable / una unidad específica). La revisión sube por la
+// jerarquía o se queda; nunca baja → sin subárbol ni "todas" (eso es distribución, vive en las reglas).
 const stepWhoMode = (step) => (String(step?.resolver_type || "task_assignee") === "task_assignee" ? "task_assignee" : "scope");
 const updateFillStepWho = (index, value) => {
   if (value === "task_assignee") {
@@ -643,68 +629,31 @@ const updateFillStepWho = (index, value) => {
     unit_scope_type: processHasRules.value ? "context_exact" : "unit_exact",
     unit_id: null,
     unit_type_id: null,
-    relation_type_id: null
+    filter_unit_type_id: null
   });
 };
 const updateFillStepUbicacion = (index, value) => {
-  const isAncestor = value === "context_ancestor_type";
   patchFillStep(index, {
     unit_scope_type: value,
     unit_id: value === "unit_exact" ? (fillSteps.value[index]?.unit_id ?? null) : null,
-    unit_type_id: isAncestor ? (fillSteps.value[index]?.unit_type_id ?? null) : null,
-    relation_type_id: isAncestor ? (fillSteps.value[index]?.relation_type_id ?? null) : null
+    unit_type_id: null,
+    filter_unit_type_id: null
   });
-  if (isAncestor) {
-    loadAncestorPreview(fillSteps.value[index]);
-  }
 };
 // El "Modo" (uno/todos/manual) solo aplica con cargo (puede resolver varias personas).
 const fillStepShowsMode = (step) => String(step?.resolver_type || "") === "cargo_in_scope";
 const fillStepNeedsUnit = (step) => String(step?.unit_scope_type || "") === "unit_exact";
-const fillStepIsAncestor = (step) => String(step?.unit_scope_type || "") === "context_ancestor_type";
 
-// Preview en config-time: a qué ancestro concreto resolvería el paso, subiendo por la relación elegida desde
-// las unidades del alcance del proceso. Cacheado por (relación, tipo) para no repetir llamadas.
-const ancestorPreview = ref({});
-const ancestorPreviewKey = (step) => `${step?.relation_type_id || 0}:${step?.unit_type_id || 0}`;
-const loadAncestorPreview = async (step) => {
-  const defId = props.draftArtifactForm.process_definition_id;
-  if (!defId || !fillStepIsAncestor(step)) return;
-  const key = ancestorPreviewKey(step);
-  if (ancestorPreview.value[key]) return;
-  ancestorPreview.value = { ...ancestorPreview.value, [key]: { loading: true } };
-  try {
-    const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_ANCESTOR_PREVIEW(defId), {
-      params: { relation_type_id: step.relation_type_id || "", unit_type_id: step.unit_type_id || "" }
-    });
-    ancestorPreview.value = {
-      ...ancestorPreview.value,
-      [key]: { samples: data?.samples || [], total: data?.total ?? null, truncated: Boolean(data?.truncated) }
-    };
-  } catch {
-    ancestorPreview.value = { ...ancestorPreview.value, [key]: { samples: [] } };
+// Unidad fija = ruteo a una oficina concreta (puede estar fuera del alcance). El filtro por tipo es solo un
+// atajo de navegación para acortar la lista; no se persiste (el paso guarda únicamente unit_id).
+const fillStepUnitOptions = (step) => {
+  if (step?.filter_unit_type_id) {
+    return unitOptions.value.filter((u) => Number(u.unit_type_id) === Number(step.filter_unit_type_id));
   }
+  return unitOptions.value;
 };
-// Lista TODOS los ancestros resueltos para el alcance (deduplicados) + conteos.
-const ancestorPreviewText = (step) => {
-  const p = ancestorPreview.value[ancestorPreviewKey(step)];
-  if (!p) return "";
-  if (p.loading) return "Calculando…";
-  const samples = p.samples || [];
-  const resolved = samples.filter((s) => s.ancestor_name);
-  if (!resolved.length) return "Ningún ancestro resuelto para el alcance (revisa las aristas de esa relación).";
-  const distinct = [...new Set(resolved.map((s) => s.ancestor_name))];
-  const without = samples.length - resolved.length;
-  const total = p.total || samples.length;
-  const notes = [`${resolved.length}/${total} unidades`];
-  if (without) notes.push(`${without} sin ancestro`);
-  if (p.truncated) notes.push("muestra parcial");
-  return `${distinct.join("  ·  ")}  (${notes.join(", ")})`;
-};
-// Cambia un campo del ancestro y refresca el preview con el nuevo valor.
-const onAncestorChange = (index, field, value) => {
-  updateFillStep(index, field, value);
-  loadAncestorPreview(fillSteps.value[index]);
+const onUnitTypeFilterChange = (index, value) => {
+  patchFillStep(index, { filter_unit_type_id: value, unit_id: null });
 };
 
 // Ámbito resoluble del proceso vinculado (sus reglas objetivo): habilita los ámbitos de contexto y
@@ -729,15 +678,6 @@ const loadProcessScope = async (definitionId) => {
 watch(() => props.draftArtifactForm.process_definition_id, (id) => { loadProcessScope(id); }, { immediate: true });
 const processHasRules = computed(() => Boolean(processScope.value?.has_rules));
 const processSupportsContext = computed(() => Boolean(processScope.value?.supports_context));
-// Unidades ofrecidas para ámbitos estáticos: acotadas a las que cubren las reglas del proceso.
-const scopedUnitOptions = computed(() => {
-  const scope = processScope.value;
-  if (!scope || scope.all_units || !Array.isArray(scope.unit_ids) || !scope.unit_ids.length) {
-    return unitOptions.value;
-  }
-  const allowed = new Set(scope.unit_ids.map((id) => Number(id)));
-  return unitOptions.value.filter((u) => allowed.has(Number(u.id)));
-});
 
 // ── Flujo de firmas ──
 const signatureSteps = computed(() => props.draftArtifactForm.signature_workflow?.steps || []);

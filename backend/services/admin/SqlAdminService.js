@@ -241,7 +241,6 @@ const WEB_FILL_RESOLVER_TYPES = new Set([
 // autoría web de pasos: la unidad del entregable, el ancestro de cierto tipo, o una unidad fija (ruteo).
 const WEB_FILL_UNIT_SCOPE_TYPES = new Set([
   "context_exact",
-  "context_ancestor_type",
   "unit_exact"
 ]);
 const FILL_UNIT_SCOPE_TYPES = new Set([
@@ -918,13 +917,13 @@ const collectAuthoredWorkflowIssues = ({
         }
       }
       if (scope === "unit_exact" || scope === "unit_subtree") {
+        // Unidad fija = ruteo a una oficina concreta (revisión/firma). Esa oficina puede estar FUERA del
+        // alcance del proceso (p. ej. una dirección superior), así que solo se exige que exista y esté activa.
         const unitId = normalizeNumericId(resolver?.unit_id);
         if (!unitId) {
           issues.push(`${label}: el ámbito de unidad específica requiere seleccionar una unidad.`);
         } else if (unitIds.size && !unitIds.has(unitId)) {
           issues.push(`${label}: la unidad seleccionada (${unitId}) no existe o está inactiva.`);
-        } else if (scopeHasRules && !scopeAllUnits && scopeUnitIds.size && !scopeUnitIds.has(unitId)) {
-          issues.push(`${label}: la unidad seleccionada (${unitId}) está fuera del ámbito de las reglas objetivo del proceso.`);
         }
       }
       if (scope === "unit_type") {
@@ -964,7 +963,7 @@ const collectAuthoredWorkflowIssues = ({
       if (type === "cargo_in_scope") {
         const scope = String(resolver.unit_scope_type || "context_exact");
         if (!WEB_FILL_UNIT_SCOPE_TYPES.has(scope)) {
-          issues.push(`${label}: ámbito no permitido para revisión. Usa la unidad del entregable, el ancestro de un tipo, o una unidad específica.`);
+          issues.push(`${label}: ámbito no permitido para revisión. Usa la unidad del entregable o una unidad específica.`);
           return;
         }
       }
@@ -3406,77 +3405,6 @@ export default class SqlAdminService {
       unit_ids: Array.from(unitIds),
       cargo_ids: Array.from(cargoIds)
     };
-  }
-
-  // Preview en config-time: para una muestra de unidades del alcance del proceso, sube por la relación
-  // elegida (NULL = 'org') y devuelve qué ancestro concreto resolvería el paso (el más cercano; si se indica
-  // tipo de unidad, el más cercano de ese tipo; si no, el padre directo). Evidencia la resolución matricial.
-  async previewFillAncestorResolution(processDefinitionId, { relationTypeId = null, unitTypeId = null } = {}, connection = this.pool) {
-    const scope = await this.getProcessTargetScope(processDefinitionId, connection);
-    if (!scope.has_rules) {
-      return { has_rules: false, relation_code: null, samples: [] };
-    }
-    let resolvedRelationId = normalizeNumericId(relationTypeId);
-    if (!resolvedRelationId) {
-      const [orgRows] = await connection.query("SELECT id FROM relation_unit_types WHERE code = 'org' LIMIT 1");
-      resolvedRelationId = orgRows?.[0]?.id ? Number(orgRows[0].id) : null;
-    }
-    const [relRows] = await connection.query("SELECT code, name FROM relation_unit_types WHERE id = ? LIMIT 1", [resolvedRelationId]);
-    const relationLabel = relRows?.[0]?.name || relRows?.[0]?.code || "Orgánica";
-
-    // Se listan TODAS las unidades del alcance (no una muestra); tope de seguridad alto para evitar payloads
-    // patológicos en organigramas enormes.
-    const PREVIEW_UNIT_CAP = 500;
-    let sampleUnitIds = Array.isArray(scope.unit_ids) ? scope.unit_ids.slice(0, PREVIEW_UNIT_CAP) : [];
-    if (!sampleUnitIds.length && scope.all_units) {
-      const [anyUnits] = await connection.query(
-        "SELECT id FROM units WHERE is_active = 1 ORDER BY id ASC LIMIT ?",
-        [PREVIEW_UNIT_CAP]
-      );
-      sampleUnitIds = anyUnits.map((row) => Number(row.id));
-    }
-    const totalScopeUnits = Array.isArray(scope.unit_ids) ? scope.unit_ids.length : sampleUnitIds.length;
-    const truncated = totalScopeUnits > sampleUnitIds.length;
-    if (!resolvedRelationId || !sampleUnitIds.length) {
-      return { has_rules: true, relation_code: relationLabel, samples: [], total: totalScopeUnits, truncated };
-    }
-
-    const typeId = normalizeNumericId(unitTypeId);
-    const nearestSelect = typeId
-      ? "SELECT id FROM ancestor_units WHERE depth > 0 AND unit_type_id = ? ORDER BY depth ASC LIMIT 1"
-      : "SELECT id FROM ancestor_units WHERE depth = 1 ORDER BY depth ASC LIMIT 1";
-
-    const samples = [];
-    for (const unitId of sampleUnitIds) {
-      const params = [unitId, resolvedRelationId];
-      if (typeId) {
-        params.push(typeId);
-      }
-      const [rows] = await connection.query(
-        `WITH RECURSIVE ancestor_units AS (
-           SELECT id, unit_type_id, 0 AS depth FROM units WHERE id = ?
-           UNION ALL
-           SELECT parent_u.id, parent_u.unit_type_id, au.depth + 1
-             FROM unit_relations ur
-             INNER JOIN ancestor_units au ON au.id = ur.child_unit_id
-             INNER JOIN units parent_u ON parent_u.id = ur.parent_unit_id
-            WHERE ur.relation_type_id = ?
-         )
-         SELECT u.id, u.name
-           FROM units u
-          WHERE u.id = (${nearestSelect})
-          LIMIT 1`,
-        params
-      );
-      const [srcRows] = await connection.query("SELECT name FROM units WHERE id = ? LIMIT 1", [unitId]);
-      samples.push({
-        unit_id: unitId,
-        unit_name: srcRows?.[0]?.name || `Unidad ${unitId}`,
-        ancestor_id: rows?.[0]?.id ? Number(rows[0].id) : null,
-        ancestor_name: rows?.[0]?.name || null
-      });
-    }
-    return { has_rules: true, relation_code: relationLabel, samples, total: totalScopeUnits, truncated };
   }
 
   // La serie de un proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad

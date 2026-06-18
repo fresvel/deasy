@@ -316,20 +316,6 @@ export const getProcessTargetScope = async (req, res) => {
   }
 };
 
-// Preview en config-time: a qué ancestro concreto resolvería un paso "vía relación" para una muestra de
-// unidades del alcance del proceso. Lo consume el editor de plantillas para evidenciar la resolución matricial.
-export const previewFillAncestorResolution = async (req, res) => {
-  try {
-    const result = await service.previewFillAncestorResolution(req.params.id, {
-      relationTypeId: req.query.relation_type_id || null,
-      unitTypeId: req.query.unit_type_id || null
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
 // Cargo/tipo de unidad que la serie del proceso fija. Lo consume el panel de reglas para precargar y
 // bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).
 export const getProcessDefinitionSeriesScope = async (req, res) => {

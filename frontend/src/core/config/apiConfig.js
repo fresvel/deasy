@@ -75,7 +75,6 @@ export const API_ROUTES = {
   ADMIN_SQL_TEMPLATE_ARTIFACT_SYNC_STATUS: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/sync-status`,
   ADMIN_SQL_TEMPLATE_ARTIFACT_RESYNC: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/${artifactId}/resync`,
   ADMIN_SQL_PROCESS_TARGET_SCOPE: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/target-scope`,
-  ADMIN_SQL_PROCESS_ANCESTOR_PREVIEW: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/ancestor-preview`,
   ADMIN_SQL_PROCESS_SERIES_SCOPE: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/series-scope`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
