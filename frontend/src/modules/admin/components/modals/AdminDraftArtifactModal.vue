@@ -213,17 +213,9 @@
             </div>
             <div class="col-span-3">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
-              <select :value="step.resolver_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'resolver_type', $event.target.value)">
-                <optgroup label="Responsable de la tarea">
-                  <option value="task_assignee">Responsable de la tarea (por defecto)</option>
-                  <option value="document_owner">Dueño del documento</option>
-                </optgroup>
-                <optgroup label="Otra persona (avanzado)">
-                  <option value="cargo_in_scope">Cargo en ámbito</option>
-                  <option value="position">Posición exacta</option>
-                  <option value="specific_person">Persona específica</option>
-                  <option value="manual_pick">Selección manual</option>
-                </optgroup>
+              <select :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
+                <option value="task_assignee">Responsable del entregable</option>
+                <option value="scope">Por cargo</option>
               </select>
             </div>
             <div v-if="fillStepShowsMode(step)" class="col-span-2">
@@ -246,58 +238,38 @@
               <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar paso" @click="removeFillStep(index)">✕</button>
             </div>
           </div>
-          <div v-if="fillStepNeedsDetail(step)" class="mt-2 grid grid-cols-12 gap-2">
-            <!-- Persona específica -->
-            <div v-if="step.resolver_type === 'specific_person'" class="col-span-6">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
-              <select :value="step.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
-                <option value="">— Selecciona persona —</option>
-                <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}{{ p.cedula ? ` — ${p.cedula}` : "" }}</option>
+          <!-- "Por cargo": la revisión sube por la jerarquía o se queda en la misma unidad; nunca baja. Por eso
+               no hay subárbol ni "todas las unidades" (eso es distribución y vive en las reglas del proceso). -->
+          <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
+            <div class="col-span-4">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
+              <select :value="step.cargo_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
+                <option value="">— Selecciona cargo —</option>
+                <option v-for="c in cargoOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
-            <!-- Posición concreta del organigrama -->
-            <div v-else-if="step.resolver_type === 'position'" class="col-span-6">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Posición</label>
-              <select :value="step.position_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'position_id', Number($event.target.value) || null)">
-                <option value="">— Selecciona posición —</option>
-                <option v-for="p in positionOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
+            <div class="col-span-4">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
+              <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepUbicacion(index, $event.target.value)">
+                <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
+                <option value="context_ancestor_type" :disabled="!processHasRules">En el ancestro de tipo…{{ processHasRules ? "" : " — requiere reglas" }}</option>
+                <option value="unit_exact">En una unidad específica…</option>
               </select>
             </div>
-            <!-- Cargo (rol) resuelto dentro de un ámbito de unidades -->
-            <template v-else-if="step.resolver_type === 'cargo_in_scope'">
-              <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
-                <select :value="step.cargo_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
-                  <option value="">— Selecciona cargo —</option>
-                  <option v-for="c in cargoOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
-              </div>
-              <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ámbito</label>
-                <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_scope_type', $event.target.value)">
-                  <option value="context_exact" :disabled="!processHasRules">Unidad del proceso{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}{{ processHasRules ? "" : " — requiere reglas" }}</option>
-                  <option value="context_subtree" :disabled="!processHasRules">Unidad del proceso y subárbol{{ selectedProcessName ? ` (${selectedProcessName})` : "" }}{{ processHasRules ? "" : " — requiere reglas" }}</option>
-                  <option value="unit_exact">Unidad específica</option>
-                  <option value="unit_subtree">Unidad específica y subárbol</option>
-                  <option value="unit_type">Tipo de unidad</option>
-                  <option value="all_units">Todas las unidades</option>
-                </select>
-              </div>
-              <div v-if="fillStepNeedsUnit(step)" class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
-                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
-                  <option value="">— Selecciona unidad —</option>
-                  <option v-for="u in scopedUnitOptions" :key="u.id" :value="u.id">{{ u.name }}</option>
-                </select>
-              </div>
-              <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
-                <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_type_id', Number($event.target.value) || null)">
-                  <option value="">— Selecciona tipo —</option>
-                  <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
-                </select>
-              </div>
-            </template>
+            <div v-if="fillStepNeedsUnitType(step)" class="col-span-4">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad (ancestro)</label>
+              <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_type_id', Number($event.target.value) || null)">
+                <option value="">— Selecciona tipo —</option>
+                <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+              </select>
+            </div>
+            <div v-else-if="fillStepNeedsUnit(step)" class="col-span-4">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
+              <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
+                <option value="">— Selecciona unidad —</option>
+                <option v-for="u in scopedUnitOptions" :key="u.id" :value="u.id">{{ u.name }}</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -428,8 +400,6 @@ onMounted(loadProcessDefinitionOptions);
 const cargoOptions = ref([]);
 const unitOptions = ref([]);
 const unitTypeOptions = ref([]);
-const positionOptions = ref([]);
-const personOptions = ref([]);
 const workflowCatalogsLoaded = ref(false);
 const toRows = (data) => (Array.isArray(data) ? data : (data?.rows || data?.data || []));
 const loadWorkflowCatalogs = async () => {
@@ -437,35 +407,19 @@ const loadWorkflowCatalogs = async () => {
     return;
   }
   try {
-    const [cargoRes, unitRes, unitTypeRes, positionRes, personRes] = await Promise.all([
+    const [cargoRes, unitRes, unitTypeRes] = await Promise.all([
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("cargos"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 1000 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_types"), { params: { orderBy: "name", order: "asc", limit: 500 } }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), { params: { filter_is_active: 1, orderBy: "id", order: "asc", limit: 2000 } }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("persons"), { params: { filter_is_active: 1, orderBy: "last_name", order: "asc", limit: 2000 } }),
     ]);
     cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, code: r.code || "", name: r.name || r.code || `Cargo ${r.id}` }));
     unitOptions.value = toRows(unitRes.data).map((r) => ({ id: r.id, name: r.label || r.name || `Unidad ${r.id}`, unit_type_id: r.unit_type_id ?? null }));
     unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
-    const cargoNames = new Map(cargoOptions.value.map((c) => [Number(c.id), c.name]));
-    const unitNames = new Map(unitOptions.value.map((u) => [Number(u.id), u.name]));
-    positionOptions.value = toRows(positionRes.data).map((r) => {
-      const cargoName = cargoNames.get(Number(r.cargo_id)) || r.title || `Posición ${r.id}`;
-      const unitName = unitNames.get(Number(r.unit_id)) || `Unidad ${r.unit_id}`;
-      return { id: r.id, name: `${cargoName} — ${unitName}` };
-    });
-    personOptions.value = toRows(personRes.data).map((r) => ({
-      id: r.id,
-      name: [r.first_name, r.last_name].filter(Boolean).join(" ").trim() || r.email || `Persona ${r.id}`,
-      cedula: r.cedula || "",
-    }));
     workflowCatalogsLoaded.value = true;
   } catch {
     cargoOptions.value = [];
     unitOptions.value = [];
     unitTypeOptions.value = [];
-    positionOptions.value = [];
-    personOptions.value = [];
   }
 };
 
@@ -651,23 +605,39 @@ const addFillStep = () => {
 const updateFillStep = (index, prop, value) => {
   commitFillSteps(fillSteps.value.map((s, i) => (i === index ? { ...s, [prop]: value } : s)));
 };
+const patchFillStep = (index, patch) => {
+  commitFillSteps(fillSteps.value.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+};
 const removeFillStep = (index) => {
   commitFillSteps(fillSteps.value.filter((_, i) => i !== index));
 };
-// El "Modo" (uno/todos/manual) solo aplica cuando el responsable puede resolver varias personas.
-const FILL_MULTI_RESOLVERS = new Set(["position", "cargo_in_scope"]);
-const fillStepShowsMode = (step) => FILL_MULTI_RESOLVERS.has(String(step?.resolver_type || ""));
-// Los tipos de un solo destinatario no necesitan campos extra.
-const fillStepNeedsDetail = (step) => ["specific_person", "position", "cargo_in_scope"].includes(String(step?.resolver_type || ""));
-const fillStepNeedsUnit = (step) => ["unit_exact", "unit_subtree"].includes(String(step?.unit_scope_type || ""));
-const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "unit_type";
-// Los ámbitos de contexto resuelven la unidad del proceso destino; se muestra su nombre para dejar
-// explícito a qué proceso se refiere "Unidad del proceso".
-const selectedProcessName = computed(() => {
-  const id = props.draftArtifactForm.process_definition_id;
-  if (!id) return "";
-  return processDefinitionOptions.value.find((o) => String(o.id) === String(id))?.name || "";
-});
+// "Quién hace el paso": dos modos. 'task_assignee' = el responsable del entregable; 'scope' = un cargo
+// resuelto por ubicación (misma unidad / ancestro de cierto tipo / unidad específica). La revisión sube por
+// la jerarquía o se queda; nunca baja → sin subárbol ni "todas" (eso es distribución, vive en las reglas).
+const stepWhoMode = (step) => (String(step?.resolver_type || "task_assignee") === "task_assignee" ? "task_assignee" : "scope");
+const updateFillStepWho = (index, value) => {
+  if (value === "task_assignee") {
+    patchFillStep(index, { resolver_type: "task_assignee", cargo_id: null, unit_id: null, unit_type_id: null });
+    return;
+  }
+  patchFillStep(index, {
+    resolver_type: "cargo_in_scope",
+    unit_scope_type: processHasRules.value ? "context_exact" : "unit_exact",
+    unit_id: null,
+    unit_type_id: null
+  });
+};
+const updateFillStepUbicacion = (index, value) => {
+  patchFillStep(index, {
+    unit_scope_type: value,
+    unit_id: value === "unit_exact" ? (fillSteps.value[index]?.unit_id ?? null) : null,
+    unit_type_id: value === "context_ancestor_type" ? (fillSteps.value[index]?.unit_type_id ?? null) : null
+  });
+};
+// El "Modo" (uno/todos/manual) solo aplica con cargo (puede resolver varias personas).
+const fillStepShowsMode = (step) => String(step?.resolver_type || "") === "cargo_in_scope";
+const fillStepNeedsUnit = (step) => String(step?.unit_scope_type || "") === "unit_exact";
+const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "context_ancestor_type";
 
 // Ámbito resoluble del proceso vinculado (sus reglas objetivo): habilita los ámbitos de contexto y
 // acota el select de unidades. Sin reglas, los ámbitos de contexto resolverían a nadie.

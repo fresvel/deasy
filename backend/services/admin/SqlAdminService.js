@@ -224,6 +224,21 @@ const FILL_RESOLVER_TYPES = new Set([
   "cargo_in_scope",
   "manual_pick"
 ]);
+// Plantillas de proceso (autoría web): la REVISIÓN de un entregable solo necesita responsable + cargo.
+// Se excluyen 'document_owner'/'specific_person'/'manual_pick' (frágiles/ad-hoc, para el futuro editor de
+// usuario) y 'position' (un aprobador nombrado se modela como cargo en una unidad fija, no como plaza suelta).
+const WEB_FILL_RESOLVER_TYPES = new Set([
+  "task_assignee",
+  "cargo_in_scope"
+]);
+// La revisión sube por la jerarquía o se queda en la misma unidad; NUNCA baja. Por eso los pasos no usan
+// subárbol ni 'todas las unidades' (eso es DISTRIBUCIÓN, vive en las reglas del proceso). Ámbitos válidos en
+// autoría web de pasos: la unidad del entregable, el ancestro de cierto tipo, o una unidad fija (ruteo).
+const WEB_FILL_UNIT_SCOPE_TYPES = new Set([
+  "context_exact",
+  "context_ancestor_type",
+  "unit_exact"
+]);
 const FILL_UNIT_SCOPE_TYPES = new Set([
   "unit_exact",
   "unit_subtree",
@@ -231,7 +246,8 @@ const FILL_UNIT_SCOPE_TYPES = new Set([
   "all_units",
   // Ámbitos relativos al contexto del proceso (la unidad se resuelve en runtime, sin fijarla en autoría).
   "context_exact",
-  "context_subtree"
+  "context_subtree",
+  "context_ancestor_type"
 ]);
 const FILL_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
 const SIGNATURE_SELECTION_MODES = new Set(["auto_one", "auto_all", "manual"]);
@@ -912,6 +928,18 @@ const collectAuthoredWorkflowIssues = ({
           issues.push(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
         }
       }
+      if (scope === "context_ancestor_type") {
+        // Sube por la jerarquía desde la unidad del entregable hasta el ancestro del tipo indicado.
+        const unitTypeId = normalizeNumericId(resolver?.unit_type_id);
+        if (!unitTypeId) {
+          issues.push(`${label}: "El ancestro de tipo…" requiere seleccionar un tipo de unidad.`);
+        } else if (unitTypeIds.size && !unitTypeIds.has(unitTypeId)) {
+          issues.push(`${label}: el tipo de unidad seleccionado (${unitTypeId}) no existe o está inactivo.`);
+        }
+        if (scopeHasRules === false) {
+          issues.push(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
+        }
+      }
     }
   };
 
@@ -922,9 +950,17 @@ const collectAuthoredWorkflowIssues = ({
       const label = `Paso de entrega ${index + 1}`;
       const resolver = getStepResolver(step);
       const type = String(resolver.type || "task_assignee");
-      if (!FILL_RESOLVER_TYPES.has(type)) {
-        issues.push(`${label}: responsable inválido (${type}).`);
+      if (!WEB_FILL_RESOLVER_TYPES.has(type)) {
+        issues.push(`${label}: responsable no permitido. Usa "Responsable del entregable" o "Por cargo".`);
         return;
+      }
+      // La revisión no usa subárbol ni "todas las unidades" (eso es distribución, vive en las reglas).
+      if (type === "cargo_in_scope") {
+        const scope = String(resolver.unit_scope_type || "context_exact");
+        if (!WEB_FILL_UNIT_SCOPE_TYPES.has(scope)) {
+          issues.push(`${label}: ámbito no permitido para revisión. Usa la unidad del entregable, el ancestro de un tipo, o una unidad específica.`);
+          return;
+        }
       }
       checkResolverRefs(resolver, type, label);
       const selection = resolver.selection_mode;
