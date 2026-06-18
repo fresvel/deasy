@@ -809,6 +809,9 @@ CREATE TABLE IF NOT EXISTS fill_flow_steps (
   unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact', 'context_subtree', 'context_ancestor_type') NOT NULL DEFAULT 'unit_exact',
   unit_id INT NULL,
   unit_type_id INT NULL,
+  -- Para el ancestro: por qué grafo de relaciones subir (NULL = 'org', la jerarquía orgánica). Permite
+  -- resolver ancestros en organigramas matriciales (un padre por tipo de relación).
+  relation_type_id INT NULL,
   cargo_id INT NULL,
   position_id INT NULL,
   selection_mode ENUM('auto_one', 'auto_all', 'manual') NOT NULL DEFAULT 'auto_one',
@@ -827,7 +830,9 @@ CREATE TABLE IF NOT EXISTS fill_flow_steps (
   CONSTRAINT fk_fill_flow_steps_cargo
     FOREIGN KEY (cargo_id) REFERENCES cargos(id),
   CONSTRAINT fk_fill_flow_steps_position
-    FOREIGN KEY (position_id) REFERENCES unit_positions(id)
+    FOREIGN KEY (position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_fill_flow_steps_relation_type
+    FOREIGN KEY (relation_type_id) REFERENCES relation_unit_types(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS document_fill_flows (

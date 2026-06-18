@@ -505,6 +505,21 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     // Un documento principal por entregable (task_item).
     await addIndexIgnoringDuplicate(connection, "documents", "UNIQUE KEY uq_documents_task_item (task_item_id)", "unique documents un-documento-por-entregable");
 
+    // Ancestro por tipo de relación en pasos de llenado (organigramas matriciales): NULL = 'org'.
+    await addColumnIfMissing(
+      connection,
+      "fill_flow_steps",
+      "relation_type_id",
+      "relation_type_id INT NULL AFTER unit_type_id"
+    );
+    await addForeignKeyIfMissing(
+      connection,
+      "fill_flow_steps",
+      "relation_type_id",
+      "CONSTRAINT fk_fill_flow_steps_relation_type FOREIGN KEY (relation_type_id) REFERENCES relation_unit_types(id)",
+      "FK fill_flow_steps.relation_type_id"
+    );
+
     await addColumnIfMissing(
       connection,
       "template_artifacts",

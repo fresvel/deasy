@@ -328,6 +328,7 @@ const getFillFlowSteps = async (connection, fillFlowTemplateId) => {
        unit_scope_type,
        unit_id,
        unit_type_id,
+       relation_type_id,
        cargo_id,
        position_id,
        selection_mode
@@ -479,30 +480,44 @@ const resolvePersonsForCargoInScope = async (connection, step, context = null) =
         AND up.unit_id IN (SELECT id FROM scoped_units)`;
     params.unshift(scope.unitId);
   } else if (scope.unitScopeType === "context_ancestor_type") {
-    if (!scope.unitId || !scope.unitTypeId) {
+    if (!scope.unitId) {
       return [];
     }
+    // Sube por el grafo de la relación elegida (NULL = 'org'). Cada tipo de relación tiene un solo padre por
+    // unidad (unique key), así que con multi-padre la resolución es determinista: se elige la rama de esa
+    // relación. Toma el ANCESTRO MÁS CERCANO (excluye la propia unidad): si se indicó tipo de unidad, el más
+    // cercano de ese tipo; si no, el padre directo por esa relación.
+    let relationTypeId = step.relation_type_id ? Number(step.relation_type_id) : null;
+    if (!relationTypeId) {
+      const [orgRows] = await connection.query(
+        "SELECT id FROM relation_unit_types WHERE code = 'org' LIMIT 1"
+      );
+      relationTypeId = orgRows?.[0]?.id ? Number(orgRows[0].id) : null;
+    }
+    if (!relationTypeId) {
+      return [];
+    }
+    const nearestAncestorSelect = scope.unitTypeId
+      ? "SELECT id FROM ancestor_units WHERE depth > 0 AND unit_type_id = ? ORDER BY depth ASC LIMIT 1"
+      : "SELECT id FROM ancestor_units WHERE depth = 1 ORDER BY depth ASC LIMIT 1";
     query = `
       WITH RECURSIVE ancestor_units AS (
-        SELECT id, unit_type_id
+        SELECT id, unit_type_id, 0 AS depth
         FROM units
         WHERE id = ?
         UNION ALL
-        SELECT parent_u.id, parent_u.unit_type_id
+        SELECT parent_u.id, parent_u.unit_type_id, au.depth + 1
         FROM unit_relations ur
-        INNER JOIN relation_unit_types rt
-          ON rt.id = ur.relation_type_id
-         AND rt.code = 'org'
         INNER JOIN ancestor_units au ON au.id = ur.child_unit_id
         INNER JOIN units parent_u ON parent_u.id = ur.parent_unit_id
+        WHERE ur.relation_type_id = ?
       )
       ${query}
-        AND up.unit_id IN (
-          SELECT id
-          FROM ancestor_units
-          WHERE unit_type_id = ?
-        )`;
-    params.unshift(scope.unitTypeId);
+        AND up.unit_id = (${nearestAncestorSelect})`;
+    if (scope.unitTypeId) {
+      params.push(scope.unitTypeId);
+    }
+    params.unshift(relationTypeId);
     params.unshift(scope.unitId);
   } else if (scope.unitScopeType === "context_exact") {
     if (!scope.unitId) {
