@@ -316,6 +316,33 @@ export const getProcessTargetScope = async (req, res) => {
   }
 };
 
+// Cargos resolubles (con titular vigente) para una ubicación: en la unidad indicada (`unit_id`) o, sin ella,
+// en el alcance del proceso. Lo consume el editor de plantillas para poblar el select de cargo de cada paso.
+export const listResolvableCargos = async (req, res) => {
+  try {
+    const result = await service.listResolvableCargos(req.params.id, {
+      unitId: req.query.unit_id || null,
+      unitTypeId: req.query.unit_type_id || null
+    });
+    res.json({ cargos: result });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// F-B backfill: reconcilia los task_items abiertos al ocupante vigente de su puesto (huérfanos creados con el
+// puesto vacante). Idempotente; opcional `position_id` para acotar. Solo AdminSistema.
+export const reconcileTaskItemAssignments = async (req, res) => {
+  try {
+    const result = await service.reconcileOpenTaskItemAssignments({
+      positionId: req.body?.position_id || req.query?.position_id || null
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Cargo/tipo de unidad que la serie del proceso fija. Lo consume el panel de reglas para precargar y
 // bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).
 export const getProcessDefinitionSeriesScope = async (req, res) => {

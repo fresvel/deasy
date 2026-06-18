@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-06-18T14:15:32.868Z",
+  "captured_at": "2026-06-18T20:11:06.121Z",
   "tables": [
     {
       "table": "persons",
@@ -71,7 +71,7 @@
           "calle_primaria": null,
           "calle_secundaria": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$4jrakrIlI6mrj3zSpx.7x.mp5EOZEPK27HPmjh0IGnbIr5g2p5soe",
+          "password_hash": "$2b$10$5zYQpnOw0KWtW5jaXUcmLeqG83ymxiKrayedZkmYJKYI05Jm.JtgG",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 1,
@@ -79,7 +79,7 @@
           "is_active": 1,
           "token": "iXcrjMvEZM",
           "created_at": "2026-06-18 14:01:51",
-          "updated_at": "2026-06-18 14:01:51"
+          "updated_at": "2026-06-18 14:28:37"
         },
         {
           "id": 2,
@@ -2650,7 +2650,60 @@
         "updated_at": "datetime",
         "cargo_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 2,
+          "unit_id": 2,
+          "slot_no": 1,
+          "title": "Docente ",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-06-18 16:02:31",
+          "updated_at": "2026-06-18 16:02:31",
+          "cargo_id": 2
+        },
+        {
+          "id": 3,
+          "unit_id": 2,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-06-18 16:03:35",
+          "updated_at": "2026-06-18 16:03:35",
+          "cargo_id": 1
+        },
+        {
+          "id": 4,
+          "unit_id": 2,
+          "slot_no": 2,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-06-18 16:04:08",
+          "updated_at": "2026-06-18 16:04:08",
+          "cargo_id": 2
+        },
+        {
+          "id": 5,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Director de Escuela",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "created_at": "2026-06-18 16:04:31",
+          "updated_at": "2026-06-18 16:04:31",
+          "cargo_id": 4
+        }
+      ]
     },
     {
       "table": "position_assignments",
@@ -2915,7 +2968,7 @@
           "created_at": "2026-06-18 14:10:49"
         },
         {
-          "id": 3,
+          "id": 4,
           "process_definition_id": 2,
           "unit_scope_type": "unit_type",
           "unit_id": null,
@@ -2927,7 +2980,7 @@
           "is_active": 1,
           "effective_from": "2026-06-18",
           "effective_to": null,
-          "created_at": "2026-06-18 14:11:15"
+          "created_at": "2026-06-18 14:43:16"
         }
       ]
     },
@@ -3062,7 +3115,7 @@
         "source_version": "varchar(20)",
         "storage_version": "varchar(20)",
         "artifact_stage": "enum('draft','review','approved','published','archived')",
-        "template_scope": "enum('official','user_reusable','ad_hoc')",
+        "template_scope": "enum('official','ad_hoc')",
         "bucket": "varchar(120)",
         "base_object_prefix": "varchar(255)",
         "available_formats": "longtext",
@@ -3315,7 +3368,24 @@
         "is_active": "tinyint(1)",
         "created_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "code": "electronic",
+          "name": "Firma electronica",
+          "description": "Firma electronica general sincronizada desde artifacts",
+          "is_active": 1,
+          "created_at": "2026-06-18 14:27:19"
+        },
+        {
+          "id": 2,
+          "code": "digital",
+          "name": "Firma digital",
+          "description": "Firma digital general sincronizada desde artifacts",
+          "is_active": 1,
+          "created_at": "2026-06-18 14:27:19"
+        }
+      ]
     },
     {
       "table": "signature_statuses",
@@ -3839,6 +3909,14 @@
           "description": "El responsable de la tarea completa el contenido.",
           "is_active": 1,
           "created_at": "2026-06-18 14:01:52"
+        },
+        {
+          "id": 2,
+          "process_definition_template_id": 1,
+          "name": "Flujo de entrega - Informe general",
+          "description": "artifact_sync_fill:1:tpl_informe_general:v0001",
+          "is_active": 1,
+          "created_at": "2026-06-18 14:27:19"
         }
       ]
     },
@@ -3895,6 +3973,23 @@
           "is_required": 1,
           "can_reject": 0,
           "created_at": "2026-06-18 14:01:52"
+        },
+        {
+          "id": 2,
+          "fill_flow_template_id": 2,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-18 14:27:19"
         }
       ]
     },

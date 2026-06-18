@@ -463,7 +463,7 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   source_version VARCHAR(20) NOT NULL,
   storage_version VARCHAR(20) NOT NULL,
   artifact_stage ENUM('draft','review','approved','published','archived') NOT NULL DEFAULT 'published',
-  template_scope ENUM('official','user_reusable','ad_hoc') NOT NULL DEFAULT 'official',
+  template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official',
   bucket VARCHAR(120) NOT NULL,
   base_object_prefix VARCHAR(255) NOT NULL,
   available_formats JSON NOT NULL,
@@ -928,6 +928,14 @@ BEGIN
     FROM unit_positions up
     INNER JOIN cargo_role_map crm ON crm.cargo_id = up.cargo_id
     WHERE up.id = NEW.position_id;
+    -- Late-binding: las tareas (task_items) se anclan al PUESTO; al ocuparse, sus ítems ABIERTOS y NO INICIADOS
+    -- (sin documento) se enlazan al nuevo ocupante. Las cerradas o YA INICIADAS no se tocan (no romper cadena).
+    UPDATE task_items ti
+       SET ti.assigned_person_id = NEW.person_id
+     WHERE ti.responsible_position_id = NEW.position_id
+       AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+       AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
+       AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
   END IF;
 END //
 
@@ -946,6 +954,23 @@ BEGIN
     WHERE source = 'derived'
       AND derived_from_assignment_id = OLD.id
       AND is_current = 1;
+    -- Puesto vacado: los task_items ABIERTOS y NO INICIADOS (sin documento) que tenía el saliente vuelven a
+    -- quedar sin persona (huérfanos) hasta que se reocupe. Los YA INICIADOS NO se tocan (no romper la cadena).
+    UPDATE task_items ti
+       SET ti.assigned_person_id = NULL
+     WHERE ti.responsible_position_id = NEW.position_id
+       AND ti.assigned_person_id = OLD.person_id
+       AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+       AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id);
+  END IF;
+  IF NEW.is_current = 1 THEN
+    -- Puesto (re)ocupado o cambio de ocupante: los task_items ABIERTOS y NO INICIADOS se enlazan al ocupante.
+    UPDATE task_items ti
+       SET ti.assigned_person_id = NEW.person_id
+     WHERE ti.responsible_position_id = NEW.position_id
+       AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+       AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
+       AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> NEW.person_id);
   END IF;
 END //
 

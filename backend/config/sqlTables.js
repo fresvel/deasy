@@ -381,9 +381,9 @@ export const SQL_TABLES = [
       },
       {
         name: "template_scope",
-        label: "Alcance de plantilla",
+        label: "Tipo de plantilla",
         type: "select",
-        options: ["official", "user_reusable", "ad_hoc"],
+        options: ["official", "ad_hoc"],
         defaultValue: "official"
       },
       { name: "bucket", label: "Bucket", type: "text", required: true },

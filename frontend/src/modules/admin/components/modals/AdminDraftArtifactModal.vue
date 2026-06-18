@@ -57,12 +57,22 @@
         </AdminSelectField>
         <p class="m-0 mt-1 text-xs font-medium text-slate-500">Toda plantilla nace de una semilla; por defecto se usa la general.</p>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Version fuente" group-class="md:col-span-6">
+      <AdminFieldGroup label="Version fuente" group-class="md:col-span-3">
         <AdminInputField
           :model-value="draftArtifactForm.source_version"
           placeholder="1.0.0"
           @update:model-value="updateField('source_version', $event)"
         />
+      </AdminFieldGroup>
+      <AdminFieldGroup label="Tipo de plantilla" group-class="md:col-span-3">
+        <span
+          class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+          :class="isAdHoc ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'"
+        >
+          <span class="h-1.5 w-1.5 rounded-full" :class="isAdHoc ? 'bg-amber-500' : 'bg-indigo-500'"></span>
+          {{ isAdHoc ? "De usuario (ad-hoc)" : "De proceso (oficial)" }}
+        </span>
+        <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ isAdHoc ? "Extensión puntual de usuario: permite persona concreta; sin tipo de unidad." : "Desde admin solo se crean oficiales: permiten tipo de unidad; sin persona concreta." }}</p>
       </AdminFieldGroup>
       <AdminFieldGroup label="Nombre de la plantilla" group-class="md:col-span-6">
         <AdminInputField
@@ -216,6 +226,7 @@
               <select :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
                 <option value="task_assignee">Responsable del entregable</option>
                 <option value="scope">Por cargo</option>
+                <option v-if="isAdHoc" value="person">Persona concreta</option>
               </select>
             </div>
             <div v-if="fillStepShowsMode(step)" class="col-span-2">
@@ -240,19 +251,15 @@
           </div>
           <!-- "Por cargo": la revisión sube por la jerarquía o se queda en la misma unidad; nunca baja. Por eso
                no hay subárbol ni "todas las unidades" (eso es distribución y vive en las reglas del proceso). -->
+          <!-- Primero la UBICACIÓN; el cargo se ofrece solo entre los que tienen titular vigente ahí (mismo
+               criterio que el resolver de runtime), así no se autoriza un revisor que no resolvería a nadie. -->
           <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
-              <select :value="step.cargo_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
-                <option value="">— Selecciona cargo —</option>
-                <option v-for="c in cargoOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </div>
             <div class="col-span-4">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
               <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepUbicacion(index, $event.target.value)">
                 <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
                 <option value="unit_exact">En una unidad específica…</option>
+                <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
               </select>
             </div>
             <!-- Unidad fija (ruteo a una oficina concreta; puede estar fuera del alcance del proceso). Filtro
@@ -265,14 +272,40 @@
                   <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                 </select>
               </div>
-              <div class="col-span-8">
+              <div class="col-span-4">
                 <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
-                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'unit_id', Number($event.target.value) || null)">
+                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitExactUnitChange(index, Number($event.target.value) || null)">
                   <option value="">— Selecciona unidad —</option>
                   <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
                 </select>
               </div>
             </template>
+            <!-- Tipo de unidad (solo plantillas de proceso): el cargo resuelve en TODAS las unidades de ese tipo
+                 (p. ej. el coordinador de cada carrera). Distribución de la revisión a muchas unidades. -->
+            <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
+              <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeScopeChange(index, Number($event.target.value) || null)">
+                <option value="">— Selecciona tipo —</option>
+                <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+              </select>
+            </div>
+            <div class="col-span-4">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
+              <select :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
+                <option value="">{{ fillStepCargoPlaceholder(step) }}</option>
+                <option v-for="c in fillStepCargoOptions(step)" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+          </div>
+          <!-- Persona concreta (solo plantillas de usuario / ad-hoc): ruteo directo a una persona. -->
+          <div v-else-if="stepWhoMode(step) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
+            <div class="col-span-6">
+              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
+              <select :value="step.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
+                <option value="">— Selecciona persona —</option>
+                <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -403,6 +436,7 @@ onMounted(loadProcessDefinitionOptions);
 const cargoOptions = ref([]);
 const unitOptions = ref([]);
 const unitTypeOptions = ref([]);
+const personOptions = ref([]);
 const workflowCatalogsLoaded = ref(false);
 const toRows = (data) => (Array.isArray(data) ? data : (data?.rows || data?.data || []));
 const loadWorkflowCatalogs = async () => {
@@ -410,19 +444,22 @@ const loadWorkflowCatalogs = async () => {
     return;
   }
   try {
-    const [cargoRes, unitRes, unitTypeRes] = await Promise.all([
+    const [cargoRes, unitRes, unitTypeRes, personRes] = await Promise.all([
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("cargos"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 1000 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_types"), { params: { orderBy: "name", order: "asc", limit: 500 } }),
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("persons"), { params: { orderBy: "first_name", order: "asc", limit: 1000 } }),
     ]);
     cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, code: r.code || "", name: r.name || r.code || `Cargo ${r.id}` }));
     unitOptions.value = toRows(unitRes.data).map((r) => ({ id: r.id, name: r.label || r.name || `Unidad ${r.id}`, unit_type_id: r.unit_type_id ?? null }));
     unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
+    personOptions.value = toRows(personRes.data).map((r) => ({ id: r.id, name: `${r.first_name || ""} ${r.last_name || ""}`.trim() || r.email || `Persona ${r.id}` }));
     workflowCatalogsLoaded.value = true;
   } catch {
     cargoOptions.value = [];
     unitOptions.value = [];
     unitTypeOptions.value = [];
+    personOptions.value = [];
   }
 };
 
@@ -444,6 +481,10 @@ const props = defineProps({
 
 const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-stage", "new-version", "create-process"]);
 const modalRef = ref(null);
+
+// Tipo de plantilla: 'official' (de proceso) | 'ad_hoc' (de usuario). Gatea las opciones de autoría de pasos.
+const templateScope = computed(() => (String(props.draftArtifactForm.template_scope || "official") === "ad_hoc" ? "ad_hoc" : "official"));
+const isAdHoc = computed(() => templateScope.value === "ad_hoc");
 
 // Cada vez que el modal se muestra, refresca las configuraciones (para incluir borradores recién creados)
 // y, si se abrió desde el flujo de edición de una configuración, la preselecciona en el select.
@@ -615,34 +656,57 @@ const patchFillStep = (index, patch) => {
 const removeFillStep = (index) => {
   commitFillSteps(fillSteps.value.filter((_, i) => i !== index));
 };
-// "Quién hace el paso": dos modos. 'task_assignee' = el responsable del entregable; 'scope' = un cargo
-// resuelto por ubicación (misma unidad del entregable / una unidad específica). La revisión sube por la
-// jerarquía o se queda; nunca baja → sin subárbol ni "todas" (eso es distribución, vive en las reglas).
-const stepWhoMode = (step) => (String(step?.resolver_type || "task_assignee") === "task_assignee" ? "task_assignee" : "scope");
+// "Quién hace el paso": 'task_assignee' (responsable del entregable) | 'scope' (cargo por ubicación) |
+// 'person' (persona concreta, SOLO en plantillas de usuario/ad-hoc). El conjunto de opciones lo gatea el
+// tipo de plantilla (template_scope), tanto en front como en back.
+const stepWhoMode = (step) => {
+  const type = String(step?.resolver_type || "task_assignee");
+  if (type === "task_assignee") return "task_assignee";
+  if (type === "specific_person") return "person";
+  return "scope";
+};
 const updateFillStepWho = (index, value) => {
   if (value === "task_assignee") {
-    patchFillStep(index, { resolver_type: "task_assignee", cargo_id: null, unit_id: null, unit_type_id: null });
+    patchFillStep(index, { resolver_type: "task_assignee", cargo_id: null, unit_id: null, unit_type_id: null, person_id: null });
     return;
   }
+  if (value === "person") {
+    patchFillStep(index, { resolver_type: "specific_person", cargo_id: null, unit_id: null, unit_type_id: null, filter_unit_type_id: null });
+    return;
+  }
+  const scopeType = processHasRules.value ? "context_exact" : "unit_exact";
+  // Se primero la ubicación: al entrar a "por cargo" se limpia el cargo (se ofrecerá según la ubicación).
   patchFillStep(index, {
     resolver_type: "cargo_in_scope",
-    unit_scope_type: processHasRules.value ? "context_exact" : "unit_exact",
+    unit_scope_type: scopeType,
+    cargo_id: null,
     unit_id: null,
     unit_type_id: null,
-    filter_unit_type_id: null
+    filter_unit_type_id: null,
+    person_id: null
   });
+  if (scopeType === "context_exact") loadResolvableCargos({});
 };
 const updateFillStepUbicacion = (index, value) => {
+  // Cambiar de ubicación invalida el cargo elegido (el conjunto resoluble cambia).
   patchFillStep(index, {
     unit_scope_type: value,
+    cargo_id: null,
     unit_id: value === "unit_exact" ? (fillSteps.value[index]?.unit_id ?? null) : null,
     unit_type_id: null,
     filter_unit_type_id: null
   });
+  if (value === "context_exact") loadResolvableCargos({});
+};
+// Elegir el tipo de unidad (ámbito) recarga los cargos resolubles en cualquier unidad de ese tipo.
+const onUnitTypeScopeChange = (index, value) => {
+  patchFillStep(index, { unit_type_id: value, cargo_id: null });
+  if (value) loadResolvableCargos({ unitTypeId: value });
 };
 // El "Modo" (uno/todos/manual) solo aplica con cargo (puede resolver varias personas).
 const fillStepShowsMode = (step) => String(step?.resolver_type || "") === "cargo_in_scope";
 const fillStepNeedsUnit = (step) => String(step?.unit_scope_type || "") === "unit_exact";
+const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "unit_type";
 
 // Unidad fija = ruteo a una oficina concreta (puede estar fuera del alcance). El filtro por tipo es solo un
 // atajo de navegación para acortar la lista; no se persiste (el paso guarda únicamente unit_id).
@@ -653,7 +717,86 @@ const fillStepUnitOptions = (step) => {
   return unitOptions.value;
 };
 const onUnitTypeFilterChange = (index, value) => {
-  patchFillStep(index, { filter_unit_type_id: value, unit_id: null });
+  patchFillStep(index, { filter_unit_type_id: value, unit_id: null, cargo_id: null });
+};
+// Elegir la unidad fija recarga los cargos resolubles de ESA unidad e invalida el cargo previo.
+const onUnitExactUnitChange = (index, value) => {
+  patchFillStep(index, { unit_id: value, cargo_id: null });
+  if (value) loadResolvableCargos({ unitId: value });
+};
+
+// Cargos resolubles por ubicación (con titular vigente): el back es la fuente, así no se ofrece un cargo que
+// el paso no podría resolver. Cacheado por clave 'ctx' (alcance del proceso, para "misma unidad") o
+// 'u:<id>' (unidad fija). 'ctx' sirve a TODOS los pasos context_exact; cada unidad fija tiene su entrada.
+const resolvableCargos = ref({});
+const loadResolvableCargos = async ({ unitId = null, unitTypeId = null } = {}) => {
+  const defId = props.draftArtifactForm.process_definition_id;
+  if (!defId) return;
+  const key = unitTypeId ? `ut:${unitTypeId}` : (unitId ? `u:${unitId}` : "ctx");
+  if (resolvableCargos.value[key]) return;
+  resolvableCargos.value = { ...resolvableCargos.value, [key]: { loading: true, cargos: [] } };
+  try {
+    const params = {};
+    if (unitTypeId) params.unit_type_id = unitTypeId;
+    else if (unitId) params.unit_id = unitId;
+    const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_RESOLVABLE_CARGOS(defId), { params });
+    resolvableCargos.value = { ...resolvableCargos.value, [key]: { loading: false, cargos: data?.cargos || [] } };
+  } catch {
+    resolvableCargos.value = { ...resolvableCargos.value, [key]: { loading: false, cargos: [] } };
+  }
+};
+const fillStepCargoKey = (step) => {
+  const scope = String(step?.unit_scope_type || "");
+  if (scope === "unit_exact") return step?.unit_id ? `u:${step.unit_id}` : null;
+  if (scope === "unit_type") return step?.unit_type_id ? `ut:${step.unit_type_id}` : null;
+  return "ctx";
+};
+// El cargo solo es elegible cuando la ubicación está definida: con reglas (misma unidad), con unidad elegida
+// (unidad específica) o con tipo de unidad elegido.
+const fillStepCargoReady = (step) => {
+  const scope = String(step?.unit_scope_type || "");
+  if (scope === "unit_exact") return Boolean(step?.unit_id);
+  if (scope === "unit_type") return Boolean(step?.unit_type_id);
+  return processHasRules.value;
+};
+const fillStepCargoOptions = (step) => {
+  const key = fillStepCargoKey(step);
+  const list = (key && resolvableCargos.value[key]?.cargos) || [];
+  // Si el cargo ya elegido no está en la lista (p. ej. perdió titular tras guardarse), se conserva visible
+  // para no vaciar el select en silencio; el guardado lo validará en back.
+  if (step?.cargo_id && !list.some((c) => Number(c.id) === Number(step.cargo_id))) {
+    const known = cargoOptions.value.find((c) => Number(c.id) === Number(step.cargo_id));
+    if (known) return [...list, { id: known.id, name: `${known.name} (sin puesto aquí)` }];
+  }
+  return list;
+};
+const fillStepCargoPlaceholder = (step) => {
+  if (!fillStepCargoReady(step)) {
+    const scope = String(step?.unit_scope_type || "");
+    if (scope === "unit_exact") return "Elige primero la unidad";
+    if (scope === "unit_type") return "Elige primero el tipo de unidad";
+    return "— Selecciona cargo —";
+  }
+  const entry = resolvableCargos.value[fillStepCargoKey(step)];
+  if (entry?.loading) return "Cargando cargos…";
+  if (entry && !entry.cargos.length) return "Sin cargos con puesto aquí";
+  return "— Selecciona cargo —";
+};
+// Precarga las listas de cargos necesarias al abrir/editar (pasos ya guardados) o al cargar el alcance.
+const ensureResolvableCargosLoaded = () => {
+  let needsCtx = false;
+  for (const step of fillSteps.value) {
+    if (String(step?.resolver_type || "") !== "cargo_in_scope") continue;
+    const scope = String(step?.unit_scope_type || "");
+    if (scope === "unit_exact") {
+      if (step?.unit_id) loadResolvableCargos({ unitId: step.unit_id });
+    } else if (scope === "unit_type") {
+      if (step?.unit_type_id) loadResolvableCargos({ unitTypeId: step.unit_type_id });
+    } else {
+      needsCtx = true;
+    }
+  }
+  if (needsCtx && processHasRules.value) loadResolvableCargos({});
 };
 
 // Ámbito resoluble del proceso vinculado (sus reglas objetivo): habilita los ámbitos de contexto y
@@ -678,6 +821,9 @@ const loadProcessScope = async (definitionId) => {
 watch(() => props.draftArtifactForm.process_definition_id, (id) => { loadProcessScope(id); }, { immediate: true });
 const processHasRules = computed(() => Boolean(processScope.value?.has_rules));
 const processSupportsContext = computed(() => Boolean(processScope.value?.supports_context));
+// Precarga los cargos resolubles de los pasos por cargo (al abrir/editar o cuando llega el alcance). Va aquí
+// para que processHasRules ya esté declarado al ejecutarse de inmediato.
+watch([fillSteps, processHasRules], ensureResolvableCargosLoaded, { immediate: true });
 
 // ── Flujo de firmas ──
 const signatureSteps = computed(() => props.draftArtifactForm.signature_workflow?.steps || []);

@@ -524,21 +524,36 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       connection,
       "template_artifacts",
       "template_scope",
-      "template_scope ENUM('official','user_reusable','ad_hoc') NOT NULL DEFAULT 'official' AFTER artifact_stage"
+      "template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official' AFTER artifact_stage"
     );
     try {
+      // Modelo de dos tipos: 'official' (de proceso, creada por gestor) | 'ad_hoc' (de usuario en runtime).
+      // Se elimina 'user_reusable' por completo: las reutilizables previas pasan a 'official'. Backfill por
+      // ruta para filas sin valor válido (las de ruta AdHoc → ad_hoc; el resto → official).
+      await connection.query(
+        "UPDATE template_artifacts SET template_scope = 'official' WHERE template_scope = 'user_reusable'"
+      );
       await connection.query(
         `UPDATE template_artifacts
          SET template_scope = CASE
            WHEN base_object_prefix LIKE 'Users/%/AdHoc/%' THEN 'ad_hoc'
-           WHEN owner_person_id IS NOT NULL OR owner_ref IS NOT NULL OR base_object_prefix LIKE 'Users/%' THEN 'user_reusable'
            ELSE 'official'
          END
          WHERE template_scope IS NULL
-            OR template_scope NOT IN ('official','user_reusable','ad_hoc')`
+            OR template_scope NOT IN ('official','ad_hoc')`
       );
+      // Quita 'user_reusable' del ENUM (idempotente: solo si la columna aún lo declara).
+      const [scopeCol] = await connection.query(
+        `SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = 'template_scope'`
+      );
+      if (scopeCol?.[0]?.t && /user_reusable/.test(scopeCol[0].t)) {
+        await connection.query(
+          "ALTER TABLE template_artifacts MODIFY template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official'"
+        );
+      }
     } catch (error) {
-      console.warn("⚠️  No se pudo backfillear template_artifacts.template_scope:", error.message);
+      console.warn("⚠️  No se pudo migrar template_artifacts.template_scope:", error.message);
     }
     await addIndexIgnoringDuplicate(
       connection,

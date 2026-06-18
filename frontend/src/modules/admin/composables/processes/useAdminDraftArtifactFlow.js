@@ -38,6 +38,7 @@ export function useAdminDraftArtifactFlow({
       description: "",
       source_version: "1.0.0",
       process_definition_id: "",
+      template_scope: "official",
       schema_fields: [],
       fill_workflow: { required: true, steps: [] },
       signature_workflow: { required: true, anchors: [], steps: [] }
@@ -99,6 +100,8 @@ export function useAdminDraftArtifactFlow({
         source_version: row.source_version ? String(row.source_version) : "1.0.0",
         artifact_stage: row.artifact_stage ? String(row.artifact_stage) : "draft",
         storage_version: row.storage_version ? String(row.storage_version) : "",
+        // El tipo no se cambia al editar: define el almacenamiento y las opciones de autoría. Se muestra como tag.
+        template_scope: row.template_scope === "ad_hoc" ? "ad_hoc" : "official",
         schema_fields: []
       };
       draftArtifactExistingFiles.value = {
@@ -126,6 +129,8 @@ export function useAdminDraftArtifactFlow({
         description: "",
         source_version: "1.0.0",
         process_definition_id: "",
+        // En admin solo se CREAN plantillas oficiales (de proceso). Las ad_hoc nacen en runtime del usuario.
+        template_scope: "official",
         schema_fields: [],
         fill_workflow: { required: true, steps: [] },
         signature_workflow: { required: true, anchors: [], steps: [] }
@@ -179,6 +184,7 @@ export function useAdminDraftArtifactFlow({
       form.append("display_name", draftArtifactForm.value.display_name || "");
       form.append("description", draftArtifactForm.value.description || "");
       form.append("source_version", draftArtifactForm.value.source_version || "1.0.0");
+      form.append("template_scope", draftArtifactForm.value.template_scope || "official");
       if (Array.isArray(draftArtifactForm.value.schema_fields) && draftArtifactForm.value.schema_fields.length) {
         form.append("schema_fields", JSON.stringify(draftArtifactForm.value.schema_fields));
       }

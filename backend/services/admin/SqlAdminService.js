@@ -229,20 +229,24 @@ const FILL_RESOLVER_TYPES = new Set([
   "cargo_in_scope",
   "manual_pick"
 ]);
-// Plantillas de proceso (autoría web): la REVISIÓN de un entregable solo necesita responsable + cargo.
-// Se excluyen 'document_owner'/'specific_person'/'manual_pick' (frágiles/ad-hoc, para el futuro editor de
-// usuario) y 'position' (un aprobador nombrado se modela como cargo en una unidad fija, no como plaza suelta).
-const WEB_FILL_RESOLVER_TYPES = new Set([
-  "task_assignee",
-  "cargo_in_scope"
-]);
-// La revisión sube por la jerarquía o se queda en la misma unidad; NUNCA baja. Por eso los pasos no usan
-// subárbol ni 'todas las unidades' (eso es DISTRIBUCIÓN, vive en las reglas del proceso). Ámbitos válidos en
-// autoría web de pasos: la unidad del entregable, el ancestro de cierto tipo, o una unidad fija (ruteo).
-const WEB_FILL_UNIT_SCOPE_TYPES = new Set([
-  "context_exact",
-  "unit_exact"
-]);
+// Opciones de autoría de pasos de llenado SEGÚN el tipo de plantilla (template_scope):
+// - 'official' (de proceso): responsable | cargo en {misma unidad, unidad específica, TIPO de unidad}.
+//   El tipo de unidad permite disparar la revisión a un cargo en muchas unidades (p. ej. todas las carreras).
+//   SIN persona concreta (frágil ante rotación en algo durable que corre en muchas unidades).
+// - 'ad_hoc' (de usuario, extensión puntual): responsable | cargo en {misma unidad, unidad específica} |
+//   persona concreta. SIN tipo de unidad (no hay distribución masiva en una extensión puntual).
+const WEB_FILL_RESOLVER_TYPES_BY_SCOPE = {
+  official: new Set(["task_assignee", "cargo_in_scope"]),
+  ad_hoc: new Set(["task_assignee", "cargo_in_scope", "specific_person"])
+};
+const WEB_FILL_UNIT_SCOPE_TYPES_BY_SCOPE = {
+  official: new Set(["context_exact", "unit_exact", "unit_type"]),
+  ad_hoc: new Set(["context_exact", "unit_exact"])
+};
+const webFillResolverTypesForScope = (scope) =>
+  WEB_FILL_RESOLVER_TYPES_BY_SCOPE[scope === "ad_hoc" ? "ad_hoc" : "official"];
+const webFillUnitScopeTypesForScope = (scope) =>
+  WEB_FILL_UNIT_SCOPE_TYPES_BY_SCOPE[scope === "ad_hoc" ? "ad_hoc" : "official"];
 const FILL_UNIT_SCOPE_TYPES = new Set([
   "unit_exact",
   "unit_subtree",
@@ -841,7 +845,9 @@ const collectAuthoredWorkflowIssues = ({
   cargoCodeMap = new Map(),
   signatureTypeCodeMap = new Map(),
   referenceIds = {},
-  processScope = null
+  processScope = null,
+  resolvableCargoIds = null,
+  templateScope = "official"
 } = {}) => {
   const personIds = referenceIds?.personIds instanceof Set ? referenceIds.personIds : new Set();
   const positionIds = referenceIds?.positionIds instanceof Set ? referenceIds.positionIds : new Set();
@@ -854,6 +860,10 @@ const collectAuthoredWorkflowIssues = ({
   const scopeUnitIds = hasProcessScope && Array.isArray(processScope.unit_ids)
     ? new Set(processScope.unit_ids.map((id) => Number(id)))
     : new Set();
+  // Cargos resolubles (con titular vigente) por ubicación: ctx = unión del alcance del proceso (para
+  // "misma unidad"); byUnit = mapa unidad→Set de cargos (para "unidad específica"). Si no se pasan, no se valida.
+  const resolvableCtxCargoIds = resolvableCargoIds?.ctx instanceof Set ? resolvableCargoIds.ctx : null;
+  const resolvableCargoIdsByUnit = resolvableCargoIds?.byUnit instanceof Map ? resolvableCargoIds.byUnit : null;
   const issues = [];
   const checkOrders = (steps, label) => {
     const seen = new Set();
@@ -905,10 +915,23 @@ const collectAuthoredWorkflowIssues = ({
       }
     }
     if (type === "cargo_in_scope") {
-      if (!resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap)) {
+      const resolvedCargoId = resolveStepCargoId(resolver, fallbackCargoCode, cargoCodeMap);
+      if (!resolvedCargoId) {
         issues.push(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
       }
       const scope = String(resolver?.unit_scope_type || "context_exact");
+      // El cargo debe tener un PUESTO en la ubicación (late-binding: el ocupante se enlaza después; sin puesto
+      // nunca podría resolverse).
+      if (resolvedCargoId && scope === "context_exact" && resolvableCtxCargoIds && !resolvableCtxCargoIds.has(resolvedCargoId)) {
+        issues.push(`${label}: el cargo seleccionado no tiene un puesto en ninguna unidad del alcance del proceso; el paso nunca resolvería.`);
+      }
+      if (resolvedCargoId && scope === "unit_exact" && resolvableCargoIdsByUnit) {
+        const stepUnitId = normalizeNumericId(resolver?.unit_id);
+        const unitCargoSet = stepUnitId ? resolvableCargoIdsByUnit.get(stepUnitId) : null;
+        if (stepUnitId && (!unitCargoSet || !unitCargoSet.has(resolvedCargoId))) {
+          issues.push(`${label}: el cargo seleccionado no tiene un puesto en la unidad indicada; el paso nunca resolvería.`);
+        }
+      }
       if (scope === "context_exact" || scope === "context_subtree") {
         // Los ámbitos de contexto resuelven la unidad del proceso vía la posición responsable; si el
         // proceso no tiene reglas objetivo, no se genera posición responsable → resolución null garantizada.
@@ -951,19 +974,28 @@ const collectAuthoredWorkflowIssues = ({
   const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps.filter((s) => s && typeof s === "object") : [];
   if (fillSteps.length) {
     checkOrders(fillSteps, "Paso de entrega");
+    const allowedResolverTypes = webFillResolverTypesForScope(templateScope);
+    const allowedUnitScopeTypes = webFillUnitScopeTypesForScope(templateScope);
+    const isAdHocScope = String(templateScope) === "ad_hoc";
     fillSteps.forEach((step, index) => {
       const label = `Paso de entrega ${index + 1}`;
       const resolver = getStepResolver(step);
       const type = String(resolver.type || "task_assignee");
-      if (!WEB_FILL_RESOLVER_TYPES.has(type)) {
-        issues.push(`${label}: responsable no permitido. Usa "Responsable del entregable" o "Por cargo".`);
+      if (!allowedResolverTypes.has(type)) {
+        const allowed = isAdHocScope
+          ? '"Responsable del entregable", "Por cargo" o "Persona concreta"'
+          : '"Responsable del entregable" o "Por cargo"';
+        issues.push(`${label}: responsable no permitido para este tipo de plantilla. Usa ${allowed}.`);
         return;
       }
       // La revisión no usa subárbol ni "todas las unidades" (eso es distribución, vive en las reglas).
       if (type === "cargo_in_scope") {
         const scope = String(resolver.unit_scope_type || "context_exact");
-        if (!WEB_FILL_UNIT_SCOPE_TYPES.has(scope)) {
-          issues.push(`${label}: ámbito no permitido para revisión. Usa la unidad del entregable o una unidad específica.`);
+        if (!allowedUnitScopeTypes.has(scope)) {
+          const allowed = isAdHocScope
+            ? "la unidad del entregable o una unidad específica"
+            : "la unidad del entregable, una unidad específica o un tipo de unidad";
+          issues.push(`${label}: ámbito no permitido para este tipo de plantilla. Usa ${allowed}.`);
           return;
         }
       }
@@ -3407,6 +3439,105 @@ export default class SqlAdminService {
     };
   }
 
+  // Cargos AUTORIZABLES en una ubicación: los que tienen un PUESTO activo (`unit_positions`) ahí. NO se exige
+  // ocupante vigente — el modelo es late-binding: se autoriza contra el puesto y la persona se enlaza después
+  // (al ocuparse el puesto, un trigger reconcilia los task_items abiertos). Con `unitId` = esa unidad;
+  // `unitTypeId` = cualquier unidad de ese tipo; sin ambos = las unidades del alcance del proceso.
+  async listResolvableCargos(processDefinitionId, { unitId = null, unitTypeId = null } = {}, connection = this.pool) {
+    const directUnitId = normalizeNumericId(unitId);
+    const directUnitTypeId = normalizeNumericId(unitTypeId);
+    let unitIdList = null; // null = sin restricción de unidad (alcance "todas las unidades")
+    if (!directUnitTypeId) {
+      if (directUnitId) {
+        unitIdList = [directUnitId];
+      } else {
+        const scope = await this.getProcessTargetScope(processDefinitionId, connection);
+        if (!scope.has_rules) {
+          return [];
+        }
+        if (!scope.all_units) {
+          unitIdList = Array.isArray(scope.unit_ids) ? scope.unit_ids : [];
+          if (!unitIdList.length) {
+            return [];
+          }
+        }
+      }
+    }
+    const params = [];
+    let unitFilter = "";
+    if (directUnitTypeId) {
+      // Cargos resolubles en CUALQUIER unidad de ese tipo (para revisores "por tipo de unidad" en proceso).
+      unitFilter = "AND u.unit_type_id = ?";
+      params.push(directUnitTypeId);
+    } else if (Array.isArray(unitIdList)) {
+      unitFilter = "AND up.unit_id IN (?)";
+      params.push(unitIdList);
+    }
+    const [rows] = await connection.query(
+      `SELECT DISTINCT c.id, c.name, c.code
+         FROM unit_positions up
+         INNER JOIN units u ON u.id = up.unit_id
+         INNER JOIN cargos c ON c.id = up.cargo_id
+        WHERE up.is_active = 1 AND c.is_active = 1 ${unitFilter}
+        ORDER BY c.name ASC`,
+      params
+    );
+    return rows.map((row) => ({ id: Number(row.id), name: row.name, code: row.code || "" }));
+  }
+
+  // Mapa unidad → conjunto de cargo_ids con PUESTO en ella (mismo criterio que listResolvableCargos, sin exigir
+  // ocupante). Lo usa la validación de autoría para rechazar un cargo que no tiene puesto en la unidad elegida.
+  async getResolvableCargoIdsByUnit(connection, unitIds = []) {
+    const list = [...new Set((unitIds || []).map((id) => normalizeNumericId(id)).filter(Boolean))];
+    const map = new Map();
+    if (!list.length) {
+      return map;
+    }
+    const [rows] = await connection.query(
+      `SELECT DISTINCT up.unit_id, up.cargo_id
+         FROM unit_positions up
+         INNER JOIN cargos c ON c.id = up.cargo_id
+        WHERE up.is_active = 1 AND c.is_active = 1 AND up.unit_id IN (?)`,
+      [list]
+    );
+    for (const row of rows) {
+      const unit = Number(row.unit_id);
+      if (!map.has(unit)) {
+        map.set(unit, new Set());
+      }
+      map.get(unit).add(Number(row.cargo_id));
+    }
+    return map;
+  }
+
+  // F-B (backfill idempotente): reconcilia los task_items ABIERTOS y NO INICIADOS (sin documento) al ocupante
+  // vigente de su puesto. El trigger de `position_assignments` reconcilia hacia adelante; esto arregla huérfanos
+  // creados con el puesto vacante. No toca cerradas ni YA INICIADAS (no romper la cadena). `positionId` acota.
+  async reconcileOpenTaskItemAssignments({ positionId = null } = {}, connection = this.pool) {
+    const pid = normalizeNumericId(positionId);
+    const params = [];
+    let posFilter = "";
+    if (pid) {
+      posFilter = "AND ti.responsible_position_id = ?";
+      params.push(pid);
+    }
+    const [result] = await connection.query(
+      `UPDATE task_items ti
+         INNER JOIN position_assignments pa
+            ON pa.position_id = ti.responsible_position_id
+           AND pa.is_current = 1
+           AND pa.person_id IS NOT NULL
+          SET ti.assigned_person_id = pa.person_id
+        WHERE ti.responsible_position_id IS NOT NULL
+          AND ti.status NOT IN ('completed','completado','cancelled','cancelado','finalizado','entregado','rechazado')
+          AND NOT EXISTS (SELECT 1 FROM documents d WHERE d.task_item_id = ti.id)
+          AND (ti.assigned_person_id IS NULL OR ti.assigned_person_id <> pa.person_id)
+          ${posFilter}`,
+      params
+    );
+    return { reconciled: result?.affectedRows ?? 0 };
+  }
+
   // La serie de un proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad
   // objetivo. La regla NO debe volver a decidirlos: se siembran desde la serie y se blindan para que no
   // puedan contradecirla. Así el cargo se decide una sola vez (en la serie) y la regla solo añade el
@@ -4158,7 +4289,7 @@ export default class SqlAdminService {
         artifact.owner_ref,
         artifact.source_version,
         nextStorageVersion,
-        artifact.template_scope || "user_reusable",
+        artifact.template_scope || "official",
         bucket,
         newPrefix,
         JSON.stringify(remappedFormats || {}),
@@ -4173,7 +4304,7 @@ export default class SqlAdminService {
       template_code: templateCode,
       storage_version: nextStorageVersion,
       base_object_prefix: newPrefix,
-      template_scope: artifact.template_scope || "user_reusable",
+      template_scope: artifact.template_scope || "official",
       bucket,
       artifact_stage: "draft",
       __notice: `Nueva versión ${nextStorageVersion} creada en estado draft.`,
@@ -4469,14 +4600,13 @@ export default class SqlAdminService {
     const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
     const storageVersion = existingArtifact?.storage_version || await this.getNextStorageVersionForTemplateCode(templateCode);
     const bucket = String(existingArtifact?.bucket || MINIO_TEMPLATES_BUCKET);
-    const requestedTemplateScope = String(data.template_scope || existingArtifact?.template_scope || "user_reusable").trim();
-    const templateScope = ["user_reusable", "ad_hoc"].includes(requestedTemplateScope)
-      ? requestedTemplateScope
-      : "user_reusable";
+    const requestedTemplateScope = String(data.template_scope || existingArtifact?.template_scope || "official").trim();
+    const templateScope = requestedTemplateScope === "ad_hoc" ? "ad_hoc" : "official";
     const adHocToken = sanitizeStorageSegment(data.task_item_id || data.draft_token || randomUUID(), "draft");
+    // 'official' (de proceso) vive en un repo distinto del de usuarios; 'ad_hoc' (de usuario) bajo Users/.
     const defaultBaseObjectPrefix = templateScope === "ad_hoc"
       ? `${TEMPLATE_USERS_PREFIX}/${ownerRef}/AdHoc/${adHocToken}/${templateCode}/${storageVersion}/`
-      : `${TEMPLATE_USERS_PREFIX}/${ownerRef}/Reusable/${templateCode}/${storageVersion}/`;
+      : `${MINIO_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
     const baseObjectPrefix = String(existingArtifact?.base_object_prefix || defaultBaseObjectPrefix);
     const artifactStage = String(existingArtifact?.artifact_stage || "draft");
     const draftDir = path.join(
@@ -4651,13 +4781,39 @@ export default class SqlAdminService {
         this.getWorkflowReferenceIdSets(),
         this.getProcessTargetScope(linkedDefinitionId)
       ]);
+      // Cargos resolubles por ubicación, para rechazar pasos por cargo que no tendrían titular: ctx (alcance,
+      // para "misma unidad") + byUnit (cada unidad fija usada en pasos "unidad específica").
+      const fillStepList = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
+      const unitExactUnitIds = [];
+      let needsCtxCargos = false;
+      for (const step of fillStepList) {
+        const resolverType = String(step?.resolver_type || step?.resolver?.resolver_type || "task_assignee");
+        if (resolverType !== "cargo_in_scope") continue;
+        const stepScope = String(step?.unit_scope_type || step?.resolver?.unit_scope_type || "context_exact");
+        if (stepScope === "unit_exact") {
+          const uid = normalizeNumericId(step?.unit_id ?? step?.resolver?.unit_id);
+          if (uid) unitExactUnitIds.push(uid);
+        } else if (stepScope === "context_exact") {
+          needsCtxCargos = true;
+        }
+      }
+      const [ctxCargos, resolvableByUnit] = await Promise.all([
+        needsCtxCargos && linkedDefinitionId ? this.listResolvableCargos(linkedDefinitionId) : Promise.resolve(null),
+        unitExactUnitIds.length ? this.getResolvableCargoIdsByUnit(this.pool, unitExactUnitIds) : Promise.resolve(new Map())
+      ]);
+      const resolvableCargoIds = {
+        ctx: ctxCargos ? new Set(ctxCargos.map((c) => c.id)) : null,
+        byUnit: resolvableByUnit
+      };
       const workflowIssues = collectAuthoredWorkflowIssues({
         fillWorkflow,
         signatureWorkflow,
         cargoCodeMap,
         signatureTypeCodeMap,
         referenceIds,
-        processScope
+        processScope,
+        resolvableCargoIds,
+        templateScope
       });
       if (workflowIssues.length) {
         const error = new Error(`El flujo definido tiene errores:\n- ${workflowIssues.join("\n- ")}`);
