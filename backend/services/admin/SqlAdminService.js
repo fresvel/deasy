@@ -82,6 +82,40 @@ const ARTIFACT_WORKFLOW_CONTRACT = [
 // Genera el bloque `workflows:` (fill + signatures) + `dependencies:` a partir de los flujos definidos en
 // el editor web. Construye un objeto y lo serializa con yaml.dump (maneja saltos de línea/comillas/caracteres
 // especiales de forma segura). Produce la misma estructura que consumen normalizeFillSteps/normalizeSignatureSteps.
+// Resolver compartido (mismo modelo "Quién hace/firma el paso" para llenado y firmas): quién resuelve el paso.
+const buildStepResolver = (step) => {
+  const resolver = {
+    type: step?.resolver_type || "task_assignee",
+    selection_mode: step?.selection_mode || "auto_one",
+  };
+  if (step?.resolver_type === "cargo_in_scope") {
+    // El cargo se referencia por id (controlado contra la DB); se conserva cargo_code legible si viene.
+    if (step?.cargo_id) resolver.cargo_id = Number(step.cargo_id);
+    if (step?.cargo_code) resolver.cargo_code = step.cargo_code;
+    const scopeType = step?.unit_scope_type || "context_exact";
+    resolver.unit_scope_type = scopeType;
+    // Ámbitos estáticos requieren fijar la unidad/tipo; los context_* la derivan del proceso en runtime.
+    if ((scopeType === "unit_exact" || scopeType === "unit_subtree") && step?.unit_id) {
+      resolver.unit_id = Number(step.unit_id);
+    }
+    if (scopeType === "unit_type" && step?.unit_type_id) {
+      resolver.unit_type_id = Number(step.unit_type_id);
+    }
+    // Ancestro: sube por el grafo de la relación (NULL = 'org'); el tipo de unidad es el tope opcional.
+    if (scopeType === "context_ancestor_type") {
+      if (step?.unit_type_id) resolver.unit_type_id = Number(step.unit_type_id);
+      if (step?.relation_type_id) resolver.relation_type_id = Number(step.relation_type_id);
+    }
+  }
+  if (step?.resolver_type === "specific_person" && step?.person_id) {
+    resolver.person_id = Number(step.person_id);
+  }
+  if (step?.resolver_type === "position" && step?.position_id) {
+    resolver.position_id = Number(step.position_id);
+  }
+  return resolver;
+};
+
 const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
   // ── Fill ──
   const fillSteps = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
@@ -91,35 +125,7 @@ const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
     sync_mode: "artifact_to_db",
     steps: fillSteps.map((step, index) => {
       const order = Number(step?.order) || index + 1;
-      const resolver = {
-        type: step?.resolver_type || "task_assignee",
-        selection_mode: step?.selection_mode || "auto_one",
-      };
-      if (step?.resolver_type === "cargo_in_scope") {
-        // El cargo se referencia por id (controlado contra la DB); se conserva cargo_code legible si viene.
-        if (step?.cargo_id) resolver.cargo_id = Number(step.cargo_id);
-        if (step?.cargo_code) resolver.cargo_code = step.cargo_code;
-        const scopeType = step?.unit_scope_type || "context_exact";
-        resolver.unit_scope_type = scopeType;
-        // Ámbitos estáticos requieren fijar la unidad/tipo; los context_* la derivan del proceso en runtime.
-        if ((scopeType === "unit_exact" || scopeType === "unit_subtree") && step?.unit_id) {
-          resolver.unit_id = Number(step.unit_id);
-        }
-        if (scopeType === "unit_type" && step?.unit_type_id) {
-          resolver.unit_type_id = Number(step.unit_type_id);
-        }
-        // Ancestro: sube por el grafo de la relación (NULL = 'org'); el tipo de unidad es el tope opcional.
-        if (scopeType === "context_ancestor_type") {
-          if (step?.unit_type_id) resolver.unit_type_id = Number(step.unit_type_id);
-          if (step?.relation_type_id) resolver.relation_type_id = Number(step.relation_type_id);
-        }
-      }
-      if (step?.resolver_type === "specific_person" && step?.person_id) {
-        resolver.person_id = Number(step.person_id);
-      }
-      if (step?.resolver_type === "position" && step?.position_id) {
-        resolver.position_id = Number(step.position_id);
-      }
+      const resolver = buildStepResolver(step);
       const out = { order };
       if (step?.code) out.code = step.code;
       out.name = step?.name || `Paso ${order}`;
@@ -134,34 +140,26 @@ const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
     }),
   };
 
-  // ── Signatures ──
+  // ── Signatures ── Mismo modelo que llenado (resolver "Quién firma"). Sin anclas: cada paso lleva su SLOT de
+  // token (= su code); el jinja generado embebe ahí el token del firmante resuelto (`{{ signatures.<slot>.token }}`).
+  // Pasos SECUENCIALES entre sí; dentro de un paso, varios firmantes en paralelo según approval_mode (and/or/at_least).
   const sigSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [];
-  const anchors = (Array.isArray(signatureWorkflow?.anchors) ? signatureWorkflow.anchors : [])
-    .filter((anchor) => anchor?.code && anchor?.token_field_ref)
-    .map((anchor) => ({
-      code: anchor.code,
-      placement: { strategy: "token", token_field_ref: anchor.token_field_ref },
-      size: { width: Number(anchor.width) || 124, height: Number(anchor.height) || 48 },
-    }));
   const signatures = {
     required: signatureWorkflow?.required === true && sigSteps.length > 0,
     source: "artifact",
     sync_mode: "artifact_to_db",
   };
-  if (anchors.length) signatures.anchors = anchors;
   signatures.steps = sigSteps.map((step, index) => {
     const order = Number(step?.order) || index + 1;
-    const out = { order };
-    if (step?.code) out.code = step.code;
+    const slot = String(step?.code || step?.slot || `firma_${order}`);
+    const out = { order, code: slot, slot };
     out.name = step?.name || `Firma ${order}`;
     out.step_type_code = step?.step_type_code || "electronic";
-    if (step?.required_cargo_code) out.required_cargo_code = step.required_cargo_code;
-    out.selection_mode = step?.selection_mode || "auto_all";
+    out.resolver = buildStepResolver({ ...step, selection_mode: step?.selection_mode || "auto_all" });
+    out.approval_mode = ["and", "or", "at_least"].includes(String(step?.approval_mode)) ? step.approval_mode : "and";
     out.required_signers_min = Number(step?.required_signers_min) || 1;
-    out.required_signers_max = Number(step?.required_signers_max) || 1;
+    if (Number(step?.required_signers_max)) out.required_signers_max = Number(step.required_signers_max);
     out.required = step?.required !== false;
-    const anchorRefs = Array.isArray(step?.anchor_refs) ? step.anchor_refs.filter(Boolean) : [];
-    if (anchorRefs.length) out.anchor_refs = anchorRefs;
     return out;
   });
 
@@ -1015,6 +1013,9 @@ const collectAuthoredWorkflowIssues = ({
   const signatureSteps = Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps.filter((s) => s && typeof s === "object") : [];
   if (signatureSteps.length) {
     checkOrders(signatureSteps, "Paso de firma");
+    // Mismo gating por tipo de plantilla que llenado (official: +tipo de unidad, sin persona; ad_hoc: +persona).
+    const sigAllowedResolverTypes = webFillResolverTypesForScope(templateScope);
+    const sigAllowedUnitScopeTypes = webFillUnitScopeTypesForScope(templateScope);
     signatureSteps.forEach((step, index) => {
       const label = `Paso de firma ${index + 1}`;
       // Solo valida el tipo de firma si el catálogo está poblado (si no, el sync lo asegura más tarde).
@@ -1025,12 +1026,24 @@ const collectAuthoredWorkflowIssues = ({
           issues.push(`${label}: tipo de firma desconocido (${step.step_type_code || "electronic"}).`);
         }
       }
-      const type = String(step?.resolver?.type || "cargo_in_scope");
-      if (!SIGNATURE_RESOLVER_TYPES.has(type)) {
-        issues.push(`${label}: firmante inválido (${type}).`);
+      const resolver = getStepResolver(step);
+      const type = String(resolver.type || "cargo_in_scope");
+      if (!sigAllowedResolverTypes.has(type)) {
+        issues.push(`${label}: firmante no permitido para este tipo de plantilla.`);
         return;
       }
-      checkResolverRefs(step?.resolver, type, label, step.required_cargo_code);
+      if (type === "cargo_in_scope") {
+        const scope = String(resolver.unit_scope_type || "context_exact");
+        if (!sigAllowedUnitScopeTypes.has(scope)) {
+          issues.push(`${label}: ámbito no permitido para este tipo de plantilla.`);
+          return;
+        }
+      }
+      const approval = String(step.approval_mode || "and");
+      if (!SIGNATURE_APPROVAL_MODES.has(approval)) {
+        issues.push(`${label}: modo de aprobación inválido (${approval}).`);
+      }
+      checkResolverRefs(resolver, type, label, step.required_cargo_code);
     });
   }
 
