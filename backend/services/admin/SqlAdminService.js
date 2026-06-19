@@ -156,7 +156,12 @@ const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
     const slot = String(step?.code || step?.slot || `firma_${order}`);
     const out = { order, code: slot, slot };
     out.name = step?.name || `Firma ${order}`;
-    out.resolver = buildStepResolver({ ...step, selection_mode: step?.selection_mode || "auto_all" });
+    // Multi-firmante: cada paso lleva una lista de firmantes, cada uno con su propio resolutor. Back-compat:
+    // si llega un resolutor inline sin lista, se envuelve como un único firmante.
+    const signerSources = Array.isArray(step?.signers) && step.signers.length ? step.signers : [step];
+    out.signers = signerSources.map((signer) =>
+      buildStepResolver({ ...signer, selection_mode: signer?.selection_mode || "auto_all" })
+    );
     out.approval_mode = ["and", "or", "at_least"].includes(String(step?.approval_mode)) ? step.approval_mode : "and";
     out.required_signers_min = Number(step?.required_signers_min) || 1;
     if (Number(step?.required_signers_max)) out.required_signers_max = Number(step.required_signers_max);
@@ -699,6 +704,30 @@ const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) =>
     .sort((left, right) => left.stepOrder - right.stepOrder);
 };
 
+// Normaliza UN firmante (resolutor) de un paso de firma. `resolver` tiene la forma que produce buildStepResolver
+// ({ type, selection_mode, cargo_id, cargo_code, unit_scope_type, unit_id, unit_type_id, person_id, position_id }).
+const normalizeSignatureSigner = (
+  resolver = {},
+  { cargoCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
+) => {
+  const rawCargoCode = String(resolver?.cargo_code || resolver?.required_cargo_code || "").trim().toLowerCase();
+  const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
+  const resolverType = String(resolver?.type || resolver?.resolver_type || "cargo_in_scope").trim();
+  const unitScopeType = String(resolver?.unit_scope_type || "context_exact").trim();
+  const selectionMode = String(resolver?.selection_mode || "auto_all").trim();
+  const rawUnitTypeName = String(resolver?.unit_type_name || "").trim().toLowerCase();
+  return {
+    resolverType: SIGNATURE_RESOLVER_TYPES.has(resolverType) ? resolverType : "cargo_in_scope",
+    assignedPersonId: normalizeNumericId(resolver?.person_id),
+    unitScopeType: SIGNATURE_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "context_exact",
+    unitId: normalizeNumericId(resolver?.unit_id),
+    unitTypeId: normalizeNumericId(resolver?.unit_type_id) || unitTypeNameMap.get(rawUnitTypeName) || null,
+    positionId: normalizeNumericId(resolver?.position_id),
+    requiredCargoId: normalizeNumericId(resolver?.cargo_id) || cargoCodeMap.get(normalizedCargoCode) || null,
+    selectionMode: SIGNATURE_SELECTION_MODES.has(selectionMode) ? selectionMode : "auto_all"
+  };
+};
+
 const normalizeSignatureSteps = (
   workflow = {},
   { cargoCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
@@ -707,48 +736,45 @@ const normalizeSignatureSteps = (
   return rawSteps
     .filter((step) => step && typeof step === "object")
     .map((step, index) => {
-      const rawCargoCode = String(
-        step?.resolver?.cargo_code
-        || step.required_cargo_code
-        || ""
-      ).trim().toLowerCase();
-      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
       const normalizedSlot = String(step.slot || "").trim() || null;
       const stepCode = String(step.code || "").trim() || null;
       const stepName = String(step.name || "").trim() || null;
       const anchorRefs = normalizeSignatureStepAnchorRefs(step.anchor_refs);
-      const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
-      const unitScopeType = String(step?.resolver?.unit_scope_type || "context_exact").trim();
-      const selectionMode = String(step?.resolver?.selection_mode || step.selection_mode || "auto_all").trim();
       const approvalMode = String(step.approval_mode || "and").trim().toLowerCase();
-      const rawUnitTypeName = String(step?.resolver?.unit_type_name || "").trim().toLowerCase();
+      // Back-compat: meta antigua con un único `resolver`; nueva con `signers: [...]`.
+      const rawSigners = Array.isArray(step.signers) && step.signers.length
+        ? step.signers
+        : (step.resolver ? [step.resolver] : []);
+      const signers = rawSigners
+        .filter((s) => s && typeof s === "object")
+        .map((s) => normalizeSignatureSigner(s, { cargoCodeMap, unitTypeNameMap }))
+        // Un firmante "por cargo" sin cargo resoluble no aporta; se descarta.
+        .filter((s) => s.resolverType !== "cargo_in_scope" || s.requiredCargoId);
+      const primary = signers[0] || null;
       return {
         stepOrder: Number(step.order) || index + 1,
         code: stepCode,
         name: stepName,
         slot: normalizedSlot,
-        resolverType: SIGNATURE_RESOLVER_TYPES.has(resolverType) ? resolverType : "cargo_in_scope",
-        assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
-        unitScopeType: SIGNATURE_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "context_exact",
-        unitId: normalizeNumericId(step?.resolver?.unit_id),
-        unitTypeId:
-          normalizeNumericId(step?.resolver?.unit_type_id)
-          || unitTypeNameMap.get(rawUnitTypeName)
-          || null,
-        positionId: normalizeNumericId(step?.resolver?.position_id),
-        requiredCargoId:
-          normalizeNumericId(step?.resolver?.cargo_id)
-          || cargoCodeMap.get(normalizedCargoCode)
-          || null,
-        selectionMode: SIGNATURE_SELECTION_MODES.has(selectionMode) ? selectionMode : "auto_all",
+        // Firmante principal (mirror del primero) en las columnas del paso: fallback runtime + integridad FK.
+        resolverType: primary?.resolverType || "cargo_in_scope",
+        assignedPersonId: primary?.assignedPersonId || null,
+        unitScopeType: primary?.unitScopeType || "context_exact",
+        unitId: primary?.unitId || null,
+        unitTypeId: primary?.unitTypeId || null,
+        positionId: primary?.positionId || null,
+        requiredCargoId: primary?.requiredCargoId || null,
+        selectionMode: primary?.selectionMode || "auto_all",
         approvalMode: SIGNATURE_APPROVAL_MODES.has(approvalMode) ? approvalMode : "and",
         requiredSignersMin: normalizeNumericId(step.required_signers_min),
         requiredSignersMax: normalizeNumericId(step.required_signers_max),
         isRequired: normalizeBooleanFlag(step.required, true) ? 1 : 0,
-        anchorRefs
+        anchorRefs,
+        signers
       };
     })
-    .filter((step) => step.resolverType !== "cargo_in_scope" || step.requiredCargoId)
+    // Un paso sin firmantes válidos no se materializa.
+    .filter((step) => step.signers.length > 0)
     .sort((left, right) => left.stepOrder - right.stepOrder);
 };
 
@@ -851,7 +877,12 @@ const collectAuthoredWorkflowIssues = ({
   // "misma unidad"); byUnit = mapa unidad→Set de cargos (para "unidad específica"). Si no se pasan, no se valida.
   const resolvableCtxCargoIds = resolvableCargoIds?.ctx instanceof Set ? resolvableCargoIds.ctx : null;
   const resolvableCargoIdsByUnit = resolvableCargoIds?.byUnit instanceof Map ? resolvableCargoIds.byUnit : null;
+  // issues = errores que ABORTAN el guardado (imposibilidades estructurales). warnings = avisos que NO bloquean:
+  // el cargo no tiene HOY un puesto en la ubicación, pero el modelo es late-binding (el ocupante se enlaza
+  // después) y los puestos son mutables: el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante
+  // (el runtime ya reconcilia huérfanos). Bloquear aquí impediría modelar puestos temporalmente vacantes.
   const issues = [];
+  const warnings = [];
   const checkOrders = (steps, label) => {
     const seen = new Set();
     steps.forEach((step, index) => {
@@ -907,16 +938,16 @@ const collectAuthoredWorkflowIssues = ({
         issues.push(`${label}: "Cargo en ámbito" requiere seleccionar un cargo válido.`);
       }
       const scope = String(resolver?.unit_scope_type || "context_exact");
-      // El cargo debe tener un PUESTO en la ubicación (late-binding: el ocupante se enlaza después; sin puesto
-      // nunca podría resolverse).
+      // Aviso (no bloqueante): el cargo no tiene HOY un puesto en la ubicación. Por late-binding el paso queda
+      // pendiente y se resolverá cuando el puesto/ocupante exista (puesto temporalmente vacante o aún por crear).
       if (resolvedCargoId && scope === "context_exact" && resolvableCtxCargoIds && !resolvableCtxCargoIds.has(resolvedCargoId)) {
-        issues.push(`${label}: el cargo seleccionado no tiene un puesto en ninguna unidad del alcance del proceso; el paso nunca resolvería.`);
+        warnings.push(`${label}: el cargo seleccionado aún no tiene un puesto en el alcance del proceso; el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante.`);
       }
       if (resolvedCargoId && scope === "unit_exact" && resolvableCargoIdsByUnit) {
         const stepUnitId = normalizeNumericId(resolver?.unit_id);
         const unitCargoSet = stepUnitId ? resolvableCargoIdsByUnit.get(stepUnitId) : null;
         if (stepUnitId && (!unitCargoSet || !unitCargoSet.has(resolvedCargoId))) {
-          issues.push(`${label}: el cargo seleccionado no tiene un puesto en la unidad indicada; el paso nunca resolvería.`);
+          warnings.push(`${label}: el cargo seleccionado aún no tiene un puesto en la unidad indicada; el paso quedará pendiente y se resolverá cuando exista el puesto/ocupante.`);
         }
       }
       if (scope === "context_exact" || scope === "context_subtree") {
@@ -1004,28 +1035,37 @@ const collectAuthoredWorkflowIssues = ({
     const sigAllowedUnitScopeTypes = webFillUnitScopeTypesForScope(templateScope);
     signatureSteps.forEach((step, index) => {
       const label = `Paso de firma ${index + 1}`;
-      const resolver = getStepResolver(step);
-      const type = String(resolver.type || "cargo_in_scope");
-      if (!sigAllowedResolverTypes.has(type)) {
-        issues.push(`${label}: firmante no permitido para este tipo de plantilla.`);
-        return;
-      }
-      if (type === "cargo_in_scope") {
-        const scope = String(resolver.unit_scope_type || "context_exact");
-        if (!sigAllowedUnitScopeTypes.has(scope)) {
-          issues.push(`${label}: ámbito no permitido para este tipo de plantilla.`);
-          return;
-        }
-      }
       const approval = String(step.approval_mode || "and");
       if (!SIGNATURE_APPROVAL_MODES.has(approval)) {
         issues.push(`${label}: modo de aprobación inválido (${approval}).`);
       }
-      checkResolverRefs(resolver, type, label, step.required_cargo_code);
+      // Multi-firmante: valida cada firmante del paso. Back-compat: si no hay lista, el paso es un firmante.
+      const signers = Array.isArray(step.signers) && step.signers.length ? step.signers : [step];
+      if (!signers.length) {
+        issues.push(`${label}: define al menos un firmante.`);
+        return;
+      }
+      signers.forEach((signer, si) => {
+        const signerLabel = signers.length > 1 ? `${label} · firmante ${si + 1}` : label;
+        const resolver = getStepResolver(signer);
+        const type = String(resolver.type || "cargo_in_scope");
+        if (!sigAllowedResolverTypes.has(type)) {
+          issues.push(`${signerLabel}: firmante no permitido para este tipo de plantilla.`);
+          return;
+        }
+        if (type === "cargo_in_scope") {
+          const scope = String(resolver.unit_scope_type || "context_exact");
+          if (!sigAllowedUnitScopeTypes.has(scope)) {
+            issues.push(`${signerLabel}: ámbito no permitido para este tipo de plantilla.`);
+            return;
+          }
+        }
+        checkResolverRefs(resolver, type, signerLabel, signer.required_cargo_code);
+      });
     });
   }
 
-  return issues;
+  return { errors: issues, warnings };
 };
 
 const isArtifactFillWorkflowSyncEnabled = (workflow = {}) =>
@@ -3922,8 +3962,9 @@ export default class SqlAdminService {
          required_signers_min,
          required_signers_max,
          is_required,
-         anchor_refs
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         anchor_refs,
+         signers
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           signatureFlowTemplateId,
           step.stepOrder,
@@ -3942,7 +3983,8 @@ export default class SqlAdminService {
           step.requiredSignersMin,
           step.requiredSignersMax,
           step.isRequired,
-          JSON.stringify(Array.isArray(step.anchorRefs) ? step.anchorRefs : [])
+          JSON.stringify(Array.isArray(step.anchorRefs) ? step.anchorRefs : []),
+          JSON.stringify(Array.isArray(step.signers) ? step.signers : [])
         ]
       );
     }
@@ -4341,24 +4383,35 @@ export default class SqlAdminService {
         })),
       };
       const sig = meta?.workflows?.signatures || {};
+      // Aplana un resolutor del meta a los campos que usa el formulario web de firmante.
+      const flattenSigner = (resolver = {}) => ({
+        resolver_type: resolver?.type || "cargo_in_scope",
+        selection_mode: resolver?.selection_mode || "auto_all",
+        cargo_id: resolver?.cargo_id || null,
+        cargo_code: resolver?.cargo_code || "",
+        unit_scope_type: resolver?.unit_scope_type || "context_exact",
+        unit_id: resolver?.unit_id || null,
+        unit_type_id: resolver?.unit_type_id || null,
+        person_id: resolver?.person_id || null,
+        position_id: resolver?.position_id || null,
+      });
       signatureWorkflow = {
         required: sig?.required === true,
-        steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => ({
-          order: Number(s?.order) || i + 1,
-          code: s?.code || "",
-          name: s?.name || "",
-          resolver_type: s?.resolver?.type || "task_assignee",
-          selection_mode: s?.resolver?.selection_mode || "auto_all",
-          cargo_id: s?.resolver?.cargo_id || null,
-          cargo_code: s?.resolver?.cargo_code || "",
-          unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
-          unit_id: s?.resolver?.unit_id || null,
-          unit_type_id: s?.resolver?.unit_type_id || null,
-          person_id: s?.resolver?.person_id || null,
-          approval_mode: s?.approval_mode || "and",
-          required_signers_min: s?.required_signers_min || 1,
-          required: s?.required !== false,
-        })),
+        steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => {
+          // Multi-firmante: `signers: [...]`. Back-compat: meta antigua con un único `resolver`.
+          const rawSigners = Array.isArray(s?.signers) && s.signers.length
+            ? s.signers
+            : (s?.resolver ? [s.resolver] : []);
+          return {
+            order: Number(s?.order) || i + 1,
+            code: s?.code || "",
+            name: s?.name || "",
+            approval_mode: s?.approval_mode || "and",
+            required_signers_min: s?.required_signers_min || 1,
+            required: s?.required !== false,
+            signers: rawSigners.map(flattenSigner),
+          };
+        }),
       };
     } catch {
       // sin meta legible → flujos vacíos por defecto
@@ -4963,6 +5016,9 @@ export default class SqlAdminService {
     const hasCustomWorkflows =
       (fillWorkflow && Array.isArray(fillWorkflow.steps) && fillWorkflow.steps.length)
       || (signatureWorkflow && Array.isArray(signatureWorkflow.steps) && signatureWorkflow.steps.length);
+    // Avisos no bloqueantes de autoría (p. ej. cargo sin puesto hoy en la ubicación): se acumulan para
+    // informarlos en la respuesta, sin abortar el guardado.
+    let authoringWarnings = [];
     // Validación del contrato de flujo en autoría (no solo al vincular): falla rápido y claro antes de
     // subir el meta.yaml, en vez de degradar silenciosamente en la normalización del sync.
     if (hasCustomWorkflows) {
@@ -4985,7 +5041,14 @@ export default class SqlAdminService {
       const fillStepList = Array.isArray(fillWorkflow?.steps) ? fillWorkflow.steps : [];
       const unitExactUnitIds = [];
       let needsCtxCargos = false;
-      for (const step of fillStepList) {
+      // Considera tanto pasos de entrega (un resolutor) como firmantes de cada paso de firma (lista). Así los
+      // avisos "cargo sin puesto" se evalúan con el set de cargos resolubles correcto y no salen falsos.
+      const cargoScopeSources = [...fillStepList];
+      for (const step of (Array.isArray(signatureWorkflow?.steps) ? signatureWorkflow.steps : [])) {
+        const signers = Array.isArray(step?.signers) && step.signers.length ? step.signers : [step];
+        cargoScopeSources.push(...signers);
+      }
+      for (const step of cargoScopeSources) {
         const resolverType = String(step?.resolver_type || step?.resolver?.resolver_type || "task_assignee");
         if (resolverType !== "cargo_in_scope") continue;
         const stepScope = String(step?.unit_scope_type || step?.resolver?.unit_scope_type || "context_exact");
@@ -5004,7 +5067,7 @@ export default class SqlAdminService {
         ctx: ctxCargos ? new Set(ctxCargos.map((c) => c.id)) : null,
         byUnit: resolvableByUnit
       };
-      const workflowIssues = collectAuthoredWorkflowIssues({
+      const { errors: workflowErrors, warnings: workflowWarnings } = collectAuthoredWorkflowIssues({
         fillWorkflow,
         signatureWorkflow,
         cargoCodeMap,
@@ -5013,11 +5076,12 @@ export default class SqlAdminService {
         resolvableCargoIds,
         templateScope
       });
-      if (workflowIssues.length) {
-        const error = new Error(`El flujo definido tiene errores:\n- ${workflowIssues.join("\n- ")}`);
+      if (workflowErrors.length) {
+        const error = new Error(`El flujo definido tiene errores:\n- ${workflowErrors.join("\n- ")}`);
         error.statusCode = 422;
         throw error;
       }
+      authoringWarnings = workflowWarnings;
     }
     const workflowsYaml = hasCustomWorkflows
       ? buildWorkflowsYaml({ fillWorkflow, signatureWorkflow })
@@ -5166,6 +5230,12 @@ export default class SqlAdminService {
         }
       }
 
+      // Avisos no bloqueantes (sync fallido + autoría: cargos sin puesto hoy) se combinan en __warning.
+      const combinedWarning = [
+        workflowSyncFailed ? workflowNotice.trim() : "",
+        ...authoringWarnings
+      ].filter(Boolean).join(" ");
+
       return {
         id: createdId,
         template_seed_id: templateSeedId,
@@ -5186,7 +5256,7 @@ export default class SqlAdminService {
         content_hash: contentHash,
         is_active: 1,
         workflow_sync_failed: workflowSyncFailed,
-        __warning: workflowSyncFailed ? workflowNotice.trim() : undefined,
+        __warning: combinedWarning || undefined,
         __notice: (isEdit
           ? "La plantilla de documento fue actualizada y cargada correctamente en MinIO."
           : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.") + workflowNotice

@@ -101,6 +101,45 @@ const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
   return rows?.[0] || null;
 };
 
+// Normaliza la lista de firmantes (columna JSON `signers`) a la forma camelCase que consumen los resolutores.
+// Mantiene `selection_mode` (snake) además de `selectionMode` porque la resolución por cargo lo lee así.
+const parseStepSigners = (value) => {
+  let arr = value;
+  if (typeof value === "string") {
+    try { arr = JSON.parse(value); } catch { arr = null; }
+  }
+  if (!Array.isArray(arr)) {
+    return [];
+  }
+  return arr.map((s) => {
+    const selectionMode = String(s?.selectionMode || s?.selection_mode || "auto_all").trim() || "auto_all";
+    return {
+      resolverType: String(s?.resolverType || s?.type || "cargo_in_scope").trim() || "cargo_in_scope",
+      assignedPersonId: s?.assignedPersonId || s?.person_id ? Number(s.assignedPersonId || s.person_id) : null,
+      unitScopeType: String(s?.unitScopeType || s?.unit_scope_type || "context_exact").trim() || "context_exact",
+      unitId: s?.unitId || s?.unit_id ? Number(s.unitId || s.unit_id) : null,
+      unitTypeId: s?.unitTypeId || s?.unit_type_id ? Number(s.unitTypeId || s.unit_type_id) : null,
+      positionId: s?.positionId || s?.position_id ? Number(s.positionId || s.position_id) : null,
+      requiredCargoId: s?.requiredCargoId || s?.cargo_id ? Number(s.requiredCargoId || s.cargo_id) : null,
+      selectionMode,
+      selection_mode: selectionMode
+    };
+  });
+};
+
+// Construye un firmante a partir de las columnas de resolutor del propio paso (pasos legacy sin lista signers).
+const signerFromStepColumns = (step) => ({
+  resolverType: step.resolverType,
+  assignedPersonId: step.assignedPersonId,
+  unitScopeType: step.unitScopeType,
+  unitId: step.unitId,
+  unitTypeId: step.unitTypeId,
+  positionId: step.positionId,
+  requiredCargoId: step.requiredCargoId,
+  selectionMode: step.selectionMode,
+  selection_mode: step.selectionMode
+});
+
 const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
   const [rows] = await connection.query(
     `SELECT
@@ -121,36 +160,43 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
        required_signers_min,
        required_signers_max,
        is_required,
-       anchor_refs
+       anchor_refs,
+       signers
      FROM signature_flow_steps
      WHERE template_id = ?
      ORDER BY step_order ASC, id ASC`,
     [signatureFlowTemplateId]
   );
-  return rows.map((row) => ({
-    id: row.id,
-    stepOrder: Number(row.step_order || 0),
-    code: String(row.code || "").trim() || null,
-    name: String(row.name || "").trim() || null,
-    slot: String(row.slot || "").trim() || null,
-    resolverType: String(row.resolver_type || "cargo_in_scope").trim() || "cargo_in_scope",
-    assignedPersonId: row.assigned_person_id ? Number(row.assigned_person_id) : null,
-    unitScopeType: String(row.unit_scope_type || "context_exact").trim() || "context_exact",
-    unitId: row.unit_id ? Number(row.unit_id) : null,
-    unitTypeId: row.unit_type_id ? Number(row.unit_type_id) : null,
-    positionId: row.position_id ? Number(row.position_id) : null,
-    requiredCargoId: row.required_cargo_id ? Number(row.required_cargo_id) : null,
-    selectionMode: String(row.selection_mode || "auto_all").trim() || "auto_all",
-    approvalMode: String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase() || SIGNATURE_APPROVAL_AND,
-    requiredSignersMin: row.required_signers_min !== null && row.required_signers_min !== undefined
-      ? Number(row.required_signers_min)
-      : null,
-    requiredSignersMax: row.required_signers_max !== null && row.required_signers_max !== undefined
-      ? Number(row.required_signers_max)
-      : null,
-    isRequired: row.is_required ? Number(row.is_required) : 0,
-    anchorRefs: parseSignatureStepAnchorRefs(row.anchor_refs)
-  }));
+  return rows.map((row) => {
+    const step = {
+      id: row.id,
+      stepOrder: Number(row.step_order || 0),
+      code: String(row.code || "").trim() || null,
+      name: String(row.name || "").trim() || null,
+      slot: String(row.slot || "").trim() || null,
+      resolverType: String(row.resolver_type || "cargo_in_scope").trim() || "cargo_in_scope",
+      assignedPersonId: row.assigned_person_id ? Number(row.assigned_person_id) : null,
+      unitScopeType: String(row.unit_scope_type || "context_exact").trim() || "context_exact",
+      unitId: row.unit_id ? Number(row.unit_id) : null,
+      unitTypeId: row.unit_type_id ? Number(row.unit_type_id) : null,
+      positionId: row.position_id ? Number(row.position_id) : null,
+      requiredCargoId: row.required_cargo_id ? Number(row.required_cargo_id) : null,
+      selectionMode: String(row.selection_mode || "auto_all").trim() || "auto_all",
+      approvalMode: String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase() || SIGNATURE_APPROVAL_AND,
+      requiredSignersMin: row.required_signers_min !== null && row.required_signers_min !== undefined
+        ? Number(row.required_signers_min)
+        : null,
+      requiredSignersMax: row.required_signers_max !== null && row.required_signers_max !== undefined
+        ? Number(row.required_signers_max)
+        : null,
+      isRequired: row.is_required ? Number(row.is_required) : 0,
+      anchorRefs: parseSignatureStepAnchorRefs(row.anchor_refs)
+    };
+    // Multi-firmante: lista de resolutores. Fallback (pasos legacy sin `signers`): el propio paso = 1 firmante.
+    const parsed = parseStepSigners(row.signers);
+    step.signers = parsed.length ? parsed : [signerFromStepColumns(step)];
+    return step;
+  });
 };
 
 const resolveSignatureTemplateStepsForContext = async (connection, signatureFlowTemplateId, context) => {
@@ -416,25 +462,41 @@ const resolvePositionAssignees = async (connection, step, context) => {
   );
 };
 
-const resolveSignatureStepAssignees = async (connection, step, context) => {
-  if (!step || String(step.selectionMode || "auto_all") === "manual") {
+// Resuelve los firmantes de UN solo resolutor (firmante) del paso.
+const resolveSingleSignerAssignees = async (connection, signer, context) => {
+  if (!signer || String(signer.selectionMode || signer.selection_mode || "auto_all") === "manual") {
     return [];
   }
-
-  const resolverType = String(step.resolverType || "cargo_in_scope").trim();
+  const resolverType = String(signer.resolverType || "cargo_in_scope").trim();
   switch (resolverType) {
     case "specific_person":
-      return collectAssignees(resolveSpecificPersonAssignees(step));
+      return resolveSpecificPersonAssignees(signer);
     case "document_owner":
-      return collectAssignees(resolveDocumentOwnerAssignee(context));
+      return resolveDocumentOwnerAssignee(context);
     case "task_assignee":
-      return collectAssignees(resolveTaskAssignee(context));
+      return resolveTaskAssignee(context);
     case "position":
-      return collectAssignees(await resolvePositionAssignees(connection, step, context));
+      return resolvePositionAssignees(connection, signer, context);
     case "cargo_in_scope":
     default:
-      return collectAssignees(await resolvePersonsForCargoInScope(connection, step, context));
+      return resolvePersonsForCargoInScope(connection, signer, context);
   }
+};
+
+// Multi-firmante: une (sin duplicados) las personas resueltas por cada firmante del paso. El cupo entre ellas
+// (todas / cualquiera / mínimo N) lo evalúa approval_mode más adelante en el flujo.
+const resolveSignatureStepAssignees = async (connection, step, context) => {
+  if (!step) {
+    return [];
+  }
+  const signers = Array.isArray(step.signers) && step.signers.length
+    ? step.signers
+    : [signerFromStepColumns(step)];
+  const resolved = [];
+  for (const signer of signers) {
+    resolved.push(await resolveSingleSignerAssignees(connection, signer, context));
+  }
+  return collectAssignees(...resolved);
 };
 
 const deriveSignatureStatusCode = (result) => {

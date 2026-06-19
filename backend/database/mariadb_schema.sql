@@ -1069,6 +1069,9 @@ CREATE TABLE IF NOT EXISTS signature_flow_steps (
   required_signers_max INT NULL,
   is_required TINYINT(1) NOT NULL DEFAULT 1,
   anchor_refs JSON NULL,
+  -- Firmantes del paso (modelo multi-firmante): lista de resolutores, cada uno con su configuración. Las
+  -- columnas de resolutor de arriba son el firmante "principal"/legacy (fallback cuando signers es NULL).
+  signers JSON NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_signature_flow_steps (template_id, step_order),
   INDEX idx_signature_flow_steps_person (assigned_person_id),

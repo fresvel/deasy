@@ -2587,6 +2587,12 @@ const handleDraftArtifactSubmit = async () => {
   // Cierra el picker "Seleccionar plantilla" tras crear; su handler hidden.bs.modal restaura el modal de
   // origen (gestión de plantillas del proceso). Antes quedaba abierto encima.
   getFkInstance()?.hide();
+  // La plantilla recién creada ya quedó vinculada a la configuración (auto-link del backend). Refresca la
+  // tabla de plantillas del proceso para que aparezca de inmediato y limpia el form (ya no es "Agregar").
+  if (definitionArtifactsContext.value?.id) {
+    resetDefinitionArtifactsForm();
+    await loadDefinitionArtifacts();
+  }
 };
 
 // Descarga el ZIP de formatos del registro abierto en el visor (paquetes de plantilla o seeds).

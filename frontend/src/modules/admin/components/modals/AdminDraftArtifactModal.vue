@@ -336,20 +336,12 @@
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Orden</label>
               <input type="number" min="1" :value="step.order" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'order', Number($event.target.value))" />
             </div>
-            <div class="col-span-4">
+            <div class="col-span-5">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Nombre</label>
-              <input :value="step.name" placeholder="ej. Firma del director" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'name', $event.target.value)" />
+              <input :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
-            <div class="col-span-3">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién firma</label>
-              <select :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, $event.target.value)">
-                <option value="task_assignee">Responsable del entregable</option>
-                <option value="scope">Por cargo</option>
-                <option v-if="isAdHoc" value="person">Persona concreta</option>
-              </select>
-            </div>
-            <div class="col-span-3">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Aprobación</label>
+            <div class="col-span-5">
+              <label class="mb-1 inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
               <select :value="step.approval_mode || 'and'" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
                 <option value="and">Todas</option>
                 <option value="or">Cualquiera</option>
@@ -367,54 +359,76 @@
               <input type="number" min="1" :value="step.required_signers_min || 1" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'required_signers_min', Number($event.target.value) || 1)" />
             </div>
           </div>
-          <!-- "Por cargo": misma ubicación/cargo resoluble que entrega (reusa los helpers de lectura). -->
-          <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
-              <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureUbicacion(index, $event.target.value)">
-                <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
-                <option value="unit_exact">En una unidad específica…</option>
-                <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
-              </select>
+
+          <!-- Firmantes del paso: cada uno con su propio resolutor; el cupo entre ellos lo define "Aprobación". -->
+          <div class="mt-3 border-t border-slate-100 pt-2">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
+              <button type="button" class="rounded-lg border border-indigo-200 px-2 py-1 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50" @click="addSignatureSigner(index)">+ Añadir firmante</button>
             </div>
-            <template v-if="fillStepNeedsUnit(step)">
-              <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo (filtro)</label>
-                <select :value="step.filter_unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitTypeFilterChange(index, Number($event.target.value) || null)">
-                  <option value="">Todos los tipos</option>
-                  <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
-                </select>
+            <div v-for="(signer, si) in stepSigners(step)" :key="`sig-${index}-${si}`" class="mt-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2">
+              <div class="grid grid-cols-12 items-end gap-2">
+                <div :class="stepSigners(step).length > 1 ? 'col-span-11' : 'col-span-12'">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién firma</label>
+                  <select :value="stepWhoMode(signer)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureWho(index, si, $event.target.value)">
+                    <option value="task_assignee">Responsable del entregable</option>
+                    <option value="scope">Por cargo</option>
+                    <option v-if="isAdHoc" value="person">Persona concreta</option>
+                  </select>
+                </div>
+                <div v-if="stepSigners(step).length > 1" class="col-span-1 flex items-center justify-end pb-1">
+                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar firmante" @click="removeSignatureSigner(index, si)">✕</button>
+                </div>
               </div>
-              <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
-                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitExactChange(index, Number($event.target.value) || null)">
-                  <option value="">— Selecciona unidad —</option>
-                  <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
-                </select>
+              <div v-if="stepWhoMode(signer) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
+                <div class="col-span-4">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
+                  <select :value="signer.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureUbicacion(index, si, $event.target.value)">
+                    <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
+                    <option value="unit_exact">En una unidad específica…</option>
+                    <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
+                  </select>
+                </div>
+                <template v-if="fillStepNeedsUnit(signer)">
+                  <div class="col-span-4">
+                    <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo (filtro)</label>
+                    <select :value="signer.filter_unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitTypeFilterChange(index, si, Number($event.target.value) || null)">
+                      <option value="">Todos los tipos</option>
+                      <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+                    </select>
+                  </div>
+                  <div class="col-span-4">
+                    <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
+                    <select :value="signer.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitExactChange(index, si, Number($event.target.value) || null)">
+                      <option value="">— Selecciona unidad —</option>
+                      <option v-for="u in fillStepUnitOptions(signer)" :key="u.id" :value="u.id">{{ u.name }}</option>
+                    </select>
+                  </div>
+                </template>
+                <div v-else-if="fillStepNeedsUnitType(signer)" class="col-span-4">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
+                  <select :value="signer.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitTypeScopeChange(index, si, Number($event.target.value) || null)">
+                    <option value="">— Selecciona tipo —</option>
+                    <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+                  </select>
+                </div>
+                <div class="col-span-4">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
+                  <select :value="signer.cargo_id || ''" :disabled="!fillStepCargoReady(signer)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400" @change="updateSignatureSigner(index, si, 'cargo_id', Number($event.target.value) || null)">
+                    <option value="">{{ fillStepCargoPlaceholder(signer) }}</option>
+                    <option v-for="c in fillStepCargoOptions(signer)" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  </select>
+                </div>
               </div>
-            </template>
-            <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
-              <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onSignatureUnitTypeScopeChange(index, Number($event.target.value) || null)">
-                <option value="">— Selecciona tipo —</option>
-                <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
-              </select>
-            </div>
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
-              <select :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400" @change="updateSignatureStep(index, 'cargo_id', Number($event.target.value) || null)">
-                <option value="">{{ fillStepCargoPlaceholder(step) }}</option>
-                <option v-for="c in fillStepCargoOptions(step)" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </div>
-          </div>
-          <div v-else-if="stepWhoMode(step) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-6">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
-              <select :value="step.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'person_id', Number($event.target.value) || null)">
-                <option value="">— Selecciona persona —</option>
-                <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
-              </select>
+              <div v-else-if="stepWhoMode(signer) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
+                <div class="col-span-6">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
+                  <select :value="signer.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureSigner(index, si, 'person_id', Number($event.target.value) || null)">
+                    <option value="">— Selecciona persona —</option>
+                    <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -845,18 +859,22 @@ const fillStepCargoPlaceholder = (step) => {
 // Precarga las listas de cargos necesarias al abrir/editar (pasos ya guardados) o al cargar el alcance.
 const ensureResolvableCargosLoaded = () => {
   let needsCtx = false;
-  // Mismos cargos resolubles sirven a pasos de entrega y de firma (mismo modelo de ubicación).
-  const allSteps = [...fillSteps.value, ...(props.draftArtifactForm.signature_workflow?.steps || [])];
-  for (const step of allSteps) {
-    if (String(step?.resolver_type || "") !== "cargo_in_scope") continue;
-    const scope = String(step?.unit_scope_type || "");
+  // Mismos cargos resolubles sirven a entrega (un resolutor por paso) y firmas (varios firmantes por paso).
+  const considerScopeObject = (obj) => {
+    if (String(obj?.resolver_type || "") !== "cargo_in_scope") return;
+    const scope = String(obj?.unit_scope_type || "");
     if (scope === "unit_exact") {
-      if (step?.unit_id) loadResolvableCargos({ unitId: step.unit_id });
+      if (obj?.unit_id) loadResolvableCargos({ unitId: obj.unit_id });
     } else if (scope === "unit_type") {
-      if (step?.unit_type_id) loadResolvableCargos({ unitTypeId: step.unit_type_id });
+      if (obj?.unit_type_id) loadResolvableCargos({ unitTypeId: obj.unit_type_id });
     } else {
       needsCtx = true;
     }
+  };
+  for (const step of fillSteps.value) considerScopeObject(step);
+  for (const step of (props.draftArtifactForm.signature_workflow?.steps || [])) {
+    const signers = Array.isArray(step?.signers) && step.signers.length ? step.signers : [step];
+    for (const signer of signers) considerScopeObject(signer);
   }
   if (needsCtx && processHasRules.value) loadResolvableCargos({});
 };
@@ -904,21 +922,28 @@ const commitSignature = (patch) => {
     },
   });
 };
+// Firmante por defecto (resolutor inicial = responsable del entregable).
+const newSignatureSigner = () => ({
+  resolver_type: "task_assignee",
+  selection_mode: "auto_all",
+  cargo_id: null,
+  unit_scope_type: "context_exact",
+  unit_id: null,
+  unit_type_id: null,
+  filter_unit_type_id: null,
+  person_id: null
+});
+// Firmantes del paso (lista). Back-compat: si un paso llega sin lista, se trata como vacío (se podrá añadir).
+const stepSigners = (step) => (Array.isArray(step?.signers) ? step.signers : []);
+
 const addSignatureStep = () => {
   commitSignature({ steps: [...signatureSteps.value, {
     order: signatureSteps.value.length + 1,
     name: "",
-    resolver_type: "task_assignee",
-    selection_mode: "auto_all",
-    cargo_id: null,
-    unit_scope_type: "context_exact",
-    unit_id: null,
-    unit_type_id: null,
-    filter_unit_type_id: null,
-    person_id: null,
     approval_mode: "and",
     required_signers_min: 1,
-    required: true
+    required: true,
+    signers: [newSignatureSigner()]
   }] });
 };
 const updateSignatureStep = (index, prop, value) => {
@@ -930,39 +955,62 @@ const patchSignatureStep = (index, patch) => {
 const removeSignatureStep = (index) => {
   commitSignature({ steps: signatureSteps.value.filter((_, i) => i !== index) });
 };
-// "Quién firma": reusa stepWhoMode/lectura de cargo de entrega; los handlers de escritura commitean a firmas.
-const updateSignatureWho = (index, value) => {
+
+// ── Firmantes de un paso ── Cada firmante tiene su propio resolutor; el cupo entre ellos lo da approval_mode.
+const addSignatureSigner = (index) => {
+  const step = signatureSteps.value[index];
+  if (!step) return;
+  patchSignatureStep(index, { signers: [...stepSigners(step), newSignatureSigner()] });
+};
+const removeSignatureSigner = (index, si) => {
+  const step = signatureSteps.value[index];
+  if (!step) return;
+  const current = stepSigners(step);
+  if (current.length <= 1) return;
+  patchSignatureStep(index, { signers: current.filter((_, i) => i !== si) });
+};
+const patchSignatureSigner = (index, si, patch) => {
+  const step = signatureSteps.value[index];
+  if (!step) return;
+  const signers = stepSigners(step).map((s, i) => (i === si ? { ...s, ...patch } : s));
+  patchSignatureStep(index, { signers });
+};
+const updateSignatureSigner = (index, si, prop, value) => patchSignatureSigner(index, si, { [prop]: value });
+
+// "Quién firma" por firmante; los handlers de escritura commitean al firmante correspondiente.
+const updateSignatureWho = (index, si, value) => {
   if (value === "task_assignee") {
-    patchSignatureStep(index, { resolver_type: "task_assignee", cargo_id: null, unit_id: null, unit_type_id: null, person_id: null });
+    patchSignatureSigner(index, si, { resolver_type: "task_assignee", cargo_id: null, unit_id: null, unit_type_id: null, person_id: null });
     return;
   }
   if (value === "person") {
-    patchSignatureStep(index, { resolver_type: "specific_person", cargo_id: null, unit_id: null, unit_type_id: null, filter_unit_type_id: null });
+    patchSignatureSigner(index, si, { resolver_type: "specific_person", cargo_id: null, unit_id: null, unit_type_id: null, filter_unit_type_id: null });
     return;
   }
   const scopeType = processHasRules.value ? "context_exact" : "unit_exact";
-  patchSignatureStep(index, { resolver_type: "cargo_in_scope", unit_scope_type: scopeType, cargo_id: null, unit_id: null, unit_type_id: null, filter_unit_type_id: null, person_id: null });
+  patchSignatureSigner(index, si, { resolver_type: "cargo_in_scope", unit_scope_type: scopeType, cargo_id: null, unit_id: null, unit_type_id: null, filter_unit_type_id: null, person_id: null });
   if (scopeType === "context_exact") loadResolvableCargos({});
 };
-const updateSignatureUbicacion = (index, value) => {
-  patchSignatureStep(index, {
+const updateSignatureUbicacion = (index, si, value) => {
+  const current = stepSigners(signatureSteps.value[index])[si];
+  patchSignatureSigner(index, si, {
     unit_scope_type: value,
     cargo_id: null,
-    unit_id: value === "unit_exact" ? (signatureSteps.value[index]?.unit_id ?? null) : null,
+    unit_id: value === "unit_exact" ? (current?.unit_id ?? null) : null,
     unit_type_id: null,
     filter_unit_type_id: null
   });
   if (value === "context_exact") loadResolvableCargos({});
 };
-const onSignatureUnitTypeFilterChange = (index, value) => {
-  patchSignatureStep(index, { filter_unit_type_id: value, unit_id: null, cargo_id: null });
+const onSignatureUnitTypeFilterChange = (index, si, value) => {
+  patchSignatureSigner(index, si, { filter_unit_type_id: value, unit_id: null, cargo_id: null });
 };
-const onSignatureUnitExactChange = (index, value) => {
-  patchSignatureStep(index, { unit_id: value, cargo_id: null });
+const onSignatureUnitExactChange = (index, si, value) => {
+  patchSignatureSigner(index, si, { unit_id: value, cargo_id: null });
   if (value) loadResolvableCargos({ unitId: value });
 };
-const onSignatureUnitTypeScopeChange = (index, value) => {
-  patchSignatureStep(index, { unit_type_id: value, cargo_id: null });
+const onSignatureUnitTypeScopeChange = (index, si, value) => {
+  patchSignatureSigner(index, si, { unit_type_id: value, cargo_id: null });
   if (value) loadResolvableCargos({ unitTypeId: value });
 };
 

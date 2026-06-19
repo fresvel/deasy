@@ -227,12 +227,16 @@ export function useAdminDraftArtifactFlow({
       );
       await fetchRows();
       closeDraftArtifactModal();
+      const baseMessage = response.data?.__notice || (isEditingDraft
+        ? "La plantilla de documento fue actualizada correctamente."
+        : "La plantilla de documento fue creada correctamente.");
+      // Avisos no bloqueantes (p. ej. cargo sin puesto hoy en la ubicación, resoluble por late-binding):
+      // la plantilla se guardó, pero se informa al autor.
+      const warning = response.data?.__warning;
       showFeedbackToast({
-        kind: "success",
+        kind: warning ? "warning" : "success",
         title: isEditingDraft ? "Plantilla actualizada" : "Plantilla creada",
-        message: response.data?.__notice || (isEditingDraft
-          ? "La plantilla de documento fue actualizada correctamente."
-          : "La plantilla de documento fue creada correctamente.")
+        message: warning ? `${baseMessage} ${warning}`.trim() : baseMessage
       });
       return response?.data;
     } catch (err) {
