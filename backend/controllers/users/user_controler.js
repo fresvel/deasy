@@ -354,7 +354,6 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        srs.name AS signature_request_status_name,
        sfs.step_order,
        sfs.name AS step_name,
-       st.name AS signature_type_name,
        d.id AS document_id,
        d.task_item_id,
        d.status AS document_status,
@@ -399,7 +398,6 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
      WHERE sr.assigned_person_id = ?
        AND sr.responded_at IS NULL
        AND LOWER(COALESCE(dv.status, '')) IN (
@@ -592,7 +590,6 @@ const getDefinitionTemplates = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
        pdt.id,
-       pdt.creates_task,
        pdt.sort_order,
        tar.id AS template_artifact_id,
        tar.display_name AS template_artifact_name,
@@ -606,7 +603,6 @@ const getDefinitionTemplates = async (pool, definitionId) => {
      WHERE pdt.process_definition_id = ?
      GROUP BY
        pdt.id,
-       pdt.creates_task,
        pdt.sort_order,
        tar.id,
        tar.display_name,
@@ -1075,9 +1071,7 @@ const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId)
        sr.requested_at,
        sr.responded_at,
        srs.name AS status_name,
-       sfs.step_order,
-       st.name AS signature_type_name,
-       tar.display_name AS template_artifact_name,
+       sfs.step_order,       tar.display_name AS template_artifact_name,
        d.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version
@@ -1090,9 +1084,7 @@ const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId)
      INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
-     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
-     WHERE sr.assigned_person_id = ?
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     WHERE sr.assigned_person_id = ?
        AND t.process_definition_id = ?
        AND LOWER(COALESCE(dv.status, '')) IN (
          'listo para firma',
@@ -1122,9 +1114,7 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
        sr.responded_at,
        srs.code AS request_status_code,
        srs.name AS status_name,
-       sfs.step_order,
-       st.name AS signature_type_name,
-       c.name AS cargo_name,
+       sfs.step_order,       c.name AS cargo_name,
        tar.display_name AS template_artifact_name,
        d.id AS document_id,
        dv.id AS document_version_id,
@@ -1138,9 +1128,7 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
      INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
      LEFT JOIN persons p ON p.id = sr.assigned_person_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
-     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
-     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
+     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
      WHERE sfi.document_version_id IN (${placeholders})
      ORDER BY sfi.document_version_id ASC, sfs.step_order ASC, sr.id ASC`,
     documentVersionIds
@@ -1168,8 +1156,6 @@ const getSignatureWorkflowStepsForDocumentVersions = async (pool, documentVersio
        sfs.required_signers_min,
        sfs.required_signers_max,
        sfs.is_required,
-       st.code AS step_type_code,
-       st.name AS step_type_name,
        c.code AS cargo_code,
        c.name AS cargo_name
      FROM (
@@ -1198,9 +1184,7 @@ const getSignatureWorkflowStepsForDocumentVersions = async (pool, documentVersio
        FROM document_versions dv
        WHERE dv.id IN (${placeholders})
      ) dv_context
-     INNER JOIN signature_flow_steps sfs ON sfs.template_id = dv_context.signature_template_id
-     LEFT JOIN signature_types st ON st.id = sfs.step_type_id
-     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
+     INNER JOIN signature_flow_steps sfs ON sfs.template_id = dv_context.signature_template_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
      ORDER BY dv_context.document_version_id ASC, sfs.step_order ASC, sfs.id ASC`,
     documentVersionIds
   );
@@ -1641,8 +1625,6 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
       required_signers_min: step.required_signers_min !== null ? Number(step.required_signers_min) : null,
       required_signers_max: step.required_signers_max !== null ? Number(step.required_signers_max) : null,
       is_required: Boolean(step.is_required),
-      step_type_code: step.step_type_code || null,
-      step_type_name: step.step_type_name || null,
       cargo_code: step.cargo_code || null,
       cargo_name: step.cargo_name || null
     });
@@ -2564,7 +2546,6 @@ export const getUserGlobalSignatureCenter = async (req, res) => {
         requested_at: row.requested_at || null,
         step_order: row.step_order ? Number(row.step_order) : null,
         step_name: row.step_name || null,
-        signature_type_name: row.signature_type_name || null,
         working_file_path: row.working_file_path || null,
         final_file_path: row.final_file_path || null,
         preloadFilePath,
@@ -3586,7 +3567,6 @@ export const createGeneralTask = async (req, res) => {
         `SELECT pdt.id, pdt.template_artifact_id
          FROM process_definition_templates pdt
          WHERE pdt.process_definition_id = ?
-           AND pdt.creates_task = 1
          ORDER BY pdt.sort_order ASC, pdt.id ASC
          LIMIT 1`,
         [definitionId]

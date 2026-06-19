@@ -26,6 +26,7 @@ list_migrations() {
 Migraciones disponibles:
   backfill-unit-labels                     -> /app/backend/scripts/backfill_unit_labels.mjs
   drop-legacy-tables                      -> /app/backend/scripts/drop_legacy_tables.mjs
+  drop-process-definition-template-creates-task -> /app/backend/scripts/drop_process_definition_template_creates_task.mjs
   enforce-process-definition-active-series -> /app/backend/scripts/enforce_process_definition_active_series.mjs
   enforce-process-definition-document-artifacts -> /app/backend/scripts/enforce_process_definition_document_artifacts.mjs
   migrate-process-definition-series       -> /app/backend/scripts/migrate_process_definition_series.mjs
@@ -46,6 +47,9 @@ resolve_script_path() {
       ;;
     drop-legacy-tables)
       echo "/app/backend/scripts/drop_legacy_tables.mjs"
+      ;;
+    drop-process-definition-template-creates-task)
+      echo "/app/backend/scripts/drop_process_definition_template_creates_task.mjs"
       ;;
     enforce-process-definition-active-series)
       echo "/app/backend/scripts/enforce_process_definition_active_series.mjs"

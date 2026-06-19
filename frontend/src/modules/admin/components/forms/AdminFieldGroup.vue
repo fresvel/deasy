@@ -1,12 +1,13 @@
 <template>
   <div :class="groupClass">
     <label
-      v-if="label"
+      v-if="label || $slots.labelSuffix"
       class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700"
       :class="labelClass"
     >
       {{ label }}
       <span v-if="required" class="text-red-600">*</span>
+      <slot name="labelSuffix" />
     </label>
     <slot />
   </div>

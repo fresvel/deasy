@@ -83,6 +83,12 @@ const props = defineProps({
     type: Object,
     default: null
   },
+  // Señal explícita de "hay archivo" para usos donde el archivo se gestiona en el padre y no se pasa
+  // selectedFile (p. ej. el wizard de plantillas). Si no se pasa, se deriva de selectedFile.
+  filled: {
+    type: Boolean,
+    default: false
+  },
   inputId: {
     type: String,
     default: ""
@@ -100,6 +106,7 @@ const resolvedInputId = computed(() => props.inputId || generatedId);
 const isCard = computed(() => props.variant === "card");
 const isInline = computed(() => props.variant === "inline");
 const isCompact = computed(() => props.variant === "compact");
+const hasFile = computed(() => props.filled || Boolean(props.selectedFile));
 
 const wrapperClasses = computed(() => [
   "deasy-dropzone",
@@ -115,6 +122,7 @@ const surfaceClasses = computed(() => [
   isInline.value ? "deasy-dropzone__surface--inline" : "",
   {
     "deasy-dropzone__surface--active": props.active || internalActive.value,
+    "deasy-dropzone__surface--filled": hasFile.value && !props.disabled,
     "deasy-dropzone__surface--clickable": !props.disabled,
     "deasy-dropzone__surface--disabled": props.disabled
   }

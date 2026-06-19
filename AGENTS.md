@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Reglas de Testing 
+Para realizar las pruebas debes considerar que todo el sistema está dockerizado.  En la ruta scripts está docker-env.sh que te permite levantar entornos y ejecutar comandos de manera rápida. 
+
 ## Repository rules
 
 ### General

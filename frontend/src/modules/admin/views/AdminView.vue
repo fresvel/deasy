@@ -566,7 +566,7 @@ const GROUP_DEFS = [
       "documents",
       "document_versions"
     ],
-    support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_types", "signature_statuses", "signature_request_statuses"]
+    support: ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests", "document_signatures", "signature_statuses", "signature_request_statuses"]
       .concat(["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"])
   },
   {
@@ -672,7 +672,6 @@ const GESTION_INDEX_ITEMS = [
     tables: [
       "signature_flow_templates",
       "signature_flow_steps",
-      "signature_types",
       "signature_statuses",
       "signature_request_statuses"
     ]

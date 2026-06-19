@@ -46,18 +46,7 @@
         </div>
       </div>
       <div v-if="canManage && !hasTemplateSelection" class="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-600">
-        Selecciona una plantilla para configurar como parte de este paquete.
-      </div>
-      <div v-if="hasTemplateSelection" class="mt-4 grid gap-3 md:grid-cols-12">
-        <AdminFieldGroup label="Orden" group-class="md:col-span-6">
-          <AdminInputField :model-value="form.sort_order" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('sort_order', $event)" />
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Materializa entregable" group-class="md:col-span-6">
-          <AdminSelectField :model-value="form.creates_task" :disabled="!canManage" @update:model-value="updateField('creates_task', $event)">
-            <option value="1">Si</option>
-            <option value="0">No</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
+        Selecciona una plantilla para añadirla a este proceso.
       </div>
       <AdminFormActions
         v-if="hasTemplateSelection"
@@ -87,9 +76,6 @@
         <template v-if="field.name === 'template_artifact_id'">
           {{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }) }}
         </template>
-        <template v-else-if="field.name === 'creates_task'">
-          {{ Number(row[field.name]) === 1 ? "Si" : "No" }}
-        </template>
         <template v-else>
           {{ row[field.name] ?? "—" }}
         </template>
@@ -112,10 +98,7 @@
 <script setup>
 import { computed } from "vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
-import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
@@ -134,24 +117,21 @@ const props = defineProps({
   formatCell: { type: Function, required: true }
 });
 
-const emit = defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
+defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
 
 const selectedTemplateLabel = computed(() =>
   String(props.labels.template_artifact_id || props.form.template_artifact_id || "").trim()
 );
 const hasTemplateSelection = computed(() => Boolean(String(props.form.template_artifact_id || "").trim()));
+// El orden (sort_order) es interno y creates_task es siempre "sí"; no se muestran como columnas.
+const HIDDEN_ARTIFACT_COLUMNS = new Set(["creates_task", "sort_order"]);
 const displayTableFields = computed(() =>
-  props.tableFields.map((field) =>
-    field.name === "template_artifact_id"
-      ? { ...field, label: "Plantilla" }
-      : field
-  )
+  props.tableFields
+    .filter((field) => !HIDDEN_ARTIFACT_COLUMNS.has(field.name))
+    .map((field) =>
+      field.name === "template_artifact_id"
+        ? { ...field, label: "Plantilla" }
+        : field
+    )
 );
-
-const updateField = (fieldName, value) => {
-  emit("update:form", {
-    ...props.form,
-    [fieldName]: value
-  });
-};
 </script>

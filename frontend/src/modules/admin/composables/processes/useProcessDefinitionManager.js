@@ -730,8 +730,8 @@ export function useProcessDefinitionManager({
     definitionArtifactsEditId.value = row.id ? String(row.id) : "";
     definitionArtifactsForm.value = {
       template_artifact_id: row.template_artifact_id ? String(row.template_artifact_id) : "",
-      creates_task: Number(row.creates_task) === 1 ? "1" : "0",
-      sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : "1"
+      // creates_task ya no se edita (siempre materializa entregable); sort_order se conserva (interno).
+      sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : ""
     };
     definitionArtifactsLabels.value = {
       template_artifact_id: row.template_artifact_id

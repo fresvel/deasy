@@ -407,7 +407,6 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
       { name: "template_artifact_id", label: "Plantilla documental", type: "number", required: true },
-      { name: "creates_task", label: "Materializa entregable", type: "boolean", defaultValue: 1 },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
@@ -661,14 +660,13 @@ export const SQL_TABLES = [
       { name: "signature_request_id", label: "Solicitud", type: "number" },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
       { name: "signer_user_id", label: "Firmante", type: "number", required: true },
-      { name: "signature_type_id", label: "Tipo firma", type: "number", required: true },
       { name: "signature_status_id", label: "Estado firma", type: "number", required: true },
       { name: "note_short", label: "Nota", type: "textarea" },
       { name: "signed_file_path", label: "Ruta firmada", type: "text" },
       { name: "signed_at", label: "Firmado", type: "datetime" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["signature_type_id", "signature_status_id"]
+    searchFields: ["signature_status_id"]
   },
   {
     table: "fill_flow_templates",
@@ -778,21 +776,6 @@ export const SQL_TABLES = [
     searchFields: ["status"]
   },
   {
-    table: "signature_types",
-    label: "Tipos de firma",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "name"]
-  },
-  {
     table: "signature_statuses",
     label: "Estados de firma",
     category: "Firmas",
@@ -854,7 +837,6 @@ export const SQL_TABLES = [
       { name: "code", label: "Código", type: "text" },
       { name: "name", label: "Nombre", type: "text" },
       { name: "slot", label: "Slot", type: "text" },
-      { name: "step_type_id", label: "Tipo", type: "number", required: true },
       {
         name: "resolver_type",
         label: "Resolver",

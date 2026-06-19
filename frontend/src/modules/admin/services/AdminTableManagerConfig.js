@@ -74,14 +74,12 @@ export const processDefinitionActivationTriggerTableFields = [
 ];
 
 export const processDefinitionActivationArtifactTableFields = [
-  { name: "template_artifact_id", label: "Plantilla documental" },
-  { name: "creates_task", label: "Materializa entregable" }
+  { name: "template_artifact_id", label: "Plantilla documental" }
 ];
 
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
   { name: "template_artifact_id", label: "Plantilla documental" },
-  { name: "creates_task", label: "Materializa entregable" },
   { name: "sort_order", label: "Orden" }
 ];
 
@@ -148,10 +146,8 @@ export const FK_TABLE_MAP = {
   vacancy_id: "vacancies",
   role_assignment_id: "role_assignments",
   signature_request_id: "signature_requests",
-  signature_type_id: "signature_types",
   signature_status_id: "signature_statuses",
   step_id: "signature_flow_steps",
-  step_type_id: "signature_types",
   instance_id: "signature_flow_instances",
   status_id: "signature_request_statuses"
 };

@@ -297,7 +297,6 @@ const DROP_TABLES = [
   "document_fill_flows",
   "fill_flow_steps",
   "fill_flow_templates",
-  "signature_types",
   "signature_statuses",
   "signature_request_statuses",
   "document_versions",
@@ -582,6 +581,34 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "UNIQUE KEY uq_unit_head (unit_id, head_flag)",
       "unique una-cabeza-por-unidad"
     );
+
+    // Eliminación del catálogo `signature_types` (tipo de firma): no ramificaba comportamiento (todas las firmas
+    // son con certificado vía pyhanko) → metadato inútil. Se quitan FKs, columnas y la tabla. Idempotente.
+    try {
+      const dropFkIfExists = async (table, fk) => {
+        const [rows] = await connection.query(
+          `SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?`,
+          [table, fk]
+        );
+        if (rows.length) await connection.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${fk}\``);
+      };
+      const dropColumnIfExists = async (table, column) => {
+        const [rows] = await connection.query(
+          `SELECT 1 FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+          [table, column]
+        );
+        if (rows.length) await connection.query(`ALTER TABLE \`${table}\` DROP COLUMN \`${column}\``);
+      };
+      await dropFkIfExists("signature_flow_steps", "fk_signature_flow_steps_type");
+      await dropColumnIfExists("signature_flow_steps", "step_type_id");
+      await dropFkIfExists("document_signatures", "fk_document_signatures_type");
+      await dropColumnIfExists("document_signatures", "signature_type_id");
+      await connection.query("DROP TABLE IF EXISTS signature_types");
+    } catch (error) {
+      console.warn("⚠️  No se pudo eliminar signature_types:", error.message);
+    }
 
     const [cargoColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS

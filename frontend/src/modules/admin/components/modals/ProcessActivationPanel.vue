@@ -133,9 +133,6 @@
               <template v-if="field.name === 'template_artifact_id'">
                 {{ formatCell(row.template_artifact_id, { name: "template_artifact_id" }, row) }}
               </template>
-              <template v-else-if="field.name === 'creates_task'">
-                {{ Number(row.creates_task) === 1 ? "Si" : "No" }}
-              </template>
               <template v-else>
                 {{ row[field.name] || "—" }}
               </template>

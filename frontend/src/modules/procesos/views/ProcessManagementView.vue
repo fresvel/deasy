@@ -285,7 +285,6 @@ const PROCESS_INDEX_ITEMS = [
     tables: [
       "signature_flow_templates",
       "signature_flow_steps",
-      "signature_types",
       "signature_statuses",
       "signature_request_statuses"
     ]

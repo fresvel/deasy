@@ -1007,9 +1007,6 @@
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
                         <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="text-sm font-bold text-slate-700 flex flex-col gap-1 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                           <span>{{ template.template_artifact_name }}</span>
-                          <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                            <span :class="template.creates_task ? 'text-sky-600' : 'text-slate-400'">{{ template.creates_task ? 'Genera tarea' : 'Soporte' }}</span>
-                          </span>
                         </li>
                       </ul>
                     </section>
@@ -3945,9 +3942,9 @@ const documentCenterFields = [
   { name: 'status', label: 'Estado' }
 ];
 
+// Toda plantilla vinculada materializa un entregable, así que todas se instancian al lanzar.
 const taskLaunchSystemTemplates = computed(() =>
-  (selectedProcessPanel.value?.dependencies?.templates || [])
-    .filter((template) => Number(template.creates_task) === 1)
+  selectedProcessPanel.value?.dependencies?.templates || []
 );
 
 const taskLaunchSelectedTermLabel = computed(() => {

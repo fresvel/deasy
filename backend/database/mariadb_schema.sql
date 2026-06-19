@@ -492,7 +492,6 @@ CREATE TABLE IF NOT EXISTS process_definition_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_id INT NOT NULL,
   template_artifact_id INT NOT NULL,
-  creates_task TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id),
@@ -741,15 +740,6 @@ CREATE TABLE IF NOT EXISTS document_attachments (
     FOREIGN KEY (document_version_id) REFERENCES document_versions(id) ON DELETE CASCADE,
   CONSTRAINT fk_document_attachments_uploader
     FOREIGN KEY (uploaded_by_person_id) REFERENCES persons(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS signature_types (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(40) NOT NULL UNIQUE,
-  name VARCHAR(80) NOT NULL,
-  description VARCHAR(255) NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS signature_statuses (
@@ -1066,7 +1056,6 @@ CREATE TABLE IF NOT EXISTS signature_flow_steps (
   code VARCHAR(120) NULL,
   name VARCHAR(180) NULL,
   slot VARCHAR(80) NULL,
-  step_type_id INT NOT NULL,
   resolver_type ENUM('task_assignee', 'document_owner', 'specific_person', 'position', 'cargo_in_scope', 'manual_pick') NOT NULL DEFAULT 'cargo_in_scope',
   assigned_person_id INT NULL,
   unit_scope_type ENUM('unit_exact', 'unit_subtree', 'unit_type', 'all_units', 'context_exact', 'context_subtree', 'context_ancestor_type') NOT NULL DEFAULT 'context_exact',
@@ -1087,7 +1076,6 @@ CREATE TABLE IF NOT EXISTS signature_flow_steps (
   INDEX idx_signature_flow_steps_unit_type (unit_type_id),
   INDEX idx_signature_flow_steps_position (position_id),
   CONSTRAINT fk_signature_flow_steps_template FOREIGN KEY (template_id) REFERENCES signature_flow_templates(id),
-  CONSTRAINT fk_signature_flow_steps_type FOREIGN KEY (step_type_id) REFERENCES signature_types(id),
   CONSTRAINT fk_signature_flow_steps_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id),
   CONSTRAINT fk_signature_flow_steps_unit FOREIGN KEY (unit_id) REFERENCES units(id),
   CONSTRAINT fk_signature_flow_steps_unit_type FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
@@ -1159,7 +1147,6 @@ CREATE TABLE IF NOT EXISTS document_signatures (
   signature_request_id INT NULL,
   document_version_id INT NOT NULL,
   signer_user_id INT NOT NULL,
-  signature_type_id INT NOT NULL,
   signature_status_id INT NOT NULL,
   note_short VARCHAR(255) NULL,
   signed_file_path VARCHAR(255) NULL,
@@ -1168,7 +1155,6 @@ CREATE TABLE IF NOT EXISTS document_signatures (
   CONSTRAINT fk_document_signatures_request FOREIGN KEY (signature_request_id) REFERENCES signature_requests(id),
   CONSTRAINT fk_document_signatures_document FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
   CONSTRAINT fk_document_signatures_signer FOREIGN KEY (signer_user_id) REFERENCES persons(id),
-  CONSTRAINT fk_document_signatures_type FOREIGN KEY (signature_type_id) REFERENCES signature_types(id),
   CONSTRAINT fk_document_signatures_status FOREIGN KEY (signature_status_id) REFERENCES signature_statuses(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

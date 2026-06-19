@@ -79,7 +79,7 @@ export function useAdminDraftArtifactFlow({
     }
   };
 
-  const openDraftArtifactModal = async (row = null, { force = false } = {}) => {
+  const openDraftArtifactModal = async (row = null, { force = false, show = true, preselectDefinitionId = "" } = {}) => {
     if (!force && (!props.table || props.table.table !== "template_artifacts")) {
       return;
     }
@@ -128,7 +128,9 @@ export function useAdminDraftArtifactFlow({
         display_name: "",
         description: "",
         source_version: "1.0.0",
-        process_definition_id: "",
+        // Preselecciona la configuración de origen cuando la plantilla se crea desde la edición de una config
+        // (el modo embebido del picker no dispara shown.bs.modal, así que se fija aquí al construir el form).
+        process_definition_id: preselectDefinitionId ? String(preselectDefinitionId) : "",
         // En admin solo se CREAN plantillas oficiales (de proceso). Las ad_hoc nacen en runtime del usuario.
         template_scope: "official",
         schema_fields: [],
@@ -137,8 +139,11 @@ export function useAdminDraftArtifactFlow({
       };
     }
     await loadDraftArtifactSeedOptions();
-    ensureDraftArtifactInstance();
-    draftArtifactInstance?.show();
+    // En modo embebido (pestaña Crear dentro del picker) se prepara el form sin abrir el modal standalone.
+    if (show) {
+      ensureDraftArtifactInstance();
+      draftArtifactInstance?.show();
+    }
   };
 
   const closeDraftArtifactModal = () => {

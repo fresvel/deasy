@@ -1140,6 +1140,19 @@
         @apply border-sky-500 bg-sky-50 shadow-[0_0_0_3px_rgba(14,165,233,0.12)];
     }
 
+    .deasy-dropzone__surface--filled {
+        @apply border-solid border-emerald-400 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-50;
+    }
+
+    .deasy-dropzone__surface--filled .deasy-dropzone__icon,
+    .deasy-dropzone__surface--filled .deasy-dropzone__action {
+        @apply text-emerald-700;
+    }
+
+    .deasy-dropzone__surface--filled .deasy-dropzone__help {
+        @apply text-emerald-600;
+    }
+
     .deasy-dropzone__surface--disabled {
         @apply cursor-not-allowed border-slate-200 bg-slate-100 opacity-70;
     }

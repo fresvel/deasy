@@ -1,5 +1,6 @@
 <template>
-  <AdminModalShell
+  <component
+    :is="shellComponent"
     ref="modalRef"
     labelled-by="draftArtifactModalLabel"
     :title="draftArtifactEditId ? 'Editar plantilla de documento' : 'Crear plantilla de documento'"
@@ -9,10 +10,15 @@
     close-action
     @close="$emit('close')"
   >
+    <template #title>
+      <span class="inline-flex items-center gap-1.5">
+        {{ draftArtifactEditId ? 'Editar plantilla de documento' : 'Crear plantilla de documento' }}
+        <AppInfoTip placement="bottom">
+          Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} la plantilla de documento y la sube directamente a MinIO. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
+        </AppInfoTip>
+      </span>
+    </template>
     <div v-if="draftArtifactError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ draftArtifactError }}</div>
-    <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-      Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} la plantilla de documento y la sube directamente a <strong>MinIO</strong>. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
-    </div>
     <div v-if="draftArtifactLoading" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
     </div>
@@ -43,6 +49,9 @@
     <!-- Pestaña: General -->
     <div v-show="activeTab === 'general'" class="mt-4 grid gap-3 md:grid-cols-12">
       <AdminFieldGroup label="Semilla (base)" group-class="md:col-span-6">
+        <template #labelSuffix>
+          <AppInfoTip>Toda plantilla nace de una semilla; por defecto se usa la general.</AppInfoTip>
+        </template>
         <AdminSelectField
           :model-value="draftArtifactForm.template_seed_id"
           @update:model-value="updateField('template_seed_id', $event)"
@@ -55,7 +64,6 @@
             {{ row.display_name }}{{ row.seed_code === DEFAULT_SEED_CODE ? " (por defecto)" : "" }}
           </option>
         </AdminSelectField>
-        <p class="m-0 mt-1 text-xs font-medium text-slate-500">Toda plantilla nace de una semilla; por defecto se usa la general.</p>
       </AdminFieldGroup>
       <AdminFieldGroup label="Version fuente" group-class="md:col-span-3">
         <AdminInputField
@@ -65,6 +73,9 @@
         />
       </AdminFieldGroup>
       <AdminFieldGroup label="Tipo de plantilla" group-class="md:col-span-3">
+        <template #labelSuffix>
+          <AppInfoTip>{{ isAdHoc ? "Extensión puntual de usuario: permite persona concreta; sin tipo de unidad." : "Desde admin solo se crean oficiales: permiten tipo de unidad; sin persona concreta." }}</AppInfoTip>
+        </template>
         <span
           class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
           :class="isAdHoc ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'"
@@ -72,7 +83,6 @@
           <span class="h-1.5 w-1.5 rounded-full" :class="isAdHoc ? 'bg-amber-500' : 'bg-indigo-500'"></span>
           {{ isAdHoc ? "De usuario (ad-hoc)" : "De proceso (oficial)" }}
         </span>
-        <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ isAdHoc ? "Extensión puntual de usuario: permite persona concreta; sin tipo de unidad." : "Desde admin solo se crean oficiales: permiten tipo de unidad; sin persona concreta." }}</p>
       </AdminFieldGroup>
       <AdminFieldGroup label="Nombre de la plantilla" group-class="md:col-span-6">
         <AdminInputField
@@ -89,6 +99,9 @@
         />
       </AdminFieldGroup>
       <AdminFieldGroup label="Configuración destino" group-class="md:col-span-12">
+        <template #labelSuffix>
+          <AppInfoTip>La plantilla quedará vinculada a esta configuración de proceso (o 'default' para tareas libres). ¿No existe? Créala con el wizard guiado.</AppInfoTip>
+        </template>
         <div class="flex gap-2">
           <AdminSelectField
             class="flex-1"
@@ -106,7 +119,6 @@
           </AdminSelectField>
           <AdminButton variant="cancel" @click="$emit('create-process')">+ Nueva configuración</AdminButton>
         </div>
-        <p class="mt-1 text-xs text-slate-400">La plantilla quedará vinculada a esta configuración de proceso (o 'default' para tareas libres). ¿No existe? Créala con el wizard guiado.</p>
       </AdminFieldGroup>
     </div>
 
@@ -117,19 +129,19 @@
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PDF</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" accept=".pdf" input-id="draft-upload-pdf" @files-selected="emitDraftFiles('pdf', $event)" />
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pdf')" :filled="isDraftFileSelected('pdf')" accept=".pdf" input-id="draft-upload-pdf" @files-selected="emitDraftFiles('pdf', $event)" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Word</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('docx')" accept=".doc,.docx" input-id="draft-upload-docx" @files-selected="emitDraftFiles('docx', $event)" />
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('docx')" :filled="isDraftFileSelected('docx')" accept=".doc,.docx" input-id="draft-upload-docx" @files-selected="emitDraftFiles('docx', $event)" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Excel</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('xlsx')" accept=".xls,.xlsx" input-id="draft-upload-xlsx" @files-selected="emitDraftFiles('xlsx', $event)" />
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('xlsx')" :filled="isDraftFileSelected('xlsx')" accept=".xls,.xlsx" input-id="draft-upload-xlsx" @files-selected="emitDraftFiles('xlsx', $event)" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">PowerPoint</label>
-        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" accept=".ppt,.pptx" input-id="draft-upload-pptx" @files-selected="emitDraftFiles('pptx', $event)" />
+        <PdfDropField variant="compact" title="" action-text="Arrastra o haz clic" :help-text="getDraftArtifactFileLabel('pptx')" :filled="isDraftFileSelected('pptx')" accept=".ppt,.pptx" input-id="draft-upload-pptx" @files-selected="emitDraftFiles('pptx', $event)" />
       </div>
       <div v-if="draftArtifactPreviewStatus !== 'idle'" class="md:col-span-12">
         <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Preview del seed</label>
@@ -146,9 +158,9 @@
     <!-- Pestaña: Campos del formulario (schema.json) -->
     <div v-show="activeTab === 'campos'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
-        <div>
+        <div class="inline-flex items-center gap-1.5">
           <h4 class="m-0 text-sm font-bold text-slate-800">Campos del formulario</h4>
-          <p class="m-0 mt-0.5 text-xs font-medium text-slate-500">Definen los datos que el usuario llenará en el entregable (schema.json).</p>
+          <AppInfoTip>Definen los datos que el usuario llenará en el entregable (schema.json).</AppInfoTip>
         </div>
         <AdminButton variant="outlinePrimary" @click="addSchemaField">+ Añadir campo</AdminButton>
       </div>
@@ -198,9 +210,9 @@
     <!-- Pestaña: Flujo de ENTREGA -->
     <div v-show="activeTab === 'entrega'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
-        <div>
+        <div class="inline-flex items-center gap-1.5">
           <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de entrega</h4>
-          <p class="m-0 mt-0.5 text-xs font-medium text-slate-500">Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</p>
+          <AppInfoTip>Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</AppInfoTip>
         </div>
         <AdminButton variant="outlinePrimary" @click="addFillStep">+ Añadir paso</AdminButton>
       </div>
@@ -307,9 +319,9 @@
          hoy se firma por coordenadas vía el firmador. Sin anclas manuales: el slot de token se deriva del paso. -->
     <div v-show="activeTab === 'firmas'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
-        <div>
+        <div class="inline-flex items-center gap-1.5">
           <h4 class="m-0 text-sm font-bold text-slate-800">Flujo de firmas</h4>
-          <p class="m-0 mt-0.5 text-xs font-medium text-slate-500">Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</p>
+          <AppInfoTip>Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</AppInfoTip>
         </div>
         <AdminButton variant="outlinePrimary" @click="addSignatureStep">+ Añadir paso</AdminButton>
       </div>
@@ -324,7 +336,7 @@
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Orden</label>
               <input type="number" min="1" :value="step.order" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'order', Number($event.target.value))" />
             </div>
-            <div class="col-span-3">
+            <div class="col-span-4">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Nombre</label>
               <input :value="step.name" placeholder="ej. Firma del director" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
@@ -336,14 +348,7 @@
                 <option v-if="isAdHoc" value="person">Persona concreta</option>
               </select>
             </div>
-            <div class="col-span-2">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de firma</label>
-              <select :value="step.step_type_code || 'electronic'" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'step_type_code', $event.target.value)">
-                <option value="electronic">Electrónica</option>
-                <option value="digital">Digital</option>
-              </select>
-            </div>
-            <div class="col-span-2">
+            <div class="col-span-3">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Aprobación</label>
               <select :value="step.approval_mode || 'and'" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
                 <option value="and">Todas</option>
@@ -429,7 +434,7 @@
         {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear plantilla") }}
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </component>
 </template>
 
 <script setup>
@@ -440,9 +445,11 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppInlineShell from "@/shared/components/modals/AppInlineShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
+import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 
 // Configuraciones de proceso destino (para vincular la plantilla).
 const processDefinitionOptions = ref([]);
@@ -520,11 +527,14 @@ const props = defineProps({
   newProcessDefinitionId: { type: [String, Number], default: "" },
   // Configuración de origen al crear una plantilla desde el flujo de edición de configuración:
   // se preselecciona en el select (y se refrescan las opciones para incluirla aunque sea borrador).
-  preselectProcessDefinitionId: { type: [String, Number], default: "" }
+  preselectProcessDefinitionId: { type: [String, Number], default: "" },
+  // Embebido: renderiza el wizard sin su propio overlay (para hospedarlo como pestaña dentro de otro modal).
+  embedded: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-stage", "new-version", "create-process"]);
 const modalRef = ref(null);
+const shellComponent = computed(() => (props.embedded ? AppInlineShell : AdminModalShell));
 
 // Tipo de plantilla: 'official' (de proceso) | 'ad_hoc' (de usuario). Gatea las opciones de autoría de pasos.
 const templateScope = computed(() => (String(props.draftArtifactForm.template_scope || "official") === "ad_hoc" ? "ad_hoc" : "official"));
@@ -545,6 +555,12 @@ const refreshDefinitionOptionsOnShow = async () => {
 onMounted(() => {
   modalRef.value?.el?.addEventListener("shown.bs.modal", refreshDefinitionOptionsOnShow);
   modalRef.value?.el?.addEventListener("shown.bs.modal", loadWorkflowCatalogs);
+  // En modo embebido (pestaña Crear dentro del picker) no hay evento shown.bs.modal: los catálogos de
+  // tipos/unidades/cargos/personas se cargan al montar para que los selectores "Por cargo" funcionen.
+  if (props.embedded) {
+    refreshDefinitionOptionsOnShow();
+    loadWorkflowCatalogs();
+  }
 });
 
 // Código de la semilla por defecto (debe coincidir con DEFAULT_TEMPLATE_SEED_CODE del backend).
@@ -892,7 +908,6 @@ const addSignatureStep = () => {
   commitSignature({ steps: [...signatureSteps.value, {
     order: signatureSteps.value.length + 1,
     name: "",
-    step_type_code: "electronic",
     resolver_type: "task_assignee",
     selection_mode: "auto_all",
     cargo_id: null,
@@ -953,6 +968,13 @@ const onSignatureUnitTypeScopeChange = (index, value) => {
 
 const emitDraftFiles = (type, files) => {
   emit("file-change", type, { target: { files } });
+};
+
+// El archivo se gestiona en el padre (solo llega su etiqueta), así que el resaltado "lleno" del dropzone
+// se deriva de que la etiqueta no sea el placeholder vacío.
+const isDraftFileSelected = (kind) => {
+  const label = props.getDraftArtifactFileLabel(kind);
+  return Boolean(label) && label !== "Sin archivo";
 };
 
 defineExpose({ el: modalRef });

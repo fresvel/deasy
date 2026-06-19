@@ -8,7 +8,6 @@ import {
   SIGNATURE_STATUS,
   getSignatureStatusIdByCode,
   getSignatureRequestStatusIdByCode,
-  getDefaultSignatureTypeId,
 } from "./DocumentWorkflowCatalog.js";
 
 const normalizeCode = (value) => String(value || "").trim().toLowerCase();
@@ -110,7 +109,6 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
        code,
        name,
        slot,
-       step_type_id,
        resolver_type,
        assigned_person_id,
        unit_scope_type,
@@ -135,7 +133,6 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
     code: String(row.code || "").trim() || null,
     name: String(row.name || "").trim() || null,
     slot: String(row.slot || "").trim() || null,
-    stepTypeId: row.step_type_id ? Number(row.step_type_id) : null,
     resolverType: String(row.resolver_type || "cargo_in_scope").trim() || "cargo_in_scope",
     assignedPersonId: row.assigned_person_id ? Number(row.assigned_person_id) : null,
     unitScopeType: String(row.unit_scope_type || "context_exact").trim() || "context_exact",
@@ -472,8 +469,7 @@ export const getSignatureRequestContext = async (connection, signatureRequestId)
        sr.instance_id,
        sr.step_id,
        sfi.document_version_id,
-       sfs.step_order,
-       sfs.step_type_id
+       sfs.step_order
      FROM signature_requests sr
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
      INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
@@ -772,13 +768,6 @@ export const registerSignatureEvidence = async ({ connection, context, result })
     throw new Error(`No existe el estado técnico de firma '${signatureStatusCode}'.`);
   }
 
-  const signatureTypeId = signatureRequest?.step_type_id
-    ? Number(signatureRequest.step_type_id)
-    : await getDefaultSignatureTypeId(connection);
-  if (!signatureTypeId) {
-    throw new Error("No existe un tipo de firma disponible para registrar la evidencia.");
-  }
-
   if (persistedSignedPath) {
     await connection.query(
       `UPDATE document_versions
@@ -815,17 +804,15 @@ export const registerSignatureEvidence = async ({ connection, context, result })
        signature_request_id,
        document_version_id,
        signer_user_id,
-       signature_type_id,
        signature_status_id,
        note_short,
        signed_file_path,
        signed_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       signatureRequest?.id ? Number(signatureRequest.id) : null,
       documentVersionId,
       Number(context.user.id),
-      Number(signatureTypeId),
       Number(signatureStatusId),
       noteShort,
       persistedSignedPath,

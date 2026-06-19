@@ -603,6 +603,8 @@
       :is-fk-units="isFkUnits"
       :is-fk-process-definitions="isFkProcessDefinitions"
       :is-fk-template-artifacts="isFkTemplateArtifacts"
+      :create-tab-enabled="isFkTemplateArtifacts"
+      :active-tab="fkActiveTab"
       :is-fk-unit-positions="isFkUnitPositions"
       :fk-search="fkSearch"
       :fk-filters="fkFilters"
@@ -614,6 +616,7 @@
       :fk-process-definition-process-options="fkProcessDefinitionProcessOptions"
       :has-fk-process-definition-filters="hasFkProcessDefinitionFilters"
       :has-fk-template-artifact-filters="hasFkTemplateArtifactFilters"
+      :process-filter-context-id="definitionArtifactsContext?.process_id || ''"
       :fk-loading="fkLoading"
       :fk-error="fkError"
       :fk-search-table-fields="fkSearchTableFields"
@@ -644,7 +647,34 @@
       @select-fk-row="selectFkRow"
       @open-fk-filter="openFkFilterModal"
       @open-fk-create="openFkCreate"
-    />
+      @update:active-tab="fkActiveTab = $event"
+    >
+      <!-- Pestaña "Crear nueva": el wizard de plantilla embebido (sin overlay propio). -->
+      <template #create>
+        <AdminDraftArtifactModal
+          v-if="isFkTemplateArtifacts"
+          embedded
+          :draft-artifact-edit-id="draftArtifactEditId"
+          :draft-artifact-error="draftArtifactError"
+          :draft-artifact-loading="draftArtifactLoading"
+          :draft-artifact-form="draftArtifactForm"
+          :draft-artifact-seed-options="draftArtifactSeedOptions"
+          :draft-artifact-preview-url="draftArtifactPreviewUrl"
+          :draft-artifact-preview-status="draftArtifactPreviewStatus"
+          :get-draft-artifact-file-label="getDraftArtifactFileLabel"
+          :new-process-definition-id="draftNewProcessDefinitionId"
+          :preselect-process-definition-id="draftArtifactPreselectDefinitionId"
+          @update:form="draftArtifactForm = $event"
+          @file-change="handleDraftArtifactFileChange"
+          @drop="handleDraftArtifactDrop"
+          @close="fkActiveTab = 'select'"
+          @submit="handleDraftArtifactSubmit"
+          @change-stage="handleArtifactStageChange"
+          @new-version="handleArtifactNewVersion"
+          @create-process="handleDraftCreateProcess"
+        />
+      </template>
+    </AdminFkBrowserModal>
 
     <AdminRecordViewerModal
       ref="recordViewerModal"
@@ -1146,8 +1176,7 @@ const definitionArtifactsError = ref("");
 const definitionArtifactsEditId = ref("");
 const definitionArtifactsForm = ref({
   template_artifact_id: "",
-  creates_task: "1",
-  sort_order: "1"
+  sort_order: ""
 });
 const definitionArtifactsLabels = ref({
   template_artifact_id: ""
@@ -1549,8 +1578,7 @@ const hasFkProcessDefinitionFilters = computed(() =>
 );
 const hasFkTemplateArtifactFilters = computed(() =>
   Boolean(
-    fkFilters.value.template_code?.trim()
-    || fkFilters.value.storage_version?.trim()
+    (fkFilters.value.process_id ?? "") !== ""
     || fkFilters.value.is_active !== ""
   )
 );
@@ -1853,7 +1881,6 @@ const tableHeaderIcon = computed(() => {
       "documents",
       "document_versions",
       "document_signatures",
-      "signature_types",
       "signature_statuses",
       "signature_request_statuses",
       "signature_flow_templates",
@@ -1944,7 +1971,6 @@ const {
   ensureProcessSearchInstance,
   ensureDocumentSearchInstance,
   ensureUnitPositionSearchInstance,
-  restoreReturnModal,
   hideParentModalsForFk,
   hideParentModalsForRecordViewer,
   getPersonAssignmentsInstance,
@@ -2265,8 +2291,7 @@ const handleFkTemplateArtifactFilterChange = async () => {
 const clearFkTemplateArtifactFilters = async () => {
   fkFilters.value = {
     ...fkFilters.value,
-    template_code: "",
-    storage_version: "",
+    process_id: "",
     is_active: ""
   };
   await fetchFkRows();
@@ -2508,6 +2533,22 @@ const {
   getFkCreateInstance
 });
 
+// Pestaña activa del picker de plantillas (Crear/Seleccionar). Por defecto "Seleccionar".
+const fkActiveTab = ref("select");
+// Al abrir el picker para plantillas, prepara el form embebido del wizard (sin abrir el modal standalone) y
+// lo marca en modo "crear desde FK" (al guardar, aplica la plantilla creada como selección). Al cerrarse, limpia.
+watch(isFkTemplateArtifacts, async (isTpl) => {
+  if (isTpl) {
+    draftArtifactFkCreateMode.value = true;
+    fkActiveTab.value = "create";
+    draftArtifactPreselectDefinitionId.value = String(definitionArtifactsContext.value?.id || "");
+    await openDraftArtifactModal(null, { force: true, show: false, preselectDefinitionId: draftArtifactPreselectDefinitionId.value });
+  } else {
+    draftArtifactFkCreateMode.value = false;
+    draftArtifactPreselectDefinitionId.value = "";
+  }
+});
+
 const openFkCreate = async () => {
   if (!canCreateFkReference.value) {
     return;
@@ -2519,7 +2560,7 @@ const openFkCreate = async () => {
     // Si se está creando la plantilla desde la edición de una configuración, preselecciona esa config.
     draftArtifactPreselectDefinitionId.value = String(definitionArtifactsContext.value?.id || "");
     getFkInstance()?.hide();
-    await openDraftArtifactModal(null, { force: true });
+    await openDraftArtifactModal(null, { force: true, preselectDefinitionId: draftArtifactPreselectDefinitionId.value });
     return;
   }
   openFkCreateBase();
@@ -2543,8 +2584,9 @@ const handleDraftArtifactSubmit = async () => {
   }
   draftArtifactFkCreateMode.value = false;
   applyFkSelection(createdRow);
-  await fetchFkRows();
-  restoreReturnModal();
+  // Cierra el picker "Seleccionar plantilla" tras crear; su handler hidden.bs.modal restaura el modal de
+  // origen (gestión de plantillas del proceso). Antes quedaba abierto encima.
+  getFkInstance()?.hide();
 };
 
 // Descarga el ZIP de formatos del registro abierto en el visor (paquetes de plantilla o seeds).

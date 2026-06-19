@@ -506,7 +506,7 @@ export const ensureDefaultProcess = async (connection) => {
     );
   }
 
-  // 5. vínculo configuración↔plantilla (creates_task)
+  // 5. vínculo configuración↔plantilla
   let pdt = await fetchOne(
     connection,
     "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
@@ -515,8 +515,8 @@ export const ensureDefaultProcess = async (connection) => {
   if (!pdt) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_templates
-        (process_definition_id, template_artifact_id, creates_task, sort_order)
-       VALUES (?, ?, 1, 1)`,
+        (process_definition_id, template_artifact_id, sort_order)
+       VALUES (?, ?, 1)`,
       [definitionId, artifactId]
     );
     pdt = { id: r.insertId };

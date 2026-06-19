@@ -83,7 +83,6 @@ const getExecutableTemplatesMap = async (connection) => {
        pdt.template_artifact_id,
        pdt.sort_order
      FROM process_definition_templates pdt
-     WHERE pdt.creates_task = 1
      ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`
   );
   const map = new Map();
@@ -351,7 +350,6 @@ const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
        unit_id,
        unit_type_id,
        position_id,
-       step_type_id,
        required_cargo_id,
        selection_mode,
        approval_mode,
@@ -1643,8 +1641,8 @@ export const generateTasksForTerm = async (termId) => {
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
     const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
-    // artifact_origin deprecado: la generación automática toma todas las plantillas ejecutables
-    // (creates_task=1), sin filtrar por process/general.
+    // artifact_origin deprecado: la generación automática toma todas las plantillas vinculadas a la
+    // configuración (toda plantilla materializa un entregable), sin filtrar por process/general.
     const executableTemplatesMap = await getExecutableTemplatesMap(connection);
     const existingTasksMap = await getExistingAutomaticTasksMap(connection, term.id);
 

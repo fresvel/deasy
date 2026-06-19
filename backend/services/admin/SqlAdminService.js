@@ -16,7 +16,9 @@ import crypto from "crypto";
 import { spawn } from "child_process";
 import * as Minio from "minio";
 import { fileURLToPath } from "url";
+import { randomUUID } from "crypto";
 import yaml from "js-yaml";
+import { sanitizeStorageSegment } from "../../utils/templateArchive.js";
 import {
   assertDocumentStatusValue,
   assertDocumentVersionStatusValue,
@@ -154,7 +156,6 @@ const buildWorkflowsYaml = ({ fillWorkflow, signatureWorkflow } = {}) => {
     const slot = String(step?.code || step?.slot || `firma_${order}`);
     const out = { order, code: slot, slot };
     out.name = step?.name || `Firma ${order}`;
-    out.step_type_code = step?.step_type_code || "electronic";
     out.resolver = buildStepResolver({ ...step, selection_mode: step?.selection_mode || "auto_all" });
     out.approval_mode = ["and", "or", "at_least"].includes(String(step?.approval_mode)) ? step.approval_mode : "and";
     out.required_signers_min = Number(step?.required_signers_min) || 1;
@@ -278,11 +279,6 @@ const SIGNATURE_UNIT_SCOPE_TYPES = new Set([
   "context_ancestor_type"
 ]);
 const SIGNATURE_APPROVAL_MODES = new Set(["and", "or", "at_least"]);
-const SIGNATURE_TYPE_CODE_ALIASES = new Map([
-  ["electronic", "electronic"],
-  ["firma_electronica", "electronic"],
-  ["electronic_signature", "electronic"]
-]);
 const CARGO_CODE_ALIASES = new Map([
   ["coordinador_carrera", "coordinador"],
   ["director_escuela", "director"],
@@ -705,14 +701,12 @@ const normalizeFillSteps = (workflow = {}, { cargoCodeMap = new Map() } = {}) =>
 
 const normalizeSignatureSteps = (
   workflow = {},
-  { cargoCodeMap = new Map(), signatureTypeCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
+  { cargoCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
 ) => {
   const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
   return rawSteps
     .filter((step) => step && typeof step === "object")
     .map((step, index) => {
-      const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
-      const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
       const rawCargoCode = String(
         step?.resolver?.cargo_code
         || step.required_cargo_code
@@ -733,7 +727,6 @@ const normalizeSignatureSteps = (
         code: stepCode,
         name: stepName,
         slot: normalizedSlot,
-        stepTypeId: signatureTypeCodeMap.get(normalizedTypeCode) || null,
         resolverType: SIGNATURE_RESOLVER_TYPES.has(resolverType) ? resolverType : "cargo_in_scope",
         assignedPersonId: normalizeNumericId(step?.resolver?.person_id),
         unitScopeType: SIGNATURE_UNIT_SCOPE_TYPES.has(unitScopeType) ? unitScopeType : "context_exact",
@@ -755,14 +748,13 @@ const normalizeSignatureSteps = (
         anchorRefs
       };
     })
-    .filter((step) => step.stepTypeId)
     .filter((step) => step.resolverType !== "cargo_in_scope" || step.requiredCargoId)
     .sort((left, right) => left.stepOrder - right.stepOrder);
 };
 
 const collectSignatureWorkflowNormalizationIssues = (
   workflow = {},
-  { cargoCodeMap = new Map(), signatureTypeCodeMap = new Map() } = {}
+  { cargoCodeMap = new Map() } = {}
 ) => {
   const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
   const issues = [];
@@ -773,11 +765,6 @@ const collectSignatureWorkflowNormalizationIssues = (
 
     const stepOrder = Number(step.order) || index + 1;
     const stepCode = String(step.code || "").trim() || `step_${stepOrder}`;
-    const rawTypeCode = String(step.step_type_code || "electronic").trim().toLowerCase();
-    const normalizedTypeCode = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawTypeCode) || rawTypeCode);
-    if (!signatureTypeCodeMap.get(normalizedTypeCode)) {
-      issues.push(`Paso ${stepOrder} (${stepCode}): tipo de firma no resuelto (${rawTypeCode || "vacío"}).`);
-    }
 
     const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
     if (resolverType === "cargo_in_scope") {
@@ -844,7 +831,6 @@ const collectAuthoredWorkflowIssues = ({
   fillWorkflow,
   signatureWorkflow,
   cargoCodeMap = new Map(),
-  signatureTypeCodeMap = new Map(),
   referenceIds = {},
   processScope = null,
   resolvableCargoIds = null,
@@ -1018,14 +1004,6 @@ const collectAuthoredWorkflowIssues = ({
     const sigAllowedUnitScopeTypes = webFillUnitScopeTypesForScope(templateScope);
     signatureSteps.forEach((step, index) => {
       const label = `Paso de firma ${index + 1}`;
-      // Solo valida el tipo de firma si el catálogo está poblado (si no, el sync lo asegura más tarde).
-      if (signatureTypeCodeMap.size) {
-        const rawType = String(step.step_type_code || "electronic").trim().toLowerCase();
-        const normalizedType = slugify(SIGNATURE_TYPE_CODE_ALIASES.get(rawType) || rawType);
-        if (!signatureTypeCodeMap.get(normalizedType)) {
-          issues.push(`${label}: tipo de firma desconocido (${step.step_type_code || "electronic"}).`);
-        }
-      }
       const resolver = getStepResolver(step);
       const type = String(resolver.type || "cargo_in_scope");
       if (!sigAllowedResolverTypes.has(type)) {
@@ -1809,6 +1787,17 @@ export default class SqlAdminService {
         orderableFields.push("seed_display_name");
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;
+      // Filtro "por proceso al que pertenece": plantillas vinculadas a ese proceso vía process_definition_templates.
+      const processFilter = normalizedFilters.process_id;
+      delete normalizedFilters.process_id;
+      if (processFilter !== undefined && processFilter !== null && processFilter !== "") {
+        conditions.push(`EXISTS (
+          SELECT 1 FROM process_definition_templates pdt
+            INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
+           WHERE pdt.template_artifact_id = template_artifacts.id AND pdv.process_id = ?
+        )`);
+        params.push(processFilter);
+      }
     }
 
     if (q && config.searchFields?.length) {
@@ -1874,7 +1863,7 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, template_artifact_id, sort_order, creates_task
+      `SELECT id, process_definition_id, template_artifact_id, sort_order
        FROM process_definition_templates
        WHERE id = ?
        LIMIT 1`,
@@ -2045,7 +2034,7 @@ export default class SqlAdminService {
     }
 
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, creates_task, sort_order
+      `SELECT template_artifact_id, sort_order
        FROM process_definition_templates
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
@@ -2057,13 +2046,11 @@ export default class SqlAdminService {
         `INSERT INTO process_definition_templates (
           process_definition_id,
           template_artifact_id,
-          creates_task,
           sort_order
-        ) VALUES (?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?)`,
         [
           normalizedTargetId,
           row.template_artifact_id,
-          row.creates_task,
           row.sort_order
         ]
       );
@@ -2304,6 +2291,35 @@ export default class SqlAdminService {
       );
     }
 
+    if (tableName === "process_definition_templates") {
+      // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
+      // wizard ya se enlazó), no se duplica el registro (evita el ER_DUP_ENTRY de uq_process_definition_templates);
+      // se devuelve el vínculo existente.
+      const [existingLinkRows] = await this.pool.query(
+        `SELECT id, sort_order FROM process_definition_templates
+         WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
+        [payload.process_definition_id, payload.template_artifact_id]
+      );
+      if (existingLinkRows?.length) {
+        return sanitizePersonRow(tableName, {
+          id: existingLinkRows[0].id,
+          process_definition_id: Number(payload.process_definition_id),
+          template_artifact_id: Number(payload.template_artifact_id),
+          sort_order: existingLinkRows[0].sort_order,
+          __notice: "La plantilla ya estaba vinculada a esta configuración."
+        });
+      }
+      // El orden es interno (secuencia de la plantilla dentro de la configuración) y se asigna solo:
+      // el usuario no debe elegirlo.
+      if (payload.sort_order === undefined || payload.sort_order === null || payload.sort_order === "") {
+        const [countRows] = await this.pool.query(
+          "SELECT COUNT(*) AS c FROM process_definition_templates WHERE process_definition_id = ?",
+          [payload.process_definition_id]
+        );
+        payload.sort_order = Number(countRows?.[0]?.c || 0) + 1;
+      }
+    }
+
     if (tableName === "process_target_rules") {
       await this.applyTargetRuleSeriesConstraints(payload.process_definition_id, payload);
     }
@@ -2346,9 +2362,6 @@ export default class SqlAdminService {
       const template = await this.getTaskTemplate(payload.process_definition_template_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado seleccionada no existe.");
-      }
-      if (!Number(template.creates_task)) {
-        throw new Error("La plantilla seleccionada no esta marcada para generar items de tarea.");
       }
       const task = await this.getByKeys("tasks", { id: payload.task_id });
       if (!task) {
@@ -3357,23 +3370,6 @@ export default class SqlAdminService {
     return map;
   }
 
-  async getSignatureTypeCodeMap(connection = this.pool) {
-    const [rows] = await connection.query(
-      `SELECT id, code
-       FROM signature_types
-       WHERE is_active = 1
-       ORDER BY id ASC`
-    );
-    const map = new Map();
-    for (const row of rows) {
-      const normalizedCode = slugify(row.code);
-      if (normalizedCode && !map.has(normalizedCode)) {
-        map.set(normalizedCode, Number(row.id));
-      }
-    }
-    return map;
-  }
-
   async getUnitTypeNameMap(connection = this.pool) {
     const [rows] = await connection.query(
       `SELECT id, name
@@ -3844,19 +3840,6 @@ export default class SqlAdminService {
     }
   }
 
-  async ensureSignatureTypeCatalog(connection = this.pool) {
-    await connection.query(
-      `INSERT INTO signature_types (code, name, description, is_active)
-       VALUES
-         ('electronic', 'Firma electronica', 'Firma electronica general sincronizada desde artifacts', 1),
-         ('digital', 'Firma digital', 'Firma digital general sincronizada desde artifacts', 1)
-       ON DUPLICATE KEY UPDATE
-         name = VALUES(name),
-         description = VALUES(description),
-         is_active = VALUES(is_active)`
-    );
-  }
-
   async replaceSyncedFillFlowSteps(fillFlowTemplateId, steps, connection = this.pool) {
     await connection.query(
       "DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?",
@@ -3927,7 +3910,6 @@ export default class SqlAdminService {
            code,
            name,
            slot,
-           step_type_id,
            resolver_type,
            assigned_person_id,
            unit_scope_type,
@@ -3941,14 +3923,13 @@ export default class SqlAdminService {
          required_signers_max,
          is_required,
          anchor_refs
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           signatureFlowTemplateId,
           step.stepOrder,
           step.code,
           step.name,
           step.slot,
-          step.stepTypeId,
           step.resolverType,
           step.assignedPersonId,
           step.unitScopeType,
@@ -4105,7 +4086,6 @@ export default class SqlAdminService {
       };
     }
 
-    await this.ensureSignatureTypeCatalog(connection);
     const syncEnabled = isArtifactSignatureWorkflowSyncEnabled(workflow);
     const templateName = String(workflow?.name || "").trim() || `Flujo de firma - ${displayName}`;
     const templateDescription = buildArtifactSyncedSignatureDescription({
@@ -4115,10 +4095,9 @@ export default class SqlAdminService {
     });
 
     const cargoCodeMap = await this.getCargoCodeMap(connection);
-    const signatureTypeCodeMap = await this.getSignatureTypeCodeMap(connection);
     const unitTypeNameMap = await this.getUnitTypeNameMap(connection);
     const normalizationIssues = syncEnabled
-      ? collectSignatureWorkflowNormalizationIssues(workflow, { cargoCodeMap, signatureTypeCodeMap })
+      ? collectSignatureWorkflowNormalizationIssues(workflow, { cargoCodeMap })
       : [];
     if (normalizationIssues.length) {
       throw new Error(
@@ -4126,7 +4105,7 @@ export default class SqlAdminService {
       );
     }
     const normalizedSteps = syncEnabled
-      ? normalizeSignatureSteps(workflow, { cargoCodeMap, signatureTypeCodeMap, unitTypeNameMap })
+      ? normalizeSignatureSteps(workflow, { cargoCodeMap, unitTypeNameMap })
       : [];
 
     let syncedTemplates = 0;
@@ -4364,23 +4343,21 @@ export default class SqlAdminService {
       const sig = meta?.workflows?.signatures || {};
       signatureWorkflow = {
         required: sig?.required === true,
-        anchors: (Array.isArray(sig?.anchors) ? sig.anchors : []).map((a) => ({
-          code: a?.code || "",
-          token_field_ref: a?.placement?.token_field_ref || "",
-          width: a?.size?.width || 124,
-          height: a?.size?.height || 48,
-        })),
         steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => ({
           order: Number(s?.order) || i + 1,
           code: s?.code || "",
           name: s?.name || "",
-          step_type_code: s?.step_type_code || "electronic",
-          required_cargo_code: s?.required_cargo_code || s?.resolver?.cargo_code || "",
-          selection_mode: s?.selection_mode || "auto_all",
+          resolver_type: s?.resolver?.type || "task_assignee",
+          selection_mode: s?.resolver?.selection_mode || "auto_all",
+          cargo_id: s?.resolver?.cargo_id || null,
+          cargo_code: s?.resolver?.cargo_code || "",
+          unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
+          unit_id: s?.resolver?.unit_id || null,
+          unit_type_id: s?.resolver?.unit_type_id || null,
+          person_id: s?.resolver?.person_id || null,
+          approval_mode: s?.approval_mode || "and",
           required_signers_min: s?.required_signers_min || 1,
-          required_signers_max: s?.required_signers_max || 1,
           required: s?.required !== false,
-          anchor_refs: Array.isArray(s?.anchor_refs) ? s.anchor_refs : [],
         })),
       };
     } catch {
@@ -4998,9 +4975,8 @@ export default class SqlAdminService {
         );
         linkedDefinitionId = normalizeNumericId(linkRows?.[0]?.process_definition_id);
       }
-      const [cargoCodeMap, signatureTypeCodeMap, referenceIds, processScope] = await Promise.all([
+      const [cargoCodeMap, referenceIds, processScope] = await Promise.all([
         this.getCargoCodeMap(),
-        this.getSignatureTypeCodeMap(),
         this.getWorkflowReferenceIdSets(),
         this.getProcessTargetScope(linkedDefinitionId)
       ]);
@@ -5032,7 +5008,6 @@ export default class SqlAdminService {
         fillWorkflow,
         signatureWorkflow,
         cargoCodeMap,
-        signatureTypeCodeMap,
         referenceIds,
         processScope,
         resolvableCargoIds,
@@ -5165,8 +5140,8 @@ export default class SqlAdminService {
         if (!existingLink?.length) {
           await this.pool.query(
             `INSERT INTO process_definition_templates
-              (process_definition_id, template_artifact_id, creates_task, sort_order)
-             VALUES (?, ?, 1, 1)`,
+              (process_definition_id, template_artifact_id, sort_order)
+             VALUES (?, ?, 1)`,
             [requestedProcessDefinitionId, createdId]
           );
         }

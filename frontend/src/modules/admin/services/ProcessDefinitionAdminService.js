@@ -43,10 +43,10 @@ export class ProcessDefinitionAdminService {
   }
 
   createArtifactForm() {
+    // creates_task ya no se expone (toda plantilla materializa un entregable) y el orden lo asigna el backend.
     return {
       template_artifact_id: "",
-      creates_task: "1",
-      sort_order: "1"
+      sort_order: ""
     };
   }
 
@@ -168,12 +168,16 @@ export class ProcessDefinitionAdminService {
   }
 
   buildArtifactPayload(definitionId, form) {
-    return {
+    const payload = {
       process_definition_id: Number(definitionId),
-      template_artifact_id: Number(form.template_artifact_id),
-      creates_task: Number(form.creates_task) === 1 ? 1 : 0,
-      sort_order: Number(form.sort_order || 1) || 1
+      template_artifact_id: Number(form.template_artifact_id)
     };
+    // El orden se asigna automáticamente al crear; en edición se conserva el existente si llega en el form.
+    const sortOrder = Number(form.sort_order);
+    if (Number.isFinite(sortOrder) && sortOrder > 0) {
+      payload.sort_order = sortOrder;
+    }
+    return payload;
   }
 
   listRules(processDefinitionId) {

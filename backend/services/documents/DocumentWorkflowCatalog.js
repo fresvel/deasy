@@ -41,14 +41,3 @@ export const getSignatureRequestStatusIdByCode = (connection, code) =>
 
 export const getSignatureStatusIdByCode = (connection, code) =>
   getCatalogIdByCode(connection, "signature_statuses", code);
-
-export const getDefaultSignatureTypeId = async (connection) => {
-  const [rows] = await connection.query(
-    `SELECT id
-     FROM signature_types
-     WHERE LOWER(code) IN ('electronic', 'digital')
-     ORDER BY CASE LOWER(code) WHEN 'electronic' THEN 0 ELSE 1 END, id ASC
-     LIMIT 1`
-  );
-  return rows?.[0] ? Number(rows[0].id) : null;
-};

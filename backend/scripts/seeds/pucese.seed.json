@@ -3155,7 +3155,6 @@
         "id",
         "process_definition_id",
         "template_artifact_id",
-        "creates_task",
         "sort_order",
         "created_at"
       ],
@@ -3163,7 +3162,6 @@
         "id": "int(11)",
         "process_definition_id": "int(11)",
         "template_artifact_id": "int(11)",
-        "creates_task": "tinyint(1)",
         "sort_order": "int(11)",
         "created_at": "datetime"
       },
@@ -3172,7 +3170,6 @@
           "id": 1,
           "process_definition_id": 1,
           "template_artifact_id": 1,
-          "creates_task": 1,
           "sort_order": 1,
           "created_at": "2026-06-18 14:01:52"
         }
@@ -3351,43 +3348,6 @@
       "rows": []
     },
     {
-      "table": "signature_types",
-      "columns": [
-        "id",
-        "code",
-        "name",
-        "description",
-        "is_active",
-        "created_at"
-      ],
-      "column_types": {
-        "id": "int(11)",
-        "code": "varchar(40)",
-        "name": "varchar(80)",
-        "description": "varchar(255)",
-        "is_active": "tinyint(1)",
-        "created_at": "datetime"
-      },
-      "rows": [
-        {
-          "id": 1,
-          "code": "electronic",
-          "name": "Firma electronica",
-          "description": "Firma electronica general sincronizada desde artifacts",
-          "is_active": 1,
-          "created_at": "2026-06-18 14:27:19"
-        },
-        {
-          "id": 2,
-          "code": "digital",
-          "name": "Firma digital",
-          "description": "Firma digital general sincronizada desde artifacts",
-          "is_active": 1,
-          "created_at": "2026-06-18 14:27:19"
-        }
-      ]
-    },
-    {
       "table": "signature_statuses",
       "columns": [
         "id",
@@ -3530,7 +3490,6 @@
         "code",
         "name",
         "slot",
-        "step_type_id",
         "resolver_type",
         "assigned_person_id",
         "unit_scope_type",
@@ -3553,7 +3512,6 @@
         "code": "varchar(120)",
         "name": "varchar(180)",
         "slot": "varchar(80)",
-        "step_type_id": "int(11)",
         "resolver_type": "enum('task_assignee','document_owner','specific_person','position','cargo_in_scope','manual_pick')",
         "assigned_person_id": "int(11)",
         "unit_scope_type": "enum('unit_exact','unit_subtree','unit_type','all_units','context_exact','context_subtree','context_ancestor_type')",
@@ -3622,7 +3580,6 @@
         "signature_request_id",
         "document_version_id",
         "signer_user_id",
-        "signature_type_id",
         "signature_status_id",
         "note_short",
         "signed_file_path",
@@ -3634,7 +3591,6 @@
         "signature_request_id": "int(11)",
         "document_version_id": "int(11)",
         "signer_user_id": "int(11)",
-        "signature_type_id": "int(11)",
         "signature_status_id": "int(11)",
         "note_short": "varchar(255)",
         "signed_file_path": "varchar(255)",
