@@ -22,6 +22,9 @@
         :multiple="multiple"
         :disabled="disabled"
         @change="handleInputChange"
+        @dragover.prevent="handleDragOver"
+        @dragleave="handleDragLeave"
+        @drop.prevent.stop="handleDrop"
       />
       <label :for="resolvedInputId" :class="triggerClasses">
         <span class="deasy-dropzone__action">{{ actionText }}</span>
@@ -166,9 +169,78 @@ const handleDragLeave = () => {
   internalActive.value = false;
 };
 
-const handleDrop = (event) => {
+// Lee el File de una entrada del FileSystem API y le adjunta su ruta interna multinivel
+// (fullPath: "/carpeta/sub/doc.pdf"), ya que webkitRelativePath no se rellena al arrastrar.
+const readEntryFile = (entry) =>
+  new Promise((resolve) => {
+    entry.file(
+      (file) => {
+        try {
+          file.relativePathOverride = String(entry.fullPath || entry.name).replace(/^\/+/, "");
+        } catch {
+          // File no extensible en algunos navegadores: se ignora y caera al nombre plano.
+        }
+        resolve(file);
+      },
+      () => resolve(null)
+    );
+  });
+
+// readEntries devuelve los hijos por lotes; hay que invocarlo hasta que llegue un lote vacio.
+const readDirectoryEntries = (directoryReader) =>
+  new Promise((resolve) => {
+    const collected = [];
+    const readBatch = () => {
+      directoryReader.readEntries(
+        (batch) => {
+          if (!batch.length) {
+            resolve(collected);
+            return;
+          }
+          collected.push(...batch);
+          readBatch();
+        },
+        () => resolve(collected)
+      );
+    };
+    readBatch();
+  });
+
+// Recorre recursivamente una entrada (archivo o carpeta multinivel) y devuelve todos los File.
+const collectEntryFiles = async (entry) => {
+  if (!entry) return [];
+  if (entry.isFile) {
+    const file = await readEntryFile(entry);
+    return file ? [file] : [];
+  }
+  if (entry.isDirectory) {
+    const children = await readDirectoryEntries(entry.createReader());
+    const nested = await Promise.all(children.map(collectEntryFiles));
+    return nested.flat();
+  }
+  return [];
+};
+
+const handleDrop = async (event) => {
+  event.preventDefault();
   if (props.disabled) return;
   internalActive.value = false;
+
+  // Las entradas del DataTransfer deben capturarse de forma SINCRONA antes de cualquier await,
+  // porque el DataTransfer se invalida al terminar el handler.
+  const items = event.dataTransfer?.items;
+  const entries = items && items.length
+    ? Array.from(items)
+        .map((item) => (typeof item.webkitGetAsEntry === "function" ? item.webkitGetAsEntry() : null))
+        .filter(Boolean)
+    : [];
+
+  if (entries.some((entry) => entry.isDirectory)) {
+    const nested = await Promise.all(entries.map(collectEntryFiles));
+    emitFiles(nested.flat());
+    return;
+  }
+
   emitFiles(event.dataTransfer?.files);
 };
 </script>
