@@ -399,7 +399,7 @@
       @submit="submitDefinitionArtifact"
       @reset="resetDefinitionArtifactsForm"
       @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
-      @edit-row="startDefinitionArtifactEdit"
+      @edit-row="openDefinitionArtifactTemplateEditor"
       @delete-row="deleteDefinitionArtifact"
       @close="closeDefinitionArtifactsManager"
       @accept="acceptDefinitionArtifactsManager"
@@ -507,7 +507,7 @@
           @submit="wizardSubmitArtifact"
           @reset="resetDefinitionArtifactsForm"
           @view-row="handleWizardViewRow($event, allTablesMap.process_definition_templates)"
-          @edit-row="startDefinitionArtifactEdit"
+          @edit-row="openDefinitionArtifactTemplateEditor"
           @delete-row="deleteDefinitionArtifact"
         />
       </template>
@@ -1971,6 +1971,7 @@ const {
   ensureProcessSearchInstance,
   ensureDocumentSearchInstance,
   ensureUnitPositionSearchInstance,
+  restoreReturnModal,
   hideParentModalsForFk,
   hideParentModalsForRecordViewer,
   getPersonAssignmentsInstance,
@@ -2566,19 +2567,57 @@ const openFkCreate = async () => {
   openFkCreateBase();
 };
 
+// Editar una plantilla vinculada desde la pestaña Paquetes: abre el editor de la plantilla (modo edición).
+// Se preserva el modal de paquetes vía el origen "definitionArtifacts" para volver a él al cerrar/guardar.
+const draftArtifactReturnToPackages = ref(false);
+const openDefinitionArtifactTemplateEditor = async (row) => {
+  const artifactId = row?.template_artifact_id;
+  if (!artifactId) {
+    return;
+  }
+  let artifactRow = null;
+  try {
+    const { data } = await adminSqlService.list("template_artifacts", { filter_id: artifactId, limit: 1 });
+    artifactRow = Array.isArray(data) ? data[0] : (data?.rows?.[0] || data?.data?.[0] || null);
+  } catch {
+    artifactRow = null;
+  }
+  if (!artifactRow?.id) {
+    return;
+  }
+  draftArtifactReturnToPackages.value = true;
+  pushModalOrigin("definitionArtifacts");
+  getDefinitionArtifactsInstance()?.hide();
+  await openDraftArtifactModal(artifactRow);
+};
+
+const returnToDefinitionArtifactsAfterEdit = async () => {
+  draftArtifactReturnToPackages.value = false;
+  restoreReturnModal();          // saca "definitionArtifacts" del stack y vuelve a mostrar el modal de paquetes
+  await loadDefinitionArtifacts(); // refresca nombres/estado tras editar la plantilla
+};
+
 const handleDraftArtifactClose = () => {
   const shouldReturnToFkSearch = draftArtifactFkCreateMode.value;
+  const shouldReturnToPackages = !shouldReturnToFkSearch && draftArtifactReturnToPackages.value;
   draftArtifactPreselectDefinitionId.value = "";
   closeDraftArtifactModal();
   if (shouldReturnToFkSearch) {
     draftArtifactFkCreateMode.value = false;
     ensureFkInstance();
     getFkInstance()?.show();
+  } else if (shouldReturnToPackages) {
+    returnToDefinitionArtifactsAfterEdit();
   }
 };
 
 const handleDraftArtifactSubmit = async () => {
   const createdRow = await submitDraftArtifact();
+  // Edición desde Paquetes: al guardar correctamente, vuelve a la gestión de plantillas y refresca.
+  if (!draftArtifactFkCreateMode.value && draftArtifactReturnToPackages.value && createdRow?.id) {
+    await returnToDefinitionArtifactsAfterEdit();
+    return;
+  }
   if (!draftArtifactFkCreateMode.value || !createdRow?.id) {
     return;
   }
@@ -2824,7 +2863,6 @@ const {
   openDefinitionArtifactsFromEditor,
   openDefinitionArtifactFkSearch,
   clearDefinitionArtifactSelection,
-  startDefinitionArtifactEdit,
   submitDefinitionArtifact,
   deleteDefinitionArtifact
 } = useProcessDefinitionManager({

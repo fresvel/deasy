@@ -6,22 +6,12 @@
           <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
             <PdfDropField
               title=""
-              action-text="Seleccionar documentos"
-              help-text="Agrega nuevos archivos"
+              action-text="Seleccionar PDFs"
+              help-text="Haz clic para elegir PDFs o arrastra una carpeta (solo PDFs); se conserva su estructura interna"
               input-id="multisigner-input-rail"
               multiple
               class="multisigner-upload-card"
               @files-selected="onFilesSelected"
-            />
-            <PdfDropField
-              title=""
-              action-text="Seleccionar carpeta"
-              help-text="Carga una carpeta (solo PDFs); se conserva su estructura interna"
-              input-id="multisigner-folder-rail"
-              directory
-              variant="compact"
-              class="multisigner-upload-card"
-              @files-selected="onFolderSelected"
             />
             <p v-if="uploadError" class="rounded-lg bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-rose-600">
               {{ uploadError }}
@@ -689,9 +679,10 @@ const normalizeMetadata = (metadata = {}) => ({
   requestedAt: metadata.requestedAt || ""
 });
 
-// Ruta relativa multinivel del archivo: webkitRelativePath cuando viene de una carpeta, o el nombre plano.
+// Ruta relativa multinivel del archivo: webkitRelativePath (carpeta vía input) o relativePathOverride
+// (carpeta vía drag&drop); cae al nombre plano para archivos sueltos.
 const resolveRelativePath = (file) => {
-  const relative = String(file?.webkitRelativePath || "").trim();
+  const relative = String(file?.webkitRelativePath || file?.relativePathOverride || "").trim();
   return relative || file.name;
 };
 
@@ -967,15 +958,10 @@ const appendNewDocuments = async (candidateFiles) => {
   }
 };
 
+// Maneja tanto PDFs sueltos (clic o arrastre) como una carpeta multinivel (arrastre). Cuando la
+// seleccion proviene de una carpeta exige que TODAS sus rutas internas sean PDFs; con archivos sueltos
+// simplemente conserva los PDFs.
 const onFilesSelected = async (files) => {
-  uploadError.value = "";
-  const pdfFiles = Array.from(files || []).filter(isPdfFile);
-  if (!pdfFiles.length) return;
-  await appendNewDocuments(pdfFiles);
-};
-
-// Carga de carpeta: exige que TODAS las rutas internas sean PDFs. Si hay archivos no-PDF, aborta y los reporta.
-const onFolderSelected = async (files) => {
   uploadError.value = "";
   const allFiles = Array.from(files || []).filter((file) => {
     // Ignora artefactos del sistema de archivos (p. ej. .DS_Store, Thumbs.db) que no son contenido real.
@@ -984,18 +970,26 @@ const onFolderSelected = async (files) => {
   });
   if (!allFiles.length) return;
 
-  const nonPdfFiles = allFiles.filter((file) => !isPdfFile(file));
-  if (nonPdfFiles.length) {
-    const sample = nonPdfFiles
-      .slice(0, 3)
-      .map((file) => resolveRelativePath(file))
-      .join(", ");
-    const extra = nonPdfFiles.length > 3 ? ` y ${nonPdfFiles.length - 3} más` : "";
-    uploadError.value = `La carpeta contiene archivos que no son PDF (${sample}${extra}). Solo se permiten PDFs.`;
+  // Una carpeta arrastrada produce rutas multinivel; en ese caso validamos estrictamente solo-PDF.
+  const isFromFolder = allFiles.some((file) => resolveRelativePath(file).includes("/"));
+  if (isFromFolder) {
+    const nonPdfFiles = allFiles.filter((file) => !isPdfFile(file));
+    if (nonPdfFiles.length) {
+      const sample = nonPdfFiles
+        .slice(0, 3)
+        .map((file) => resolveRelativePath(file))
+        .join(", ");
+      const extra = nonPdfFiles.length > 3 ? ` y ${nonPdfFiles.length - 3} más` : "";
+      uploadError.value = `La carpeta contiene archivos que no son PDF (${sample}${extra}). Solo se permiten PDFs.`;
+      return;
+    }
+    await appendNewDocuments(allFiles);
     return;
   }
 
-  await appendNewDocuments(allFiles);
+  const pdfFiles = allFiles.filter(isPdfFile);
+  if (!pdfFiles.length) return;
+  await appendNewDocuments(pdfFiles);
 };
 
 const hasDocumentMetadata = (doc) => Boolean(

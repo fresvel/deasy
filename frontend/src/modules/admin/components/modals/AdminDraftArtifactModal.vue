@@ -223,91 +223,120 @@
         Sin pasos de entrega.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
-        <div v-for="(step, index) in fillSteps" :key="index" class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-          <div class="grid grid-cols-12 items-end gap-2">
-            <div class="col-span-1">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Orden</label>
-              <input type="number" min="1" :value="step.order" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'order', Number($event.target.value))" />
+        <div
+          v-for="(step, index) in fillSteps"
+          :key="index"
+          class="overflow-hidden rounded-xl border-l-4 border bg-white"
+          :class="stepToneClass(index)"
+          draggable="true"
+          @dragstart="onStepDragStart('fill', index)"
+          @dragover.prevent
+          @drop="onStepDrop('fill', index)"
+          @dragend="onStepDragEnd"
+        >
+          <!-- Cabecera (resumen): arrastra para reordenar; Editar expande; cada paso con su tono. -->
+          <div class="flex items-center gap-2 px-3 py-2">
+            <span class="cursor-grab select-none px-1 text-slate-300" title="Arrastra para reordenar" aria-hidden="true">⠿</span>
+            <span class="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs font-bold" :class="stepBadgeClass(index)">{{ index + 1 }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="m-0 truncate text-sm font-semibold text-slate-800">{{ step.name || "Paso sin nombre" }}</p>
+              <p class="m-0 truncate text-xs text-slate-500">{{ fillWhoSummary(step) }}</p>
             </div>
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Nombre</label>
-              <input :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
-            </div>
-            <div class="col-span-3">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
-              <select :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
-                <option value="task_assignee">Responsable del entregable</option>
-                <option value="scope">Por cargo</option>
-                <option v-if="isAdHoc" value="person">Persona concreta</option>
-              </select>
-            </div>
-            <div v-if="fillStepShowsMode(step)" class="col-span-2">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Modo</label>
-              <select :value="step.selection_mode" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
-                <option value="auto_one">Uno cualquiera</option>
-                <option value="auto_all">Todas</option>
-              </select>
-            </div>
-            <div class="col-span-2 flex items-center justify-end pb-1">
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar paso" @click="removeFillStep(index)">✕</button>
-            </div>
+            <AdminButton
+              variant="secondary"
+              size="sm"
+              icon-only
+              :class-name="expandedFillStep === index ? 'hope-action-btn hope-action-select' : 'hope-action-btn hope-action-edit'"
+              :title="expandedFillStep === index ? 'Listo' : 'Editar paso'"
+              :aria-label="expandedFillStep === index ? 'Listo' : 'Editar paso'"
+              @click="toggleFillStep(index)"
+            >
+              <font-awesome-icon :icon="expandedFillStep === index ? 'check' : 'edit'" />
+            </AdminButton>
+            <AdminButton
+              variant="secondary"
+              size="sm"
+              icon-only
+              class-name="hope-action-btn hope-action-delete"
+              title="Eliminar paso"
+              aria-label="Eliminar paso"
+              @click="removeFillStep(index)"
+            >
+              <font-awesome-icon icon="trash" />
+            </AdminButton>
           </div>
-          <!-- "Por cargo": la revisión sube por la jerarquía o se queda en la misma unidad; nunca baja. Por eso
-               no hay subárbol ni "todas las unidades" (eso es distribución y vive en las reglas del proceso). -->
-          <!-- Primero la UBICACIÓN; el cargo se ofrece solo entre los que tienen titular vigente ahí (mismo
-               criterio que el resolver de runtime), así no se autoriza un revisor que no resolvería a nadie. -->
-          <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
-              <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepUbicacion(index, $event.target.value)">
-                <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
-                <option value="unit_exact">En una unidad específica…</option>
-                <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
-              </select>
+          <!-- Editor (expandido). El orden lo define el arrastre; aquí no se edita el número. -->
+          <div v-show="expandedFillStep === index" class="border-t border-slate-100 px-3 py-2.5">
+            <div class="grid grid-cols-12 items-end gap-2">
+              <div class="col-span-6">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Nombre</label>
+                <input :value="step.name" placeholder="ej. Entrega del docente" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateFillStep(index, 'name', $event.target.value)" />
+              </div>
+              <div class="col-span-3">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Quién hace el paso</label>
+                <select :value="stepWhoMode(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepWho(index, $event.target.value)">
+                  <option value="task_assignee">Responsable del entregable</option>
+                  <option value="scope">Por cargo</option>
+                  <option v-if="isAdHoc" value="person">Persona concreta</option>
+                </select>
+              </div>
+              <div v-if="fillStepShowsMode(step)" class="col-span-3">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Modo</label>
+                <select :value="step.selection_mode" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
+                  <option value="auto_one">Uno cualquiera</option>
+                  <option value="auto_all">Todas</option>
+                </select>
+              </div>
             </div>
-            <!-- Unidad fija (ruteo a una oficina concreta; puede estar fuera del alcance del proceso). Filtro
-                 opcional por tipo de unidad para acortar la lista. El paso guarda la unidad fija (unit_id). -->
-            <template v-if="fillStepNeedsUnit(step)">
+            <!-- "Por cargo": primero la UBICACIÓN; el cargo se ofrece solo entre los que tienen titular vigente ahí. -->
+            <div v-if="stepWhoMode(step) === 'scope'" class="mt-2 grid grid-cols-12 gap-2">
               <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo (filtro)</label>
-                <select :value="step.filter_unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeFilterChange(index, Number($event.target.value) || null)">
-                  <option value="">Todos los tipos</option>
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Ubicación</label>
+                <select :value="step.unit_scope_type" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStepUbicacion(index, $event.target.value)">
+                  <option value="context_exact" :disabled="!processHasRules">En la misma unidad del entregable{{ processHasRules ? "" : " — requiere reglas" }}</option>
+                  <option value="unit_exact">En una unidad específica…</option>
+                  <option v-if="!isAdHoc" value="unit_type">En un tipo de unidad…</option>
+                </select>
+              </div>
+              <template v-if="fillStepNeedsUnit(step)">
+                <div class="col-span-4">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo (filtro)</label>
+                  <select :value="step.filter_unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeFilterChange(index, Number($event.target.value) || null)">
+                    <option value="">Todos los tipos</option>
+                    <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
+                  </select>
+                </div>
+                <div class="col-span-4">
+                  <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
+                  <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitExactUnitChange(index, Number($event.target.value) || null)">
+                    <option value="">— Selecciona unidad —</option>
+                    <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
+                  </select>
+                </div>
+              </template>
+              <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
+                <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeScopeChange(index, Number($event.target.value) || null)">
+                  <option value="">— Selecciona tipo —</option>
                   <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
                 </select>
               </div>
               <div class="col-span-4">
-                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Unidad</label>
-                <select :value="step.unit_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitExactUnitChange(index, Number($event.target.value) || null)">
-                  <option value="">— Selecciona unidad —</option>
-                  <option v-for="u in fillStepUnitOptions(step)" :key="u.id" :value="u.id">{{ u.name }}</option>
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
+                <select :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
+                  <option value="">{{ fillStepCargoPlaceholder(step) }}</option>
+                  <option v-for="c in fillStepCargoOptions(step)" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
               </div>
-            </template>
-            <!-- Tipo de unidad (solo plantillas de proceso): el cargo resuelve en TODAS las unidades de ese tipo
-                 (p. ej. el coordinador de cada carrera). Distribución de la revisión a muchas unidades. -->
-            <div v-else-if="fillStepNeedsUnitType(step)" class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Tipo de unidad</label>
-              <select :value="step.unit_type_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="onUnitTypeScopeChange(index, Number($event.target.value) || null)">
-                <option value="">— Selecciona tipo —</option>
-                <option v-for="t in unitTypeOptions" :key="t.id" :value="t.id">{{ t.name }}</option>
-              </select>
             </div>
-            <div class="col-span-4">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Cargo</label>
-              <select :value="step.cargo_id || ''" :disabled="!fillStepCargoReady(step)" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400" @change="updateFillStep(index, 'cargo_id', Number($event.target.value) || null)">
-                <option value="">{{ fillStepCargoPlaceholder(step) }}</option>
-                <option v-for="c in fillStepCargoOptions(step)" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </div>
-          </div>
-          <!-- Persona concreta (solo plantillas de usuario / ad-hoc): ruteo directo a una persona. -->
-          <div v-else-if="stepWhoMode(step) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-6">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
-              <select :value="step.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
-                <option value="">— Selecciona persona —</option>
-                <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
-              </select>
+            <div v-else-if="stepWhoMode(step) === 'person'" class="mt-2 grid grid-cols-12 gap-2">
+              <div class="col-span-6">
+                <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Persona</label>
+                <select :value="step.person_id || ''" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @change="updateFillStep(index, 'person_id', Number($event.target.value) || null)">
+                  <option value="">— Selecciona persona —</option>
+                  <option v-for="p in personOptions" :key="p.id" :value="p.id">{{ p.name }}</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -330,13 +359,52 @@
         Sin pasos de firma.
       </div>
       <div v-else class="mt-3 flex flex-col gap-2">
-        <div v-for="(step, index) in signatureSteps" :key="`sig-${index}`" class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-          <div class="grid grid-cols-12 items-end gap-2">
-            <div class="col-span-1">
-              <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Orden</label>
-              <input type="number" min="1" :value="step.order" class="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'order', Number($event.target.value))" />
+        <div
+          v-for="(step, index) in signatureSteps"
+          :key="`sig-${index}`"
+          class="overflow-hidden rounded-xl border-l-4 border bg-white"
+          :class="stepToneClass(index)"
+          draggable="true"
+          @dragstart="onStepDragStart('signature', index)"
+          @dragover.prevent
+          @drop="onStepDrop('signature', index)"
+          @dragend="onStepDragEnd"
+        >
+          <!-- Cabecera (resumen): arrastra para reordenar; Editar expande; cada paso con su tono. -->
+          <div class="flex items-center gap-2 px-3 py-2">
+            <span class="cursor-grab select-none px-1 text-slate-300" title="Arrastra para reordenar" aria-hidden="true">⠿</span>
+            <span class="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs font-bold" :class="stepBadgeClass(index)">{{ index + 1 }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="m-0 truncate text-sm font-semibold text-slate-800">{{ step.name || "Paso sin nombre" }}</p>
+              <p class="m-0 truncate text-xs text-slate-500">{{ signatureSummary(step) }}</p>
             </div>
-            <div class="col-span-5">
+            <AdminButton
+              variant="secondary"
+              size="sm"
+              icon-only
+              :class-name="expandedSignatureStep === index ? 'hope-action-btn hope-action-select' : 'hope-action-btn hope-action-edit'"
+              :title="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
+              :aria-label="expandedSignatureStep === index ? 'Listo' : 'Editar paso'"
+              @click="toggleSignatureStep(index)"
+            >
+              <font-awesome-icon :icon="expandedSignatureStep === index ? 'check' : 'edit'" />
+            </AdminButton>
+            <AdminButton
+              variant="secondary"
+              size="sm"
+              icon-only
+              class-name="hope-action-btn hope-action-delete"
+              title="Eliminar paso"
+              aria-label="Eliminar paso"
+              @click="removeSignatureStep(index)"
+            >
+              <font-awesome-icon icon="trash" />
+            </AdminButton>
+          </div>
+          <!-- Editor (expandido). El orden lo define el arrastre; aquí no se edita el número. -->
+          <div v-show="expandedSignatureStep === index" class="border-t border-slate-100 px-3 py-2.5">
+          <div class="grid grid-cols-12 items-end gap-2">
+            <div class="col-span-7">
               <label class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400">Nombre</label>
               <input :value="step.name" placeholder="ej. Firma de dirección" class="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
@@ -347,9 +415,6 @@
                 <option value="or">Cualquiera</option>
                 <option value="at_least">Al menos…</option>
               </select>
-            </div>
-            <div class="col-span-1 flex items-center justify-end pb-1">
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50" aria-label="Eliminar paso" @click="removeSignatureStep(index)">✕</button>
             </div>
           </div>
           <!-- "Al menos N": mínimo de firmas requerido del conjunto de firmantes del paso. -->
@@ -430,6 +495,7 @@
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -704,8 +770,11 @@ const commitFillSteps = (steps) => {
   emit("update:form", { ...props.draftArtifactForm, fill_workflow: { required: true, ...props.draftArtifactForm.fill_workflow, steps } });
 };
 const addFillStep = () => {
+  // El nuevo paso se agrega al final, así que su índice es la longitud ACTUAL (antes del commit). Leer la
+  // longitud después de commit daría el valor viejo (el prop no se actualiza de forma síncrona).
+  const newIndex = fillSteps.value.length;
   commitFillSteps([...fillSteps.value, {
-    order: fillSteps.value.length + 1,
+    order: newIndex + 1,
     name: "",
     resolver_type: "task_assignee",
     selection_mode: "auto_one",
@@ -720,6 +789,7 @@ const addFillStep = () => {
     field_refs: [],
     required: true
   }]);
+  expandedFillStep.value = newIndex; // auto-expande el nuevo
 };
 const updateFillStep = (index, prop, value) => {
   commitFillSteps(fillSteps.value.map((s, i) => (i === index ? { ...s, [prop]: value } : s)));
@@ -728,7 +798,77 @@ const patchFillStep = (index, patch) => {
   commitFillSteps(fillSteps.value.map((s, i) => (i === index ? { ...s, ...patch } : s)));
 };
 const removeFillStep = (index) => {
-  commitFillSteps(fillSteps.value.filter((_, i) => i !== index));
+  commitFillSteps(renumberSteps(fillSteps.value.filter((_, i) => i !== index)));
+  if (expandedFillStep.value === index) expandedFillStep.value = null;
+};
+
+// ── Resúmenes colapsables + reordenar (drag) + tonos por paso (entrega y firmas) ──
+const expandedFillStep = ref(null);
+const expandedSignatureStep = ref(null);
+const toggleFillStep = (index) => { expandedFillStep.value = expandedFillStep.value === index ? null : index; };
+const toggleSignatureStep = (index) => { expandedSignatureStep.value = expandedSignatureStep.value === index ? null : index; };
+
+// Paleta de tonos para diferenciar pasos (se cicla por índice).
+const STEP_TONES = [
+  { card: "border-indigo-200", badge: "bg-indigo-100 text-indigo-700" },
+  { card: "border-emerald-200", badge: "bg-emerald-100 text-emerald-700" },
+  { card: "border-amber-200", badge: "bg-amber-100 text-amber-700" },
+  { card: "border-sky-200", badge: "bg-sky-100 text-sky-700" },
+  { card: "border-rose-200", badge: "bg-rose-100 text-rose-700" },
+  { card: "border-violet-200", badge: "bg-violet-100 text-violet-700" }
+];
+const stepToneClass = (index) => STEP_TONES[index % STEP_TONES.length].card;
+const stepBadgeClass = (index) => STEP_TONES[index % STEP_TONES.length].badge;
+
+// Etiquetas legibles desde los catálogos cargados.
+const cargoName = (id) => cargoOptions.value.find((c) => Number(c.id) === Number(id))?.name || "";
+const personName = (id) => personOptions.value.find((p) => Number(p.id) === Number(id))?.name || "";
+const unitName = (id) => unitOptions.value.find((u) => Number(u.id) === Number(id))?.name || "";
+const unitTypeName = (id) => unitTypeOptions.value.find((t) => Number(t.id) === Number(id))?.name || "";
+const scopeSummary = (obj) => {
+  const scope = String(obj?.unit_scope_type || "");
+  if (scope === "unit_exact") return unitName(obj?.unit_id) || "unidad específica";
+  if (scope === "unit_type") return `tipo: ${unitTypeName(obj?.unit_type_id) || "—"}`;
+  return "misma unidad del entregable";
+};
+// Resumen de "quién" para un objeto con resolutor (paso de entrega o firmante).
+const whoSummary = (obj) => {
+  const who = stepWhoMode(obj);
+  if (who === "task_assignee") return "Responsable del entregable";
+  if (who === "person") return personName(obj?.person_id) ? `Persona: ${personName(obj?.person_id)}` : "Persona concreta";
+  const cargo = cargoName(obj?.cargo_id);
+  return `${cargo ? `Cargo: ${cargo}` : "Por cargo"} · ${scopeSummary(obj)}`;
+};
+const fillWhoSummary = (step) => whoSummary(step);
+const APPROVAL_LABEL = { and: "Todas", or: "Cualquiera", at_least: "Al menos N" };
+const signatureSummary = (step) => {
+  const n = stepSigners(step).length;
+  const approval = APPROVAL_LABEL[String(step?.approval_mode || "and")] || "Todas";
+  return `${n} firmante${n === 1 ? "" : "s"} · ${approval}`;
+};
+
+// Reordenar pasos por drag (DnD nativo). Renumera `order` para mantener 1..N.
+const renumberSteps = (arr) => arr.map((s, i) => ({ ...s, order: i + 1 }));
+const moveInArray = (arr, from, to) => {
+  const copy = [...arr];
+  const [item] = copy.splice(from, 1);
+  copy.splice(to, 0, item);
+  return copy;
+};
+const stepDrag = ref({ kind: null, index: null });
+const onStepDragStart = (kind, index) => { stepDrag.value = { kind, index }; };
+const onStepDragEnd = () => { stepDrag.value = { kind: null, index: null }; };
+const onStepDrop = (kind, index) => {
+  const { kind: fromKind, index: from } = stepDrag.value;
+  onStepDragEnd();
+  if (fromKind !== kind || from === null || from === index) return;
+  if (kind === "fill") {
+    commitFillSteps(renumberSteps(moveInArray(fillSteps.value, from, index)));
+    if (expandedFillStep.value === from) expandedFillStep.value = index;
+  } else {
+    commitSignature({ steps: renumberSteps(moveInArray(signatureSteps.value, from, index)) });
+    if (expandedSignatureStep.value === from) expandedSignatureStep.value = index;
+  }
 };
 // "Quién hace el paso": 'task_assignee' (responsable del entregable) | 'scope' (cargo por ubicación) |
 // 'person' (persona concreta, SOLO en plantillas de usuario/ad-hoc). El conjunto de opciones lo gatea el
@@ -937,14 +1077,16 @@ const newSignatureSigner = () => ({
 const stepSigners = (step) => (Array.isArray(step?.signers) ? step.signers : []);
 
 const addSignatureStep = () => {
+  const newIndex = signatureSteps.value.length; // índice del nuevo paso (se agrega al final)
   commitSignature({ steps: [...signatureSteps.value, {
-    order: signatureSteps.value.length + 1,
+    order: newIndex + 1,
     name: "",
     approval_mode: "and",
     required_signers_min: 1,
     required: true,
     signers: [newSignatureSigner()]
   }] });
+  expandedSignatureStep.value = newIndex; // auto-expande el nuevo
 };
 const updateSignatureStep = (index, prop, value) => {
   commitSignature({ steps: signatureSteps.value.map((s, i) => (i === index ? { ...s, [prop]: value } : s)) });

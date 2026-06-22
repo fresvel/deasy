@@ -4,6 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > See `AGENTS.md` for the full repository conventions (layer boundaries, reuse rules, approved base components). The notes below are the operational quick-start that complements it.
 
+## Reglas de Testing 
+Para realizar las pruebas debes considerar que todo el sistema está dockerizado.  En la ruta scripts está docker-env.sh que te permite levantar entornos y ejecutar comandos de manera rápida. 
+
+Las contraseñas de todos los usuarios de dev son Demo1234!, se tienen los siguientes usuarios:
+    admin -> user: 1234567890
+    gestor -> user: 0987654321 (de momento tiene rol de usuario también)
+
 ## Monorepo layout
 
 Each module has its own toolchain and package manager — do not mix them.

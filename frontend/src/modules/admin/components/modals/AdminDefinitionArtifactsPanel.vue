@@ -17,47 +17,16 @@
       Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
     </div>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div class="min-w-0">
-          <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Plantilla</p>
-          <h6 class="m-0 mt-1 text-base font-extrabold text-slate-800">
-            {{ hasTemplateSelection ? selectedTemplateLabel : "Sin plantilla seleccionada" }}
-          </h6>
-        </div>
-        <div v-if="canManage" class="flex flex-wrap gap-2">
-          <AdminButton
-            variant="outlinePrimary"
-            :disabled="!canManage"
-            @click="$emit('open-fk-search')"
-          >
-            <font-awesome-icon icon="search" class="mr-2" />
-            {{ hasTemplateSelection ? "Cambiar plantilla" : "Agregar plantilla" }}
-          </AdminButton>
-          <AdminButton
-            v-if="hasTemplateSelection"
-            variant="secondary"
-            :disabled="!canManage"
-            @click="$emit('clear-selection')"
-          >
-            <font-awesome-icon icon="times" class="mr-2" />
-            Quitar
-          </AdminButton>
-        </div>
-      </div>
-      <div v-if="canManage && !hasTemplateSelection" class="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-600">
-        Selecciona una plantilla para añadirla a este proceso.
-      </div>
-      <AdminFormActions
-        v-if="hasTemplateSelection"
-        class="mt-4"
-        :primary-label="editId ? 'Guardar plantilla' : 'Agregar plantilla'"
-        :primary-disabled="!canSubmit"
-        :show-cancel="Boolean(editId)"
-        cancel-label="Cancelar edicion"
-        @primary="$emit('submit')"
-        @cancel="$emit('reset')"
-      />
+    <div class="flex items-center justify-between gap-3">
+      <h6 class="m-0 text-sm font-bold text-slate-800">Plantillas del proceso</h6>
+      <AdminButton
+        v-if="canManage"
+        variant="outlinePrimary"
+        @click="$emit('open-fk-search')"
+      >
+        <font-awesome-icon icon="search" class="mr-2" />
+        Agregar plantilla
+      </AdminButton>
     </div>
 
     <div v-if="loading" class="text-sm text-slate-500">Cargando plantillas vinculadas...</div>
@@ -98,7 +67,6 @@
 <script setup>
 import { computed } from "vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
-import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 
@@ -106,6 +74,8 @@ const props = defineProps({
   context: { type: Object, default: null },
   error: { type: String, default: "" },
   canManage: { type: Boolean, default: false },
+  // Props heredadas del wrapper (ya no se usan tras quitar la tarjeta de selección); se declaran para
+  // evitar que caigan como atributos sueltos en el div raíz.
   canSubmit: { type: Boolean, default: false },
   labels: { type: Object, default: () => ({}) },
   form: { type: Object, default: () => ({}) },
@@ -119,10 +89,6 @@ const props = defineProps({
 
 defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
 
-const selectedTemplateLabel = computed(() =>
-  String(props.labels.template_artifact_id || props.form.template_artifact_id || "").trim()
-);
-const hasTemplateSelection = computed(() => Boolean(String(props.form.template_artifact_id || "").trim()));
 // El orden (sort_order) es interno y creates_task es siempre "sí"; no se muestran como columnas.
 const HIDDEN_ARTIFACT_COLUMNS = new Set(["creates_task", "sort_order"]);
 const displayTableFields = computed(() =>

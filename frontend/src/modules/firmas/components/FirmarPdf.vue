@@ -206,8 +206,8 @@
         >
           <PdfDropField
             title="Multifirmador"
-            action-text="Seleccionar documentos"
-            help-text="Arrastra y suelta o selecciona varios PDF."
+            action-text="Seleccionar PDFs"
+            help-text="Haz clic para elegir PDFs o arrastra una carpeta (solo PDFs); se conserva su estructura interna."
             :icon="CustomIconFiles"
             input-id="multi-pdf-input"
             multiple
