@@ -386,6 +386,8 @@ const parseBatchDocumentContexts = (rawDocumentContexts) => {
     return {
       id: entry?.id || null,
       name: entry?.name || null,
+      // Ruta relativa multinivel del PDF dentro de la carpeta cargada (preserva la estructura en la descarga).
+      relativePath: String(entry?.relativePath || "").trim() || null,
       metadata: {
         signatureRequestId: metadata?.signatureRequestId ? Number(metadata.signatureRequestId) : null,
         documentVersionId: metadata?.documentVersionId ? Number(metadata.documentVersionId) : null,
@@ -490,17 +492,15 @@ const streamMinioObjectToFile = async (bucket, objectName, destinationPath) => {
   await pipeline(stream, fs.createWriteStream(destinationPath));
 };
 
-const createZipArchive = async (zipPath, sourcePaths) =>
+// ZIP que PRESERVA la estructura de carpetas: comprime el contenido de `cwd` recursivamente.
+// El zipPath debe vivir FUERA de `cwd` para no incluirse a si mismo en el archivo.
+const createStructuredZipArchive = async (cwd, zipPath) =>
   new Promise((resolve, reject) => {
-    const zipProcess = spawn("zip", ["-j", zipPath, ...sourcePaths], {
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-
+    const zipProcess = spawn("zip", ["-rq", zipPath, "."], { cwd, stdio: ["ignore", "ignore", "pipe"] });
     let stderr = "";
     zipProcess.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
     });
-
     zipProcess.on("error", reject);
     zipProcess.on("close", (code) => {
       if (code === 0) {
@@ -510,6 +510,25 @@ const createZipArchive = async (zipPath, sourcePaths) =>
       reject(new Error(stderr.trim() || "No se pudo generar el archivo ZIP."));
     });
   });
+
+// Sanea una ruta relativa multinivel para usarla como entrada del ZIP de salida: descarta segmentos
+// vacios, "." y ".." (evita path traversal), normaliza cada segmento y garantiza extension .pdf.
+const sanitizeRelativePdfPath = (relativePath, fallbackName, index = 0) => {
+  const raw = String(relativePath || fallbackName || "").trim();
+  const segments = raw
+    .split(/[\\/]+/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment && segment !== "." && segment !== "..")
+    .map((segment) => segment.replace(/[^\w.\-]+/g, "_"));
+  if (!segments.length) {
+    return `documento-${index + 1}.pdf`;
+  }
+  const last = segments[segments.length - 1];
+  if (!last.toLowerCase().endsWith(".pdf")) {
+    segments[segments.length - 1] = `${last}.pdf`;
+  }
+  return segments.join("/");
+};
 
 const truncateNote = (value, max = 255) => {
   const normalized = String(value || "").trim();
@@ -646,6 +665,10 @@ export const requestSignBatchStart = async (req, res) => {
     setImmediate(async () => {
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index];
+        // Declarados fuera del try para que el catch tambien pueda referenciarlos al registrar el error.
+        const documentFieldConfig = batchDocumentFields[index];
+        const documentContextConfig = batchDocumentContexts[index]?.metadata || {};
+        const documentRelativePath = batchDocumentContexts[index]?.relativePath || file.originalname;
         try {
           await updateBatchJob(job.jobId, (current) => {
             const results = [...current.results];
@@ -659,8 +682,6 @@ export const requestSignBatchStart = async (req, res) => {
               results
             };
           });
-          const documentFieldConfig = batchDocumentFields[index];
-          const documentContextConfig = batchDocumentContexts[index]?.metadata || {};
           const documentContext =
             {
               ...context,
@@ -677,6 +698,7 @@ export const requestSignBatchStart = async (req, res) => {
             const results = [...current.results];
             results[index] = {
               fileName: file.originalname,
+              relativePath: documentRelativePath,
               status: "success",
               ...result,
               workflow: workflow || null,
@@ -710,6 +732,7 @@ export const requestSignBatchStart = async (req, res) => {
             const results = [...current.results];
             results[index] = {
               fileName: file.originalname,
+              relativePath: documentRelativePath,
               status: "error",
               error: error.message || "No se pudo firmar el documento.",
               signatureRequestId: documentContextConfig.signatureRequestId || null,
@@ -778,24 +801,33 @@ export const downloadSignBatch = async (req, res) => {
     }
 
     workspace = fs.mkdtempSync(path.join(os.tmpdir(), "deasy-sign-batch-"));
-    const filePaths = [];
+    // El ZIP vive fuera del workspace para no incluirse a si mismo al comprimir recursivamente.
+    const zipPath = path.join(os.tmpdir(), `firmas-lote-${jobId}-${randomUUID()}.zip`);
+    const usedEntryPaths = new Set();
 
     for (let index = 0; index < successResults.length; index += 1) {
       const result = successResults[index];
-      const safeBaseName = String(result.fileName || `documento-${index + 1}.pdf`).replace(/[^\w.\-]+/g, "_");
-      const outputName = safeBaseName.toLowerCase().endsWith(".pdf") ? safeBaseName : `${safeBaseName}.pdf`;
-      const destinationPath = path.join(workspace, outputName);
+      // Reconstruye la estructura de carpetas de entrada usando la ruta relativa; cae al nombre plano si no hay.
+      let entryPath = sanitizeRelativePdfPath(result.relativePath, result.fileName, index);
+      // Evita colisiones de rutas identicas (p. ej. dos PDFs distintos saneados al mismo nombre).
+      if (usedEntryPaths.has(entryPath.toLowerCase())) {
+        const parsed = path.posix.parse(entryPath);
+        entryPath = path.posix.join(parsed.dir, `${parsed.name}-${index + 1}${parsed.ext || ".pdf"}`);
+      }
+      usedEntryPaths.add(entryPath.toLowerCase());
+
+      const destinationPath = path.join(workspace, entryPath);
+      fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
       await streamMinioObjectToFile(result.signedBucket || MINIO_USERS_BUCKET, result.signedPath, destinationPath);
-      filePaths.push(destinationPath);
     }
 
-    const zipPath = path.join(workspace, `firmas-lote-${jobId}.zip`);
-    await createZipArchive(zipPath, filePaths);
+    await createStructuredZipArchive(workspace, zipPath);
 
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="firmas-lote-${jobId}.zip"`);
     res.download(zipPath, `firmas-lote-${jobId}.zip`, () => {
       fs.rm(workspace, { recursive: true, force: true }, () => {});
+      fs.rm(zipPath, { force: true }, () => {});
     });
   } catch (error) {
     console.error("[sign_controller][batch-download] Error:", error);

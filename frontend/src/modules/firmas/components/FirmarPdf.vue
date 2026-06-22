@@ -2546,6 +2546,7 @@
             multiBatchRequest.value.documents.map((doc) => ({
               id: doc.id,
               name: doc.name,
+              relativePath: doc.relativePath || doc.name,
               metadata: {
                 signatureRequestId: Number(doc?.metadata?.signatureRequestId || 0) || null,
                 documentVersionId: Number(doc?.metadata?.documentVersionId || 0) || null,

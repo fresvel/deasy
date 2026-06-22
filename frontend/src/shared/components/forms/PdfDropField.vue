@@ -18,8 +18,9 @@
         ref="inputRef"
         type="file"
         class="deasy-dropzone__input"
-        :accept="accept"
-        :multiple="multiple"
+        :accept="directory ? null : accept"
+        :multiple="multiple || directory"
+        :webkitdirectory="directory ? true : null"
         :disabled="disabled"
         @change="handleInputChange"
       />
@@ -60,6 +61,12 @@ const props = defineProps({
     default: "application/pdf"
   },
   multiple: {
+    type: Boolean,
+    default: false
+  },
+  // Modo carpeta: el input selecciona un directorio completo (webkitdirectory) y cada File
+  // expuesto incluye su webkitRelativePath con la ruta interna multinivel.
+  directory: {
     type: Boolean,
     default: false
   },

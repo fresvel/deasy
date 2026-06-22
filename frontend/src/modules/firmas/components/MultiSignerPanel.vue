@@ -3,7 +3,7 @@
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
       <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
         <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div v-if="allowManualUpload" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div v-if="allowManualUpload" class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
             <PdfDropField
               title=""
               action-text="Seleccionar documentos"
@@ -13,6 +13,19 @@
               class="multisigner-upload-card"
               @files-selected="onFilesSelected"
             />
+            <PdfDropField
+              title=""
+              action-text="Seleccionar carpeta"
+              help-text="Carga una carpeta (solo PDFs); se conserva su estructura interna"
+              input-id="multisigner-folder-rail"
+              directory
+              variant="compact"
+              class="multisigner-upload-card"
+              @files-selected="onFolderSelected"
+            />
+            <p v-if="uploadError" class="rounded-lg bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-snug text-rose-600">
+              {{ uploadError }}
+            </p>
           </div>
 
           <div
@@ -123,6 +136,7 @@
                     <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
                   </div>
                 </div>
+                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-[11px] font-medium text-slate-400" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
                 <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-rose-600">{{ doc.error }}</div>
               </div>
             </div>
@@ -445,6 +459,7 @@ const pdfCanvas = ref(null);
 const canvasHost = ref(null);
 const viewerRef = ref(null);
 const batchError = ref("");
+const uploadError = ref("");
 const displayScaleRef = ref(1);
 
 let pdfDoc = null;
@@ -674,15 +689,32 @@ const normalizeMetadata = (metadata = {}) => ({
   requestedAt: metadata.requestedAt || ""
 });
 
-const buildDocumentItem = (file, metadata = {}) => ({
-  id: `multi-doc-${inputSequence += 1}`,
-  file,
-  fingerprint: `${file.name}-${file.size}-${file.lastModified}`,
-  name: file.name,
-  status: "Pendiente",
-  progressLabel: "Sin procesar",
-  metadata: normalizeMetadata(metadata)
-});
+// Ruta relativa multinivel del archivo: webkitRelativePath cuando viene de una carpeta, o el nombre plano.
+const resolveRelativePath = (file) => {
+  const relative = String(file?.webkitRelativePath || "").trim();
+  return relative || file.name;
+};
+
+const buildDocumentItem = (file, metadata = {}) => {
+  const relativePath = resolveRelativePath(file);
+  return {
+    id: `multi-doc-${inputSequence += 1}`,
+    file,
+    fingerprint: `${relativePath}-${file.size}-${file.lastModified}`,
+    name: file.name,
+    relativePath,
+    status: "Pendiente",
+    progressLabel: "Sin procesar",
+    metadata: normalizeMetadata(metadata)
+  };
+};
+
+// Devuelve solo la porcion de directorio de la ruta relativa (sin el nombre del archivo).
+const formatRelativeDir = (doc) => {
+  const relative = String(doc?.relativePath || "");
+  const lastSlash = relative.lastIndexOf("/");
+  return lastSlash > 0 ? relative.slice(0, lastSlash) : "";
+};
 
 const loadCurrentDocument = async () => {
   const selected = currentDocument.value;
@@ -917,14 +949,12 @@ const handlePointerUp = () => {
   activeSelectionBox.value = null;
 };
 
-const onFilesSelected = async (files) => {
-  const pdfFiles = Array.from(files || []).filter(
-    (file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-  );
-  if (!pdfFiles.length) return;
+const isPdfFile = (file) =>
+  file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
+const appendNewDocuments = async (candidateFiles) => {
   const existingFingerprints = new Set(documents.value.map((doc) => doc.fingerprint));
-  const newDocuments = pdfFiles
+  const newDocuments = candidateFiles
     .map((file) => buildDocumentItem(file))
     .filter((doc) => !existingFingerprints.has(doc.fingerprint));
 
@@ -935,6 +965,37 @@ const onFilesSelected = async (files) => {
     currentDocumentId.value = newDocuments[0]?.id || "";
     await loadCurrentDocument();
   }
+};
+
+const onFilesSelected = async (files) => {
+  uploadError.value = "";
+  const pdfFiles = Array.from(files || []).filter(isPdfFile);
+  if (!pdfFiles.length) return;
+  await appendNewDocuments(pdfFiles);
+};
+
+// Carga de carpeta: exige que TODAS las rutas internas sean PDFs. Si hay archivos no-PDF, aborta y los reporta.
+const onFolderSelected = async (files) => {
+  uploadError.value = "";
+  const allFiles = Array.from(files || []).filter((file) => {
+    // Ignora artefactos del sistema de archivos (p. ej. .DS_Store, Thumbs.db) que no son contenido real.
+    const base = file.name.toLowerCase();
+    return base !== ".ds_store" && base !== "thumbs.db";
+  });
+  if (!allFiles.length) return;
+
+  const nonPdfFiles = allFiles.filter((file) => !isPdfFile(file));
+  if (nonPdfFiles.length) {
+    const sample = nonPdfFiles
+      .slice(0, 3)
+      .map((file) => resolveRelativePath(file))
+      .join(", ");
+    const extra = nonPdfFiles.length > 3 ? ` y ${nonPdfFiles.length - 3} más` : "";
+    uploadError.value = `La carpeta contiene archivos que no son PDF (${sample}${extra}). Solo se permiten PDFs.`;
+    return;
+  }
+
+  await appendNewDocuments(allFiles);
 };
 
 const hasDocumentMetadata = (doc) => Boolean(
@@ -1135,6 +1196,7 @@ const requestBatchStart = async () => {
     documents: documents.value.map((doc) => ({
       id: doc.id,
       name: doc.name,
+      relativePath: doc.relativePath || doc.name,
       file: doc.file,
       metadata: { ...(doc.metadata || {}) }
     })),
@@ -1213,6 +1275,18 @@ watch(batchMode, () => {
   if (batchMode.value !== "shared-coordinates") {
     sharedPageReference.value = "start";
   }
+});
+
+// La referencia de pagina (inicio/ultima) se captura al colocar cada sello. Si el usuario la
+// cambia DESPUES de haber ubicado sellos, propagala a los campos ya colocados: pageOffset (distancia
+// al final) y pageValue (pagina absoluta) ya quedaron calculados al colocar el sello, de modo que el
+// backend resuelve la pagina por documento contando en reversa sin necesidad de recolocar el sello.
+watch(sharedPageReference, (reference) => {
+  if (!sharedFields.value.length) return;
+  sharedFields.value = sharedFields.value.map((field) => ({
+    ...field,
+    pageReference: reference
+  }));
 });
 
 watch(currentDocumentIndex, async () => {
