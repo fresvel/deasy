@@ -255,9 +255,9 @@ export const getTemplateArtifactSchema = async (req, res) => {
   }
 };
 
-export const updateTemplateArtifactStage = async (req, res) => {
+export const setTemplateArtifactActive = async (req, res) => {
   try {
-    const result = await service.updateTemplateArtifactStage(req.params.id, req.body?.stage);
+    const result = await service.setTemplateArtifactActive(req.params.id, req.body?.is_active);
     res.json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -266,7 +266,7 @@ export const updateTemplateArtifactStage = async (req, res) => {
 
 export const createTemplateArtifactVersion = async (req, res) => {
   try {
-    const result = await service.createTemplateArtifactVersion(req.params.id);
+    const result = await service.createTemplateArtifactVersion(req.params.id, req.body?.bump_level);
     res.json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });

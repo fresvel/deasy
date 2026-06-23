@@ -71,7 +71,7 @@ export function useAdminEditorFlow({
   const openEdit = async (row) => {
     if (
       props.table?.table === "template_artifacts"
-      && !row?.owner_ref
+      && row?.template_scope !== "ad_hoc"
     ) {
       showFeedbackToast({
         kind: "error",

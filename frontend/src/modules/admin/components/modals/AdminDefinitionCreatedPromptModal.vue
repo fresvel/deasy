@@ -9,7 +9,7 @@
     </p>
     <template #footer>
       <AdminButton variant="secondary" @click="$emit('close')">Ahora no</AdminButton>
-      <AdminButton variant="outlinePrimary" @click="$emit('open-rules')">Reglas</AdminButton>
+      <AdminButton variant="outlinePrimary" @click="$emit('open-rules')">Alcance</AdminButton>
       <AdminButton variant="outlinePrimary" @click="$emit('open-triggers')">Periodos</AdminButton>
       <AdminButton variant="outlinePrimary" @click="$emit('open-artifacts')">Paquetes</AdminButton>
       <AdminButton variant="primary" @click="$emit('open-wizard')">Continuar guiado →</AdminButton>

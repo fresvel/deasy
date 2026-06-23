@@ -19,10 +19,13 @@
       </AdminButton>
     </div>
 
-    <!-- Formulario colapsable: alta o edición de una regla -->
-    <div v-if="canManage && formOpen" class="person-assignment-form flex flex-col gap-5">
-      <p class="m-0 text-sm font-bold text-slate-800">{{ editId ? "Editar regla" : "Nueva regla" }}</p>
-
+    <!-- Alta/edición de una regla en un modal enfocado (mismo patrón que Paquetes). -->
+    <AppDialogOverlay
+      :open="canManage && formOpen"
+      :title="editId ? 'Editar regla de alcance' : 'Nueva regla de alcance'"
+      @close="cancelForm"
+    >
+      <div class="flex flex-col gap-5">
       <div
         class="flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm"
         :class="canSubmit
@@ -150,15 +153,18 @@
         </div>
       </fieldset>
 
-      <AdminFormActions
-        :primary-label="editId ? 'Guardar regla' : 'Agregar regla'"
-        :primary-disabled="!canSubmit"
-        show-cancel
-        cancel-label="Cancelar"
-        @primary="handleSubmit"
-        @cancel="cancelForm"
-      />
-    </div>
+      </div>
+      <template #footer>
+        <AdminFormActions
+          :primary-label="editId ? 'Guardar regla' : 'Agregar regla'"
+          :primary-disabled="!canSubmit"
+          show-cancel
+          cancel-label="Cancelar"
+          @primary="handleSubmit"
+          @cancel="cancelForm"
+        />
+      </template>
+    </AppDialogOverlay>
 
     <div v-if="loading" class="text-sm text-slate-500">Cargando reglas vinculadas...</div>
     <AdminDataTable
@@ -204,6 +210,7 @@ import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vu
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 
 const props = defineProps({
   context: { type: Object, default: null },

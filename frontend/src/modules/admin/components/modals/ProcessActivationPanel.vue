@@ -1,34 +1,41 @@
 <template>
   <div>
-    <div v-if="checking" class="text-sm text-slate-500">Validando configuracion de la configuracion...</div>
+    <div v-if="checking" class="text-sm text-slate-500">Validando la configuración…</div>
     <template v-else-if="status === 'active'">
-      <div class="definition-activation-warning mt-3">
-        Esta configuracion ya esta <strong>activa</strong>. No se puede modificar reglas, periodos ni
-        paquetes en esta version: para introducir cambios crea una nueva version, o retirala para desactivarla.
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
+        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-slate-400" />
+        <span>Configuración <strong>activa</strong> y de solo lectura. Para cambios, crea una nueva versión o retírala.</span>
       </div>
     </template>
     <template v-else-if="status === 'retired'">
-      <div class="definition-activation-warning mt-3">
-        Esta configuracion esta <strong>retirada</strong> y es de solo lectura. Para reutilizarla crea una
-        nueva version a partir de ella.
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-sm text-slate-700">
+        <font-awesome-icon icon="lock" class="h-4 w-4 shrink-0 text-slate-400" />
+        <span>Configuración <strong>retirada</strong> y de solo lectura. Para reutilizarla, crea una nueva versión a partir de ella.</span>
       </div>
     </template>
     <template v-else>
-      <p class="mb-2">Vas a activar una configuracion en borrador.</p>
-      <div class="definition-activation-warning mt-3">
-        Despues de activarla ya no podras modificar reglas, periodos ni paquetes en esta misma version.
-        Si ya existe una configuracion activa en esta misma serie, se retirara automaticamente.
-      </div>
-
-      <div class="definition-activation-checklist mt-3">
-        <div class="definition-checklist-items">
-          <div class="definition-checklist-item" :class="{ 'is-complete': hasActiveRules }">
-            <font-awesome-icon :icon="hasActiveRules ? 'check' : 'times'" />
-            <span>Al menos una regla activa</span>
-          </div>
-          <div class="definition-checklist-item" :class="{ 'is-complete': hasActiveTriggers }">
-            <font-awesome-icon :icon="hasActiveTriggers ? 'check' : 'times'" />
-            <span>Al menos un tipo de periodo activo</span>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Requisitos para activar</span>
+          <span
+            class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold ring-1"
+            :class="allRequirementsMet ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 'bg-slate-100 text-slate-600 ring-slate-200'"
+          >{{ completedRequirements }}/3</span>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-3">
+          <div
+            v-for="req in requirements"
+            :key="req.key"
+            class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold ring-1 transition-colors"
+            :class="req.done ? 'bg-emerald-50 text-emerald-800 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200'"
+          >
+            <span
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
+              :class="req.done ? 'bg-emerald-500' : 'bg-rose-400'"
+            >
+              <font-awesome-icon :icon="req.done ? 'check' : 'times'" class="h-3.5 w-3.5" />
+            </span>
+            <span>{{ req.label }}</span>
           </div>
         </div>
       </div>
@@ -36,7 +43,7 @@
       <div v-if="view !== 'activate'" class="definition-activation-panel mt-3">
         <div v-if="showMenu" class="definition-activation-menu flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
           <AdminButton variant="secondary" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
-          <AdminButton variant="secondary" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Reglas</AdminButton>
+          <AdminButton variant="secondary" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Alcance</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Periodos</AdminButton>
           <AdminButton variant="secondary" :class="{ active: view === 'artifacts' }" @click="$emit('update:view', 'artifacts')">Paquetes</AdminButton>
         </div>
@@ -164,6 +171,7 @@ const props = defineProps({
   checking: { type: Boolean, default: false },
   hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
+  hasActiveArtifacts: { type: Boolean, default: false },
   view: { type: String, default: "definition" },
   selectedRow: { type: Object, default: null },
   rules: { type: Array, default: () => [] },
@@ -179,4 +187,11 @@ const props = defineProps({
 defineEmits(["update:view", "view-row"]);
 
 const status = computed(() => String(props.selectedRow?.status || "").toLowerCase());
+const requirements = computed(() => [
+  { key: "rules", label: "Regla de alcance", done: props.hasActiveRules },
+  { key: "triggers", label: "Tipo de periodo", done: props.hasActiveTriggers },
+  { key: "artifacts", label: "Plantilla vinculada", done: props.hasActiveArtifacts }
+]);
+const completedRequirements = computed(() => requirements.value.filter((r) => r.done).length);
+const allRequirementsMet = computed(() => completedRequirements.value === requirements.value.length);
 </script>

@@ -7,7 +7,7 @@ import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 // de las reglas objetivo del proceso, así que estas deben definirse primero.
 export const PROCESS_WIZARD_STEPS = [
   { key: "definition", label: "Configuración" },
-  { key: "rules", label: "Reglas" },
+  { key: "rules", label: "Alcance" },
   { key: "packages", label: "Paquetes" },
   { key: "triggers", label: "Periodos" },
   { key: "activate", label: "Activar" },

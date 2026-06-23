@@ -1162,7 +1162,7 @@
                     <strong class="block truncate text-sm font-bold text-slate-800">{{ item.display_name }}</strong>
                     <p class="mt-1 mb-0 text-xs font-medium text-slate-500">{{ item.description || 'Plantilla de documento registrada por el usuario.' }}</p>
                   </div>
-                  <AppTag variant="muted" class-name="shrink-0">{{ item.artifact_stage }}</AppTag>
+                  <AppTag :variant="Number(item.is_active) === 1 ? 'success' : 'muted'" class-name="shrink-0">{{ Number(item.is_active) === 1 ? 'Activa' : 'Inactiva' }}</AppTag>
                 </article>
               </div>
             </article>

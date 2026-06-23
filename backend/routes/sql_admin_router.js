@@ -12,7 +12,7 @@ import {
   createTemplateArtifactDraft,
   updateTemplateArtifactDraft,
   getTemplateArtifactSchema,
-  updateTemplateArtifactStage,
+  setTemplateArtifactActive,
   createTemplateArtifactVersion,
   getTemplateArtifactSyncStatus,
   resyncTemplateArtifactWorkflows,
@@ -42,7 +42,7 @@ router.get("/template_seeds/:id/preview", requireSqlAdminPermission({ resource: 
 router.get("/template_seeds/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateSeedArchive);
 router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateArtifactArchive);
 router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
-router.patch("/template_artifacts/:id/stage", requireSqlAdminPermission({ resource: "templates", action: "update" }), updateTemplateArtifactStage);
+router.patch("/template_artifacts/:id/active", requireSqlAdminPermission({ resource: "templates", action: "update" }), setTemplateArtifactActive);
 router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
 router.get("/template_artifacts/:id/sync-status", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSyncStatus);
 router.post("/template_artifacts/:id/resync", requireSqlAdminPermission({ resource: "templates", action: "update" }), resyncTemplateArtifactWorkflows);

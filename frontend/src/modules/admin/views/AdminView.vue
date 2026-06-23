@@ -412,7 +412,6 @@
                       :key="item.table"
                       layout="stacked"
                       :title="item.label"
-                      :meta="item.bucket"
                       :description="item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
                       :icon="tableIconMeta(item.table).icon"
                       show-arrow

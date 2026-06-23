@@ -19,6 +19,7 @@ export function useProcessDefinitionActivationFlow({
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
@@ -96,6 +97,7 @@ export function useProcessDefinitionActivationFlow({
     processDefinitionActivationChecking.value = true;
     processDefinitionActivationHasActiveRules.value = true;
     processDefinitionActivationHasActiveTriggers.value = true;
+    processDefinitionActivationHasActiveArtifacts.value = true;
     processDefinitionActivationView.value = "definition";
     ensureProcessDefinitionActivationInstance();
     getProcessDefinitionActivationInstance()?.show();
@@ -105,9 +107,11 @@ export function useProcessDefinitionActivationFlow({
       await loadProcessDefinitionActivationDetail(definitionId);
       processDefinitionActivationHasActiveRules.value = checklist.rules;
       processDefinitionActivationHasActiveTriggers.value = checklist.triggers;
+      processDefinitionActivationHasActiveArtifacts.value = checklist.artifacts;
     } catch {
       processDefinitionActivationHasActiveRules.value = false;
       processDefinitionActivationHasActiveTriggers.value = true;
+      processDefinitionActivationHasActiveArtifacts.value = true;
       processDefinitionActivationRules.value = [];
       processDefinitionActivationTriggers.value = [];
       processDefinitionActivationArtifacts.value = [];

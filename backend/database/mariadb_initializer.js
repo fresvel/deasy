@@ -610,6 +610,49 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       console.warn("⚠️  No se pudo eliminar signature_types:", error.message);
     }
 
+    // Limpieza de sobrecarga en template_artifacts: el ciclo de vida se reduce a is_active (Activo/Inactivo);
+    // se elimina artifact_stage (pipeline editorial del CLI obsoleto, no gateaba runtime), source_version
+    // (semver decorativo nunca leído), owner_ref (cédula derivable de owner_person_id; lo editable lo da
+    // template_scope) y bucket (siempre la constante). storage_version pasa de 'vNNNN' a semver 'X.Y.Z'.
+    try {
+      const columnExists = async (table, column) => {
+        const [rows] = await connection.query(
+          `SELECT 1 FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+          [table, column]
+        );
+        return rows.length > 0;
+      };
+      const dropColumnIfExists = async (table, column) => {
+        if (await columnExists(table, column)) {
+          await connection.query(`ALTER TABLE \`${table}\` DROP COLUMN \`${column}\``);
+        }
+      };
+      // Coherencia previa: una etapa 'archived' equivale a inactiva.
+      if (await columnExists("template_artifacts", "artifact_stage")) {
+        await connection.query(
+          "UPDATE template_artifacts SET is_active = 0 WHERE artifact_stage = 'archived'"
+        );
+      }
+      // Invariante: storage_version SIEMPRE coincide con el segmento de versión del base_object_prefix (donde
+      // viven los objetos en MinIO). Re-alinea filas desincronizadas (p. ej. por migraciones previas) sin mover
+      // objetos: la verdad es la ruta física. Las plantillas nuevas/versiones nacen ya con semver (X.Y.Z); las
+      // antiguas conservan su segmento histórico (vNNNN) hasta que se cree una nueva versión o se reinstale.
+      await connection.query(
+        `UPDATE template_artifacts
+            SET storage_version = SUBSTRING_INDEX(TRIM(TRAILING '/' FROM base_object_prefix), '/', -1)
+          WHERE base_object_prefix IS NOT NULL
+            AND base_object_prefix <> ''
+            AND storage_version <> SUBSTRING_INDEX(TRIM(TRAILING '/' FROM base_object_prefix), '/', -1)`
+      );
+      await dropColumnIfExists("template_artifacts", "artifact_stage");
+      await dropColumnIfExists("template_artifacts", "source_version");
+      await dropColumnIfExists("template_artifacts", "owner_ref");
+      await dropColumnIfExists("template_artifacts", "bucket");
+    } catch (error) {
+      console.warn("⚠️  No se pudo limpiar template_artifacts:", error.message);
+    }
+
     const [cargoColumns] = await connection.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cargos'`
@@ -1228,7 +1271,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     }
 
     // Limpieza modelo (2026-06): columnas deprecadas por la migración del modelo de plantillas.
-    // - template_artifacts.artifact_origin: constante 'process'; la propiedad se distingue por owner_ref.
+    // - template_artifacts.artifact_origin: constante 'process'; la propiedad se distingue por template_scope.
     const dropDeprecatedColumn = async (table, column) => {
       const [exists] = await connection.query(
         `SELECT COLUMN_NAME FROM information_schema.COLUMNS

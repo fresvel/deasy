@@ -268,7 +268,7 @@ const BASE_SEED_DIR = path.join(__dirname, "seeds", BASE_SEED_NAME);
 
 const DEFAULT_TEMPLATE_CODE = "tpl_informe_general";
 const DEFAULT_TEMPLATE_BUCKET = "deasy-templates";
-const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/v0001/`;
+const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/1.0.0/`;
 const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/jinja2/`;
 const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
 
@@ -277,9 +277,8 @@ const BASE_META_YAML = `key: "${BASE_SEED_CODE}"
 export_id: "${DEFAULT_TEMPLATE_CODE}"
 seed_code: "${BASE_SEED_CODE}"
 name: "${BASE_SEED_DISPLAY}"
-repository_stage: published
 version: 1.0.0
-storage_version: v0001
+storage_version: 1.0.0
 formats:
   jinja2:
     path: "template/jinja2"
@@ -467,23 +466,22 @@ export const ensureDefaultProcess = async (connection) => {
   // 5. plantilla base instanciada desde el seed. Schema/meta/jinja2 viven en MinIO (publicados abajo).
   let artifact = await fetchOne(
     connection,
-    "SELECT id FROM template_artifacts WHERE template_code = ? AND storage_version = 'v0001' LIMIT 1",
+    "SELECT id FROM template_artifacts WHERE template_code = ? LIMIT 1",
     [DEFAULT_TEMPLATE_CODE]
   );
   if (!artifact) {
     const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
     const [r] = await connection.query(
       `INSERT INTO template_artifacts
-        (template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
-         source_version, storage_version, artifact_stage, template_scope, bucket, base_object_prefix,
+        (template_seed_id, owner_person_id, template_code, display_name, description,
+         storage_version, template_scope, base_object_prefix,
          available_formats, schema_object_key, meta_object_key, is_active)
-       VALUES (?, NULL, ?, ?, ?, NULL, '1.0.0', 'v0001', 'published', 'official', ?, ?, ?, ?, ?, 1)`,
+       VALUES (?, NULL, ?, ?, ?, '1.0.0', 'official', ?, ?, ?, ?, 1)`,
       [
         templateSeedId,
         DEFAULT_TEMPLATE_CODE,
         BASE_SEED_DISPLAY,
         "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
-        DEFAULT_TEMPLATE_BUCKET,
         DEFAULT_TEMPLATE_PREFIX,
         JSON.stringify(availableFormats),
         `${DEFAULT_TEMPLATE_PREFIX}schema.json`,

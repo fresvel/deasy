@@ -36,7 +36,6 @@ export function useAdminDraftArtifactFlow({
       template_seed_id: "",
       display_name: "",
       description: "",
-      source_version: "1.0.0",
       process_definition_id: "",
       template_scope: "official",
       schema_fields: [],
@@ -97,9 +96,8 @@ export function useAdminDraftArtifactFlow({
         template_seed_id: row.template_seed_id ? String(row.template_seed_id) : "",
         display_name: row.display_name ? String(row.display_name) : "",
         description: row.description ? String(row.description) : "",
-        source_version: row.source_version ? String(row.source_version) : "1.0.0",
-        artifact_stage: row.artifact_stage ? String(row.artifact_stage) : "draft",
         storage_version: row.storage_version ? String(row.storage_version) : "",
+        is_active: Number(row.is_active) === 1 ? 1 : 0,
         // El tipo no se cambia al editar: define el almacenamiento y las opciones de autoría. Se muestra como tag.
         template_scope: row.template_scope === "ad_hoc" ? "ad_hoc" : "official",
         schema_fields: []
@@ -127,7 +125,6 @@ export function useAdminDraftArtifactFlow({
         template_seed_id: "",
         display_name: "",
         description: "",
-        source_version: "1.0.0",
         // Preselecciona la configuración de origen cuando la plantilla se crea desde la edición de una config
         // (el modo embebido del picker no dispara shown.bs.modal, así que se fija aquí al construir el form).
         process_definition_id: preselectDefinitionId ? String(preselectDefinitionId) : "",
@@ -188,7 +185,6 @@ export function useAdminDraftArtifactFlow({
       }
       form.append("display_name", draftArtifactForm.value.display_name || "");
       form.append("description", draftArtifactForm.value.description || "");
-      form.append("source_version", draftArtifactForm.value.source_version || "1.0.0");
       form.append("template_scope", draftArtifactForm.value.template_scope || "official");
       if (Array.isArray(draftArtifactForm.value.schema_fields) && draftArtifactForm.value.schema_fields.length) {
         form.append("schema_fields", JSON.stringify(draftArtifactForm.value.schema_fields));

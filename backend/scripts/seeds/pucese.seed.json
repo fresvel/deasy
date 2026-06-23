@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-06-18T20:11:06.121Z",
+  "captured_at": "2026-06-23T20:38:21.520Z",
   "tables": [
     {
       "table": "persons",
@@ -96,7 +96,7 @@
           "calle_primaria": null,
           "calle_secundaria": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$57SljEqnITNNt1QDEPlNzuY.gMczwvE4ciDeoIgikYlBnMpbvAMCa",
+          "password_hash": "$2b$10$/0O.2PeSdaq4qXJxggMLIeG2iEFErHKMro3SPUHiF5uuW0dRgzXPG",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 1,
@@ -104,7 +104,7 @@
           "is_active": 1,
           "token": "3qkHU9tizq",
           "created_at": "2026-06-18 14:01:52",
-          "updated_at": "2026-06-18 14:01:52"
+          "updated_at": "2026-06-22 15:40:33"
         }
       ]
     },
@@ -2570,6 +2570,22 @@
           "assigned_at": "2026-06-18 14:01:52",
           "revoked_at": null,
           "revoked_reason": null
+        },
+        {
+          "id": 10,
+          "role_id": 13,
+          "unit_id": 1,
+          "derived_from_assignment_id": null,
+          "source": "manual",
+          "person_id": 2,
+          "max_depth": 0,
+          "start_date": "2026-06-22",
+          "end_date": null,
+          "is_current": 1,
+          "current_flag": 1,
+          "assigned_at": "2026-06-22 13:44:32",
+          "revoked_at": null,
+          "revoked_reason": null
         }
       ]
     },
@@ -2633,6 +2649,8 @@
         "position_type",
         "is_active",
         "deactivated_at",
+        "is_unit_head",
+        "head_flag",
         "created_at",
         "updated_at",
         "cargo_id"
@@ -2646,6 +2664,8 @@
         "position_type": "enum('real','promocion','simbolico')",
         "is_active": "tinyint(1)",
         "deactivated_at": "datetime",
+        "is_unit_head": "tinyint(1)",
+        "head_flag": "tinyint(1)",
         "created_at": "datetime",
         "updated_at": "datetime",
         "cargo_id": "int(11)"
@@ -2660,8 +2680,10 @@
           "position_type": "real",
           "is_active": 1,
           "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
           "created_at": "2026-06-18 16:02:31",
-          "updated_at": "2026-06-18 16:02:31",
+          "updated_at": "2026-06-18 20:21:43",
           "cargo_id": 2
         },
         {
@@ -2673,8 +2695,10 @@
           "position_type": "real",
           "is_active": 1,
           "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
           "created_at": "2026-06-18 16:03:35",
-          "updated_at": "2026-06-18 16:03:35",
+          "updated_at": "2026-06-18 21:14:23",
           "cargo_id": 1
         },
         {
@@ -2686,6 +2710,8 @@
           "position_type": "real",
           "is_active": 1,
           "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
           "created_at": "2026-06-18 16:04:08",
           "updated_at": "2026-06-18 16:04:08",
           "cargo_id": 2
@@ -2699,8 +2725,10 @@
           "position_type": "real",
           "is_active": 1,
           "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
           "created_at": "2026-06-18 16:04:31",
-          "updated_at": "2026-06-18 16:04:31",
+          "updated_at": "2026-06-18 21:03:22",
           "cargo_id": 4
         }
       ]
@@ -2870,11 +2898,25 @@
           "definition_version": "1.0.0",
           "name": "Investigación Formativa por Docente",
           "description": null,
-          "status": "draft",
-          "active_series_flag": null,
+          "status": "active",
+          "active_series_flag": 1,
           "effective_from": "2026-06-18",
           "effective_to": null,
           "created_at": "2026-06-18 14:08:16"
+        },
+        {
+          "id": 8,
+          "process_id": 3,
+          "series_id": 2,
+          "variation_key": "docente",
+          "definition_version": "1.0.1",
+          "name": "Investigación Formativa por Docente",
+          "description": null,
+          "status": "draft",
+          "active_series_flag": null,
+          "effective_from": "2026-06-23",
+          "effective_to": null,
+          "created_at": "2026-06-23 18:15:16"
         }
       ]
     },
@@ -2901,6 +2943,20 @@
           "term_type_id": 5,
           "is_active": 1,
           "created_at": "2026-06-18 14:01:52"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 2,
+          "term_type_id": 1,
+          "is_active": 1,
+          "created_at": "2026-06-23 17:52:35"
+        },
+        {
+          "id": 4,
+          "process_definition_id": 8,
+          "term_type_id": 1,
+          "is_active": 1,
+          "created_at": "2026-06-23 18:15:16"
         }
       ]
     },
@@ -2981,6 +3037,36 @@
           "effective_from": "2026-06-18",
           "effective_to": null,
           "created_at": "2026-06-18 14:43:16"
+        },
+        {
+          "id": 7,
+          "process_definition_id": 8,
+          "unit_scope_type": "unit_type",
+          "unit_id": null,
+          "unit_type_id": 7,
+          "cargo_id": 2,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-06-18",
+          "effective_to": null,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 8,
+          "unit_scope_type": "unit_type",
+          "unit_id": null,
+          "unit_type_id": 8,
+          "cargo_id": 2,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-06-18",
+          "effective_to": null,
+          "created_at": "2026-06-23 18:15:16"
         }
       ]
     },
@@ -3090,12 +3176,8 @@
         "template_code",
         "display_name",
         "description",
-        "owner_ref",
-        "source_version",
         "storage_version",
-        "artifact_stage",
         "template_scope",
-        "bucket",
         "base_object_prefix",
         "available_formats",
         "schema_object_key",
@@ -3111,12 +3193,8 @@
         "template_code": "varchar(180)",
         "display_name": "varchar(180)",
         "description": "varchar(255)",
-        "owner_ref": "varchar(180)",
-        "source_version": "varchar(20)",
         "storage_version": "varchar(20)",
-        "artifact_stage": "enum('draft','review','approved','published','archived')",
         "template_scope": "enum('official','ad_hoc')",
-        "bucket": "varchar(120)",
         "base_object_prefix": "varchar(255)",
         "available_formats": "longtext",
         "schema_object_key": "varchar(255)",
@@ -3133,12 +3211,8 @@
           "template_code": "tpl_informe_general",
           "display_name": "Informe general",
           "description": "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
-          "owner_ref": null,
-          "source_version": "1.0.0",
           "storage_version": "v0001",
-          "artifact_stage": "published",
           "template_scope": "official",
-          "bucket": "deasy-templates",
           "base_object_prefix": "System/tpl_informe_general/v0001/",
           "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/tpl_informe_general/v0001/template/jinja2/\"}}",
           "schema_object_key": "System/tpl_informe_general/v0001/schema.json",
@@ -3146,6 +3220,91 @@
           "content_hash": null,
           "is_active": 1,
           "created_at": "2026-06-18 14:01:52"
+        },
+        {
+          "id": 2,
+          "template_seed_id": 1,
+          "owner_person_id": 1,
+          "template_code": "draft_informe",
+          "display_name": "Informe",
+          "description": null,
+          "storage_version": "v0001",
+          "template_scope": "official",
+          "base_object_prefix": "System/draft_informe/v0001/",
+          "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/draft_informe/v0001/template/jinja2/\"},\"docx\":{\"entry_object_key\":\"System/draft_informe/v0001/template/docx/\"}}",
+          "schema_object_key": "System/draft_informe/v0001/schema.json",
+          "meta_object_key": "System/draft_informe/v0001/meta.yaml",
+          "content_hash": "4c187bc7b6b6417287029cb3f7ba00a63ca18f6260e72e3bee6e0014e5b337da",
+          "is_active": 1,
+          "created_at": "2026-06-19 19:19:18"
+        },
+        {
+          "id": 3,
+          "template_seed_id": 1,
+          "owner_person_id": 1,
+          "template_code": "draft_plan",
+          "display_name": "Plan",
+          "description": null,
+          "storage_version": "v0001",
+          "template_scope": "official",
+          "base_object_prefix": "System/draft_plan/v0001/",
+          "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/draft_plan/v0001/template/jinja2/\"},\"docx\":{\"entry_object_key\":\"System/draft_plan/v0001/template/docx/\"}}",
+          "schema_object_key": "System/draft_plan/v0001/schema.json",
+          "meta_object_key": "System/draft_plan/v0001/meta.yaml",
+          "content_hash": "68d1e3d47904410581c8e2436e9e8912379cb8cf134420e7d92a50d4e349205b",
+          "is_active": 1,
+          "created_at": "2026-06-19 19:20:48"
+        },
+        {
+          "id": 4,
+          "template_seed_id": 1,
+          "owner_person_id": 1,
+          "template_code": "draft_informe-de-avance",
+          "display_name": "Informe de Avance",
+          "description": null,
+          "storage_version": "v0001",
+          "template_scope": "official",
+          "base_object_prefix": "System/draft_informe-de-avance/v0001/",
+          "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/draft_informe-de-avance/v0001/template/jinja2/\"},\"docx\":{\"entry_object_key\":\"System/draft_informe-de-avance/v0001/template/docx/\"}}",
+          "schema_object_key": "System/draft_informe-de-avance/v0001/schema.json",
+          "meta_object_key": "System/draft_informe-de-avance/v0001/meta.yaml",
+          "content_hash": "17564c15520da19a6717ac40a249e0008a63a456619e2ba21343bbe5d5cbe7ba",
+          "is_active": 1,
+          "created_at": "2026-06-19 20:40:30"
+        },
+        {
+          "id": 5,
+          "template_seed_id": 1,
+          "owner_person_id": 1,
+          "template_code": "draft_informe-de-investigacion-formativa-por-docente",
+          "display_name": "Informe de Investigación Formativa por Docente",
+          "description": null,
+          "storage_version": "v0001",
+          "template_scope": "official",
+          "base_object_prefix": "System/draft_informe-de-investigacion-formativa-por-docente/v0001/",
+          "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/draft_informe-de-investigacion-formativa-por-docente/v0001/template/jinja2/\"},\"docx\":{\"entry_object_key\":\"System/draft_informe-de-investigacion-formativa-por-docente/v0001/template/docx/\"}}",
+          "schema_object_key": "System/draft_informe-de-investigacion-formativa-por-docente/v0001/schema.json",
+          "meta_object_key": "System/draft_informe-de-investigacion-formativa-por-docente/v0001/meta.yaml",
+          "content_hash": "1a2786f074b50ee6f200bb9d3ca1829eae014c7d1c06974b4f8d6ff7f77ac9da",
+          "is_active": 1,
+          "created_at": "2026-06-22 15:05:52"
+        },
+        {
+          "id": 6,
+          "template_seed_id": 1,
+          "owner_person_id": 1,
+          "template_code": "draft_informe",
+          "display_name": "Informe",
+          "description": null,
+          "storage_version": "v0002",
+          "template_scope": "official",
+          "base_object_prefix": "System/draft_informe/v0002/",
+          "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/draft_informe/v0002/template/jinja2/\"},\"docx\":{\"entry_object_key\":\"System/draft_informe/v0002/template/docx/\"}}",
+          "schema_object_key": "System/draft_informe/v0002/schema.json",
+          "meta_object_key": "System/draft_informe/v0002/meta.yaml",
+          "content_hash": "4c187bc7b6b6417287029cb3f7ba00a63ca18f6260e72e3bee6e0014e5b337da",
+          "is_active": 1,
+          "created_at": "2026-06-23 12:55:44"
         }
       ]
     },
@@ -3172,6 +3331,34 @@
           "template_artifact_id": 1,
           "sort_order": 1,
           "created_at": "2026-06-18 14:01:52"
+        },
+        {
+          "id": 8,
+          "process_definition_id": 2,
+          "template_artifact_id": 4,
+          "sort_order": 1,
+          "created_at": "2026-06-19 20:40:30"
+        },
+        {
+          "id": 9,
+          "process_definition_id": 2,
+          "template_artifact_id": 5,
+          "sort_order": 1,
+          "created_at": "2026-06-22 15:05:52"
+        },
+        {
+          "id": 16,
+          "process_definition_id": 8,
+          "template_artifact_id": 4,
+          "sort_order": 1,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 17,
+          "process_definition_id": 8,
+          "template_artifact_id": 5,
+          "sort_order": 1,
+          "created_at": "2026-06-23 18:15:16"
         }
       ]
     },
@@ -3503,6 +3690,7 @@
         "required_signers_max",
         "is_required",
         "anchor_refs",
+        "signers",
         "created_at"
       ],
       "column_types": {
@@ -3525,6 +3713,7 @@
         "required_signers_max": "int(11)",
         "is_required": "tinyint(1)",
         "anchor_refs": "longtext",
+        "signers": "longtext",
         "created_at": "datetime"
       },
       "rows": []
@@ -3873,6 +4062,38 @@
           "description": "artifact_sync_fill:1:tpl_informe_general:v0001",
           "is_active": 1,
           "created_at": "2026-06-18 14:27:19"
+        },
+        {
+          "id": 5,
+          "process_definition_template_id": 8,
+          "name": "Flujo de entrega - Informe de Avance",
+          "description": "artifact_sync_fill:4:draft_informe-de-avance:v0001",
+          "is_active": 1,
+          "created_at": "2026-06-19 20:40:30"
+        },
+        {
+          "id": 6,
+          "process_definition_template_id": 9,
+          "name": "Flujo de entrega - Informe de Investigación Formativa por Docente",
+          "description": "artifact_sync_fill:5:draft_informe-de-investigacion-formativa-por-docente:v0001",
+          "is_active": 1,
+          "created_at": "2026-06-22 15:05:52"
+        },
+        {
+          "id": 13,
+          "process_definition_template_id": 16,
+          "name": "Flujo de entrega - Informe de Avance",
+          "description": "artifact_sync_fill:4:draft_informe-de-avance:v0001",
+          "is_active": 1,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 14,
+          "process_definition_template_id": 17,
+          "name": "Flujo de entrega - Informe de Investigación Formativa por Docente",
+          "description": "artifact_sync_fill:5:draft_informe-de-investigacion-formativa-por-docente:v0001",
+          "is_active": 1,
+          "created_at": "2026-06-23 18:15:16"
         }
       ]
     },
@@ -3931,7 +4152,7 @@
           "created_at": "2026-06-18 14:01:52"
         },
         {
-          "id": 2,
+          "id": 83,
           "fill_flow_template_id": 2,
           "step_order": 1,
           "resolver_type": "document_owner",
@@ -3945,7 +4166,109 @@
           "selection_mode": "auto_one",
           "is_required": 1,
           "can_reject": 0,
-          "created_at": "2026-06-18 14:27:19"
+          "created_at": "2026-06-23 15:29:06"
+        },
+        {
+          "id": 122,
+          "fill_flow_template_id": 5,
+          "step_order": 1,
+          "resolver_type": "task_assignee",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 123,
+          "fill_flow_template_id": 13,
+          "step_order": 1,
+          "resolver_type": "task_assignee",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 124,
+          "fill_flow_template_id": 6,
+          "step_order": 1,
+          "resolver_type": "task_assignee",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 125,
+          "fill_flow_template_id": 6,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": 2,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": 1,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 126,
+          "fill_flow_template_id": 14,
+          "step_order": 1,
+          "resolver_type": "task_assignee",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-23 18:15:16"
+        },
+        {
+          "id": 127,
+          "fill_flow_template_id": 14,
+          "step_order": 2,
+          "resolver_type": "cargo_in_scope",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": 2,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": 1,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 1,
+          "created_at": "2026-06-23 18:15:16"
         }
       ]
     },
@@ -4149,7 +4472,19 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "person_id": 2,
+          "label": "HOMERO JAVIER VELASTEGUI IZURIETA 131123180324",
+          "original_filename": "HOMERO JAVIER VELASTEGUI IZURIETA 131123180324.p12",
+          "bucket": "deasy-certificates",
+          "object_name": "users/0987654321/certificates/1782136026167-HOMERO_JAVIER_VELASTEGUI_IZURIETA_131123180324.p12",
+          "is_default": 1,
+          "created_at": "2026-06-22 13:47:06",
+          "updated_at": "2026-06-22 13:47:06"
+        }
+      ]
     },
     {
       "table": "person_emergency_contacts",
@@ -4244,6 +4579,19 @@
           "updated_at": "2026-06-04 17:33:46"
         },
         {
+          "job_id": "472ce632-f7b5-46c5-88ec-c6f273f44b13",
+          "user_id": 2,
+          "sign_mode": "coordinates",
+          "status": "completed",
+          "total": 5,
+          "processed": 5,
+          "success_count": 5,
+          "failed_count": 0,
+          "results": "[{\"fileName\":\"SESM1.7. SÃLABO ARQUITECTURA DE COMPUTADORES 202561.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"e812d758-140b-4e0d-b5f6-4cf39ecfdaf0\",\"signedPath\":\"users/0987654321/signed/654e9e9a-9418-40d0-94f3-65c4e4290a74/SESM1.7._S_LABO_ARQUITECTURA_DE_COMPUTADORES_202561.pdf\",\"workingPath\":\"users/0987654321/signed/654e9e9a-9418-40d0-94f3-65c4e4290a74/SESM1.7._S_LABO_ARQUITECTURA_DE_COMPUTADORES_202561.pdf\",\"finalPath\":\"users/0987654321/signed/654e9e9a-9418-40d0-94f3-65c4e4290a74/SESM1.7._S_LABO_ARQUITECTURA_DE_COMPUTADORES_202561.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_386641be25ed4cf09d2cee455621e942\",\"fieldNames\":[\"sig_386641be25ed4cf09d2cee455621e942\"],\"tsaUrl\":null,\"coordinates\":{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_386641be25ed4cf09d2cee455621e942\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:51:43+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"b017b85f-1351-4141-b129-041c1a58fe78\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM4.2.23. SÃLABO DE PRÃCTICAS PREPROFESIONALES.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"4da2d4fe-319f-47e1-a550-ad897ca6dbf6\",\"signedPath\":\"users/0987654321/signed/7e6c87b1-e2b0-4f9e-843d-30465a77e73b/SESM4.2.23._S_LABO_DE_PR_CTICAS_PREPROFESIONALES.pdf\",\"workingPath\":\"users/0987654321/signed/7e6c87b1-e2b0-4f9e-843d-30465a77e73b/SESM4.2.23._S_LABO_DE_PR_CTICAS_PREPROFESIONALES.pdf\",\"finalPath\":\"users/0987654321/signed/7e6c87b1-e2b0-4f9e-843d-30465a77e73b/SESM4.2.23._S_LABO_DE_PR_CTICAS_PREPROFESIONALES.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_5234e8837c524c75a0add054fb72d35e\",\"fieldNames\":[\"sig_5234e8837c524c75a0add054fb72d35e\"],\"tsaUrl\":null,\"coordinates\":{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_5234e8837c524c75a0add054fb72d35e\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:51:45+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"a2a107e8-a9c8-423d-9e6b-19a2009f5e84\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM4.1.21. SÃLABO DE PRÃCTICA SERVICIO COMUNITARIO.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"5c6296eb-40ad-44b2-9fb4-b9009add6a30\",\"signedPath\":\"users/0987654321/signed/5bb99c44-cdec-4615-a1db-039ccbdf1174/SESM4.1.21._S_LABO_DE_PR_CTICA_SERVICIO_COMUNITARIO.pdf\",\"workingPath\":\"users/0987654321/signed/5bb99c44-cdec-4615-a1db-039ccbdf1174/SESM4.1.21._S_LABO_DE_PR_CTICA_SERVICIO_COMUNITARIO.pdf\",\"finalPath\":\"users/0987654321/signed/5bb99c44-cdec-4615-a1db-039ccbdf1174/SESM4.1.21._S_LABO_DE_PR_CTICA_SERVICIO_COMUNITARIO.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_12feb883e74947e0bd8a9df508096b6e\",\"fieldNames\":[\"sig_12feb883e74947e0bd8a9df508096b6e\"],\"tsaUrl\":null,\"coordinates\":{\"page\":4,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":4,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_12feb883e74947e0bd8a9df508096b6e\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:51:47+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"d892bf0d-1a73-441a-a392-d09f56024e7c\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM1.7.  SÃLABO CIRCUITO ELECTRÃNICOS DIGITALES 202561.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"2cd183ff-3830-4361-919c-684ee180f22b\",\"signedPath\":\"users/0987654321/signed/61675a85-b090-4356-920f-96c2bfc4ce76/SESM1.7._S_LABO_CIRCUITO_ELECTR_NICOS_DIGITALES_202561.pdf\",\"workingPath\":\"users/0987654321/signed/61675a85-b090-4356-920f-96c2bfc4ce76/SESM1.7._S_LABO_CIRCUITO_ELECTR_NICOS_DIGITALES_202561.pdf\",\"finalPath\":\"users/0987654321/signed/61675a85-b090-4356-920f-96c2bfc4ce76/SESM1.7._S_LABO_CIRCUITO_ELECTR_NICOS_DIGITALES_202561.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_55c2b5ea7d854ed38ee49b9fe6a9ed2f\",\"fieldNames\":[\"sig_55c2b5ea7d854ed38ee49b9fe6a9ed2f\"],\"tsaUrl\":null,\"coordinates\":{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_55c2b5ea7d854ed38ee49b9fe6a9ed2f\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:51:49+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"12314360-166d-44cc-ac80-587a7ffb2379\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM1.7.  SÃLABO ALGORITMO Y PSEUDOCÃDIGO 202561.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"d8a16099-92f8-41f4-9620-ee9ec571a841\",\"signedPath\":\"users/0987654321/signed/9d96bf71-19ca-4f83-beca-e5f030768675/SESM1.7._S_LABO_ALGORITMO_Y_PSEUDOC_DIGO_202561.pdf\",\"workingPath\":\"users/0987654321/signed/9d96bf71-19ca-4f83-beca-e5f030768675/SESM1.7._S_LABO_ALGORITMO_Y_PSEUDOC_DIGO_202561.pdf\",\"finalPath\":\"users/0987654321/signed/9d96bf71-19ca-4f83-beca-e5f030768675/SESM1.7._S_LABO_ALGORITMO_Y_PSEUDOC_DIGO_202561.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_ff9df8db0f2b49e2b3c55bf5b5dae490\",\"fieldNames\":[\"sig_ff9df8db0f2b49e2b3c55bf5b5dae490\"],\"tsaUrl\":null,\"coordinates\":{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_ff9df8db0f2b49e2b3c55bf5b5dae490\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:51:51+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"080803fa-3107-45ea-a34d-7da2a34e6ab2\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null}]",
+          "created_at": "2026-06-22 13:51:42",
+          "updated_at": "2026-06-22 13:51:52"
+        },
+        {
           "job_id": "7a7abbf9-c922-4a32-8c6b-d2fb4f38c4a7",
           "user_id": 1,
           "sign_mode": "coordinates",
@@ -4255,8 +4603,45 @@
           "results": "[{\"fileName\":\"Mortal_Kombat_2_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"75d22875-8b3c-4c3f-b66e-64e2a7914eb3\",\"signedPath\":\"users/1234567891/signed/0db567a9-de46-4ebd-abf7-c47a38653874/Mortal_Kombat_2_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/0db567a9-de46-4ebd-abf7-c47a38653874/Mortal_Kombat_2_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/0db567a9-de46-4ebd-abf7-c47a38653874/Mortal_Kombat_2_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_b167e538cbe34d3682a7d1413dcbfc75\",\"fieldNames\":[\"sig_b167e538cbe34d3682a7d1413dcbfc75\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_b167e538cbe34d3682a7d1413dcbfc75\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:44:53+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"177971d7-413d-4346-9195-84627ed217ee\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"Mortal_Kombat_1_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"56ba48b9-e411-4b0b-b5f4-0c15e6b3c9fb\",\"signedPath\":\"users/1234567891/signed/422c31e5-10ed-4b23-aa5c-897b2d1af5ce/Mortal_Kombat_1_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/422c31e5-10ed-4b23-aa5c-897b2d1af5ce/Mortal_Kombat_1_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/422c31e5-10ed-4b23-aa5c-897b2d1af5ce/Mortal_Kombat_1_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_10ce2c2c42c34c2cb0556ca1072c0e0f\",\"fieldNames\":[\"sig_10ce2c2c42c34c2cb0556ca1072c0e0f\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_10ce2c2c42c34c2cb0556ca1072c0e0f\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:45:10+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"0ea8a87b-0196-4dcf-b379-9867d6849132\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"FREE_FIRE_2_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"90f9627f-e1d9-42d7-9ac7-688007bc65cc\",\"signedPath\":\"users/1234567891/signed/dc5f3900-4405-4b39-b395-f4c4c59c7543/FREE_FIRE_2_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/dc5f3900-4405-4b39-b395-f4c4c59c7543/FREE_FIRE_2_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/dc5f3900-4405-4b39-b395-f4c4c59c7543/FREE_FIRE_2_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_a5206f7b360e4a3bbb0130f511464e86\",\"fieldNames\":[\"sig_a5206f7b360e4a3bbb0130f511464e86\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_a5206f7b360e4a3bbb0130f511464e86\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:45:27+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"2abea878-4035-4e2b-9db2-748c5219bb21\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"FREE_FIRE_1_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"0b714c43-ac6e-437a-9dd1-1aeb1277065b\",\"signedPath\":\"users/1234567891/signed/6329672b-12ab-4700-a6c8-46e1f056fa11/FREE_FIRE_1_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/6329672b-12ab-4700-a6c8-46e1f056fa11/FREE_FIRE_1_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/6329672b-12ab-4700-a6c8-46e1f056fa11/FREE_FIRE_1_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_6fc9b4e437564620968579c8a3885a6a\",\"fieldNames\":[\"sig_6fc9b4e437564620968579c8a3885a6a\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_6fc9b4e437564620968579c8a3885a6a\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:45:44+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"b7aff58c-082f-49b7-99fc-4a5851baee95\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"FIFA_2_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"aba02b5e-597e-4979-9ede-f3610d90ec79\",\"signedPath\":\"users/1234567891/signed/09ef4f88-d89e-49e2-b55d-91838e0a2216/FIFA_2_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/09ef4f88-d89e-49e2-b55d-91838e0a2216/FIFA_2_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/09ef4f88-d89e-49e2-b55d-91838e0a2216/FIFA_2_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_bb41d73e7c0c4465b141fa58879ee57f\",\"fieldNames\":[\"sig_bb41d73e7c0c4465b141fa58879ee57f\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_bb41d73e7c0c4465b141fa58879ee57f\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:46:02+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"b777bf7a-afd7-44e8-b9e4-c36a674d41cc\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"FIFA_1_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"b096f806-38df-4580-9ace-382d97aab999\",\"signedPath\":\"users/1234567891/signed/5ce9c220-0da0-4b1c-bb9e-a10452ed612b/FIFA_1_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/5ce9c220-0da0-4b1c-bb9e-a10452ed612b/FIFA_1_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/5ce9c220-0da0-4b1c-bb9e-a10452ed612b/FIFA_1_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_1d711f60dd014b02bbaaf4e6e6af26dc\",\"fieldNames\":[\"sig_1d711f60dd014b02bbaaf4e6e6af26dc\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_1d711f60dd014b02bbaaf4e6e6af26dc\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:46:19+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"c8a7765b-02f7-4aae-883f-361c2217572a\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"Dragon_Ball_2_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"39970f65-d1ec-4665-981a-644f050f7e21\",\"signedPath\":\"users/1234567891/signed/39617492-75d1-4eef-8f2c-267a28270036/Dragon_Ball_2_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/39617492-75d1-4eef-8f2c-267a28270036/Dragon_Ball_2_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/39617492-75d1-4eef-8f2c-267a28270036/Dragon_Ball_2_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_f3dac2fc33774012818f4b138b87f1f1\",\"fieldNames\":[\"sig_f3dac2fc33774012818f4b138b87f1f1\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_f3dac2fc33774012818f4b138b87f1f1\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:46:36+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"362d7896-3b91-48a2-ac49-5843c1ae349e\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"Dragon_Ball_1_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"4624ef40-a444-4160-a954-f3f7a4d1eba1\",\"signedPath\":\"users/1234567891/signed/48f0729e-5430-48de-8adc-45e9c23ed478/Dragon_Ball_1_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/48f0729e-5430-48de-8adc-45e9c23ed478/Dragon_Ball_1_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/48f0729e-5430-48de-8adc-45e9c23ed478/Dragon_Ball_1_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_9b72cde4369948119ab27dccf55973f6\",\"fieldNames\":[\"sig_9b72cde4369948119ab27dccf55973f6\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_9b72cde4369948119ab27dccf55973f6\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:46:53+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"ecd48d0d-6047-43e5-8345-a60f25068fe2\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"Clash_Royale_2_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"7ed13a3d-5fc2-4dad-a6ab-6493b9f5f0b2\",\"signedPath\":\"users/1234567891/signed/4c6acaf6-97c8-480b-b5f9-bf77d7d741a7/Clash_Royale_2_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/4c6acaf6-97c8-480b-b5f9-bf77d7d741a7/Clash_Royale_2_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/4c6acaf6-97c8-480b-b5f9-bf77d7d741a7/Clash_Royale_2_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_281f19af650347658ddece273ba46d80\",\"fieldNames\":[\"sig_281f19af650347658ddece273ba46d80\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_281f19af650347658ddece273ba46d80\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:47:11+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"c51cfd61-8f76-43a2-b897-b1654b2811bb\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"Clash_Royale_1_signed_signed.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"03d1da87-36cf-4694-b995-97006d6441be\",\"signedPath\":\"users/1234567891/signed/4872d2b2-a59d-4bfe-9c70-3fa916a28631/Clash_Royale_1_signed_signed.pdf\",\"workingPath\":\"users/1234567891/signed/4872d2b2-a59d-4bfe-9c70-3fa916a28631/Clash_Royale_1_signed_signed.pdf\",\"finalPath\":\"users/1234567891/signed/4872d2b2-a59d-4bfe-9c70-3fa916a28631/Clash_Royale_1_signed_signed.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_0a76a1c6d7114461a0fc3f9ca86053f8\",\"fieldNames\":[\"sig_0a76a1c6d7114461a0fc3f9ca86053f8\"],\"tsaUrl\":null,\"coordinates\":{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":1,\"x\":161,\"y\":158,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_0a76a1c6d7114461a0fc3f9ca86053f8\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-04T15:47:28+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"913f8f8c-87a1-44aa-abbb-1d7fb7ea884d\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null}]",
           "created_at": "2026-06-04 15:44:51",
           "updated_at": "2026-06-04 15:47:45"
+        },
+        {
+          "job_id": "bee067d4-b266-4191-98cd-23622f2cdf40",
+          "user_id": 2,
+          "sign_mode": "coordinates",
+          "status": "completed",
+          "total": 5,
+          "processed": 5,
+          "success_count": 5,
+          "failed_count": 0,
+          "results": "[{\"fileName\":\"SESM1.7. SÃLABO ARQUITECTURA DE COMPUTADORES 202561.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"83712f46-26c2-4742-b1c6-4c81640d4311\",\"signedPath\":\"users/0987654321/signed/72c510f9-6a54-4ec3-bb43-8d9265060f9d/SESM1.7._S_LABO_ARQUITECTURA_DE_COMPUTADORES_202561.pdf\",\"workingPath\":\"users/0987654321/signed/72c510f9-6a54-4ec3-bb43-8d9265060f9d/SESM1.7._S_LABO_ARQUITECTURA_DE_COMPUTADORES_202561.pdf\",\"finalPath\":\"users/0987654321/signed/72c510f9-6a54-4ec3-bb43-8d9265060f9d/SESM1.7._S_LABO_ARQUITECTURA_DE_COMPUTADORES_202561.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_1afa1cea76d043a2b93415b088d78be4\",\"fieldNames\":[\"sig_1afa1cea76d043a2b93415b088d78be4\"],\"tsaUrl\":null,\"coordinates\":{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_1afa1cea76d043a2b93415b088d78be4\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:50:40+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"30218669-5681-4af6-97a4-dd8ebe57cd48\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM4.2.23. SÃLABO DE PRÃCTICAS PREPROFESIONALES.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"9ced388b-3c6e-4bd3-a220-0a9c10cc4838\",\"signedPath\":\"users/0987654321/signed/411b7c1d-7771-4b95-8d1c-2df19f764d41/SESM4.2.23._S_LABO_DE_PR_CTICAS_PREPROFESIONALES.pdf\",\"workingPath\":\"users/0987654321/signed/411b7c1d-7771-4b95-8d1c-2df19f764d41/SESM4.2.23._S_LABO_DE_PR_CTICAS_PREPROFESIONALES.pdf\",\"finalPath\":\"users/0987654321/signed/411b7c1d-7771-4b95-8d1c-2df19f764d41/SESM4.2.23._S_LABO_DE_PR_CTICAS_PREPROFESIONALES.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_7c209e2470ff48a0a9af397388dd9896\",\"fieldNames\":[\"sig_7c209e2470ff48a0a9af397388dd9896\"],\"tsaUrl\":null,\"coordinates\":{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_7c209e2470ff48a0a9af397388dd9896\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:50:42+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"08880e12-94d1-487e-acbe-39e2b5d466af\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM4.1.21. SÃLABO DE PRÃCTICA SERVICIO COMUNITARIO.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"1aa04a4c-dd6f-41b7-8122-a3fa154159bb\",\"signedPath\":\"users/0987654321/signed/47bc49c9-c571-4eed-8e85-cfd86371cbb4/SESM4.1.21._S_LABO_DE_PR_CTICA_SERVICIO_COMUNITARIO.pdf\",\"workingPath\":\"users/0987654321/signed/47bc49c9-c571-4eed-8e85-cfd86371cbb4/SESM4.1.21._S_LABO_DE_PR_CTICA_SERVICIO_COMUNITARIO.pdf\",\"finalPath\":\"users/0987654321/signed/47bc49c9-c571-4eed-8e85-cfd86371cbb4/SESM4.1.21._S_LABO_DE_PR_CTICA_SERVICIO_COMUNITARIO.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_b55e0c0edddc4e028d4aa04a0f069d42\",\"fieldNames\":[\"sig_b55e0c0edddc4e028d4aa04a0f069d42\"],\"tsaUrl\":null,\"coordinates\":{\"page\":4,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":4,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_b55e0c0edddc4e028d4aa04a0f069d42\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:50:43+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"ac38dfd1-8c2a-4ad8-a767-bacbe7056c48\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM1.7.  SÃLABO CIRCUITO ELECTRÃNICOS DIGITALES 202561.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"d4677073-75dd-4367-8455-07e1ffd97c0f\",\"signedPath\":\"users/0987654321/signed/d81ef1a5-fbfc-476b-98e6-935d929a3883/SESM1.7._S_LABO_CIRCUITO_ELECTR_NICOS_DIGITALES_202561.pdf\",\"workingPath\":\"users/0987654321/signed/d81ef1a5-fbfc-476b-98e6-935d929a3883/SESM1.7._S_LABO_CIRCUITO_ELECTR_NICOS_DIGITALES_202561.pdf\",\"finalPath\":\"users/0987654321/signed/d81ef1a5-fbfc-476b-98e6-935d929a3883/SESM1.7._S_LABO_CIRCUITO_ELECTR_NICOS_DIGITALES_202561.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_a805c6f068d34e039db3f2d8230c84a1\",\"fieldNames\":[\"sig_a805c6f068d34e039db3f2d8230c84a1\"],\"tsaUrl\":null,\"coordinates\":{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":7,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_a805c6f068d34e039db3f2d8230c84a1\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:50:45+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"ac5b5e8b-ee81-4451-95de-adbb3b5a8f1b\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null},{\"fileName\":\"SESM1.7.  SÃLABO ALGORITMO Y PSEUDOCÃDIGO 202561.pdf\",\"status\":\"success\",\"message\":\"Documento firmado correctamente.\",\"jobId\":\"449abece-4542-488f-9604-aa7187deb31f\",\"signedPath\":\"users/0987654321/signed/eb2e71a2-dc89-4dca-891c-ab91c913f1b4/SESM1.7._S_LABO_ALGORITMO_Y_PSEUDOC_DIGO_202561.pdf\",\"workingPath\":\"users/0987654321/signed/eb2e71a2-dc89-4dca-891c-ab91c913f1b4/SESM1.7._S_LABO_ALGORITMO_Y_PSEUDOC_DIGO_202561.pdf\",\"finalPath\":\"users/0987654321/signed/eb2e71a2-dc89-4dca-891c-ab91c913f1b4/SESM1.7._S_LABO_ALGORITMO_Y_PSEUDOC_DIGO_202561.pdf\",\"certificate\":{\"subject\":\"C=EC,O=SECURITY DATA S.A. 2,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,2.5.4.5=131123180324,CN=HOMERO JAVIER VELASTEGUI IZURIETA\",\"issuer\":\"CN=AUTORIDAD DE CERTIFICACION SUBCA-2 SECURITY DATA,OU=ENTIDAD DE CERTIFICACION DE INFORMACION,O=SECURITY DATA S.A. 2,C=EC\",\"serial_number\":\"539a3f2c\",\"not_valid_before\":\"2023-11-13T22:54:07+00:00\",\"not_valid_after\":\"2028-11-12T22:54:07+00:00\",\"common_name\":\"HOMERO JAVIER VELASTEGUI IZURIETA\",\"chain_length\":2},\"signature\":{\"fieldName\":\"sig_b42a4fa149c541df9aba3b90283abd60\",\"fieldNames\":[\"sig_b42a4fa149c541df9aba3b90283abd60\"],\"tsaUrl\":null,\"coordinates\":{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48},\"coordinateMatches\":[{\"page\":5,\"x\":340,\"y\":192,\"width\":124,\"height\":48}],\"matchCount\":1},\"validation\":{\"performed\":true,\"fieldName\":\"sig_b42a4fa149c541df9aba3b90283abd60\",\"bottomLine\":true,\"details\":\"Signer info\\n-----------\\nCertificate subject: \\\"Common Name: HOMERO JAVIER VELASTEGUI IZURIETA, Serial Number: 131123180324, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nCertificate SHA1 fingerprint: 60e4ec3eb54f5caaf372c0e61b6c22900e5de495\\nCertificate SHA256 fingerprint: 640d20c81be9279aa2f9a523fdc0ba1571ac91d610dc3ae4d5cf23706ca7731b\\nTrust anchor: \\\"Common Name: AUTORIDAD DE CERTIFICACION RAIZ CA-2 SECURITY DATA, Organizational Unit: ENTIDAD DE CERTIFICACION DE INFORMACION, Organization: SECURITY DATA S.A. 2, Country: EC\\\"\\nThe signer's certificate is trusted.\\n\\n\\nIntegrity\\n---------\\nThe signature is cryptographically sound.\\n\\nThe digest algorithm used was 'sha256'.\\nThe signature mechanism used was 'sha256_rsa'.\\n\\n\\nSigning time\\n------------\\nSigning time as reported by signer: 2026-06-22T13:50:48+00:00\\n\\n\\nModifications\\n-------------\\nThe signature covers the entire file.\\n\\n\\nBottom line\\n-----------\\nThe signature is judged VALID.\\n\\n\"},\"timestamped\":false,\"tsaUrl\":null,\"correlationId\":\"02818597-008e-4845-9191-708acd7d951a\",\"signedBucket\":\"deasy-users\",\"fieldsCount\":1,\"signMode\":\"coordinates\",\"workflow\":null,\"signatureRequestId\":null,\"documentVersionId\":null}]",
+          "created_at": "2026-06-22 13:50:38",
+          "updated_at": "2026-06-22 13:50:49"
         }
       ]
+    },
+    {
+      "table": "task_item_handovers",
+      "columns": [
+        "id",
+        "task_item_id",
+        "from_person_id",
+        "to_person_id",
+        "reason",
+        "trigger_kind",
+        "performed_by_user_id",
+        "created_at"
+      ],
+      "column_types": {
+        "id": "int(11)",
+        "task_item_id": "int(11)",
+        "from_person_id": "int(11)",
+        "to_person_id": "int(11)",
+        "reason": "varchar(255)",
+        "trigger_kind": "enum('occupancy_end','position_deactivated','manual')",
+        "performed_by_user_id": "bigint(20) unsigned",
+        "created_at": "datetime"
+      },
+      "rows": []
     },
     {
       "table": "users",

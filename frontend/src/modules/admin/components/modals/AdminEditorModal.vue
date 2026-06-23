@@ -178,11 +178,15 @@
       <div class="definition-checklist-items">
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.rules }">
           <font-awesome-icon :icon="processDefinitionChecklist.rules ? 'check' : 'times'" />
-          <span>Al menos una regla activa</span>
+          <span>Al menos una regla de alcance activa</span>
         </div>
         <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.triggers }">
           <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
           <span>Al menos un tipo de periodo activo</span>
+        </div>
+        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.artifacts }">
+          <font-awesome-icon :icon="processDefinitionChecklist.artifacts ? 'check' : 'times'" />
+          <span>Al menos un paquete (plantilla) vinculado</span>
         </div>
       </div>
     </div>
@@ -193,7 +197,7 @@
         @click="$emit('open-definition-rules')"
       >
         <font-awesome-icon icon="sitemap" />
-        Reglas
+        Alcance
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"

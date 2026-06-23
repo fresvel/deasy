@@ -81,10 +81,10 @@
 
             <template v-else-if="showAdvancedFilters && isTemplateArtifactsTable">
               <div class="md:col-span-6 lg:col-span-3">
-                <AdminSelectField :model-value="templateArtifactInlineFilters.artifact_stage" select-class="deasy-filter-control" @update:model-value="updateTemplateArtifactFilter('artifact_stage', $event)" @change="$emit('fetch-rows')">
-                  <option value="">Etapa</option>
-                  <option value="draft">draft</option>
-                  <option value="published">published</option>
+                <AdminSelectField :model-value="templateArtifactInlineFilters.is_active" select-class="deasy-filter-control" @update:model-value="updateTemplateArtifactFilter('is_active', $event)" @change="$emit('fetch-rows')">
+                  <option value="">Estado</option>
+                  <option value="1">Activas</option>
+                  <option value="0">Inactivas</option>
                 </AdminSelectField>
               </div>
             </template>
@@ -304,10 +304,10 @@
                     size="sm"
                     icon-only
                     class-name="text-primary hope-action-btn hope-action-edit"
-                    :title="!row?.owner_ref ? 'Las plantillas oficiales del sistema se sincronizan desde MinIO' : 'Editar'"
-                    :aria-label="!row?.owner_ref ? 'Edicion bloqueada para plantillas del sistema' : 'Editar'"
-                    :disabled="!row?.owner_ref"
-                    @click="!row?.owner_ref ? undefined : $emit('open-edit', row)"
+                    :title="row?.template_scope !== 'ad_hoc' ? 'Las plantillas oficiales del sistema se sincronizan desde MinIO' : 'Editar'"
+                    :aria-label="row?.template_scope !== 'ad_hoc' ? 'Edicion bloqueada para plantillas del sistema' : 'Editar'"
+                    :disabled="row?.template_scope !== 'ad_hoc'"
+                    @click="row?.template_scope !== 'ad_hoc' ? undefined : $emit('open-edit', row)"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M11.4925 2.78906H7.75349C4.67849 2.78906 2.75049 4.96606 2.75049 8.04806V16.3621C2.75049 19.4441 4.66949 21.6211 7.75349 21.6211H16.5775C19.6625 21.6211 21.5815 19.4441 21.5815 16.3621V12.3341" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />

@@ -57,8 +57,7 @@ export const unassignedTemplateArtifactTableFields = [
   { name: "display_name", label: "Nombre" },
   { name: "available_formats", label: "Formatos" },
   { name: "template_code", label: "Codigo" },
-  { name: "source_version", label: "Version fuente" },
-  { name: "storage_version", label: "Version storage" },
+  { name: "storage_version", label: "Version" },
   { name: "is_active", label: "Activo" }
 ];
 

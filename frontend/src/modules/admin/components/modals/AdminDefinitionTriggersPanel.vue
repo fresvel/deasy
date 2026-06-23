@@ -12,7 +12,20 @@
       Esta configuracion no esta en draft. Solo puedes gestionar los periodos del proceso cuando la configuracion este en draft.
     </div>
 
-    <div class="person-assignment-form">
+    <!-- Por defecto solo se ve la lista; el formulario se abre con este botón (mismo patrón que Paquetes). -->
+    <div v-if="canManage && !formOpen" class="flex justify-end">
+      <AdminButton variant="outlinePrimary" @click="openForm">
+        <font-awesome-icon icon="plus" class="mr-2" />
+        Agregar periodo
+      </AdminButton>
+    </div>
+
+    <AppDialogOverlay
+      :open="canManage && formOpen"
+      :title="editId ? 'Editar periodo' : 'Nuevo periodo'"
+      panel-class="max-w-2xl"
+      @close="cancelForm"
+    >
       <div class="grid gap-3 md:grid-cols-12">
         <div class="md:col-span-8">
           <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de periodo</label>
@@ -35,15 +48,17 @@
           </AdminSelectField>
         </AdminFieldGroup>
       </div>
-      <AdminFormActions
-        :primary-label="editId ? 'Guardar periodo' : 'Agregar periodo'"
-        :primary-disabled="!canSubmit"
-        :show-cancel="Boolean(editId)"
-        cancel-label="Cancelar edicion"
-        @primary="$emit('submit')"
-        @cancel="$emit('reset')"
-      />
-    </div>
+      <template #footer>
+        <AdminFormActions
+          :primary-label="editId ? 'Guardar periodo' : 'Agregar periodo'"
+          :primary-disabled="!canSubmit"
+          show-cancel
+          cancel-label="Cancelar"
+          @primary="handleSubmit"
+          @cancel="cancelForm"
+        />
+      </template>
+    </AppDialogOverlay>
 
     <div v-if="loading" class="text-sm text-slate-500">Cargando periodos del proceso...</div>
     <AdminDataTable
@@ -83,12 +98,15 @@
 </template>
 
 <script setup>
+import { ref, watch } from "vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 
 const props = defineProps({
   context: { type: Object, default: null },
@@ -107,6 +125,45 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:form", "trigger-mode-change", "clear-term-type", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
+
+// Formulario en modal: por defecto solo se ve la lista. Se abre con "Agregar periodo" o al editar una fila,
+// y se cierra al cancelar o cuando el guardado tiene éxito (alta = la lista crece; edición = editId se limpia).
+const formOpen = ref(false);
+const submitting = ref(false);
+const openForm = () => {
+  emit("reset");
+  formOpen.value = true;
+};
+const cancelForm = () => {
+  submitting.value = false;
+  formOpen.value = false;
+  emit("reset");
+};
+const handleSubmit = () => {
+  submitting.value = true;
+  emit("submit");
+};
+watch(() => props.editId, (val, old) => {
+  if (val) {
+    formOpen.value = true;
+    return;
+  }
+  if (old && submitting.value) {
+    formOpen.value = false;
+    submitting.value = false;
+  }
+});
+watch(() => props.rows.length, (len, old) => {
+  if (submitting.value && len > old) {
+    formOpen.value = false;
+    submitting.value = false;
+  }
+});
+watch(() => props.error, (val) => {
+  if (val) {
+    submitting.value = false;
+  }
+});
 
 const updateField = (fieldName, value) => {
   emit("update:form", {

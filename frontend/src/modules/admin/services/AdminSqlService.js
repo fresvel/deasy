@@ -37,12 +37,12 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SCHEMA(artifactId));
   }
 
-  updateTemplateArtifactStage(artifactId, stage) {
-    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_STAGE(artifactId), { stage });
+  setTemplateArtifactActive(artifactId, isActive) {
+    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_ACTIVE(artifactId), { is_active: isActive });
   }
 
-  createTemplateArtifactVersion(artifactId) {
-    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION(artifactId));
+  createTemplateArtifactVersion(artifactId, bumpLevel = "minor") {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION(artifactId), { bump_level: bumpLevel });
   }
 
   syncTemplateSeeds() {

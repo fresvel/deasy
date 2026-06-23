@@ -27,19 +27,47 @@
     <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-4 py-3">
       <div class="flex items-center gap-3">
         <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</span>
-        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold capitalize" :class="stageBadgeClass">{{ draftArtifactForm.artifact_stage || 'draft' }}</span>
+        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="draftArtifactForm.is_active ? 'text-emerald-600' : 'text-slate-500'">{{ draftArtifactForm.is_active ? 'Activa' : 'Inactiva' }}</span>
         <span v-if="draftArtifactForm.storage_version" class="text-xs font-medium text-slate-400">· {{ draftArtifactForm.storage_version }}</span>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <AdminButton
-          v-for="next in nextStages"
-          :key="next.value"
-          variant="outlinePrimary"
-          @click="$emit('change-stage', next.value)"
-        >{{ next.label }}</AdminButton>
-        <AdminButton variant="cancel" @click="$emit('new-version')">Nueva versión</AdminButton>
+          :variant="draftArtifactForm.is_active ? 'cancel' : 'outlinePrimary'"
+          @click="$emit('change-active', !draftArtifactForm.is_active)"
+        >{{ draftArtifactForm.is_active ? 'Desactivar' : 'Activar' }}</AdminButton>
+        <AdminButton variant="primary" @click="openVersionDialog">Nueva versión</AdminButton>
       </div>
     </div>
+
+    <!-- Diálogo de nueva versión: elige el nivel de cambio semver. Anidado sobre el modal de la plantilla. -->
+    <AppDialogOverlay
+      :open="showVersionDialog"
+      title="Crear nueva versión"
+      panel-class="max-w-md"
+      @close="showVersionDialog = false"
+    >
+      <p class="mb-3 mt-0 text-sm text-slate-600">
+        Elige el tipo de cambio. La nueva versión nace <strong>inactiva</strong>, clonada de la versión actual<span v-if="draftArtifactForm.storage_version"> ({{ draftArtifactForm.storage_version }})</span>.
+      </p>
+      <div class="flex flex-col gap-2">
+        <label
+          v-for="opt in versionBumpOptions"
+          :key="opt.value"
+          class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
+          :class="versionBumpLevel === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-slate-200 hover:border-slate-300'"
+        >
+          <input v-model="versionBumpLevel" type="radio" name="bump-level" :value="opt.value" class="mt-1" />
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold text-slate-800">{{ opt.label }} <span class="font-mono text-xs font-normal text-slate-500">{{ opt.example }}</span></span>
+            <span class="block text-xs text-slate-500">{{ opt.hint }}</span>
+          </span>
+        </label>
+      </div>
+      <template #footer>
+        <AdminButton variant="cancel" @click="showVersionDialog = false">Cancelar</AdminButton>
+        <AdminButton variant="primary" @click="confirmNewVersion">Crear versión</AdminButton>
+      </template>
+    </AppDialogOverlay>
 
     <!-- Pestañas con indicadores de avance -->
     <div class="mt-3">
@@ -65,14 +93,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Version fuente" group-class="md:col-span-3">
-        <AdminInputField
-          :model-value="draftArtifactForm.source_version"
-          placeholder="1.0.0"
-          @update:model-value="updateField('source_version', $event)"
-        />
-      </AdminFieldGroup>
-      <AdminFieldGroup label="Tipo de plantilla" group-class="md:col-span-3">
+      <AdminFieldGroup label="Tipo de plantilla" group-class="md:col-span-6">
         <template #labelSuffix>
           <AppInfoTip>{{ isAdHoc ? "Extensión puntual de usuario: permite persona concreta; sin tipo de unidad." : "Desde admin solo se crean oficiales: permiten tipo de unidad; sin persona concreta." }}</AppInfoTip>
         </template>
@@ -526,6 +547,7 @@ import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vu
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInlineShell from "@/shared/components/modals/AppInlineShell.vue";
+import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
@@ -612,7 +634,7 @@ const props = defineProps({
   embedded: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-stage", "new-version", "create-process"]);
+const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-active", "new-version", "create-process"]);
 const modalRef = ref(null);
 const shellComponent = computed(() => (props.embedded ? AppInlineShell : AdminModalShell));
 
@@ -732,19 +754,22 @@ const goPrevTab = () => {
 // Reinicia a la primera pestaña al cambiar entre crear/editar.
 watch(() => props.draftArtifactEditId, () => { activeTab.value = "general"; });
 
-const STAGE_TRANSITIONS = {
-  draft: [{ value: "review", label: "Enviar a revisión" }, { value: "archived", label: "Archivar" }],
-  review: [{ value: "approved", label: "Aprobar" }, { value: "draft", label: "Devolver a borrador" }, { value: "archived", label: "Archivar" }],
-  approved: [{ value: "published", label: "Publicar" }, { value: "review", label: "Volver a revisión" }, { value: "archived", label: "Archivar" }],
-  published: [{ value: "archived", label: "Archivar" }, { value: "approved", label: "Despublicar" }],
-  archived: [{ value: "draft", label: "Restaurar a borrador" }],
+// Nueva versión (semver): el usuario elige el nivel en un diálogo y el back calcula la nueva versión.
+const versionBumpLevel = ref("minor");
+const showVersionDialog = ref(false);
+const versionBumpOptions = [
+  { value: "patch", label: "Parche", example: "X.Y.Z+1", hint: "Correcciones o ajustes menores." },
+  { value: "minor", label: "Menor", example: "X.Y+1.0", hint: "Cambios compatibles (nuevos campos, mejoras)." },
+  { value: "major", label: "Mayor", example: "X+1.0.0", hint: "Cambios importantes o incompatibles." }
+];
+const openVersionDialog = () => {
+  versionBumpLevel.value = "minor";
+  showVersionDialog.value = true;
 };
-const STAGE_BADGE = {
-  draft: "text-slate-600", review: "text-amber-600", approved: "text-sky-600",
-  published: "text-emerald-600", archived: "text-rose-500",
+const confirmNewVersion = () => {
+  showVersionDialog.value = false;
+  emit("new-version", versionBumpLevel.value);
 };
-const nextStages = computed(() => STAGE_TRANSITIONS[props.draftArtifactForm.artifact_stage || "draft"] || []);
-const stageBadgeClass = computed(() => STAGE_BADGE[props.draftArtifactForm.artifact_stage || "draft"] || "text-slate-600");
 
 const updateField = (fieldName, value) => {
   emit("update:form", { ...props.draftArtifactForm, [fieldName]: value });

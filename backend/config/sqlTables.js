@@ -369,16 +369,7 @@ export const SQL_TABLES = [
       { name: "template_code", label: "Codigo", type: "text", required: true },
       { name: "display_name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "owner_ref", label: "Propietario", type: "text" },
-      { name: "source_version", label: "Version fuente", type: "text", required: true },
-      { name: "storage_version", label: "Version storage", type: "text", required: true },
-      {
-        name: "artifact_stage",
-        label: "Etapa",
-        type: "select",
-        options: ["draft", "review", "approved", "published", "archived"],
-        defaultValue: "published"
-      },
+      { name: "storage_version", label: "Version", type: "text", readOnly: true },
       {
         name: "template_scope",
         label: "Tipo de plantilla",
@@ -386,17 +377,15 @@ export const SQL_TABLES = [
         options: ["official", "ad_hoc"],
         defaultValue: "official"
       },
-      { name: "bucket", label: "Bucket", type: "text", required: true },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
       { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
       { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
-      { name: "seed_display_name", label: "Nombre de la semilla", type: "text", readOnly: true, virtual: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_code", "display_name", "storage_version", "owner_ref", "artifact_stage"]
+    searchFields: ["template_code", "display_name", "storage_version"]
   },
   {
     table: "process_definition_templates",

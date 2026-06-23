@@ -593,7 +593,7 @@ const getDefinitionTemplates = async (pool, definitionId) => {
        pdt.sort_order,
        tar.id AS template_artifact_id,
        tar.display_name AS template_artifact_name,
-       tar.artifact_stage,
+       tar.is_active AS template_artifact_active,
        COUNT(DISTINCT sft.id) AS signature_flow_count
      FROM process_definition_templates pdt
      INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
@@ -606,7 +606,7 @@ const getDefinitionTemplates = async (pool, definitionId) => {
        pdt.sort_order,
        tar.id,
        tar.display_name,
-       tar.artifact_stage
+       tar.is_active
      ORDER BY pdt.sort_order ASC, pdt.id ASC`,
     [definitionId]
   );
@@ -638,7 +638,7 @@ const getUserOwnedTemplateArtifacts = async (pool, userId) => {
        id,
        display_name,
        description,
-       artifact_stage,
+       is_active,
        available_formats,
        created_at
      FROM template_artifacts

@@ -38,7 +38,25 @@ const DEFAULT_LIMIT = 50;
 const BCRYPT_HASH_REGEX = /^\$2[abxy]\$\d{2}\$/;
 const PERSON_TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
-const ARTIFACT_STAGE_VALUES = new Set(["draft", "review", "approved", "published", "archived"]);
+const STORAGE_VERSION_BUMP_LEVELS = new Set(["patch", "minor", "major"]);
+// Calcula la siguiente versión semver (X.Y.Z) a partir de la actual y el nivel de cambio elegido por el
+// usuario al crear una nueva versión. La primera versión es 1.0.0.
+const bumpSemanticVersion = (current, level = "minor") => {
+  const safeLevel = STORAGE_VERSION_BUMP_LEVELS.has(String(level)) ? String(level) : "minor";
+  const match = String(current || "").trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) {
+    return "1.0.0";
+  }
+  let [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  if (safeLevel === "major") {
+    major += 1; minor = 0; patch = 0;
+  } else if (safeLevel === "patch") {
+    patch += 1;
+  } else {
+    minor += 1; patch = 0;
+  }
+  return `${major}.${minor}.${patch}`;
+};
 const SERVICE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SERVICE_DIR, "..", "..", "..");
 const BACKEND_STORAGE_ROOT = path.join(REPO_ROOT, "backend", "storage");
@@ -562,15 +580,6 @@ const removeMinioPrefix = async (bucket, objectPrefix) => {
       });
     });
   }
-};
-
-// Transiciones de stage permitidas (lineal + reversas razonables + archivar desde cualquiera).
-const ARTIFACT_STAGE_TRANSITIONS = {
-  draft: ["review", "archived"],
-  review: ["approved", "draft", "archived"],
-  approved: ["published", "review", "archived"],
-  published: ["archived", "approved"],
-  archived: ["draft"],
 };
 
 const ensureMinioBucket = (bucket) => new Promise((resolve, reject) => {
@@ -1425,11 +1434,8 @@ const validateTableRules = (tableName, candidate) => {
       }
       break;
     case "template_artifacts":
-      if (candidate.artifact_stage && !ARTIFACT_STAGE_VALUES.has(String(candidate.artifact_stage))) {
-        throw new Error("La etapa del artifact debe ser: draft, review, approved, published o archived.");
-      }
-      if (!candidate.bucket || !candidate.base_object_prefix) {
-        throw new Error("Debes registrar bucket y prefijo base del artifact.");
+      if (!candidate.base_object_prefix) {
+        throw new Error("Debes registrar el prefijo base del artifact.");
       }
       {
         const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
@@ -1819,13 +1825,8 @@ export default class SqlAdminService {
     }
 
     if (tableName === "template_artifacts") {
-      joinClause = "LEFT JOIN template_seeds ts ON ts.id = template_artifacts.template_seed_id";
       columnPrefix = "template_artifacts.";
       const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
-      if (availableFields.includes("seed_display_name")) {
-        selectFields.push("ts.display_name AS seed_display_name");
-        orderableFields.push("seed_display_name");
-      }
       selectClause = `SELECT ${selectFields.join(", ")}`;
       // Filtro "por proceso al que pertenece": plantillas vinculadas a ese proceso vía process_definition_templates.
       const processFilter = normalizedFilters.process_id;
@@ -1870,8 +1871,6 @@ export default class SqlAdminService {
     const orderColumn =
       (tableName === "processes" && safeOrderBy === "active_definition_version")
         ? safeOrderBy
-        : (tableName === "template_artifacts" && safeOrderBy === "seed_display_name")
-          ? safeOrderBy
         : joinClause
           ? `${tableName}.${safeOrderBy}`
           : safeOrderBy;
@@ -1921,7 +1920,6 @@ export default class SqlAdminService {
          display_name,
          storage_version,
          template_scope,
-         bucket,
          meta_object_key
        FROM template_artifacts
        WHERE id = ?
@@ -1932,15 +1930,15 @@ export default class SqlAdminService {
   }
 
   async loadTemplateArtifactMetaDocument(artifact, connection = this.pool) {
-    if (!artifact?.bucket || !artifact?.meta_object_key) {
+    if (!artifact?.meta_object_key) {
       return null;
     }
     const content = await readMinioObjectAsText(
-      artifact.bucket,
+      MINIO_TEMPLATES_BUCKET,
       String(artifact.meta_object_key || "").trim()
     );
     return parseYamlDocument(content, {
-      filePath: `${artifact.bucket}/${artifact.meta_object_key}`
+      filePath: `${MINIO_TEMPLATES_BUCKET}/${artifact.meta_object_key}`
     });
   }
 
@@ -2081,6 +2079,10 @@ export default class SqlAdminService {
       [normalizedSourceId]
     );
 
+    // Avisos no bloqueantes de sincronización de flujos: clonar la configuración NO debe fallar porque una
+    // plantilla vinculada tenga un flujo incompleto (p. ej. pasos de firma con cargo sin resolver). El vínculo
+    // se conserva y el flujo se re-sincroniza cuando la plantilla quede consistente (resync/reconcile).
+    const templateWorkflowWarnings = [];
     for (const row of templateRows) {
       await connection.query(
         `INSERT INTO process_definition_templates (
@@ -2096,7 +2098,15 @@ export default class SqlAdminService {
       );
 
       if (row.template_artifact_id) {
-        await this.syncArtifactWorkflowsForTemplateArtifactId(Number(row.template_artifact_id), connection);
+        try {
+          await this.syncArtifactWorkflowsForTemplateArtifactId(Number(row.template_artifact_id), connection);
+        } catch (syncError) {
+          console.warn(
+            `No se pudo sincronizar el flujo de la plantilla ${row.template_artifact_id} al versionar:`,
+            syncError?.message
+          );
+          templateWorkflowWarnings.push(syncError?.message || String(syncError));
+        }
       }
     }
 
@@ -2175,7 +2185,8 @@ export default class SqlAdminService {
     return {
       clonedTemplates: templateRows.length,
       clonedRules: ruleRows.length,
-      clonedPeriodTypes: periodTypeRows.length
+      clonedPeriodTypes: periodTypeRows.length,
+      templateWorkflowWarnings
     };
   }
 
@@ -2219,6 +2230,36 @@ export default class SqlAdminService {
     if (total < 1) {
       throw new Error(
         "No se puede activar una configuracion si no tiene al menos un tipo de periodo activo en Periodos del proceso."
+      );
+    }
+  }
+
+  async ensureDefinitionHasArtifactsForActivation(definitionId, connection = this.pool) {
+    const normalizedDefinitionId = Number(definitionId);
+    if (!normalizedDefinitionId) {
+      return;
+    }
+
+    const [rows] = await connection.query(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN ta.is_active = 1 THEN 1 ELSE 0 END) AS active_total
+       FROM process_definition_templates pdt
+       INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+       WHERE pdt.process_definition_id = ?`,
+      [normalizedDefinitionId]
+    );
+
+    const total = Number(rows?.[0]?.total || 0);
+    const activeTotal = Number(rows?.[0]?.active_total || 0);
+    if (total < 1) {
+      throw new Error(
+        "No se puede activar una configuracion si no tiene al menos un paquete (plantilla) vinculado."
+      );
+    }
+    if (activeTotal < 1) {
+      throw new Error(
+        "No se puede activar: la configuracion debe tener al menos una plantilla vinculada y activa."
       );
     }
   }
@@ -2550,6 +2591,9 @@ export default class SqlAdminService {
               createNotice =
                 `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
                 + ` y ${cloneSummary.clonedPeriodTypes} periodos del proceso desde la configuracion origen.`;
+            }
+            if (cloneSummary.templateWorkflowWarnings?.length) {
+              createNotice = `${createNotice || ""} Atención: ${cloneSummary.templateWorkflowWarnings.length} plantilla(s) con flujo incompleto no se sincronizaron (revisa sus pasos de firma y vuelve a sincronizarlas).`.trim();
             }
           }
 
@@ -2927,9 +2971,9 @@ export default class SqlAdminService {
       }
     }
     if (tableName === "template_artifacts") {
-      // Propiedad, no origen: las plantillas oficiales del sistema (sin owner_ref) se sincronizan desde
-      // MinIO/dist y no se editan a mano; las de usuario (con owner_ref) se editan por el flujo de borrador.
-      if (!existing.owner_ref) {
+      // Propiedad: las plantillas oficiales (template_scope='official') se sincronizan desde MinIO/dist y no se
+      // editan a mano; las ad_hoc (de usuario) se editan por el flujo de borrador.
+      if (String(existing.template_scope || "official") === "official") {
         throw new Error("Los artifacts oficiales del sistema se sincronizan desde MinIO y no se pueden editar manualmente.");
       }
     }
@@ -3078,6 +3122,7 @@ export default class SqlAdminService {
           await connection.beginTransaction();
           await this.ensureDefinitionHasActiveRulesForActivation(existing.id ?? keyPayload.id, connection);
           await this.ensureDefinitionHasActivePeriodTypesForActivation(existing.id ?? keyPayload.id, connection);
+          await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, connection);
           const retiredCount = await this.retireActiveDefinitionsInSeries({
             ...processDefinitionSeriesContext,
             connection
@@ -4338,7 +4383,7 @@ export default class SqlAdminService {
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+    const bucket = MINIO_TEMPLATES_BUCKET;
     let schema = {};
     try {
       const text = await readMinioObjectAsText(bucket, artifact.schema_object_key);
@@ -4427,29 +4472,21 @@ export default class SqlAdminService {
     };
   }
 
-  // Cambia el stage de un artifact (gobierno del ciclo de vida) actualizando BD y meta.yaml.
-  async updateTemplateArtifactStage(artifactId, nextStage) {
+  // Activa/desactiva una plantilla. is_active es el único estado del ciclo de vida (Activo/Inactivo).
+  // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega definido en su meta.yaml
+  // (regla: una plantilla de proceso no se usa sin flujo de entrega). La firma puede ser ad-hoc.
+  async setTemplateArtifactActive(artifactId, active) {
     this.ensurePool();
-    const stage = String(nextStage || "").trim().toLowerCase();
-    if (!ARTIFACT_STAGE_VALUES.has(stage)) {
-      throw new Error("Etapa inválida. Debe ser: draft, review, approved, published o archived.");
-    }
+    const nextActive = active ? 1 : 0;
     const artifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const current = String(artifact.artifact_stage || "draft").toLowerCase();
-    if (current === stage) {
-      return { artifact_id: Number(artifactId), artifact_stage: stage, changed: false };
+    const current = Number(artifact.is_active) === 1 ? 1 : 0;
+    if (current === nextActive) {
+      return { artifact_id: Number(artifactId), is_active: nextActive, changed: false };
     }
-    const allowed = ARTIFACT_STAGE_TRANSITIONS[current] || [];
-    if (!allowed.includes(stage)) {
-      throw new Error(`No se permite pasar de "${current}" a "${stage}".`);
-    }
-
-    // Al publicar, exigir que la plantilla tenga al menos un paso de entrega definido en su meta.yaml
-    // (regla: las plantillas de proceso no se publican sin flujo de entrega). La firma puede ser ad-hoc.
-    if (stage === "published") {
+    if (nextActive === 1) {
       let fillSteps = 0;
       try {
         const meta = await this.loadTemplateArtifactMetaDocument(artifact);
@@ -4458,48 +4495,34 @@ export default class SqlAdminService {
         fillSteps = 0;
       }
       if (!fillSteps) {
-        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+        throw new Error("No se puede activar: la plantilla debe definir al menos un paso de flujo de entrega.");
       }
     }
 
     await this.pool.query(
-      "UPDATE template_artifacts SET artifact_stage = ? WHERE id = ?",
-      [stage, Number(artifactId)]
+      "UPDATE template_artifacts SET is_active = ? WHERE id = ?",
+      [nextActive, Number(artifactId)]
     );
 
-    // Refleja el stage en el meta.yaml de MinIO (campos stage / repository_stage).
-    try {
-      const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
-      const metaKey = String(artifact.meta_object_key || "").trim();
-      if (metaKey) {
-        let meta = await readMinioObjectAsText(bucket, metaKey);
-        const replaceOrAppend = (content, key, value) => {
-          const re = new RegExp(`^${key}:.*$`, "m");
-          return re.test(content) ? content.replace(re, `${key}: ${value}`) : `${content.trimEnd()}\n${key}: ${value}\n`;
-        };
-        meta = replaceOrAppend(meta, "stage", stage);
-        meta = replaceOrAppend(meta, "repository_stage", stage);
-        await putMinioObjectFromText(bucket, metaKey, meta, "text/yaml");
-      }
-    } catch (metaError) {
-      console.warn("Stage actualizado en BD pero no en meta.yaml:", metaError?.message);
-    }
-
-    return { artifact_id: Number(artifactId), artifact_stage: stage, previous_stage: current, changed: true };
+    return { artifact_id: Number(artifactId), is_active: nextActive, previous_is_active: current, changed: true };
   }
 
-  // Crea una nueva versión (storage_version) clonando un artifact existente en stage draft.
-  async createTemplateArtifactVersion(artifactId) {
+  // Crea una nueva versión (storage_version semver) clonando un artifact existente. Nace inactiva
+  // (is_active=0): el gestor la activa cuando esté lista. El nivel de cambio (patch/minor/major) lo elige
+  // quien crea la versión.
+  async createTemplateArtifactVersion(artifactId, bumpLevel = "minor") {
     this.ensurePool();
     const artifact = await this.getByKeys("template_artifacts", { id: Number(artifactId) });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+    const bucket = MINIO_TEMPLATES_BUCKET;
     const templateCode = String(artifact.template_code);
-    const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode);
+    const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
+    const oldVersion = String(artifact.storage_version || "");
     const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
-    const newPrefix = oldPrefix.replace(/v\d+\/?$/i, `${nextStorageVersion}/`);
+    const versionSuffixRe = new RegExp(`${oldVersion.replace(/[.\\]/g, "\\$&")}/?$`);
+    const newPrefix = oldVersion ? oldPrefix.replace(versionSuffixRe, `${nextStorageVersion}/`) : oldPrefix;
     if (newPrefix === oldPrefix) {
       throw new Error("No se pudo derivar la ruta de la nueva versión.");
     }
@@ -4529,21 +4552,18 @@ export default class SqlAdminService {
     }
     const [result] = await this.pool.query(
       `INSERT INTO template_artifacts (
-        template_seed_id, owner_person_id, template_code, display_name, description, owner_ref,
-        source_version, storage_version, artifact_stage, template_scope, bucket, base_object_prefix,
+        template_seed_id, owner_person_id, template_code, display_name, description,
+        storage_version, template_scope, base_object_prefix,
         available_formats, schema_object_key, meta_object_key, content_hash, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, 1)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
         artifact.template_seed_id,
         artifact.owner_person_id,
         templateCode,
         artifact.display_name,
         artifact.description,
-        artifact.owner_ref,
-        artifact.source_version,
         nextStorageVersion,
         artifact.template_scope || "official",
-        bucket,
         newPrefix,
         JSON.stringify(remappedFormats || {}),
         newSchemaKey,
@@ -4558,9 +4578,8 @@ export default class SqlAdminService {
       storage_version: nextStorageVersion,
       base_object_prefix: newPrefix,
       template_scope: artifact.template_scope || "official",
-      bucket,
-      artifact_stage: "draft",
-      __notice: `Nueva versión ${nextStorageVersion} creada en estado draft.`,
+      is_active: 0,
+      __notice: `Nueva versión ${nextStorageVersion} creada (inactiva). Actívala cuando esté lista.`,
     };
   }
 
@@ -4579,7 +4598,7 @@ export default class SqlAdminService {
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const bucket = String(artifact.bucket || MINIO_TEMPLATES_BUCKET);
+    const bucket = MINIO_TEMPLATES_BUCKET;
     const basePrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const formats = parseAvailableFormats(artifact.available_formats);
     const jinjaEntry = formats?.[CONTRACT_FORMAT]?.entry_object_key;
@@ -4648,7 +4667,7 @@ export default class SqlAdminService {
         throw new Error("No se detectaron cambios en el contenido editable (Contenido/).");
       }
 
-      const version = await this.createTemplateArtifactVersion(artifactId);
+      const version = await this.createTemplateArtifactVersion(artifactId, "patch");
       for (const entry of editedContent) {
         await putMinioObjectFromText(
           bucket,
@@ -4662,7 +4681,7 @@ export default class SqlAdminService {
         storage_version: version.storage_version,
         base_object_prefix: version.base_object_prefix,
         edited_files: editedContent.length,
-        __notice: `Código verificado y actualizado en nueva versión ${version.storage_version} (draft). Archivos de contenido actualizados: ${editedContent.length}.`
+        __notice: `Código verificado y actualizado en nueva versión ${version.storage_version} (inactiva). Archivos de contenido actualizados: ${editedContent.length}.`
       };
     } finally {
       fs.rmSync(workDir, { recursive: true, force: true });
@@ -4720,22 +4739,32 @@ export default class SqlAdminService {
     };
   }
 
-  async getNextStorageVersionForTemplateCode(templateCode, connection = this.pool) {
+  // Devuelve la siguiente storage_version semver para un código. La primera versión es 1.0.0; si ya existe
+  // alguna, sube desde la mayor por el nivel elegido (patch/minor/major). Garantiza unicidad y monotonía.
+  async getNextStorageVersionForTemplateCode(templateCode, level = "minor", connection = this.pool) {
     const [rows] = await connection.query(
       `SELECT storage_version
        FROM template_artifacts
        WHERE template_code = ?`,
       [templateCode]
     );
-    let maxVersion = 0;
+    let maxKey = -1;
+    let maxVersion = "";
     for (const row of rows || []) {
-      const match = String(row.storage_version || "").match(/^v(\d+)$/i);
+      const match = String(row.storage_version || "").trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
       if (!match) {
         continue;
       }
-      maxVersion = Math.max(maxVersion, Number(match[1]));
+      const key = Number(match[1]) * 1e6 + Number(match[2]) * 1e3 + Number(match[3]);
+      if (key > maxKey) {
+        maxKey = key;
+        maxVersion = `${match[1]}.${match[2]}.${match[3]}`;
+      }
     }
-    return `v${String(maxVersion + 1).padStart(4, "0")}`;
+    if (!maxVersion) {
+      return "1.0.0";
+    }
+    return bumpSemanticVersion(maxVersion, level);
   }
 
   async createTemplateArtifactDraft(data = {}, files = {}, actor = {}) {
@@ -4751,7 +4780,6 @@ export default class SqlAdminService {
 
     const displayName = String(data.display_name || "").trim();
     const description = String(data.description || "").trim() || null;
-    const sourceVersion = String(data.source_version || "1.0.0").trim();
     const ownerCedula = String(data.owner_cedula || "").trim();
     const requestedOwnerPersonId = normalizeNumericId(data.owner_person_id);
     let templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
@@ -4777,9 +4805,9 @@ export default class SqlAdminService {
       if (!existingArtifact) {
         throw new Error("El artifact seleccionado no existe.");
       }
-      // Este flujo edita plantillas creadas desde la web (propiedad de usuario: tienen owner_ref).
-      // Las plantillas oficiales del sistema (sin owner_ref, sincronizadas desde dist) no se editan aquí.
-      if (!existingArtifact.owner_ref) {
+      // Este flujo edita plantillas ad_hoc creadas desde la web. Las oficiales (template_scope='official',
+      // sincronizadas desde dist) no se editan aquí.
+      if (String(existingArtifact.template_scope || "official") === "official") {
         throw new Error("Las plantillas oficiales del sistema no se editan con este flujo (usa el pipeline de templates).");
       }
     }
@@ -4826,11 +4854,15 @@ export default class SqlAdminService {
       throw new Error("Selecciona un seed o sube al menos un archivo para actualizar el borrador.");
     }
 
-    const ownerRef = String(existingArtifact?.owner_ref || ownerCedula).slice(0, 180);
-    if (!ownerRef) {
-      throw new Error("No se pudo resolver el propietario del artifact.");
-    }
+    // La cédula del propietario (ownerRef) ya no se persiste como columna: se usa solo para construir la ruta
+    // MinIO ad_hoc al crear (Users/<cédula>/...) y para resolver owner_person_id. En edición se reutiliza el
+    // base_object_prefix ya almacenado, así que no es necesaria.
+    let ownerRef = ownerCedula.slice(0, 180);
     let ownerPersonId = normalizeNumericId(existingArtifact?.owner_person_id);
+    if (!ownerRef && ownerPersonId) {
+      const ownerPersonRow = await this.getByKeys("persons", { id: ownerPersonId });
+      ownerRef = String(ownerPersonRow?.cedula || "").slice(0, 180);
+    }
     if (requestedOwnerPersonId) {
       const ownerPerson = await this.getByKeys("persons", { id: requestedOwnerPersonId });
       if (!ownerPerson) {
@@ -4852,7 +4884,7 @@ export default class SqlAdminService {
     const baseSlug = slugify(displayName) || "artifact";
     const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
     const storageVersion = existingArtifact?.storage_version || await this.getNextStorageVersionForTemplateCode(templateCode);
-    const bucket = String(existingArtifact?.bucket || MINIO_TEMPLATES_BUCKET);
+    const bucket = MINIO_TEMPLATES_BUCKET;
     const requestedTemplateScope = String(data.template_scope || existingArtifact?.template_scope || "official").trim();
     const templateScope = requestedTemplateScope === "ad_hoc" ? "ad_hoc" : "official";
     const adHocToken = sanitizeStorageSegment(data.task_item_id || data.draft_token || randomUUID(), "draft");
@@ -4861,12 +4893,11 @@ export default class SqlAdminService {
       ? `${TEMPLATE_USERS_PREFIX}/${ownerRef}/AdHoc/${adHocToken}/${templateCode}/${storageVersion}/`
       : `${MINIO_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
     const baseObjectPrefix = String(existingArtifact?.base_object_prefix || defaultBaseObjectPrefix);
-    const artifactStage = String(existingArtifact?.artifact_stage || "draft");
     const draftDir = path.join(
       BACKEND_STORAGE_ROOT,
       "minio-jobs",
       "templates-drafts",
-      ownerRef,
+      ownerRef || templateScope,
       templateCode,
       storageVersion
     );
@@ -4993,10 +5024,9 @@ export default class SqlAdminService {
     );
     const metaLines = [
       `name: "${displayName.replace(/"/g, '\\"')}"`,
-      `version: "${sourceVersion.replace(/"/g, '\\"')}"`,
+      `version: "${storageVersion.replace(/"/g, '\\"')}"`,
       `template_code: "${templateCode.replace(/"/g, '\\"')}"`,
-      `owner_ref: "${ownerRef.replace(/"/g, '\\"')}"`,
-      `stage: ${artifactStage}`
+      `template_scope: ${templateScope}`
     ];
     if (description) {
       metaLines.push(`description: "${description.replace(/"/g, '\\"')}"`);
@@ -5114,11 +5144,7 @@ export default class SqlAdminService {
                owner_person_id = ?,
                display_name = ?,
                description = ?,
-               owner_ref = ?,
-               source_version = ?,
-               artifact_stage = ?,
                template_scope = ?,
-               bucket = ?,
                base_object_prefix = ?,
                available_formats = ?,
                schema_object_key = ?,
@@ -5131,11 +5157,7 @@ export default class SqlAdminService {
             ownerPersonId,
             displayName,
             description,
-            ownerRef,
-            sourceVersion,
-            artifactStage,
             templateScope,
-            bucket,
             baseObjectPrefix,
             JSON.stringify(availableFormats),
             schemaObjectKey,
@@ -5152,30 +5174,23 @@ export default class SqlAdminService {
             template_code,
             display_name,
             description,
-            owner_ref,
-            source_version,
             storage_version,
-            artifact_stage,
             template_scope,
-            bucket,
             base_object_prefix,
             available_formats,
             schema_object_key,
             meta_object_key,
             content_hash,
             is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, 1)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
           [
             templateSeedId,
             ownerPersonId,
             templateCode,
             displayName,
             description,
-            ownerRef,
-            sourceVersion,
             storageVersion,
             templateScope,
-            bucket,
             baseObjectPrefix,
             JSON.stringify(availableFormats),
             schemaObjectKey,
@@ -5243,12 +5258,8 @@ export default class SqlAdminService {
         template_code: templateCode,
         display_name: displayName,
         description,
-        owner_ref: ownerRef,
-        source_version: sourceVersion,
         storage_version: storageVersion,
-        artifact_stage: artifactStage,
         template_scope: templateScope,
-        bucket,
         base_object_prefix: baseObjectPrefix,
         available_formats: availableFormats,
         schema_object_key: schemaObjectKey,
@@ -5319,6 +5330,44 @@ export default class SqlAdminService {
         template.process_definition_id,
         { entityLabel: "los flujos de firma" }
       );
+    }
+
+    // Quitar una plantilla de la configuración: sus flujos derivados (entrega/firma) cuelgan del vínculo y sus
+    // FKs NO son ON DELETE CASCADE, así que hay que borrarlos primero. Solo aplica en draft (validado arriba);
+    // en draft no existen instancias de runtime (requests/firmas), por eso basta con templates + pasos.
+    if (tableName === "process_definition_templates") {
+      const templateId = Number(keyPayload.id);
+      const connection = await this.pool.getConnection();
+      try {
+        await connection.beginTransaction();
+        // Flujos de ENTREGA del vínculo: pasos → template.
+        const [fillTpls] = await connection.query(
+          "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ?",
+          [templateId]
+        );
+        for (const tpl of fillTpls) {
+          await connection.query("DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?", [tpl.id]);
+        }
+        await connection.query("DELETE FROM fill_flow_templates WHERE process_definition_template_id = ?", [templateId]);
+        // Flujos de FIRMA del vínculo: pasos → template.
+        const [sigTpls] = await connection.query(
+          "SELECT id FROM signature_flow_templates WHERE process_definition_template_id = ?",
+          [templateId]
+        );
+        for (const tpl of sigTpls) {
+          await connection.query("DELETE FROM signature_flow_steps WHERE template_id = ?", [tpl.id]);
+        }
+        await connection.query("DELETE FROM signature_flow_templates WHERE process_definition_template_id = ?", [templateId]);
+        // Finalmente el vínculo.
+        await connection.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
+        await connection.commit();
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+      return keyPayload;
     }
 
     await this.pool.query(`DELETE FROM ${tableName} WHERE ${where}`, params);

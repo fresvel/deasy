@@ -322,6 +322,7 @@
       :checking="processDefinitionActivationChecking"
       :has-active-rules="processDefinitionActivationHasActiveRules"
       :has-active-triggers="processDefinitionActivationHasActiveTriggers"
+      :has-active-artifacts="processDefinitionActivationHasActiveArtifacts"
       :view="processDefinitionActivationView"
       :selected-row="selectedRow"
       :rules="processDefinitionActivationRules"
@@ -569,6 +570,7 @@
           :checking="processDefinitionActivationChecking"
           :has-active-rules="processDefinitionActivationHasActiveRules"
           :has-active-triggers="processDefinitionActivationHasActiveTriggers"
+          :has-active-artifacts="processDefinitionActivationHasActiveArtifacts"
           :view="processDefinitionActivationView"
           :selected-row="processWizardDefinition"
           :rules="processDefinitionActivationRules"
@@ -590,9 +592,29 @@
             v-if="!processWizardReadonly"
             variant="success"
             :disabled="processDefinitionActivationChecking || !allProcessDefinitionActivationRequirementsMet"
-            @click="wizardConfirmActivation"
+            @click="showWizardActivateConfirm = true"
           >Activar proceso</AdminButton>
         </div>
+
+        <!-- Confirmación con tono de advertencia: la activación es irreversible en esta versión. -->
+        <AppDialogOverlay
+          :open="showWizardActivateConfirm"
+          title="Confirmar activación"
+          panel-class="max-w-md"
+          @close="showWizardActivateConfirm = false"
+        >
+          <div class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
+            <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <span>
+              Al activar, <strong>ya no podrás modificar</strong> reglas, periodos ni paquetes en esta versión.
+              Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
+            </span>
+          </div>
+          <template #footer>
+            <AdminButton variant="cancel" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
+            <AdminButton variant="success" :disabled="processDefinitionActivationChecking" @click="confirmWizardActivation">Sí, activar</AdminButton>
+          </template>
+        </AppDialogOverlay>
       </template>
     </AdminProcessWizardModal>
 
@@ -669,7 +691,7 @@
           @drop="handleDraftArtifactDrop"
           @close="fkActiveTab = 'select'"
           @submit="handleDraftArtifactSubmit"
-          @change-stage="handleArtifactStageChange"
+          @change-active="handleArtifactActiveChange"
           @new-version="handleArtifactNewVersion"
           @create-process="handleDraftCreateProcess"
         />
@@ -922,7 +944,7 @@
       @drop="handleDraftArtifactDrop"
       @close="handleDraftArtifactClose"
       @submit="handleDraftArtifactSubmit"
-      @change-stage="handleArtifactStageChange"
+      @change-active="handleArtifactActiveChange"
       @new-version="handleArtifactNewVersion"
       @create-process="handleDraftCreateProcess"
     />
@@ -1020,6 +1042,7 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
@@ -1072,7 +1095,7 @@ const processTargetRuleInlineFilters = ref({
   definition_status: ""
 });
 const templateArtifactInlineFilters = ref({
-  artifact_stage: ""
+  is_active: ""
 });
 const processDefinitionProcessOptions = ref([]);
 const processDefinitionSeriesOptions = ref([]);
@@ -1122,6 +1145,7 @@ const processDefinitionActivationFromEditor = ref(false);
 const processDefinitionActivationChecking = ref(false);
 const processDefinitionActivationHasActiveRules = ref(true);
 const processDefinitionActivationHasActiveTriggers = ref(true);
+const processDefinitionActivationHasActiveArtifacts = ref(true);
 const processDefinitionActivationView = ref("definition");
 const processDefinitionActivationRules = ref([]);
 const processDefinitionActivationTriggers = ref([]);
@@ -1196,9 +1220,8 @@ const draftArtifactForm = ref({
   template_seed_id: "",
   display_name: "",
   description: "",
-  source_version: "1.0.0",
-  artifact_stage: "draft",
   storage_version: "",
+  is_active: 1,
   process_definition_id: "",
   schema_fields: [],
   fill_workflow: { required: true, steps: [] },
@@ -1421,7 +1444,6 @@ const tableListFields = computed(() => {
       "display_name",
       "available_formats",
       "template_code",
-      "source_version",
       "storage_version"
     ];
     normalizedFields = [...fields].sort((left, right) => {
@@ -1522,7 +1544,7 @@ const fkListExtraFields = computed(() => {
   if (fkTable.value.table === "template_artifacts") {
     return fkTable.value.fields
       .filter((field) =>
-        ["template_code", "source_version", "storage_version", "available_formats", "is_active"].includes(field.name)
+        ["template_code", "storage_version", "available_formats", "is_active"].includes(field.name)
       )
       .map((field) => formatTemplateArtifactFieldLabel(field));
   }
@@ -1710,6 +1732,7 @@ const processDefinitionActivationPrimaryActionLabel = computed(() =>
 const allProcessDefinitionActivationRequirementsMet = computed(() =>
   processDefinitionActivationHasActiveRules.value
   && processDefinitionActivationHasActiveTriggers.value
+  && processDefinitionActivationHasActiveArtifacts.value
 );
 // El preview del seed se descarga por axios (responseType blob) para que lleve el header Bearer del
 // interceptor; un <iframe src="..."> con la URL cruda no manda el token → backend responde "Token requerido".
@@ -1775,7 +1798,7 @@ const hasProcessTargetRuleInlineFilters = computed(() =>
 );
 const hasTemplateArtifactInlineFilters = computed(() =>
   Boolean(
-    templateArtifactInlineFilters.value.artifact_stage
+    templateArtifactInlineFilters.value.is_active
   )
 );
 const hasVacantPositionFilters = computed(() =>
@@ -2024,6 +2047,7 @@ const {
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
@@ -2388,27 +2412,31 @@ const {
   resolveModalElement
 });
 
-const handleArtifactStageChange = async (nextStage) => {
+const handleArtifactActiveChange = async (nextActive) => {
   const id = draftArtifactEditId.value;
   if (!id) return;
   try {
-    const { data } = await adminSqlService.updateTemplateArtifactStage(id, nextStage);
-    draftArtifactForm.value = { ...draftArtifactForm.value, artifact_stage: data?.artifact_stage || nextStage };
+    const { data } = await adminSqlService.setTemplateArtifactActive(id, nextActive ? 1 : 0);
+    draftArtifactForm.value = { ...draftArtifactForm.value, is_active: data?.is_active };
     await fetchRows();
-    showFeedbackToast({ kind: "success", title: "Estado actualizado", message: `La plantilla pasó a estado "${data?.artifact_stage || nextStage}".` });
+    showFeedbackToast({
+      kind: "success",
+      title: data?.is_active ? "Plantilla activada" : "Plantilla desactivada",
+      message: data?.is_active ? "La plantilla quedó activa y disponible." : "La plantilla quedó inactiva."
+    });
   } catch (err) {
     showFeedbackToast({ kind: "error", title: "No se pudo cambiar el estado", message: err?.response?.data?.message || "Error al actualizar el estado." });
   }
 };
 
-const handleArtifactNewVersion = async () => {
+const handleArtifactNewVersion = async (bumpLevel = "minor") => {
   const id = draftArtifactEditId.value;
   if (!id) return;
   try {
-    const { data } = await adminSqlService.createTemplateArtifactVersion(id);
+    const { data } = await adminSqlService.createTemplateArtifactVersion(id, bumpLevel);
     await fetchRows();
     closeDraftArtifactModal();
-    showFeedbackToast({ kind: "success", title: "Nueva versión creada", message: data?.__notice || "Se creó una nueva versión en borrador." });
+    showFeedbackToast({ kind: "success", title: "Nueva versión creada", message: data?.__notice || "Se creó una nueva versión (inactiva)." });
   } catch (err) {
     showFeedbackToast({ kind: "error", title: "No se pudo crear la versión", message: err?.response?.data?.message || "Error al crear la nueva versión." });
   }
@@ -2588,7 +2616,9 @@ const openDefinitionArtifactTemplateEditor = async (row) => {
   draftArtifactReturnToPackages.value = true;
   pushModalOrigin("definitionArtifacts");
   getDefinitionArtifactsInstance()?.hide();
-  await openDraftArtifactModal(artifactRow);
+  // force: estamos en el contexto de process_definition_versions, no de template_artifacts; sin force el
+  // editor abortaría por el guard de tabla.
+  await openDraftArtifactModal(artifactRow, { force: true });
 };
 
 const returnToDefinitionArtifactsAfterEdit = async () => {
@@ -2995,6 +3025,7 @@ const {
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
   processDefinitionActivationRules,
@@ -3151,6 +3182,11 @@ const refreshWizardAfter = async (action) => {
 const wizardSubmitArtifact = () => refreshWizardAfter(submitDefinitionArtifact);
 const wizardSubmitRule = () => refreshWizardAfter(submitDefinitionRule);
 const wizardSubmitTrigger = () => refreshWizardAfter(submitDefinitionTrigger);
+const showWizardActivateConfirm = ref(false);
+const confirmWizardActivation = async () => {
+  showWizardActivateConfirm.value = false;
+  await wizardConfirmActivation();
+};
 const wizardConfirmActivation = async () => {
   const definitionRow = processWizardDefinition.value;
   if (!definitionRow?.id) {
