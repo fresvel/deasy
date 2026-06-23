@@ -104,6 +104,47 @@
                 </div>
               </div>
             </div>
+
+            <!-- Usuario de prueba (opcional): rol base "Usuario" para validar el flujo operativo -->
+            <label class="flex items-center gap-3 rounded-xl border p-3.5 transition-colors" :class="usuarioEnabled ? 'border-sky-300 bg-sky-50' : 'border-slate-200'">
+              <input v-model="usuarioEnabled" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" />
+              <span>
+                <span class="block text-sm font-semibold text-slate-700">Crear un usuario de prueba</span>
+                <span class="block text-xs text-slate-500">Persona con rol "Usuario" para probar el flujo operativo (Home, tareas, firmas). Opcional.</span>
+              </span>
+            </label>
+            <div v-if="usuarioEnabled" class="space-y-4">
+              <label class="flex items-center gap-2.5 text-sm font-medium text-slate-600">
+                <input v-model="useExampleUsuario" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600" @change="toggleExampleUsuario" />
+                Usar datos de ejemplo
+              </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Cédula</label>
+                  <input v-model="usuarioForm.cedula" type="text" inputmode="numeric" autocomplete="off" class="deasy-auth-field" placeholder="1122334455" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+                  <input v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-auth-field" placeholder="usuario@institucion.edu.ec" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Nombres</label>
+                  <input v-model="usuarioForm.first_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Usuario" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Apellidos</label>
+                  <input v-model="usuarioForm.last_name" type="text" autocomplete="off" class="deasy-auth-field" placeholder="Prueba" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Contraseña</label>
+                  <input v-model="usuarioForm.password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Contraseña del usuario" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+                  <input v-model="usuarioForm.confirm_password" type="password" autocomplete="new-password" class="deasy-auth-field" placeholder="Repite la contraseña" />
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Paso 3: Catálogos genéricos -->
@@ -174,6 +215,10 @@
             <div class="rounded-xl border border-slate-200 p-4">
               <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Gestor por defecto</p>
               <p class="m-0 mt-1 text-slate-500">{{ gestorEnabled ? `${gestorForm.first_name} ${gestorForm.last_name} · ${gestorForm.email}` : 'No se creará' }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-4">
+              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Usuario de prueba</p>
+              <p class="m-0 mt-1 text-slate-500">{{ usuarioEnabled ? `${usuarioForm.first_name} ${usuarioForm.last_name} · ${usuarioForm.email}` : 'No se creará' }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 p-4">
               <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Catálogos a preconfigurar</p>
@@ -274,7 +319,7 @@ const environment = ref("development");
 const step = ref(1);
 const steps = [
   { key: "admin", label: "Administrador" },
-  { key: "gestor", label: "Gestor" },
+  { key: "gestor", label: "Cuentas demo" },
   { key: "catalogos", label: "Catálogos" },
   { key: "resumen", label: "Resumen" }
 ];
@@ -291,6 +336,10 @@ const EXAMPLE_GESTOR = {
   cedula: "0987654321", first_name: "Gestor", last_name: "Procesos",
   email: "gestor@institucion.edu.ec", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!"
 };
+const EXAMPLE_USUARIO = {
+  cedula: "1122334455", first_name: "Usuario", last_name: "Prueba",
+  email: "usuario@institucion.edu.ec", whatsapp: "", password: "Demo1234!", confirm_password: "Demo1234!"
+};
 
 const form = reactive(blankPerson());
 const useExampleAdmin = ref(false);
@@ -305,6 +354,14 @@ const useExampleGestor = ref(false);
 const toggleExampleGestor = () => {
   if (useExampleGestor.value) Object.assign(gestorForm, EXAMPLE_GESTOR);
   else Object.assign(gestorForm, blankPerson());
+};
+
+const usuarioEnabled = ref(false);
+const usuarioForm = reactive(blankPerson());
+const useExampleUsuario = ref(false);
+const toggleExampleUsuario = () => {
+  if (useExampleUsuario.value) Object.assign(usuarioForm, EXAMPLE_USUARIO);
+  else Object.assign(usuarioForm, blankPerson());
 };
 
 const catalogGroupMeta = [
@@ -383,7 +440,10 @@ const isPersonComplete = (p) =>
 
 const canAdvance = computed(() => {
   if (step.value === 1) return isPersonComplete(form);
-  if (step.value === 2) return !gestorEnabled.value || isPersonComplete(gestorForm);
+  if (step.value === 2) {
+    return (!gestorEnabled.value || isPersonComplete(gestorForm))
+      && (!usuarioEnabled.value || isPersonComplete(usuarioForm));
+  }
   return true;
 });
 
@@ -404,7 +464,7 @@ const copyText = computed(() => {
   if (mode.value === "normal") {
     return "El sistema ya tiene un administrador activo. Esta pantalla ya no está disponible para bootstrap.";
   }
-  return "Define la cuenta administradora, opcionalmente un gestor, y los catálogos a preconfigurar.";
+  return "Define la cuenta administradora, opcionalmente un gestor y un usuario de prueba, y los catálogos a preconfigurar.";
 });
 
 const loadStatus = async ({ force = false } = {}) => {
@@ -432,6 +492,7 @@ const submitBootstrap = async () => {
     const payload = {
       ...form,
       gestor: gestorEnabled.value ? { ...gestorForm } : null,
+      usuario: usuarioEnabled.value ? { ...usuarioForm } : null,
       preconfig: { ...preconfig }
     };
     await SystemBootstrapService.initialize(payload);

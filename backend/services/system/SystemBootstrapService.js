@@ -21,6 +21,7 @@ const BOOTSTRAP_UNIT_LABEL = "Sistema";
 const BOOTSTRAP_UNIT_SLUG = "root-system";
 const MANUAL_ROLE_SOURCE = "manual";
 const GESTOR_ROLE_NAME = "GestorProcesos";
+const USUARIO_ROLE_NAME = "Usuario";
 
 const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const TOKEN_LENGTH = 10;
@@ -779,6 +780,8 @@ export default class SystemBootstrapService {
     const adminPayload = validateAdminPayload(payload);
     // Gestor por defecto OPCIONAL (mismos campos que el admin).
     const gestorPayload = payload.gestor ? validateAdminPayload(payload.gestor) : null;
+    // Usuario de prueba OPCIONAL (rol base "Usuario"): para validar el flujo operativo (Home/tareas/firmas).
+    const usuarioPayload = payload.usuario ? validateAdminPayload(payload.usuario) : null;
     // Bloques de catálogos genéricos OPCIONALES a preconfigurar.
     const preconfig = payload.preconfig && typeof payload.preconfig === "object" ? payload.preconfig : {};
     const connection = await this.pool.getConnection();
@@ -809,6 +812,23 @@ export default class SystemBootstrapService {
           last_name: gestorPayload.last_name
         };
       }
+      // Usuario de prueba (opcional): persona + rol Usuario.
+      let usuario = null;
+      if (usuarioPayload) {
+        const usuarioPerson = await upsertAdminPerson(connection, usuarioPayload);
+        await ensureAdminRoleAssignment(connection, {
+          personId: usuarioPerson.id,
+          roleId: roleIds.get(USUARIO_ROLE_NAME),
+          unitId
+        });
+        usuario = {
+          id: usuarioPerson.id,
+          cedula: usuarioPayload.cedula,
+          email: usuarioPayload.email,
+          first_name: usuarioPayload.first_name,
+          last_name: usuarioPayload.last_name
+        };
+      }
       await ensureDefaultProcess(connection);
       // Catálogos genéricos seleccionados (idempotente).
       const seededCatalog = await seedGenericCatalog(connection, preconfig, roleIds);
@@ -824,6 +844,7 @@ export default class SystemBootstrapService {
           last_name: adminPayload.last_name
         },
         gestor,
+        usuario,
         preconfig: seededCatalog
       };
     } catch (error) {

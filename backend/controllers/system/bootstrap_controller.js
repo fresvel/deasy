@@ -27,6 +27,7 @@ export const initializeBootstrap = async (req, res) => {
       message: result.message,
       admin: result.admin,
       gestor: result.gestor,
+      usuario: result.usuario,
       preconfig: result.preconfig,
       ...status
     });

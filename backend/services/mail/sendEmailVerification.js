@@ -4,12 +4,12 @@ import { transporter } from "../../lib/mailer.js";
 import { generateVerificationCode } from "../../utils/email/generateCode.js";
 import { saveEmailVerificationCode } from "./saveEmailVerificationCode.js";
 
-export const sendEmailVerification = async ({ userId, email }) => {
+export const sendEmailVerification = async ({ personId, email }) => {
   // 1️⃣ Generar código
   const code = generateVerificationCode();
 
   // 2️⃣ Guardar código
-  await saveEmailVerificationCode(userId, code);
+  await saveEmailVerificationCode(personId, code);
 
   // 3️⃣ Cargar template
   const templatePath = path.resolve(

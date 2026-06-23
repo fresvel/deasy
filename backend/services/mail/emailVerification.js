@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { getMariaDBPool } from "../../config/mariadb.js";
 
-export const verifyEmailCode = async (userId, code) => {
+export const verifyEmailCode = async (personId, code) => {
   const pool = getMariaDBPool();
 
   // 1️⃣ Buscar código activo
@@ -9,11 +9,11 @@ export const verifyEmailCode = async (userId, code) => {
     `
     SELECT id, code_hash, expires_at
     FROM email_verification_codes
-    WHERE user_id = ?
+    WHERE person_id = ?
     ORDER BY created_at DESC
     LIMIT 1
     `,
-    [userId]
+    [personId]
   );
 
   if (!rows.length) {
@@ -39,15 +39,15 @@ export const verifyEmailCode = async (userId, code) => {
     throw new Error("INVALID_CODE");
   }
 
-  // 4️⃣ Marcar usuario como verificado
+  // 4️⃣ Marcar a la persona como verificada
   await pool.query(
     `
-    UPDATE users
+    UPDATE persons
     SET verify_email = 1,
         status = 'Verificado'
     WHERE id = ?
     `,
-    [userId]
+    [personId]
   );
 
   // 5️⃣ Eliminar código (one-time use)

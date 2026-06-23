@@ -1937,7 +1937,7 @@ export const createUser = async (req, res) => {
 
     try {
       await sendEmailVerification({
-        userId: createdUser.id,
+        personId: createdUser.id,
         email: createdUser.email
       });
 

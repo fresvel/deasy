@@ -9,46 +9,21 @@ import {
 const ensureDatabaseSQL = (databaseName) =>
   `CREATE DATABASE IF NOT EXISTS \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;
 
-const CREATE_USERS_TABLE_SQL = `
-CREATE TABLE IF NOT EXISTS users (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  mongo_id CHAR(24) DEFAULT NULL,
-  cedula VARCHAR(10) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  nombre VARCHAR(120) NOT NULL,
-  apellido VARCHAR(120) NOT NULL,
-  whatsapp VARCHAR(20) DEFAULT NULL,
-  direccion VARCHAR(255) DEFAULT NULL,
-  pais VARCHAR(80) DEFAULT NULL,
-  status ENUM('Inactivo','Activo','Verificado','Reportado') DEFAULT 'Inactivo',
-  verify_email TINYINT(1) DEFAULT 0,
-  verify_whatsapp TINYINT(1) DEFAULT 0,
-  photo_url LONGTEXT DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_users_cedula (cedula),
-  UNIQUE KEY uq_users_email (email),
-  UNIQUE KEY uq_users_mongo_id (mongo_id)
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-`;
-
+// Tablas de códigos de auth ligadas a la identidad ÚNICA del sistema: persons. (La antigua tabla `users`
+// con su puente Mongo quedó obsoleta; el dossier en Mongo se enlaza por cédula→persons, no por `users`.)
+// Se crean DESPUÉS del schema principal porque referencian persons(id).
 const CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS email_verification_codes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NOT NULL,
+  person_id INT NOT NULL,
   code_hash VARCHAR(255) NOT NULL,
   expires_at DATETIME NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_user_id (user_id),
+  INDEX idx_person_id (person_id),
   INDEX idx_expires_at (expires_at),
-  CONSTRAINT fk_email_verification_user
-    FOREIGN KEY (user_id)
-    REFERENCES users(id)
+  CONSTRAINT fk_email_verification_person
+    FOREIGN KEY (person_id)
+    REFERENCES persons(id)
     ON DELETE CASCADE
 )
 ENGINE=InnoDB
@@ -59,18 +34,16 @@ COLLATE=utf8mb4_unicode_ci;
 const CREATE_PASSWORD_RESET_CODES_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS password_reset_codes (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT UNSIGNED NULL,
-  person_id INT NULL,
+  person_id INT NOT NULL,
   code_hash VARCHAR(255) NOT NULL,
   expires_at DATETIME NOT NULL,
   used TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_user_id (user_id),
   INDEX idx_person_id (person_id),
   INDEX idx_expires_at (expires_at),
-  CONSTRAINT fk_password_reset_user
-    FOREIGN KEY (user_id)
-    REFERENCES users(id)
+  CONSTRAINT fk_password_reset_person
+    FOREIGN KEY (person_id)
+    REFERENCES persons(id)
     ON DELETE CASCADE
 )
 ENGINE=InnoDB
@@ -78,71 +51,72 @@ DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 `;
 
-const ADD_PHOTO_COLUMN_SQL = `
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS photo_url LONGTEXT DEFAULT NULL;
-`;
-
-const MODIFY_PHOTO_COLUMN_SQL = `
-ALTER TABLE users
-MODIFY COLUMN photo_url LONGTEXT DEFAULT NULL;
-`;
-
-const ensurePasswordResetCodesPersonLink = async (connection) => {
-  const [columns] = await connection.query(
-    `SELECT COLUMN_NAME
-     FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'password_reset_codes'`
-  );
-  const columnNames = new Set(columns.map((column) => column.COLUMN_NAME));
-
-  if (!columnNames.has("person_id")) {
-    await connection.query(
-      "ALTER TABLE password_reset_codes ADD COLUMN person_id INT NULL AFTER user_id"
+// Migración idempotente para BDs existentes: re-cablea los códigos de auth desde la antigua `users` a
+// `persons` y elimina la tabla legacy `users`. En instalación limpia es no-op (las tablas ya nacen con
+// person_id). Helpers guardados por information_schema.
+const ensureLegacyAuthCleanup = async (connection) => {
+  const columnExists = async (table, column) => {
+    const [rows] = await connection.query(
+      `SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [table, column]
     );
-  }
-
-  // El flujo de recuperación ya inserta por person_id (no user_id); user_id pasa a NULLABLE
-  // para no violar NOT NULL. Idempotente (MODIFY se puede re-ejecutar sin efecto).
-  await connection.query(
-    "ALTER TABLE password_reset_codes MODIFY COLUMN user_id BIGINT UNSIGNED NULL"
-  );
-
-  await connection.query(
-    `UPDATE password_reset_codes prc
-     INNER JOIN users u ON u.id = prc.user_id
-     INNER JOIN persons p ON (p.email IS NOT NULL AND p.email = u.email) OR p.cedula = u.cedula
-     SET prc.person_id = p.id
-     WHERE prc.person_id IS NULL`
-  );
-
-  try {
-    await connection.query(
-      "ALTER TABLE password_reset_codes ADD INDEX idx_person_id (person_id)"
+    return rows.length > 0;
+  };
+  const tableExists = async (table) => {
+    const [rows] = await connection.query(
+      `SELECT 1 FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+      [table]
     );
-  } catch (error) {
-    if (error?.code !== "ER_DUP_KEYNAME") {
-      throw error;
+    return rows.length > 0;
+  };
+  const dropFkIfExists = async (table, column, referenced) => {
+    const [rows] = await connection.query(
+      `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ?`,
+      [table, column, referenced]
+    );
+    for (const row of rows) {
+      await connection.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${row.CONSTRAINT_NAME}\``);
     }
-  }
-
-  const [fkRows] = await connection.query(
-    `SELECT CONSTRAINT_NAME
-     FROM information_schema.KEY_COLUMN_USAGE
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = 'password_reset_codes'
-       AND COLUMN_NAME = 'person_id'
-       AND REFERENCED_TABLE_NAME = 'persons'`
-  );
-
-  if (!fkRows.length) {
-    await connection.query(
-      `ALTER TABLE password_reset_codes
-       ADD CONSTRAINT fk_password_reset_person
-       FOREIGN KEY (person_id) REFERENCES persons(id)
-       ON DELETE CASCADE`
+  };
+  const addPersonFkIfMissing = async (table) => {
+    const [rows] = await connection.query(
+      `SELECT 1 FROM information_schema.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'person_id' AND REFERENCED_TABLE_NAME = 'persons'`,
+      [table]
     );
+    if (!rows.length) {
+      await connection.query(
+        `ALTER TABLE \`${table}\` ADD CONSTRAINT fk_${table}_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE`
+      );
+    }
+  };
+
+  // email_verification_codes: user_id (→users) -> person_id (→persons).
+  if (await tableExists("email_verification_codes")) {
+    await dropFkIfExists("email_verification_codes", "user_id", "users");
+    if ((await columnExists("email_verification_codes", "user_id")) && !(await columnExists("email_verification_codes", "person_id"))) {
+      // dev no tiene filas de verificación; cambiar tipo/colummna es seguro.
+      await connection.query("ALTER TABLE email_verification_codes CHANGE COLUMN user_id person_id INT NOT NULL");
+    } else if (await columnExists("email_verification_codes", "user_id")) {
+      await connection.query("ALTER TABLE email_verification_codes DROP COLUMN user_id");
+    }
+    await addPersonFkIfMissing("email_verification_codes");
   }
+
+  // password_reset_codes: ya migrada a person_id en versiones previas; soltar el FK/columna user_id legacy.
+  if (await tableExists("password_reset_codes")) {
+    await dropFkIfExists("password_reset_codes", "user_id", "users");
+    if (await columnExists("password_reset_codes", "user_id")) {
+      await connection.query("ALTER TABLE password_reset_codes DROP COLUMN user_id");
+    }
+    await addPersonFkIfMissing("password_reset_codes");
+  }
+
+  // Tabla legacy `users` (duplicaba persons; vacía y sin referencias vivas): se elimina.
+  await connection.query("DROP TABLE IF EXISTS users");
 };
 
 // Mantiene el enum de series actualizado. Migra el centinela historico 'legacy' -> 'default' y colapsa las
@@ -369,25 +343,19 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     }
 
-    // 1. Tablas legacy de autenticación (no dependen del schema principal)
-    await connection.query(CREATE_USERS_TABLE_SQL);
-    await connection.query(CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL);
-    await connection.query(ADD_PHOTO_COLUMN_SQL);
-    await connection.query(MODIFY_PHOTO_COLUMN_SQL);
-    await connection.query(CREATE_PASSWORD_RESET_CODES_TABLE_SQL);
-    console.log("✅ Tabla 'users' verificada/creada en MariaDB");
-    console.log("✅ Tabla 'email_verification_codes' verificada/creada");
-    console.log("✅ Tabla 'password_reset_codes' verificada/creada");
-
-    // 2. Schema principal — esto crea processes, persons, templates, etc.
+    // 1. Schema principal — crea processes, persons, templates, etc. (la identidad única es `persons`).
     const schemaSQL = await fs.readFile(SCHEMA_FILE_URL, "utf8");
     const statements = splitSqlStatements(schemaSQL);
     for (const statement of statements) {
       await connection.query(statement);
     }
     console.log("✅ Schema principal aplicado desde mariadb_schema.sql");
-    await ensurePasswordResetCodesPersonLink(connection);
-    console.log("✅ password_reset_codes alineada con persons");
+
+    // 2. Códigos de auth ligados a persons (tras el schema, porque referencian persons(id)) + limpieza legacy.
+    await connection.query(CREATE_EMAIL_VERIFICATION_CODES_TABLE_SQL);
+    await connection.query(CREATE_PASSWORD_RESET_CODES_TABLE_SQL);
+    await ensureLegacyAuthCleanup(connection);
+    console.log("✅ Códigos de auth (email/reset) alineados con persons; tabla legacy 'users' eliminada");
     await ensureProcessSeriesSourceTypes(connection);
 
     // 3. Migraciones sobre tablas del schema (ahora sí existen)
