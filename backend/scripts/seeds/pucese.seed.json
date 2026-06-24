@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-06-23T23:44:13.650Z",
+  "captured_at": "2026-06-23T23:57:29.010Z",
   "tables": [
     {
       "table": "persons",
@@ -2733,7 +2733,128 @@
         "updated_at": "datetime",
         "cargo_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "unit_id": 5,
+          "slot_no": 1,
+          "title": "Director de Docencia y Estudiantes",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-23 23:47:16",
+          "updated_at": "2026-06-23 23:48:14",
+          "cargo_id": 4
+        },
+        {
+          "id": 2,
+          "unit_id": 8,
+          "slot_no": 1,
+          "title": "Coordinador/a de Aprendizaje y Enseñanza",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-23 23:48:08",
+          "updated_at": "2026-06-23 23:48:08",
+          "cargo_id": 1
+        },
+        {
+          "id": 3,
+          "unit_id": 4,
+          "slot_no": 1,
+          "title": "Director/a de Escuela",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-23 23:49:06",
+          "updated_at": "2026-06-23 23:49:06",
+          "cargo_id": 4
+        },
+        {
+          "id": 4,
+          "unit_id": 2,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-23 23:49:56",
+          "updated_at": "2026-06-23 23:49:56",
+          "cargo_id": 1
+        },
+        {
+          "id": 5,
+          "unit_id": 3,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile_ref": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-23 23:50:34",
+          "updated_at": "2026-06-23 23:50:34",
+          "cargo_id": 1
+        },
+        {
+          "id": 7,
+          "unit_id": 2,
+          "slot_no": 1,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
+          "created_at": "2026-06-23 23:51:15",
+          "updated_at": "2026-06-23 23:51:15",
+          "cargo_id": 2
+        },
+        {
+          "id": 8,
+          "unit_id": 3,
+          "slot_no": 1,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
+          "created_at": "2026-06-23 23:53:02",
+          "updated_at": "2026-06-23 23:53:02",
+          "cargo_id": 2
+        },
+        {
+          "id": 10,
+          "unit_id": 2,
+          "slot_no": 2,
+          "title": "Docente",
+          "profile_ref": null,
+          "position_type": "real",
+          "is_active": 1,
+          "deactivated_at": null,
+          "is_unit_head": 0,
+          "head_flag": null,
+          "created_at": "2026-06-23 23:53:54",
+          "updated_at": "2026-06-23 23:53:54",
+          "cargo_id": 2
+        }
+      ]
     },
     {
       "table": "position_assignments",
