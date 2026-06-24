@@ -11,7 +11,8 @@
   >
     <Handle type="target" :position="Position.Top" class="unit-node__handle" />
 
-    <!-- Toolbar de nodo (hover): colapsar / detalle / editar / agregar hijo / agregar hermano -->
+    <!-- Toolbar de nodo (hover), al costado derecho para no tapar los conectores: colapsar / editar /
+         agregar hijo / agregar hermano. El detalle (puestos/ocupaciones) se abre al hacer clic en el nodo. -->
     <div v-if="hover" class="nodrag nopan unit-node__toolbar">
       <button
         v-if="data.hasChildren"
@@ -20,21 +21,18 @@
         :title="data.collapsed ? 'Expandir rama' : 'Colapsar rama'"
         @click.stop="data.onToggleCollapse?.(data.id)"
       >
-        <IconChevronDown v-if="data.collapsed" class="h-3.5 w-3.5" />
-        <IconChevronUp v-else class="h-3.5 w-3.5" />
-      </button>
-      <button type="button" class="unit-node__btn" title="Ver puestos y ocupaciones" @click.stop="data.onDetail?.(data.id)">
-        <IconLayoutSidebarRightExpand class="h-3.5 w-3.5" />
+        <IconChevronDown v-if="data.collapsed" class="h-4 w-4" />
+        <IconChevronUp v-else class="h-4 w-4" />
       </button>
       <template v-if="data.editable">
         <button type="button" class="unit-node__btn" title="Editar unidad" @click.stop="data.onEdit?.(data.id)">
-          <IconPencil class="h-3.5 w-3.5" />
+          <IconPencil class="h-4 w-4" />
         </button>
         <button type="button" class="unit-node__btn" title="Agregar unidad hija" @click.stop="data.onAddChild?.(data.id)">
-          <IconCornerDownRight class="h-3.5 w-3.5" />
+          <IconCornerDownRight class="h-4 w-4" />
         </button>
         <button type="button" class="unit-node__btn" title="Agregar unidad hermana" @click.stop="data.onAddSibling?.(data.id)">
-          <IconPlus class="h-3.5 w-3.5" />
+          <IconPlus class="h-4 w-4" />
         </button>
       </template>
     </div>
@@ -70,7 +68,7 @@ import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import {
   IconPencil, IconCornerDownRight, IconPlus, IconCrown,
-  IconLayoutSidebarRightExpand, IconAlertTriangle, IconChevronUp, IconChevronDown
+  IconAlertTriangle, IconChevronUp, IconChevronDown
 } from "@tabler/icons-vue";
 
 const props = defineProps({
@@ -95,30 +93,35 @@ const positionsBadgeClass = computed(() => {
   background: #6366f1;
   border: 2px solid #fff;
 }
+/* Al costado derecho del nodo, centrado verticalmente: libre de los conectores (top/bottom centro).
+   left:100% + padding-left transparente = contiguo al nodo (no se pierde el hover al moverse a la toolbar). */
 .unit-node__toolbar {
   position: absolute;
-  top: -14px;
-  right: 6px;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  padding-left: 8px;
   display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
-  z-index: 5;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 6;
 }
 .unit-node__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 22px;
-  width: 22px;
-  border-radius: 6px;
+  height: 30px;
+  width: 30px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
   color: #475569;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .unit-node__btn:hover {
   background: #eef2ff;
+  border-color: #c7d2fe;
   color: #4f46e5;
 }
 </style>

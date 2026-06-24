@@ -27,6 +27,11 @@ import {
   getUnitGraph,
   createUnitWithParent,
   getUnitDetail,
+  addUnitPosition,
+  updateUnitPosition,
+  removeUnitPosition,
+  assignUnitPosition,
+  unassignUnitPosition,
   listSqlRows,
   createSqlRow,
   updateSqlRow,
@@ -90,6 +95,11 @@ router.put(
 router.get("/units/graph", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitGraph);
 router.post("/units/with-parent", requireSqlAdminPermission({ resource: "units", action: "create" }), createUnitWithParent);
 router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitDetail);
+router.post("/units/:id/positions", requireSqlAdminPermission({ resource: "people", action: "create" }), addUnitPosition);
+router.put("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "update" }), updateUnitPosition);
+router.delete("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "delete" }), removeUnitPosition);
+router.post("/units/positions/:positionId/assign", requireSqlAdminPermission({ resource: "people", action: "update" }), assignUnitPosition);
+router.post("/units/positions/:positionId/unassign", requireSqlAdminPermission({ resource: "people", action: "update" }), unassignUnitPosition);
 router.get("/:table", requireSqlAdminPermission(), listSqlRows);
 router.post("/:table", requireSqlAdminPermission(), createSqlRow);
 router.put("/:table", requireSqlAdminPermission(), updateSqlRow);

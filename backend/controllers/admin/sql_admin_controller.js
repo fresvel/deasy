@@ -423,6 +423,51 @@ export const getUnitDetail = async (req, res) => {
   }
 };
 
+export const addUnitPosition = async (req, res) => {
+  try {
+    const result = await service.addUnitPosition(req.params.id, req.body || {});
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateUnitPosition = async (req, res) => {
+  try {
+    const result = await service.updateUnitPosition(req.params.positionId, req.body || {});
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const removeUnitPosition = async (req, res) => {
+  try {
+    const result = await service.removeUnitPosition(req.params.positionId);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const assignUnitPosition = async (req, res) => {
+  try {
+    const result = await service.assignUnitPosition(req.params.positionId, req.body?.person_id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const unassignUnitPosition = async (req, res) => {
+  try {
+    const result = await service.unassignUnitPosition(req.params.positionId);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

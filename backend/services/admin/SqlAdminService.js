@@ -2369,7 +2369,7 @@ export default class SqlAdminService {
       throw new Error("La unidad no existe.");
     }
     const [positions] = await this.pool.query(
-      `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type,
+      `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type, p.cargo_id,
               c.name AS cargo_name, c.code AS cargo_code,
               pa.id AS assignment_id, pa.start_date,
               pers.id AS person_id, pers.cedula,
@@ -2386,6 +2386,153 @@ export default class SqlAdminService {
       unit: { id: unit.id, name: unit.name, label: unit.label },
       positions
     };
+  }
+
+  // --- Gestión de puestos y ocupaciones desde el organigrama ---
+  // Crea un puesto (unit_position) en una unidad. slot_no se autoincrementa por (unidad, cargo).
+  async addUnitPosition(unitId, data = {}) {
+    this.ensurePool();
+    const uId = Number(unitId);
+    const cargoId = Number(data.cargo_id);
+    if (!uId || !cargoId) {
+      throw new Error("La unidad y el cargo son obligatorios.");
+    }
+    const positionType = ["real", "promocion", "simbolico"].includes(data.position_type) ? data.position_type : "real";
+    const isHead = data.is_unit_head ? 1 : 0;
+    this.assertUnitHeadAllowed(isHead, positionType);
+    const [slotRows] = await this.pool.query(
+      "SELECT COALESCE(MAX(slot_no), 0) + 1 AS next_slot FROM unit_positions WHERE unit_id = ? AND cargo_id = ?",
+      [uId, cargoId]
+    );
+    const nextSlot = Number(slotRows?.[0]?.next_slot || 1);
+    try {
+      const [r] = await this.pool.query(
+        `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, position_type, is_unit_head, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, 1)`,
+        [uId, cargoId, nextSlot, String(data.title || "").trim() || null, positionType, isHead]
+      );
+      return { id: Number(r.insertId) };
+    } catch (error) {
+      if (error?.code === "ER_DUP_ENTRY") {
+        throw new Error("La unidad ya tiene una jefatura asignada (solo se permite una).");
+      }
+      throw error;
+    }
+  }
+
+  async updateUnitPosition(positionId, data = {}) {
+    this.ensurePool();
+    const pid = Number(positionId);
+    const existing = await this.getByKeys("unit_positions", { id: pid });
+    if (!existing) {
+      throw new Error("El puesto no existe.");
+    }
+    const effType = data.position_type !== undefined ? data.position_type : existing.position_type;
+    const effHead = data.is_unit_head !== undefined ? (data.is_unit_head ? 1 : 0) : existing.is_unit_head;
+    this.assertUnitHeadAllowed(effHead, effType);
+    const fields = [];
+    const params = [];
+    if (data.title !== undefined) { fields.push("title = ?"); params.push(String(data.title || "").trim() || null); }
+    if (data.cargo_id !== undefined) { fields.push("cargo_id = ?"); params.push(Number(data.cargo_id)); }
+    if (data.position_type !== undefined) { fields.push("position_type = ?"); params.push(effType); }
+    if (data.is_unit_head !== undefined) { fields.push("is_unit_head = ?"); params.push(effHead); }
+    if (data.is_active !== undefined) { fields.push("is_active = ?"); params.push(data.is_active ? 1 : 0); }
+    if (!fields.length) {
+      return { id: pid };
+    }
+    params.push(pid);
+    try {
+      await this.pool.query(`UPDATE unit_positions SET ${fields.join(", ")} WHERE id = ?`, params);
+    } catch (error) {
+      if (error?.code === "ER_DUP_ENTRY") {
+        throw new Error("La unidad ya tiene una jefatura asignada (solo se permite una).");
+      }
+      throw error;
+    }
+    return { id: pid };
+  }
+
+  // Elimina un puesto y sus ocupaciones (transacción). Antes limpia los role_assignments derivados de esas
+  // ocupaciones (FK derived_from_assignment_id) y sus relation_types. Si el puesto está referenciado por
+  // vacantes/contratos/reglas, se rechaza con mensaje claro (mejor desactivarlo).
+  async removeUnitPosition(positionId) {
+    this.ensurePool();
+    const pid = Number(positionId);
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query(
+        `DELETE rart FROM role_assignment_relation_types rart
+           INNER JOIN role_assignments ra ON ra.id = rart.role_assignment_id
+          WHERE ra.derived_from_assignment_id IN (SELECT id FROM position_assignments WHERE position_id = ?)`,
+        [pid]
+      );
+      await connection.query(
+        `DELETE FROM role_assignments
+          WHERE derived_from_assignment_id IN (SELECT id FROM position_assignments WHERE position_id = ?)`,
+        [pid]
+      );
+      await connection.query("DELETE FROM position_assignments WHERE position_id = ?", [pid]);
+      await connection.query("DELETE FROM unit_positions WHERE id = ?", [pid]);
+      await connection.commit();
+      return { id: pid };
+    } catch (error) {
+      await connection.rollback();
+      if (error?.code === "ER_ROW_IS_REFERENCED_2" || error?.code === "ER_ROW_IS_REFERENCED") {
+        throw new Error("No se puede eliminar: el puesto está referenciado (vacantes, contratos o reglas). Desactívalo en su lugar.");
+      }
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Asigna (o cambia) el ocupante de un puesto: cierra la ocupación vigente y crea la nueva (atómico).
+  async assignUnitPosition(positionId, personId) {
+    this.ensurePool();
+    const pid = Number(positionId);
+    const perId = Number(personId);
+    if (!pid || !perId) {
+      throw new Error("El puesto y la persona son obligatorios.");
+    }
+    const position = await this.getByKeys("unit_positions", { id: pid });
+    if (!position) {
+      throw new Error("El puesto no existe.");
+    }
+    const person = await this.getByKeys("persons", { id: perId });
+    if (!person) {
+      throw new Error("La persona no existe.");
+    }
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query(
+        "UPDATE position_assignments SET is_current = 0, end_date = CURDATE() WHERE position_id = ? AND is_current = 1",
+        [pid]
+      );
+      await connection.query(
+        "INSERT INTO position_assignments (position_id, person_id, start_date, is_current) VALUES (?, ?, CURDATE(), 1)",
+        [pid, perId]
+      );
+      await connection.commit();
+      return { ok: true };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Quita el ocupante vigente de un puesto (cierra la ocupación).
+  async unassignUnitPosition(positionId) {
+    this.ensurePool();
+    const pid = Number(positionId);
+    await this.pool.query(
+      "UPDATE position_assignments SET is_current = 0, end_date = CURDATE() WHERE position_id = ? AND is_current = 1",
+      [pid]
+    );
+    return { ok: true };
   }
 
   // Crea una unidad y, opcionalmente, su relación con un padre en un solo paso atómico (para "+ Hijo/Hermano"

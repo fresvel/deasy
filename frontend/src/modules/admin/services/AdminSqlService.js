@@ -26,6 +26,26 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_DETAIL(unitId));
   }
 
+  addUnitPosition(unitId, payload) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_UNIT_POSITIONS(unitId), payload);
+  }
+
+  updateUnitPosition(positionId, payload) {
+    return this.httpClient.put(API_ROUTES.ADMIN_SQL_UNIT_POSITION(positionId), payload);
+  }
+
+  removeUnitPosition(positionId) {
+    return this.httpClient.delete(API_ROUTES.ADMIN_SQL_UNIT_POSITION(positionId));
+  }
+
+  assignUnitPosition(positionId, personId) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_UNIT_POSITION_ASSIGN(positionId), { person_id: personId });
+  }
+
+  unassignUnitPosition(positionId) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_UNIT_POSITION_UNASSIGN(positionId));
+  }
+
   create(table, payload, config = {}) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TABLE(table), payload, config);
   }

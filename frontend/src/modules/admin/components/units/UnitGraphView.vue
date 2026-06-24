@@ -26,8 +26,9 @@
     </div>
 
     <p class="m-0 text-xs text-slate-400">
-      <template v-if="editable">Arrastra desde el punto inferior de una unidad al superior de otra para crear una relación padre→hija. Haz clic en una unidad para editarla o en una relación para quitarla.</template>
-      <template v-else>Vista de solo lectura. No tienes permisos para editar unidades ni relaciones.</template>
+      Haz clic en una unidad para ver sus puestos y ocupaciones.
+      <template v-if="editable"> Pasa el cursor sobre una unidad para editar / agregar hijos, o arrastra desde su punto inferior al superior de otra para crear una relación. Usa los botones de cada relación para cambiar su tipo o quitarla.</template>
+      <template v-else> Vista de solo lectura: no tienes permisos para editar.</template>
     </p>
 
     <!-- Controles: buscar/centrar, salud, exportar -->
@@ -173,7 +174,36 @@
           </button>
         </header>
         <div class="flex-1 overflow-y-auto px-5 py-4">
-          <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Puestos y ocupaciones</p>
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Puestos y ocupaciones</p>
+            <AppButton v-if="editable" variant="secondary" size="sm" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
+          </div>
+
+          <!-- Formulario de nuevo puesto -->
+          <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3">
+            <div class="flex flex-col gap-2">
+              <select v-model="positionForm.cargo_id" class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+                <option value="">Cargo…</option>
+                <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+              <input v-model="positionForm.title" type="text" placeholder="Título (opcional)" class="h-9 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
+              <div class="flex items-center gap-3">
+                <select v-model="positionForm.position_type" class="h-9 flex-1 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+                  <option value="real">Real</option>
+                  <option value="promocion">Promoción</option>
+                  <option value="simbolico">Simbólico</option>
+                </select>
+                <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                  <input v-model="positionForm.is_unit_head" type="checkbox" class="h-3.5 w-3.5" /> Jefatura
+                </label>
+              </div>
+              <div class="flex justify-end gap-2">
+                <AppButton variant="cancel" size="sm" @click="addingPosition = false">Cancelar</AppButton>
+                <AppButton variant="primary" size="sm" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
+              </div>
+            </div>
+          </div>
+
           <div v-if="detailLoading" class="text-sm text-slate-500">Cargando…</div>
           <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
             Esta unidad no tiene puestos registrados.
@@ -185,19 +215,100 @@
                 <span class="truncate text-sm font-semibold text-slate-800">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
                 <span class="text-xs text-slate-400">#{{ pos.slot_no }}</span>
                 <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-rose-500">Inactivo</span>
+                <div v-if="editable" class="ml-auto flex items-center gap-1">
+                  <button type="button" class="unit-pos-btn" :class="pos.is_unit_head ? 'text-amber-500' : 'text-slate-400'" title="Marcar/quitar jefatura" @click="toggleHead(pos)">
+                    <IconCrown class="h-4 w-4" />
+                  </button>
+                  <button type="button" class="unit-pos-btn text-slate-400 hover:text-indigo-600" title="Editar puesto" @click="openEditPosition(pos)">
+                    <IconPencil class="h-4 w-4" />
+                  </button>
+                  <button type="button" class="unit-pos-btn text-slate-400 hover:text-rose-600" title="Eliminar puesto" @click="removePosition(pos.id)">
+                    <IconTrash class="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <div class="mt-1 flex items-center gap-2 text-xs">
+              <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <template v-if="pos.person_id">
                   <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200">Ocupado</span>
                   <span class="truncate text-slate-600">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
+                  <template v-if="editable">
+                    <button type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Cambiar</button>
+                    <button type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="unassign(pos.id)">Quitar</button>
+                  </template>
                 </template>
-                <span v-else class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
+                <template v-else>
+                  <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
+                  <button v-if="editable" type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openAssign(pos.id)">Asignar</button>
+                </template>
+              </div>
+
+              <!-- Buscador de persona para asignar -->
+              <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                <input
+                  v-model="personQuery"
+                  type="text"
+                  placeholder="Buscar persona (nombre o cédula)…"
+                  class="h-8 w-full rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-indigo-400"
+                  @input="searchPersons"
+                />
+                <div v-if="personSearching" class="mt-1 px-1 text-[11px] text-slate-400">Buscando…</div>
+                <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-0.5 overflow-y-auto p-0">
+                  <li v-for="per in personResults" :key="per.id">
+                    <button type="button" class="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-indigo-50" @click="pickPerson(per.id)">
+                      <span class="truncate text-slate-700">{{ per.first_name }} {{ per.last_name }}</span>
+                      <span class="ml-2 shrink-0 text-slate-400">{{ per.cedula }}</span>
+                    </button>
+                  </li>
+                </ul>
+                <div v-else-if="personQuery.trim().length >= 2" class="mt-1 px-1 text-[11px] text-slate-400">Sin resultados.</div>
               </div>
             </li>
           </ul>
         </div>
       </aside>
     </div>
+
+    <!-- Editar puesto (cargo, título, tipo, jefatura, activo) -->
+    <AppDialogOverlay
+      :open="Boolean(editingPosition)"
+      title="Editar puesto"
+      panel-class="max-w-md"
+      @close="editingPosition = null"
+    >
+      <div class="flex flex-col gap-3">
+        <label class="block text-sm font-medium text-slate-700">
+          Cargo
+          <select v-model="editPositionForm.cargo_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="">Selecciona…</option>
+            <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Título <span class="font-normal text-slate-400">(opcional)</span>
+          <input v-model="editPositionForm.title" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Título del puesto" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Tipo
+          <select v-model="editPositionForm.position_type" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="real">Real</option>
+            <option value="promocion">Promoción</option>
+            <option value="simbolico">Simbólico</option>
+          </select>
+        </label>
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-1.5 text-sm font-medium text-slate-600">
+            <input v-model="editPositionForm.is_unit_head" type="checkbox" class="h-4 w-4" /> Jefatura
+          </label>
+          <label class="flex items-center gap-1.5 text-sm font-medium text-slate-600">
+            <input v-model="editPositionForm.is_active" type="checkbox" class="h-4 w-4" /> Activo
+          </label>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="cancel" @click="editingPosition = null">Cancelar</AppButton>
+        <AppButton variant="primary" :disabled="!editPositionForm.cargo_id" @click="confirmEditPosition">Guardar</AppButton>
+      </template>
+    </AppDialogOverlay>
   </div>
 </template>
 
@@ -215,7 +326,7 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
-import { IconX, IconCrown } from "@tabler/icons-vue";
+import { IconX, IconCrown, IconTrash, IconPencil } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
@@ -243,6 +354,16 @@ const createForm = ref({ name: "", slug: "", unit_type_id: "" });
 const detailUnit = ref(null);
 const detailPositions = ref([]);
 const detailLoading = ref(false);
+// Gestión de puestos/ocupaciones en el drawer.
+const cargos = ref([]);
+const addingPosition = ref(false);
+const positionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false });
+const assignForId = ref(null);
+const personQuery = ref("");
+const personResults = ref([]);
+const personSearching = ref(false);
+const editingPosition = ref(null);
+const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false, is_active: true });
 const feedback = ref({ kind: "", message: "" });
 // F-E: buscar/centrar, colapsar ramas, salud, exportar.
 const { fitView } = useVueFlow();
@@ -405,7 +526,6 @@ const buildGraph = () => {
         onEdit: editUnit,
         onAddChild,
         onAddSibling,
-        onDetail: openDetail,
         onToggleCollapse: toggleCollapse,
         healthIssues: issues,
         hasChildren: childrenMap.value.has(String(u.id)),
@@ -465,9 +585,10 @@ const editUnit = (unitId) => {
   const u = rawUnitById(unitId);
   if (u) emit("edit-unit", { ...u });
 };
+// Clic en el nodo: abre el panel derecho de puestos y ocupaciones (la edición se hace desde la toolbar).
 const onNodeClick = ({ node }) => {
-  if (!props.editable || !node?.data) return;
-  editUnit(node.data.id);
+  if (!node?.data) return;
+  openDetail(node.data.id);
 };
 
 // Detalle de unidad (drawer): puestos y ocupaciones.
@@ -490,6 +611,132 @@ const openDetail = async (unitId) => {
 const closeDetail = () => {
   detailUnit.value = null;
   detailPositions.value = [];
+  addingPosition.value = false;
+  assignForId.value = null;
+  editingPosition.value = null;
+};
+
+const loadCargos = async () => {
+  try {
+    const { data } = await adminSqlService.list("cargos", { limit: 300 });
+    cargos.value = Array.isArray(data) ? data : (data?.rows || []);
+  } catch {
+    cargos.value = [];
+  }
+};
+
+// Tras cambiar puestos/ocupaciones: recarga el detalle (drawer) y el grafo (badges).
+const refreshAfterPositionChange = async () => {
+  if (detailUnit.value?.id) {
+    await openDetail(detailUnit.value.id);
+  }
+  await loadGraph();
+};
+
+const confirmAddPosition = async () => {
+  if (!detailUnit.value?.id || !positionForm.value.cargo_id) return;
+  try {
+    await adminSqlService.addUnitPosition(detailUnit.value.id, { ...positionForm.value });
+    addingPosition.value = false;
+    positionForm.value = { cargo_id: "", title: "", position_type: "real", is_unit_head: false };
+    setFeedback("success", "Puesto creado.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo crear el puesto.");
+  }
+};
+
+const removePosition = async (positionId) => {
+  try {
+    await adminSqlService.removeUnitPosition(positionId);
+    setFeedback("success", "Puesto eliminado.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo eliminar el puesto.");
+  }
+};
+
+const openEditPosition = (pos) => {
+  editingPosition.value = pos;
+  editPositionForm.value = {
+    cargo_id: pos.cargo_id || "",
+    title: pos.title || "",
+    position_type: pos.position_type || "real",
+    is_unit_head: Number(pos.is_unit_head) === 1,
+    is_active: Number(pos.is_active) === 1
+  };
+};
+const confirmEditPosition = async () => {
+  const pos = editingPosition.value;
+  const form = editPositionForm.value;
+  editingPosition.value = null;
+  if (!pos) return;
+  try {
+    await adminSqlService.updateUnitPosition(pos.id, {
+      cargo_id: form.cargo_id ? Number(form.cargo_id) : undefined,
+      title: form.title,
+      position_type: form.position_type,
+      is_unit_head: form.is_unit_head ? 1 : 0,
+      is_active: form.is_active ? 1 : 0
+    });
+    setFeedback("success", "Puesto actualizado.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo actualizar el puesto.");
+  }
+};
+
+const toggleHead = async (pos) => {
+  try {
+    await adminSqlService.updateUnitPosition(pos.id, { is_unit_head: pos.is_unit_head ? 0 : 1 });
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo cambiar la jefatura.");
+  }
+};
+
+const unassign = async (positionId) => {
+  try {
+    await adminSqlService.unassignUnitPosition(positionId);
+    setFeedback("success", "Ocupante retirado.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo retirar el ocupante.");
+  }
+};
+
+const openAssign = (positionId) => {
+  assignForId.value = assignForId.value === positionId ? null : positionId;
+  personQuery.value = "";
+  personResults.value = [];
+};
+const searchPersons = async () => {
+  const q = personQuery.value.trim();
+  if (q.length < 2) {
+    personResults.value = [];
+    return;
+  }
+  personSearching.value = true;
+  try {
+    const { data } = await adminSqlService.list("persons", { q, limit: 8 });
+    personResults.value = Array.isArray(data) ? data : (data?.rows || []);
+  } catch {
+    personResults.value = [];
+  } finally {
+    personSearching.value = false;
+  }
+};
+const pickPerson = async (personId) => {
+  const positionId = assignForId.value;
+  assignForId.value = null;
+  if (!positionId) return;
+  try {
+    await adminSqlService.assignUnitPosition(positionId, personId);
+    setFeedback("success", "Ocupante asignado.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo asignar el ocupante.");
+  }
 };
 
 // Tipo de relación a usar al crear una arista (el activo si es específico; si 'all', org o el primero).
@@ -662,6 +909,7 @@ watch(activeRelationType, loadGraph);
 onMounted(() => {
   loadGraph();
   loadUnitTypes();
+  loadCargos();
 });
 
 defineExpose({ reloadGraph: loadGraph });
@@ -688,5 +936,17 @@ defineExpose({ reloadGraph: loadGraph });
   height: 100%;
   background: #fff;
   box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+}
+.unit-pos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 24px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.unit-pos-btn:hover {
+  background: #f1f5f9;
 }
 </style>
