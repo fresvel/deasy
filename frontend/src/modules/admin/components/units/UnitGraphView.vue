@@ -173,7 +173,16 @@
             <IconX class="h-5 w-5" />
           </button>
         </header>
+
+        <!-- Pestañas del panel -->
+        <div class="flex gap-4 border-b border-slate-200 px-5">
+          <button type="button" class="unit-detail-tab" :class="detailTab === 'ocupaciones' ? 'unit-detail-tab--active' : ''" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
+          <button type="button" class="unit-detail-tab" :class="detailTab === 'procesos' ? 'unit-detail-tab--active' : ''" @click="setDetailTab('procesos')">Procesos</button>
+        </div>
+
         <div class="flex-1 overflow-y-auto px-5 py-4">
+          <!-- Pestaña: Ocupaciones -->
+          <div v-show="detailTab === 'ocupaciones'">
           <div class="mb-3 flex items-center justify-between gap-2">
             <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Puestos y ocupaciones</p>
             <AppButton v-if="editable" variant="secondary" size="sm" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
@@ -264,6 +273,28 @@
               </div>
             </li>
           </ul>
+          </div>
+
+          <!-- Pestaña: Procesos que aplican a la unidad -->
+          <div v-show="detailTab === 'procesos'">
+            <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Procesos de la unidad</p>
+            <div v-if="detailProcessesLoading" class="text-sm text-slate-500">Cargando…</div>
+            <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+              Ningún proceso aplica a esta unidad.
+            </div>
+            <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+              <li v-for="proc in detailProcesses" :key="proc.definition_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="truncate text-sm font-semibold text-slate-800">{{ proc.process_name }}</span>
+                  <span class="ml-auto inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="processStatusClass(proc.status)">{{ proc.status }}</span>
+                </div>
+                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>
+                  <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 ring-1 ring-indigo-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </aside>
     </div>
@@ -302,6 +333,28 @@
           <label class="flex items-center gap-1.5 text-sm font-medium text-slate-600">
             <input v-model="editPositionForm.is_active" type="checkbox" class="h-4 w-4" /> Activo
           </label>
+        </div>
+
+        <div class="mt-1 border-t border-slate-100 pt-3">
+          <p class="m-0 mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Perfil del puesto</p>
+          <div class="flex flex-col gap-2.5">
+            <label class="block text-sm font-medium text-slate-700">
+              Formación
+              <textarea v-model="editPositionForm.profile.formacion" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Formación requerida"></textarea>
+            </label>
+            <label class="block text-sm font-medium text-slate-700">
+              Experiencia
+              <textarea v-model="editPositionForm.profile.experiencia" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Experiencia requerida"></textarea>
+            </label>
+            <label class="block text-sm font-medium text-slate-700">
+              Capacitación
+              <textarea v-model="editPositionForm.profile.capacitacion" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Capacitación requerida"></textarea>
+            </label>
+            <label class="block text-sm font-medium text-slate-700">
+              Investigación
+              <textarea v-model="editPositionForm.profile.investigacion" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Requisitos de investigación"></textarea>
+            </label>
+          </div>
         </div>
       </div>
       <template #footer>
@@ -354,6 +407,10 @@ const createForm = ref({ name: "", slug: "", unit_type_id: "" });
 const detailUnit = ref(null);
 const detailPositions = ref([]);
 const detailLoading = ref(false);
+const detailTab = ref("ocupaciones");
+const detailProcesses = ref([]);
+const detailProcessesLoading = ref(false);
+const detailProcessesLoaded = ref(false);
 // Gestión de puestos/ocupaciones en el drawer.
 const cargos = ref([]);
 const addingPosition = ref(false);
@@ -363,7 +420,8 @@ const personQuery = ref("");
 const personResults = ref([]);
 const personSearching = ref(false);
 const editingPosition = ref(null);
-const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false, is_active: true });
+const emptyProfile = () => ({ formacion: "", experiencia: "", capacitacion: "", investigacion: "" });
+const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false, is_active: true, profile: emptyProfile() });
 const feedback = ref({ kind: "", message: "" });
 // F-E: buscar/centrar, colapsar ramas, salud, exportar.
 const { fitView } = useVueFlow();
@@ -595,6 +653,9 @@ const onNodeClick = ({ node }) => {
 const openDetail = async (unitId) => {
   const u = rawUnitById(unitId);
   detailUnit.value = u ? { id: u.id, name: u.name } : { id: unitId, name: "" };
+  detailTab.value = "ocupaciones";
+  detailProcesses.value = [];
+  detailProcessesLoaded.value = false;
   detailPositions.value = [];
   detailLoading.value = true;
   try {
@@ -614,6 +675,38 @@ const closeDetail = () => {
   addingPosition.value = false;
   assignForId.value = null;
   editingPosition.value = null;
+  detailTab.value = "ocupaciones";
+};
+
+// Pestaña "Procesos" del drawer: procesos que aplican a la unidad (carga perezosa).
+const loadUnitProcesses = async () => {
+  if (!detailUnit.value?.id || detailProcessesLoaded.value) return;
+  detailProcessesLoading.value = true;
+  try {
+    const { data } = await adminSqlService.getUnitProcesses(detailUnit.value.id);
+    detailProcesses.value = data.processes || [];
+    detailProcessesLoaded.value = true;
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudieron cargar los procesos.");
+  } finally {
+    detailProcessesLoading.value = false;
+  }
+};
+const setDetailTab = (tab) => {
+  detailTab.value = tab;
+  if (tab === "procesos") loadUnitProcesses();
+};
+const PROCESS_SCOPE_LABELS = {
+  unit_exact: "Esta unidad",
+  unit_subtree: "Unidad y dependientes",
+  unit_type: "Por tipo de unidad",
+  all_units: "Todas las unidades"
+};
+const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
+const processStatusClass = (status) => {
+  if (status === "active") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (status === "retired") return "bg-rose-50 text-rose-600 ring-rose-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200";
 };
 
 const loadCargos = async () => {
@@ -658,12 +751,22 @@ const removePosition = async (positionId) => {
 
 const openEditPosition = (pos) => {
   editingPosition.value = pos;
+  let prof = pos.profile || {};
+  if (typeof prof === "string") {
+    try { prof = JSON.parse(prof); } catch { prof = {}; }
+  }
   editPositionForm.value = {
     cargo_id: pos.cargo_id || "",
     title: pos.title || "",
     position_type: pos.position_type || "real",
     is_unit_head: Number(pos.is_unit_head) === 1,
-    is_active: Number(pos.is_active) === 1
+    is_active: Number(pos.is_active) === 1,
+    profile: {
+      formacion: prof.formacion || "",
+      experiencia: prof.experiencia || "",
+      capacitacion: prof.capacitacion || "",
+      investigacion: prof.investigacion || ""
+    }
   };
 };
 const confirmEditPosition = async () => {
@@ -677,7 +780,8 @@ const confirmEditPosition = async () => {
       title: form.title,
       position_type: form.position_type,
       is_unit_head: form.is_unit_head ? 1 : 0,
-      is_active: form.is_active ? 1 : 0
+      is_active: form.is_active ? 1 : 0,
+      profile: { ...form.profile }
     });
     setFeedback("success", "Puesto actualizado.");
     await refreshAfterPositionChange();
@@ -932,10 +1036,27 @@ defineExpose({ reloadGraph: loadGraph });
 .unit-detail-drawer {
   display: flex;
   flex-direction: column;
-  width: min(24rem, 100vw);
+  width: min(30rem, 100vw);
   height: 100%;
   background: #fff;
   box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+}
+.unit-detail-tab {
+  position: relative;
+  padding: 0.6rem 0.15rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.unit-detail-tab:hover {
+  color: #334155;
+}
+.unit-detail-tab--active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
 }
 .unit-pos-btn {
   display: inline-flex;

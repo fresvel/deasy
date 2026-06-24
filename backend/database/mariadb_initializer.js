@@ -535,7 +535,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       connection,
       "unit_positions",
       "is_unit_head",
-      "is_unit_head TINYINT(1) NOT NULL DEFAULT 0 AFTER deactivated_at"
+      "is_unit_head TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active"
     );
     await addColumnIfMissing(
       connection,
@@ -549,6 +549,33 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "UNIQUE KEY uq_unit_head (unit_id, head_flag)",
       "unique una-cabeza-por-unidad"
     );
+
+    // unit_positions: (a) is_active es la única convención de estado → se elimina deactivated_at (redundante;
+    // no se mantenía en los flujos del grafo y updated_at ya registra el cuándo). (b) El perfil del puesto pasa
+    // de profile_ref (puntero VARCHAR a Mongo, nunca usado) a una columna JSON local `profile`
+    // (keys: formacion/experiencia/capacitacion/investigacion). Idempotente.
+    try {
+      const upColumnExists = async (column) => {
+        const [rows] = await connection.query(
+          `SELECT 1 FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'unit_positions' AND COLUMN_NAME = ?`,
+          [column]
+        );
+        return rows.length > 0;
+      };
+      if (await upColumnExists("deactivated_at")) {
+        await connection.query("ALTER TABLE unit_positions DROP COLUMN deactivated_at");
+      }
+      if (!(await upColumnExists("profile"))) {
+        await connection.query("ALTER TABLE unit_positions ADD COLUMN profile JSON NULL AFTER title");
+      }
+      // profile_ref era solo un puntero (VARCHAR(64)) sin contenido real → se descarta sin migrar datos.
+      if (await upColumnExists("profile_ref")) {
+        await connection.query("ALTER TABLE unit_positions DROP COLUMN profile_ref");
+      }
+    } catch (error) {
+      console.warn("⚠️  No se pudo migrar unit_positions (deactivated_at/profile):", error.message);
+    }
 
     // Eliminación del catálogo `signature_types` (tipo de firma): no ramificaba comportamiento (todas las firmas
     // son con certificado vía pyhanko) → metadato inútil. Se quitan FKs, columnas y la tabla. Idempotente.

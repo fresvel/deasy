@@ -26,6 +26,10 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_DETAIL(unitId));
   }
 
+  getUnitProcesses(unitId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_PROCESSES(unitId));
+  }
+
   addUnitPosition(unitId, payload) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_UNIT_POSITIONS(unitId), payload);
   }

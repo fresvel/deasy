@@ -547,7 +547,7 @@ export const SQL_TABLES = [
       { name: "cargo_id", label: "Cargo", type: "number", required: true },
       { name: "slot_no", label: "Plaza", type: "number", required: true },
       { name: "title", label: "Titulo", type: "text" },
-      { name: "profile_ref", label: "Perfil (Mongo)", type: "text", readOnly: true },
+      { name: "profile", label: "Perfil (JSON)", type: "textarea", json: true },
       {
         name: "position_type",
         label: "Tipo de puesto",
@@ -557,7 +557,6 @@ export const SQL_TABLES = [
       },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "is_unit_head", label: "Jefe de la unidad", type: "boolean", defaultValue: 0 },
-      { name: "deactivated_at", label: "Desactivado", type: "datetime" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],

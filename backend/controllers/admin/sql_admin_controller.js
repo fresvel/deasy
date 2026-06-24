@@ -423,6 +423,15 @@ export const getUnitDetail = async (req, res) => {
   }
 };
 
+export const getUnitProcesses = async (req, res) => {
+  try {
+    const result = await service.getUnitProcesses(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const addUnitPosition = async (req, res) => {
   try {
     const result = await service.addUnitPosition(req.params.id, req.body || {});

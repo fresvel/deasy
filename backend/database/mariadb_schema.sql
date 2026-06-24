@@ -127,10 +127,11 @@ CREATE TABLE IF NOT EXISTS unit_positions (
   unit_id INT NOT NULL,
   slot_no INT NOT NULL,
   title VARCHAR(180) NULL,
-  profile_ref VARCHAR(64) NULL,
+  -- Perfil del puesto (requisitos) como JSON local: keys formacion/experiencia/capacitacion/investigacion.
+  profile JSON NULL,
   position_type ENUM('real','promocion','simbolico') NOT NULL DEFAULT 'real',
+  -- Estado del puesto: is_active es la única convención (1=activo, 0=inactivo); updated_at registra el cuándo.
   is_active TINYINT(1) NOT NULL DEFAULT 1,
-  deactivated_at DATETIME NULL,
   -- Jefatura: el puesto cabeza de la unidad (su ocupante es jefe de todos los de la unidad). Máximo uno por
   -- unidad (vía head_flag + UNIQUE). Debe ser un puesto ocupable (real/promocion) — validado por trigger.
   is_unit_head TINYINT(1) NOT NULL DEFAULT 0,

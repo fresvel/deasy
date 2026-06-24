@@ -1178,6 +1178,22 @@ const normalizeValue = (field, value) => {
     return value ? 1 : 0;
   }
 
+  // Columnas JSON: vacío → null; string → validar JSON; objeto → serializar.
+  if (field?.json) {
+    if (value === "") {
+      return null;
+    }
+    if (typeof value === "string") {
+      try {
+        JSON.parse(value);
+      } catch {
+        throw new Error(`El campo ${field.label || field.name} debe ser un JSON válido.`);
+      }
+      return value;
+    }
+    return JSON.stringify(value);
+  }
+
   return value;
 };
 
@@ -2369,7 +2385,7 @@ export default class SqlAdminService {
       throw new Error("La unidad no existe.");
     }
     const [positions] = await this.pool.query(
-      `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type, p.cargo_id,
+      `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type, p.cargo_id, p.profile,
               c.name AS cargo_name, c.code AS cargo_code,
               pa.id AS assignment_id, pa.start_date,
               pers.id AS person_id, pers.cedula,
@@ -2388,8 +2404,73 @@ export default class SqlAdminService {
     };
   }
 
+  // Procesos que aplican a una unidad: reglas de alcance (process_target_rules) que la referencian
+  // directamente (unit_exact/unit_subtree por unit_id), por su tipo de unidad, o de alcance global (all_units).
+  async getUnitProcesses(unitId) {
+    this.ensurePool();
+    const id = Number(unitId);
+    if (!id) {
+      throw new Error("Unidad inválida.");
+    }
+    const unit = await this.getByKeys("units", { id });
+    if (!unit) {
+      throw new Error("La unidad no existe.");
+    }
+    const [rows] = await this.pool.query(
+      `SELECT DISTINCT
+              pdv.id AS definition_id,
+              p.name AS process_name,
+              pdv.name AS definition_name,
+              pdv.definition_version,
+              pdv.variation_key,
+              pdv.status,
+              ptr.unit_scope_type,
+              ptr.recipient_policy,
+              ptr.priority,
+              ptr.is_active AS rule_active
+       FROM process_target_rules ptr
+       INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+       INNER JOIN processes p ON p.id = pdv.process_id
+       WHERE ptr.unit_id = ?
+          OR (ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ?)
+          OR ptr.unit_scope_type = 'all_units'
+       ORDER BY FIELD(pdv.status, 'active', 'draft', 'retired'), p.name ASC, pdv.definition_version DESC`,
+      [id, unit.unit_type_id]
+    );
+    return {
+      unit: { id: unit.id, name: unit.name },
+      processes: rows
+    };
+  }
+
   // --- Gestión de puestos y ocupaciones desde el organigrama ---
   // Crea un puesto (unit_position) en una unidad. slot_no se autoincrementa por (unidad, cargo).
+  // Normaliza el perfil del puesto a un JSON con las keys soportadas (formacion/experiencia/capacitacion/
+  // investigacion). Acepta objeto o string JSON; devuelve un string JSON o null si queda vacío.
+  normalizePositionProfile(profile) {
+    if (profile === undefined || profile === null || profile === "") return null;
+    let obj = profile;
+    if (typeof profile === "string") {
+      try {
+        obj = JSON.parse(profile);
+      } catch {
+        throw new Error("El perfil debe ser un JSON válido.");
+      }
+    }
+    if (typeof obj !== "object" || Array.isArray(obj)) {
+      throw new Error("El perfil debe ser un objeto con secciones (formación, experiencia, etc.).");
+    }
+    const KEYS = ["formacion", "experiencia", "capacitacion", "investigacion"];
+    const out = {};
+    for (const key of KEYS) {
+      const value = obj[key];
+      if (value === undefined || value === null) continue;
+      const text = String(value).trim();
+      if (text) out[key] = text;
+    }
+    return Object.keys(out).length ? JSON.stringify(out) : null;
+  }
+
   async addUnitPosition(unitId, data = {}) {
     this.ensurePool();
     const uId = Number(unitId);
@@ -2400,6 +2481,7 @@ export default class SqlAdminService {
     const positionType = ["real", "promocion", "simbolico"].includes(data.position_type) ? data.position_type : "real";
     const isHead = data.is_unit_head ? 1 : 0;
     this.assertUnitHeadAllowed(isHead, positionType);
+    const profileJson = this.normalizePositionProfile(data.profile);
     const [slotRows] = await this.pool.query(
       "SELECT COALESCE(MAX(slot_no), 0) + 1 AS next_slot FROM unit_positions WHERE unit_id = ? AND cargo_id = ?",
       [uId, cargoId]
@@ -2407,9 +2489,9 @@ export default class SqlAdminService {
     const nextSlot = Number(slotRows?.[0]?.next_slot || 1);
     try {
       const [r] = await this.pool.query(
-        `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, position_type, is_unit_head, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, 1)`,
-        [uId, cargoId, nextSlot, String(data.title || "").trim() || null, positionType, isHead]
+        `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+        [uId, cargoId, nextSlot, String(data.title || "").trim() || null, profileJson, positionType, isHead]
       );
       return { id: Number(r.insertId) };
     } catch (error) {
@@ -2437,6 +2519,7 @@ export default class SqlAdminService {
     if (data.position_type !== undefined) { fields.push("position_type = ?"); params.push(effType); }
     if (data.is_unit_head !== undefined) { fields.push("is_unit_head = ?"); params.push(effHead); }
     if (data.is_active !== undefined) { fields.push("is_active = ?"); params.push(data.is_active ? 1 : 0); }
+    if (data.profile !== undefined) { fields.push("profile = ?"); params.push(this.normalizePositionProfile(data.profile)); }
     if (!fields.length) {
       return { id: pid };
     }

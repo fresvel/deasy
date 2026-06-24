@@ -27,6 +27,7 @@ import {
   getUnitGraph,
   createUnitWithParent,
   getUnitDetail,
+  getUnitProcesses,
   addUnitPosition,
   updateUnitPosition,
   removeUnitPosition,
@@ -95,6 +96,7 @@ router.put(
 router.get("/units/graph", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitGraph);
 router.post("/units/with-parent", requireSqlAdminPermission({ resource: "units", action: "create" }), createUnitWithParent);
 router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitDetail);
+router.get("/units/:id/processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitProcesses);
 router.post("/units/:id/positions", requireSqlAdminPermission({ resource: "people", action: "create" }), addUnitPosition);
 router.put("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "update" }), updateUnitPosition);
 router.delete("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "delete" }), removeUnitPosition);

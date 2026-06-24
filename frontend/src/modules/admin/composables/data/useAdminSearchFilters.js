@@ -251,10 +251,7 @@ export function useAdminSearchFilters({
     try {
       await axios.put(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
         keys: { id: positionId },
-        data: {
-          is_active: 0,
-          deactivated_at: new Date().toISOString().slice(0, 19).replace("T", " ")
-        }
+        data: { is_active: 0 }
       });
       await loadVacantPositions();
     } catch {}
