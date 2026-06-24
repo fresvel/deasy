@@ -445,7 +445,8 @@
                ref="adminManager"
                :table="selectedTable"
                :sibling-tabs="currentSiblingTabs"
-               :active-sibling-tab="selectedTable?.table || ''"
+               :active-sibling-tab="graphTabActive ? ORG_GRAPH_TAB_KEY : (selectedTable?.table || '')"
+               :force-graph="graphTabActive"
                :all-tables="tables"
                :initial-filters="pendingTableFilters"
                @select-sibling-tab="handleSiblingTabChange"
@@ -503,6 +504,9 @@ const metaError = ref("");
 const selectedTable = ref(null);
 const operationStats = ref(null);
 const pendingTableFilters = ref(null);
+// Organigrama como pestaña hermana de las tablas de Unidades (no una tabla real).
+const ORG_GRAPH_TAB_KEY = "__unit_graph__";
+const graphTabActive = ref(false);
 const selectedSection = ref("");
 const selectedAcademyItem = ref("");
 const selectedGestionItem = ref("");
@@ -854,10 +858,15 @@ const currentSiblingTabs = computed(() => {
     return [];
   }
 
-  return availableTables.map((table) => ({
+  const tabs = availableTables.map((table) => ({
     key: table.table,
     label: TABLE_TAB_LABEL_OVERRIDES[table.table] || table.label || table.table
   }));
+  // Pestaña hermana "Organigrama" para el grupo que contiene unidades.
+  if (availableTables.some((table) => table.table === "units")) {
+    tabs.push({ key: ORG_GRAPH_TAB_KEY, label: "Organigrama" });
+  }
+  return tabs;
 });
 
 const showAcademiaIndex = computed(
@@ -1032,6 +1041,17 @@ const adminShellHeaderSubtitle = computed(() =>
 );
 
 const handleSiblingTabChange = (tableName) => {
+  if (tableName === ORG_GRAPH_TAB_KEY) {
+    const unitsTable = tableMap.value.units;
+    if (unitsTable) {
+      if (selectedTable.value?.table !== "units") {
+        selectTable(unitsTable);
+      }
+      graphTabActive.value = true;
+    }
+    return;
+  }
+  graphTabActive.value = false;
   const targetTable = tableMap.value[tableName];
   if (!targetTable || targetTable.table === selectedTable.value?.table) {
     return;
@@ -1228,6 +1248,7 @@ const selectTable = (table, filters = null) => {
   if (!table) {
     return;
   }
+  graphTabActive.value = false;
   pendingTableFilters.value = filters;
   selectedTable.value = table;
   const group = groupedTables.value.find((candidate) =>
@@ -1309,7 +1330,17 @@ const openAcademyItem = (item) => {
   selectedContratoItem.value = "";
   selectedSeguridadItem.value = "";
   openCategories.value[ACADEMY_GROUP_LABEL] = true;
-  selectedTable.value = null;
+  // Ir directo a las pestañas (sin menú intermedio). Si el subgrupo tiene unidades, abre el Organigrama por defecto.
+  const unitsTable = item.availableTables?.find((table) => table.table === "units");
+  const firstItemTable = item.availableTables?.[0];
+  if (unitsTable) {
+    selectTable(unitsTable);
+    graphTabActive.value = true;
+  } else if (firstItemTable) {
+    selectTable(firstItemTable);
+  } else {
+    selectedTable.value = null;
+  }
 };
 const openGestionIndex = () => {
   selectedSection.value = GESTION_GROUP_KEY;
@@ -1333,7 +1364,12 @@ const openGestionItem = (item) => {
   selectedContratoItem.value = "";
   selectedSeguridadItem.value = "";
   openCategories.value[GESTION_GROUP_LABEL] = true;
-  selectedTable.value = null;
+  const firstItemTable = item.availableTables?.[0];
+  if (firstItemTable) {
+    selectTable(firstItemTable);
+  } else {
+    selectedTable.value = null;
+  }
 };
 const openTemplateArtifactDraftFromHome = async () => {
   const templateArtifactsTable = tables.value.find((table) => table.table === "template_artifacts");
@@ -1366,7 +1402,12 @@ const openUsersItem = (item) => {
   selectedContratoItem.value = "";
   selectedSeguridadItem.value = "";
   openCategories.value[USERS_GROUP_LABEL] = true;
-  selectedTable.value = null;
+  const firstItemTable = item.availableTables?.[0];
+  if (firstItemTable) {
+    selectTable(firstItemTable);
+  } else {
+    selectedTable.value = null;
+  }
 };
 const openContractsIndex = () => {
   selectedSection.value = CONTRACT_GROUP_KEY;
@@ -1389,7 +1430,12 @@ const openContractsItem = (item) => {
   selectedUsuarioItem.value = "";
   selectedSeguridadItem.value = "";
   openCategories.value[CONTRACT_GROUP_LABEL] = true;
-  selectedTable.value = null;
+  const firstItemTable = item.availableTables?.[0];
+  if (firstItemTable) {
+    selectTable(firstItemTable);
+  } else {
+    selectedTable.value = null;
+  }
 };
 const openSecurityIndex = () => {
   selectedSection.value = SECURITY_GROUP_KEY;
@@ -1412,7 +1458,12 @@ const openSecurityItem = (item) => {
   selectedUsuarioItem.value = "";
   selectedContratoItem.value = "";
   openCategories.value[SECURITY_GROUP_LABEL] = true;
-  selectedTable.value = null;
+  const firstItemTable = item.availableTables?.[0];
+  if (firstItemTable) {
+    selectTable(firstItemTable);
+  } else {
+    selectedTable.value = null;
+  }
 };
 
 const openGroupFromHome = (group) => {

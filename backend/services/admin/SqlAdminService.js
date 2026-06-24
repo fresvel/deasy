@@ -2307,7 +2307,12 @@ export default class SqlAdminService {
   async getUnitGraph(relationTypeCode = "org") {
     this.ensurePool();
     const [nodes] = await this.pool.query(
-      `SELECT u.id, u.name, u.label, u.slug, u.unit_type_id, ut.name AS unit_type_name, u.is_active
+      `SELECT u.id, u.name, u.label, u.slug, u.unit_type_id, ut.name AS unit_type_name, u.is_active,
+              (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_active = 1) AS positions_count,
+              (SELECT COUNT(*) FROM unit_positions p
+                 INNER JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
+                WHERE p.unit_id = u.id AND p.is_active = 1) AS occupied_count,
+              (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND p.is_active = 1) AS head_count
        FROM units u
        LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
        ORDER BY u.id ASC`
@@ -2349,6 +2354,85 @@ export default class SqlAdminService {
       [childUnitId, relationTypeId, relationTypeId, parentUnitId]
     );
     return rows.length > 0;
+  }
+
+  // Detalle de una unidad para el panel del organigrama: sus puestos (cargo, slot, jefatura, activo) y el
+  // ocupante actual de cada uno (position_assignments → persons).
+  async getUnitDetail(unitId) {
+    this.ensurePool();
+    const id = Number(unitId);
+    if (!id) {
+      throw new Error("Unidad inválida.");
+    }
+    const unit = await this.getByKeys("units", { id });
+    if (!unit) {
+      throw new Error("La unidad no existe.");
+    }
+    const [positions] = await this.pool.query(
+      `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type,
+              c.name AS cargo_name, c.code AS cargo_code,
+              pa.id AS assignment_id, pa.start_date,
+              pers.id AS person_id, pers.cedula,
+              CONCAT(COALESCE(pers.first_name, ''), ' ', COALESCE(pers.last_name, '')) AS person_name
+       FROM unit_positions p
+       LEFT JOIN cargos c ON c.id = p.cargo_id
+       LEFT JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
+       LEFT JOIN persons pers ON pers.id = pa.person_id
+       WHERE p.unit_id = ?
+       ORDER BY p.is_unit_head DESC, c.name ASC, p.slot_no ASC`,
+      [id]
+    );
+    return {
+      unit: { id: unit.id, name: unit.name, label: unit.label },
+      positions
+    };
+  }
+
+  // Crea una unidad y, opcionalmente, su relación con un padre en un solo paso atómico (para "+ Hijo/Hermano"
+  // desde el organigrama). La nueva unidad es una hoja nueva: no puede formar ciclo ni duplicar padre.
+  async createUnitWithParent({ name, label, slug, unit_type_id, parent_unit_id, relation_type_id } = {}) {
+    this.ensurePool();
+    const nm = String(name || "").trim();
+    if (!nm) {
+      throw new Error("Ingresa el nombre de la unidad.");
+    }
+    const unitTypeId = Number(unit_type_id);
+    if (!unitTypeId) {
+      throw new Error("Selecciona el tipo de unidad.");
+    }
+    const finalSlug = (String(slug || "").trim() || slugify(nm)).slice(0, 180);
+    if (!finalSlug) {
+      throw new Error("No se pudo derivar un slug para la unidad.");
+    }
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [unitResult] = await connection.query(
+        "INSERT INTO units (name, label, slug, unit_type_id, is_active) VALUES (?, ?, ?, ?, 1)",
+        [nm.slice(0, 180), (String(label || "").trim() || nm).slice(0, 180), finalSlug, unitTypeId]
+      );
+      const newUnitId = Number(unitResult.insertId);
+      let relationId = null;
+      const parentId = Number(parent_unit_id);
+      const relTypeId = Number(relation_type_id);
+      if (parentId && relTypeId) {
+        const [relResult] = await connection.query(
+          "INSERT INTO unit_relations (relation_type_id, parent_unit_id, child_unit_id) VALUES (?, ?, ?)",
+          [relTypeId, parentId, newUnitId]
+        );
+        relationId = Number(relResult.insertId);
+      }
+      await connection.commit();
+      return { unit_id: newUnitId, relation_id: relationId };
+    } catch (error) {
+      await connection.rollback();
+      if (error?.code === "ER_DUP_ENTRY") {
+        throw new Error("Ya existe una unidad con ese slug. Cambia el nombre o el slug.");
+      }
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 
   async create(tableName, data) {
@@ -2867,6 +2951,25 @@ export default class SqlAdminService {
       const effHead = updates.is_unit_head !== undefined ? updates.is_unit_head : existing.is_unit_head;
       const effType = updates.position_type !== undefined ? updates.position_type : existing.position_type;
       this.assertUnitHeadAllowed(effHead, effType);
+    }
+
+    if (tableName === "unit_relations") {
+      const parentId = Number(updates.parent_unit_id ?? existing.parent_unit_id);
+      const childId = Number(updates.child_unit_id ?? existing.child_unit_id);
+      const relTypeId = Number(updates.relation_type_id ?? existing.relation_type_id);
+      if (parentId === childId) {
+        throw new Error("Una unidad no puede relacionarse consigo misma.");
+      }
+      const [dupRel] = await this.pool.query(
+        "SELECT id FROM unit_relations WHERE child_unit_id = ? AND relation_type_id = ? AND id <> ? LIMIT 1",
+        [childId, relTypeId, Number(existing.id)]
+      );
+      if (dupRel.length) {
+        throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de reasignar.");
+      }
+      if (await this.wouldCreateUnitCycle(parentId, childId, relTypeId)) {
+        throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
+      }
     }
 
     if (tableName === "persons" && Object.prototype.hasOwnProperty.call(data, "password")) {

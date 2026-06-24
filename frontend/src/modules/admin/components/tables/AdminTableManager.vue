@@ -82,21 +82,6 @@
       </p>
     </div>
 
-    <!-- Unidades: alternar entre tabla y organigrama (grafo) -->
-    <div v-if="table && isUnitsTable" class="mb-3 inline-flex rounded-xl border border-slate-200 bg-white p-1 text-sm">
-      <button
-        type="button"
-        class="rounded-lg px-3 py-1.5 font-semibold transition-colors"
-        :class="!unitGraphMode ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700'"
-        @click="unitGraphMode = false"
-      >Tabla</button>
-      <button
-        type="button"
-        class="rounded-lg px-3 py-1.5 font-semibold transition-colors"
-        :class="unitGraphMode ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700'"
-        @click="unitGraphMode = true"
-      >Organigrama</button>
-    </div>
     <UnitGraphView
       v-if="table && isUnitsTable && unitGraphMode"
       ref="unitGraphRef"
@@ -1096,6 +1081,11 @@ const props = defineProps({
   initialFilters: {
     type: Object,
     default: null
+  },
+  // Lo controla la pestaña hermana "Organigrama": muestra el grafo en vez de la tabla de unidades.
+  forceGraph: {
+    type: Boolean,
+    default: false
   }
 });
 const emit = defineEmits(["go-back", "select-sibling-tab"]);
@@ -1638,7 +1628,8 @@ const isTemplateSeedsTable = computed(() => props.table?.table === "template_see
 const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitsTable = computed(() => props.table?.table === "units");
-const unitGraphMode = ref(false);
+// El modo grafo lo activa la pestaña hermana "Organigrama" (prop forceGraph).
+const unitGraphMode = computed(() => props.forceGraph && isUnitsTable.value);
 const unitGraphRef = ref(null);
 // Tras editar/crear una unidad (fetchRows actualiza rows), refresca el organigrama si está visible.
 watch(rows, () => {

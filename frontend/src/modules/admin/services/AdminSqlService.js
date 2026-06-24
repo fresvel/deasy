@@ -18,6 +18,14 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNITS_GRAPH(relationType));
   }
 
+  createUnitWithParent(payload) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_UNITS_WITH_PARENT, payload);
+  }
+
+  getUnitDetail(unitId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_DETAIL(unitId));
+  }
+
   create(table, payload, config = {}) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TABLE(table), payload, config);
   }

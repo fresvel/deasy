@@ -405,6 +405,24 @@ export const getUnitGraph = async (req, res) => {
   }
 };
 
+export const createUnitWithParent = async (req, res) => {
+  try {
+    const result = await service.createUnitWithParent(req.body || {});
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getUnitDetail = async (req, res) => {
+  try {
+    const result = await service.getUnitDetail(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

@@ -30,6 +30,26 @@
       <template v-else>Vista de solo lectura. No tienes permisos para editar unidades ni relaciones.</template>
     </p>
 
+    <!-- Controles: buscar/centrar, salud, exportar -->
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-1.5">
+        <input
+          v-model="searchTerm"
+          type="text"
+          placeholder="Buscar unidad…"
+          class="h-8 w-52 rounded-lg border border-slate-300 px-3 text-xs outline-none focus:border-indigo-400"
+          @keyup.enter="searchAndCenter"
+        />
+        <AppButton variant="secondary" size="sm" @click="searchAndCenter">Buscar</AppButton>
+      </div>
+      <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+        <input v-model="healthOnly" type="checkbox" class="h-3.5 w-3.5 rounded border-slate-300 text-amber-600" />
+        Resaltar pendientes
+        <span v-if="pendingCount" class="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">{{ pendingCount }}</span>
+      </label>
+      <AppButton variant="secondary" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
+    </div>
+
     <!-- Leyenda de tipos de relación presentes -->
     <div v-if="legend.length > 1" class="flex flex-wrap items-center gap-3">
       <span v-for="item in legend" :key="item.code" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600">
@@ -53,17 +73,22 @@
         :min-zoom="0.2"
         :max-zoom="2"
         :nodes-connectable="editable"
+        :edges-updatable="editable"
+        :delete-key-code="null"
         :only-render-visible-elements="true"
         fit-view-on-init
         class="h-full"
         @connect="onConnect"
         @node-click="onNodeClick"
-        @edge-click="onEdgeClick"
+        @edge-update="onEdgeUpdate"
       >
         <Background pattern-color="#cbd5e1" :gap="20" />
         <Controls />
         <template #node-unit="nodeProps">
           <UnitNode :data="nodeProps.data" />
+        </template>
+        <template #edge-unit="edgeProps">
+          <UnitEdge v-bind="edgeProps" />
         </template>
       </VueFlow>
     </div>
@@ -83,12 +108,103 @@
         <AppButton variant="danger" @click="confirmDeleteEdge">Quitar</AppButton>
       </template>
     </AppDialogOverlay>
+
+    <!-- Cambiar el tipo de una relación existente -->
+    <AppDialogOverlay
+      :open="Boolean(editingEdge)"
+      title="Cambiar tipo de relación"
+      panel-class="max-w-md"
+      @close="editingEdge = null"
+    >
+      <p class="m-0 mb-3 text-sm text-slate-600">Relación <strong>{{ editingEdgeLabel }}</strong>.</p>
+      <label class="block text-sm font-medium text-slate-700">
+        Tipo de relación
+        <select v-model="editingTypeCode" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+          <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
+        </select>
+      </label>
+      <template #footer>
+        <AppButton variant="cancel" @click="editingEdge = null">Cancelar</AppButton>
+        <AppButton variant="primary" @click="confirmEditEdge">Guardar</AppButton>
+      </template>
+    </AppDialogOverlay>
+
+    <!-- Crear unidad hija/hermana (con su relación) en un paso -->
+    <AppDialogOverlay
+      :open="Boolean(createContext)"
+      :title="createDialogTitle"
+      panel-class="max-w-md"
+      @close="createContext = null"
+    >
+      <p class="m-0 mb-3 text-sm text-slate-600">{{ createDialogHint }}</p>
+      <div class="flex flex-col gap-3">
+        <label class="block text-sm font-medium text-slate-700">
+          Nombre
+          <input v-model="createForm.name" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre de la unidad" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Tipo de unidad
+          <select v-model="createForm.unit_type_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="">Selecciona…</option>
+            <option v-for="ut in unitTypes" :key="ut.id" :value="ut.id">{{ ut.name }}</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Slug <span class="font-normal text-slate-400">(opcional)</span>
+          <input v-model="createForm.slug" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="se deriva del nombre" />
+        </label>
+      </div>
+      <template #footer>
+        <AppButton variant="cancel" @click="createContext = null">Cancelar</AppButton>
+        <AppButton variant="primary" :disabled="!createForm.name.trim() || !createForm.unit_type_id" @click="confirmCreateUnit">Crear</AppButton>
+      </template>
+    </AppDialogOverlay>
+
+    <!-- Drawer: detalle de unidad (puestos y ocupaciones) -->
+    <div v-if="detailUnit" class="unit-detail-overlay" @click.self="closeDetail">
+      <aside class="unit-detail-drawer">
+        <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          <div class="min-w-0">
+            <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Detalle de unidad</p>
+            <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ detailUnit.name }}</h3>
+          </div>
+          <button type="button" class="shrink-0 text-slate-400 transition-colors hover:text-slate-600" title="Cerrar" @click="closeDetail">
+            <IconX class="h-5 w-5" />
+          </button>
+        </header>
+        <div class="flex-1 overflow-y-auto px-5 py-4">
+          <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Puestos y ocupaciones</p>
+          <div v-if="detailLoading" class="text-sm text-slate-500">Cargando…</div>
+          <div v-else-if="!detailPositions.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+            Esta unidad no tiene puestos registrados.
+          </div>
+          <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+            <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+              <div class="flex items-center gap-2">
+                <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-amber-500" title="Jefatura" />
+                <span class="truncate text-sm font-semibold text-slate-800">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
+                <span class="text-xs text-slate-400">#{{ pos.slot_no }}</span>
+                <span v-if="!pos.is_active" class="ml-auto text-[11px] font-semibold text-rose-500">Inactivo</span>
+              </div>
+              <div class="mt-1 flex items-center gap-2 text-xs">
+                <template v-if="pos.person_id">
+                  <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200">Ocupado</span>
+                  <span class="truncate text-slate-600">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
+                </template>
+                <span v-else class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-500 ring-1 ring-slate-200">Vacante</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
-import { VueFlow, MarkerType } from "@vue-flow/core";
+import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
+import { toPng } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
@@ -98,6 +214,8 @@ import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import UnitNode from "./UnitNode.vue";
+import UnitEdge from "./UnitEdge.vue";
+import { IconX, IconCrown } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
@@ -117,7 +235,22 @@ const loading = ref(false);
 const error = ref("");
 const showInactive = ref(true);
 const selectedEdge = ref(null);
+const editingEdge = ref(null);
+const editingTypeCode = ref("");
+const unitTypes = ref([]);
+const createContext = ref(null);
+const createForm = ref({ name: "", slug: "", unit_type_id: "" });
+const detailUnit = ref(null);
+const detailPositions = ref([]);
+const detailLoading = ref(false);
 const feedback = ref({ kind: "", message: "" });
+// F-E: buscar/centrar, colapsar ramas, salud, exportar.
+const { fitView } = useVueFlow();
+const searchTerm = ref("");
+const collapsedIds = ref(new Set());
+const highlightId = ref(null);
+const healthOnly = ref(false);
+const exporting = ref(false);
 let feedbackTimer = null;
 
 const NODE_W = 210;
@@ -135,18 +268,104 @@ const nodeNameById = computed(() => {
   (rawGraph.value.nodes || []).forEach((u) => map.set(String(u.id), u.name));
   return map;
 });
-const selectedEdgeLabel = computed(() => {
-  if (!selectedEdge.value) return "";
-  const p = nodeNameById.value.get(String(selectedEdge.value.source)) || selectedEdge.value.source;
-  const c = nodeNameById.value.get(String(selectedEdge.value.target)) || selectedEdge.value.target;
+const edgeLabel = (edge) => {
+  if (!edge) return "";
+  const p = nodeNameById.value.get(String(edge.source)) || edge.source;
+  const c = nodeNameById.value.get(String(edge.target)) || edge.target;
   return `${p} → ${c}`;
-});
+};
+const selectedEdgeLabel = computed(() => edgeLabel(selectedEdge.value));
+const editingEdgeLabel = computed(() => edgeLabel(editingEdge.value));
 const legend = computed(() => {
   const codes = new Set((rawGraph.value.edges || []).map((e) => e.relation_type_code));
   return relationTypes.value
     .filter((rt) => codes.has(rt.code))
     .map((rt) => ({ code: rt.code, name: rt.name, color: colorForCode(rt.code) }));
 });
+
+// Salud: una unidad tiene pendientes si no tiene jefatura o no tiene puestos.
+const healthIssues = (u) => {
+  const issues = [];
+  if (!Number(u.head_count)) issues.push("Sin jefatura");
+  if (!Number(u.positions_count)) issues.push("Sin puestos");
+  return issues;
+};
+const pendingCount = computed(
+  () => (rawGraph.value.nodes || []).filter((u) => healthIssues(u).length).length
+);
+// Mapa padre→hijos (tipo de relación activo) para colapsar ramas.
+const childrenMap = computed(() => {
+  const map = new Map();
+  (rawGraph.value.edges || []).forEach((e) => {
+    const p = String(e.parent_unit_id);
+    if (!map.has(p)) map.set(p, []);
+    map.get(p).push(String(e.child_unit_id));
+  });
+  return map;
+});
+const hiddenByCollapse = computed(() => {
+  const hidden = new Set();
+  const walk = (id) => {
+    (childrenMap.value.get(String(id)) || []).forEach((childId) => {
+      if (!hidden.has(childId)) {
+        hidden.add(childId);
+        walk(childId);
+      }
+    });
+  };
+  collapsedIds.value.forEach((id) => walk(id));
+  return hidden;
+});
+
+const toggleCollapse = (unitId) => {
+  const id = String(unitId);
+  const next = new Set(collapsedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  collapsedIds.value = next;
+  buildGraph();
+};
+
+// Buscar y centrar una unidad por nombre.
+const searchAndCenter = () => {
+  const term = searchTerm.value.trim().toLowerCase();
+  if (!term) return;
+  const match = (rawGraph.value.nodes || []).find((u) =>
+    String(u.name || "").toLowerCase().includes(term)
+  );
+  if (!match) {
+    setFeedback("error", "No se encontró ninguna unidad con ese nombre.");
+    return;
+  }
+  // Si está oculta por colapso, expande sus ancestros (simple: limpia colapsados).
+  if (hiddenByCollapse.value.has(String(match.id))) {
+    collapsedIds.value = new Set();
+    buildGraph();
+  }
+  highlightId.value = String(match.id);
+  buildGraph();
+  fitView({ nodes: [{ id: String(match.id) }], duration: 600, maxZoom: 1.2, padding: 0.6 });
+};
+
+const exportPng = async () => {
+  const el = document.querySelector(".unit-graph-canvas .vue-flow__viewport");
+  const container = document.querySelector(".unit-graph-canvas .vue-flow");
+  const target = container || el;
+  if (!target) return;
+  exporting.value = true;
+  try {
+    const dataUrl = await toPng(target, { backgroundColor: "#ffffff", pixelRatio: 2 });
+    const a = document.createElement("a");
+    a.download = `organigrama-${activeRelationType.value}.png`;
+    a.href = dataUrl;
+    a.click();
+    setFeedback("success", "Organigrama exportado.");
+  } catch (e) {
+    setFeedback("error", "No se pudo exportar la imagen.");
+  } finally {
+    exporting.value = false;
+  }
+};
 
 const setFeedback = (kind, message) => {
   feedback.value = { kind, message };
@@ -169,27 +388,53 @@ const layout = (rawNodes, rawEdges) => {
 };
 
 const buildGraph = () => {
+  const hidden = hiddenByCollapse.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (u) => showInactive.value || Number(u.is_active) === 1
+    (u) => (showInactive.value || Number(u.is_active) === 1) && !hidden.has(String(u.id))
   );
   const visibleIds = new Set(apiNodes.map((u) => String(u.id)));
-  const rawNodes = apiNodes.map((u) => ({
-    id: String(u.id),
-    type: "unit",
-    position: { x: 0, y: 0 },
-    data: u
-  }));
+  const rawNodes = apiNodes.map((u) => {
+    const issues = healthIssues(u);
+    return {
+      id: String(u.id),
+      type: "unit",
+      position: { x: 0, y: 0 },
+      data: {
+        ...u,
+        editable: props.editable,
+        onEdit: editUnit,
+        onAddChild,
+        onAddSibling,
+        onDetail: openDetail,
+        onToggleCollapse: toggleCollapse,
+        healthIssues: issues,
+        hasChildren: childrenMap.value.has(String(u.id)),
+        collapsed: collapsedIds.value.has(String(u.id)),
+        highlighted: highlightId.value === String(u.id),
+        dimmed: healthOnly.value && !issues.length
+      }
+    };
+  });
   const rawEdges = (rawGraph.value.edges || [])
     .filter((e) => visibleIds.has(String(e.parent_unit_id)) && visibleIds.has(String(e.child_unit_id)))
     .map((e) => {
       const color = colorForCode(e.relation_type_code);
       return {
         id: `e${e.id}`,
+        type: "unit",
         source: String(e.parent_unit_id),
         target: String(e.child_unit_id),
+        updatable: props.editable,
         markerEnd: { type: MarkerType.ArrowClosed, color },
         style: { stroke: color, strokeWidth: 1.6 },
-        data: { relationId: e.id, relationTypeId: e.relation_type_id, code: e.relation_type_code }
+        data: {
+          relationId: e.id,
+          relationTypeId: e.relation_type_id,
+          code: e.relation_type_code,
+          editable: props.editable,
+          onEdit: openEditEdge,
+          onDelete: openDeleteEdge
+        }
       };
     });
   nodes.value = rawNodes.length ? layout(rawNodes, rawEdges) : [];
@@ -211,10 +456,110 @@ const loadGraph = async () => {
   }
 };
 
-// Fase 3: clic en nodo abre el editor de unidad existente (en el componente padre).
+const rawUnitById = (unitId) =>
+  (rawGraph.value.nodes || []).find((u) => String(u.id) === String(unitId)) || null;
+
+// Clic en nodo / botón Editar: abre el editor de unidad existente (en el componente padre).
+const editUnit = (unitId) => {
+  if (!props.editable) return;
+  const u = rawUnitById(unitId);
+  if (u) emit("edit-unit", { ...u });
+};
 const onNodeClick = ({ node }) => {
   if (!props.editable || !node?.data) return;
-  emit("edit-unit", { ...node.data });
+  editUnit(node.data.id);
+};
+
+// Detalle de unidad (drawer): puestos y ocupaciones.
+const openDetail = async (unitId) => {
+  const u = rawUnitById(unitId);
+  detailUnit.value = u ? { id: u.id, name: u.name } : { id: unitId, name: "" };
+  detailPositions.value = [];
+  detailLoading.value = true;
+  try {
+    const { data } = await adminSqlService.getUnitDetail(unitId);
+    detailUnit.value = data.unit || detailUnit.value;
+    detailPositions.value = data.positions || [];
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo cargar el detalle.");
+    detailUnit.value = null;
+  } finally {
+    detailLoading.value = false;
+  }
+};
+const closeDetail = () => {
+  detailUnit.value = null;
+  detailPositions.value = [];
+};
+
+// Tipo de relación a usar al crear una arista (el activo si es específico; si 'all', org o el primero).
+const relationTypeIdForCreate = () => {
+  if (activeRelationType.value !== "all") {
+    const byActive = relationTypes.value.find((r) => r.code === activeRelationType.value);
+    if (byActive) return byActive.id;
+  }
+  return (relationTypes.value.find((r) => r.code === "org") || relationTypes.value[0])?.id || null;
+};
+const parentUnitIdOf = (childId) => {
+  const edge = (rawGraph.value.edges || []).find((e) => String(e.child_unit_id) === String(childId));
+  return edge ? edge.parent_unit_id : null;
+};
+
+const openCreateUnit = (mode, parentUnitId, anchorName) => {
+  if (!props.editable) return;
+  createForm.value = { name: "", slug: "", unit_type_id: "" };
+  createContext.value = { mode, parentUnitId: parentUnitId || null, anchorName: anchorName || "" };
+};
+const onAddChild = (unitId) => {
+  openCreateUnit("child", unitId, nodeNameById.value.get(String(unitId)));
+};
+const onAddSibling = (unitId) => {
+  const parentId = parentUnitIdOf(unitId);
+  openCreateUnit("sibling", parentId, nodeNameById.value.get(String(unitId)));
+};
+
+const createDialogTitle = computed(() =>
+  createContext.value?.mode === "sibling" ? "Agregar unidad hermana" : "Agregar unidad hija"
+);
+const createDialogHint = computed(() => {
+  const ctx = createContext.value;
+  if (!ctx) return "";
+  if (ctx.mode === "sibling") {
+    return ctx.parentUnitId
+      ? `Se creará bajo el mismo padre que "${ctx.anchorName}".`
+      : `"${ctx.anchorName}" es una raíz: la nueva unidad se creará sin padre.`;
+  }
+  return `Se creará como hija de "${ctx.anchorName}".`;
+});
+
+const confirmCreateUnit = async () => {
+  const ctx = createContext.value;
+  const form = createForm.value;
+  if (!ctx || !form.name.trim() || !form.unit_type_id) return;
+  const parentId = ctx.parentUnitId;
+  try {
+    await adminSqlService.createUnitWithParent({
+      name: form.name.trim(),
+      slug: form.slug.trim() || undefined,
+      unit_type_id: Number(form.unit_type_id),
+      parent_unit_id: parentId || null,
+      relation_type_id: parentId ? relationTypeIdForCreate() : null
+    });
+    createContext.value = null;
+    setFeedback("success", "Unidad creada.");
+    await loadGraph();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo crear la unidad.");
+  }
+};
+
+const loadUnitTypes = async () => {
+  try {
+    const { data } = await adminSqlService.list("unit_types", { limit: 200 });
+    unitTypes.value = Array.isArray(data) ? data : (data?.rows || []);
+  } catch {
+    unitTypes.value = [];
+  }
 };
 
 // Fase 4: conectar dos nodos crea la relación padre(source)→hija(target).
@@ -243,9 +588,19 @@ const onConnect = async ({ source, target }) => {
   }
 };
 
-const onEdgeClick = ({ edge }) => {
+const findEdgeById = (edgeId) => edges.value.find((e) => e.id === edgeId) || null;
+
+// Abrir diálogos desde la toolbar de la arista.
+const openDeleteEdge = (edgeId) => {
   if (!props.editable) return;
-  selectedEdge.value = edge || null;
+  selectedEdge.value = findEdgeById(edgeId);
+};
+const openEditEdge = (edgeId) => {
+  if (!props.editable) return;
+  const edge = findEdgeById(edgeId);
+  if (!edge) return;
+  editingEdge.value = edge;
+  editingTypeCode.value = edge.data?.code || props.relationType;
 };
 
 const confirmDeleteEdge = async () => {
@@ -261,9 +616,53 @@ const confirmDeleteEdge = async () => {
   }
 };
 
+const confirmEditEdge = async () => {
+  const edge = editingEdge.value;
+  const newCode = editingTypeCode.value;
+  editingEdge.value = null;
+  if (!edge?.data?.relationId) return;
+  const newTypeId = relationTypes.value.find((r) => r.code === newCode)?.id;
+  if (!newTypeId || newTypeId === edge.data.relationTypeId) return;
+  try {
+    await adminSqlService.update("unit_relations", { id: edge.data.relationId }, { relation_type_id: newTypeId });
+    setFeedback("success", "Tipo de relación actualizado.");
+    await loadGraph();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo cambiar el tipo de relación.");
+    await loadGraph();
+  }
+};
+
+// Reparentar arrastrando el extremo de la arista a otro nodo: quita la relación vieja y crea la nueva.
+const onEdgeUpdate = async ({ edge, connection }) => {
+  if (!props.editable) return;
+  const relationId = edge?.data?.relationId;
+  const rtId = edge?.data?.relationTypeId;
+  const source = connection?.source;
+  const target = connection?.target;
+  if (!relationId || !rtId || !source || !target || source === target) return;
+  try {
+    await adminSqlService.remove("unit_relations", { id: relationId });
+    await adminSqlService.create("unit_relations", {
+      relation_type_id: rtId,
+      parent_unit_id: Number(source),
+      child_unit_id: Number(target)
+    });
+    setFeedback("success", "Relación reasignada.");
+    await loadGraph();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo reasignar la relación.");
+    await loadGraph();
+  }
+};
+
 watch(showInactive, buildGraph);
+watch(healthOnly, buildGraph);
 watch(activeRelationType, loadGraph);
-onMounted(loadGraph);
+onMounted(() => {
+  loadGraph();
+  loadUnitTypes();
+});
 
 defineExpose({ reloadGraph: loadGraph });
 </script>
@@ -272,5 +671,22 @@ defineExpose({ reloadGraph: loadGraph });
 .unit-graph-canvas {
   height: 70vh;
   min-height: 28rem;
+}
+.unit-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1075;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(1px);
+}
+.unit-detail-drawer {
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, 100vw);
+  height: 100%;
+  background: #fff;
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
 }
 </style>
