@@ -396,6 +396,15 @@ export const getProcessDefinitionSeriesScope = async (req, res) => {
   }
 };
 
+export const getUnitGraph = async (req, res) => {
+  try {
+    const result = await service.getUnitGraph(req.query?.relation_type || "org");
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const listSqlRows = async (req, res) => {
   try {
     const { table } = req.params;

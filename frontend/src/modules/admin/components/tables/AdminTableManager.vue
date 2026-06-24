@@ -82,6 +82,31 @@
       </p>
     </div>
 
+    <!-- Unidades: alternar entre tabla y organigrama (grafo) -->
+    <div v-if="table && isUnitsTable" class="mb-3 inline-flex rounded-xl border border-slate-200 bg-white p-1 text-sm">
+      <button
+        type="button"
+        class="rounded-lg px-3 py-1.5 font-semibold transition-colors"
+        :class="!unitGraphMode ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700'"
+        @click="unitGraphMode = false"
+      >Tabla</button>
+      <button
+        type="button"
+        class="rounded-lg px-3 py-1.5 font-semibold transition-colors"
+        :class="unitGraphMode ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700'"
+        @click="unitGraphMode = true"
+      >Organigrama</button>
+    </div>
+    <UnitGraphView
+      v-if="table && isUnitsTable && unitGraphMode"
+      ref="unitGraphRef"
+      relation-type="org"
+      :editable="canUpdateCurrentTable"
+      class="mb-2"
+      @edit-unit="openEdit"
+      @create-unit="openCreate"
+    />
+
     <div v-if="!table" class="flex">
       <div class="w-full">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -94,7 +119,7 @@
 
     <AdminMainTableSection
       v-else
-      v-show="(!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
+      v-show="!(isUnitsTable && unitGraphMode) && (!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
       ref="mainTableSection"
       :table="table"
       :loading="loading"
@@ -952,7 +977,7 @@
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
+import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref, watch } from "vue";
 import { useAdminFkManager } from "@/modules/admin/composables/fk/useAdminFkManager";
 import { useAdminFkCrud } from "@/modules/admin/composables/fk/useAdminFkCrud";
 import { useAdminFkSearch } from "@/modules/admin/composables/fk/useAdminFkSearch";
@@ -1022,6 +1047,8 @@ import ProcessLaunchModal from "@/modules/admin/components/modals/ProcessLaunchM
 import ProcessDefinitionLaunchModal from "@/modules/admin/components/modals/ProcessDefinitionLaunchModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
 import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTableSection.vue";
+// Lazy-load: Vue Flow + dagre solo se cargan al abrir el organigrama (fuera del bundle principal).
+const UnitGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/UnitGraphView.vue"));
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFkBrowserModal from "@/modules/admin/components/modals/AdminFkBrowserModal.vue";
 import AdminFkCreateModal from "@/modules/admin/components/modals/AdminFkCreateModal.vue";
@@ -1610,6 +1637,15 @@ const isProcessDefinitionFilterTable = computed(() => props.table?.table === "pr
 const isTemplateSeedsTable = computed(() => props.table?.table === "template_seeds");
 const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
 const isPersonTable = computed(() => props.table?.table === "persons");
+const isUnitsTable = computed(() => props.table?.table === "units");
+const unitGraphMode = ref(false);
+const unitGraphRef = ref(null);
+// Tras editar/crear una unidad (fetchRows actualiza rows), refresca el organigrama si está visible.
+watch(rows, () => {
+  if (isUnitsTable.value && unitGraphMode.value) {
+    unitGraphRef.value?.reloadGraph?.();
+  }
+});
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
 const isPositionAssignmentsTable = computed(() => props.table?.table === "position_assignments");
 

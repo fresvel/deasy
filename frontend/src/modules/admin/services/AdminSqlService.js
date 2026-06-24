@@ -14,6 +14,10 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_OPERATION_STATS);
   }
 
+  getUnitGraph(relationType = "org") {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNITS_GRAPH(relationType));
+  }
+
   create(table, payload, config = {}) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TABLE(table), payload, config);
   }

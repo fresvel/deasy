@@ -24,6 +24,7 @@ import {
   listStuckTaskItems,
   getImmediateBoss,
   getProcessDefinitionSeriesScope,
+  getUnitGraph,
   listSqlRows,
   createSqlRow,
   updateSqlRow,
@@ -84,6 +85,7 @@ router.put(
   ]),
   updateTemplateArtifactDraft
 );
+router.get("/units/graph", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitGraph);
 router.get("/:table", requireSqlAdminPermission(), listSqlRows);
 router.post("/:table", requireSqlAdminPermission(), createSqlRow);
 router.put("/:table", requireSqlAdminPermission(), updateSqlRow);

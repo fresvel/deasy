@@ -2302,12 +2302,82 @@ export default class SqlAdminService {
     }
   }
 
+  // Devuelve el grafo de unidades (nodos + aristas + catálogo de tipos) para la vista de organigrama.
+  // relationTypeCode filtra las aristas por tipo (p. ej. 'org'); 'all' devuelve todas.
+  async getUnitGraph(relationTypeCode = "org") {
+    this.ensurePool();
+    const [nodes] = await this.pool.query(
+      `SELECT u.id, u.name, u.label, u.slug, u.unit_type_id, ut.name AS unit_type_name, u.is_active
+       FROM units u
+       LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
+       ORDER BY u.id ASC`
+    );
+    const [relationTypes] = await this.pool.query(
+      "SELECT id, code, name FROM relation_unit_types ORDER BY id ASC"
+    );
+    let edgeSql =
+      `SELECT ur.id, ur.parent_unit_id, ur.child_unit_id, ur.relation_type_id, rt.code AS relation_type_code
+       FROM unit_relations ur
+       INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id`;
+    const params = [];
+    const code = String(relationTypeCode || "").trim();
+    if (code && code !== "all") {
+      edgeSql += " WHERE rt.code = ?";
+      params.push(code);
+    }
+    edgeSql += " ORDER BY ur.id ASC";
+    const [edges] = await this.pool.query(edgeSql, params);
+    return { nodes, edges, relationTypes };
+  }
+
+  // Detecta si crear la arista parent->child (en un tipo de relación) cerraría un ciclo: ocurre si el padre
+  // ya es descendiente del hijo dentro de ese mismo tipo. CTE recursiva acotada al relation_type.
+  async wouldCreateUnitCycle(parentUnitId, childUnitId, relationTypeId, connection = this.pool) {
+    if (Number(parentUnitId) === Number(childUnitId)) {
+      return true;
+    }
+    const [rows] = await connection.query(
+      `WITH RECURSIVE descendants AS (
+         SELECT child_unit_id FROM unit_relations
+          WHERE parent_unit_id = ? AND relation_type_id = ?
+         UNION ALL
+         SELECT ur.child_unit_id FROM unit_relations ur
+         INNER JOIN descendants d ON ur.parent_unit_id = d.child_unit_id
+          WHERE ur.relation_type_id = ?
+       )
+       SELECT 1 FROM descendants WHERE child_unit_id = ? LIMIT 1`,
+      [childUnitId, relationTypeId, relationTypeId, parentUnitId]
+    );
+    return rows.length > 0;
+  }
+
   async create(tableName, data) {
     this.ensurePool();
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
     if (tableName === "unit_positions") {
       this.assertUnitHeadAllowed(payload.is_unit_head, payload.position_type || "real");
+    }
+    if (tableName === "unit_relations") {
+      const parentId = Number(payload.parent_unit_id);
+      const childId = Number(payload.child_unit_id);
+      const relTypeId = Number(payload.relation_type_id);
+      if (!parentId || !childId || !relTypeId) {
+        throw new Error("La relación requiere unidad padre, unidad hija y tipo de relación.");
+      }
+      if (parentId === childId) {
+        throw new Error("Una unidad no puede relacionarse consigo misma.");
+      }
+      const [existingParent] = await this.pool.query(
+        "SELECT parent_unit_id FROM unit_relations WHERE child_unit_id = ? AND relation_type_id = ? LIMIT 1",
+        [childId, relTypeId]
+      );
+      if (existingParent.length) {
+        throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de crear otra.");
+      }
+      if (await this.wouldCreateUnitCycle(parentId, childId, relTypeId)) {
+        throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
+      }
     }
     const cloneSourceDefinitionId = (
       tableName === "process_definition_versions"
