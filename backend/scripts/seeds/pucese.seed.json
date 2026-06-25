@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-06-23T23:57:29.010Z",
+  "captured_at": "2026-06-25T14:28:20.131Z",
   "tables": [
     {
       "table": "persons",
@@ -71,15 +71,15 @@
           "calle_primaria": null,
           "calle_secundaria": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$IeltjLnS6QDfRrzOOslGLu7JqYLp9KVCFTvw/znzmJr1HqWxz2M2C",
+          "password_hash": "$2b$10$IOmtITOhbp0LSaiq2WMk5.JPfI7s5dScWHNPI4yw.T24ZsyM0b6W6",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 1,
           "photo_url": null,
           "is_active": 1,
-          "token": "DzwUkzQ2EC",
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "token": "ky5N3SAndS",
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 2,
@@ -96,15 +96,15 @@
           "calle_primaria": null,
           "calle_secundaria": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$fK1V2SXOJh9lykORxr8BD.vFxHLNglJ.pfBTiE59M8S9U2ilmQ9Nq",
+          "password_hash": "$2b$10$dmP0VC5LQJvaEm6sg8HEl.ZQYNPJs8C7V0n5FLhW/Tl1AhzU5bQ6a",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 1,
           "photo_url": null,
           "is_active": 1,
-          "token": "4k83HCOmtq",
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "token": "yNBV7mxxCI",
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 3,
@@ -121,15 +121,15 @@
           "calle_primaria": null,
           "calle_secundaria": null,
           "codigo_postal": null,
-          "password_hash": "$2b$10$3D8Eui424xMpjbpOuEZnvuG.AWJthHAvpDSPK2CYIQKLP.pPKRJYW",
+          "password_hash": "$2b$10$rCEncVIn23BFuA3Ipi4vde1xUA5DMs42lDq6.9yWnnnYGfkJxyNwG",
           "status": "Activo",
           "verify_email": 1,
           "verify_whatsapp": 1,
           "photo_url": null,
           "is_active": 1,
-          "token": "AzOuAJtc23",
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "token": "qhZh105l6b",
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -149,58 +149,58 @@
       },
       "rows": [
         {
-          "id": 1,
+          "id": 7,
           "name": "Sistema",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48"
-        },
-        {
-          "id": 2,
-          "name": "Prorrectorado",
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
-        },
-        {
-          "id": 3,
-          "name": "Coordinación",
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
-        },
-        {
-          "id": 4,
-          "name": "Dirección",
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
-        },
-        {
-          "id": 5,
-          "name": "Escuela",
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
-        },
-        {
-          "id": 6,
-          "name": "Jefatura",
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
-        },
-        {
-          "id": 7,
-          "name": "Carrera",
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         },
         {
           "id": 8,
-          "name": "Tecnología",
+          "name": "Prorrectorado",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         },
         {
           "id": 9,
+          "name": "Coordinación",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 10,
+          "name": "Dirección",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 11,
+          "name": "Escuela",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 12,
+          "name": "Jefatura",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 13,
+          "name": "Carrera",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 14,
+          "name": "Tecnología",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 15,
           "name": "Sede",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -232,7 +232,7 @@
           "description": "Relacion jerarquica organizacional",
           "is_inheritance_allowed": 1,
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         }
       ]
     },
@@ -260,84 +260,94 @@
       },
       "rows": [
         {
-          "id": 1,
+          "id": 9,
           "name": "Raiz del sistema",
           "label": "Sistema",
           "slug": "root-system",
-          "unit_type_id": 1,
-          "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
-        },
-        {
-          "id": 2,
-          "name": "Sistemas de Información",
-          "label": "Carrera de Sistemas de Información",
-          "slug": "E140",
           "unit_type_id": 7,
           "is_active": 1,
-          "created_at": "2026-06-23 22:17:56",
-          "updated_at": "2026-06-23 22:18:43"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 3,
-          "name": "Tecnologías de la Información",
-          "label": "Carrera de Tecnologías de la Información",
-          "slug": "E055",
-          "unit_type_id": 7,
+          "id": 10,
+          "name": "Prorrectorado",
+          "label": "Prorrectorado",
+          "slug": "PREC",
+          "unit_type_id": 8,
           "is_active": 1,
-          "created_at": "2026-06-23 22:18:34",
-          "updated_at": "2026-06-23 22:18:34"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 4,
-          "name": "Hábitat Infraestructura y Creatividad",
-          "label": "Escuela de Hábitat Infraestructura y Creatividad",
-          "slug": "EHIC",
-          "unit_type_id": 5,
-          "is_active": 1,
-          "created_at": "2026-06-23 23:37:43",
-          "updated_at": "2026-06-23 23:37:43"
-        },
-        {
-          "id": 5,
+          "id": 11,
           "name": "Dirección de Docencia y Estudiantes",
           "label": "Dirección de Docencia y Estudiantes",
           "slug": "DDE",
-          "unit_type_id": 4,
+          "unit_type_id": 10,
           "is_active": 1,
-          "created_at": "2026-06-23 23:38:18",
-          "updated_at": "2026-06-23 23:38:18"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 6,
+          "id": 12,
           "name": "Dirección de Investigación",
           "label": "Dirección de Investigación Vinculación e Innovación",
           "slug": "DIVI",
-          "unit_type_id": 4,
+          "unit_type_id": 10,
           "is_active": 1,
-          "created_at": "2026-06-23 23:38:54",
-          "updated_at": "2026-06-23 23:38:54"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 7,
+          "id": 13,
           "name": "Talento Humano",
           "label": "Jefatura de Talento Humano",
           "slug": "TTHH",
-          "unit_type_id": 6,
+          "unit_type_id": 12,
           "is_active": 1,
-          "created_at": "2026-06-23 23:39:32",
-          "updated_at": "2026-06-23 23:39:32"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 8,
-          "name": "Coordinación de Aprendizaje y Enseñanza ",
-          "label": "Coordinación de Aprendizaje y Enseñanza ",
+          "id": 14,
+          "name": "Coordinación de Aprendizaje y Enseñanza",
+          "label": "Coordinación de Aprendizaje y Enseñanza",
           "slug": "CAE",
-          "unit_type_id": 3,
+          "unit_type_id": 9,
           "is_active": 1,
-          "created_at": "2026-06-23 23:41:38",
-          "updated_at": "2026-06-23 23:41:38"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 15,
+          "name": "Hábitat Infraestructura y Creatividad",
+          "label": "Escuela de Hábitat Infraestructura y Creatividad",
+          "slug": "EHIC",
+          "unit_type_id": 11,
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 16,
+          "name": "Tecnologías de la Información",
+          "label": "Carrera de Tecnologías de la Información",
+          "slug": "E055",
+          "unit_type_id": 13,
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 17,
+          "name": "Sistemas de Información",
+          "label": "Carrera de Sistemas de Información",
+          "slug": "E140",
+          "unit_type_id": 13,
+          "is_active": 1,
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -359,32 +369,53 @@
       },
       "rows": [
         {
-          "id": 1,
+          "id": 15,
           "relation_type_id": 1,
-          "parent_unit_id": 8,
-          "child_unit_id": 4,
-          "created_at": "2026-06-23 23:40:03"
+          "parent_unit_id": 10,
+          "child_unit_id": 11,
+          "created_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 2,
+          "id": 16,
           "relation_type_id": 1,
-          "parent_unit_id": 4,
-          "child_unit_id": 3,
-          "created_at": "2026-06-23 23:40:32"
+          "parent_unit_id": 10,
+          "child_unit_id": 12,
+          "created_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 4,
+          "id": 17,
           "relation_type_id": 1,
-          "parent_unit_id": 4,
-          "child_unit_id": 2,
-          "created_at": "2026-06-23 23:40:51"
+          "parent_unit_id": 10,
+          "child_unit_id": 13,
+          "created_at": "2026-06-25 14:27:20"
         },
         {
-          "id": 6,
+          "id": 18,
           "relation_type_id": 1,
-          "parent_unit_id": 5,
-          "child_unit_id": 8,
-          "created_at": "2026-06-23 23:42:44"
+          "parent_unit_id": 11,
+          "child_unit_id": 14,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 19,
+          "relation_type_id": 1,
+          "parent_unit_id": 14,
+          "child_unit_id": 15,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 20,
+          "relation_type_id": 1,
+          "parent_unit_id": 15,
+          "child_unit_id": 16,
+          "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 21,
+          "relation_type_id": 1,
+          "parent_unit_id": 15,
+          "child_unit_id": 17,
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -415,8 +446,8 @@
           "name": "Coordinador",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 2,
@@ -424,8 +455,8 @@
           "name": "Docente",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 3,
@@ -433,8 +464,8 @@
           "name": "Responsable",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 4,
@@ -442,8 +473,8 @@
           "name": "Director",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 5,
@@ -451,8 +482,8 @@
           "name": "Prorrector",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 6,
@@ -460,8 +491,8 @@
           "name": "Asistente",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 7,
@@ -469,8 +500,8 @@
           "name": "Jefe",
           "description": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49",
-          "updated_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -596,8 +627,8 @@
           "name": "Cuenta",
           "description": "Datos de cuenta y sesion.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 2,
@@ -605,8 +636,8 @@
           "name": "Dossier",
           "description": "Perfil profesional y evidencias.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 3,
@@ -614,8 +645,8 @@
           "name": "Seguridad",
           "description": "Roles, permisos, recursos, acciones y asignaciones de seguridad.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 4,
@@ -623,8 +654,8 @@
           "name": "Talento humano",
           "description": "Personas, cargos, puestos y ocupaciones.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 5,
@@ -632,8 +663,8 @@
           "name": "Unidades",
           "description": "Unidades, tipos y relaciones institucionales.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 6,
@@ -641,8 +672,8 @@
           "name": "Periodos academicos",
           "description": "Tipos de periodo y periodos.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 7,
@@ -650,8 +681,8 @@
           "name": "Configuraciones de proceso",
           "description": "Procesos base, configuraciones, versiones, reglas y disparadores.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 8,
@@ -659,8 +690,8 @@
           "name": "Ejecucion de procesos",
           "description": "Corridas, tareas, entregables y asignaciones.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 9,
@@ -668,8 +699,8 @@
           "name": "Plantillas",
           "description": "Seeds, artifacts y plantillas de procesos configurados.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 10,
@@ -677,8 +708,8 @@
           "name": "Documentos",
           "description": "Documentos, versiones y ciclo documental operativo.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 11,
@@ -686,8 +717,8 @@
           "name": "Entrega documental",
           "description": "Flujos, pasos, instancias y solicitudes de entrega.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 12,
@@ -695,8 +726,8 @@
           "name": "Firmas",
           "description": "Flujos, solicitudes, estados y firmas documentales.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 13,
@@ -704,8 +735,8 @@
           "name": "Contratacion",
           "description": "Vacantes, postulaciones, ofertas, contratos y origenes.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -736,8 +767,8 @@
           "name": "Leer",
           "description": "Consultar registros.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 2,
@@ -745,8 +776,8 @@
           "name": "Crear",
           "description": "Crear registros.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 3,
@@ -754,8 +785,8 @@
           "name": "Actualizar",
           "description": "Modificar registros.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 4,
@@ -763,8 +794,8 @@
           "name": "Eliminar",
           "description": "Eliminar registros.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 5,
@@ -772,8 +803,8 @@
           "name": "Administrar",
           "description": "Administracion completa del modulo.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -807,8 +838,8 @@
           "code": "account.read",
           "description": "Leer Cuenta",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 2,
@@ -817,8 +848,8 @@
           "code": "account.create",
           "description": "Crear Cuenta",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 3,
@@ -827,8 +858,8 @@
           "code": "account.update",
           "description": "Actualizar Cuenta",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 4,
@@ -837,8 +868,8 @@
           "code": "account.delete",
           "description": "Eliminar Cuenta",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 5,
@@ -847,8 +878,8 @@
           "code": "account.manage",
           "description": "Administrar Cuenta",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 6,
@@ -857,8 +888,8 @@
           "code": "dossier.read",
           "description": "Leer Dossier",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 7,
@@ -867,8 +898,8 @@
           "code": "dossier.create",
           "description": "Crear Dossier",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 8,
@@ -877,8 +908,8 @@
           "code": "dossier.update",
           "description": "Actualizar Dossier",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 9,
@@ -887,8 +918,8 @@
           "code": "dossier.delete",
           "description": "Eliminar Dossier",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 10,
@@ -897,8 +928,8 @@
           "code": "dossier.manage",
           "description": "Administrar Dossier",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 11,
@@ -907,8 +938,8 @@
           "code": "security.read",
           "description": "Leer Seguridad",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 12,
@@ -917,8 +948,8 @@
           "code": "security.create",
           "description": "Crear Seguridad",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 13,
@@ -927,8 +958,8 @@
           "code": "security.update",
           "description": "Actualizar Seguridad",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 14,
@@ -937,8 +968,8 @@
           "code": "security.delete",
           "description": "Eliminar Seguridad",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 15,
@@ -947,8 +978,8 @@
           "code": "security.manage",
           "description": "Administrar Seguridad",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 16,
@@ -957,8 +988,8 @@
           "code": "people.read",
           "description": "Leer Talento humano",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 17,
@@ -967,8 +998,8 @@
           "code": "people.create",
           "description": "Crear Talento humano",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 18,
@@ -977,8 +1008,8 @@
           "code": "people.update",
           "description": "Actualizar Talento humano",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 19,
@@ -987,8 +1018,8 @@
           "code": "people.delete",
           "description": "Eliminar Talento humano",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 20,
@@ -997,8 +1028,8 @@
           "code": "people.manage",
           "description": "Administrar Talento humano",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 21,
@@ -1007,8 +1038,8 @@
           "code": "units.read",
           "description": "Leer Unidades",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 22,
@@ -1017,8 +1048,8 @@
           "code": "units.create",
           "description": "Crear Unidades",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 23,
@@ -1027,8 +1058,8 @@
           "code": "units.update",
           "description": "Actualizar Unidades",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 24,
@@ -1037,8 +1068,8 @@
           "code": "units.delete",
           "description": "Eliminar Unidades",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 25,
@@ -1047,8 +1078,8 @@
           "code": "units.manage",
           "description": "Administrar Unidades",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 26,
@@ -1057,8 +1088,8 @@
           "code": "academic_terms.read",
           "description": "Leer Periodos academicos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 27,
@@ -1067,8 +1098,8 @@
           "code": "academic_terms.create",
           "description": "Crear Periodos academicos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 28,
@@ -1077,8 +1108,8 @@
           "code": "academic_terms.update",
           "description": "Actualizar Periodos academicos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 29,
@@ -1087,8 +1118,8 @@
           "code": "academic_terms.delete",
           "description": "Eliminar Periodos academicos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 30,
@@ -1097,8 +1128,8 @@
           "code": "academic_terms.manage",
           "description": "Administrar Periodos academicos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 31,
@@ -1107,8 +1138,8 @@
           "code": "process_definitions.read",
           "description": "Leer Configuraciones de proceso",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 32,
@@ -1117,8 +1148,8 @@
           "code": "process_definitions.create",
           "description": "Crear Configuraciones de proceso",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 33,
@@ -1127,8 +1158,8 @@
           "code": "process_definitions.update",
           "description": "Actualizar Configuraciones de proceso",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 34,
@@ -1137,8 +1168,8 @@
           "code": "process_definitions.delete",
           "description": "Eliminar Configuraciones de proceso",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 35,
@@ -1147,8 +1178,8 @@
           "code": "process_definitions.manage",
           "description": "Administrar Configuraciones de proceso",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 36,
@@ -1157,8 +1188,8 @@
           "code": "process_execution.read",
           "description": "Leer Ejecucion de procesos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 37,
@@ -1167,8 +1198,8 @@
           "code": "process_execution.create",
           "description": "Crear Ejecucion de procesos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 38,
@@ -1177,8 +1208,8 @@
           "code": "process_execution.update",
           "description": "Actualizar Ejecucion de procesos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 39,
@@ -1187,8 +1218,8 @@
           "code": "process_execution.delete",
           "description": "Eliminar Ejecucion de procesos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 40,
@@ -1197,8 +1228,8 @@
           "code": "process_execution.manage",
           "description": "Administrar Ejecucion de procesos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 41,
@@ -1207,8 +1238,8 @@
           "code": "templates.read",
           "description": "Leer Plantillas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 42,
@@ -1217,8 +1248,8 @@
           "code": "templates.create",
           "description": "Crear Plantillas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 43,
@@ -1227,8 +1258,8 @@
           "code": "templates.update",
           "description": "Actualizar Plantillas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 44,
@@ -1237,8 +1268,8 @@
           "code": "templates.delete",
           "description": "Eliminar Plantillas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 45,
@@ -1247,8 +1278,8 @@
           "code": "templates.manage",
           "description": "Administrar Plantillas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 46,
@@ -1257,8 +1288,8 @@
           "code": "documents.read",
           "description": "Leer Documentos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 47,
@@ -1267,8 +1298,8 @@
           "code": "documents.create",
           "description": "Crear Documentos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 48,
@@ -1277,8 +1308,8 @@
           "code": "documents.update",
           "description": "Actualizar Documentos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 49,
@@ -1287,8 +1318,8 @@
           "code": "documents.delete",
           "description": "Eliminar Documentos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 50,
@@ -1297,8 +1328,8 @@
           "code": "documents.manage",
           "description": "Administrar Documentos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 51,
@@ -1307,8 +1338,8 @@
           "code": "fill_flows.read",
           "description": "Leer Entrega documental",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 52,
@@ -1317,8 +1348,8 @@
           "code": "fill_flows.create",
           "description": "Crear Entrega documental",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 53,
@@ -1327,8 +1358,8 @@
           "code": "fill_flows.update",
           "description": "Actualizar Entrega documental",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 54,
@@ -1337,8 +1368,8 @@
           "code": "fill_flows.delete",
           "description": "Eliminar Entrega documental",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 55,
@@ -1347,8 +1378,8 @@
           "code": "fill_flows.manage",
           "description": "Administrar Entrega documental",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 56,
@@ -1357,8 +1388,8 @@
           "code": "signature_flows.read",
           "description": "Leer Firmas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 57,
@@ -1367,8 +1398,8 @@
           "code": "signature_flows.create",
           "description": "Crear Firmas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 58,
@@ -1377,8 +1408,8 @@
           "code": "signature_flows.update",
           "description": "Actualizar Firmas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 59,
@@ -1387,8 +1418,8 @@
           "code": "signature_flows.delete",
           "description": "Eliminar Firmas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 60,
@@ -1397,8 +1428,8 @@
           "code": "signature_flows.manage",
           "description": "Administrar Firmas",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 61,
@@ -1407,8 +1438,8 @@
           "code": "contracts.read",
           "description": "Leer Contratacion",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 62,
@@ -1417,8 +1448,8 @@
           "code": "contracts.create",
           "description": "Crear Contratacion",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 63,
@@ -1427,8 +1458,8 @@
           "code": "contracts.update",
           "description": "Actualizar Contratacion",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 64,
@@ -1437,8 +1468,8 @@
           "code": "contracts.delete",
           "description": "Eliminar Contratacion",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         },
         {
           "id": 65,
@@ -1447,8 +1478,8 @@
           "code": "contracts.manage",
           "description": "Administrar Contratacion",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:48",
-          "updated_at": "2026-06-23 22:13:48"
+          "created_at": "2026-06-25 14:27:20",
+          "updated_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -2605,48 +2636,48 @@
         {
           "id": 1,
           "role_id": 1,
-          "unit_id": 1,
+          "unit_id": 9,
           "derived_from_assignment_id": null,
           "source": "manual",
           "person_id": 1,
           "max_depth": 0,
-          "start_date": "2026-06-23",
+          "start_date": "2026-06-25",
           "end_date": null,
           "is_current": 1,
           "current_flag": 1,
-          "assigned_at": "2026-06-23 22:13:49",
+          "assigned_at": "2026-06-25 14:27:20",
           "revoked_at": null,
           "revoked_reason": null
         },
         {
           "id": 2,
           "role_id": 6,
-          "unit_id": 1,
+          "unit_id": 9,
           "derived_from_assignment_id": null,
           "source": "manual",
           "person_id": 2,
           "max_depth": 0,
-          "start_date": "2026-06-23",
+          "start_date": "2026-06-25",
           "end_date": null,
           "is_current": 1,
           "current_flag": 1,
-          "assigned_at": "2026-06-23 22:13:49",
+          "assigned_at": "2026-06-25 14:27:20",
           "revoked_at": null,
           "revoked_reason": null
         },
         {
           "id": 3,
           "role_id": 13,
-          "unit_id": 1,
+          "unit_id": 9,
           "derived_from_assignment_id": null,
           "source": "manual",
           "person_id": 3,
           "max_depth": 0,
-          "start_date": "2026-06-23",
+          "start_date": "2026-06-25",
           "end_date": null,
           "is_current": 1,
           "current_flag": 1,
-          "assigned_at": "2026-06-23 22:13:49",
+          "assigned_at": "2026-06-25 14:27:20",
           "revoked_at": null,
           "revoked_reason": null
         }
@@ -2708,10 +2739,9 @@
         "unit_id",
         "slot_no",
         "title",
-        "profile_ref",
+        "profile",
         "position_type",
         "is_active",
-        "deactivated_at",
         "is_unit_head",
         "head_flag",
         "created_at",
@@ -2723,138 +2753,16 @@
         "unit_id": "int(11)",
         "slot_no": "int(11)",
         "title": "varchar(180)",
-        "profile_ref": "varchar(64)",
+        "profile": "longtext",
         "position_type": "enum('real','promocion','simbolico')",
         "is_active": "tinyint(1)",
-        "deactivated_at": "datetime",
         "is_unit_head": "tinyint(1)",
         "head_flag": "tinyint(1)",
         "created_at": "datetime",
         "updated_at": "datetime",
         "cargo_id": "int(11)"
       },
-      "rows": [
-        {
-          "id": 1,
-          "unit_id": 5,
-          "slot_no": 1,
-          "title": "Director de Docencia y Estudiantes",
-          "profile_ref": null,
-          "position_type": "promocion",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 1,
-          "head_flag": 1,
-          "created_at": "2026-06-23 23:47:16",
-          "updated_at": "2026-06-23 23:48:14",
-          "cargo_id": 4
-        },
-        {
-          "id": 2,
-          "unit_id": 8,
-          "slot_no": 1,
-          "title": "Coordinador/a de Aprendizaje y Enseñanza",
-          "profile_ref": null,
-          "position_type": "promocion",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 1,
-          "head_flag": 1,
-          "created_at": "2026-06-23 23:48:08",
-          "updated_at": "2026-06-23 23:48:08",
-          "cargo_id": 1
-        },
-        {
-          "id": 3,
-          "unit_id": 4,
-          "slot_no": 1,
-          "title": "Director/a de Escuela",
-          "profile_ref": null,
-          "position_type": "promocion",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 1,
-          "head_flag": 1,
-          "created_at": "2026-06-23 23:49:06",
-          "updated_at": "2026-06-23 23:49:06",
-          "cargo_id": 4
-        },
-        {
-          "id": 4,
-          "unit_id": 2,
-          "slot_no": 1,
-          "title": "Coordinador de Carrera",
-          "profile_ref": null,
-          "position_type": "promocion",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 1,
-          "head_flag": 1,
-          "created_at": "2026-06-23 23:49:56",
-          "updated_at": "2026-06-23 23:49:56",
-          "cargo_id": 1
-        },
-        {
-          "id": 5,
-          "unit_id": 3,
-          "slot_no": 1,
-          "title": "Coordinador de Carrera",
-          "profile_ref": null,
-          "position_type": "promocion",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 1,
-          "head_flag": 1,
-          "created_at": "2026-06-23 23:50:34",
-          "updated_at": "2026-06-23 23:50:34",
-          "cargo_id": 1
-        },
-        {
-          "id": 7,
-          "unit_id": 2,
-          "slot_no": 1,
-          "title": "Docente",
-          "profile_ref": null,
-          "position_type": "real",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 0,
-          "head_flag": null,
-          "created_at": "2026-06-23 23:51:15",
-          "updated_at": "2026-06-23 23:51:15",
-          "cargo_id": 2
-        },
-        {
-          "id": 8,
-          "unit_id": 3,
-          "slot_no": 1,
-          "title": "Docente",
-          "profile_ref": null,
-          "position_type": "real",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 0,
-          "head_flag": null,
-          "created_at": "2026-06-23 23:53:02",
-          "updated_at": "2026-06-23 23:53:02",
-          "cargo_id": 2
-        },
-        {
-          "id": 10,
-          "unit_id": 2,
-          "slot_no": 2,
-          "title": "Docente",
-          "profile_ref": null,
-          "position_type": "real",
-          "is_active": 1,
-          "deactivated_at": null,
-          "is_unit_head": 0,
-          "head_flag": null,
-          "created_at": "2026-06-23 23:53:54",
-          "updated_at": "2026-06-23 23:53:54",
-          "cargo_id": 2
-        }
-      ]
+      "rows": []
     },
     {
       "table": "position_assignments",
@@ -2907,7 +2815,7 @@
           "slug": "default",
           "parent_id": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -2939,7 +2847,7 @@
           "cargo_id": null,
           "code": "default",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -2984,9 +2892,9 @@
           "description": "Tareas libres y no clasificadas.",
           "status": "active",
           "active_series_flag": 1,
-          "effective_from": "2026-06-23",
+          "effective_from": "2026-06-25",
           "effective_to": null,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3012,7 +2920,7 @@
           "process_definition_id": 1,
           "term_type_id": 5,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3062,7 +2970,7 @@
           "is_active": 1,
           "effective_from": null,
           "effective_to": null,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3093,8 +3001,8 @@
           "name": "Semestre",
           "description": "Periodo academico semestral",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03",
-          "updated_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42",
+          "updated_at": "2026-06-25 14:16:42"
         },
         {
           "id": 2,
@@ -3102,8 +3010,8 @@
           "name": "Trimestre",
           "description": "Periodo academico trimestral",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03",
-          "updated_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42",
+          "updated_at": "2026-06-25 14:16:42"
         },
         {
           "id": 3,
@@ -3111,8 +3019,8 @@
           "name": "Intensivo",
           "description": "Periodo academico intensivo",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03",
-          "updated_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42",
+          "updated_at": "2026-06-25 14:16:42"
         },
         {
           "id": 4,
@@ -3120,8 +3028,8 @@
           "name": "Custom",
           "description": "Periodo operativo personalizado",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03",
-          "updated_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42",
+          "updated_at": "2026-06-25 14:16:42"
         },
         {
           "id": 5,
@@ -3129,8 +3037,8 @@
           "name": "Permanente",
           "description": "Periodo sentinela de todos los tiempos",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03",
-          "updated_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42",
+          "updated_at": "2026-06-25 14:16:42"
         }
       ]
     },
@@ -3215,7 +3123,7 @@
           "meta_object_key": "System/tpl_informe_general/1.0.0/meta.yaml",
           "content_hash": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3241,7 +3149,7 @@
           "process_definition_id": 1,
           "template_artifact_id": 1,
           "sort_order": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3442,7 +3350,7 @@
           "name": "Firmado",
           "description": "La firma se generó y validó correctamente.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 2,
@@ -3450,7 +3358,7 @@
           "name": "Fallido",
           "description": "La firma no se pudo generar por error operativo.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 3,
@@ -3458,7 +3366,7 @@
           "name": "Inválido",
           "description": "La firma se generó pero no validó correctamente.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 4,
@@ -3466,7 +3374,7 @@
           "name": "Cancelado",
           "description": "La firma fue cancelada o descartada.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         }
       ]
     },
@@ -3495,7 +3403,7 @@
           "name": "Pendiente",
           "description": "Solicitud de firma pendiente de atención.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 2,
@@ -3503,7 +3411,7 @@
           "name": "En progreso",
           "description": "Solicitud de firma en ejecución.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 3,
@@ -3511,7 +3419,7 @@
           "name": "Completado",
           "description": "Solicitud de firma completada con evidencia válida.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 4,
@@ -3519,7 +3427,7 @@
           "name": "Rechazado",
           "description": "Solicitud de firma rechazada o con resultado no válido.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         },
         {
           "id": 5,
@@ -3527,7 +3435,7 @@
           "name": "Cancelado",
           "description": "Solicitud de firma cancelada.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:12:03"
+          "created_at": "2026-06-25 14:16:42"
         }
       ]
     },
@@ -3907,7 +3815,7 @@
           "source_path": "Seeds/latex/informe-general/",
           "preview_path": null,
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3936,7 +3844,7 @@
           "name": "Entrega del responsable",
           "description": "El responsable de la tarea completa el contenido.",
           "is_active": 1,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },
@@ -3992,7 +3900,7 @@
           "selection_mode": "auto_one",
           "is_required": 1,
           "can_reject": 0,
-          "created_at": "2026-06-23 22:13:49"
+          "created_at": "2026-06-25 14:27:20"
         }
       ]
     },

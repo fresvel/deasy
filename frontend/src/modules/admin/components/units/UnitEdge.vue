@@ -8,7 +8,7 @@
       @mouseenter="hover = true"
       @mouseleave="hover = false"
     >
-      <button type="button" class="unit-edge-btn" title="Cambiar tipo de relación" @click.stop="data?.onEdit?.(id)">
+      <button v-if="data?.onEdit" type="button" class="unit-edge-btn" title="Cambiar tipo de relación" @click.stop="data?.onEdit?.(id)">
         <IconPencil class="h-3.5 w-3.5" />
       </button>
       <button type="button" class="unit-edge-btn unit-edge-btn--danger" title="Quitar relación" @click.stop="data?.onDelete?.(id)">

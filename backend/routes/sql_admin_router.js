@@ -28,6 +28,11 @@ import {
   createUnitWithParent,
   getUnitDetail,
   getUnitProcesses,
+  getUnitAttachableProcesses,
+  getProcessGraph,
+  getProcessDetail,
+  createProcessWithParent,
+  setProcessParent,
   addUnitPosition,
   updateUnitPosition,
   removeUnitPosition,
@@ -93,10 +98,15 @@ router.put(
   ]),
   updateTemplateArtifactDraft
 );
+router.get("/processes/graph", requireSqlAdminPermission({ table: "processes", action: "read" }), getProcessGraph);
+router.post("/processes/with-parent", requireSqlAdminPermission({ table: "processes", action: "create" }), createProcessWithParent);
+router.get("/processes/:id/detail", requireSqlAdminPermission({ table: "processes", action: "read" }), getProcessDetail);
+router.patch("/processes/:id/parent", requireSqlAdminPermission({ table: "processes", action: "update" }), setProcessParent);
 router.get("/units/graph", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitGraph);
 router.post("/units/with-parent", requireSqlAdminPermission({ resource: "units", action: "create" }), createUnitWithParent);
 router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitDetail);
 router.get("/units/:id/processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitProcesses);
+router.get("/units/:id/attachable-processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitAttachableProcesses);
 router.post("/units/:id/positions", requireSqlAdminPermission({ resource: "people", action: "create" }), addUnitPosition);
 router.put("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "update" }), updateUnitPosition);
 router.delete("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "delete" }), removeUnitPosition);

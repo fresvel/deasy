@@ -212,23 +212,7 @@
                </section>
                
                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 flex-1 items-start">
-                 <template v-if="showAcademyCrudIndex">
-                    <AppNavCard
-                      v-for="table in academyCrudTables"
-                      :key="table.table"
-                      layout="stacked"
-                      :title="table.label"
-                      meta="Gestionar"
-                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="tableIconMeta(table.table).icon"
-                      show-arrow
-                      class-name="min-h-[170px]"
-                      @click="selectTable(table)"
-                    />
-                    <div v-if="!academyCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
-                 </template>
-
-                 <template v-else-if="showAcademiaIndex">
+                 <template v-if="showAcademiaIndex">
                     <AppNavCard
                       v-for="item in academyMenuItems"
                       :key="item.key"
@@ -242,40 +226,7 @@
                     />
                  </template>
 
-                 <template v-else-if="showGestionCrudIndex">
-                    <AppNavCard
-                      v-for="table in gestionCrudTables"
-                      :key="table.table"
-                      layout="stacked"
-                      :title="table.label"
-                      meta="Gestionar"
-                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="tableIconMeta(table.table).icon"
-                      show-arrow
-                      class-name="min-h-[170px]"
-                      @click="selectTable(table)"
-                    />
-                    <AppNavCard
-                      v-if="selectedGestionCrudItem?.key === 'plantillas' && canCreateAdminTable('template_artifacts', currentUser)"
-                      layout="stacked"
-                      title="Nueva plantilla de documento"
-                      meta=""
-                      description="Crear desde una semilla o archivos"
-                      :icon="IconPlus"
-                      badge="Acción especial"
-                      badge-variant="info"
-                      class-name="min-h-[170px] bg-gradient-to-br from-sky-50 to-white border-sky-200 hover:border-sky-400"
-                      icon-wrapper-class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 border border-sky-200 group-hover:border-sky-300 group-hover:bg-sky-50 group-hover:text-sky-700 transition-colors"
-                      title-class="text-sky-900 group-hover:text-sky-700"
-                      @click="openTemplateArtifactDraftFromHome"
-                    />
-                    <div v-if="!gestionCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
-                 </template>
-
                  <template v-else-if="showGestionesIndex">
-                    <div class="col-span-full">
-                      <AdminOperationSummary :stats="operationStats" />
-                    </div>
                     <AppNavCard
                       v-for="item in gestionMenuItems"
                       :key="item.key"
@@ -316,22 +267,6 @@
                     </div>
                  </template>
 
-                 <template v-else-if="showUsersCrudIndex">
-                    <AppNavCard
-                      v-for="table in usersCrudTables"
-                      :key="table.table"
-                      layout="stacked"
-                      :title="table.label"
-                      meta="Gestionar"
-                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="tableIconMeta(table.table).icon"
-                      show-arrow
-                      class-name="min-h-[170px]"
-                      @click="selectTable(table)"
-                    />
-                    <div v-if="!usersCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
-                 </template>
-
                  <template v-else-if="showUsersIndex">
                     <AppNavCard
                       v-for="item in usersMenuItems"
@@ -344,22 +279,6 @@
                       class-name="min-h-[140px]"
                       @click="openUsersItem(item)"
                     />
-                 </template>
-
-                 <template v-else-if="showContractsCrudIndex">
-                    <AppNavCard
-                      v-for="table in contractsCrudTables"
-                      :key="table.table"
-                      layout="stacked"
-                      :title="table.label"
-                      meta="Gestionar"
-                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="tableIconMeta(table.table).icon"
-                      show-arrow
-                      class-name="min-h-[170px]"
-                      @click="selectTable(table)"
-                    />
-                    <div v-if="!contractsCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
                  </template>
 
                  <template v-else-if="showContractsIndex">
@@ -376,22 +295,6 @@
                     />
                  </template>
 
-                 <template v-else-if="showSecurityCrudIndex">
-                    <AppNavCard
-                      v-for="table in securityCrudTables"
-                      :key="table.table"
-                      layout="stacked"
-                      :title="table.label"
-                      meta="Gestionar"
-                      :description="table.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="tableIconMeta(table.table).icon"
-                      show-arrow
-                      class-name="min-h-[170px]"
-                      @click="selectTable(table)"
-                    />
-                    <div v-if="!securityCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles para este subgrupo.</div>
-                 </template>
-
                  <template v-else-if="showSecurityIndex">
                     <AppNavCard
                       v-for="item in securityMenuItems"
@@ -406,21 +309,6 @@
                     />
                  </template>
 
-                 <template v-else-if="showGroupCrudIndex">
-                    <AppNavCard
-                      v-for="item in selectedGroupCrudTables"
-                      :key="item.table"
-                      layout="stacked"
-                      :title="item.label"
-                      :description="item.description || 'Configura la estructura, relaciones y permisos propios de este submódulo.'"
-                      :icon="tableIconMeta(item.table).icon"
-                      show-arrow
-                      class-name="min-h-[170px]"
-                      @click="selectTable(item)"
-                    />
-                    <div v-if="!selectedGroupCrudTables.length" class="col-span-full py-10 text-center text-slate-500 font-medium">No hay tablas disponibles en este grupo.</div>
-                 </template>
-                 
                  <template v-else>
                     <AppNavCard
                       v-for="group in homeGroups"
@@ -445,8 +333,9 @@
                ref="adminManager"
                :table="selectedTable"
                :sibling-tabs="currentSiblingTabs"
-               :active-sibling-tab="graphTabActive ? ORG_GRAPH_TAB_KEY : (selectedTable?.table || '')"
+               :active-sibling-tab="graphTabActive ? ORG_GRAPH_TAB_KEY : (processGraphTabActive ? PROCESS_GRAPH_TAB_KEY : (selectedTable?.table || ''))"
                :force-graph="graphTabActive"
+               :force-process-graph="processGraphTabActive"
                :all-tables="tables"
                :initial-filters="pendingTableFilters"
                @select-sibling-tab="handleSiblingTabChange"
@@ -462,7 +351,7 @@
 
 <script setup>
 
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import { 
   IconLock,
@@ -477,12 +366,10 @@ import {
 
 import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
-import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
-import AdminOperationSummary from "@/modules/admin/components/tables/AdminOperationSummary.vue";
 import FirmarPdf from "@/modules/firmas/components/FirmarPdf.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import {
@@ -491,22 +378,23 @@ import {
   resolveWorkspaceProfileMenuIcon,
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
-import { canCreateAdminTable, canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
+import { canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
 
 const isClient = typeof window !== 'undefined';
 const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
 const vnotify = ref(false);
-const showNavMenu = ref(false);
 const isSigningView = ref(false);
 const tables = ref([]);
 const loadingMeta = ref(false);
 const metaError = ref("");
 const selectedTable = ref(null);
-const operationStats = ref(null);
 const pendingTableFilters = ref(null);
 // Organigrama como pestaña hermana de las tablas de Unidades (no una tabla real).
 const ORG_GRAPH_TAB_KEY = "__unit_graph__";
 const graphTabActive = ref(false);
+// Mapa de procesos como pestaña hermana de las tablas de Procesos (no una tabla real).
+const PROCESS_GRAPH_TAB_KEY = "__process_graph__";
+const processGraphTabActive = ref(false);
 const selectedSection = ref("");
 const selectedAcademyItem = ref("");
 const selectedGestionItem = ref("");
@@ -638,7 +526,7 @@ const GESTION_INDEX_ITEMS = [
   },
   {
     key: "plantillas",
-    label: "Modelos",
+    label: "Entregables",
     icon: "certificate",
     description: "Gestiona semillas, plantillas y su asignación a procesos.",
     tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
@@ -866,40 +754,20 @@ const currentSiblingTabs = computed(() => {
   if (availableTables.some((table) => table.table === "units")) {
     tabs.push({ key: ORG_GRAPH_TAB_KEY, label: "Organigrama" });
   }
+  // Pestaña hermana "Mapa de procesos" para el grupo que contiene procesos.
+  if (availableTables.some((table) => table.table === "processes")) {
+    tabs.push({ key: PROCESS_GRAPH_TAB_KEY, label: "Mapa de procesos" });
+  }
   return tabs;
 });
 
+// Índices de sección (landing por grupo con sus ítems). El antiguo "índice CRUD por ítem" se eliminó porque
+// duplicaba las pestañas hermanas (los ítems van directo a la primera tabla con sus pestañas).
 const showAcademiaIndex = computed(
-  () => selectedSection.value === ACADEMY_GROUP_KEY
-    && !selectedAcademyItem.value
-    && !selectedTable.value
-);
-const showAcademyCrudIndex = computed(
-  () => selectedSection.value === ACADEMY_GROUP_KEY
-    && Boolean(selectedAcademyItem.value)
-    && !selectedTable.value
-);
-const selectedAcademyCrudItem = computed(() =>
-  academyMenuItems.value.find((item) => item.key === selectedAcademyItem.value) || null
-);
-const academyCrudTables = computed(() =>
-  selectedAcademyCrudItem.value?.availableTables || []
+  () => selectedSection.value === ACADEMY_GROUP_KEY && !selectedTable.value
 );
 const showGestionesIndex = computed(
-  () => selectedSection.value === GESTION_GROUP_KEY
-    && !selectedGestionItem.value
-    && !selectedTable.value
-);
-const showGestionCrudIndex = computed(
-  () => selectedSection.value === GESTION_GROUP_KEY
-    && Boolean(selectedGestionItem.value)
-    && !selectedTable.value
-);
-const selectedGestionCrudItem = computed(() =>
-  gestionMenuItems.value.find((item) => item.key === selectedGestionItem.value) || null
-);
-const gestionCrudTables = computed(() =>
-  selectedGestionCrudItem.value?.availableTables || []
+  () => selectedSection.value === GESTION_GROUP_KEY && !selectedTable.value
 );
 // Tablas runtime (registros materializados por los flujos). Se muestran aparte, en el bloque colapsable
 // "Trazabilidad y soporte", ya filtradas por permiso de lectura (visibleTables).
@@ -908,124 +776,44 @@ const traceabilityTables = computed(() =>
   visibleTables.value.filter((table) => isTraceabilityTable(table.table))
 );
 const showUsersIndex = computed(
-  () => selectedSection.value === USERS_GROUP_KEY
-    && !selectedUsuarioItem.value
-    && !selectedTable.value
-);
-const showUsersCrudIndex = computed(
-  () => selectedSection.value === USERS_GROUP_KEY
-    && Boolean(selectedUsuarioItem.value)
-    && !selectedTable.value
-);
-const selectedUsersCrudItem = computed(() =>
-  usersMenuItems.value.find((item) => item.key === selectedUsuarioItem.value) || null
-);
-const usersCrudTables = computed(() =>
-  selectedUsersCrudItem.value?.availableTables || []
+  () => selectedSection.value === USERS_GROUP_KEY && !selectedTable.value
 );
 const showContractsIndex = computed(
-  () => selectedSection.value === CONTRACT_GROUP_KEY
-    && !selectedContratoItem.value
-    && !selectedTable.value
-);
-const showContractsCrudIndex = computed(
-  () => selectedSection.value === CONTRACT_GROUP_KEY
-    && Boolean(selectedContratoItem.value)
-    && !selectedTable.value
-);
-const selectedContractsCrudItem = computed(() =>
-  contractsMenuItems.value.find((item) => item.key === selectedContratoItem.value) || null
-);
-const contractsCrudTables = computed(() =>
-  selectedContractsCrudItem.value?.availableTables || []
+  () => selectedSection.value === CONTRACT_GROUP_KEY && !selectedTable.value
 );
 const showSecurityIndex = computed(
-  () => selectedSection.value === SECURITY_GROUP_KEY
-    && !selectedSeguridadItem.value
-    && !selectedTable.value
+  () => selectedSection.value === SECURITY_GROUP_KEY && !selectedTable.value
 );
-const showSecurityCrudIndex = computed(
-  () => selectedSection.value === SECURITY_GROUP_KEY
-    && Boolean(selectedSeguridadItem.value)
-    && !selectedTable.value
-);
-const selectedSecurityCrudItem = computed(() =>
-  securityMenuItems.value.find((item) => item.key === selectedSeguridadItem.value) || null
-);
-const securityCrudTables = computed(() =>
-  selectedSecurityCrudItem.value?.availableTables || []
-);
-const selectedGroup = computed(() =>
-  groupedTables.value.find((group) => group.key === selectedSection.value) || null
-);
-const showGroupCrudIndex = computed(
-  () => Boolean(selectedGroup.value)
-    && selectedGroup.value.key !== ACADEMY_GROUP_KEY
-    && selectedGroup.value.key !== GESTION_GROUP_KEY
-    && selectedGroup.value.key !== USERS_GROUP_KEY
-    && selectedGroup.value.key !== CONTRACT_GROUP_KEY
-    && selectedGroup.value.key !== SECURITY_GROUP_KEY
-    && !selectedTable.value
-);
-const selectedGroupCrudTables = computed(() => {
-  if (!selectedGroup.value) {
-    return [];
-  }
-  const mainTables = selectedGroup.value.mainTables.map((table) => ({ ...table, bucket: "Principal" }));
-  const supportTables = selectedGroup.value.supportTables.map((table) => ({ ...table, bucket: "Soporte" }));
-  return [...mainTables, ...supportTables];
-});
 
 const adminHeroIcon = computed(() =>
-  showAcademyCrudIndex.value ? resolveIconMeta(selectedAcademyCrudItem.value?.icon || 'map-marked-alt', selectedAcademyCrudItem.value?.label).icon
-  : showAcademiaIndex.value ? resolveIconMeta('map-marked-alt', 'Academia').icon
-  : showGestionCrudIndex.value ? resolveIconMeta(selectedGestionCrudItem.value?.icon || 'check-double', selectedGestionCrudItem.value?.label).icon
+  showAcademiaIndex.value ? resolveIconMeta('map-marked-alt', 'Academia').icon
   : showGestionesIndex.value ? resolveIconMeta('check-double', 'Gestiones').icon
-  : showUsersCrudIndex.value ? resolveIconMeta(selectedUsersCrudItem.value?.icon || 'user', selectedUsersCrudItem.value?.label).icon
   : showUsersIndex.value ? resolveIconMeta('user', 'Usuarios').icon
-  : showContractsCrudIndex.value ? resolveIconMeta(selectedContractsCrudItem.value?.icon || 'certificate', selectedContractsCrudItem.value?.label).icon
   : showContractsIndex.value ? resolveIconMeta('certificate', 'Contratos').icon
-  : showSecurityCrudIndex.value ? resolveIconMeta(selectedSecurityCrudItem.value?.icon || 'lock', selectedSecurityCrudItem.value?.label).icon
   : showSecurityIndex.value ? resolveIconMeta('lock', 'Seguridad').icon
-  : showGroupCrudIndex.value ? groupIconMeta(selectedGroup.value).icon
   : IconLock
 );
 
 const adminHeroTitle = computed(() =>
-  showAcademyCrudIndex.value ? (selectedAcademyCrudItem.value?.label || 'Academia')
-  : showAcademiaIndex.value ? 'Academia'
-  : showGestionCrudIndex.value ? (selectedGestionCrudItem.value?.label || 'Gestiones')
+  showAcademiaIndex.value ? 'Academia'
   : showGestionesIndex.value ? 'Gestiones'
-  : showUsersCrudIndex.value ? (selectedUsersCrudItem.value?.label || 'Usuarios')
   : showUsersIndex.value ? 'Usuarios'
-  : showContractsCrudIndex.value ? (selectedContractsCrudItem.value?.label || 'Contratos')
   : showContractsIndex.value ? 'Contratos'
-  : showSecurityCrudIndex.value ? (selectedSecurityCrudItem.value?.label || 'Seguridad')
   : showSecurityIndex.value ? 'Seguridad'
-  : showGroupCrudIndex.value ? (selectedGroup.value?.label || 'Administración')
   : 'Panel de administración'
 );
 
 const adminHeroDescription = computed(() =>
-  showAcademyCrudIndex.value ? (selectedAcademyCrudItem.value?.description || 'Gestiona el CRUD de catálogos y relaciones.')
-  : showAcademiaIndex.value ? 'Accesos principales para administrar unidades, periodos y cargos institucionales.'
-  : showGestionCrudIndex.value ? (selectedGestionCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
+  showAcademiaIndex.value ? 'Accesos principales para administrar unidades, periodos y cargos institucionales.'
   : showGestionesIndex.value ? 'Accesos por subgrupo para administrar procesos, tareas, plantillas, documentos y firmas.'
-  : showUsersCrudIndex.value ? (selectedUsersCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
   : showUsersIndex.value ? 'Accesos por subgrupo para administrar personas del sistema.'
-  : showContractsCrudIndex.value ? (selectedContractsCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
   : showContractsIndex.value ? 'Accesos por subgrupo para administrar vacantes, contratos y orígenes.'
-  : showSecurityCrudIndex.value ? (selectedSecurityCrudItem.value?.description || 'Gestiona tablas relacionadas al subgrupo.')
   : showSecurityIndex.value ? 'Accesos por subgrupo para administrar roles y permisos.'
-  : showGroupCrudIndex.value ? 'Gestiona el CRUD de las tablas del grupo.'
   : 'Accesos organizados para crear, editar, leer y eliminar datos del sistema.'
 );
 
 const adminHeroKicker = computed(() =>
-  selectedTable.value ? 'Tabla activa'
-  : showAcademyCrudIndex.value || showGestionCrudIndex.value || showUsersCrudIndex.value || showContractsCrudIndex.value || showSecurityCrudIndex.value || showGroupCrudIndex.value
-    ? 'Índice de gestión'
-    : 'Administración'
+  selectedTable.value ? 'Tabla activa' : 'Administración'
 );
 
 const adminShellHeaderTitle = computed(() =>
@@ -1051,7 +839,18 @@ const handleSiblingTabChange = (tableName) => {
     }
     return;
   }
+  if (tableName === PROCESS_GRAPH_TAB_KEY) {
+    const processesTable = tableMap.value.processes;
+    if (processesTable) {
+      if (selectedTable.value?.table !== "processes") {
+        selectTable(processesTable);
+      }
+      processGraphTabActive.value = true;
+    }
+    return;
+  }
   graphTabActive.value = false;
+  processGraphTabActive.value = false;
   const targetTable = tableMap.value[tableName];
   if (!targetTable || targetTable.table === selectedTable.value?.table) {
     return;
@@ -1060,21 +859,7 @@ const handleSiblingTabChange = (tableName) => {
 };
 
 const handleHeroBack = () => {
-  // La navegación del panel es estado de componente (no rutas): subir un nivel en la jerarquía interna.
-  // Si hay un subgrupo (índice CRUD) abierto, volver al índice del grupo limpiando el item activo.
-  const itemRefs = [
-    selectedAcademyItem,
-    selectedGestionItem,
-    selectedUsuarioItem,
-    selectedContratoItem,
-    selectedSeguridadItem
-  ];
-  const activeItem = itemRefs.find((itemRef) => itemRef.value);
-  if (activeItem) {
-    activeItem.value = "";
-    return;
-  }
-  // Si hay un grupo/sección abierto, volver al panel principal de administración.
+  // El índice de sección vuelve al panel principal de administración; desde el home, sale a /home.
   if (selectedSection.value) {
     goAdminHome();
     return;
@@ -1131,8 +916,6 @@ const groupDescMap = {
 const descriptionForGroup = (group) => groupDescMap[group?.key] || 'Gestión segura de módulos del sistema.';
 
 
-
-const tablesCountForGroup = (group) => (group?.mainTables?.length ?? 0) + (group?.supportTables?.length ?? 0);
 
 const isAcademiaGroup = (group) => group?.key === ACADEMY_GROUP_KEY;
 const isGestionGroup = (group) => group?.key === GESTION_GROUP_KEY;
@@ -1221,14 +1004,12 @@ const openGroupIndex = (group) => {
     openSecurityIndex();
     return;
   }
-  selectedSection.value = group.key;
-  selectedAcademyItem.value = "";
-  selectedGestionItem.value = "";
-  selectedUsuarioItem.value = "";
-  selectedContratoItem.value = "";
-  selectedSeguridadItem.value = "";
-  selectedTable.value = null;
+  // Grupos sin índice de sección propio (p. ej. "Otros"): ir directo a su primera tabla.
+  const firstTable = [...(group.mainTables || []), ...(group.supportTables || [])][0];
   openCategories.value[group.label] = true;
+  if (firstTable) {
+    selectTable(firstTable);
+  }
 };
 
 const onGroupTitleClick = (group) => {
@@ -1249,6 +1030,7 @@ const selectTable = (table, filters = null) => {
     return;
   }
   graphTabActive.value = false;
+  processGraphTabActive.value = false;
   pendingTableFilters.value = filters;
   selectedTable.value = table;
   const group = groupedTables.value.find((candidate) =>
@@ -1371,16 +1153,6 @@ const openGestionItem = (item) => {
     selectedTable.value = null;
   }
 };
-const openTemplateArtifactDraftFromHome = async () => {
-  const templateArtifactsTable = tables.value.find((table) => table.table === "template_artifacts");
-  if (!templateArtifactsTable) {
-    return;
-  }
-  selectTable(templateArtifactsTable);
-  await nextTick();
-  await nextTick();
-  adminManager.value?.openDraftArtifactModal?.();
-};
 const openUsersIndex = () => {
   selectedSection.value = USERS_GROUP_KEY;
   selectedUsuarioItem.value = "";
@@ -1477,19 +1249,28 @@ const handleManagerGoBack = () => {
   if (!selectedTable.value) {
     return;
   }
+  // Volver de una tabla cae en el índice de sección (sus ítems), no en el índice por ítem (que era idéntico
+  // a las pestañas y se eliminó). Por eso se limpia el ítem activo y se conserva la sección.
   selectedTable.value = null;
   pendingTableFilters.value = null;
+  graphTabActive.value = false;
+  processGraphTabActive.value = false;
+  selectedAcademyItem.value = "";
+  selectedGestionItem.value = "";
+  selectedUsuarioItem.value = "";
+  selectedContratoItem.value = "";
+  selectedSeguridadItem.value = "";
   if (!selectedSection.value) {
     goAdminHome();
   }
 };
 
 const isHomeActive = computed(() => {
-  return !selectedTable.value && !selectedSection.value && !selectedAcademyItem.value && 
-         !selectedGestionItem.value && !selectedUsuarioItem.value && 
-         !selectedContratoItem.value && !selectedSeguridadItem.value && 
-         !showAcademiaIndex.value && !showGestionesIndex.value && !showUsersIndex.value && 
-         !showContractsIndex.value && !showSecurityIndex.value && !showGroupCrudIndex.value;
+  return !selectedTable.value && !selectedSection.value && !selectedAcademyItem.value &&
+         !selectedGestionItem.value && !selectedUsuarioItem.value &&
+         !selectedContratoItem.value && !selectedSeguridadItem.value &&
+         !showAcademiaIndex.value && !showGestionesIndex.value && !showUsersIndex.value &&
+         !showContractsIndex.value && !showSecurityIndex.value;
 });
 
 const goAdminHome = () => {
@@ -1507,17 +1288,7 @@ const goAdminHome = () => {
 };
 
 const toggleNotify = () => {
-  if (showNavMenu.value) {
-    showNavMenu.value = false;
-  }
   vnotify.value = !vnotify.value;
-};
-
-const toggleNavMenu = () => {
-  if (vnotify.value) {
-    vnotify.value = false;
-  }
-  showNavMenu.value = !showNavMenu.value;
 };
 
 const fetchMeta = async () => {
@@ -1538,16 +1309,6 @@ const fetchMeta = async () => {
     metaError.value = error?.response?.data?.message || "No se pudo cargar el catalogo.";
   } finally {
     loadingMeta.value = false;
-  }
-};
-
-// Resumen de operación: conteos agregados (solo lectura). Si falla, el bloque simplemente no se muestra.
-const fetchOperationStats = async () => {
-  try {
-    const response = await axios.get(API_ROUTES.ADMIN_SQL_OPERATION_STATS);
-    operationStats.value = response.data || null;
-  } catch {
-    operationStats.value = null;
   }
 };
 
@@ -1573,7 +1334,6 @@ onMounted(() => {
     }
   }
   fetchMeta();
-  fetchOperationStats();
 });
 
 </script>

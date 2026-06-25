@@ -103,7 +103,7 @@ import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
-const emit = defineEmits(["notify", "changed"]);
+const emit = defineEmits(["notify", "changed", "close"]);
 
 const open = ref(false);
 const loading = ref(false);
@@ -159,6 +159,7 @@ const openModal = async (definitionRow) => {
 
 const close = () => {
   open.value = false;
+  emit("close");
 };
 
 const launch = async (relaunch) => {

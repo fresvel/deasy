@@ -18,6 +18,7 @@
       ref="processDefinitionLaunchModal"
       @notify="showFeedbackToast"
       @changed="fetchRows"
+      @close="handleProcessGraphLaunchClose"
     />
 
     <div v-if="table && siblingTabs.length" class="admin-related-tabs">
@@ -87,9 +88,21 @@
       ref="unitGraphRef"
       relation-type="org"
       :editable="canUpdateCurrentTable"
+      :can-create-process="canCreateProcessConfiguration"
       class="mb-2"
       @edit-unit="openEdit"
       @create-unit="openCreate"
+      @create-process="openProcessWizardFromScratch"
+    />
+
+    <ProcessGraphView
+      v-if="table && isProcessesTable && processGraphMode"
+      ref="processGraphRef"
+      :editable="canUpdateCurrentTable"
+      class="mb-2"
+      @open-config-wizard="openConfigWizardFromGraph"
+      @edit-config="editConfigFromGraph"
+      @launch-config="launchConfigFromGraph"
     />
 
     <div v-if="!table" class="flex">
@@ -104,7 +117,7 @@
 
     <AdminMainTableSection
       v-else
-      v-show="!(isUnitsTable && unitGraphMode) && (!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
+      v-show="!(isUnitsTable && unitGraphMode) && !(isProcessesTable && processGraphMode) && (!isPositionAssignmentsTable || positionAssignmentsView === 'ocupaciones') && (!isProcessDefinitionTemplatesTable || definitionTemplatesView === 'plantillas')"
       ref="mainTableSection"
       :table="table"
       :loading="loading"
@@ -1032,8 +1045,9 @@ import ProcessLaunchModal from "@/modules/admin/components/modals/ProcessLaunchM
 import ProcessDefinitionLaunchModal from "@/modules/admin/components/modals/ProcessDefinitionLaunchModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
 import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTableSection.vue";
-// Lazy-load: Vue Flow + dagre solo se cargan al abrir el organigrama (fuera del bundle principal).
+// Lazy-load: Vue Flow + dagre solo se cargan al abrir el organigrama / mapa de procesos (fuera del bundle).
 const UnitGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/UnitGraphView.vue"));
+const ProcessGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/ProcessGraphView.vue"));
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFkBrowserModal from "@/modules/admin/components/modals/AdminFkBrowserModal.vue";
 import AdminFkCreateModal from "@/modules/admin/components/modals/AdminFkCreateModal.vue";
@@ -1084,6 +1098,11 @@ const props = defineProps({
   },
   // Lo controla la pestaña hermana "Organigrama": muestra el grafo en vez de la tabla de unidades.
   forceGraph: {
+    type: Boolean,
+    default: false
+  },
+  // Lo controla la pestaña hermana "Mapa de procesos": muestra el grafo en vez de la tabla de procesos.
+  forceProcessGraph: {
     type: Boolean,
     default: false
   }
@@ -1631,10 +1650,17 @@ const isUnitsTable = computed(() => props.table?.table === "units");
 // El modo grafo lo activa la pestaña hermana "Organigrama" (prop forceGraph).
 const unitGraphMode = computed(() => props.forceGraph && isUnitsTable.value);
 const unitGraphRef = ref(null);
+// Mapa de procesos: pestaña hermana "Mapa de procesos" (prop forceProcessGraph) sobre la tabla processes.
+const isProcessesTable = computed(() => props.table?.table === "processes");
+const processGraphMode = computed(() => props.forceProcessGraph && isProcessesTable.value);
+const processGraphRef = ref(null);
 // Tras editar/crear una unidad (fetchRows actualiza rows), refresca el organigrama si está visible.
 watch(rows, () => {
   if (isUnitsTable.value && unitGraphMode.value) {
     unitGraphRef.value?.reloadGraph?.();
+  }
+  if (isProcessesTable.value && processGraphMode.value) {
+    processGraphRef.value?.reloadGraph?.();
   }
 });
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
@@ -3190,6 +3216,16 @@ const handleProcessWizardClose = async () => {
   wizardFromDraft.value = false;
   processWizardReadonly.value = false;
   processDefinitionCloneSourceId.value = "";
+  // Si el wizard se abrió desde el organigrama, refresca los procesos de la unidad abierta.
+  if (unitGraphMode.value) {
+    await unitGraphRef.value?.refreshProcesses?.();
+  }
+  // Si se abrió desde el mapa de procesos, recarga el grafo y reabre el drawer del proceso.
+  if (processGraphMode.value && processGraphReturnId.value) {
+    const pid = processGraphReturnId.value;
+    processGraphReturnId.value = null;
+    await processGraphRef.value?.reopenDetail(pid);
+  }
   if (props.table?.table === "process_definition_versions") {
     await fetchRows();
   }
@@ -3279,6 +3315,54 @@ const openProcessWizardFromScratch = async () => {
   processWizardReadonly.value = false;
   processDefinitionCloneSourceId.value = "";
   await openProcessWizard();
+};
+
+// --- Mapa de procesos: acciones del drawer (un modal a la vez). El grafo cierra su drawer y delega aquí;
+// al cerrarse el wizard/lanzamiento se reabre el drawer vía processGraphRef.reopenDetail(processGraphReturnId).
+const processGraphReturnId = ref(null);
+
+const openConfigWizardFromGraph = async ({ processId, processName } = {}) => {
+  processGraphReturnId.value = processId || null;
+  processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = "";
+  await openProcessWizard({
+    processRow: processId ? { id: processId, name: processName || `Proceso ${processId}` } : null
+  });
+};
+
+const editConfigFromGraph = async ({ processId, definition, step = "definition", readonly = false } = {}) => {
+  if (!definition?.definition_id) return;
+  processGraphReturnId.value = processId || null;
+  await openProcessDefinitionWizard(
+    {
+      id: definition.definition_id,
+      name: definition.definition_name,
+      process_id: processId,
+      process_name: definition.process_name,
+      status: definition.status,
+      variation_key: definition.variation_key,
+      definition_version: definition.definition_version,
+      series_id: definition.series_id
+    },
+    { step, readonly }
+  );
+};
+
+const launchConfigFromGraph = async ({ processId, definition } = {}) => {
+  if (!definition?.definition_id) return;
+  processGraphReturnId.value = processId || null;
+  await processDefinitionLaunchModal.value?.openModal({
+    id: definition.definition_id,
+    name: definition.definition_name
+  });
+};
+
+// Reabre el drawer del proceso tras cerrar el modal de lanzamiento (solo si vino del grafo).
+const handleProcessGraphLaunchClose = async () => {
+  if (!processGraphMode.value || !processGraphReturnId.value) return;
+  const pid = processGraphReturnId.value;
+  processGraphReturnId.value = null;
+  await processGraphRef.value?.reopenDetail(pid);
 };
 
 const openProcessDefinitionWizard = async (row, { step = "definition", readonly = false } = {}) => {

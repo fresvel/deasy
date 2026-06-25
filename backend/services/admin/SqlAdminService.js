@@ -2351,6 +2351,187 @@ export default class SqlAdminService {
     return { nodes, edges, relationTypes };
   }
 
+  // --- Jerarquía de procesos (padre→hijo vía processes.parent_id), análoga al organigrama de unidades ---
+  async getProcessGraph() {
+    this.ensurePool();
+    const [nodes] = await this.pool.query(
+      `SELECT p.id, p.name, p.slug, p.is_active, p.parent_id,
+              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = p.id) AS definitions_count,
+              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = p.id AND pdv.status = 'active') AS active_count
+         FROM processes p
+        ORDER BY p.name ASC`
+    );
+    const edges = nodes
+      .filter((node) => node.parent_id)
+      .map((node) => ({
+        id: `pe-${node.parent_id}-${node.id}`,
+        parent_process_id: node.parent_id,
+        child_process_id: node.id
+      }));
+    return { nodes, edges };
+  }
+
+  // Ciclo: poner parentId como padre de childId lo cerraría si parentId ya es descendiente de childId
+  // (o son el mismo). CTE recursiva sobre processes.parent_id.
+  async wouldCreateProcessCycle(parentId, childId, connection = this.pool) {
+    if (Number(parentId) === Number(childId)) {
+      return true;
+    }
+    const [rows] = await connection.query(
+      `WITH RECURSIVE descendants AS (
+         SELECT id FROM processes WHERE parent_id = ?
+         UNION ALL
+         SELECT p.id FROM processes p INNER JOIN descendants d ON p.parent_id = d.id
+       )
+       SELECT 1 FROM descendants WHERE id = ? LIMIT 1`,
+      [childId, parentId]
+    );
+    return rows.length > 0;
+  }
+
+  async createProcessWithParent({ name, slug, parent_id = null } = {}) {
+    this.ensurePool();
+    const cleanName = String(name || "").trim();
+    if (!cleanName) {
+      throw new Error("El nombre del proceso es obligatorio.");
+    }
+    const cleanSlug = slugify(slug || cleanName);
+    if (!cleanSlug) {
+      throw new Error("No se pudo derivar el slug del proceso.");
+    }
+    const parentId = parent_id ? Number(parent_id) : null;
+    if (parentId) {
+      const parent = await this.getByKeys("processes", { id: parentId });
+      if (!parent) {
+        throw new Error("El proceso padre no existe.");
+      }
+    }
+    try {
+      const [r] = await this.pool.query(
+        "INSERT INTO processes (name, slug, parent_id, is_active) VALUES (?, ?, ?, 1)",
+        [cleanName, cleanSlug, parentId]
+      );
+      return { id: Number(r.insertId) };
+    } catch (error) {
+      if (error?.code === "ER_DUP_ENTRY") {
+        throw new Error("Ya existe un proceso con ese identificador (slug).");
+      }
+      throw error;
+    }
+  }
+
+  // Reparenta (o desvincula con parentId null) un proceso, con guardia de ciclo.
+  async setProcessParent(processId, parentId) {
+    this.ensurePool();
+    const id = Number(processId);
+    const newParent = parentId ? Number(parentId) : null;
+    const proc = await this.getByKeys("processes", { id });
+    if (!proc) {
+      throw new Error("El proceso no existe.");
+    }
+    if (newParent) {
+      if (newParent === id) {
+        throw new Error("Un proceso no puede ser su propio padre.");
+      }
+      const parent = await this.getByKeys("processes", { id: newParent });
+      if (!parent) {
+        throw new Error("El proceso padre no existe.");
+      }
+      if (await this.wouldCreateProcessCycle(newParent, id)) {
+        throw new Error("La relación crearía un ciclo en la jerarquía de procesos.");
+      }
+    }
+    await this.pool.query("UPDATE processes SET parent_id = ? WHERE id = ?", [newParent, id]);
+    return { id, parent_id: newParent };
+  }
+
+  // Detalle de un proceso para el cockpit del grafo de procesos: el registro en sí (+ nombre del padre),
+  // sus configuraciones (process_definition_versions agrupadas por serie/variación, con estado y conteos de
+  // reglas/plantillas/corridas), sus sub-procesos (hijos en el árbol parent_id) y sus corridas (process_runs).
+  async getProcessDetail(processId) {
+    this.ensurePool();
+    const id = Number(processId);
+    if (!id) {
+      throw new Error("Proceso inválido.");
+    }
+    const [processRows] = await this.pool.query(
+      `SELECT p.id, p.name, p.slug, p.parent_id, p.is_active, par.name AS parent_name
+         FROM processes p
+         LEFT JOIN processes par ON par.id = p.parent_id
+        WHERE p.id = ?
+        LIMIT 1`,
+      [id]
+    );
+    const process = processRows?.[0];
+    if (!process) {
+      throw new Error("El proceso no existe.");
+    }
+
+    const [configurations] = await this.pool.query(
+      `SELECT pdv.id AS definition_id,
+              pdv.name AS definition_name,
+              pdv.variation_key,
+              pdv.definition_version,
+              pdv.status,
+              pdv.effective_from,
+              pdv.effective_to,
+              pds.id AS series_id,
+              pds.source_type AS series_source_type,
+              pds.code AS series_code,
+              sc.name AS series_cargo_name,
+              sut.name AS series_unit_type_name,
+              (SELECT COUNT(*) FROM process_target_rules ptr WHERE ptr.process_definition_id = pdv.id) AS rules_count,
+              (SELECT COUNT(*) FROM process_definition_templates pdt WHERE pdt.process_definition_id = pdv.id) AS templates_count,
+              (SELECT COUNT(*) FROM process_runs pr WHERE pr.process_definition_id = pdv.id) AS runs_count
+         FROM process_definition_versions pdv
+         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+         LEFT JOIN cargos sc ON sc.id = pds.cargo_id
+         LEFT JOIN unit_types sut ON sut.id = pds.unit_type_id
+        WHERE pdv.process_id = ?
+        ORDER BY FIELD(pdv.status, 'active', 'draft', 'retired'),
+                 pdv.variation_key ASC, pdv.definition_version DESC`,
+      [id]
+    );
+
+    const [children] = await this.pool.query(
+      `SELECT c.id, c.name, c.slug, c.is_active,
+              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = c.id) AS definitions_count,
+              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = c.id AND pdv.status = 'active') AS active_count
+         FROM processes c
+        WHERE c.parent_id = ?
+        ORDER BY c.name ASC`,
+      [id]
+    );
+
+    const [runs] = await this.pool.query(
+      `SELECT pr.id, pr.process_definition_id, pr.run_mode, pr.status, pr.reason, pr.source_run_id, pr.created_at,
+              pdv.name AS definition_name, pdv.variation_key, pdv.definition_version,
+              t.id AS term_id, t.name AS term_name,
+              tt.code AS term_type_code, tt.name AS term_type_name
+         FROM process_runs pr
+         INNER JOIN process_definition_versions pdv ON pdv.id = pr.process_definition_id
+         LEFT JOIN terms t ON t.id = pr.term_id
+         LEFT JOIN term_types tt ON tt.id = t.term_type_id
+        WHERE pdv.process_id = ?
+        ORDER BY pr.created_at DESC`,
+      [id]
+    );
+
+    return {
+      process: {
+        id: process.id,
+        name: process.name,
+        slug: process.slug,
+        parent_id: process.parent_id,
+        parent_name: process.parent_name,
+        is_active: process.is_active
+      },
+      configurations,
+      children,
+      runs
+    };
+  }
+
   // Detecta si crear la arista parent->child (en un tipo de relación) cerraría un ciclo: ocurre si el padre
   // ya es descendiente del hijo dentro de ese mismo tipo. CTE recursiva acotada al relation_type.
   async wouldCreateUnitCycle(parentUnitId, childUnitId, relationTypeId, connection = this.pool) {
@@ -2417,7 +2598,8 @@ export default class SqlAdminService {
       throw new Error("La unidad no existe.");
     }
     const [rows] = await this.pool.query(
-      `SELECT DISTINCT
+      `SELECT
+              ptr.id AS rule_id,
               pdv.id AS definition_id,
               p.name AS process_name,
               pdv.name AS definition_name,
@@ -2427,20 +2609,70 @@ export default class SqlAdminService {
               ptr.unit_scope_type,
               ptr.recipient_policy,
               ptr.priority,
-              ptr.is_active AS rule_active
+              ptr.is_active AS rule_active,
+              ptr.unit_id,
+              ptr.unit_type_id,
+              ptr.cargo_id,
+              ptr.position_id,
+              c.name AS cargo_name,
+              up.title AS position_title,
+              upc.name AS position_cargo_name,
+              CASE
+                WHEN ptr.unit_id = ? THEN 'direct'
+                WHEN ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ? THEN 'type'
+                WHEN ptr.unit_scope_type = 'all_units' THEN 'global'
+                ELSE 'other'
+              END AS origin
        FROM process_target_rules ptr
        INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
        INNER JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN cargos c ON c.id = ptr.cargo_id
+       LEFT JOIN unit_positions up ON up.id = ptr.position_id
+       LEFT JOIN cargos upc ON upc.id = up.cargo_id
        WHERE ptr.unit_id = ?
           OR (ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ?)
           OR ptr.unit_scope_type = 'all_units'
-       ORDER BY FIELD(pdv.status, 'active', 'draft', 'retired'), p.name ASC, pdv.definition_version DESC`,
-      [id, unit.unit_type_id]
+       ORDER BY (ptr.unit_id = ?) DESC,
+                FIELD(pdv.status, 'active', 'draft', 'retired'),
+                p.name ASC, pdv.definition_version DESC`,
+      [id, unit.unit_type_id, id, unit.unit_type_id, id]
     );
     return {
       unit: { id: unit.id, name: unit.name },
       processes: rows
     };
+  }
+
+  // Configuraciones de proceso a las que se puede vincular esta unidad vía regla de alcance.
+  // Dos restricciones del modelo:
+  // 1) Las reglas de alcance solo se editan mientras la configuración está en 'draft' (activar congela el
+  //    diseño; cambiar alcance ⇒ nueva versión). Por eso solo se ofrecen configuraciones en draft.
+  // 2) Solo variaciones por cargo o default: las variaciones por tipo de unidad fijan el alcance a 'unit_type'
+  //    (unit_id NULL) y aplican a todas las unidades del tipo, así que no se acotan por unidad.
+  async getUnitAttachableProcesses(unitId) {
+    this.ensurePool();
+    const id = Number(unitId);
+    if (!id) {
+      throw new Error("Unidad inválida.");
+    }
+    const [rows] = await this.pool.query(
+      `SELECT pdv.id AS definition_id,
+              p.name AS process_name,
+              pdv.name AS definition_name,
+              pdv.definition_version,
+              pdv.variation_key,
+              pds.source_type AS series_source_type,
+              pds.cargo_id AS series_cargo_id,
+              c.name AS series_cargo_name
+         FROM process_definition_versions pdv
+         INNER JOIN processes p ON p.id = pdv.process_id
+         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+         LEFT JOIN cargos c ON c.id = pds.cargo_id
+        WHERE pdv.status = 'draft'
+          AND pds.source_type <> 'unit_type'
+        ORDER BY p.name ASC, pdv.definition_version DESC`
+    );
+    return { definitions: rows };
   }
 
   // --- Gestión de puestos y ocupaciones desde el organigrama ---

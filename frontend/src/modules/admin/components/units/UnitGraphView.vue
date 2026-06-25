@@ -251,6 +251,17 @@
                 </template>
               </div>
 
+              <!-- Acceso al wizard de perfil (visible, con texto) -->
+              <button
+                v-if="editable"
+                type="button"
+                class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                @click="openProfileWizard(pos)"
+              >
+                <IconFileDescription class="h-3.5 w-3.5" />
+                {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
+              </button>
+
               <!-- Buscador de persona para asignar -->
               <div v-if="editable && assignForId === pos.id" class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
                 <input
@@ -275,25 +286,46 @@
           </ul>
           </div>
 
-          <!-- Pestaña: Procesos que aplican a la unidad -->
+          <!-- Pestaña: Procesos de la unidad (alcance) -->
           <div v-show="detailTab === 'procesos'">
-            <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Procesos de la unidad</p>
+            <div class="mb-3 flex items-center justify-between gap-2">
+              <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-500">Procesos de la unidad</p>
+              <div class="flex items-center gap-2">
+                <AppButton v-if="editable" variant="secondary" size="sm" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
+                <AppButton v-if="editable && canCreateProcess" variant="primary" size="sm" @click="$emit('create-process')">+ Nueva configuración</AppButton>
+              </div>
+            </div>
             <div v-if="detailProcessesLoading" class="text-sm text-slate-500">Cargando…</div>
             <div v-else-if="!detailProcesses.length" class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
               Ningún proceso aplica a esta unidad.
             </div>
             <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-              <li v-for="proc in detailProcesses" :key="proc.definition_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
+              <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-slate-200 px-3 py-2.5">
                 <div class="flex items-center gap-2">
                   <span class="truncate text-sm font-semibold text-slate-800">{{ proc.process_name }}</span>
-                  <span class="ml-auto inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="processStatusClass(proc.status)">{{ proc.status }}</span>
+                  <span class="ml-auto inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1" :class="processOriginMeta(proc.origin).class">{{ processOriginMeta(proc.origin).label }}</span>
+                  <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize ring-1" :class="processStatusClass(proc.status)">{{ proc.status }}</span>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span class="truncate">{{ proc.definition_name }} · v{{ proc.definition_version }}</span>
-                  <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 ring-1 ring-indigo-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+                  <span class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 font-semibold text-slate-600 ring-1 ring-slate-200">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+                </div>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                  <span class="text-slate-500">Destinatario: <span class="font-medium text-slate-700">{{ recipientSummary(proc) }}</span></span>
+                  <template v-if="editable && proc.origin === 'direct' && proc.status === 'draft'">
+                    <button type="button" class="ml-auto text-[11px] font-semibold text-indigo-600 hover:underline" @click="openEditProcessRule(proc)">Editar</button>
+                    <button type="button" class="text-[11px] font-semibold text-rose-600 hover:underline" @click="detachProcess(proc.rule_id)">Quitar</button>
+                  </template>
+                  <span v-else-if="proc.origin === 'direct'" class="ml-auto text-[11px] italic text-slate-400">Versiona el proceso para cambiar el alcance</span>
+                  <span v-else class="ml-auto text-[11px] italic text-slate-400">Definido a nivel de proceso</span>
                 </div>
               </li>
             </ul>
+            <p class="m-0 mt-3 text-[11px] leading-snug text-slate-400">
+              "Directo" = regla propia de esta unidad. El alcance solo se edita mientras la configuración está
+              en <span class="font-semibold">borrador</span>; al activarse queda fija (cambiarla ⇒ nueva versión).
+              "Por tipo"/"Global" se definen en la configuración del proceso y aplican a varias unidades.
+            </p>
           </div>
         </div>
       </aside>
@@ -335,31 +367,99 @@
           </label>
         </div>
 
-        <div class="mt-1 border-t border-slate-100 pt-3">
-          <p class="m-0 mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Perfil del puesto</p>
-          <div class="flex flex-col gap-2.5">
-            <label class="block text-sm font-medium text-slate-700">
-              Formación
-              <textarea v-model="editPositionForm.profile.formacion" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Formación requerida"></textarea>
-            </label>
-            <label class="block text-sm font-medium text-slate-700">
-              Experiencia
-              <textarea v-model="editPositionForm.profile.experiencia" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Experiencia requerida"></textarea>
-            </label>
-            <label class="block text-sm font-medium text-slate-700">
-              Capacitación
-              <textarea v-model="editPositionForm.profile.capacitacion" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Capacitación requerida"></textarea>
-            </label>
-            <label class="block text-sm font-medium text-slate-700">
-              Investigación
-              <textarea v-model="editPositionForm.profile.investigacion" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400" placeholder="Requisitos de investigación"></textarea>
-            </label>
-          </div>
-        </div>
       </div>
       <template #footer>
         <AppButton variant="cancel" @click="editingPosition = null">Cancelar</AppButton>
         <AppButton variant="primary" :disabled="!editPositionForm.cargo_id" @click="confirmEditPosition">Guardar</AppButton>
+      </template>
+    </AppDialogOverlay>
+
+    <!-- Wizard de perfil del puesto -->
+    <UnitPositionProfileWizard
+      :open="Boolean(profileWizardPosition)"
+      :position="profileWizardPosition"
+      @close="profileWizardPosition = null"
+      @save="saveProfileWizard"
+    />
+
+    <!-- Vincular / editar proceso de la unidad (regla de alcance) -->
+    <AppDialogOverlay
+      :open="processModalOpen"
+      :title="processEditingRuleId ? 'Editar proceso de la unidad' : 'Vincular proceso a la unidad'"
+      panel-class="max-w-md"
+      @close="processModalOpen = false"
+    >
+      <div class="flex flex-col gap-3">
+        <label class="block text-sm font-medium text-slate-700">
+          Proceso (configuración en borrador)
+          <select
+            v-model="processForm.process_definition_id"
+            :disabled="Boolean(processEditingRuleId)"
+            class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400 disabled:bg-slate-100"
+          >
+            <option value="">Selecciona…</option>
+            <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
+              {{ def.process_name }} · {{ def.variation_key }} · v{{ def.definition_version }}
+            </option>
+          </select>
+          <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-[11px] text-amber-600">
+            No hay configuraciones en borrador acotables por unidad. El alcance solo se edita en borrador; las variaciones por tipo de unidad se gestionan en la configuración del proceso.
+          </span>
+        </label>
+
+        <label class="block text-sm font-medium text-slate-700">
+          Alcance
+          <select v-model="processForm.unit_scope_type" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="unit_exact">Solo esta unidad</option>
+            <option value="unit_subtree">Esta unidad y sus dependientes</option>
+          </select>
+        </label>
+
+        <label class="block text-sm font-medium text-slate-700">
+          Entrega (destinatario)
+          <select v-model="processForm.recipient_policy" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="all_matches">Todos los del cargo</option>
+            <option value="one_per_unit">Jefatura de la unidad</option>
+            <option value="exact_position">Puesto exacto</option>
+          </select>
+        </label>
+
+        <!-- Cargo: fijado por la serie (variación por cargo) o seleccionable (variación default) -->
+        <div v-if="processForm.recipient_policy !== 'exact_position'">
+          <div v-if="seriesLockedCargo" class="rounded-lg border border-violet-200 bg-violet-50/50 px-3 py-2 text-xs text-violet-700">
+            Cargo fijado por la serie: <span class="font-semibold">{{ seriesLockedCargo.name }}</span>
+          </div>
+          <label v-else class="block text-sm font-medium text-slate-700">
+            Cargo destinatario
+            <select v-model="processForm.cargo_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+              <option value="">Selecciona…</option>
+              <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Puesto exacto: de los puestos de esta unidad -->
+        <label v-else class="block text-sm font-medium text-slate-700">
+          Puesto de la unidad
+          <select v-model="processForm.position_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="">Selecciona…</option>
+            <option v-for="pos in detailPositions" :key="pos.id" :value="pos.id">
+              {{ pos.cargo_name || pos.title || 'Puesto' }} #{{ pos.slot_no }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <template #footer>
+        <AppButton variant="cancel" @click="processModalOpen = false">Cancelar</AppButton>
+        <AppButton
+          variant="primary"
+          :disabled="processSaving || !processForm.process_definition_id
+            || (processForm.recipient_policy === 'exact_position' && !processForm.position_id)
+            || (processForm.recipient_policy !== 'exact_position' && !seriesLockedCargo && !processForm.cargo_id)"
+          @click="confirmProcessRule"
+        >
+          {{ processSaving ? 'Guardando…' : (processEditingRuleId ? 'Guardar' : 'Vincular') }}
+        </AppButton>
       </template>
     </AppDialogOverlay>
   </div>
@@ -379,14 +479,16 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
-import { IconX, IconCrown, IconTrash, IconPencil } from "@tabler/icons-vue";
+import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
+import { IconX, IconCrown, IconTrash, IconPencil, IconFileDescription } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
   relationType: { type: String, default: "org" },
-  editable: { type: Boolean, default: true }
+  editable: { type: Boolean, default: true },
+  canCreateProcess: { type: Boolean, default: true }
 });
-const emit = defineEmits(["edit-unit", "create-unit"]);
+const emit = defineEmits(["edit-unit", "create-unit", "create-process"]);
 
 const EDGE_PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6"];
 
@@ -420,8 +522,9 @@ const personQuery = ref("");
 const personResults = ref([]);
 const personSearching = ref(false);
 const editingPosition = ref(null);
-const emptyProfile = () => ({ formacion: "", experiencia: "", capacitacion: "", investigacion: "" });
-const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false, is_active: true, profile: emptyProfile() });
+const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false, is_active: true });
+// Wizard de perfil del puesto (formación/experiencia/capacitación/investigación) → columna JSON `profile`.
+const profileWizardPosition = ref(null);
 const feedback = ref({ kind: "", message: "" });
 // F-E: buscar/centrar, colapsar ramas, salud, exportar.
 const { fitView } = useVueFlow();
@@ -675,6 +778,11 @@ const closeDetail = () => {
   addingPosition.value = false;
   assignForId.value = null;
   editingPosition.value = null;
+  profileWizardPosition.value = null;
+  processModalOpen.value = false;
+  processEditingRuleId.value = null;
+  attachableLoaded.value = false;
+  attachableProcesses.value = [];
   detailTab.value = "ocupaciones";
 };
 
@@ -707,6 +815,123 @@ const processStatusClass = (status) => {
   if (status === "active") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
   if (status === "retired") return "bg-rose-50 text-rose-600 ring-rose-200";
   return "bg-slate-100 text-slate-600 ring-slate-200";
+};
+
+// --- Administración de procesos de la unidad (vía reglas de alcance) ---
+const RECIPIENT_POLICY_LABELS = {
+  all_matches: "Todos los del cargo",
+  one_per_unit: "Jefatura de la unidad",
+  exact_position: "Puesto exacto"
+};
+const PROCESS_ORIGIN_META = {
+  direct: { label: "Directo", class: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
+  type: { label: "Por tipo", class: "bg-violet-50 text-violet-700 ring-violet-200" },
+  global: { label: "Global", class: "bg-slate-100 text-slate-600 ring-slate-200" },
+  other: { label: "Otro", class: "bg-slate-100 text-slate-500 ring-slate-200" }
+};
+const recipientPolicyLabel = (code) => RECIPIENT_POLICY_LABELS[code] || code || "—";
+const processOriginMeta = (origin) => PROCESS_ORIGIN_META[origin] || PROCESS_ORIGIN_META.other;
+const recipientSummary = (proc) => {
+  if (proc.recipient_policy === "exact_position") {
+    const cargo = proc.position_cargo_name ? `${proc.position_cargo_name}` : "Puesto";
+    return `${cargo}${proc.position_title ? ' · ' + proc.position_title : ''}`;
+  }
+  return `${proc.cargo_name || 'Cargo no definido'} · ${recipientPolicyLabel(proc.recipient_policy)}`;
+};
+
+const attachableProcesses = ref([]);
+const attachableLoaded = ref(false);
+const processModalOpen = ref(false);
+const processEditingRuleId = ref(null);
+const processSaving = ref(false);
+const processForm = ref({ process_definition_id: "", unit_scope_type: "unit_exact", recipient_policy: "all_matches", cargo_id: "", position_id: "" });
+
+const selectedAttachableDef = computed(() =>
+  attachableProcesses.value.find((d) => String(d.definition_id) === String(processForm.value.process_definition_id)) || null
+);
+// Variación por cargo: la serie fija el cargo de la regla (no editable aquí).
+const seriesLockedCargo = computed(() => {
+  const def = selectedAttachableDef.value;
+  return def?.series_cargo_id ? { id: def.series_cargo_id, name: def.series_cargo_name } : null;
+});
+
+const loadAttachableProcesses = async () => {
+  if (!detailUnit.value?.id) return;
+  try {
+    const { data } = await adminSqlService.getUnitAttachableProcesses(detailUnit.value.id);
+    attachableProcesses.value = data.definitions || [];
+  } catch {
+    attachableProcesses.value = [];
+  } finally {
+    attachableLoaded.value = true;
+  }
+};
+const refreshUnitProcesses = async () => {
+  detailProcessesLoaded.value = false;
+  await loadUnitProcesses();
+};
+const resetProcessForm = () => {
+  processForm.value = { process_definition_id: "", unit_scope_type: "unit_exact", recipient_policy: "all_matches", cargo_id: "", position_id: "" };
+};
+const openAttachProcess = async () => {
+  processEditingRuleId.value = null;
+  resetProcessForm();
+  processModalOpen.value = true;
+  if (!attachableLoaded.value) await loadAttachableProcesses();
+};
+const openEditProcessRule = async (proc) => {
+  processEditingRuleId.value = proc.rule_id;
+  processForm.value = {
+    process_definition_id: proc.definition_id,
+    unit_scope_type: proc.unit_scope_type || "unit_exact",
+    recipient_policy: proc.recipient_policy || "all_matches",
+    cargo_id: proc.cargo_id || "",
+    position_id: proc.position_id || ""
+  };
+  processModalOpen.value = true;
+  if (!attachableLoaded.value) await loadAttachableProcesses();
+};
+const confirmProcessRule = async () => {
+  const form = processForm.value;
+  if (!form.process_definition_id) return;
+  const exact = form.recipient_policy === "exact_position";
+  const payload = {
+    process_definition_id: Number(form.process_definition_id),
+    unit_scope_type: form.unit_scope_type,
+    unit_id: detailUnit.value.id,
+    unit_type_id: null,
+    recipient_policy: form.recipient_policy,
+    // En variación por cargo el cargo lo siembra/blinda la serie en el backend (se envía vacío).
+    cargo_id: exact || seriesLockedCargo.value ? null : (form.cargo_id ? Number(form.cargo_id) : null),
+    position_id: exact ? (form.position_id ? Number(form.position_id) : null) : null,
+    is_active: 1
+  };
+  processSaving.value = true;
+  try {
+    if (processEditingRuleId.value) {
+      await adminSqlService.update("process_target_rules", { id: processEditingRuleId.value }, payload);
+      setFeedback("success", "Proceso actualizado en la unidad.");
+    } else {
+      await adminSqlService.create("process_target_rules", payload);
+      setFeedback("success", "Proceso vinculado a la unidad.");
+    }
+    processModalOpen.value = false;
+    processEditingRuleId.value = null;
+    await refreshUnitProcesses();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo guardar el proceso.");
+  } finally {
+    processSaving.value = false;
+  }
+};
+const detachProcess = async (ruleId) => {
+  try {
+    await adminSqlService.remove("process_target_rules", { id: ruleId });
+    setFeedback("success", "Proceso desvinculado de la unidad.");
+    await refreshUnitProcesses();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo desvincular el proceso.");
+  }
 };
 
 const loadCargos = async () => {
@@ -751,22 +976,12 @@ const removePosition = async (positionId) => {
 
 const openEditPosition = (pos) => {
   editingPosition.value = pos;
-  let prof = pos.profile || {};
-  if (typeof prof === "string") {
-    try { prof = JSON.parse(prof); } catch { prof = {}; }
-  }
   editPositionForm.value = {
     cargo_id: pos.cargo_id || "",
     title: pos.title || "",
     position_type: pos.position_type || "real",
     is_unit_head: Number(pos.is_unit_head) === 1,
-    is_active: Number(pos.is_active) === 1,
-    profile: {
-      formacion: prof.formacion || "",
-      experiencia: prof.experiencia || "",
-      capacitacion: prof.capacitacion || "",
-      investigacion: prof.investigacion || ""
-    }
+    is_active: Number(pos.is_active) === 1
   };
 };
 const confirmEditPosition = async () => {
@@ -780,13 +995,29 @@ const confirmEditPosition = async () => {
       title: form.title,
       position_type: form.position_type,
       is_unit_head: form.is_unit_head ? 1 : 0,
-      is_active: form.is_active ? 1 : 0,
-      profile: { ...form.profile }
+      is_active: form.is_active ? 1 : 0
     });
     setFeedback("success", "Puesto actualizado.");
     await refreshAfterPositionChange();
   } catch (e) {
     setFeedback("error", e?.response?.data?.message || "No se pudo actualizar el puesto.");
+  }
+};
+
+// Wizard de perfil: abre/guarda el JSON de perfil del puesto.
+const openProfileWizard = (pos) => {
+  profileWizardPosition.value = pos;
+};
+const saveProfileWizard = async (profile) => {
+  const pos = profileWizardPosition.value;
+  profileWizardPosition.value = null;
+  if (!pos) return;
+  try {
+    await adminSqlService.updateUnitPosition(pos.id, { profile });
+    setFeedback("success", "Perfil del puesto guardado.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo guardar el perfil.");
   }
 };
 
@@ -1016,7 +1247,16 @@ onMounted(() => {
   loadCargos();
 });
 
-defineExpose({ reloadGraph: loadGraph });
+// refreshProcesses: tras crear/editar una configuración en el wizard, recarga la lista de procesos del drawer.
+const refreshProcessesIfOpen = async () => {
+  if (detailUnit.value?.id && detailTab.value === "procesos") {
+    attachableLoaded.value = false;
+    await refreshUnitProcesses();
+  } else {
+    detailProcessesLoaded.value = false;
+  }
+};
+defineExpose({ reloadGraph: loadGraph, refreshProcesses: refreshProcessesIfOpen });
 </script>
 
 <style scoped>

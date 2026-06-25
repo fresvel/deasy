@@ -29,11 +29,25 @@ export const GENERIC_CATALOG = {
     { code: "TRI", name: "Trimestre", description: "Periodo académico trimestral" },
     { code: "INT", name: "Intensivo", description: "Periodo académico intensivo" },
     { code: "CUS", name: "Custom", description: "Periodo operativo personalizado" }
+  ],
+  // Estructura de unidades de DEMOSTRACIÓN (árbol orgánico de ejemplo, inspirado en PUCESE). Opt-in:
+  // pensada para evaluar el organigrama y los procesos con datos de muestra en una instalación virgen.
+  // Cada unidad referencia su tipo por NOMBRE (se crea si falta) y su padre por SLUG; relaciones 'org'.
+  // El orden es topológico (padres antes que hijos) para resolver el padre al insertar.
+  example_units: [
+    { slug: "PREC", name: "Prorrectorado", label: "Prorrectorado", unit_type: "Prorrectorado", parent: null },
+    { slug: "DDE", name: "Dirección de Docencia y Estudiantes", label: "Dirección de Docencia y Estudiantes", unit_type: "Dirección", parent: "PREC" },
+    { slug: "DIVI", name: "Dirección de Investigación", label: "Dirección de Investigación Vinculación e Innovación", unit_type: "Dirección", parent: "PREC" },
+    { slug: "TTHH", name: "Talento Humano", label: "Jefatura de Talento Humano", unit_type: "Jefatura", parent: "PREC" },
+    { slug: "CAE", name: "Coordinación de Aprendizaje y Enseñanza", label: "Coordinación de Aprendizaje y Enseñanza", unit_type: "Coordinación", parent: "DDE" },
+    { slug: "EHIC", name: "Hábitat Infraestructura y Creatividad", label: "Escuela de Hábitat Infraestructura y Creatividad", unit_type: "Escuela", parent: "CAE" },
+    { slug: "E055", name: "Tecnologías de la Información", label: "Carrera de Tecnologías de la Información", unit_type: "Carrera", parent: "EHIC" },
+    { slug: "E140", name: "Sistemas de Información", label: "Carrera de Sistemas de Información", unit_type: "Carrera", parent: "EHIC" }
   ]
 };
 
 // Bloques que el wizard puede ofrecer como opcionales (claves de preconfig).
-export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types"];
+export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types", "example_units"];
 
 const selectCatalogEntries = (selection, entries, getId) => {
   if (selection === true) {
@@ -62,6 +76,68 @@ export const getGenericCatalogOptions = () => ({
     description: termType.description
   }))
 });
+
+const ORG_RELATION = GENERIC_CATALOG.relation_unit_types.find((relation) => relation.code === "org");
+
+// Siembra idempotente del árbol de unidades de ejemplo. Asegura primero los tipos de unidad usados y el
+// tipo de relación orgánica (dependencias), crea las unidades por slug y luego las relaciones padre->hijo.
+const seedExampleUnits = async (connection) => {
+  // 1. Tipos de unidad requeridos por el árbol (por nombre, idempotente).
+  const neededTypes = [...new Set(GENERIC_CATALOG.example_units.map((unit) => unit.unit_type))];
+  for (const name of neededTypes) {
+    await connection.query(
+      "INSERT INTO unit_types (name, is_active) SELECT ?, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM unit_types WHERE name = ?)",
+      [name, name]
+    );
+  }
+  const typeIdByName = new Map();
+  for (const name of neededTypes) {
+    const [rows] = await connection.query("SELECT id FROM unit_types WHERE name = ? LIMIT 1", [name]);
+    if (rows?.[0]?.id) typeIdByName.set(name, Number(rows[0].id));
+  }
+
+  // 2. Tipo de relación orgánica (dependencia de las relaciones del árbol).
+  await connection.query(
+    "INSERT IGNORE INTO relation_unit_types (code, name, description, is_inheritance_allowed, is_active) VALUES (?, ?, ?, ?, 1)",
+    [ORG_RELATION.code, ORG_RELATION.name, ORG_RELATION.description, ORG_RELATION.inheritance]
+  );
+  const [relationRows] = await connection.query("SELECT id FROM relation_unit_types WHERE code = ? LIMIT 1", [ORG_RELATION.code]);
+  const orgRelationId = relationRows?.[0]?.id ? Number(relationRows[0].id) : null;
+
+  // 3. Unidades (idempotente por slug) -> mapa slug->id.
+  const idBySlug = new Map();
+  for (const unit of GENERIC_CATALOG.example_units) {
+    const typeId = typeIdByName.get(unit.unit_type);
+    if (!typeId) continue;
+    await connection.query(
+      `INSERT INTO units (name, label, slug, unit_type_id, is_active)
+       SELECT ?, ?, ?, ?, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM units WHERE slug = ?)`,
+      [unit.name, unit.label, unit.slug, typeId, unit.slug]
+    );
+    const [rows] = await connection.query("SELECT id FROM units WHERE slug = ? LIMIT 1", [unit.slug]);
+    if (rows?.[0]?.id) idBySlug.set(unit.slug, Number(rows[0].id));
+  }
+
+  // 4. Relaciones orgánicas padre->hijo (idempotente; un padre por tipo de relación).
+  if (orgRelationId) {
+    for (const unit of GENERIC_CATALOG.example_units) {
+      if (!unit.parent) continue;
+      const parentId = idBySlug.get(unit.parent);
+      const childId = idBySlug.get(unit.slug);
+      if (!parentId || !childId) continue;
+      await connection.query(
+        `INSERT INTO unit_relations (relation_type_id, parent_unit_id, child_unit_id)
+         SELECT ?, ?, ? FROM DUAL WHERE NOT EXISTS (
+           SELECT 1 FROM unit_relations
+           WHERE relation_type_id = ? AND parent_unit_id = ? AND child_unit_id = ?
+         )`,
+        [orgRelationId, parentId, childId, orgRelationId, parentId, childId]
+      );
+    }
+  }
+
+  return idBySlug.size;
+};
 
 // Siembra idempotente de los bloques seleccionados. Reutiliza la conexión/transacción del bootstrap y el
 // mapa roleIds (name->id) ya producido por seedBaseRbacCatalog para resolver cargo_role_map.
@@ -134,6 +210,10 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
       );
     }
     seeded.term_types = selectedTermTypes.length;
+  }
+
+  if (preconfig.example_units) {
+    seeded.example_units = await seedExampleUnits(connection);
   }
 
   return seeded;

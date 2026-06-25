@@ -1,0 +1,151 @@
+<template>
+  <AppDialogOverlay
+    :open="open"
+    :title="`Perfil del puesto${positionLabel ? ' · ' + positionLabel : ''}`"
+    panel-class="max-w-lg"
+    @close="$emit('close')"
+  >
+    <!-- Indicador de pasos -->
+    <div class="mb-5 flex items-center gap-1.5">
+      <template v-for="(step, idx) in stepLabels" :key="idx">
+        <div class="flex items-center gap-1.5">
+          <span class="profile-step-dot" :class="dotClass(idx)">
+            <IconCheck v-if="idx < current" class="h-3.5 w-3.5" />
+            <span v-else>{{ idx + 1 }}</span>
+          </span>
+          <span class="hidden text-[11px] font-semibold sm:inline" :class="idx === current ? 'text-indigo-600' : 'text-slate-400'">{{ step }}</span>
+        </div>
+        <div v-if="idx < stepLabels.length - 1" class="h-px flex-1 bg-slate-200"></div>
+      </template>
+    </div>
+
+    <!-- Paso de sección -->
+    <div v-if="currentSection">
+      <h4 class="m-0 text-base font-bold text-slate-800">{{ currentSection.label }}</h4>
+      <p class="m-0 mt-1 mb-3 text-sm text-slate-500">{{ currentSection.hint }}</p>
+      <textarea
+        v-model="form[currentSection.key]"
+        rows="5"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+        :placeholder="currentSection.placeholder"
+      ></textarea>
+    </div>
+
+    <!-- Paso de revisión -->
+    <div v-else>
+      <h4 class="m-0 mb-3 text-base font-bold text-slate-800">Revisión</h4>
+      <ul class="m-0 flex list-none flex-col gap-2.5 p-0">
+        <li v-for="section in SECTIONS" :key="section.key" class="rounded-lg border border-slate-200 px-3 py-2">
+          <span class="block text-xs font-bold uppercase tracking-wide text-slate-400">{{ section.label }}</span>
+          <p class="m-0 mt-0.5 whitespace-pre-line text-sm" :class="form[section.key] ? 'text-slate-700' : 'italic text-slate-400'">
+            {{ form[section.key] || 'Sin especificar' }}
+          </p>
+        </li>
+      </ul>
+    </div>
+
+    <template #footer>
+      <div class="flex w-full items-center justify-between gap-3">
+        <AppButton v-if="current > 0" variant="secondary" @click="current--">Atrás</AppButton>
+        <span v-else></span>
+        <div class="flex items-center gap-3">
+          <AppButton variant="cancel" @click="$emit('close')">Cancelar</AppButton>
+          <AppButton v-if="!isReview" variant="primary" @click="current++">Siguiente</AppButton>
+          <AppButton v-else variant="primary" @click="submit">Guardar perfil</AppButton>
+        </div>
+      </div>
+    </template>
+  </AppDialogOverlay>
+</template>
+
+<script setup>
+import { ref, computed, watch } from "vue";
+import { IconCheck } from "@tabler/icons-vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+
+const props = defineProps({
+  open: { type: Boolean, default: false },
+  position: { type: Object, default: null }
+});
+const emit = defineEmits(["close", "save"]);
+
+const SECTIONS = [
+  { key: "formacion", label: "Formación", hint: "Formación académica requerida para ocupar el puesto.", placeholder: "Ej. Magíster o PhD en el área afín…" },
+  { key: "experiencia", label: "Experiencia", hint: "Experiencia profesional o docente requerida.", placeholder: "Ej. 3 años en docencia universitaria…" },
+  { key: "capacitacion", label: "Capacitación", hint: "Capacitaciones o certificaciones requeridas.", placeholder: "Ej. Pedagogía universitaria, ofimática…" },
+  { key: "investigacion", label: "Investigación", hint: "Requisitos de investigación o producción académica.", placeholder: "Ej. Publicaciones indexadas, proyectos…" }
+];
+const stepLabels = [...SECTIONS.map((s) => s.label), "Revisión"];
+
+const current = ref(0);
+const form = ref({ formacion: "", experiencia: "", capacitacion: "", investigacion: "" });
+
+const isReview = computed(() => current.value >= SECTIONS.length);
+const currentSection = computed(() => (isReview.value ? null : SECTIONS[current.value]));
+const positionLabel = computed(() => {
+  const p = props.position;
+  if (!p) return "";
+  return p.cargo_name || p.title || "Puesto";
+});
+
+const dotClass = (idx) => {
+  if (idx < current.value) return "profile-step-dot--done";
+  if (idx === current.value) return "profile-step-dot--active";
+  return "profile-step-dot--idle";
+};
+
+const resetFromPosition = () => {
+  current.value = 0;
+  let prof = props.position?.profile || {};
+  if (typeof prof === "string") {
+    try { prof = JSON.parse(prof); } catch { prof = {}; }
+  }
+  form.value = {
+    formacion: prof.formacion || "",
+    experiencia: prof.experiencia || "",
+    capacitacion: prof.capacitacion || "",
+    investigacion: prof.investigacion || ""
+  };
+};
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) resetFromPosition();
+  },
+  { immediate: true }
+);
+
+const submit = () => {
+  emit("save", { ...form.value });
+};
+</script>
+
+<style scoped>
+.profile-step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 24px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.profile-step-dot--idle {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.profile-step-dot--active {
+  background: #eef2ff;
+  color: #4f46e5;
+  border-color: #c7d2fe;
+}
+.profile-step-dot--done {
+  background: #4f46e5;
+  color: #fff;
+}
+</style>

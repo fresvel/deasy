@@ -26,8 +26,28 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_DETAIL(unitId));
   }
 
+  getProcessGraph() {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_PROCESSES_GRAPH);
+  }
+
+  getProcessDetail(processId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_PROCESS_DETAIL(processId));
+  }
+
+  createProcessWithParent(payload) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_PROCESSES_WITH_PARENT, payload);
+  }
+
+  setProcessParent(processId, parentId) {
+    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_PROCESS_PARENT(processId), { parent_id: parentId });
+  }
+
   getUnitProcesses(unitId) {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_PROCESSES(unitId));
+  }
+
+  getUnitAttachableProcesses(unitId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_UNIT_ATTACHABLE_PROCESSES(unitId));
   }
 
   addUnitPosition(unitId, payload) {

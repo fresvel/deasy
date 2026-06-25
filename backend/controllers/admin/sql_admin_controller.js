@@ -423,9 +423,54 @@ export const getUnitDetail = async (req, res) => {
   }
 };
 
+export const getProcessGraph = async (req, res) => {
+  try {
+    const result = await service.getProcessGraph();
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getProcessDetail = async (req, res) => {
+  try {
+    const result = await service.getProcessDetail(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const createProcessWithParent = async (req, res) => {
+  try {
+    const result = await service.createProcessWithParent(req.body || {});
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const setProcessParent = async (req, res) => {
+  try {
+    const result = await service.setProcessParent(req.params.id, req.body?.parent_id ?? null);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const getUnitProcesses = async (req, res) => {
   try {
     const result = await service.getUnitProcesses(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getUnitAttachableProcesses = async (req, res) => {
+  try {
+    const result = await service.getUnitAttachableProcesses(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
