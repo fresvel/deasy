@@ -31,6 +31,7 @@
     </div>
 
     <AdminTableHeader
+      v-if="!(isProcessesTable && processGraphMode)"
       :table-header-icon="tableHeaderIcon"
       :table-header-title="tableHeaderTitle"
       :table-header-subtitle="tableHeaderSubtitle"
@@ -103,6 +104,11 @@
       @open-config-wizard="openConfigWizardFromGraph"
       @edit-config="editConfigFromGraph"
       @launch-config="launchConfigFromGraph"
+      @version-config="versionConfigFromGraph"
+      @version-template="versionTemplateFromGraph"
+      @add-template="addTemplateFromGraph"
+      @clone-template="cloneTemplateFromGraph"
+      @go-back="handleGoBack"
     />
 
     <div v-if="!table" class="flex">
@@ -425,8 +431,8 @@
       @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
       @edit-row="openDefinitionArtifactTemplateEditor"
       @delete-row="deleteDefinitionArtifact"
-      @close="closeDefinitionArtifactsManager"
-      @accept="acceptDefinitionArtifactsManager"
+      @close="handleDefinitionArtifactsManagerClose"
+      @accept="handleDefinitionArtifactsManagerAccept"
     />
 
     <AdminDefinitionTriggersModal
@@ -2666,6 +2672,37 @@ const openDefinitionArtifactTemplateEditor = async (row) => {
   if (!artifactRow?.id) {
     return;
   }
+  // Plantillas oficiales del sistema: su CONTENIDO se gestiona por el pipeline de templates, no se edita aquí.
+  // Antes el editor abría y fallaba al guardar con un mensaje críptico; ahora se avisa de entrada.
+  if (String(artifactRow.template_scope || "official") === "official") {
+    showFeedbackToast({
+      kind: "info",
+      title: "Plantilla oficial del sistema",
+      message: "Su contenido se gestiona por el pipeline de plantillas y no se edita aquí. Puedes vincularla/desvincularla o, en el mapa de procesos, usar “Crear a partir de este” para hacer una variante editable.",
+      duration: 8000
+    });
+    return;
+  }
+  // Advertencia si la plantilla está vinculada a varias configuraciones: editar su contenido las afecta a todas.
+  try {
+    const { data } = await adminSqlService.list("process_definition_templates", {
+      filter_template_artifact_id: artifactId,
+      limit: 500
+    });
+    const rows = Array.isArray(data) ? data : (data?.rows || data?.data || []);
+    const usageCount = rows.filter((r) => String(r.template_artifact_id) === String(artifactId)).length;
+    if (usageCount > 1) {
+      const ok = window.confirm(
+        `Esta plantilla está vinculada a ${usageCount} configuraciones. Si editas su contenido, los cambios `
+        + "afectarán a TODAS esas configuraciones. ¿Deseas continuar?"
+      );
+      if (!ok) {
+        return;
+      }
+    }
+  } catch {
+    // Si no se pudo calcular el uso, no se bloquea la edición.
+  }
   draftArtifactReturnToPackages.value = true;
   pushModalOrigin("definitionArtifacts");
   getDefinitionArtifactsInstance()?.hide();
@@ -3355,6 +3392,95 @@ const launchConfigFromGraph = async ({ processId, definition } = {}) => {
     id: definition.definition_id,
     name: definition.definition_name
   });
+};
+
+// Versionar una configuración desde su nodo: abre el wizard de nueva versión (clona la definición).
+const versionConfigFromGraph = async ({ processId, definition } = {}) => {
+  if (!definition?.definition_id) return;
+  processGraphReturnId.value = processId || null;
+  await openProcessDefinitionVersionWizard({
+    id: definition.definition_id,
+    process_id: processId,
+    process_name: definition.process_name,
+    series_id: definition.series_id,
+    variation_key: definition.variation_key,
+    definition_version: definition.definition_version
+  });
+};
+
+// Versionar un entregable (plantilla ad_hoc) desde su nodo: crea una nueva versión (inactiva) y recarga el grafo.
+const versionTemplateFromGraph = async ({ templateArtifactId, displayName } = {}) => {
+  if (!templateArtifactId) return;
+  try {
+    const { data } = await adminSqlService.createTemplateArtifactVersion(templateArtifactId, "minor");
+    showFeedbackToast({
+      kind: "success",
+      title: "Nueva versión del entregable",
+      message: data?.__notice || `Se creó una nueva versión (inactiva) de "${displayName || "la plantilla"}".`
+    });
+    await processGraphRef.value?.reloadGraph?.();
+  } catch (err) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo versionar el entregable",
+      message: err?.response?.data?.message || "Error al crear la nueva versión."
+    });
+  }
+};
+
+// Agregar entregable desde el grafo: abre el gestor de plantillas de esa configuración (modal enfocado
+// "Plantillas del proceso", NO el wizard de proceso). Desde ahí se crea/selecciona la plantilla.
+const addTemplateFromGraph = async ({ definition } = {}) => {
+  const id = definition?.definition_id || definition?.id;
+  if (!id) return;
+  processGraphReturnId.value = definition?.process_id || null;
+  await openDefinitionArtifactsManager(
+    {
+      id,
+      status: definition?.status,
+      name: definition?.definition_name,
+      variation_key: definition?.variation_key,
+      definition_version: definition?.definition_version,
+      process_id: definition?.process_id,
+      process_name: definition?.process_name
+    },
+    { showModal: true }
+  );
+};
+
+// Al cerrar/aceptar el gestor de plantillas: si vino del grafo, recarga el grafo para reflejar el cambio.
+const reloadGraphAfterArtifacts = async () => {
+  if (processGraphMode.value && processGraphReturnId.value) {
+    processGraphReturnId.value = null;
+    await processGraphRef.value?.reloadGraph?.();
+  }
+};
+const handleDefinitionArtifactsManagerClose = async () => {
+  closeDefinitionArtifactsManager();
+  await reloadGraphAfterArtifacts();
+};
+const handleDefinitionArtifactsManagerAccept = async () => {
+  acceptDefinitionArtifactsManager();
+  await reloadGraphAfterArtifacts();
+};
+
+// Crear un entregable a partir de otro: precarga el modal en modo creación con los datos del origen
+// (nombre "(copia)", semilla, campos y flujos), vinculado a la misma configuración. Útil para variar una
+// plantilla oficial sin tocar la original (su contenido se gestiona por el pipeline).
+const cloneTemplateFromGraph = async ({ templateArtifactId, definitionId } = {}) => {
+  if (!templateArtifactId) return;
+  let source = null;
+  try {
+    const { data } = await adminSqlService.list("template_artifacts", { filter_id: templateArtifactId, limit: 1 });
+    source = Array.isArray(data) ? data[0] : (data?.rows?.[0] || data?.data?.[0] || null);
+  } catch {
+    source = null;
+  }
+  if (!source?.id) {
+    showFeedbackToast({ kind: "error", title: "No se pudo clonar", message: "No se encontró la plantilla de origen." });
+    return;
+  }
+  await openDraftArtifactModal(null, { force: true, preselectDefinitionId: definitionId ? String(definitionId) : "", cloneFrom: source });
 };
 
 // Reabre el drawer del proceso tras cerrar el modal de lanzamiento (solo si vino del grafo).

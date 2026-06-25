@@ -23,6 +23,10 @@ import { computed, ref } from "vue";
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from "@vue-flow/core";
 import { IconPencil, IconX } from "@tabler/icons-vue";
 
+// Vue Flow pasa muchos props de arista; el componente renderiza un fragment (BaseEdge + EdgeLabelRenderer),
+// así que se desactiva la herencia de atributos para evitar warnings de "extraneous non-props attributes".
+defineOptions({ inheritAttrs: false });
+
 const props = defineProps({
   id: { type: String, required: true },
   sourceX: { type: Number, default: 0 },

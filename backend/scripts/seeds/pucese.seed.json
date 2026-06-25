@@ -1,7 +1,7 @@
 {
   "seed_name": "pucese",
   "source_database": "deasy",
-  "captured_at": "2026-06-25T14:28:20.131Z",
+  "captured_at": "2026-06-25T18:34:27.959Z",
   "tables": [
     {
       "table": "persons",
@@ -348,6 +348,16 @@
           "is_active": 1,
           "created_at": "2026-06-25 14:27:20",
           "updated_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 18,
+          "name": "Tecnologías de la Información",
+          "label": "Tecnologías de la Información",
+          "slug": "JTIC",
+          "unit_type_id": 12,
+          "is_active": 1,
+          "created_at": "2026-06-25 18:25:42",
+          "updated_at": "2026-06-25 18:25:42"
         }
       ]
     },
@@ -416,6 +426,13 @@
           "parent_unit_id": 15,
           "child_unit_id": 17,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 23,
+          "relation_type_id": 1,
+          "parent_unit_id": 10,
+          "child_unit_id": 18,
+          "created_at": "2026-06-25 18:25:56"
         }
       ]
     },
@@ -2680,6 +2697,38 @@
           "assigned_at": "2026-06-25 14:27:20",
           "revoked_at": null,
           "revoked_reason": null
+        },
+        {
+          "id": 4,
+          "role_id": 6,
+          "unit_id": 16,
+          "derived_from_assignment_id": 1,
+          "source": "derived",
+          "person_id": 3,
+          "max_depth": 0,
+          "start_date": "2026-06-25",
+          "end_date": "2026-06-25",
+          "is_current": 0,
+          "current_flag": null,
+          "assigned_at": "2026-06-25 18:31:36",
+          "revoked_at": "2026-06-25 18:34:00",
+          "revoked_reason": "position_assignment_closed"
+        },
+        {
+          "id": 5,
+          "role_id": 8,
+          "unit_id": 16,
+          "derived_from_assignment_id": 2,
+          "source": "derived",
+          "person_id": 3,
+          "max_depth": 0,
+          "start_date": "2026-06-25",
+          "end_date": "2026-06-25",
+          "is_current": 0,
+          "current_flag": null,
+          "assigned_at": "2026-06-25 18:32:11",
+          "revoked_at": "2026-06-25 18:33:59",
+          "revoked_reason": "position_assignment_closed"
         }
       ]
     },
@@ -2762,7 +2811,148 @@
         "updated_at": "datetime",
         "cargo_id": "int(11)"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "unit_id": 10,
+          "slot_no": 1,
+          "title": "Prorrector",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:23:03",
+          "updated_at": "2026-06-25 18:23:03",
+          "cargo_id": 5
+        },
+        {
+          "id": 2,
+          "unit_id": 11,
+          "slot_no": 1,
+          "title": "Director de Docencia y Estudiantes",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:23:36",
+          "updated_at": "2026-06-25 18:23:36",
+          "cargo_id": 4
+        },
+        {
+          "id": 3,
+          "unit_id": 12,
+          "slot_no": 1,
+          "title": "Director de Investigación",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:24:03",
+          "updated_at": "2026-06-25 18:24:03",
+          "cargo_id": 4
+        },
+        {
+          "id": 4,
+          "unit_id": 13,
+          "slot_no": 1,
+          "title": "Jefe de Talento Humano",
+          "profile": null,
+          "position_type": "real",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:24:31",
+          "updated_at": "2026-06-25 18:24:31",
+          "cargo_id": 7
+        },
+        {
+          "id": 5,
+          "unit_id": 14,
+          "slot_no": 1,
+          "title": "Coordinador/a de Aprendizaje y Enseñanza",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:28:45",
+          "updated_at": "2026-06-25 18:28:45",
+          "cargo_id": 1
+        },
+        {
+          "id": 6,
+          "unit_id": 15,
+          "slot_no": 1,
+          "title": "Director de Escuela",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:29:21",
+          "updated_at": "2026-06-25 18:29:21",
+          "cargo_id": 4
+        },
+        {
+          "id": 7,
+          "unit_id": 16,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:29:43",
+          "updated_at": "2026-06-25 18:29:43",
+          "cargo_id": 1
+        },
+        {
+          "id": 8,
+          "unit_id": 17,
+          "slot_no": 1,
+          "title": "Coordinador de Carrera",
+          "profile": null,
+          "position_type": "promocion",
+          "is_active": 1,
+          "is_unit_head": 1,
+          "head_flag": 1,
+          "created_at": "2026-06-25 18:30:02",
+          "updated_at": "2026-06-25 18:30:02",
+          "cargo_id": 1
+        },
+        {
+          "id": 10,
+          "unit_id": 16,
+          "slot_no": 1,
+          "title": "Docente",
+          "profile": null,
+          "position_type": "real",
+          "is_active": 1,
+          "is_unit_head": 0,
+          "head_flag": null,
+          "created_at": "2026-06-25 18:30:21",
+          "updated_at": "2026-06-25 18:30:21",
+          "cargo_id": 2
+        },
+        {
+          "id": 11,
+          "unit_id": 16,
+          "slot_no": 2,
+          "title": "Docente",
+          "profile": null,
+          "position_type": "real",
+          "is_active": 1,
+          "is_unit_head": 0,
+          "head_flag": null,
+          "created_at": "2026-06-25 18:31:59",
+          "updated_at": "2026-06-25 18:31:59",
+          "cargo_id": 2
+        }
+      ]
     },
     {
       "table": "position_assignments",
@@ -2788,7 +2978,30 @@
         "created_at": "datetime",
         "updated_at": "datetime"
       },
-      "rows": []
+      "rows": [
+        {
+          "id": 1,
+          "position_id": 7,
+          "person_id": 3,
+          "start_date": "2026-06-25",
+          "end_date": "2026-06-25",
+          "is_current": 0,
+          "current_flag": null,
+          "created_at": "2026-06-25 18:31:36",
+          "updated_at": "2026-06-25 18:34:00"
+        },
+        {
+          "id": 2,
+          "position_id": 10,
+          "person_id": 3,
+          "start_date": "2026-06-25",
+          "end_date": "2026-06-25",
+          "is_current": 0,
+          "current_flag": null,
+          "created_at": "2026-06-25 18:32:11",
+          "updated_at": "2026-06-25 18:33:59"
+        }
+      ]
     },
     {
       "table": "processes",
@@ -2816,6 +3029,30 @@
           "parent_id": null,
           "is_active": 1,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "name": "Investigación",
+          "slug": "RTIN",
+          "parent_id": null,
+          "is_active": 1,
+          "created_at": "2026-06-25 14:28:54"
+        },
+        {
+          "id": 3,
+          "name": "Investigación Formativa",
+          "slug": "inft",
+          "parent_id": 2,
+          "is_active": 1,
+          "created_at": "2026-06-25 14:29:25"
+        },
+        {
+          "id": 4,
+          "name": "Investigación Productiva",
+          "slug": "inpr",
+          "parent_id": 2,
+          "is_active": 1,
+          "created_at": "2026-06-25 17:24:43"
         }
       ]
     },
@@ -2848,6 +3085,15 @@
           "code": "default",
           "is_active": 1,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "source_type": "unit_type",
+          "unit_type_id": 13,
+          "cargo_id": null,
+          "code": "carrera",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:30:28"
         }
       ]
     },
@@ -2895,6 +3141,34 @@
           "effective_from": "2026-06-25",
           "effective_to": null,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "process_id": 3,
+          "series_id": 2,
+          "variation_key": "carrera",
+          "definition_version": "1.0.0",
+          "name": "Investigación Formativa por Carrera",
+          "description": null,
+          "status": "draft",
+          "active_series_flag": null,
+          "effective_from": "2026-06-25",
+          "effective_to": null,
+          "created_at": "2026-06-25 14:30:28"
+        },
+        {
+          "id": 3,
+          "process_id": 4,
+          "series_id": 2,
+          "variation_key": "carrera",
+          "definition_version": "1.0.0",
+          "name": "Investigación Productiva por Carrera",
+          "description": null,
+          "status": "draft",
+          "active_series_flag": null,
+          "effective_from": "2026-06-25",
+          "effective_to": null,
+          "created_at": "2026-06-25 17:26:12"
         }
       ]
     },
@@ -2921,6 +3195,13 @@
           "term_type_id": 5,
           "is_active": 1,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 2,
+          "term_type_id": 1,
+          "is_active": 1,
+          "created_at": "2026-06-25 17:36:34"
         }
       ]
     },
@@ -2971,6 +3252,36 @@
           "effective_from": null,
           "effective_to": null,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 2,
+          "unit_scope_type": "unit_type",
+          "unit_id": null,
+          "unit_type_id": 13,
+          "cargo_id": 1,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-06-25",
+          "effective_to": null,
+          "created_at": "2026-06-25 16:52:34"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 3,
+          "unit_scope_type": "unit_type",
+          "unit_id": null,
+          "unit_type_id": 13,
+          "cargo_id": 2,
+          "position_id": null,
+          "recipient_policy": "all_matches",
+          "priority": 1,
+          "is_active": 1,
+          "effective_from": "2026-06-25",
+          "effective_to": null,
+          "created_at": "2026-06-25 17:26:24"
         }
       ]
     },
@@ -3124,6 +3435,23 @@
           "content_hash": null,
           "is_active": 1,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "template_seed_id": 1,
+          "owner_person_id": 1,
+          "template_code": "draft_informe",
+          "display_name": "Informe",
+          "description": null,
+          "storage_version": "1.0.0",
+          "template_scope": "official",
+          "base_object_prefix": "System/draft_informe/1.0.0/",
+          "available_formats": "{\"jinja2\":{\"entry_object_key\":\"System/draft_informe/1.0.0/template/jinja2/\"},\"docx\":{\"entry_object_key\":\"System/draft_informe/1.0.0/template/docx/\"},\"xlsx\":{\"entry_object_key\":\"System/draft_informe/1.0.0/template/xlsx/\"}}",
+          "schema_object_key": "System/draft_informe/1.0.0/schema.json",
+          "meta_object_key": "System/draft_informe/1.0.0/meta.yaml",
+          "content_hash": "ad6820990a2e0898f52655e759d76205dd866aadacd8ef22056cbdfea6dd71f6",
+          "is_active": 1,
+          "created_at": "2026-06-25 17:21:53"
         }
       ]
     },
@@ -3150,6 +3478,20 @@
           "template_artifact_id": 1,
           "sort_order": 1,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "process_definition_id": 2,
+          "template_artifact_id": 2,
+          "sort_order": 1,
+          "created_at": "2026-06-25 17:21:53"
+        },
+        {
+          "id": 3,
+          "process_definition_id": 3,
+          "template_artifact_id": 1,
+          "sort_order": 1,
+          "created_at": "2026-06-25 18:22:45"
         }
       ]
     },
@@ -3845,6 +4187,30 @@
           "description": "El responsable de la tarea completa el contenido.",
           "is_active": 1,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 2,
+          "process_definition_template_id": 1,
+          "name": "Flujo de entrega - Informe general",
+          "description": "artifact_sync_fill:1:tpl_informe_general:1.0.0",
+          "is_active": 1,
+          "created_at": "2026-06-25 14:48:34"
+        },
+        {
+          "id": 3,
+          "process_definition_template_id": 2,
+          "name": "Flujo de entrega - Informe",
+          "description": "artifact_sync_fill:2:draft_informe:1.0.0",
+          "is_active": 1,
+          "created_at": "2026-06-25 17:21:53"
+        },
+        {
+          "id": 4,
+          "process_definition_template_id": 3,
+          "name": "Flujo de entrega - Informe general",
+          "description": "artifact_sync_fill:1:tpl_informe_general:1.0.0",
+          "is_active": 1,
+          "created_at": "2026-06-25 18:22:45"
         }
       ]
     },
@@ -3901,6 +4267,57 @@
           "is_required": 1,
           "can_reject": 0,
           "created_at": "2026-06-25 14:27:20"
+        },
+        {
+          "id": 3,
+          "fill_flow_template_id": 3,
+          "step_order": 1,
+          "resolver_type": "task_assignee",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-25 17:21:53"
+        },
+        {
+          "id": 4,
+          "fill_flow_template_id": 2,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-25 18:22:45"
+        },
+        {
+          "id": 5,
+          "fill_flow_template_id": 4,
+          "step_order": 1,
+          "resolver_type": "document_owner",
+          "assigned_person_id": null,
+          "unit_scope_type": "unit_exact",
+          "unit_id": null,
+          "unit_type_id": null,
+          "relation_type_id": null,
+          "cargo_id": null,
+          "position_id": null,
+          "selection_mode": "auto_one",
+          "is_required": 1,
+          "can_reject": 0,
+          "created_at": "2026-06-25 18:22:45"
         }
       ]
     },

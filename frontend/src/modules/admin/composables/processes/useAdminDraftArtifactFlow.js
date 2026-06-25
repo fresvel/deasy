@@ -52,6 +52,10 @@ export function useAdminDraftArtifactFlow({
 
   const ensureDraftArtifactInstance = () => {
     const modalElement = resolveModalElement(draftArtifactModalRef.value);
+    // Si la instancia cacheada quedó apuntando a un elemento viejo (remontado), se descarta y recrea.
+    if (draftArtifactInstance && draftArtifactInstance.element !== modalElement) {
+      draftArtifactInstance = null;
+    }
     if (!draftArtifactInstance && modalElement) {
       draftArtifactInstance = new Modal(modalElement);
       modalElement.addEventListener("hidden.bs.modal", () => {
@@ -78,7 +82,7 @@ export function useAdminDraftArtifactFlow({
     }
   };
 
-  const openDraftArtifactModal = async (row = null, { force = false, show = true, preselectDefinitionId = "" } = {}) => {
+  const openDraftArtifactModal = async (row = null, { force = false, show = true, preselectDefinitionId = "", cloneFrom = null } = {}) => {
     if (!force && (!props.table || props.table.table !== "template_artifacts")) {
       return;
     }
@@ -119,6 +123,30 @@ export function useAdminDraftArtifactFlow({
         };
       } catch {
         // Si falla la lectura, se continúa con campos/flujos vacíos.
+      }
+    } else if (cloneFrom) {
+      // Crear A PARTIR DE otra plantilla: modo creación (editId vacío) con datos del origen precargados.
+      // No copia los documentos de referencia (binarios en MinIO): el autor los vuelve a adjuntar.
+      draftArtifactForm.value = {
+        template_seed_id: cloneFrom.template_seed_id ? String(cloneFrom.template_seed_id) : "",
+        display_name: cloneFrom.display_name ? `${cloneFrom.display_name} (copia)` : "",
+        description: cloneFrom.description ? String(cloneFrom.description) : "",
+        process_definition_id: preselectDefinitionId ? String(preselectDefinitionId) : "",
+        template_scope: "official",
+        schema_fields: [],
+        fill_workflow: { required: true, steps: [] },
+        signature_workflow: { required: true, anchors: [], steps: [] }
+      };
+      try {
+        const { data: schemaData } = await adminSqlService.getTemplateArtifactSchema(cloneFrom.id);
+        draftArtifactForm.value = {
+          ...draftArtifactForm.value,
+          schema_fields: Array.isArray(schemaData?.fields) ? schemaData.fields : [],
+          fill_workflow: schemaData?.fill_workflow || { required: true, steps: [] },
+          signature_workflow: schemaData?.signature_workflow || { required: true, anchors: [], steps: [] }
+        };
+      } catch {
+        // Si falla la lectura del esquema de origen, se continúa con campos/flujos vacíos.
       }
     } else {
       draftArtifactForm.value = {

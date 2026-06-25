@@ -43,12 +43,17 @@
       <span class="inline-flex max-w-[10.5rem] items-center truncate rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200" :title="data.slug">
         {{ data.slug }}
       </span>
-      <span
+      <button
         v-if="data.definitions_count"
-        class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1"
+        type="button"
+        class="nodrag inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition-colors hover:brightness-95"
         :class="configBadgeClass"
-        :title="`${data.active_count || 0} activas de ${data.definitions_count} configuraciones`"
-      >{{ data.active_count || 0 }}/{{ data.definitions_count }} config.</span>
+        :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
+        @click.stop="data.onToggleConfigs?.(data.id)"
+      >
+        <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
+        {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
+      </button>
       <span v-else class="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400 ring-1 ring-slate-200">Sin config.</span>
       <span v-if="!data.is_active" class="text-[11px] font-semibold text-rose-500">Inactivo</span>
     </p>
@@ -59,7 +64,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconPencil, IconCornerDownRight, IconPlus, IconChevronUp, IconChevronDown } from "@tabler/icons-vue";
+import { IconPencil, IconCornerDownRight, IconPlus, IconChevronUp, IconChevronDown, IconChevronRight } from "@tabler/icons-vue";
 
 const props = defineProps({
   data: { type: Object, required: true }

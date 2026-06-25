@@ -4,6 +4,17 @@
       <div class="flex items-center gap-2 text-sm text-slate-500">
         <span class="font-semibold text-slate-700">Organigrama</span>
         <span>· {{ nodes.length }} unidades · {{ edges.length }} relaciones</span>
+        <AppInfoTip placement="bottom" aria-label="Ayuda del organigrama">
+          <template v-if="editable">
+            Haz clic en una unidad para ver sus puestos y ocupaciones. Pasa el cursor sobre una unidad para
+            editar / agregar hijos, o arrastra desde su punto inferior al superior de otra para crear una
+            relación. Usa los botones de cada relación para cambiar su tipo o quitarla.
+          </template>
+          <template v-else>
+            Haz clic en una unidad para ver sus puestos y ocupaciones. Vista de solo lectura: no tienes
+            permisos para editar.
+          </template>
+        </AppInfoTip>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
@@ -25,11 +36,6 @@
       </div>
     </div>
 
-    <p class="m-0 text-xs text-slate-400">
-      Haz clic en una unidad para ver sus puestos y ocupaciones.
-      <template v-if="editable"> Pasa el cursor sobre una unidad para editar / agregar hijos, o arrastra desde su punto inferior al superior de otra para crear una relación. Usa los botones de cada relación para cambiar su tipo o quitarla.</template>
-      <template v-else> Vista de solo lectura: no tienes permisos para editar.</template>
-    </p>
 
     <!-- Controles: buscar/centrar, salud, exportar -->
     <div class="flex flex-wrap items-center gap-3">
@@ -468,7 +474,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
-import { toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
@@ -477,6 +483,7 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
@@ -630,20 +637,34 @@ const searchAndCenter = () => {
 };
 
 const exportPng = async () => {
-  const el = document.querySelector(".unit-graph-canvas .vue-flow__viewport");
-  const container = document.querySelector(".unit-graph-canvas .vue-flow");
-  const target = container || el;
-  if (!target) return;
+  const target = document.querySelector(".unit-graph-canvas .vue-flow")
+    || document.querySelector(".unit-graph-canvas .vue-flow__viewport");
+  if (!target) {
+    setFeedback("error", "No se encontró el lienzo para exportar.");
+    return;
+  }
   exporting.value = true;
   try {
-    const dataUrl = await toPng(target, { backgroundColor: "#ffffff", pixelRatio: 2 });
+    // toBlob + reintento sin fuentes: la incrustación de webfonts es la causa más común de fallo (CORS/caché).
+    const opts = { backgroundColor: "#ffffff", pixelRatio: 2, cacheBust: true };
+    let blob = null;
+    try {
+      blob = await toBlob(target, opts);
+    } catch {
+      blob = await toBlob(target, { ...opts, skipFonts: true });
+    }
+    if (!blob) {
+      throw new Error("el lienzo no devolvió imagen");
+    }
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.download = `organigrama-${activeRelationType.value}.png`;
-    a.href = dataUrl;
+    a.href = url;
     a.click();
+    URL.revokeObjectURL(url);
     setFeedback("success", "Organigrama exportado.");
   } catch (e) {
-    setFeedback("error", "No se pudo exportar la imagen.");
+    setFeedback("error", `No se pudo exportar la imagen: ${e?.message || e}`);
   } finally {
     exporting.value = false;
   }

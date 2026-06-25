@@ -2368,7 +2368,30 @@ export default class SqlAdminService {
         parent_process_id: node.parent_id,
         child_process_id: node.id
       }));
-    return { nodes, edges };
+    // Configuraciones (process_definition_versions) por proceso, para el grafo multinivel expandible.
+    const [configs] = await this.pool.query(
+      `SELECT pdv.id AS definition_id, pdv.process_id, pdv.name AS definition_name,
+              pdv.variation_key, pdv.definition_version, pdv.status,
+              pds.source_type AS series_source_type, pds.code AS series_code,
+              sc.name AS series_cargo_name, sut.name AS series_unit_type_name
+         FROM process_definition_versions pdv
+         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+         LEFT JOIN cargos sc ON sc.id = pds.cargo_id
+         LEFT JOIN unit_types sut ON sut.id = pds.unit_type_id
+        ORDER BY pdv.process_id, FIELD(pdv.status, 'active', 'draft', 'retired'), pdv.variation_key ASC`
+    );
+    // Entregables (plantillas vinculadas) por configuración, para el 3er nivel del grafo. Una misma plantilla
+    // puede estar en varias configuraciones: cada fila pdt es un nodo (duplicado por config) y el template_code
+    // es el distintivo que identifica que es el mismo entregable.
+    const [templates] = await this.pool.query(
+      `SELECT pdt.id, pdt.process_definition_id AS definition_id, pdv.process_id,
+              pdt.template_artifact_id, ta.template_code, ta.display_name, ta.template_scope
+         FROM process_definition_templates pdt
+         INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
+         INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+        ORDER BY pdt.process_definition_id, pdt.sort_order ASC`
+    );
+    return { nodes, edges, configs, templates };
   }
 
   // Ciclo: poner parentId como padre de childId lo cerraría si parentId ya es descendiente de childId

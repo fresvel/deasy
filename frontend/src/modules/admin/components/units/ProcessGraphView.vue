@@ -1,38 +1,42 @@
 <template>
   <div class="unit-graph-view flex flex-col gap-3">
-    <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <!-- Izquierda: regresar + título + contador + ayuda -->
       <div class="flex items-center gap-2 text-sm text-slate-500">
+        <AppButton variant="secondary" size="sm" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
+          <IconArrowLeft class="h-4 w-4" />
+        </AppButton>
         <span class="font-semibold text-slate-700">Mapa de procesos</span>
-        <span>· {{ nodes.length }} procesos · {{ edges.length }} relaciones</span>
+        <span class="text-xs">· {{ nodes.length }} procesos · {{ edges.length }} relaciones</span>
+        <AppInfoTip placement="bottom" aria-label="Ayuda del mapa de procesos">
+          <template v-if="editable">
+            Jerarquía padre→hijo de procesos (procesos macro y sub-procesos). Pasa el cursor sobre un proceso para
+            editar / agregar hijos, o arrastra desde su punto inferior al superior de otro para anidarlo. Usa el
+            botón de la relación para desvincular (el hijo queda como raíz).
+          </template>
+          <template v-else>
+            Jerarquía padre→hijo de procesos (procesos macro y sub-procesos). Vista de solo lectura: no tienes
+            permisos para editar.
+          </template>
+        </AppInfoTip>
       </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-          <input v-model="showInactive" type="checkbox" class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
-          Mostrar inactivos
-        </label>
-        <AppButton v-if="editable" variant="secondary" size="sm" :disabled="loading" @click="openCreateProcess('root', null, '')">+ Proceso</AppButton>
-        <AppButton variant="secondary" size="sm" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
+      <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+          <button type="button" class="proc-toggle" :class="showInactive ? 'proc-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
+          <button type="button" class="proc-toggle" :class="showConfigs ? 'proc-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
+          <button type="button" class="proc-toggle" :class="showTemplates ? 'proc-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
+        </div>
+        <AppButton variant="secondary" size="sm" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
+          <IconRefresh class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+        </AppButton>
+        <AppButton variant="secondary" size="sm" icon-only :disabled="exporting" title="Exportar PNG" aria-label="Exportar PNG" @click="exportPng">
+          <IconDownload class="h-4 w-4" />
+        </AppButton>
+        <AppButton v-if="editable" variant="primary" size="sm" :disabled="loading" title="Crear proceso raíz" @click="openCreateProcess('root', null, '')">
+          <IconPlus class="mr-1 h-4 w-4" /> Proceso
+        </AppButton>
       </div>
-    </div>
-
-    <p class="m-0 text-xs text-slate-400">
-      Jerarquía padre→hijo de procesos (procesos macro y sub-procesos).
-      <template v-if="editable"> Pasa el cursor sobre un proceso para editar / agregar hijos, o arrastra desde su punto inferior al superior de otro para anidarlo. Usa el botón de la relación para desvincular (el hijo queda como raíz).</template>
-      <template v-else> Vista de solo lectura: no tienes permisos para editar.</template>
-    </p>
-
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-1.5">
-        <input
-          v-model="searchTerm"
-          type="text"
-          placeholder="Buscar proceso…"
-          class="h-8 w-52 rounded-lg border border-slate-300 px-3 text-xs outline-none focus:border-indigo-400"
-          @keyup.enter="searchAndCenter"
-        />
-        <AppButton variant="secondary" size="sm" @click="searchAndCenter">Buscar</AppButton>
-      </div>
-      <AppButton variant="secondary" size="sm" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
 
     <div v-if="feedback.message" class="rounded-xl px-3 py-2 text-sm font-medium" :class="feedback.kind === 'error' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'">
@@ -63,6 +67,12 @@
         <Controls />
         <template #node-process="nodeProps">
           <ProcessNode :data="nodeProps.data" />
+        </template>
+        <template #node-config="nodeProps">
+          <ProcessConfigNode :data="nodeProps.data" />
+        </template>
+        <template #node-template="nodeProps">
+          <ProcessTemplateNode :data="nodeProps.data" />
         </template>
         <template #edge-process="edgeProps">
           <UnitEdge v-bind="edgeProps" />
@@ -100,7 +110,35 @@
       </template>
     </AppDialogOverlay>
 
-    <!-- Drawer: cockpit del proceso (configuraciones, datos generales, sub-procesos, lanzamientos) -->
+    <!-- Editar datos generales del proceso (modal, como en unidades) -->
+    <AppDialogOverlay :open="Boolean(editingProcess)" title="Editar proceso" panel-class="max-w-md" @close="closeEditModal">
+      <div class="flex flex-col gap-3">
+        <label class="block text-sm font-medium text-slate-700">
+          Nombre
+          <input v-model="editForm.name" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="Nombre del proceso" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Identificador (slug)
+          <input v-model="editForm.slug" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" placeholder="identificador" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">
+          Proceso padre
+          <select v-model="editForm.parent_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
+            <option value="">— Sin padre (raíz) —</option>
+            <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
+          </select>
+        </label>
+        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input v-model="editForm.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600" /> Activo
+        </label>
+      </div>
+      <template #footer>
+        <AppButton variant="cancel" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
+        <AppButton variant="primary" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
+      </template>
+    </AppDialogOverlay>
+
+    <!-- Drawer: cockpit del proceso (configuraciones, sub-procesos, lanzamientos) -->
     <div v-if="detailProcess" class="proc-detail-overlay" @click.self="closeDetail">
       <aside class="proc-detail-drawer">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
@@ -108,14 +146,18 @@
             <p class="m-0 text-xs font-bold uppercase tracking-wide text-slate-400">Detalle de proceso</p>
             <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ detailProcess.name }}</h3>
           </div>
-          <button type="button" class="shrink-0 text-slate-400 transition-colors hover:text-slate-600" title="Cerrar" @click="closeDetail">
-            <IconX class="h-5 w-5" />
-          </button>
+          <div class="flex shrink-0 items-center gap-1">
+            <button v-if="editable" type="button" class="text-slate-400 transition-colors hover:text-indigo-600" title="Editar datos del proceso" @click="openEditModal(detailProcess.id)">
+              <IconPencil class="h-5 w-5" />
+            </button>
+            <button type="button" class="text-slate-400 transition-colors hover:text-slate-600" title="Cerrar" @click="closeDetail">
+              <IconX class="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
         <div class="flex gap-4 border-b border-slate-200 px-5">
           <button type="button" class="proc-detail-tab" :class="detailTab === 'configuraciones' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'configuraciones'">Configuraciones</button>
-          <button type="button" class="proc-detail-tab" :class="detailTab === 'general' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'general'">Datos generales</button>
           <button type="button" class="proc-detail-tab" :class="detailTab === 'subprocesos' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'subprocesos'">Sub-procesos</button>
           <button type="button" class="proc-detail-tab" :class="detailTab === 'corridas' ? 'proc-detail-tab--active' : ''" @click="detailTab = 'corridas'">Lanzamientos</button>
         </div>
@@ -163,35 +205,6 @@
                   </div>
                 </li>
               </ul>
-            </div>
-
-            <!-- Pestaña: Datos generales -->
-            <div v-show="detailTab === 'general'">
-              <p class="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Datos generales</p>
-              <fieldset :disabled="!editable" class="m-0 flex flex-col gap-3 border-0 p-0">
-                <label class="block text-sm font-medium text-slate-700">
-                  Nombre
-                  <input v-model="generalForm.name" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
-                </label>
-                <label class="block text-sm font-medium text-slate-700">
-                  Identificador (slug)
-                  <input v-model="generalForm.slug" type="text" class="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-indigo-400" />
-                </label>
-                <label class="block text-sm font-medium text-slate-700">
-                  Proceso padre
-                  <select v-model="generalForm.parent_id" class="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-indigo-400">
-                    <option value="">— Sin padre (raíz) —</option>
-                    <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
-                  </select>
-                </label>
-                <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <input v-model="generalForm.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600" /> Activo
-                </label>
-              </fieldset>
-              <div v-if="editable" class="mt-4 flex justify-end gap-2">
-                <AppButton variant="secondary" size="sm" :disabled="savingGeneral" @click="resetGeneralForm">Revertir</AppButton>
-                <AppButton variant="primary" size="sm" :disabled="savingGeneral || !generalForm.name.trim()" @click="saveGeneral">{{ savingGeneral ? "Guardando…" : "Guardar" }}</AppButton>
-              </div>
             </div>
 
             <!-- Pestaña: Sub-procesos -->
@@ -252,8 +265,8 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
-import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
-import { toPng } from "html-to-image";
+import { VueFlow, MarkerType } from "@vue-flow/core";
+import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
@@ -262,8 +275,11 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
-import { IconX } from "@tabler/icons-vue";
+import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
+import { IconX, IconPencil, IconArrowLeft, IconRefresh, IconDownload, IconPlus } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
+import ProcessConfigNode from "./ProcessConfigNode.vue";
+import ProcessTemplateNode from "./ProcessTemplateNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
@@ -272,22 +288,34 @@ const props = defineProps({
 });
 // El drawer delega en el padre la apertura de modales (wizard / lanzar): se cierra primero y emite, para
 // no apilar capas (un modal a la vez). El padre reabre el drawer al cerrar el modal (reopenDetail).
-const emit = defineEmits(["open-config-wizard", "edit-config", "launch-config"]);
+const emit = defineEmits([
+  "open-config-wizard", "edit-config", "launch-config", "go-back", "version-config", "version-template",
+  "add-template", "clone-template"
+]);
 
 const NODE_W = 210;
 const NODE_H = 64;
+const CONFIG_W = 190;
+const CONFIG_H = 64;
+const TEMPLATE_W = 170;
+const TEMPLATE_H = 52;
 const EDGE_COLOR = "#6366f1";
+const CONFIG_EDGE_COLOR = "#94a3b8";
+const TEMPLATE_EDGE_COLOR = "#a78bfa";
 
 const nodes = ref([]);
 const edges = ref([]);
-const rawGraph = ref({ nodes: [], edges: [] });
+const rawGraph = ref({ nodes: [], edges: [], configs: [], templates: [] });
+const expandedConfigIds = ref(new Set());
+const expandedTemplateIds = ref(new Set());
+const showConfigs = ref(false);
+const showTemplates = ref(false);
 const loading = ref(false);
 const error = ref("");
 const showInactive = ref(true);
 const selectedEdge = ref(null);
 const createContext = ref(null);
 const createForm = ref({ name: "", slug: "" });
-const searchTerm = ref("");
 const highlightId = ref("");
 const collapsedIds = ref(new Set());
 const exporting = ref(false);
@@ -301,10 +329,10 @@ const detailLoading = ref(false);
 const detailConfigurations = ref([]);
 const detailChildren = ref([]);
 const detailRuns = ref([]);
-const generalForm = ref({ name: "", slug: "", parent_id: "", is_active: true });
-const savingGeneral = ref(false);
-
-const { fitView } = useVueFlow();
+// Edición de datos generales del proceso en un modal aparte (como en unidades).
+const editingProcess = ref(null);
+const editForm = ref({ name: "", slug: "", parent_id: "", is_active: true });
+const savingEdit = ref(false);
 
 const nodeNameById = computed(() => {
   const map = new Map();
@@ -351,22 +379,93 @@ const toggleCollapse = (processId) => {
   buildGraph();
 };
 
+// Configuraciones por proceso (para el nivel expandible de configuraciones en el grafo).
+const configsByProcess = computed(() => {
+  const map = new Map();
+  (rawGraph.value.configs || []).forEach((c) => {
+    const pid = String(c.process_id);
+    if (!map.has(pid)) map.set(pid, []);
+    map.get(pid).push(c);
+  });
+  return map;
+});
+const toggleConfigs = (processId) => {
+  const id = String(processId);
+  const next = new Set(expandedConfigIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  expandedConfigIds.value = next;
+  buildGraph();
+};
+
+// Entregables (plantillas) por configuración (definition_id) para el 3er nivel del grafo.
+const templatesByConfig = computed(() => {
+  const map = new Map();
+  (rawGraph.value.templates || []).forEach((t) => {
+    const did = String(t.definition_id);
+    if (!map.has(did)) map.set(did, []);
+    map.get(did).push(t);
+  });
+  return map;
+});
+const toggleTemplates = (definitionId) => {
+  const id = String(definitionId);
+  const next = new Set(expandedTemplateIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  expandedTemplateIds.value = next;
+  buildGraph();
+};
+
+// Toggles globales de la barra: expanden/colapsan TODOS los procesos / configuraciones de una vez.
+const expandAllConfigs = (on) => {
+  if (on) {
+    expandedConfigIds.value = new Set((rawGraph.value.configs || []).map((c) => String(c.process_id)));
+  } else {
+    expandedConfigIds.value = new Set();
+    expandedTemplateIds.value = new Set();
+    showTemplates.value = false;
+  }
+  buildGraph();
+};
+const expandAllTemplates = (on) => {
+  if (on) {
+    if (!showConfigs.value) {
+      showConfigs.value = true;
+      expandedConfigIds.value = new Set((rawGraph.value.configs || []).map((c) => String(c.process_id)));
+    }
+    expandedTemplateIds.value = new Set((rawGraph.value.templates || []).map((t) => String(t.definition_id)));
+  } else {
+    expandedTemplateIds.value = new Set();
+  }
+  buildGraph();
+};
+
+// Solo los ids numéricos son procesos (configs usan "c-<id>", entregables "t-<id>").
+const isProcessId = (id) => /^\d+$/.test(String(id));
+
 const setFeedback = (kind, message) => {
   feedback.value = { kind, message };
   if (feedbackTimer) clearTimeout(feedbackTimer);
   feedbackTimer = setTimeout(() => { feedback.value = { kind: "", message: "" }; }, 4000);
 };
 
+const dimsOf = (n) => {
+  if (n.type === "config") return { width: CONFIG_W, height: CONFIG_H };
+  if (n.type === "template") return { width: TEMPLATE_W, height: TEMPLATE_H };
+  return { width: NODE_W, height: NODE_H };
+};
 const layout = (rawNodes, rawEdges) => {
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: "TB", nodesep: 45, ranksep: 75 });
   g.setDefaultEdgeLabel(() => ({}));
-  rawNodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
+  rawNodes.forEach((n) => g.setNode(n.id, dimsOf(n)));
   rawEdges.forEach((e) => g.setEdge(e.source, e.target));
   dagre.layout(g);
   return rawNodes.map((n) => {
     const p = g.node(n.id);
-    return { ...n, position: { x: p.x - NODE_W / 2, y: p.y - NODE_H / 2 } };
+    const { width, height } = dimsOf(n);
+    return { ...n, position: { x: p.x - width / 2, y: p.y - height / 2 } };
   });
 };
 
@@ -389,6 +488,9 @@ const buildGraph = () => {
       onToggleCollapse: toggleCollapse,
       hasChildren: childrenMap.value.has(String(p.id)),
       collapsed: collapsedIds.value.has(String(p.id)),
+      hasConfigs: Number(p.definitions_count) > 0,
+      configsExpanded: expandedConfigIds.value.has(String(p.id)),
+      onToggleConfigs: toggleConfigs,
       highlighted: highlightId.value === String(p.id)
     }
   }));
@@ -408,6 +510,69 @@ const buildGraph = () => {
         onDelete: openDeleteEdge
       }
     }));
+  // Nivel de configuraciones (expand-on-demand): por cada proceso visible y expandido, agrega sus
+  // configuraciones como nodos hijos (estilo distinto) con una arista punteada proceso→config.
+  apiNodes.forEach((p) => {
+    const pid = String(p.id);
+    if (!expandedConfigIds.value.has(pid)) return;
+    (configsByProcess.value.get(pid) || []).forEach((cfg) => {
+      const did = String(cfg.definition_id);
+      const cfgTemplates = templatesByConfig.value.get(did) || [];
+      rawNodes.push({
+        id: `c-${cfg.definition_id}`,
+        type: "config",
+        position: { x: 0, y: 0 },
+        data: {
+          ...cfg,
+          editable: props.editable,
+          templatesCount: cfgTemplates.length,
+          templatesExpanded: expandedTemplateIds.value.has(did),
+          onToggleTemplates: toggleTemplates,
+          onAddTemplate: addTemplateToConfig,
+          onVersion: versionConfig,
+          onAddSibling: addSiblingConfig,
+          highlighted: false
+        }
+      });
+      rawEdges.push({
+        id: `pc-${pid}-${cfg.definition_id}`,
+        type: "process",
+        source: pid,
+        target: `c-${cfg.definition_id}`,
+        updatable: false,
+        markerEnd: { type: MarkerType.ArrowClosed, color: CONFIG_EDGE_COLOR },
+        style: { stroke: CONFIG_EDGE_COLOR, strokeWidth: 1.2, strokeDasharray: "4 3" },
+        data: { editable: false }
+      });
+      // 3er nivel: entregables (plantillas) de la configuración, si está expandida.
+      if (!expandedTemplateIds.value.has(did)) return;
+      cfgTemplates.forEach((tpl) => {
+        rawNodes.push({
+          id: `t-${tpl.id}`,
+          type: "template",
+          position: { x: 0, y: 0 },
+          data: {
+            ...tpl,
+            editable: props.editable,
+            onVersion: versionTemplate,
+            onAddSibling: addSiblingTemplate,
+            onClone: cloneTemplate,
+            highlighted: false
+          }
+        });
+        rawEdges.push({
+          id: `ct-${cfg.definition_id}-${tpl.id}`,
+          type: "process",
+          source: `c-${cfg.definition_id}`,
+          target: `t-${tpl.id}`,
+          updatable: false,
+          markerEnd: { type: MarkerType.ArrowClosed, color: TEMPLATE_EDGE_COLOR },
+          style: { stroke: TEMPLATE_EDGE_COLOR, strokeWidth: 1.2, strokeDasharray: "3 3" },
+          data: { editable: false }
+        });
+      });
+    });
+  });
   nodes.value = rawNodes.length ? layout(rawNodes, rawEdges) : [];
   edges.value = rawEdges;
 };
@@ -417,7 +582,12 @@ const loadGraph = async () => {
   error.value = "";
   try {
     const { data } = await adminSqlService.getProcessGraph();
-    rawGraph.value = { nodes: data.nodes || [], edges: data.edges || [] };
+    rawGraph.value = {
+      nodes: data.nodes || [],
+      edges: data.edges || [],
+      configs: data.configs || [],
+      templates: data.templates || []
+    };
     buildGraph();
   } catch (e) {
     error.value = e?.response?.data?.message || "No se pudo cargar el mapa de procesos.";
@@ -429,28 +599,136 @@ const loadGraph = async () => {
 const rawProcessById = (processId) =>
   (rawGraph.value.nodes || []).find((p) => String(p.id) === String(processId)) || null;
 
-// Clic en el nodo abre el drawer (detalle); el ✎ del hover lo abre en "Datos generales".
+// Clic en nodo proceso → drawer; clic en nodo configuración → abre el wizard de esa configuración.
 const onNodeClick = ({ node }) => {
   if (!node?.data) return;
+  if (node.type === "config") {
+    openConfigFromNode(node.data);
+    return;
+  }
+  if (node.type === "template") {
+    openTemplateFromNode(node.data);
+    return;
+  }
   openProcessDetail(node.data.id);
 };
-const editProcess = (processId) => openProcessDetail(processId, "general");
+// Abre la configuración (wizard) desde su nodo en el grafo; reusa el camino edit-config del padre.
+const openConfigFromNode = (cfg) => {
+  const proc = rawProcessById(cfg.process_id);
+  closeDetail();
+  emit("edit-config", {
+    processId: cfg.process_id,
+    definition: { ...cfg, process_name: proc?.name },
+    step: "definition",
+    readonly: cfg.status !== "draft"
+  });
+};
+// Clic en un entregable → abre el wizard de su configuración en el paso de Plantillas (packages).
+const openTemplateFromNode = (tpl) => {
+  const cfg = (rawGraph.value.configs || []).find((c) => String(c.definition_id) === String(tpl.definition_id));
+  if (!cfg) return;
+  const proc = rawProcessById(cfg.process_id);
+  closeDetail();
+  emit("edit-config", {
+    processId: cfg.process_id,
+    definition: { ...cfg, process_name: proc?.name },
+    step: "packages",
+    readonly: cfg.status !== "draft"
+  });
+};
 
-// Opciones de proceso padre (todos menos el propio; el backend bloquea ciclos).
+// --- Acciones desde el toolbar de los nodos de configuración y entregable (un modal a la vez) ---
+const cfgPayload = (cfg, extra = {}) => {
+  const proc = rawProcessById(cfg.process_id);
+  return { processId: cfg.process_id, definition: { ...cfg, process_name: proc?.name }, ...extra };
+};
+// Config: agregar entregable → gestor de plantillas de ESTA configuración (modal enfocado, no el wizard).
+const addTemplateToConfig = (cfg) => {
+  closeDetail();
+  const proc = rawProcessById(cfg.process_id);
+  emit("add-template", { definition: { ...cfg, process_name: proc?.name } });
+};
+// Config: versionar → wizard de nueva versión (clona la definición).
+const versionConfig = (cfg) => {
+  closeDetail();
+  emit("version-config", cfgPayload(cfg));
+};
+// Config: agregar hermana → nueva configuración del mismo proceso.
+const addSiblingConfig = (cfg) => {
+  closeDetail();
+  const proc = rawProcessById(cfg.process_id);
+  emit("open-config-wizard", { processId: cfg.process_id, processName: proc?.name });
+};
+// Entregable: versionar (solo ad_hoc; el botón ya se oculta en oficiales).
+const versionTemplate = (tpl) => {
+  if (!tpl?.template_artifact_id) return;
+  emit("version-template", { templateArtifactId: tpl.template_artifact_id, displayName: tpl.display_name });
+};
+// Entregable: agregar hermano → gestor de plantillas de su misma configuración.
+const addSiblingTemplate = (tpl) => {
+  const cfg = (rawGraph.value.configs || []).find((c) => String(c.definition_id) === String(tpl.definition_id));
+  if (!cfg) return;
+  closeDetail();
+  const proc = rawProcessById(cfg.process_id);
+  emit("add-template", { definition: { ...cfg, process_name: proc?.name } });
+};
+// Entregable: crear uno nuevo a partir del actual (clona nombre/semilla/campos/flujos en modo creación).
+const cloneTemplate = (tpl) => {
+  if (!tpl?.template_artifact_id) return;
+  closeDetail();
+  emit("clone-template", { templateArtifactId: tpl.template_artifact_id, definitionId: tpl.definition_id });
+};
+// El ✎ del hover (o el botón del drawer) abre el modal de edición de datos generales.
+const editProcess = (processId) => openEditModal(processId);
+
+// Opciones de proceso padre (todos menos el que se está editando; el backend bloquea ciclos).
 const parentOptions = computed(() =>
   (rawGraph.value.nodes || [])
-    .filter((p) => String(p.id) !== String(detailProcess.value?.id))
+    .filter((p) => String(p.id) !== String(editingProcess.value?.id))
     .map((p) => ({ id: p.id, name: p.name }))
 );
 
-const resetGeneralForm = () => {
-  const p = detailProcess.value;
-  generalForm.value = {
-    name: p?.name || "",
-    slug: p?.slug || "",
-    parent_id: p?.parent_id ? String(p.parent_id) : "",
-    is_active: Number(p?.is_active) === 1
+const openEditModal = (processId) => {
+  if (!props.editable) return;
+  const p = rawProcessById(processId);
+  if (!p) return;
+  editingProcess.value = { id: p.id, name: p.name };
+  editForm.value = {
+    name: p.name || "",
+    slug: p.slug || "",
+    parent_id: p.parent_id ? String(p.parent_id) : "",
+    is_active: Number(p.is_active) === 1
   };
+};
+const closeEditModal = () => { editingProcess.value = null; };
+const saveProcessEdit = async () => {
+  const ep = editingProcess.value;
+  if (!ep?.id || !editForm.value.name.trim()) return;
+  savingEdit.value = true;
+  try {
+    await adminSqlService.update(
+      "processes",
+      { id: ep.id },
+      {
+        name: editForm.value.name.trim(),
+        slug: editForm.value.slug.trim(),
+        is_active: editForm.value.is_active ? 1 : 0
+      }
+    );
+    const current = rawProcessById(ep.id);
+    const nextParent = editForm.value.parent_id ? Number(editForm.value.parent_id) : null;
+    if (Number(current?.parent_id || 0) !== Number(nextParent || 0)) {
+      await adminSqlService.setProcessParent(ep.id, nextParent);
+    }
+    setFeedback("success", "Proceso actualizado.");
+    editingProcess.value = null;
+    await loadGraph();
+    if (detailProcess.value?.id === ep.id) await openProcessDetail(ep.id, detailTab.value);
+  } catch (e) {
+    setFeedback("error", e?.response?.data?.message || "No se pudo actualizar el proceso.");
+  } finally {
+    savingEdit.value = false;
+  }
 };
 
 const openProcessDetail = async (processId, tab = "configuraciones") => {
@@ -466,7 +744,6 @@ const openProcessDetail = async (processId, tab = "configuraciones") => {
     detailConfigurations.value = data.configurations || [];
     detailChildren.value = data.children || [];
     detailRuns.value = data.runs || [];
-    resetGeneralForm();
   } catch (e) {
     setFeedback("error", e?.response?.data?.message || "No se pudo cargar el detalle del proceso.");
     detailProcess.value = null;
@@ -475,34 +752,6 @@ const openProcessDetail = async (processId, tab = "configuraciones") => {
   }
 };
 const closeDetail = () => { detailProcess.value = null; };
-
-const saveGeneral = async () => {
-  const p = detailProcess.value;
-  if (!p?.id || !generalForm.value.name.trim()) return;
-  savingGeneral.value = true;
-  try {
-    await adminSqlService.update(
-      "processes",
-      { id: p.id },
-      {
-        name: generalForm.value.name.trim(),
-        slug: generalForm.value.slug.trim(),
-        is_active: generalForm.value.is_active ? 1 : 0
-      }
-    );
-    const nextParent = generalForm.value.parent_id ? Number(generalForm.value.parent_id) : null;
-    if (Number(p.parent_id || 0) !== Number(nextParent || 0)) {
-      await adminSqlService.setProcessParent(p.id, nextParent);
-    }
-    setFeedback("success", "Proceso actualizado.");
-    await loadGraph();
-    await openProcessDetail(p.id, "general");
-  } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo actualizar el proceso.");
-  } finally {
-    savingGeneral.value = false;
-  }
-};
 
 const addChildFromDrawer = () => {
   if (!detailProcess.value?.id) return;
@@ -622,6 +871,8 @@ const confirmCreateProcess = async () => {
 // Conectar source→target = anidar target bajo source (su padre pasa a ser source).
 const onConnect = async ({ source, target }) => {
   if (!props.editable || !source || !target || source === target) return;
+  // Solo se anidan procesos entre sí (ignora arrastres hacia/desde nodos de configuración).
+  if (!isProcessId(source) || !isProcessId(target)) return;
   try {
     await adminSqlService.setProcessParent(Number(target), Number(source));
     setFeedback("success", "Proceso anidado.");
@@ -658,6 +909,7 @@ const onEdgeUpdate = async ({ edge, connection }) => {
   const source = connection?.source;
   const target = connection?.target;
   if (!childId || !source || !target || source === target) return;
+  if (!isProcessId(source) || !isProcessId(target)) return;
   try {
     await adminSqlService.setProcessParent(Number(target), Number(source));
     setFeedback("success", "Relación reasignada.");
@@ -668,40 +920,46 @@ const onEdgeUpdate = async ({ edge, connection }) => {
   }
 };
 
-const searchAndCenter = () => {
-  const term = searchTerm.value.trim().toLowerCase();
-  if (!term) return;
-  const match = (rawGraph.value.nodes || []).find((p) =>
-    String(p.name || "").toLowerCase().includes(term) || String(p.slug || "").toLowerCase().includes(term)
-  );
-  if (!match) {
-    setFeedback("error", "No se encontró ningún proceso con ese nombre.");
-    return;
-  }
-  if (hiddenByCollapse.value.has(String(match.id))) {
-    collapsedIds.value = new Set();
-    buildGraph();
-  }
-  highlightId.value = String(match.id);
-  buildGraph();
-  fitView({ nodes: [{ id: String(match.id) }], duration: 600, maxZoom: 1.2, padding: 0.6 });
+// Toggles de niveles (segmented control de la barra): expanden/colapsan todos a la vez.
+const toggleConfigsView = () => {
+  showConfigs.value = !showConfigs.value;
+  expandAllConfigs(showConfigs.value);
+};
+const toggleTemplatesView = () => {
+  showTemplates.value = !showTemplates.value;
+  expandAllTemplates(showTemplates.value);
 };
 
 const exportPng = async () => {
-  const container = document.querySelector(".unit-graph-canvas .vue-flow");
-  const el = document.querySelector(".unit-graph-canvas .vue-flow__viewport");
-  const target = container || el;
-  if (!target) return;
+  const target = document.querySelector(".unit-graph-canvas .vue-flow")
+    || document.querySelector(".unit-graph-canvas .vue-flow__viewport");
+  if (!target) {
+    setFeedback("error", "No se encontró el lienzo para exportar.");
+    return;
+  }
   exporting.value = true;
   try {
-    const dataUrl = await toPng(target, { backgroundColor: "#ffffff", pixelRatio: 2 });
+    // toBlob es más robusto que un data-URL grande. Reintento sin incrustar fuentes: la incrustación de
+    // webfonts (fetch) es la causa más común de fallo de html-to-image (CORS/caché), normalmente en la 1ª vez.
+    const opts = { backgroundColor: "#ffffff", pixelRatio: 2, cacheBust: true };
+    let blob = null;
+    try {
+      blob = await toBlob(target, opts);
+    } catch {
+      blob = await toBlob(target, { ...opts, skipFonts: true });
+    }
+    if (!blob) {
+      throw new Error("el lienzo no devolvió imagen");
+    }
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.download = "mapa-procesos.png";
-    a.href = dataUrl;
+    a.href = url;
     a.click();
+    URL.revokeObjectURL(url);
     setFeedback("success", "Mapa de procesos exportado.");
   } catch (e) {
-    setFeedback("error", "No se pudo exportar la imagen.");
+    setFeedback("error", `No se pudo exportar la imagen: ${e?.message || e}`);
   } finally {
     exporting.value = false;
   }
@@ -759,5 +1017,21 @@ defineExpose({
 .proc-detail-tab--active {
   color: #4f46e5;
   border-bottom-color: #4f46e5;
+}
+.proc-toggle {
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.proc-toggle:hover {
+  color: #334155;
+}
+.proc-toggle--on {
+  background: #fff;
+  color: #4f46e5;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
 }
 </style>

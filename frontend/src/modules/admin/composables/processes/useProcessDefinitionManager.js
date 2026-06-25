@@ -705,6 +705,12 @@ export function useProcessDefinitionManager({
         ...definitionArtifactsLabels.value,
         template_artifact_id: labelValue ? String(labelValue) : ""
       };
+      // El panel ya no tiene tarjeta de selección con botón "Guardar": al elegir la plantilla se vincula
+      // inmediatamente (modo creación, editId vacío). Antes esto solo rellenaba el formulario y "no pasaba nada".
+      if (idValue) {
+        definitionArtifactsEditId.value = "";
+        submitDefinitionArtifact();
+      }
     });
   };
 

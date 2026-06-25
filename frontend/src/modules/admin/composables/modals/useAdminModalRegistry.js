@@ -218,6 +218,11 @@ export function useAdminModalRegistry({
 
   const ensureDefinitionArtifactsInstance = () => {
     const modalElement = resolveModalElement(definitionArtifactsModal.value);
+    // El modal se remonta por su v-if (p. ej. al abrir/cerrar el wizard): si la instancia cacheada apunta a
+    // un elemento viejo (stale/desmontado), se descarta para recrearla sobre el elemento vigente.
+    if (definitionArtifactsInstance && definitionArtifactsInstance.element !== modalElement) {
+      definitionArtifactsInstance = null;
+    }
     if (!definitionArtifactsInstance && modalElement) {
       definitionArtifactsInstance = new Modal(modalElement);
       modalElement.addEventListener("hidden.bs.modal", () => {
