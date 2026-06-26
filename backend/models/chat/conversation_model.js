@@ -27,7 +27,7 @@ const conversationSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["direct", "group", "thread", "process_thread"],
+      enum: ["direct", "group", "thread", "process_thread", "unit"],
       required: true
     },
     title: {

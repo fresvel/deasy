@@ -54,6 +54,9 @@ export const API_ROUTES = {
   USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT_DOWNLOAD: (userId, definitionId, taskItemId, attachmentId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments/${attachmentId}/download`,
   CHAT_PROCESS_THREAD: (processId) => `${API_PREFIX}/chat/processes/${processId}/thread`,
+  CHAT_UNITS: `${API_PREFIX}/chat/units`,
+  CHAT_UNIT_THREAD: (unitId) => `${API_PREFIX}/chat/units/${unitId}/thread`,
+  CHAT_CONVERSATION: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}`,
   CHAT_CONVERSATION_MESSAGES: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/messages`,
   CHAT_CONVERSATION_READ: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/read`,
   CHAT_CONVERSATION_ATTACHMENTS: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/attachments`,

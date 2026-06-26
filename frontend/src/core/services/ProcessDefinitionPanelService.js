@@ -365,6 +365,55 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async listChatUnits() {
+    const { data } = await axios.get(API_ROUTES.CHAT_UNITS, {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+    return data;
+  }
+
+  async getUnitThread(unitId) {
+    if (!unitId) {
+      throw new Error("Se requiere unitId.");
+    }
+    const { data } = await axios.get(API_ROUTES.CHAT_UNIT_THREAD(unitId), {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+    return data;
+  }
+
+  async createOrGetUnitThread(unitId) {
+    if (!unitId) {
+      throw new Error("Se requiere unitId.");
+    }
+    const { data } = await axios.post(
+      API_ROUTES.CHAT_UNIT_THREAD(unitId),
+      {},
+      {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return data;
+  }
+
+  async getConversation(conversationId) {
+    if (!conversationId) {
+      throw new Error("Se requiere conversationId.");
+    }
+    const { data } = await axios.get(API_ROUTES.CHAT_CONVERSATION(conversationId), {
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+    return data;
+  }
+
   async getConversationMessages(conversationId, params = {}) {
     if (!conversationId) {
       throw new Error("Se requiere conversationId.");

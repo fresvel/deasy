@@ -274,6 +274,120 @@ export default class ChatConversationService {
     return toConversationSummary(conversation, 0);
   }
 
+  buildUnitThreadTitle(unitLabel = null) {
+    const normalizedUnitLabel = String(unitLabel || "").trim();
+    return normalizedUnitLabel ? `Unidad · ${normalizedUnitLabel}` : "Chat de unidad";
+  }
+
+  async createUnitThread({
+    unitId,
+    stableKey,
+    participantIds = [],
+    adminIds = [],
+    createdBy,
+    unitLabel = null
+  }) {
+    const normalizedParticipantIds = Array.from(
+      new Set(
+        participantIds
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0)
+      )
+    );
+
+    if (!normalizedParticipantIds.length) {
+      const error = new Error("No se pudieron resolver miembros para el chat de la unidad.");
+      error.status = 400;
+      throw error;
+    }
+
+    // El rol admin del chat de unidad sigue a la jefatura (is_unit_head), no a
+    // quién abre primero la conversación, por lo que no se promueve a createdBy.
+    const adminIdSet = new Set(
+      adminIds
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    );
+
+    const conversation = await ChatConversation.create({
+      type: "unit",
+      title: this.buildUnitThreadTitle(unitLabel),
+      participants: normalizedParticipantIds.map((personId) => ({
+        person_id: personId,
+        role: adminIdSet.has(personId) ? "admin" : "member",
+        joined_at: new Date(),
+        left_at: null
+      })),
+      scope: {
+        scope_unit_id: Number(unitId),
+        stable_key: String(stableKey)
+      },
+      created_by: Number(createdBy),
+      last_message_id: null,
+      last_message_at: null,
+      archived_at: null,
+      mobile_summary: null
+    });
+
+    logChatInfo("chat.unit_thread.created", {
+      conversation_id: conversation._id.toString(),
+      scope_unit_id: Number(unitId),
+      person_id: Number(createdBy)
+    });
+
+    return toConversationSummary(conversation, 0);
+  }
+
+  async syncUnitThread(conversationId, {
+    participantIds = [],
+    adminIds = [],
+    unitLabel = null
+  } = {}) {
+    const conversation = await ChatConversation.findById(conversationId);
+    if (!conversation) {
+      const error = new Error("Chat de la unidad no encontrado.");
+      error.status = 404;
+      throw error;
+    }
+
+    const normalizedParticipantIds = Array.from(
+      new Set(
+        participantIds
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0)
+      )
+    );
+    const adminIdSet = new Set(
+      adminIds
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    );
+
+    const existingByPersonId = new Map(
+      (conversation.participants || []).map((participant) => [Number(participant.person_id), participant])
+    );
+
+    conversation.participants = normalizedParticipantIds.map((personId) => {
+      const existing = existingByPersonId.get(personId);
+      return {
+        person_id: personId,
+        role: adminIdSet.has(personId) ? "admin" : "member",
+        joined_at: existing?.joined_at || new Date(),
+        left_at: null
+      };
+    });
+    conversation.title = this.buildUnitThreadTitle(unitLabel);
+    await conversation.save();
+
+    logChatInfo("chat.unit_thread.synced", {
+      conversation_id: conversation._id.toString(),
+      scope_unit_id: Number(conversation.scope?.scope_unit_id || 0) || null,
+      participants_count: normalizedParticipantIds.length
+    });
+
+    return toConversationSummary(conversation, 0);
+  }
+
   async syncProcessThread(conversationId, {
     participantIds = [],
     adminIds = [],

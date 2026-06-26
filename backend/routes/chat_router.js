@@ -6,12 +6,15 @@ import {
   createConversation,
   createConversationMessage,
   createOrGetProcessThread,
+  createOrGetUnitThread,
   downloadConversationAttachment,
   getConversation,
   getProcessThread,
+  getUnitThread,
   listConversationMessages,
   listConversations,
   listNotifications,
+  listUnitThreads,
   markConversationRead,
   markNotificationsRead,
   uploadConversationAttachments
@@ -39,6 +42,10 @@ router.get("/conversations/:id/messages/:messageId/attachments/:attachmentIndex"
 
 router.get("/processes/:processId/thread", getProcessThread);
 router.post("/processes/:processId/thread", createOrGetProcessThread);
+
+router.get("/units", listUnitThreads);
+router.get("/units/:unitId/thread", getUnitThread);
+router.post("/units/:unitId/thread", createOrGetUnitThread);
 
 router.get("/notifications", listNotifications);
 router.post("/notifications/read", markNotificationsRead);
