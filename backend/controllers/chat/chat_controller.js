@@ -7,12 +7,14 @@ import ChatIdentityService from "../../services/chat/ChatIdentityService.js";
 import ChatMessageService from "../../services/chat/ChatMessageService.js";
 import ChatNotificationService from "../../services/chat/ChatNotificationService.js";
 import ChatRealtimePublisherService from "../../services/chat/ChatRealtimePublisherService.js";
+import ChatUnitDirectoryService from "../../services/chat/ChatUnitDirectoryService.js";
 import { logChatError } from "../../services/chat/chat_logging.js";
 
 const identityService = new ChatIdentityService();
 const attachmentService = new ChatAttachmentService();
 const conversationService = new ChatConversationService();
 const authorizationService = new ChatAuthorizationService();
+const unitDirectoryService = new ChatUnitDirectoryService();
 const messageService = new ChatMessageService();
 const notificationService = new ChatNotificationService();
 const realtimePublisherService = new ChatRealtimePublisherService();
@@ -268,6 +270,86 @@ export const createOrGetProcessThread = async (req, res) => {
       message: error?.message || "No se pudo crear o recuperar el thread del proceso.",
       details: error?.details || null
     });
+  }
+};
+
+export const listUnitThreads = async (req, res) => {
+  try {
+    const { personId } = await identityService.resolveAuthenticatedPerson(req);
+    const units = await unitDirectoryService.listUnitsForPerson(personId);
+    const items = await Promise.all(
+      units.map(async (unit) => {
+        const conversation = await conversationService.getByStableKeyForParticipant(unit.stableKey, personId);
+        return {
+          unit_id: unit.unitId,
+          label: unit.label,
+          member_count: unit.memberCount,
+          conversation: conversation || null
+        };
+      })
+    );
+    return res.json({ data: items });
+  } catch (error) {
+    return handleControllerError(res, error, "No se pudieron cargar las unidades del chat.");
+  }
+};
+
+export const getUnitThread = async (req, res) => {
+  try {
+    const { personId } = await identityService.resolveAuthenticatedPerson(req);
+    const context = await unitDirectoryService.resolveUnitThreadContext({
+      personId,
+      unitId: req.params.unitId
+    });
+    const conversation = await conversationService.getByStableKeyForParticipant(context.stableKey, personId);
+    if (!conversation) {
+      return res.status(404).json({
+        message: "Chat de la unidad no encontrado.",
+        context: { unit_id: context.unitId }
+      });
+    }
+    return res.json({ data: conversation });
+  } catch (error) {
+    return handleControllerError(res, error, "No se pudo cargar el chat de la unidad.");
+  }
+};
+
+export const createOrGetUnitThread = async (req, res) => {
+  try {
+    const { personId } = await identityService.resolveAuthenticatedPerson(req);
+    const context = await unitDirectoryService.resolveUnitThreadContext({
+      personId,
+      unitId: req.params.unitId
+    });
+
+    const existingConversationRecord = await conversationService.getByStableKey(context.stableKey);
+    if (existingConversationRecord) {
+      const syncedConversation = await conversationService.syncUnitThread(existingConversationRecord._id, {
+        participantIds: context.participantIds,
+        adminIds: context.adminIds,
+        unitLabel: context.unitLabel
+      });
+      return res.json({
+        data: syncedConversation,
+        meta: { created: false, synchronized: true, unit_id: context.unitId }
+      });
+    }
+
+    const createdConversation = await conversationService.createUnitThread({
+      unitId: context.unitId,
+      stableKey: context.stableKey,
+      participantIds: context.participantIds,
+      adminIds: context.adminIds,
+      createdBy: personId,
+      unitLabel: context.unitLabel
+    });
+
+    return res.status(201).json({
+      data: createdConversation,
+      meta: { created: true, synchronized: false, unit_id: context.unitId }
+    });
+  } catch (error) {
+    return handleControllerError(res, error, "No se pudo crear o recuperar el chat de la unidad.");
   }
 };
 

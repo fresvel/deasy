@@ -21,21 +21,23 @@
       class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_24px_64px_rgba(15,23,42,0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
       aria-label="Panel global de chat"
     >
-      <header class="border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Chat</p>
-            <h3 class="m-0 mt-1 truncate text-base font-bold text-slate-900">
-              {{ view === 'conversation' ? (thread?.title || 'Chat del proceso') : 'Bandeja de chats' }}
-            </h3>
-            <p class="m-0 mt-1 text-xs font-medium text-slate-500">
-              {{ headerSubtitle }}
-            </p>
+      <header class="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/70 px-4 py-4 sm:px-5">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
+              <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
+            </span>
+            <div class="min-w-0">
+              <h3 class="m-0 truncate text-base font-bold text-slate-900">{{ headerTitle }}</h3>
+              <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-slate-500">
+                {{ headerSubtitle }}
+              </p>
+            </div>
           </div>
 
           <AppButton
             variant="plain"
-            class-name="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+            class-name="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             aria-label="Cerrar chat"
             title="Cerrar chat"
             @click="closePanel"
@@ -44,32 +46,41 @@
           </AppButton>
         </div>
 
-        <div class="mt-4 flex items-center gap-2">
+        <div class="mt-4">
           <AppButton
             v-if="view === 'conversation'"
             variant="plain"
-            class-name="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            class-name="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
             @click="view = 'inbox'"
           >
             <IconArrowLeft class="h-4 w-4" />
             Volver
           </AppButton>
 
-          <div class="grid flex-1 grid-cols-3 gap-2">
+          <nav v-else class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-100/70 p-1">
             <button
               v-for="mode in modeOptions"
               :key="mode"
               type="button"
-              class="rounded-lg border px-3 py-2 text-xs font-bold transition"
-              :class="activeMode === mode ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'"
+              :title="modeLabels[mode]"
+              :aria-label="modeLabels[mode]"
+              :aria-pressed="activeMode === mode"
+              class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition"
+              :class="activeMode === mode
+                ? 'bg-white text-blue-700 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
+                : 'text-slate-500 hover:text-slate-700'"
               @click="switchMode(mode)"
             >
-              {{ modeLabels[mode] }}
+              <component :is="modeIcons[mode]" class="h-5 w-5" :stroke="1.8" />
+              <span>{{ modeLabels[mode] }}</span>
             </button>
-          </div>
+          </nav>
         </div>
 
-        <label class="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+        <label
+          v-if="view !== 'conversation'"
+          class="mt-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10"
+        >
           <IconSearch class="h-4 w-4 text-slate-400" />
           <input
             v-model="searchQuery"
@@ -90,62 +101,7 @@
           {{ error }}
         </div>
 
-        <div v-else-if="activeMode !== 'processes'" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
-            <IconMessages class="h-6 w-6" />
-          </div>
-          <p class="m-0 text-sm font-bold text-slate-700">Modo en preparación</p>
-          <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
-            {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
-          </p>
-        </div>
-
-        <div v-else-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
-            <IconInbox class="h-6 w-6" />
-          </div>
-          <p class="m-0 text-sm font-bold text-slate-700">Sin contexto de proceso</p>
-          <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
-            Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
-          </p>
-        </div>
-
-        <div v-else-if="view === 'inbox'" class="flex h-full flex-col">
-          <div class="px-4 pb-4 pt-4 sm:px-5">
-            <div v-if="filteredThreadItems.length" class="flex flex-col gap-3">
-              <button
-                v-for="item in filteredThreadItems"
-                :key="item.id"
-                type="button"
-                class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
-                @click="openThreadItem(item)"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ item.scopeLabel }}</p>
-                  </div>
-                  <div class="shrink-0 text-right">
-                    <span class="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                      {{ item.lastMessageAtLabel }}
-                    </span>
-                    <span
-                      v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white"
-                    >
-                      {{ item.unreadCount }}
-                    </span>
-                  </div>
-                </div>
-                <p class="m-0 mt-3 text-sm font-medium text-slate-600">
-                  {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
-                </p>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="flex h-full min-h-0 flex-col">
+        <div v-else-if="view === 'conversation'" class="flex h-full min-h-0 flex-col">
           <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
             <div v-if="messages.length" class="flex flex-col gap-3">
               <article
@@ -231,6 +187,106 @@
             </div>
           </footer>
         </div>
+
+        <template v-else-if="activeMode === 'processes'">
+          <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
+              <IconInbox class="h-6 w-6" />
+            </div>
+            <p class="m-0 text-sm font-bold text-slate-700">Sin contexto de proceso</p>
+            <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+              Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
+            </p>
+          </div>
+
+          <div v-else class="px-4 pb-4 pt-4 sm:px-5">
+            <div v-if="filteredThreadItems.length" class="flex flex-col gap-3">
+              <button
+                v-for="item in filteredThreadItems"
+                :key="item.id"
+                type="button"
+                class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                @click="openThreadItem(item)"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
+                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ item.scopeLabel }}</p>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <span class="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                      {{ item.lastMessageAtLabel }}
+                    </span>
+                    <span
+                      v-if="Number(item.unreadCount || 0) > 0"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                    >
+                      {{ item.unreadCount }}
+                    </span>
+                  </div>
+                </div>
+                <p class="m-0 mt-3 text-sm font-medium text-slate-600">
+                  {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
+                </p>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <div v-else-if="activeMode === 'units'" class="flex h-full flex-col">
+          <div v-if="filteredUnitItems.length" class="px-4 pb-4 pt-4 sm:px-5">
+            <div class="flex flex-col gap-3">
+              <button
+                v-for="item in filteredUnitItems"
+                :key="item.unitId"
+                type="button"
+                class="rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                @click="openUnitItem(item)"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
+                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ item.scopeLabel }}</p>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <span class="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                      {{ item.lastMessageAtLabel }}
+                    </span>
+                    <span
+                      v-if="Number(item.unreadCount || 0) > 0"
+                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white"
+                    >
+                      {{ item.unreadCount }}
+                    </span>
+                  </div>
+                </div>
+                <p class="m-0 mt-3 text-sm font-medium text-slate-600">
+                  {{ item.summary || 'Sin mensajes todavía. Saluda a los miembros de tu unidad.' }}
+                </p>
+              </button>
+            </div>
+          </div>
+
+          <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
+              <IconBuildingCommunity class="h-6 w-6" />
+            </div>
+            <p class="m-0 text-sm font-bold text-slate-700">Sin unidades</p>
+            <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+              No perteneces a ninguna unidad con miembros para conversar.
+            </p>
+          </div>
+        </div>
+
+        <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
+            <IconMessages class="h-6 w-6" />
+          </div>
+          <p class="m-0 text-sm font-bold text-slate-700">Modo en preparación</p>
+          <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
+            {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
+          </p>
+        </div>
       </div>
     </aside>
   </div>
@@ -243,11 +299,15 @@ import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPane
 import realtimeClient from '@/core/services/realtimeClient.js';
 import {
   IconArrowLeft,
+  IconBuildingCommunity,
   IconDownload,
   IconInbox,
   IconMessages,
   IconPaperclip,
+  IconRoute,
   IconSearch,
+  IconUser,
+  IconUsersGroup,
   IconX
 } from '@tabler/icons-vue';
 
@@ -269,6 +329,7 @@ const activeMode = ref('processes');
 const view = ref('inbox');
 const searchQuery = ref('');
 const thread = ref(null);
+const unitItems = ref([]);
 const messages = ref([]);
 const draft = ref('');
 const pendingAttachments = ref([]);
@@ -285,11 +346,18 @@ let offMessage = null;
 let offNotification = null;
 let subscribedConversationId = null;
 
-const modeOptions = ['processes', 'groups', 'users'];
+const modeOptions = ['processes', 'units', 'groups', 'users'];
 const modeLabels = {
   processes: 'Procesos',
+  units: 'Unidades',
   groups: 'Grupos',
   users: 'Usuarios'
+};
+const modeIcons = {
+  processes: IconRoute,
+  units: IconBuildingCommunity,
+  groups: IconUsersGroup,
+  users: IconUser
 };
 
 const threadItems = computed(() => {
@@ -314,17 +382,36 @@ const filteredThreadItems = computed(() => {
   );
 });
 
+const filteredUnitItems = computed(() => {
+  const normalized = String(searchQuery.value || '').trim().toLowerCase();
+  if (!normalized) return unitItems.value;
+  return unitItems.value.filter((item) =>
+    [item.title, item.summary, item.scopeLabel]
+      .map((value) => String(value || '').toLowerCase())
+      .some((value) => value.includes(normalized))
+  );
+});
+
+const activeModeIcon = computed(() => modeIcons[activeMode.value] || IconMessages);
+
+const headerTitle = computed(() => {
+  if (view.value === 'conversation') {
+    return thread.value?.title || 'Conversación';
+  }
+  return 'Chat';
+});
+
 const headerSubtitle = computed(() => {
   if (view.value === 'conversation') {
-    return 'Seguimiento del proceso y sus entregables';
+    if (activeMode.value === 'units') {
+      return 'Miembros de la unidad';
+    }
+    if (activeMode.value === 'processes') {
+      return 'Seguimiento del proceso';
+    }
+    return '';
   }
-  if (activeMode.value === 'groups') {
-    return 'Modo grupos';
-  }
-  if (activeMode.value === 'users') {
-    return 'Modo usuarios';
-  }
-  return 'Modo procesos';
+  return '';
 });
 
 const loadStoredContext = () => {
@@ -432,11 +519,58 @@ const openProcessThread = async ({ openConversation = false } = {}) => {
   }
 };
 
+const loadUnits = async () => {
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await service.listChatUnits();
+    const rows = Array.isArray(response?.data) ? response.data : [];
+    unitItems.value = rows.map((row) => {
+      const conversation = row?.conversation || null;
+      const memberCount = Number(row?.member_count || 0);
+      return {
+        unitId: Number(row?.unit_id) || null,
+        title: row?.label || `Unidad #${row?.unit_id}`,
+        scopeLabel: `${memberCount} ${memberCount === 1 ? 'miembro' : 'miembros'}`,
+        summary: conversation?.mobile_summary || '',
+        unreadCount: Number(conversation?.unread_count || 0),
+        lastMessageAt: conversation?.last_message_at || null,
+        lastMessageAtLabel: conversation?.last_message_at ? formatDateTime(conversation.last_message_at) : 'Nuevo'
+      };
+    }).filter((item) => item.unitId);
+  } catch (currentError) {
+    error.value = currentError?.response?.data?.message || currentError?.message || 'No se pudieron cargar las unidades.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openUnitItem = async (item) => {
+  if (!item?.unitId) return;
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await service.createOrGetUnitThread(item.unitId);
+    thread.value = response?.data || null;
+    if (thread.value?.id) {
+      await loadMessages(thread.value.id);
+      await markRead(thread.value.id);
+    }
+    view.value = 'conversation';
+  } catch (currentError) {
+    error.value = currentError?.response?.data?.message || currentError?.message || 'No se pudo abrir el chat de la unidad.';
+  } finally {
+    loading.value = false;
+  }
+};
+
 const openLauncher = async () => {
   loadStoredContext();
   showChat.value = true;
   if (activeMode.value === 'processes' && storedContext.value.processId) {
     await openProcessThread({ openConversation: false });
+  } else if (activeMode.value === 'units') {
+    await loadUnits();
   }
 };
 
@@ -501,8 +635,13 @@ const sendMessage = async () => {
     pendingAttachments.value = [];
     await loadMessages(thread.value.id);
     await markRead(thread.value.id);
-    const refreshedThread = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
-    thread.value = refreshedThread?.data || thread.value;
+    if (activeMode.value === 'processes' && storedContext.value.processId) {
+      const refreshedThread = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
+      thread.value = refreshedThread?.data || thread.value;
+    } else {
+      const refreshedThread = await service.getConversation(thread.value.id);
+      thread.value = refreshedThread?.data || thread.value;
+    }
   } catch (currentError) {
     error.value = currentError?.response?.data?.message || currentError?.message || 'No se pudo enviar el mensaje.';
   } finally {
@@ -529,8 +668,12 @@ const switchMode = async (mode) => {
   activeMode.value = mode;
   view.value = 'inbox';
   error.value = '';
+  thread.value = null;
+  messages.value = [];
   if (mode === 'processes' && storedContext.value.processId) {
     await openProcessThread({ openConversation: false });
+  } else if (mode === 'units') {
+    await loadUnits();
   }
 };
 
@@ -630,12 +773,16 @@ watch(
 );
 
 const handleRealtimeNotification = async () => {
-  // Refresca el badge de no leídos del hilo cuando llega un aviso mientras no
+  // Refresca el badge de no leídos del inbox cuando llega un aviso mientras no
   // se está viendo la conversación (esa vista ya se refresca por mensajes).
-  if (!showChat.value || view.value === 'conversation' || !storedContext.value.processId) return;
+  if (!showChat.value || view.value === 'conversation') return;
   try {
-    const refreshed = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
-    thread.value = refreshed?.data || thread.value;
+    if (activeMode.value === 'processes' && storedContext.value.processId) {
+      const refreshed = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
+      thread.value = refreshed?.data || thread.value;
+    } else if (activeMode.value === 'units') {
+      await loadUnits();
+    }
   } catch {
     // no-op
   }
