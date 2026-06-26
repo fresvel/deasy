@@ -213,6 +213,16 @@
                 <span class="block text-xs text-slate-500">Crea un organigrama de demostración (Prorrectorado, direcciones, escuela y carreras) con sus relaciones orgánicas. Incluye los tipos de unidad y la relación orgánica necesarios.</span>
               </span>
             </label>
+            <label
+              class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
+              :class="preconfig.example_positions ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+            >
+              <input v-model="preconfig.example_positions" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
+              <span>
+                <span class="block text-sm font-semibold text-slate-700">Puestos de ejemplo</span>
+                <span class="block text-xs text-slate-500">Crea los puestos del organigrama de demostración (jefaturas por unidad y docentes). Requiere e incluye la estructura de unidades de ejemplo.</span>
+              </span>
+            </label>
           </div>
 
           <!-- Paso 4: Resumen -->
@@ -380,7 +390,7 @@ const catalogGroupMeta = [
   { key: "term_types", label: "Tipos de periodo", hint: "Modalidades de periodos académicos u operativos." }
 ];
 const catalogOptions = reactive({ unit_types: [], cargos: [], term_types: [] });
-const preconfig = reactive({ unit_types: [], relation_unit_types: true, cargos: [], term_types: [], example_units: false });
+const preconfig = reactive({ unit_types: [], relation_unit_types: true, cargos: [], term_types: [], example_units: false, example_positions: false });
 const catalogSelectionInitialized = ref(false);
 
 const selectableCatalogGroups = computed(() =>
@@ -425,6 +435,13 @@ const selectedCatalogSummary = computed(() => {
       key: "example_units",
       label: "Unidades de ejemplo",
       value: "Organigrama de demostración"
+    });
+  }
+  if (preconfig.example_positions) {
+    summary.push({
+      key: "example_positions",
+      label: "Puestos de ejemplo",
+      value: "Jefaturas y docentes del organigrama"
     });
   }
   return summary;

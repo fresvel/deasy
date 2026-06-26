@@ -102,6 +102,8 @@ export function useAdminDraftArtifactFlow({
         description: row.description ? String(row.description) : "",
         storage_version: row.storage_version ? String(row.storage_version) : "",
         is_active: Number(row.is_active) === 1 ? 1 : 0,
+        // Ciclo de vida de la versión (draft/published/retired): gobierna edición y acciones del strip.
+        lifecycle_state: row.lifecycle_state ? String(row.lifecycle_state) : "published",
         // El tipo no se cambia al editar: define el almacenamiento y las opciones de autoría. Se muestra como tag.
         template_scope: row.template_scope === "ad_hoc" ? "ad_hoc" : "official",
         schema_fields: []

@@ -377,12 +377,21 @@ export const SQL_TABLES = [
         options: ["official", "ad_hoc"],
         defaultValue: "official"
       },
+      {
+        name: "lifecycle_state",
+        label: "Estado",
+        type: "select",
+        options: ["draft", "published", "retired"],
+        defaultValue: "published",
+        readOnly: true
+      },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
       { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
       { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "parent_version_id", label: "Versión origen", type: "number", readOnly: true },
+      { name: "is_active", label: "Almacenamiento listo", type: "boolean", defaultValue: 1, readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["template_code", "display_name", "storage_version"]

@@ -260,6 +260,63 @@
         </div>
       </aside>
     </div>
+
+    <!-- Drawer: versiones del entregable (plantilla) -->
+    <div v-if="templateDetail" class="proc-detail-overlay" @click.self="closeTemplateVersions">
+      <aside class="proc-detail-drawer">
+        <div class="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
+          <div class="min-w-0">
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-wide text-violet-500">Entregable · versiones</p>
+            <h3 class="m-0 mt-0.5 truncate text-base font-bold text-slate-800">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
+            <p class="m-0 mt-0.5 truncate text-xs text-slate-400">
+              {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
+            </p>
+          </div>
+          <button type="button" class="text-slate-400 transition-colors hover:text-slate-600" title="Cerrar" @click="closeTemplateVersions">
+            <IconX class="h-5 w-5" />
+          </button>
+        </div>
+        <div v-if="editable" class="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-2.5">
+          <AppButton variant="secondary" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
+          <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
+        </div>
+        <div class="flex-1 overflow-y-auto px-4 py-3">
+          <div v-if="templateDetail.loading" class="text-sm text-slate-500">Cargando…</div>
+          <ul v-else-if="templateDetail.versions.length" class="m-0 flex list-none flex-col gap-2 p-0">
+            <li
+              v-for="v in templateDetail.versions"
+              :key="v.id"
+              class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors hover:border-indigo-300 hover:bg-indigo-50/30"
+              :class="String(v.id) === String(templateDetail.pinnedArtifactId) ? 'border-violet-300 bg-violet-50/40' : 'border-slate-200'"
+              role="button"
+              tabindex="0"
+              :title="v.lifecycle_state === 'draft' ? 'Abrir para editar' : 'Abrir (solo lectura)'"
+              @click="openVersionFromDrawer(v)"
+              @keydown.enter="openVersionFromDrawer(v)"
+              @keydown.space.prevent="openVersionFromDrawer(v)"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-slate-800">v{{ v.storage_version }}</span>
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1" :class="versionStateClass(v.lifecycle_state)">{{ versionStateLabel(v.lifecycle_state) }}</span>
+                <span v-if="String(v.id) === String(templateDetail.pinnedArtifactId)" class="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-200" title="Versión vinculada a esta configuración">Vinculada aquí</span>
+                <span class="ml-auto text-[11px] font-semibold text-indigo-600">{{ v.lifecycle_state === 'draft' ? 'Editar' : 'Ver' }} →</span>
+              </div>
+              <div class="mt-1 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-400">{{ formatVersionDate(v.created_at) }}</span>
+                <button
+                  v-if="editable && v.lifecycle_state !== 'retired' && String(v.id) !== String(templateDetail.pinnedArtifactId)"
+                  type="button"
+                  class="rounded-md border border-violet-200 px-2 py-0.5 text-[11px] font-semibold text-violet-700 transition-colors hover:bg-violet-100"
+                  :title="templateDetail.configStatus === 'active' ? 'Prepara un borrador de la configuración con esta versión' : 'La configuración (borrador) usará esta versión'"
+                  @click.stop="useVersionInConfig(v)"
+                >Usar en esta config</button>
+              </div>
+            </li>
+          </ul>
+          <p v-else class="m-0 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">Sin versiones.</p>
+        </div>
+      </aside>
+    </div>
   </div>
 </template>
 
@@ -290,7 +347,7 @@ const props = defineProps({
 // no apilar capas (un modal a la vez). El padre reabre el drawer al cerrar el modal (reopenDetail).
 const emit = defineEmits([
   "open-config-wizard", "edit-config", "launch-config", "go-back", "version-config", "version-template",
-  "add-template", "clone-template"
+  "add-template", "clone-template", "guided-update-template", "open-template-editor", "notify"
 ]);
 
 const NODE_W = 210;
@@ -554,9 +611,11 @@ const buildGraph = () => {
           data: {
             ...tpl,
             editable: props.editable,
+            parentConfigStatus: cfg.status,
             onVersion: versionTemplate,
             onAddSibling: addSiblingTemplate,
             onClone: cloneTemplate,
+            onGuidedUpdate: guidedUpdateTemplate,
             highlighted: false
           }
         });
@@ -623,18 +682,91 @@ const openConfigFromNode = (cfg) => {
     readonly: cfg.status !== "draft"
   });
 };
-// Clic en un entregable → abre el wizard de su configuración en el paso de Plantillas (packages).
+// Clic en un entregable → abre el DRAWER de versiones de ese template_code (no sobrecarga el nodo). Desde ahí
+// se ve el linaje (borrador/publicada/retirada), se abre cada versión (editar/ver) y se versiona/actualiza.
 const openTemplateFromNode = (tpl) => {
-  const cfg = (rawGraph.value.configs || []).find((c) => String(c.definition_id) === String(tpl.definition_id));
-  if (!cfg) return;
-  const proc = rawProcessById(cfg.process_id);
+  if (!tpl?.template_code) return;
   closeDetail();
-  emit("edit-config", {
-    processId: cfg.process_id,
-    definition: { ...cfg, process_name: proc?.name },
-    step: "packages",
-    readonly: cfg.status !== "draft"
-  });
+  const cfg = (rawGraph.value.configs || []).find((c) => String(c.definition_id) === String(tpl.definition_id)) || null;
+  templateDetail.value = {
+    open: true,
+    loading: true,
+    templateCode: tpl.template_code,
+    displayName: tpl.display_name,
+    definitionId: tpl.definition_id,
+    pinnedArtifactId: tpl.template_artifact_id,
+    configName: cfg?.definition_name || cfg?.name || "",
+    configStatus: cfg?.status || "",
+    versions: []
+  };
+  loadTemplateVersions();
+};
+
+// --- Drawer de versiones del entregable ---
+const templateDetail = ref(null);
+const loadTemplateVersions = async () => {
+  const code = templateDetail.value?.templateCode;
+  if (!code) return;
+  templateDetail.value.loading = true;
+  try {
+    const { data } = await adminSqlService.getTemplateVersions(code);
+    if (templateDetail.value) templateDetail.value.versions = Array.isArray(data) ? data : (data?.rows || data?.data || []);
+  } catch {
+    if (templateDetail.value) templateDetail.value.versions = [];
+  } finally {
+    if (templateDetail.value) templateDetail.value.loading = false;
+  }
+};
+const closeTemplateVersions = () => { templateDetail.value = null; };
+// Abrir una versión concreta en el editor (borrador = editable, publicada/retirada = solo lectura).
+const openVersionFromDrawer = (v) => {
+  if (!v?.id) return;
+  const definitionId = templateDetail.value?.definitionId;
+  closeTemplateVersions();
+  emit("open-template-editor", { templateArtifactId: v.id, definitionId });
+};
+const versionFromDrawer = () => {
+  const td = templateDetail.value;
+  if (!td) return;
+  closeTemplateVersions();
+  emit("version-template", { templateArtifactId: td.pinnedArtifactId, displayName: td.displayName, templateCode: td.templateCode });
+};
+const guidedFromDrawer = () => {
+  const td = templateDetail.value;
+  if (!td) return;
+  closeTemplateVersions();
+  emit("guided-update-template", { definitionId: td.definitionId, templateArtifactId: td.pinnedArtifactId, displayName: td.displayName, templateCode: td.templateCode });
+};
+// Acción config-céntrica: usar esta versión en la configuración (borrador → re-apunta; activa → prepara borrador
+// de trabajo y avisa que se aplica al activar).
+const useVersionInConfig = async (v) => {
+  const td = templateDetail.value;
+  if (!td?.definitionId || !v?.id) return;
+  try {
+    const { data } = await adminSqlService.useTemplateVersionInConfig(td.definitionId, v.id);
+    emit("notify", { kind: "success", title: "Versión aplicada", message: data?.__notice || "Listo." });
+    await loadGraph();
+    await loadTemplateVersions();
+    if (data?.mode === "draft" && templateDetail.value) {
+      templateDetail.value.pinnedArtifactId = v.id;
+    }
+  } catch (err) {
+    emit("notify", { kind: "error", title: "No se pudo aplicar la versión", message: err?.response?.data?.message || "Error al usar la versión en la configuración." });
+  }
+};
+const versionStateLabel = (s) => ({ draft: "Borrador", published: "Publicada", retired: "Retirada" }[String(s)] || String(s || ""));
+const versionStateClass = (s) => ({
+  published: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  draft: "bg-amber-50 text-amber-700 ring-amber-200",
+  retired: "bg-slate-100 text-slate-500 ring-slate-200"
+}[String(s)] || "bg-slate-100 text-slate-500 ring-slate-200");
+const formatVersionDate = (value) => {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString("es-EC", { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return String(value);
+  }
 };
 
 // --- Acciones desde el toolbar de los nodos de configuración y entregable (un modal a la vez) ---
@@ -662,7 +794,7 @@ const addSiblingConfig = (cfg) => {
 // Entregable: versionar (solo ad_hoc; el botón ya se oculta en oficiales).
 const versionTemplate = (tpl) => {
   if (!tpl?.template_artifact_id) return;
-  emit("version-template", { templateArtifactId: tpl.template_artifact_id, displayName: tpl.display_name });
+  emit("version-template", { templateArtifactId: tpl.template_artifact_id, displayName: tpl.display_name, templateCode: tpl.template_code });
 };
 // Entregable: agregar hermano → gestor de plantillas de su misma configuración.
 const addSiblingTemplate = (tpl) => {
@@ -677,6 +809,17 @@ const cloneTemplate = (tpl) => {
   if (!tpl?.template_artifact_id) return;
   closeDetail();
   emit("clone-template", { templateArtifactId: tpl.template_artifact_id, definitionId: tpl.definition_id });
+};
+// Entregable bajo config ACTIVA: actualización guiada (versiona plantilla + config y las publica/activa juntas).
+const guidedUpdateTemplate = (tpl) => {
+  if (!tpl?.template_artifact_id || !tpl?.definition_id) return;
+  emit("guided-update-template", {
+    definitionId: tpl.definition_id,
+    templateArtifactId: tpl.template_artifact_id,
+    displayName: tpl.display_name,
+    templateCode: tpl.template_code,
+    storageVersion: tpl.storage_version
+  });
 };
 // El ✎ del hover (o el botón del drawer) abre el modal de edición de datos generales.
 const editProcess = (processId) => openEditModal(processId);

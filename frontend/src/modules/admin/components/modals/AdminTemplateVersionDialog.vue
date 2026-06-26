@@ -1,0 +1,54 @@
+<template>
+  <AppDialogOverlay :open="open" :title="guided ? 'Actualizar plantilla de configuración activa' : 'Crear nueva versión'" panel-class="max-w-md" @close="$emit('close')">
+    <p v-if="guided" class="mb-3 mt-0 text-sm text-slate-600">
+      Crea borradores de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>
+      y de su configuración activa. Editarás el contenido y, al publicar, se <strong>publica la plantilla y se
+      activa la nueva configuración</strong> juntas (la versión anterior queda retirada).
+    </p>
+    <p v-else class="mb-3 mt-0 text-sm text-slate-600">
+      Nueva versión de <strong>{{ template?.display_name || template?.template_code || "la plantilla" }}</strong>.
+      Nace <strong>en borrador</strong>, clonada de la versión actual<span v-if="template?.storage_version"> ({{ template.storage_version }})</span>.
+    </p>
+    <div class="flex flex-col gap-2">
+      <label
+        v-for="opt in options"
+        :key="opt.value"
+        class="flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors"
+        :class="level === opt.value ? 'border-indigo-400 bg-indigo-50/60' : 'border-slate-200 hover:border-slate-300'"
+      >
+        <input v-model="level" type="radio" name="tpl-version-bump" :value="opt.value" class="mt-1" />
+        <span class="min-w-0">
+          <span class="block text-sm font-semibold text-slate-800">{{ opt.label }} <span class="font-mono text-xs font-normal text-slate-500">{{ opt.example }}</span></span>
+          <span class="block text-xs text-slate-500">{{ opt.hint }}</span>
+        </span>
+      </label>
+    </div>
+    <template #footer>
+      <AppButton variant="cancel" :disabled="busy" @click="$emit('close')">Cancelar</AppButton>
+      <AppButton variant="primary" :disabled="busy" @click="$emit('confirm', level)">{{ busy ? "Creando…" : (guided ? "Crear borradores" : "Crear versión") }}</AppButton>
+    </template>
+  </AppDialogOverlay>
+</template>
+
+<script setup>
+import { ref, watch } from "vue";
+import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+
+const props = defineProps({
+  open: { type: Boolean, default: false },
+  template: { type: Object, default: null },
+  busy: { type: Boolean, default: false },
+  guided: { type: Boolean, default: false }
+});
+defineEmits(["close", "confirm"]);
+
+const level = ref("minor");
+const options = [
+  { value: "patch", label: "Parche", example: "X.Y.Z+1", hint: "Correcciones o ajustes menores." },
+  { value: "minor", label: "Menor", example: "X.Y+1.0", hint: "Cambios compatibles (nuevos campos, mejoras)." },
+  { value: "major", label: "Mayor", example: "X+1.0.0", hint: "Cambios importantes o incompatibles." }
+];
+// Reinicia a "minor" cada vez que se abre.
+watch(() => props.open, (isOpen) => { if (isOpen) level.value = "minor"; });
+</script>

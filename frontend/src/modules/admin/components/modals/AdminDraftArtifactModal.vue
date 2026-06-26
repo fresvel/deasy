@@ -23,19 +23,19 @@
       Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
     </div>
 
-    <!-- Gobierno del ciclo de vida: stage + nueva versión (solo al editar) -->
-    <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-4 py-3">
+    <!-- Gobierno del ciclo de vida: estado (draft/published/retired) + publicar/retirar/versionar (solo al editar) -->
+    <div v-if="draftArtifactEditId" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3" :class="guidedConfigId ? 'border-indigo-300 bg-indigo-50' : 'border-indigo-200 bg-indigo-50/50'">
       <div class="flex items-center gap-3">
         <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</span>
-        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="draftArtifactForm.is_active ? 'text-emerald-600' : 'text-slate-500'">{{ draftArtifactForm.is_active ? 'Activa' : 'Inactiva' }}</span>
+        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-bold" :class="lifecycleBadgeClass">{{ lifecycleLabel }}</span>
         <span v-if="draftArtifactForm.storage_version" class="text-xs font-medium text-slate-400">· {{ draftArtifactForm.storage_version }}</span>
+        <span v-if="guidedConfigId" class="text-xs font-medium text-indigo-600">· Actualización guiada: al publicar se activa la nueva configuración</span>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <AdminButton
-          :variant="draftArtifactForm.is_active ? 'cancel' : 'outlinePrimary'"
-          @click="$emit('change-active', !draftArtifactForm.is_active)"
-        >{{ draftArtifactForm.is_active ? 'Desactivar' : 'Activar' }}</AdminButton>
-        <AdminButton variant="primary" @click="openVersionDialog">Nueva versión</AdminButton>
+        <AdminButton v-if="lifecycleState === 'draft' && guidedConfigId" variant="primary" @click="$emit('finish-guided')">Publicar y activar config</AdminButton>
+        <AdminButton v-else-if="lifecycleState === 'draft'" variant="primary" @click="$emit('publish')">Publicar</AdminButton>
+        <AdminButton v-if="lifecycleState === 'published'" variant="cancel" @click="$emit('retire')">Retirar</AdminButton>
+        <AdminButton v-if="!guidedConfigId" variant="outlinePrimary" @click="openVersionDialog">Nueva versión</AdminButton>
       </div>
     </div>
 
@@ -69,10 +69,19 @@
       </template>
     </AppDialogOverlay>
 
+    <!-- Aviso de solo lectura: versión publicada/retirada (inmutable). -->
+    <div v-if="isReadOnly" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+      Esta versión está <strong>{{ lifecycleLabel.toLowerCase() }}</strong> y es de <strong>solo lectura</strong>.
+      Usa <strong>“Nueva versión”</strong> (arriba) para crear una versión editable.
+    </div>
+
     <!-- Pestañas con indicadores de avance -->
     <div class="mt-3">
       <ProfileSubsectionTabs v-model="activeTab" :tabs="tabDescriptors" aria-label="Secciones de la plantilla" />
     </div>
+
+    <!-- Paneles: en solo lectura, fieldset disabled inhabilita todos los controles (se ve pero no se edita). -->
+    <fieldset class="m-0 min-w-0 border-0 p-0" :disabled="isReadOnly">
 
     <!-- Pestaña: General -->
     <div v-show="activeTab === 'general'" class="mt-4 grid gap-3 md:grid-cols-12">
@@ -521,12 +530,14 @@
         </div>
       </div>
     </div>
+    </fieldset>
 
     <template #footer>
-      <AdminButton variant="cancel" @click="$emit('close')">Cancelar</AdminButton>
+      <AdminButton variant="cancel" @click="$emit('close')">{{ isReadOnly ? "Cerrar" : "Cancelar" }}</AdminButton>
       <AdminButton v-if="!isFirstTab" variant="secondary" @click="goPrevTab">Atrás</AdminButton>
       <AdminButton v-if="!isLastTab" variant="primary" @click="goNextTab">Siguiente →</AdminButton>
       <AdminButton
+        v-if="!isReadOnly"
         variant="outlinePrimary"
         :disabled="draftArtifactLoading || !canSubmit"
         :title="canSubmit ? '' : 'Faltan: proceso destino, documento de referencia y al menos un paso de flujo de entrega.'"
@@ -631,10 +642,25 @@ const props = defineProps({
   // se preselecciona en el select (y se refrescan las opciones para incluirla aunque sea borrador).
   preselectProcessDefinitionId: { type: [String, Number], default: "" },
   // Embebido: renderiza el wizard sin su propio overlay (para hospedarlo como pestaña dentro de otro modal).
-  embedded: { type: Boolean, default: false }
+  embedded: { type: Boolean, default: false },
+  // Actualización guiada (F2): si está presente, esta plantilla borrador tiene una config borrador asociada;
+  // "Publicar" pasa a "Publicar y activar config" (emite finish-guided) y se oculta "Nueva versión".
+  guidedConfigId: { type: [String, Number], default: null }
 });
 
-const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-active", "new-version", "create-process"]);
+const emit = defineEmits(["update:form", "file-change", "drop", "close", "submit", "change-active", "new-version", "create-process", "publish", "retire", "finish-guided"]);
+
+// Ciclo de vida de la versión: gobierna el strip (publicar/retirar) y el badge.
+const lifecycleState = computed(() => String(props.draftArtifactForm.lifecycle_state || "published"));
+const lifecycleLabel = computed(() => ({ draft: "Borrador", published: "Publicada", retired: "Retirada" }[lifecycleState.value] || lifecycleState.value));
+const lifecycleBadgeClass = computed(() => {
+  if (lifecycleState.value === "published") return "text-emerald-600";
+  if (lifecycleState.value === "draft") return "text-amber-600";
+  return "text-slate-500";
+});
+// Solo lectura: editando una versión publicada/retirada (inmutable). Se ve el contenido pero no se edita ni
+// se guarda; el strip ofrece "Nueva versión" para crear una versión editable.
+const isReadOnly = computed(() => !!props.draftArtifactEditId && lifecycleState.value !== "draft");
 const modalRef = ref(null);
 const shellComponent = computed(() => (props.embedded ? AppInlineShell : AdminModalShell));
 

@@ -71,12 +71,12 @@ export function useAdminEditorFlow({
   const openEdit = async (row) => {
     if (
       props.table?.table === "template_artifacts"
-      && row?.template_scope !== "ad_hoc"
+      && String(row?.lifecycle_state || "published") !== "draft"
     ) {
       showFeedbackToast({
-        kind: "error",
-        title: "Edicion bloqueada",
-        message: "Las plantillas oficiales del sistema se sincronizan desde MinIO y no se editan manualmente."
+        kind: "info",
+        title: "Plantilla publicada",
+        message: "Esta versión está publicada (inmutable). Usa “Versionar” para crear una versión editable."
       });
       return { blocked: true };
     }

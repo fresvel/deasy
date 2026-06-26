@@ -472,6 +472,45 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
     // Un documento principal por entregable (task_item).
     await addIndexIgnoringDuplicate(connection, "documents", "UNIQUE KEY uq_documents_task_item (task_item_id)", "unique documents un-documento-por-entregable");
 
+    // template_artifacts: ciclo de vida editorial de la versión + linaje (Fase 0 versionado de plantillas).
+    // lifecycle_state separa el estado editorial (draft/published/retired) de 'is_active' (almacenamiento listo).
+    await addColumnIfMissing(
+      connection,
+      "template_artifacts",
+      "lifecycle_state",
+      "lifecycle_state ENUM('draft','published','retired') NOT NULL DEFAULT 'published' AFTER template_scope"
+    );
+    await addColumnIfMissing(
+      connection,
+      "template_artifacts",
+      "parent_version_id",
+      "parent_version_id INT NULL AFTER content_hash"
+    );
+    // Backfill por única vez: lo existente activo → 'published'; lo inactivo (versiones creadas inactivas) → 'draft'.
+    // Solo cuando todas las filas están aún en el default 'published' (no re-pisa estados ya gestionados).
+    const [stateRows] = await connection.query(
+      "SELECT COUNT(*) AS total, SUM(lifecycle_state <> 'published') AS non_published FROM template_artifacts"
+    );
+    if (Number(stateRows?.[0]?.total || 0) > 0 && Number(stateRows?.[0]?.non_published || 0) === 0) {
+      await connection.query(
+        "UPDATE template_artifacts SET lifecycle_state = IF(is_active = 1, 'published', 'draft')"
+      );
+      console.log("✅ template_artifacts.lifecycle_state inicializado desde is_active");
+    }
+    await addIndexIgnoringDuplicate(
+      connection,
+      "template_artifacts",
+      "INDEX idx_template_artifacts_state (lifecycle_state)",
+      "índice template_artifacts.lifecycle_state"
+    );
+    await addForeignKeyIfMissing(
+      connection,
+      "template_artifacts",
+      "parent_version_id",
+      "CONSTRAINT fk_template_artifacts_parent FOREIGN KEY (parent_version_id) REFERENCES template_artifacts(id)",
+      "FK template_artifacts.parent_version_id"
+    );
+
     // Ancestro por tipo de relación en pasos de llenado (organigramas matriciales): NULL = 'org'.
     await addColumnIfMissing(
       connection,

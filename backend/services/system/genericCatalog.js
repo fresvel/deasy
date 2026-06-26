@@ -3,6 +3,17 @@
 // PUCESE-específicos (unidades reales, personas, procesos). Se ofrecen como bloques opcionales en el
 // wizard de bootstrap y se siembran de forma idempotente.
 
+// Genera N puestos de Docente (slots 1..N) para una unidad, todos del mismo tipo (real|simbolico).
+const docenteSlots = (unitSlug, positionType, count) =>
+  Array.from({ length: count }, (_, i) => ({
+    unit_slug: unitSlug,
+    cargo_code: "DOCENTE",
+    title: "Docente",
+    position_type: positionType,
+    is_unit_head: false,
+    slot_no: i + 1
+  }));
+
 export const GENERIC_CATALOG = {
   unit_types: ["Prorrectorado", "Coordinación", "Dirección", "Escuela", "Jefatura", "Carrera", "Tecnología", "Sede"],
   relation_unit_types: [
@@ -42,12 +53,53 @@ export const GENERIC_CATALOG = {
     { slug: "CAE", name: "Coordinación de Aprendizaje y Enseñanza", label: "Coordinación de Aprendizaje y Enseñanza", unit_type: "Coordinación", parent: "DDE" },
     { slug: "EHIC", name: "Hábitat Infraestructura y Creatividad", label: "Escuela de Hábitat Infraestructura y Creatividad", unit_type: "Escuela", parent: "CAE" },
     { slug: "E055", name: "Tecnologías de la Información", label: "Carrera de Tecnologías de la Información", unit_type: "Carrera", parent: "EHIC" },
-    { slug: "E140", name: "Sistemas de Información", label: "Carrera de Sistemas de Información", unit_type: "Carrera", parent: "EHIC" }
+    { slug: "E140", name: "Sistemas de Información", label: "Carrera de Sistemas de Información", unit_type: "Carrera", parent: "EHIC" },
+    { slug: "JTIC", name: "Tecnologías de la Información", label: "Tecnologías de la Información", unit_type: "Jefatura", parent: "PREC" },
+    { slug: "salud-y-bienestar", name: "Salud y Bienestar", label: "Salud y Bienestar", unit_type: "Escuela", parent: "CAE" },
+    { slug: "derecho-educacion-y-sociedad", name: "Derecho Educación y Sociedad", label: "Derecho Educación y Sociedad", unit_type: "Escuela", parent: "CAE" },
+    { slug: "formacion-tecnica-y-tecnologica", name: "Formación Técnica y Tecnológica", label: "Formación Técnica y Tecnológica", unit_type: "Escuela", parent: "CAE" },
+    { slug: "negocios-y-empresas", name: "Negocios y Empresas", label: "Negocios y Empresas", unit_type: "Escuela", parent: "CAE" }
+  ],
+  // Puestos de DEMOSTRACIÓN para el árbol de unidades de ejemplo. Cada puesto referencia su unidad por SLUG y
+  // su cargo por CÓDIGO (ambos del catálogo de arriba). 'is_unit_head' marca la jefatura (una por unidad).
+  // slot_no permite varios puestos del mismo cargo en una unidad (p. ej. dos docentes). Opt-in: requiere las
+  // unidades de ejemplo (se siembran juntas).
+  example_positions: [
+    // Jefaturas (cabeza de unidad) + un Asistente por unidad. Excepción: JTIC no lleva puestos de ejemplo.
+    { unit_slug: "PREC", cargo_code: "PRORRECTOR", title: "Prorrector", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "PREC", cargo_code: "ASISTENTE", title: "Asistente de Prorrectorado", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "DDE", cargo_code: "DIRECTOR", title: "Director de Docencia y Estudiantes", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "DDE", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "DIVI", cargo_code: "DIRECTOR", title: "Director de Investigación", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "DIVI", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "TTHH", cargo_code: "JEFE", title: "Jefe de Talento Humano", position_type: "real", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "TTHH", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "CAE", cargo_code: "COORDINADOR", title: "Coordinador/a de Aprendizaje y Enseñanza", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "CAE", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    // Escuelas (Director como cabeza + Asistente).
+    { unit_slug: "EHIC", cargo_code: "DIRECTOR", title: "Director de Escuela", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "EHIC", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "salud-y-bienestar", cargo_code: "DIRECTOR", title: "Director de Escuela", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "salud-y-bienestar", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "derecho-educacion-y-sociedad", cargo_code: "DIRECTOR", title: "Director de Escuela", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "derecho-educacion-y-sociedad", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "DIRECTOR", title: "Director de Escuela", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "negocios-y-empresas", cargo_code: "DIRECTOR", title: "Director de Escuela", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "negocios-y-empresas", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    // Carreras: Coordinador (cabeza) + Asistente + plantilla docente.
+    { unit_slug: "E055", cargo_code: "COORDINADOR", title: "Coordinador de Carrera", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "E055", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    { unit_slug: "E140", cargo_code: "COORDINADOR", title: "Coordinador de Carrera", position_type: "promocion", is_unit_head: true, slot_no: 1 },
+    { unit_slug: "E140", cargo_code: "ASISTENTE", title: "Asistente", position_type: "real", is_unit_head: false, slot_no: 1 },
+    // Tecnologías de la Información: 8 docentes reales; Sistemas de Información: 8 docentes simbólicos.
+    ...docenteSlots("E055", "real", 8),
+    ...docenteSlots("E140", "simbolico", 8)
   ]
 };
 
 // Bloques que el wizard puede ofrecer como opcionales (claves de preconfig).
-export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types", "example_units"];
+export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types", "example_units", "example_positions"];
 
 const selectCatalogEntries = (selection, entries, getId) => {
   if (selection === true) {
@@ -139,6 +191,47 @@ const seedExampleUnits = async (connection) => {
   return idBySlug.size;
 };
 
+// Siembra idempotente de los puestos de ejemplo. Resuelve unidad por slug y cargo por código (deben existir;
+// las unidades de ejemplo se siembran antes). slot_no permite repetir cargo en una unidad; head_flag (única por
+// unidad) la maneja la BD. Idempotente por (unit_id, cargo_id, slot_no).
+const seedExamplePositions = async (connection) => {
+  const positions = GENERIC_CATALOG.example_positions || [];
+  if (!positions.length) return 0;
+
+  const slugs = [...new Set(positions.map((p) => p.unit_slug))];
+  const codes = [...new Set(positions.map((p) => p.cargo_code))];
+  const unitIdBySlug = new Map();
+  const cargoIdByCode = new Map();
+  for (const slug of slugs) {
+    const [rows] = await connection.query("SELECT id FROM units WHERE slug = ? LIMIT 1", [slug]);
+    if (rows?.[0]?.id) unitIdBySlug.set(slug, Number(rows[0].id));
+  }
+  for (const code of codes) {
+    const [rows] = await connection.query("SELECT id FROM cargos WHERE code = ? LIMIT 1", [code]);
+    if (rows?.[0]?.id) cargoIdByCode.set(code, Number(rows[0].id));
+  }
+
+  let seededCount = 0;
+  for (const pos of positions) {
+    const unitId = unitIdBySlug.get(pos.unit_slug);
+    const cargoId = cargoIdByCode.get(pos.cargo_code);
+    if (!unitId || !cargoId) continue;
+    const positionType = ["real", "promocion", "simbolico"].includes(pos.position_type) ? pos.position_type : "real";
+    const isHead = pos.is_unit_head ? 1 : 0;
+    const slotNo = Number(pos.slot_no) || 1;
+    const [result] = await connection.query(
+      `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head, is_active)
+       SELECT ?, ?, ?, ?, NULL, ?, ?, 1 FROM DUAL
+       WHERE NOT EXISTS (
+         SELECT 1 FROM unit_positions WHERE unit_id = ? AND cargo_id = ? AND slot_no = ?
+       )`,
+      [unitId, cargoId, slotNo, pos.title || null, positionType, isHead, unitId, cargoId, slotNo]
+    );
+    if (result?.affectedRows) seededCount += 1;
+  }
+  return seededCount;
+};
+
 // Siembra idempotente de los bloques seleccionados. Reutiliza la conexión/transacción del bootstrap y el
 // mapa roleIds (name->id) ya producido por seedBaseRbacCatalog para resolver cargo_role_map.
 export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = new Map()) => {
@@ -212,8 +305,13 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
     seeded.term_types = selectedTermTypes.length;
   }
 
-  if (preconfig.example_units) {
+  // Las unidades de ejemplo se siembran si se piden directamente o si se piden los puestos (dependencia).
+  if (preconfig.example_units || preconfig.example_positions) {
     seeded.example_units = await seedExampleUnits(connection);
+  }
+
+  if (preconfig.example_positions) {
+    seeded.example_positions = await seedExamplePositions(connection);
   }
 
   return seeded;

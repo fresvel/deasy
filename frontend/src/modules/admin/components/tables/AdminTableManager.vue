@@ -21,6 +21,15 @@
       @close="handleProcessGraphLaunchClose"
     />
 
+    <AdminTemplateVersionDialog
+      :open="templateVersionDialog.open"
+      :template="templateVersionDialog.template"
+      :busy="templateVersionBusy"
+      :guided="templateVersionDialog.mode === 'guided'"
+      @confirm="handleVersionDialogConfirm"
+      @close="closeTemplateVersionDialog"
+    />
+
     <div v-if="table && siblingTabs.length" class="admin-related-tabs">
       <ProfileSubsectionTabs
         :model-value="activeSiblingTab"
@@ -106,6 +115,9 @@
       @launch-config="launchConfigFromGraph"
       @version-config="versionConfigFromGraph"
       @version-template="versionTemplateFromGraph"
+      @open-template-editor="openTemplateEditorFromGraph"
+      @guided-update-template="openGuidedTemplateUpdate"
+      @notify="showFeedbackToast"
       @add-template="addTemplateFromGraph"
       @clone-template="cloneTemplateFromGraph"
       @go-back="handleGoBack"
@@ -173,6 +185,7 @@
       @fetch-rows="fetchRows"
       @open-record-viewer="handleOpenRecordViewer($event, table)"
       @open-edit="openEdit"
+      @version-template="openTemplateVersionDialog"
       @open-delete="openDelete"
       @start-process-definition-versioning="startProcessDefinitionVersioning"
       @open-process-definition-activation-for-row="openProcessDefinitionActivationForRow"
@@ -639,6 +652,7 @@
               Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
             </span>
           </div>
+          <AdminConfigActivationDiff v-if="showWizardActivateConfirm" :definition-id="processWizardDefinition?.id" class="mt-3" />
           <template #footer>
             <AdminButton variant="cancel" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
             <AdminButton variant="success" :disabled="processDefinitionActivationChecking" @click="confirmWizardActivation">Sí, activar</AdminButton>
@@ -715,12 +729,16 @@
           :get-draft-artifact-file-label="getDraftArtifactFileLabel"
           :new-process-definition-id="draftNewProcessDefinitionId"
           :preselect-process-definition-id="draftArtifactPreselectDefinitionId"
+          :guided-config-id="guidedEditorConfigId"
           @update:form="draftArtifactForm = $event"
           @file-change="handleDraftArtifactFileChange"
           @drop="handleDraftArtifactDrop"
           @close="fkActiveTab = 'select'"
           @submit="handleDraftArtifactSubmit"
           @change-active="handleArtifactActiveChange"
+          @publish="handleArtifactPublish"
+          @retire="handleArtifactRetire"
+          @finish-guided="finishGuidedTemplateUpdate"
           @new-version="handleArtifactNewVersion"
           @create-process="handleDraftCreateProcess"
         />
@@ -968,12 +986,16 @@
       :get-draft-artifact-file-label="getDraftArtifactFileLabel"
       :new-process-definition-id="draftNewProcessDefinitionId"
       :preselect-process-definition-id="draftArtifactPreselectDefinitionId"
+      :guided-config-id="guidedEditorConfigId"
       @update:form="draftArtifactForm = $event"
       @file-change="handleDraftArtifactFileChange"
       @drop="handleDraftArtifactDrop"
       @close="handleDraftArtifactClose"
       @submit="handleDraftArtifactSubmit"
       @change-active="handleArtifactActiveChange"
+      @publish="handleArtifactPublish"
+      @retire="handleArtifactRetire"
+      @finish-guided="finishGuidedTemplateUpdate"
       @new-version="handleArtifactNewVersion"
       @create-process="handleDraftCreateProcess"
     />
@@ -1047,6 +1069,7 @@ import AdminDefinitionTriggersModal from "@/modules/admin/components/modals/Admi
 import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/AdminDefinitionTriggersPanel.vue";
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
+import AdminTemplateVersionDialog from "@/modules/admin/components/modals/AdminTemplateVersionDialog.vue";
 import ProcessLaunchModal from "@/modules/admin/components/modals/ProcessLaunchModal.vue";
 import ProcessDefinitionLaunchModal from "@/modules/admin/components/modals/ProcessDefinitionLaunchModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
@@ -1062,6 +1085,7 @@ import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminPersonAssignmentsModal from "@/modules/admin/components/modals/AdminPersonAssignmentsModal.vue";
 import AdminProcessDefinitionActivationModal from "@/modules/admin/components/modals/AdminProcessDefinitionActivationModal.vue";
+import AdminConfigActivationDiff from "@/modules/admin/components/modals/AdminConfigActivationDiff.vue";
 import AdminProcessDefinitionVersioningModal from "@/modules/admin/components/modals/AdminProcessDefinitionVersioningModal.vue";
 import AdminProcessWizardModal from "@/modules/admin/components/modals/AdminProcessWizardModal.vue";
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
@@ -2488,6 +2512,36 @@ const handleArtifactActiveChange = async (nextActive) => {
   }
 };
 
+const handleArtifactPublish = async () => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.publishTemplateArtifact(id);
+    draftArtifactForm.value = {
+      ...draftArtifactForm.value,
+      lifecycle_state: data?.lifecycle_state || "published",
+      is_active: data?.is_active ?? draftArtifactForm.value.is_active
+    };
+    await fetchRows();
+    showFeedbackToast({ kind: "success", title: "Plantilla publicada", message: data?.__notice || "La plantilla quedó publicada (inmutable)." });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo publicar", message: err?.response?.data?.message || "Error al publicar la plantilla." });
+  }
+};
+
+const handleArtifactRetire = async () => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.retireTemplateArtifact(id);
+    draftArtifactForm.value = { ...draftArtifactForm.value, lifecycle_state: data?.lifecycle_state || "retired", is_active: 0 };
+    await fetchRows();
+    showFeedbackToast({ kind: "success", title: "Plantilla retirada", message: "La plantilla quedó retirada (se conserva para auditoría)." });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo retirar", message: err?.response?.data?.message || "Error al retirar la plantilla." });
+  }
+};
+
 const handleArtifactNewVersion = async (bumpLevel = "minor") => {
   const id = draftArtifactEditId.value;
   if (!id) return;
@@ -2657,7 +2711,7 @@ const openFkCreate = async () => {
 // Editar una plantilla vinculada desde la pestaña Paquetes: abre el editor de la plantilla (modo edición).
 // Se preserva el modal de paquetes vía el origen "definitionArtifacts" para volver a él al cerrar/guardar.
 const draftArtifactReturnToPackages = ref(false);
-const openDefinitionArtifactTemplateEditor = async (row) => {
+const openDefinitionArtifactTemplateEditor = async (row, { fromPackages = true } = {}) => {
   const artifactId = row?.template_artifact_id;
   if (!artifactId) {
     return;
@@ -2672,43 +2726,48 @@ const openDefinitionArtifactTemplateEditor = async (row) => {
   if (!artifactRow?.id) {
     return;
   }
-  // Plantillas oficiales del sistema: su CONTENIDO se gestiona por el pipeline de templates, no se edita aquí.
-  // Antes el editor abría y fallaba al guardar con un mensaje críptico; ahora se avisa de entrada.
-  if (String(artifactRow.template_scope || "official") === "official") {
-    showFeedbackToast({
-      kind: "info",
-      title: "Plantilla oficial del sistema",
-      message: "Su contenido se gestiona por el pipeline de plantillas y no se edita aquí. Puedes vincularla/desvincularla o, en el mapa de procesos, usar “Crear a partir de este” para hacer una variante editable.",
-      duration: 8000
-    });
-    return;
-  }
-  // Advertencia si la plantilla está vinculada a varias configuraciones: editar su contenido las afecta a todas.
-  try {
-    const { data } = await adminSqlService.list("process_definition_templates", {
-      filter_template_artifact_id: artifactId,
-      limit: 500
-    });
-    const rows = Array.isArray(data) ? data : (data?.rows || data?.data || []);
-    const usageCount = rows.filter((r) => String(r.template_artifact_id) === String(artifactId)).length;
-    if (usageCount > 1) {
-      const ok = window.confirm(
-        `Esta plantilla está vinculada a ${usageCount} configuraciones. Si editas su contenido, los cambios `
-        + "afectarán a TODAS esas configuraciones. ¿Deseas continuar?"
-      );
-      if (!ok) {
-        return;
+  // El contenido solo se EDITA en borrador. Si está publicada/retirada, el editor abre en SOLO LECTURA (el
+  // propio modal lo gobierna por lifecycle_state) con la acción "Nueva versión" para crear una versión editable.
+  const isDraft = String(artifactRow.lifecycle_state || "published") === "draft";
+  // Advertencia de impacto multi-config solo cuando se va a editar (borrador): afecta a todas las configuraciones.
+  if (isDraft) {
+    try {
+      const { data } = await adminSqlService.list("process_definition_templates", {
+        filter_template_artifact_id: artifactId,
+        limit: 500
+      });
+      const rows = Array.isArray(data) ? data : (data?.rows || data?.data || []);
+      const usageCount = rows.filter((r) => String(r.template_artifact_id) === String(artifactId)).length;
+      if (usageCount > 1) {
+        const ok = window.confirm(
+          `Esta plantilla está vinculada a ${usageCount} configuraciones. Si editas su contenido, los cambios `
+          + "afectarán a TODAS esas configuraciones. ¿Deseas continuar?"
+        );
+        if (!ok) {
+          return;
+        }
       }
+    } catch {
+      // Si no se pudo calcular el uso, no se bloquea la edición.
     }
-  } catch {
-    // Si no se pudo calcular el uso, no se bloquea la edición.
   }
-  draftArtifactReturnToPackages.value = true;
-  pushModalOrigin("definitionArtifacts");
-  getDefinitionArtifactsInstance()?.hide();
+  // Desde el grafo (fromPackages=false) NO hay modal de paquetes al que volver: se abre el editor directo.
+  if (fromPackages) {
+    draftArtifactReturnToPackages.value = true;
+    pushModalOrigin("definitionArtifacts");
+    getDefinitionArtifactsInstance()?.hide();
+  } else {
+    draftArtifactReturnToPackages.value = false;
+  }
   // force: estamos en el contexto de process_definition_versions, no de template_artifacts; sin force el
   // editor abortaría por el guard de tabla.
   await openDraftArtifactModal(artifactRow, { force: true });
+};
+
+// Click en un nodo de entregable en el grafo → abre el editor del entregable directamente (no el wizard de config).
+const openTemplateEditorFromGraph = ({ templateArtifactId } = {}) => {
+  if (!templateArtifactId) return;
+  openDefinitionArtifactTemplateEditor({ template_artifact_id: templateArtifactId }, { fromPackages: false });
 };
 
 const returnToDefinitionArtifactsAfterEdit = async () => {
@@ -3408,22 +3467,169 @@ const versionConfigFromGraph = async ({ processId, definition } = {}) => {
   });
 };
 
-// Versionar un entregable (plantilla ad_hoc) desde su nodo: crea una nueva versión (inactiva) y recarga el grafo.
-const versionTemplateFromGraph = async ({ templateArtifactId, displayName } = {}) => {
-  if (!templateArtifactId) return;
+// --- Versionado de plantillas con diálogo de nivel (Parche/Menor/Mayor), reutilizado por tabla y grafo ---
+// mode 'version' = versión simple de plantilla; mode 'guided' = actualización guiada plantilla+config activa (F2).
+const templateVersionDialog = ref({ open: false, template: null, mode: "version", definitionId: null });
+const templateVersionBusy = ref(false);
+// Contexto de la actualización guiada en curso (borradores creados, pendientes de publicar/activar).
+const guidedUpdateContext = ref(null);
+// configDraftId solo cuando el editor abierto ES la plantilla borrador de la actualización guiada en curso.
+const guidedEditorConfigId = computed(() => {
+  const ctx = guidedUpdateContext.value;
+  if (!ctx?.templateDraftId || !ctx?.configDraftId) return null;
+  return Number(draftArtifactEditId.value) === ctx.templateDraftId ? ctx.configDraftId : null;
+});
+
+const openTemplateVersionDialog = (template) => {
+  if (!template?.id && !template?.template_artifact_id) return;
+  templateVersionDialog.value = {
+    open: true,
+    mode: "version",
+    definitionId: null,
+    template: {
+      id: template.id || template.template_artifact_id,
+      template_code: template.template_code,
+      display_name: template.display_name,
+      storage_version: template.storage_version
+    }
+  };
+};
+const openGuidedTemplateUpdate = ({ definitionId, templateArtifactId, displayName, templateCode, storageVersion } = {}) => {
+  if (!definitionId || !templateArtifactId) return;
+  templateVersionDialog.value = {
+    open: true,
+    mode: "guided",
+    definitionId,
+    template: {
+      id: templateArtifactId,
+      template_code: templateCode,
+      display_name: displayName,
+      storage_version: storageVersion
+    }
+  };
+};
+const closeTemplateVersionDialog = () => {
+  templateVersionDialog.value = { open: false, template: null, mode: "version", definitionId: null };
+};
+const handleVersionDialogConfirm = (level) => {
+  if (templateVersionDialog.value.mode === "guided") {
+    return confirmGuidedTemplateUpdateStart(level);
+  }
+  return confirmTemplateVersion(level);
+};
+const confirmTemplateVersion = async (level) => {
+  const tpl = templateVersionDialog.value.template;
+  if (!tpl?.id || templateVersionBusy.value) return;
+  templateVersionBusy.value = true;
   try {
-    const { data } = await adminSqlService.createTemplateArtifactVersion(templateArtifactId, "minor");
+    const { data } = await adminSqlService.createTemplateArtifactVersion(tpl.id, level || "minor");
     showFeedbackToast({
       kind: "success",
-      title: "Nueva versión del entregable",
-      message: data?.__notice || `Se creó una nueva versión (inactiva) de "${displayName || "la plantilla"}".`
+      title: "Nueva versión creada",
+      message: data?.__notice || "Se creó una nueva versión en borrador. Edítala y publícala cuando esté lista."
     });
-    await processGraphRef.value?.reloadGraph?.();
+    closeTemplateVersionDialog();
+    await fetchRows();
+    if (processGraphMode.value) {
+      await processGraphRef.value?.reloadGraph?.();
+    }
+    // Abre la nueva versión (borrador) en el editor para editarla de inmediato.
+    const newId = data?.id;
+    if (newId) {
+      try {
+        const { data: rowData } = await adminSqlService.list("template_artifacts", { filter_id: newId, limit: 1 });
+        const row = Array.isArray(rowData) ? rowData[0] : (rowData?.rows?.[0] || rowData?.data?.[0] || null);
+        if (row?.id) {
+          await openDraftArtifactModal(row, { force: true });
+        }
+      } catch {
+        // Si falla la apertura, la nueva versión ya quedó creada y visible en la tabla.
+      }
+    }
   } catch (err) {
     showFeedbackToast({
       kind: "error",
-      title: "No se pudo versionar el entregable",
+      title: "No se pudo versionar",
       message: err?.response?.data?.message || "Error al crear la nueva versión."
+    });
+  } finally {
+    templateVersionBusy.value = false;
+  }
+};
+
+// Versionar desde el grafo (nodo de entregable): abre el mismo diálogo de nivel.
+const versionTemplateFromGraph = ({ templateArtifactId, displayName, templateCode } = {}) => {
+  if (!templateArtifactId) return;
+  openTemplateVersionDialog({ id: templateArtifactId, display_name: displayName, template_code: templateCode });
+};
+
+// F2 paso 1: crea borradores de plantilla + config (re-apuntada) y abre la plantilla borrador en el editor.
+const confirmGuidedTemplateUpdateStart = async (level) => {
+  const tpl = templateVersionDialog.value.template;
+  const definitionId = templateVersionDialog.value.definitionId;
+  if (!tpl?.id || !definitionId || templateVersionBusy.value) return;
+  templateVersionBusy.value = true;
+  try {
+    const { data } = await adminSqlService.startGuidedTemplateUpdate(definitionId, tpl.id, level || "minor");
+    guidedUpdateContext.value = {
+      templateDraftId: Number(data?.template_draft_id),
+      configDraftId: Number(data?.config_draft_id)
+    };
+    showFeedbackToast({
+      kind: "success",
+      title: "Borradores creados",
+      message: data?.__notice || "Edita la plantilla y publica para activar la nueva configuración."
+    });
+    closeTemplateVersionDialog();
+    await fetchRows();
+    if (processGraphMode.value) {
+      await processGraphRef.value?.reloadGraph?.();
+    }
+    const newId = guidedUpdateContext.value.templateDraftId;
+    if (newId) {
+      try {
+        const { data: rowData } = await adminSqlService.list("template_artifacts", { filter_id: newId, limit: 1 });
+        const row = Array.isArray(rowData) ? rowData[0] : (rowData?.rows?.[0] || rowData?.data?.[0] || null);
+        if (row?.id) {
+          await openDraftArtifactModal(row, { force: true });
+        }
+      } catch {
+        // La plantilla borrador quedó creada y visible aunque no se abra el editor.
+      }
+    }
+  } catch (err) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo iniciar la actualización",
+      message: err?.response?.data?.message || "Error al crear los borradores."
+    });
+  } finally {
+    templateVersionBusy.value = false;
+  }
+};
+
+// F2 paso 2: publica la plantilla borrador y activa la config borrador (atómico en el backend).
+const finishGuidedTemplateUpdate = async () => {
+  const ctx = guidedUpdateContext.value;
+  if (!ctx?.templateDraftId || !ctx?.configDraftId) return;
+  try {
+    const { data } = await adminSqlService.finishGuidedTemplateUpdate(ctx.templateDraftId, ctx.configDraftId);
+    showFeedbackToast({
+      kind: "success",
+      title: "Plantilla publicada y configuración activada",
+      message: data?.__notice || "La nueva versión quedó publicada y la configuración activa."
+    });
+    guidedUpdateContext.value = null;
+    closeDraftArtifactModal();
+    await fetchRows();
+    if (processGraphMode.value) {
+      await processGraphRef.value?.reloadGraph?.();
+    }
+  } catch (err) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo publicar/activar",
+      message: err?.response?.data?.message || "Error al publicar la plantilla y activar la configuración."
     });
   }
 };

@@ -14,6 +14,13 @@ import {
   getTemplateArtifactSchema,
   setTemplateArtifactActive,
   createTemplateArtifactVersion,
+  publishTemplateArtifact,
+  retireTemplateArtifact,
+  getTemplateVersions,
+  getConfigActivationDiff,
+  useTemplateVersionInConfig,
+  startGuidedTemplateUpdate,
+  finishGuidedTemplateUpdate,
   getTemplateArtifactSyncStatus,
   resyncTemplateArtifactWorkflows,
   reconcileTemplateArtifactWorkflows,
@@ -58,9 +65,16 @@ router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resou
 router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
 router.patch("/template_artifacts/:id/active", requireSqlAdminPermission({ resource: "templates", action: "update" }), setTemplateArtifactActive);
 router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
+router.patch("/template_artifacts/:id/publish", requireSqlAdminPermission({ resource: "templates", action: "update" }), publishTemplateArtifact);
+router.patch("/template_artifacts/:id/retire", requireSqlAdminPermission({ resource: "templates", action: "update" }), retireTemplateArtifact);
+router.get("/template_artifacts/versions", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateVersions);
+router.post("/template_artifacts/use-in-config", requireSqlAdminPermission({ resource: "templates", action: "update" }), useTemplateVersionInConfig);
+router.post("/template_artifacts/guided-update", requireSqlAdminPermission({ resource: "templates", action: "update" }), startGuidedTemplateUpdate);
+router.post("/template_artifacts/guided-update/finish", requireSqlAdminPermission({ resource: "templates", action: "update" }), finishGuidedTemplateUpdate);
 router.get("/template_artifacts/:id/sync-status", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSyncStatus);
 router.post("/template_artifacts/:id/resync", requireSqlAdminPermission({ resource: "templates", action: "update" }), resyncTemplateArtifactWorkflows);
 router.post("/template_artifacts/workflows/reconcile", requireAnyRole(["AdminSistema"]), reconcileTemplateArtifactWorkflows);
+router.get("/process_definitions/:id/activation-diff", requireSqlAdminPermission({ resource: "templates", action: "read" }), getConfigActivationDiff);
 router.get("/process_definitions/:id/target-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessTargetScope);
 router.get("/process_definitions/:id/resolvable-cargos", requireSqlAdminPermission({ resource: "templates", action: "read" }), listResolvableCargos);
 router.post("/task-items/reconcile-assignments", requireAnyRole(["AdminSistema"]), reconcileTaskItemAssignments);

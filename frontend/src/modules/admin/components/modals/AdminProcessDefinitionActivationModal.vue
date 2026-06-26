@@ -46,6 +46,7 @@
           Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
         </span>
       </div>
+      <AdminConfigActivationDiff v-if="showConfirm" :definition-id="selectedRow?.id" class="mt-3" />
       <template #footer>
         <AdminButton variant="cancel" @click="showConfirm = false">Cancelar</AdminButton>
         <AdminButton variant="success" @click="confirmActivate">Sí, activar</AdminButton>
@@ -66,6 +67,7 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProcessWizardShell.vue";
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 import AppDialogOverlay from "@/shared/components/modals/AppDialogOverlay.vue";
+import AdminConfigActivationDiff from "@/modules/admin/components/modals/AdminConfigActivationDiff.vue";
 
 const props = defineProps({
   checking: { type: Boolean, default: false },

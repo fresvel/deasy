@@ -101,6 +101,44 @@ export class AdminSqlService {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION(artifactId), { bump_level: bumpLevel });
   }
 
+  publishTemplateArtifact(artifactId) {
+    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_PUBLISH(artifactId));
+  }
+
+  retireTemplateArtifact(artifactId) {
+    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_RETIRE(artifactId));
+  }
+
+  getTemplateVersions(templateCode) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_TEMPLATE_VERSIONS(templateCode));
+  }
+
+  getConfigActivationDiff(definitionId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_CONFIG_ACTIVATION_DIFF(definitionId));
+  }
+
+  useTemplateVersionInConfig(definitionId, templateArtifactId) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_USE_IN_CONFIG(), {
+      definition_id: definitionId,
+      template_artifact_id: templateArtifactId
+    });
+  }
+
+  startGuidedTemplateUpdate(definitionId, templateArtifactId, bumpLevel = "minor") {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_GUIDED_UPDATE_START(), {
+      definition_id: definitionId,
+      template_artifact_id: templateArtifactId,
+      bump_level: bumpLevel
+    });
+  }
+
+  finishGuidedTemplateUpdate(templateArtifactId, configDefinitionId) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_GUIDED_UPDATE_FINISH(), {
+      template_artifact_id: templateArtifactId,
+      config_definition_id: configDefinitionId
+    });
+  }
+
   syncTemplateSeeds() {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_SEEDS_SYNC);
   }

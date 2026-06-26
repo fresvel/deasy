@@ -2069,6 +2069,7 @@ export default class SqlAdminService {
     sourceDefinitionId,
     targetDefinitionId,
     targetProcessId,
+    templateRemap = null,
     connection = this.pool
   }) {
     const normalizedSourceId = Number(sourceDefinitionId);
@@ -2098,8 +2099,18 @@ export default class SqlAdminService {
     // Avisos no bloqueantes de sincronización de flujos: clonar la configuración NO debe fallar porque una
     // plantilla vinculada tenga un flujo incompleto (p. ej. pasos de firma con cargo sin resolver). El vínculo
     // se conserva y el flujo se re-sincroniza cuando la plantilla quede consistente (resync/reconcile).
+    // Remap opcional de plantilla: re-apunta enlaces de una versión a otra (acción guiada de "actualizar
+    // plantilla de config activa": la nueva config debe pinear la NUEVA versión de plantilla).
+    const remap = templateRemap && typeof templateRemap === "object" ? templateRemap : null;
+    const remapArtifactId = (artifactId) => {
+      if (!remap || artifactId == null) return artifactId;
+      const mapped = remap[String(artifactId)] ?? remap[Number(artifactId)];
+      return mapped != null ? Number(mapped) : artifactId;
+    };
+
     const templateWorkflowWarnings = [];
     for (const row of templateRows) {
+      const targetArtifactId = remapArtifactId(row.template_artifact_id);
       await connection.query(
         `INSERT INTO process_definition_templates (
           process_definition_id,
@@ -2108,17 +2119,17 @@ export default class SqlAdminService {
         ) VALUES (?, ?, ?)`,
         [
           normalizedTargetId,
-          row.template_artifact_id,
+          targetArtifactId,
           row.sort_order
         ]
       );
 
-      if (row.template_artifact_id) {
+      if (targetArtifactId) {
         try {
-          await this.syncArtifactWorkflowsForTemplateArtifactId(Number(row.template_artifact_id), connection);
+          await this.syncArtifactWorkflowsForTemplateArtifactId(Number(targetArtifactId), connection);
         } catch (syncError) {
           console.warn(
-            `No se pudo sincronizar el flujo de la plantilla ${row.template_artifact_id} al versionar:`,
+            `No se pudo sincronizar el flujo de la plantilla ${targetArtifactId} al versionar:`,
             syncError?.message
           );
           templateWorkflowWarnings.push(syncError?.message || String(syncError));
@@ -2280,6 +2291,48 @@ export default class SqlAdminService {
     }
   }
 
+  // Al activar una configuración, publica sus plantillas en BORRADOR (las creadas nacen draft y se publican de
+  // forma controlada al activar la config: "activa la config + publica la plantilla"). Para cada borrador: exige
+  // readiness (≥1 paso de entrega), retira la publicada previa del mismo template_code y la marca published.
+  // No toca is_active (storage-ready): si la subida a MinIO no terminó, el chequeo de artefactos activos avisará.
+  async publishDraftTemplatesForDefinition(definitionId, connection = this.pool) {
+    const normalizedDefinitionId = Number(definitionId);
+    if (!normalizedDefinitionId) return 0;
+    const [rows] = await connection.query(
+      `SELECT ta.*
+         FROM process_definition_templates pdt
+         INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+        WHERE pdt.process_definition_id = ? AND ta.lifecycle_state = 'draft'`,
+      [normalizedDefinitionId]
+    );
+    let published = 0;
+    for (const artifact of rows) {
+      let fillSteps = 0;
+      try {
+        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
+        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+      } catch {
+        fillSteps = 0;
+      }
+      if (!fillSteps) {
+        throw new Error(
+          `No se puede activar: la plantilla "${artifact.display_name || artifact.template_code}" debe definir al menos un paso de flujo de entrega antes de publicarse.`
+        );
+      }
+      await connection.query(
+        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
+          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
+        [String(artifact.template_code), artifact.id]
+      );
+      await connection.query(
+        "UPDATE template_artifacts SET lifecycle_state = 'published' WHERE id = ?",
+        [artifact.id]
+      );
+      published += 1;
+    }
+    return published;
+  }
+
   // Valida que la configuracion corra en el tipo de periodo del term indicado: debe existir un
   // vinculo activo en process_definition_period_types. Reemplaza la antigua validacion por
   // trigger_mode (automatic/manual_only/manual_custom_term, ya deprecada).
@@ -2385,13 +2438,32 @@ export default class SqlAdminService {
     // es el distintivo que identifica que es el mismo entregable.
     const [templates] = await this.pool.query(
       `SELECT pdt.id, pdt.process_definition_id AS definition_id, pdv.process_id,
-              pdt.template_artifact_id, ta.template_code, ta.display_name, ta.template_scope
+              pdt.template_artifact_id, ta.template_code, ta.display_name, ta.template_scope,
+              ta.storage_version, ta.lifecycle_state,
+              (SELECT COUNT(*) FROM template_artifacts tav WHERE tav.template_code = ta.template_code) AS version_count
          FROM process_definition_templates pdt
          INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
          INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
         ORDER BY pdt.process_definition_id, pdt.sort_order ASC`
     );
     return { nodes, edges, configs, templates };
+  }
+
+  // Todas las versiones de un template_code (para el drawer de versiones del grafo): linaje completo con su
+  // estado, ordenadas de la más nueva a la más antigua.
+  async getTemplateVersions(templateCode) {
+    this.ensurePool();
+    const code = String(templateCode || "").trim();
+    if (!code) return [];
+    const [rows] = await this.pool.query(
+      `SELECT id, template_code, display_name, storage_version, lifecycle_state, is_active,
+              parent_version_id, template_scope, created_at
+         FROM template_artifacts
+        WHERE template_code = ?
+        ORDER BY created_at DESC, id DESC`,
+      [code]
+    );
+    return rows;
   }
 
   // Ciclo: poner parentId como padre de childId lo cerraría si parentId ya es descendiente de childId
@@ -3629,10 +3701,9 @@ export default class SqlAdminService {
       }
     }
     if (tableName === "template_artifacts") {
-      // Propiedad: las plantillas oficiales (template_scope='official') se sincronizan desde MinIO/dist y no se
-      // editan a mano; las ad_hoc (de usuario) se editan por el flujo de borrador.
-      if (String(existing.template_scope || "official") === "official") {
-        throw new Error("Los artifacts oficiales del sistema se sincronizan desde MinIO y no se pueden editar manualmente.");
+      // Una versión publicada es inmutable; solo se edita en borrador. Para cambiar una publicada, versiónala.
+      if (String(existing.lifecycle_state || "published") !== "draft") {
+        throw new Error("Esta plantilla está publicada (inmutable). Crea una nueva versión para editarla.");
       }
     }
     let activateDraftVersion = false;
@@ -3780,6 +3851,9 @@ export default class SqlAdminService {
           await connection.beginTransaction();
           await this.ensureDefinitionHasActiveRulesForActivation(existing.id ?? keyPayload.id, connection);
           await this.ensureDefinitionHasActivePeriodTypesForActivation(existing.id ?? keyPayload.id, connection);
+          // Publica las plantillas borrador de la config (activa config + publica plantilla, juntas) antes de
+          // validar que haya artefactos activos.
+          await this.publishDraftTemplatesForDefinition(existing.id ?? keyPayload.id, connection);
           await this.ensureDefinitionHasArtifactsForActivation(existing.id ?? keyPayload.id, connection);
           const retiredCount = await this.retireActiveDefinitionsInSeries({
             ...processDefinitionSeriesContext,
@@ -5165,6 +5239,491 @@ export default class SqlAdminService {
     return { artifact_id: Number(artifactId), is_active: nextActive, previous_is_active: current, changed: true };
   }
 
+  // Máquina de estados de la VERSIÓN de plantilla (Fase 0). publicar: draft|retired → published, exige al menos
+  // un paso de flujo de entrega (readiness) y retira la versión publicada previa del mismo template_code
+  // (una sola publicada por código). La nueva queda usable (is_active=1). Atómico.
+  async publishTemplateArtifact(artifactId) {
+    this.ensurePool();
+    const id = Number(artifactId);
+    const artifact = await this.getByKeys("template_artifacts", { id });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    if (String(artifact.lifecycle_state || "") === "published") {
+      return { artifact_id: id, lifecycle_state: "published", changed: false };
+    }
+    let fillSteps = 0;
+    try {
+      const meta = await this.loadTemplateArtifactMetaDocument(artifact);
+      fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+    } catch {
+      fillSteps = 0;
+    }
+    if (!fillSteps) {
+      throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+    }
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      // Una sola publicada por template_code: retira las otras publicadas del mismo código.
+      await connection.query(
+        `UPDATE template_artifacts
+            SET lifecycle_state = 'retired', is_active = 0
+          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
+        [String(artifact.template_code), id]
+      );
+      await connection.query(
+        "UPDATE template_artifacts SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
+        [id]
+      );
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+    return {
+      artifact_id: id,
+      lifecycle_state: "published",
+      is_active: 1,
+      changed: true,
+      __notice: `Plantilla ${artifact.template_code} v${artifact.storage_version} publicada.`,
+    };
+  }
+
+  // Retira una versión: no enlazable a configs nuevas, pero se conserva para auditoría (los documentos ya
+  // emitidos siguen pineados a ella). No la borra.
+  async retireTemplateArtifact(artifactId) {
+    this.ensurePool();
+    const id = Number(artifactId);
+    const artifact = await this.getByKeys("template_artifacts", { id });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    if (String(artifact.lifecycle_state || "") === "retired") {
+      return { artifact_id: id, lifecycle_state: "retired", changed: false };
+    }
+    await this.pool.query(
+      "UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0 WHERE id = ?",
+      [id]
+    );
+    return { artifact_id: id, lifecycle_state: "retired", changed: true };
+  }
+
+  // Próxima versión semver de una configuración dentro de su (proceso, variación).
+  async getNextProcessDefinitionVersion(processId, variationKey, level = "minor", connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT definition_version FROM process_definition_versions
+        WHERE process_id = ? AND variation_key = ?`,
+      [Number(processId), String(variationKey || "")]
+    );
+    let maxKey = -1;
+    let maxVersion = "";
+    for (const row of rows || []) {
+      const m = String(row.definition_version || "").trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+      if (!m) continue;
+      const key = Number(m[1]) * 1e6 + Number(m[2]) * 1e3 + Number(m[3]);
+      if (key > maxKey) {
+        maxKey = key;
+        maxVersion = `${m[1]}.${m[2]}.${m[3]}`;
+      }
+    }
+    if (!maxVersion) return "1.0.0";
+    return bumpSemanticVersion(maxVersion, level);
+  }
+
+  // === FASE 2: actualización guiada de la plantilla de una configuración ACTIVA ===
+  // Paso 1 (start): clona la plantilla (bump → borrador) y clona la config activa → borrador re-apuntando el
+  // enlace a la nueva versión de plantilla. Devuelve ambos borradores para editar y luego publicar+activar.
+  async startTemplateUpdateForActiveConfig({ definitionId, templateArtifactId, bumpLevel = "minor" } = {}) {
+    this.ensurePool();
+    const defId = Number(definitionId);
+    const tplId = Number(templateArtifactId);
+    if (!defId || !tplId) {
+      throw new Error("Faltan datos: se requieren la configuración y la plantilla.");
+    }
+
+    const [defRows] = await this.pool.query(
+      `SELECT id, process_id, series_id, variation_key, definition_version, name, description, status
+         FROM process_definition_versions WHERE id = ? LIMIT 1`,
+      [defId]
+    );
+    const definition = defRows?.[0];
+    if (!definition) {
+      throw new Error("La configuración no existe.");
+    }
+    if (String(definition.status) !== "active") {
+      throw new Error("La actualización guiada aplica solo a configuraciones activas.");
+    }
+
+    const [linkRows] = await this.pool.query(
+      "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+      [defId, tplId]
+    );
+    if (!linkRows.length) {
+      throw new Error("La plantilla seleccionada no pertenece a esta configuración.");
+    }
+
+    const template = await this.getByKeys("template_artifacts", { id: tplId });
+    if (!template) {
+      throw new Error("La plantilla no existe.");
+    }
+    if (String(template.lifecycle_state || "published") !== "published") {
+      throw new Error("Solo se puede actualizar desde una versión publicada de la plantilla.");
+    }
+
+    // 1) Clonar la plantilla → nueva versión en borrador (MinIO + DB). Fuera de la transacción de la config
+    //    porque copia objetos en MinIO (efecto colateral no transaccional).
+    const tplVersion = await this.createTemplateArtifactVersion(tplId, bumpLevel);
+    const newTemplateId = Number(tplVersion.id);
+
+    // 2) Clonar la config activa → borrador, re-apuntando el enlace de plantilla a la nueva versión.
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const nextConfigVersion = await this.getNextProcessDefinitionVersion(
+        definition.process_id,
+        definition.variation_key,
+        bumpLevel,
+        connection
+      );
+      const [insertResult] = await connection.query(
+        `INSERT INTO process_definition_versions
+           (process_id, series_id, variation_key, definition_version, name, description, status, effective_from)
+         VALUES (?, ?, ?, ?, ?, ?, 'draft', CURDATE())`,
+        [
+          definition.process_id,
+          definition.series_id,
+          definition.variation_key,
+          nextConfigVersion,
+          definition.name,
+          definition.description
+        ]
+      );
+      const newConfigId = Number(insertResult.insertId);
+      await this.cloneProcessDefinitionChildren({
+        sourceDefinitionId: defId,
+        targetDefinitionId: newConfigId,
+        targetProcessId: definition.process_id,
+        templateRemap: { [tplId]: newTemplateId },
+        connection
+      });
+      await connection.commit();
+      return {
+        template_draft_id: newTemplateId,
+        template_storage_version: tplVersion.storage_version,
+        config_draft_id: newConfigId,
+        config_definition_version: nextConfigVersion,
+        source_definition_id: defId,
+        source_template_artifact_id: tplId,
+        __notice: `Borradores creados: plantilla v${tplVersion.storage_version} y configuración v${nextConfigVersion}. Edita el contenido y publica para activar.`
+      };
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      // La plantilla borrador ya creada queda huérfana (inofensiva); se puede retirar/eliminar luego.
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Paso 2 (finish): publica la plantilla borrador y activa la config borrador, ATÓMICO. Retira la plantilla
+  // publicada previa del mismo código y la config activa previa de la serie.
+  async finishTemplateUpdate({ templateArtifactId, configDefinitionId } = {}) {
+    this.ensurePool();
+    const tplId = Number(templateArtifactId);
+    const cfgId = Number(configDefinitionId);
+    if (!tplId || !cfgId) {
+      throw new Error("Faltan datos: se requieren la plantilla y la configuración borrador.");
+    }
+
+    const template = await this.getByKeys("template_artifacts", { id: tplId });
+    if (!template) {
+      throw new Error("La plantilla borrador no existe.");
+    }
+    if (String(template.lifecycle_state || "") !== "draft") {
+      throw new Error("La plantilla ya no está en borrador.");
+    }
+
+    const [defRows] = await this.pool.query(
+      "SELECT id, process_id, variation_key, definition_version, status FROM process_definition_versions WHERE id = ? LIMIT 1",
+      [cfgId]
+    );
+    const definition = defRows?.[0];
+    if (!definition) {
+      throw new Error("La configuración borrador no existe.");
+    }
+    if (String(definition.status) !== "draft") {
+      throw new Error("La configuración ya no está en borrador.");
+    }
+
+    const [linkRows] = await this.pool.query(
+      "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+      [cfgId, tplId]
+    );
+    if (!linkRows.length) {
+      throw new Error("La configuración borrador no está vinculada a esta plantilla.");
+    }
+
+    // Readiness de publicación de la plantilla (≥1 paso de entrega) — lectura MinIO antes de la transacción.
+    let fillSteps = 0;
+    try {
+      const meta = await this.loadTemplateArtifactMetaDocument(template);
+      fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+    } catch {
+      fillSteps = 0;
+    }
+    if (!fillSteps) {
+      throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+    }
+
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      // Readiness de activación que NO depende del estado de la plantilla.
+      await this.ensureDefinitionHasActiveRulesForActivation(cfgId, connection);
+      await this.ensureDefinitionHasActivePeriodTypesForActivation(cfgId, connection);
+
+      // Publicar plantilla PRIMERO (deja is_active=1) para que pase el check de artefactos activos.
+      await connection.query(
+        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
+          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
+        [String(template.template_code), tplId]
+      );
+      await connection.query(
+        "UPDATE template_artifacts SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
+        [tplId]
+      );
+
+      // Ahora sí, el check de artefactos activos de la config pasa (la nueva plantilla ya está activa).
+      await this.ensureDefinitionHasArtifactsForActivation(cfgId, connection);
+
+      // Activar config: retira la activa previa de la serie + activa esta.
+      const retiredCount = await this.retireActiveDefinitionsInSeries({
+        processId: definition.process_id,
+        variationKey: definition.variation_key,
+        excludeId: cfgId,
+        connection
+      });
+      await connection.query(
+        "UPDATE process_definition_versions SET status = 'active' WHERE id = ?",
+        [cfgId]
+      );
+      await connection.commit();
+      return {
+        template_artifact_id: tplId,
+        template_lifecycle_state: "published",
+        config_definition_id: cfgId,
+        config_status: "active",
+        retired_previous_config: retiredCount,
+        __notice: `Plantilla v${template.storage_version} publicada y configuración v${definition.definition_version} activada.`
+      };
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Borrador de TRABAJO de una configuración (modelo config-céntrico): una config tiene a lo más UN borrador en
+  // curso por (proceso, variación). Si la config dada es borrador, ese es el de trabajo. Si es activa, reutiliza
+  // un borrador existente de la serie o, si no hay, clona la activa a un nuevo borrador (bump minor) con sus
+  // reglas/periodos/plantillas. Devuelve { id, definition_version, created }.
+  async getOrCreateConfigWorkingDraft(definitionId, connection = this.pool) {
+    const defId = Number(definitionId);
+    const [defRows] = await connection.query(
+      `SELECT id, process_id, series_id, variation_key, definition_version, name, description, status
+         FROM process_definition_versions WHERE id = ? LIMIT 1`,
+      [defId]
+    );
+    const definition = defRows?.[0];
+    if (!definition) throw new Error("La configuración no existe.");
+    if (String(definition.status) === "draft") {
+      return { id: defId, definition_version: definition.definition_version, created: false };
+    }
+    if (String(definition.status) !== "active") {
+      throw new Error("Solo se puede preparar un borrador desde una configuración activa o borrador.");
+    }
+    // ¿Existe ya un borrador de la misma serie (proceso, variación)?
+    const [existingDraft] = await connection.query(
+      `SELECT id, definition_version FROM process_definition_versions
+        WHERE process_id = ? AND variation_key = ? AND status = 'draft'
+        ORDER BY id DESC LIMIT 1`,
+      [definition.process_id, definition.variation_key]
+    );
+    if (existingDraft?.[0]?.id) {
+      return { id: Number(existingDraft[0].id), definition_version: existingDraft[0].definition_version, created: false };
+    }
+    // Clonar la activa → nuevo borrador (bump minor) con sus hijos.
+    const nextVersion = await this.getNextProcessDefinitionVersion(
+      definition.process_id, definition.variation_key, "minor", connection
+    );
+    const [insertResult] = await connection.query(
+      `INSERT INTO process_definition_versions
+         (process_id, series_id, variation_key, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, ?, 'draft', CURDATE())`,
+      [definition.process_id, definition.series_id, definition.variation_key, nextVersion, definition.name, definition.description]
+    );
+    const newId = Number(insertResult.insertId);
+    await this.cloneProcessDefinitionChildren({
+      sourceDefinitionId: defId,
+      targetDefinitionId: newId,
+      targetProcessId: definition.process_id,
+      connection
+    });
+    return { id: newId, definition_version: nextVersion, created: true };
+  }
+
+  // Re-apunta el enlace de una configuración (su plantilla de cierto template_code) a una versión concreta.
+  async repointConfigTemplateLink(definitionId, templateCode, targetArtifactId, connection = this.pool) {
+    const [result] = await connection.query(
+      `UPDATE process_definition_templates pdt
+         INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+          SET pdt.template_artifact_id = ?
+        WHERE pdt.process_definition_id = ? AND ta.template_code = ?`,
+      [Number(targetArtifactId), Number(definitionId), String(templateCode)]
+    );
+    if (result?.affectedRows) {
+      try {
+        await this.syncArtifactWorkflowsForTemplateArtifactId(Number(targetArtifactId), connection);
+      } catch {
+        // aviso no bloqueante
+      }
+    }
+    return result?.affectedRows || 0;
+  }
+
+  // Acción config-céntrica: "usar esta versión del entregable en esta configuración".
+  //  - Config BORRADOR: re-apunta su enlace directo a la versión elegida.
+  //  - Config ACTIVA: prepara (o reutiliza) el borrador de trabajo y re-apunta ahí; se aplica al activar el borrador.
+  async useTemplateVersionInConfig({ definitionId, templateArtifactId } = {}) {
+    this.ensurePool();
+    const defId = Number(definitionId);
+    const targetId = Number(templateArtifactId);
+    if (!defId || !targetId) {
+      throw new Error("Faltan datos: configuración y versión de plantilla.");
+    }
+    const target = await this.getByKeys("template_artifacts", { id: targetId });
+    if (!target) throw new Error("La versión de plantilla no existe.");
+
+    const [defRows] = await this.pool.query(
+      "SELECT id, status FROM process_definition_versions WHERE id = ? LIMIT 1",
+      [defId]
+    );
+    const status = String(defRows?.[0]?.status || "");
+    if (!status) throw new Error("La configuración no existe.");
+    if (status === "retired") throw new Error("Una configuración retirada es de solo lectura.");
+
+    if (status === "draft") {
+      const changed = await this.repointConfigTemplateLink(defId, target.template_code, targetId);
+      if (!changed) throw new Error("Esta configuración no tiene un entregable de ese código para re-apuntar.");
+      return {
+        mode: "draft",
+        config_definition_id: defId,
+        target_artifact_id: targetId,
+        __notice: `La configuración (borrador) ahora usa la versión v${target.storage_version}.`
+      };
+    }
+
+    // Activa: preparar/usar el borrador de trabajo.
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const draft = await this.getOrCreateConfigWorkingDraft(defId, connection);
+      const changed = await this.repointConfigTemplateLink(draft.id, target.template_code, targetId, connection);
+      if (!changed) {
+        throw new Error("El borrador de la configuración no tiene un entregable de ese código para re-apuntar.");
+      }
+      await connection.commit();
+      return {
+        mode: "active",
+        config_definition_id: draft.id,
+        config_definition_version: draft.definition_version,
+        draft_created: draft.created,
+        target_artifact_id: targetId,
+        __notice: `Se preparó en el borrador v${draft.definition_version} de la configuración: usará v${target.storage_version}. Actívalo para aplicarlo.`
+      };
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Diff de activación: compara una configuración (borrador) contra la ACTIVA de su misma serie (proceso,
+  // variación). Devuelve qué entregables cambian de versión / se agregan / se quitan, y conteos de reglas y
+  // periodos. Para mostrar y confirmar antes de activar.
+  async getConfigActivationDiff(definitionId) {
+    this.ensurePool();
+    const defId = Number(definitionId);
+    const [defRows] = await this.pool.query(
+      "SELECT id, process_id, variation_key, status, definition_version FROM process_definition_versions WHERE id = ? LIMIT 1",
+      [defId]
+    );
+    const draft = defRows?.[0];
+    if (!draft) throw new Error("La configuración no existe.");
+    const [activeRows] = await this.pool.query(
+      `SELECT id, definition_version FROM process_definition_versions
+        WHERE process_id = ? AND variation_key = ? AND status = 'active' AND id <> ?
+        ORDER BY id DESC LIMIT 1`,
+      [draft.process_id, draft.variation_key, defId]
+    );
+    const active = activeRows?.[0] || null;
+
+    const loadTemplates = async (id) => {
+      const [rows] = await this.pool.query(
+        `SELECT ta.template_code, ta.display_name, ta.storage_version, ta.lifecycle_state
+           FROM process_definition_templates pdt
+           INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+          WHERE pdt.process_definition_id = ?`,
+        [id]
+      );
+      const map = new Map();
+      for (const r of rows) map.set(r.template_code, r);
+      return map;
+    };
+    const newT = await loadTemplates(defId);
+    const oldT = active ? await loadTemplates(active.id) : new Map();
+    const codes = new Set([...newT.keys(), ...oldT.keys()]);
+    const templates = [];
+    for (const code of codes) {
+      const n = newT.get(code);
+      const o = oldT.get(code);
+      if (n && o) {
+        templates.push({
+          template_code: code, display_name: n.display_name,
+          from_version: o.storage_version, to_version: n.storage_version, to_state: n.lifecycle_state,
+          change: o.storage_version === n.storage_version ? "unchanged" : "changed"
+        });
+      } else if (n) {
+        templates.push({ template_code: code, display_name: n.display_name, from_version: null, to_version: n.storage_version, to_state: n.lifecycle_state, change: "added" });
+      } else {
+        templates.push({ template_code: code, display_name: o.display_name, from_version: o.storage_version, to_version: null, change: "removed" });
+      }
+    }
+    templates.sort((a, b) => String(a.template_code).localeCompare(String(b.template_code)));
+
+    const countRows = async (table, id) => {
+      const [r] = await this.pool.query(`SELECT COUNT(*) AS n FROM ${table} WHERE process_definition_id = ?`, [id]);
+      return Number(r?.[0]?.n || 0);
+    };
+    const rules = { from: active ? await countRows("process_target_rules", active.id) : 0, to: await countRows("process_target_rules", defId) };
+    const periodTypes = { from: active ? await countRows("process_definition_period_types", active.id) : 0, to: await countRows("process_definition_period_types", defId) };
+
+    return {
+      has_active: Boolean(active),
+      from_version: active?.definition_version || null,
+      to_version: draft.definition_version,
+      config_status: draft.status,
+      templates,
+      rules,
+      period_types: periodTypes
+    };
+  }
+
   // Crea una nueva versión (storage_version semver) clonando un artifact existente. Nace inactiva
   // (is_active=0): el gestor la activa cuando esté lista. El nivel de cambio (patch/minor/major) lo elige
   // quien crea la versión.
@@ -5211,9 +5770,9 @@ export default class SqlAdminService {
     const [result] = await this.pool.query(
       `INSERT INTO template_artifacts (
         template_seed_id, owner_person_id, template_code, display_name, description,
-        storage_version, template_scope, base_object_prefix,
-        available_formats, schema_object_key, meta_object_key, content_hash, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        storage_version, template_scope, lifecycle_state, base_object_prefix,
+        available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 0)`,
       [
         artifact.template_seed_id,
         artifact.owner_person_id,
@@ -5227,6 +5786,7 @@ export default class SqlAdminService {
         newSchemaKey,
         newMetaKey,
         artifact.content_hash,
+        Number(artifactId),
       ]
     );
 
@@ -5236,8 +5796,10 @@ export default class SqlAdminService {
       storage_version: nextStorageVersion,
       base_object_prefix: newPrefix,
       template_scope: artifact.template_scope || "official",
+      lifecycle_state: "draft",
+      parent_version_id: Number(artifactId),
       is_active: 0,
-      __notice: `Nueva versión ${nextStorageVersion} creada (inactiva). Actívala cuando esté lista.`,
+      __notice: `Nueva versión ${nextStorageVersion} creada (en borrador). Publícala cuando esté lista.`,
     };
   }
 
@@ -5463,10 +6025,10 @@ export default class SqlAdminService {
       if (!existingArtifact) {
         throw new Error("El artifact seleccionado no existe.");
       }
-      // Este flujo edita plantillas ad_hoc creadas desde la web. Las oficiales (template_scope='official',
-      // sincronizadas desde dist) no se editan aquí.
-      if (String(existingArtifact.template_scope || "official") === "official") {
-        throw new Error("Las plantillas oficiales del sistema no se editan con este flujo (usa el pipeline de templates).");
+      // Solo se edita el contenido mientras la versión está en BORRADOR (independiente del scope). Una versión
+      // publicada es inmutable: para cambiarla, crea una nueva versión (que nace en borrador) y edítala.
+      if (String(existingArtifact.lifecycle_state || "published") !== "draft") {
+        throw new Error("Esta plantilla está publicada (inmutable). Crea una nueva versión para editarla.");
       }
     }
 
@@ -5834,13 +6396,14 @@ export default class SqlAdminService {
             description,
             storage_version,
             template_scope,
+            lifecycle_state,
             base_object_prefix,
             available_formats,
             schema_object_key,
             meta_object_key,
             content_hash,
             is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, 1)`,
           [
             templateSeedId,
             ownerPersonId,

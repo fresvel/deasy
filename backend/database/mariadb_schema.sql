@@ -467,21 +467,31 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   description VARCHAR(255) NULL,
   storage_version VARCHAR(20) NOT NULL,
   template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official',
+  -- Ciclo de vida editorial de la VERSIÓN (independiente del scope): 'draft' = editable, no usable;
+  -- 'published' = inmutable y usable/enlazable; 'retired' = no para enlaces nuevos, se conserva para auditoría.
+  lifecycle_state ENUM('draft','published','retired') NOT NULL DEFAULT 'published',
   base_object_prefix VARCHAR(255) NOT NULL,
   available_formats JSON NOT NULL,
   schema_object_key VARCHAR(255) NOT NULL,
   meta_object_key VARCHAR(255) NOT NULL,
   content_hash VARCHAR(64) NULL,
+  -- Linaje: versión de la que deriva este artifact (clon). NULL para la primera versión.
+  parent_version_id INT NULL,
+  -- 'is_active' = bandera de disponibilidad de almacenamiento (subida a MinIO completa). Lo "usable" por el
+  -- runtime = lifecycle_state='published' AND is_active=1.
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version),
   INDEX idx_template_artifacts_seed (template_seed_id),
   INDEX idx_template_artifacts_owner_person (owner_person_id),
   INDEX idx_template_artifacts_scope (template_scope),
+  INDEX idx_template_artifacts_state (lifecycle_state),
   CONSTRAINT fk_template_artifacts_seed
     FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
   CONSTRAINT fk_template_artifacts_owner_person
-    FOREIGN KEY (owner_person_id) REFERENCES persons(id)
+    FOREIGN KEY (owner_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_template_artifacts_parent
+    FOREIGN KEY (parent_version_id) REFERENCES template_artifacts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS process_definition_templates (

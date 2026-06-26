@@ -273,6 +273,79 @@ export const createTemplateArtifactVersion = async (req, res) => {
   }
 };
 
+export const publishTemplateArtifact = async (req, res) => {
+  try {
+    const result = await service.publishTemplateArtifact(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+export const retireTemplateArtifact = async (req, res) => {
+  try {
+    const result = await service.retireTemplateArtifact(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+export const getTemplateVersions = async (req, res) => {
+  try {
+    const result = await service.getTemplateVersions(req.query?.code);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+export const getConfigActivationDiff = async (req, res) => {
+  try {
+    const result = await service.getConfigActivationDiff(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+export const useTemplateVersionInConfig = async (req, res) => {
+  try {
+    const result = await service.useTemplateVersionInConfig({
+      definitionId: req.body?.definition_id,
+      templateArtifactId: req.body?.template_artifact_id
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+export const startGuidedTemplateUpdate = async (req, res) => {
+  try {
+    const result = await service.startTemplateUpdateForActiveConfig({
+      definitionId: req.body?.definition_id,
+      templateArtifactId: req.body?.template_artifact_id,
+      bumpLevel: req.body?.bump_level
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+export const finishGuidedTemplateUpdate = async (req, res) => {
+  try {
+    const result = await service.finishTemplateUpdate({
+      templateArtifactId: req.body?.template_artifact_id,
+      configDefinitionId: req.body?.config_definition_id
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 // Estado de sincronización del flujo de un artifact (synced/stale/no_link) por vínculo a configuración.
 export const getTemplateArtifactSyncStatus = async (req, res) => {
   try {
