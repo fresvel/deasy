@@ -280,6 +280,17 @@
           <AppButton variant="secondary" size="sm" @click="versionFromDrawer">+ Nueva versión</AppButton>
           <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary" size="sm" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
         </div>
+        <!-- Señal de salud: la config usa una versión NO publicada de este entregable. -->
+        <div v-if="drawerHealthWarning" class="border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
+          <p class="m-0 font-semibold">⚠ La configuración usa una versión {{ drawerHealthWarning.pinnedLabel }} de este entregable.</p>
+          <p class="m-0 mt-0.5">
+            <template v-if="drawerHealthWarning.publishedVersion && editable">
+              Debería usar la versión publicada
+              <button type="button" class="font-semibold text-indigo-700 underline" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
+            </template>
+            <template v-else-if="!drawerHealthWarning.publishedVersion">Este entregable no tiene ninguna versión publicada. Publica una o crea una nueva versión.</template>
+          </p>
+        </div>
         <div class="flex-1 overflow-y-auto px-4 py-3">
           <div v-if="templateDetail.loading" class="text-sm text-slate-500">Cargando…</div>
           <ul v-else-if="templateDetail.versions.length" class="m-0 flex list-none flex-col gap-2 p-0">
@@ -755,6 +766,17 @@ const useVersionInConfig = async (v) => {
   }
 };
 const versionStateLabel = (s) => ({ draft: "Borrador", published: "Publicada", retired: "Retirada" }[String(s)] || String(s || ""));
+// Señal de salud del drawer: la config usa una versión NO publicada de este entregable. No alarma el caso normal
+// "config borrador + versión borrador" (se publica al activar). Sí avisa retiradas y activas no publicadas.
+const drawerHealthWarning = computed(() => {
+  const td = templateDetail.value;
+  if (!td || !Array.isArray(td.versions)) return null;
+  const pinned = td.versions.find((v) => String(v.id) === String(td.pinnedArtifactId));
+  if (!pinned || pinned.lifecycle_state === "published") return null;
+  if (td.configStatus === "draft" && pinned.lifecycle_state === "draft") return null;
+  const publishedVersion = td.versions.find((v) => v.lifecycle_state === "published") || null;
+  return { pinnedLabel: versionStateLabel(pinned.lifecycle_state).toLowerCase(), publishedVersion };
+});
 const versionStateClass = (s) => ({
   published: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   draft: "bg-amber-50 text-amber-700 ring-amber-200",

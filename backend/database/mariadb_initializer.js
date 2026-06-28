@@ -200,6 +200,70 @@ const addForeignKeyIfMissing = async (connection, tableName, columnName, constra
   }
 };
 
+// Backfill idempotente del modelo "entregable/ediciones" (Fase 1): por cada template_code sin deliverable,
+// crea un `deliverables` (atributos representativos de una versión) con dueño = la línea (proceso, variación)
+// que más lo enlaza (NULL si no está enlazado a ninguna config), y apunta todas sus versiones a ese deliverable.
+const ensureDeliverablesBackfill = async (connection) => {
+  const [columns] = await connection.query(
+    `SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = 'deliverable_id'`
+  );
+  if (!columns.length) return; // la columna aún no existe (no debería pasar: se agrega antes)
+
+  const [codes] = await connection.query(
+    "SELECT template_code, MAX(id) AS rep_id FROM template_artifacts GROUP BY template_code"
+  );
+  let created = 0;
+  for (const row of codes) {
+    const code = row.template_code;
+    const [existing] = await connection.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [code]);
+    let deliverableId = existing?.[0]?.id;
+    if (!deliverableId) {
+      const [repRows] = await connection.query(
+        "SELECT display_name, description, template_scope, template_seed_id, owner_person_id FROM template_artifacts WHERE id = ?",
+        [row.rep_id]
+      );
+      const rep = repRows?.[0] || {};
+      const [ownerRows] = await connection.query(
+        `SELECT pdv.process_id, pdv.variation_key, COUNT(*) AS n
+           FROM process_definition_templates pdt
+           INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+           INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
+          WHERE ta.template_code = ?
+          GROUP BY pdv.process_id, pdv.variation_key
+          ORDER BY n DESC, pdv.process_id ASC
+          LIMIT 1`,
+        [code]
+      );
+      const owner = ownerRows?.[0] || {};
+      const [ins] = await connection.query(
+        `INSERT INTO deliverables
+           (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          code,
+          rep.display_name || code,
+          rep.description || null,
+          owner.process_id || null,
+          owner.variation_key || null,
+          rep.template_scope || "official",
+          rep.template_seed_id || null,
+          rep.owner_person_id || null
+        ]
+      );
+      deliverableId = ins.insertId;
+      created += 1;
+    }
+    await connection.query(
+      "UPDATE template_artifacts SET deliverable_id = ? WHERE template_code = ? AND deliverable_id IS NULL",
+      [deliverableId, code]
+    );
+  }
+  if (created > 0) {
+    console.log(`✅ deliverables backfill: ${created} entregable(s) creado(s) desde template_code`);
+  }
+};
+
 const SCHEMA_FILE_URL = new URL("./mariadb_schema.sql", import.meta.url);
 
 const splitSqlStatements = (sql) => {
@@ -509,6 +573,30 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "parent_version_id",
       "CONSTRAINT fk_template_artifacts_parent FOREIGN KEY (parent_version_id) REFERENCES template_artifacts(id)",
       "FK template_artifacts.parent_version_id"
+    );
+
+    // Modelo "entregable/ediciones" (Fase 1, aditivo): la tabla `deliverables` ya la crea el schema. Aquí se
+    // agrega template_artifacts.deliverable_id, se hace backfill (un deliverable por template_code, con dueño =
+    // la línea (proceso, variación) que más lo usa) y se enlaza. No se tocan las columnas viejas (transición).
+    await addColumnIfMissing(
+      connection,
+      "template_artifacts",
+      "deliverable_id",
+      "deliverable_id INT NULL AFTER parent_version_id"
+    );
+    await ensureDeliverablesBackfill(connection);
+    await addIndexIgnoringDuplicate(
+      connection,
+      "template_artifacts",
+      "INDEX idx_template_artifacts_deliverable (deliverable_id)",
+      "índice template_artifacts.deliverable_id"
+    );
+    await addForeignKeyIfMissing(
+      connection,
+      "template_artifacts",
+      "deliverable_id",
+      "CONSTRAINT fk_template_artifacts_deliverable FOREIGN KEY (deliverable_id) REFERENCES deliverables(id)",
+      "FK template_artifacts.deliverable_id"
     );
 
     // Ancestro por tipo de relación en pasos de llenado (organigramas matriciales): NULL = 'org'.

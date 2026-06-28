@@ -38,6 +38,11 @@
         v{{ data.storage_version }}
         <span v-if="Number(data.version_count) > 1" class="opacity-70">· {{ data.version_count }}</span>
       </span>
+      <IconAlertTriangle
+        v-if="isUnhealthy"
+        class="h-3.5 w-3.5 shrink-0 text-amber-500"
+        :title="`La configuración activa usa una versión ${stateLabel.toLowerCase()} (no publicada) de este entregable. Publica una versión o usa la publicada.`"
+      />
     </p>
   </div>
 </template>
@@ -45,7 +50,7 @@
 <script setup>
 import { ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconFileText, IconGitBranch, IconPlus, IconCopy, IconRefresh } from "@tabler/icons-vue";
+import { IconFileText, IconGitBranch, IconPlus, IconCopy, IconRefresh, IconAlertTriangle } from "@tabler/icons-vue";
 import { computed } from "vue";
 
 const props = defineProps({
@@ -66,6 +71,9 @@ const stateDotClass = computed(() => ({
   draft: "bg-amber-500",
   retired: "bg-slate-400"
 }[lifecycleState.value] || "bg-slate-400"));
+// Señal de salud: una config ACTIVA debería usar la versión publicada. Si usa una no publicada (retirada/borrador)
+// = "hueco" → ⚠. En configs borrador es normal (trabajo en curso), no se marca.
+const isUnhealthy = computed(() => String(props.data.parentConfigStatus) === "active" && lifecycleState.value !== "published");
 </script>
 
 <style scoped>

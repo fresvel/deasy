@@ -458,6 +458,30 @@ CREATE TABLE IF NOT EXISTS template_seeds (
   UNIQUE KEY uq_template_seeds_code (seed_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ENTREGABLE (el "libro"): identidad + DUEÑO. Un entregable pertenece a UNA línea = (proceso, variación).
+-- Sus VERSIONES viven en template_artifacts (template_artifacts.deliverable_id -> deliverables.id).
+-- template_scope ('official'|'ad_hoc') es un atributo del entregable (permisos/edición), NO afecta la pertenencia.
+CREATE TABLE IF NOT EXISTS deliverables (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(180) NOT NULL,
+  display_name VARCHAR(180) NOT NULL,
+  description VARCHAR(255) NULL,
+  owner_process_id INT NULL,
+  owner_variation_key VARCHAR(120) NULL,
+  template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official',
+  template_seed_id INT NULL,
+  owner_person_id INT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_deliverables_code (code),
+  INDEX idx_deliverables_owner (owner_process_id, owner_variation_key),
+  CONSTRAINT fk_deliverables_owner_process
+    FOREIGN KEY (owner_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_deliverables_seed
+    FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
+  CONSTRAINT fk_deliverables_owner_person
+    FOREIGN KEY (owner_person_id) REFERENCES persons(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS template_artifacts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   template_seed_id INT NULL,
@@ -477,6 +501,9 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   content_hash VARCHAR(64) NULL,
   -- Linaje: versión de la que deriva este artifact (clon). NULL para la primera versión.
   parent_version_id INT NULL,
+  -- Entregable padre (modelo "libro/ediciones"). Todas las versiones de un mismo template_code apuntan al mismo
+  -- deliverable. Nullable en Fase 1 (transición); en Fase 2 pasa a ser la fuente de identidad/dueño.
+  deliverable_id INT NULL,
   -- 'is_active' = bandera de disponibilidad de almacenamiento (subida a MinIO completa). Lo "usable" por el
   -- runtime = lifecycle_state='published' AND is_active=1.
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -486,12 +513,15 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   INDEX idx_template_artifacts_owner_person (owner_person_id),
   INDEX idx_template_artifacts_scope (template_scope),
   INDEX idx_template_artifacts_state (lifecycle_state),
+  INDEX idx_template_artifacts_deliverable (deliverable_id),
   CONSTRAINT fk_template_artifacts_seed
     FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
   CONSTRAINT fk_template_artifacts_owner_person
     FOREIGN KEY (owner_person_id) REFERENCES persons(id),
   CONSTRAINT fk_template_artifacts_parent
-    FOREIGN KEY (parent_version_id) REFERENCES template_artifacts(id)
+    FOREIGN KEY (parent_version_id) REFERENCES template_artifacts(id),
+  CONSTRAINT fk_template_artifacts_deliverable
+    FOREIGN KEY (deliverable_id) REFERENCES deliverables(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS process_definition_templates (

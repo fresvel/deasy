@@ -2319,11 +2319,7 @@ export default class SqlAdminService {
           `No se puede activar: la plantilla "${artifact.display_name || artifact.template_code}" debe definir al menos un paso de flujo de entrega antes de publicarse.`
         );
       }
-      await connection.query(
-        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
-          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
-        [String(artifact.template_code), artifact.id]
-      );
+      await this.retirePriorPublishedSiblings(connection, artifact.id);
       await connection.query(
         "UPDATE template_artifacts SET lifecycle_state = 'published' WHERE id = ?",
         [artifact.id]
@@ -3084,6 +3080,8 @@ export default class SqlAdminService {
     }
 
     if (tableName === "process_definition_templates") {
+      // F3 — "la pared": solo se enlaza un entregable cuyo dueño = (proceso, variación) de la config.
+      await this.assertDeliverableBelongsToConfigLine(payload.process_definition_id, payload.template_artifact_id);
       // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
       // wizard ya se enlazó), no se duplica el registro (evita el ER_DUP_ENTRY de uq_process_definition_templates);
       // se devuelve el vínculo existente.
@@ -5239,9 +5237,33 @@ export default class SqlAdminService {
     return { artifact_id: Number(artifactId), is_active: nextActive, previous_is_active: current, changed: true };
   }
 
+  // F5 — "una sola publicada por ENTREGABLE": retira las demás versiones publicadas del mismo deliverable_id
+  // (== mismo template_code, 1:1) que la versión dada. Usa deliverable_id (robusto); fallback a template_code si
+  // la fila aún no tiene deliverable (legacy). NO publica la versión dada (eso lo hace quien llama).
+  async retirePriorPublishedSiblings(connection, artifactId) {
+    const [rows] = await connection.query(
+      "SELECT deliverable_id, template_code FROM template_artifacts WHERE id = ? LIMIT 1",
+      [Number(artifactId)]
+    );
+    const delivId = rows?.[0]?.deliverable_id || null;
+    if (delivId) {
+      await connection.query(
+        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
+          WHERE deliverable_id = ? AND id <> ? AND lifecycle_state = 'published'`,
+        [delivId, Number(artifactId)]
+      );
+    } else if (rows?.[0]?.template_code) {
+      await connection.query(
+        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
+          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
+        [String(rows[0].template_code), Number(artifactId)]
+      );
+    }
+  }
+
   // Máquina de estados de la VERSIÓN de plantilla (Fase 0). publicar: draft|retired → published, exige al menos
-  // un paso de flujo de entrega (readiness) y retira la versión publicada previa del mismo template_code
-  // (una sola publicada por código). La nueva queda usable (is_active=1). Atómico.
+  // un paso de flujo de entrega (readiness) y retira la versión publicada previa del MISMO ENTREGABLE
+  // (una sola publicada por entregable). La nueva queda usable (is_active=1). Atómico.
   async publishTemplateArtifact(artifactId) {
     this.ensurePool();
     const id = Number(artifactId);
@@ -5265,13 +5287,8 @@ export default class SqlAdminService {
     const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
-      // Una sola publicada por template_code: retira las otras publicadas del mismo código.
-      await connection.query(
-        `UPDATE template_artifacts
-            SET lifecycle_state = 'retired', is_active = 0
-          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
-        [String(artifact.template_code), id]
-      );
+      // Una sola publicada por ENTREGABLE: retira las otras publicadas del mismo deliverable.
+      await this.retirePriorPublishedSiblings(connection, id);
       await connection.query(
         "UPDATE template_artifacts SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
         [id]
@@ -5486,11 +5503,8 @@ export default class SqlAdminService {
       await this.ensureDefinitionHasActivePeriodTypesForActivation(cfgId, connection);
 
       // Publicar plantilla PRIMERO (deja is_active=1) para que pase el check de artefactos activos.
-      await connection.query(
-        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
-          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
-        [String(template.template_code), tplId]
-      );
+      // Una sola publicada por ENTREGABLE: retira las demás publicadas del mismo deliverable.
+      await this.retirePriorPublishedSiblings(connection, tplId);
       await connection.query(
         "UPDATE template_artifacts SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
         [tplId]
@@ -5577,7 +5591,37 @@ export default class SqlAdminService {
   }
 
   // Re-apunta el enlace de una configuración (su plantilla de cierto template_code) a una versión concreta.
+  // F3 — "la pared": un entregable solo puede vincularse a configs de SU MISMA línea (proceso, variación).
+  // Si el entregable no tiene dueño (legacy/transición) NO se bloquea (se limpia en F4). El clon de config
+  // (cloneProcessDefinitionChildren) NO valida: copia enlaces existentes tal cual hasta el fork de F4.
+  async assertDeliverableBelongsToConfigLine(definitionId, templateArtifactId, connection = this.pool) {
+    const [defRows] = await connection.query(
+      "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
+      [Number(definitionId)]
+    );
+    const def = defRows?.[0];
+    if (!def) throw new Error("La configuración no existe.");
+    const [ownRows] = await connection.query(
+      `SELECT d.owner_process_id, d.owner_variation_key, d.code
+         FROM template_artifacts ta
+         INNER JOIN deliverables d ON d.id = ta.deliverable_id
+        WHERE ta.id = ? LIMIT 1`,
+      [Number(templateArtifactId)]
+    );
+    const own = ownRows?.[0];
+    if (!own || own.owner_process_id == null) return; // sin dueño todavía → no se bloquea (transición)
+    if (Number(own.owner_process_id) !== Number(def.process_id)
+      || String(own.owner_variation_key) !== String(def.variation_key)) {
+      const e = new Error(
+        `El entregable "${own.code}" pertenece a otra línea (proceso/variación) y no se puede vincular a esta configuración. Crea o usa un entregable propio de esta línea ("Crear a partir de este").`
+      );
+      e.statusCode = 422;
+      throw e;
+    }
+  }
+
   async repointConfigTemplateLink(definitionId, templateCode, targetArtifactId, connection = this.pool) {
+    await this.assertDeliverableBelongsToConfigLine(definitionId, targetArtifactId, connection);
     const [result] = await connection.query(
       `UPDATE process_definition_templates pdt
          INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
@@ -5736,6 +5780,10 @@ export default class SqlAdminService {
     const bucket = MINIO_TEMPLATES_BUCKET;
     const templateCode = String(artifact.template_code);
     const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
+    // El entregable se identifica por código (siempre existe tras backfill/creación). Robusto aunque getByKeys
+    // no traiga deliverable_id (la columna no está en la config de sqlTables).
+    const [delivRows] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [templateCode]);
+    const deliverableId = delivRows?.[0]?.id || null;
     const oldVersion = String(artifact.storage_version || "");
     const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const versionSuffixRe = new RegExp(`${oldVersion.replace(/[.\\]/g, "\\$&")}/?$`);
@@ -5771,8 +5819,8 @@ export default class SqlAdminService {
       `INSERT INTO template_artifacts (
         template_seed_id, owner_person_id, template_code, display_name, description,
         storage_version, template_scope, lifecycle_state, base_object_prefix,
-        available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, 0)`,
+        available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
         artifact.template_seed_id,
         artifact.owner_person_id,
@@ -5787,6 +5835,7 @@ export default class SqlAdminService {
         newMetaKey,
         artifact.content_hash,
         Number(artifactId),
+        deliverableId,
       ]
     );
 
@@ -5801,6 +5850,91 @@ export default class SqlAdminService {
       is_active: 0,
       __notice: `Nueva versión ${nextStorageVersion} creada (en borrador). Publícala cuando esté lista.`,
     };
+  }
+
+  // FORK: copia el contenido de una versión a un ENTREGABLE NUEVO propio de la línea (proceso, variación) de la
+  // config destino, lo publica (v1.0.0) y re-apunta el enlace de esa config. Resuelve el conflicto cross-línea
+  // (un linaje deja de tomar prestado el entregable de otro). Reusable también por la UI ("Crear a partir de este"
+  // / arreglo del hueco cuando la pared bloquea use-in-config).
+  async forkDeliverableForConfig({ sourceArtifactId, definitionId, newCode = null } = {}) {
+    this.ensurePool();
+    const srcId = Number(sourceArtifactId);
+    const defId = Number(definitionId);
+    const [srcRows] = await this.pool.query("SELECT * FROM template_artifacts WHERE id = ? LIMIT 1", [srcId]);
+    const src = srcRows?.[0];
+    if (!src) throw new Error("La versión de origen no existe.");
+    const [defRows] = await this.pool.query(
+      "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
+      [defId]
+    );
+    const def = defRows?.[0];
+    if (!def) throw new Error("La configuración destino no existe.");
+    const [procRows] = await this.pool.query("SELECT slug FROM processes WHERE id = ? LIMIT 1", [def.process_id]);
+    const procSlug = String(procRows?.[0]?.slug || `p${def.process_id}`);
+
+    // Código nuevo único para el fork.
+    let code = newCode || `${src.template_code}__${procSlug}`;
+    for (let i = 1; ; i += 1) {
+      const candidate = i === 1 ? code : `${code}-${i}`;
+      const [exists] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [candidate]);
+      const [existsTa] = await this.pool.query("SELECT id FROM template_artifacts WHERE template_code = ? LIMIT 1", [candidate]);
+      if (!exists.length && !existsTa.length) { code = candidate; break; }
+    }
+
+    // Crear el deliverable propio de la línea destino.
+    const [delivIns] = await this.pool.query(
+      `INSERT INTO deliverables
+         (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [code, src.display_name, src.description, def.process_id, def.variation_key, src.template_scope || "official", src.template_seed_id, src.owner_person_id]
+    );
+    const newDeliverableId = Number(delivIns.insertId);
+
+    // Copiar contenido MinIO a un prefijo propio (System/<code>/1.0.0/).
+    const bucket = MINIO_TEMPLATES_BUCKET;
+    const oldPrefix = String(src.base_object_prefix || "").replace(/\/?$/, "/");
+    const oldCode = String(src.template_code);
+    const oldVersion = String(src.storage_version || "");
+    const suffix = `${oldCode}/${oldVersion}/`;
+    const root = oldPrefix.endsWith(suffix) ? oldPrefix.slice(0, oldPrefix.length - suffix.length) : oldPrefix.replace(/[^/]+\/[^/]+\/$/, "");
+    const newPrefix = `${root}${code}/1.0.0/`;
+    const objectNames = await listMinioObjects(bucket, oldPrefix, true);
+    for (const objectName of objectNames) {
+      if (!objectName.startsWith(oldPrefix)) continue;
+      const relative = objectName.slice(oldPrefix.length);
+      if (!relative) continue;
+      await copyMinioObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
+    }
+    const remappedFormats = parseAvailableFormats(src.available_formats);
+    for (const entry of Object.values(remappedFormats || {})) {
+      if (entry?.entry_object_key && String(entry.entry_object_key).startsWith(oldPrefix)) {
+        entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
+      }
+    }
+
+    // Insertar la versión publicada del fork.
+    const [taIns] = await this.pool.query(
+      `INSERT INTO template_artifacts
+         (template_seed_id, owner_person_id, template_code, display_name, description, storage_version,
+          template_scope, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
+          meta_object_key, content_hash, deliverable_id, is_active)
+       VALUES (?, ?, ?, ?, ?, '1.0.0', ?, 'published', ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        src.template_seed_id, src.owner_person_id, code, src.display_name, src.description,
+        src.template_scope || "official", newPrefix, JSON.stringify(remappedFormats || {}),
+        `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
+      ]
+    );
+    const newArtifactId = Number(taIns.insertId);
+
+    // Re-apuntar el enlace de la config destino (del original al fork).
+    await this.pool.query(
+      "UPDATE process_definition_templates SET template_artifact_id = ? WHERE process_definition_id = ? AND template_artifact_id = ?",
+      [newArtifactId, defId, srcId]
+    );
+    try { await this.syncArtifactWorkflowsForTemplateArtifactId(newArtifactId); } catch { /* aviso no bloqueante */ }
+
+    return { deliverable_id: newDeliverableId, artifact_id: newArtifactId, code, base_object_prefix: newPrefix };
   }
 
   // Aplica una re-subida de código (ZIP del subárbol process/jinja2/src) editado por el admin:
@@ -6420,6 +6554,34 @@ export default class SqlAdminService {
           ]
         );
         createdId = result.insertId;
+        // Modelo entregable/ediciones: crear (o reusar) el `deliverable` de este código y enlazar la nueva
+        // versión. Dueño = (proceso, variación) de la configuración destino (si se indicó).
+        let ownerProcessId = null;
+        let ownerVariationKey = null;
+        const destDefId = data.process_definition_id ? Number(data.process_definition_id) : null;
+        if (destDefId) {
+          const [dRows] = await this.pool.query(
+            "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
+            [destDefId]
+          );
+          ownerProcessId = dRows?.[0]?.process_id ?? null;
+          ownerVariationKey = dRows?.[0]?.variation_key ?? null;
+        }
+        const [delivExisting] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [templateCode]);
+        let newDeliverableId = delivExisting?.[0]?.id;
+        if (!newDeliverableId) {
+          const [delivIns] = await this.pool.query(
+            `INSERT INTO deliverables
+               (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [templateCode, displayName, description, ownerProcessId, ownerVariationKey, templateScope, templateSeedId, ownerPersonId]
+          );
+          newDeliverableId = delivIns.insertId;
+        }
+        await this.pool.query(
+          "UPDATE template_artifacts SET deliverable_id = ? WHERE id = ?",
+          [newDeliverableId, createdId]
+        );
       }
 
       // Vínculo a proceso destino. Obligatorio para ejecutores (GestorEjecucionProcesos):
