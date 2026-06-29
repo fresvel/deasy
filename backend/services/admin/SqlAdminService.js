@@ -789,7 +789,7 @@ const normalizeSignatureSteps = (
 
 const collectSignatureWorkflowNormalizationIssues = (
   workflow = {},
-  { cargoCodeMap = new Map() } = {}
+  { cargoCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
 ) => {
   const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
   const issues = [];
@@ -801,17 +801,25 @@ const collectSignatureWorkflowNormalizationIssues = (
     const stepOrder = Number(step.order) || index + 1;
     const stepCode = String(step.code || "").trim() || `step_${stepOrder}`;
 
-    const resolverType = String(step?.resolver?.type || "cargo_in_scope").trim();
-    if (resolverType === "cargo_in_scope") {
-      const rawCargoCode = String(
-        step?.resolver?.cargo_code
-        || step.required_cargo_code
-        || ""
-      ).trim().toLowerCase();
-      const normalizedCargoCode = slugify(CARGO_CODE_ALIASES.get(rawCargoCode) || rawCargoCode);
-      if (!cargoCodeMap.get(normalizedCargoCode)) {
-        issues.push(`Paso ${stepOrder} (${stepCode}): cargo no resuelto (${rawCargoCode || "vacío"}).`);
-      }
+    // Misma lectura que normalizeSignatureSteps: firmantes en `signers[]` (o el `resolver` único legacy).
+    const rawSigners = Array.isArray(step.signers) && step.signers.length
+      ? step.signers
+      : (step.resolver ? [step.resolver] : []);
+    const declaredSigners = rawSigners.filter((s) => s && typeof s === "object");
+    if (!declaredSigners.length) {
+      continue; // sin firmantes declarados: no es un problema de resolución de cargo
+    }
+
+    // Un firmante por-cargo sin cargo resoluble (ni cargo_id ni cargo_code) lo descarta el normalizador. Solo es
+    // un error si el paso se queda SIN ningún firmante válido (otros tipos —task_assignee, etc.— no necesitan cargo).
+    const validSigners = declaredSigners
+      .map((signer) => normalizeSignatureSigner(signer, { cargoCodeMap, unitTypeNameMap }))
+      .filter((signer) => signer.resolverType !== "cargo_in_scope" || signer.requiredCargoId);
+    if (!validSigners.length) {
+      const badCargos = declaredSigners
+        .map((signer) => String(signer.cargo_code || signer.required_cargo_code || signer.cargo_id || "").trim())
+        .filter(Boolean);
+      issues.push(`Paso ${stepOrder} (${stepCode}): cargo no resuelto (${badCargos.join(", ") || "vacío"}).`);
     }
   }
   return issues;
@@ -4952,7 +4960,7 @@ export default class SqlAdminService {
     const cargoCodeMap = await this.getCargoCodeMap(connection);
     const unitTypeNameMap = await this.getUnitTypeNameMap(connection);
     const normalizationIssues = syncEnabled
-      ? collectSignatureWorkflowNormalizationIssues(workflow, { cargoCodeMap })
+      ? collectSignatureWorkflowNormalizationIssues(workflow, { cargoCodeMap, unitTypeNameMap })
       : [];
     if (normalizationIssues.length) {
       throw new Error(
