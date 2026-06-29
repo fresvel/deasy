@@ -40,12 +40,20 @@ const emit = defineEmits([
 ]);
 
 const h = props.helpers;
+
+// Click en el header o el cuerpo de la tarjeta abre el modal de detalle, EXCEPTO si el clic fue sobre un control
+// interactivo (botones de acción, campo de subida, enlaces): esos conservan su propio comportamiento.
+const onCardClick = (event) => {
+  if (event.target.closest('button, input, label, a, .deliverable-inline-upload')) return;
+  emit('open', props.deliverable);
+};
 </script>
 
 <template>
   <article
-    class="group/card relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(15,23,42,0.06),0_16px_32px_-16px_rgba(15,23,42,0.18)]"
+    class="group/card relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(15,23,42,0.06),0_16px_32px_-16px_rgba(15,23,42,0.18)]"
     :class="h.getDeliverableCardTone(deliverable.item).card"
+    @click="onCardClick"
   >
     <span class="absolute inset-x-0 top-0 h-1" :class="h.getDeliverableCardTone(deliverable.item).accent"></span>
     <div class="flex h-full flex-col p-4 pt-[1.3125rem]">
@@ -55,10 +63,9 @@ const h = props.helpers;
           :class="h.getDeliverableCardTone(deliverable.item).header"
           role="button"
           tabindex="0"
-          :aria-expanded="String(!h.isDeliverableCollapsed(deliverable.item))"
-          @click="emit('toggle', deliverable.item)"
-          @keydown.enter.prevent="emit('toggle', deliverable.item)"
-          @keydown.space.prevent="emit('toggle', deliverable.item)"
+          aria-label="Abrir detalle del entregable"
+          @keydown.enter.prevent="emit('open', deliverable)"
+          @keydown.space.prevent="emit('open', deliverable)"
         >
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
