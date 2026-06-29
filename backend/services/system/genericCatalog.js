@@ -246,6 +246,15 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
     GENERIC_CATALOG.cargos,
     (cargo) => cargo.code
   );
+  // Dependencia: si se piden los puestos de ejemplo, asegura también SUS cargos (con su mapeo de rol) aunque
+  // el bloque "cargos" no los incluya, para que ningún puesto se omita en silencio por un cargo faltante.
+  if (preconfig.example_positions) {
+    const neededCargoCodes = new Set(GENERIC_CATALOG.example_positions.map((p) => p.cargo_code));
+    const selectedCodes = new Set(selectedCargos.map((c) => c.code));
+    for (const cargo of GENERIC_CATALOG.cargos) {
+      if (neededCargoCodes.has(cargo.code) && !selectedCodes.has(cargo.code)) selectedCargos.push(cargo);
+    }
+  }
   const selectedTermTypes = selectCatalogEntries(
     preconfig.term_types,
     GENERIC_CATALOG.term_types,
