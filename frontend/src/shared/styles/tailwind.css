@@ -540,6 +540,11 @@
         @apply border-slate-200 bg-white text-slate-500;
     }
 
+    /* Salmón suave (un poco bajo): pendiente de firma en los pasos de firma. */
+    .deasy-tag--salmon {
+        @apply border-[#f1c4b6] bg-[#fcebe4] text-[#b85c43];
+    }
+
     .deasy-tag--accent {
         @apply border-sky-300 bg-sky-100 text-sky-800;
     }
