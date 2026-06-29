@@ -4408,7 +4408,7 @@ const getSignatureStepCardClass = (step, requests = [], currentStepOrder = null)
       return 'border-rose-200 bg-linear-to-br from-rose-50/80 via-white to-rose-100/40';
     case 'pending':
     case 'unresolved':
-      return 'border-[#f0c2b2] bg-linear-to-br from-[#fdeee8]/80 via-white to-[#f8d7ca]/40';
+      return 'border-[#f8a895] bg-linear-to-br from-[#fdeae3]/85 via-white to-[#fbccbd]/45';
     default:
       return 'border-slate-200 bg-linear-to-br from-slate-50/90 via-white to-slate-100/60';
   }
@@ -4425,7 +4425,7 @@ const getSignatureStepAccentClass = (step, requests = [], currentStepOrder = nul
       return 'bg-linear-to-r from-rose-300 via-rose-400 to-red-300';
     case 'pending':
     case 'unresolved':
-      return 'bg-linear-to-r from-[#f2ad97] via-[#ea9079] to-[#df8062]';
+      return 'bg-linear-to-r from-[#ffa792] via-[#fa8072] to-[#f0664f]';
     default:
       return 'bg-linear-to-r from-slate-200 via-slate-300 to-slate-200';
   }
