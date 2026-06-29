@@ -482,17 +482,16 @@ CREATE TABLE IF NOT EXISTS deliverables (
     FOREIGN KEY (owner_person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- template_artifacts = una EDICIÓN/versión de un entregable. La identidad (código, nombre, descripción),
+-- el dueño (proceso, variación), el scope (official/ad_hoc), la semilla y la persona propietaria viven en
+-- `deliverables` (modelo "libro/ediciones"); esta tabla solo guarda el estado/almacenamiento de la versión.
 CREATE TABLE IF NOT EXISTS template_artifacts (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  template_seed_id INT NULL,
-  owner_person_id INT NULL,
-  template_code VARCHAR(180) NOT NULL,
-  display_name VARCHAR(180) NOT NULL,
-  description VARCHAR(255) NULL,
+  -- Entregable padre. Todas las versiones de un entregable comparten deliverable_id (fuente de identidad/dueño).
+  deliverable_id INT NOT NULL,
   storage_version VARCHAR(20) NOT NULL,
-  template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official',
-  -- Ciclo de vida editorial de la VERSIÓN (independiente del scope): 'draft' = editable, no usable;
-  -- 'published' = inmutable y usable/enlazable; 'retired' = no para enlaces nuevos, se conserva para auditoría.
+  -- Ciclo de vida editorial de la VERSIÓN: 'draft' = editable, no usable; 'published' = inmutable y usable/
+  -- enlazable; 'retired' = no para enlaces nuevos, se conserva para auditoría.
   lifecycle_state ENUM('draft','published','retired') NOT NULL DEFAULT 'published',
   base_object_prefix VARCHAR(255) NOT NULL,
   available_formats JSON NOT NULL,
@@ -501,23 +500,13 @@ CREATE TABLE IF NOT EXISTS template_artifacts (
   content_hash VARCHAR(64) NULL,
   -- Linaje: versión de la que deriva este artifact (clon). NULL para la primera versión.
   parent_version_id INT NULL,
-  -- Entregable padre (modelo "libro/ediciones"). Todas las versiones de un mismo template_code apuntan al mismo
-  -- deliverable. Nullable en Fase 1 (transición); en Fase 2 pasa a ser la fuente de identidad/dueño.
-  deliverable_id INT NULL,
   -- 'is_active' = bandera de disponibilidad de almacenamiento (subida a MinIO completa). Lo "usable" por el
   -- runtime = lifecycle_state='published' AND is_active=1.
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_template_artifacts_storage (template_code, storage_version),
-  INDEX idx_template_artifacts_seed (template_seed_id),
-  INDEX idx_template_artifacts_owner_person (owner_person_id),
-  INDEX idx_template_artifacts_scope (template_scope),
+  UNIQUE KEY uq_template_artifacts_storage (deliverable_id, storage_version),
   INDEX idx_template_artifacts_state (lifecycle_state),
   INDEX idx_template_artifacts_deliverable (deliverable_id),
-  CONSTRAINT fk_template_artifacts_seed
-    FOREIGN KEY (template_seed_id) REFERENCES template_seeds(id),
-  CONSTRAINT fk_template_artifacts_owner_person
-    FOREIGN KEY (owner_person_id) REFERENCES persons(id),
   CONSTRAINT fk_template_artifacts_parent
     FOREIGN KEY (parent_version_id) REFERENCES template_artifacts(id),
   CONSTRAINT fk_template_artifacts_deliverable

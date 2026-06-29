@@ -266,7 +266,7 @@ const getUserDocumentCenterRows = async (pool, userId) => {
        trm.name AS term_name,
        tt.name AS term_type_name,
        YEAR(trm.start_date) AS term_year,
-       tar.display_name AS template_artifact_name,
+       tar_dl.display_name AS template_artifact_name,
        COALESCE(fill_stats.pending_fill_count, 0) AS pending_fill_count,
        COALESCE(signature_stats.pending_signature_count, 0) AS pending_signature_count
      FROM documents d
@@ -286,6 +286,7 @@ const getUserDocumentCenterRows = async (pool, userId) => {
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN processes p ON p.id = pdv.process_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
@@ -374,7 +375,7 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        trm.name AS term_name,
        tt.name AS term_type_name,
        YEAR(trm.start_date) AS term_year,
-       tar.display_name AS template_artifact_name
+       tar_dl.display_name AS template_artifact_name
      FROM signature_requests sr
      INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
@@ -391,6 +392,7 @@ const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN processes p ON p.id = pdv.process_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN units origin_unit ON origin_unit.id = d.origin_unit_id
@@ -592,11 +594,12 @@ const getDefinitionTemplates = async (pool, definitionId) => {
        pdt.id,
        pdt.sort_order,
        tar.id AS template_artifact_id,
-       tar.display_name AS template_artifact_name,
+       tar_dl.display_name AS template_artifact_name,
        tar.is_active AS template_artifact_active,
        COUNT(DISTINCT sft.id) AS signature_flow_count
      FROM process_definition_templates pdt
      INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN signature_flow_templates sft
        ON sft.process_definition_template_id = pdt.id
       AND sft.is_active = 1
@@ -605,7 +608,7 @@ const getDefinitionTemplates = async (pool, definitionId) => {
        pdt.id,
        pdt.sort_order,
        tar.id,
-       tar.display_name,
+       tar_dl.display_name,
        tar.is_active
      ORDER BY pdt.sort_order ASC, pdt.id ASC`,
     [definitionId]
@@ -635,16 +638,17 @@ const getAvailableTerms = async (pool) => {
 const getUserOwnedTemplateArtifacts = async (pool, userId) => {
   const [rows] = await pool.query(
     `SELECT
-       id,
-       display_name,
-       description,
-       is_active,
-       available_formats,
-       created_at
-     FROM template_artifacts
-     WHERE owner_person_id = ?
-       AND is_active = 1
-     ORDER BY created_at DESC, id DESC
+       ta.id,
+       d.display_name,
+       d.description,
+       ta.is_active,
+       ta.available_formats,
+       ta.created_at
+     FROM template_artifacts ta
+     INNER JOIN deliverables d ON d.id = ta.deliverable_id
+     WHERE d.owner_person_id = ?
+       AND ta.is_active = 1
+     ORDER BY ta.created_at DESC, ta.id DESC
      LIMIT 12`,
     [userId]
   );
@@ -750,7 +754,7 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.template_artifact_id,
        ti.origin_kind,
        ti.title,
-       tar.template_seed_id,
+       tar_dl.template_seed_id,
        ti.sort_order,
        ti.responsible_position_id,
        ti.assigned_person_id,
@@ -783,12 +787,13 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.end_date,
        ti.user_started_at,
        ti.status,
-       tar.display_name AS template_artifact_name,
+       tar_dl.display_name AS template_artifact_name,
        rp.title AS responsible_position_title,
        COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
        target_pos.title AS target_position_title
      FROM task_items ti
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
      LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
@@ -912,7 +917,7 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
        ti.start_date,
        ti.end_date,
        ti.user_started_at,
-       tar.display_name AS template_artifact_name,
+       tar_dl.display_name AS template_artifact_name,
        pdv.process_id,
        trm.term_type_id,
        trm.start_date AS term_start_date,
@@ -946,6 +951,7 @@ const getAccessibleTaskItemForUser = async (pool, userId, definitionId, taskItem
      INNER JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
      LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
      WHERE ti.id = ?
@@ -1071,7 +1077,7 @@ const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId)
        sr.requested_at,
        sr.responded_at,
        srs.name AS status_name,
-       sfs.step_order,       tar.display_name AS template_artifact_name,
+       sfs.step_order,       tar_dl.display_name AS template_artifact_name,
        d.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version
@@ -1083,6 +1089,7 @@ const getUserPendingSignaturesForDefinition = async (pool, userId, definitionId)
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     WHERE sr.assigned_person_id = ?
        AND t.process_definition_id = ?
@@ -1115,7 +1122,7 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
        srs.code AS request_status_code,
        srs.name AS status_name,
        sfs.step_order,       c.name AS cargo_name,
-       tar.display_name AS template_artifact_name,
+       tar_dl.display_name AS template_artifact_name,
        d.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version,
@@ -1125,6 +1132,7 @@ const getSignatureWorkflowRequestsForDocumentVersions = async (pool, documentVer
      INNER JOIN documents d ON d.id = dv.document_id
      INNER JOIN task_items ti ON ti.id = d.task_item_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
      LEFT JOIN persons p ON p.id = sr.assigned_person_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
@@ -1199,7 +1207,7 @@ const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionI
        fr.responded_at,
        fr.status AS status_name,
        ffs.step_order,
-       tar.display_name AS template_artifact_name,
+       tar_dl.display_name AS template_artifact_name,
        d.id AS document_id,
        dv.id AS document_version_id,
        dv.version AS document_version
@@ -1211,6 +1219,7 @@ const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionI
      INNER JOIN task_items ti ON ti.id = d.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      WHERE fr.assigned_person_id = ?
        AND t.process_definition_id = ?
        AND LOWER(COALESCE(dv.status, '')) IN (
@@ -2863,12 +2872,13 @@ export const downloadDeliverableTemplate = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT
          ti.id AS task_item_id,
-         tar.template_seed_id,
-         tar.display_name AS template_artifact_name,
+         tar_dl.template_seed_id,
+         tar_dl.display_name AS template_artifact_name,
          tar.available_formats
        FROM task_items ti
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
        WHERE ti.id = ?
          AND t.process_definition_id = ?
          AND (
@@ -3627,9 +3637,10 @@ export const createGeneralTask = async (req, res) => {
            ti.target_unit_id,
            ti.target_person_id,
            ti.responsible_position_id,
-           COALESCE(ti.title, tar.display_name) AS template_artifact_name
+           COALESCE(ti.title, tar_dl.display_name) AS template_artifact_name
          FROM task_items ti
          LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
          WHERE ti.id = ?
          LIMIT 1`,
         [taskItemId]

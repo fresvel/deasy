@@ -272,6 +272,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      LEFT JOIN template_artifacts tar ON tar.id = dv.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id
      LEFT JOIN units u_target ON u_target.id = ti.target_unit_id
@@ -970,10 +971,11 @@ const getTaskItemsForDocumentMaterialization = async (connection, taskId) => {
        ti.target_position_id,
        ti.target_person_id,
        t.responsible_position_id,
-       tar.display_name AS template_artifact_name
+       tar_dl.display_name AS template_artifact_name
      FROM task_items ti
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      WHERE ti.task_id = ?
      ORDER BY ti.sort_order ASC, ti.id ASC`,
     [taskId]

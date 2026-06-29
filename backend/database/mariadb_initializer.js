@@ -209,6 +209,11 @@ const ensureDeliverablesBackfill = async (connection) => {
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = 'deliverable_id'`
   );
   if (!columns.length) return; // la columna aún no existe (no debería pasar: se agrega antes)
+  const [tcCol] = await connection.query(
+    `SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = 'template_code'`
+  );
+  if (!tcCol.length) return; // ya se dropeó template_code (modelo migrado): nada que backfillear.
 
   const [codes] = await connection.query(
     "SELECT template_code, MAX(id) AS rep_id FROM template_artifacts GROUP BY template_code"
@@ -599,6 +604,81 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "FK template_artifacts.deliverable_id"
     );
 
+    // === F2-drop (limpieza final, irreversible): elimina las columnas DUPLICADAS de template_artifacts.
+    // Identidad (template_code/display_name/description), scope, seed y persona viven ahora SOLO en
+    // `deliverables`. Run-once: el guard por template_code hace que tras el drop el bloque se salte para siempre.
+    // Helper local (el columnExists de arriba está scoped a otra función).
+    const taColumnExists = async (column) => {
+      const [r] = await connection.query(
+        `SELECT 1 FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = ? LIMIT 1`,
+        [column]
+      );
+      return r.length > 0;
+    };
+    if (await taColumnExists("template_code")) {
+      const indexExists = async (name) => {
+        const [r] = await connection.query(
+          `SELECT 1 FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND INDEX_NAME = ? LIMIT 1`,
+          [name]
+        );
+        return r.length > 0;
+      };
+      const fkExists = async (name) => {
+        const [r] = await connection.query(
+          `SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND CONSTRAINT_NAME = ? LIMIT 1`,
+          [name]
+        );
+        return r.length > 0;
+      };
+      // El backfill de arriba ya garantizó deliverable_id en todas las filas → endurecer a NOT NULL.
+      const [nullDeliv] = await connection.query(
+        "SELECT COUNT(*) AS c FROM template_artifacts WHERE deliverable_id IS NULL"
+      );
+      if (Number(nullDeliv?.[0]?.c || 0) === 0) {
+        try {
+          await connection.query("ALTER TABLE template_artifacts MODIFY deliverable_id INT NOT NULL");
+        } catch (error) {
+          console.warn("⚠️  F2-drop: no se pudo poner deliverable_id NOT NULL:", error.message);
+        }
+      }
+      // Re-basar la clave única (template_code, storage_version) → (deliverable_id, storage_version).
+      try {
+        if (await indexExists("uq_template_artifacts_storage")) {
+          await connection.query("ALTER TABLE template_artifacts DROP INDEX uq_template_artifacts_storage");
+        }
+        await connection.query(
+          "ALTER TABLE template_artifacts ADD UNIQUE KEY uq_template_artifacts_storage (deliverable_id, storage_version)"
+        );
+      } catch (error) {
+        console.warn("⚠️  F2-drop: no se pudo re-basar la clave única:", error.message);
+      }
+      // Soltar FKs de las columnas a eliminar (deben ir antes que el DROP COLUMN).
+      for (const fk of ["fk_template_artifacts_seed", "fk_template_artifacts_owner_person"]) {
+        if (await fkExists(fk)) {
+          try { await connection.query(`ALTER TABLE template_artifacts DROP FOREIGN KEY ${fk}`); }
+          catch (error) { console.warn(`⚠️  F2-drop: no se pudo soltar ${fk}:`, error.message); }
+        }
+      }
+      // Soltar índices secundarios de esas columnas (si quedaran tras el DROP COLUMN).
+      for (const idx of ["idx_template_artifacts_seed", "idx_template_artifacts_owner_person", "idx_template_artifacts_scope"]) {
+        if (await indexExists(idx)) {
+          try { await connection.query(`ALTER TABLE template_artifacts DROP INDEX ${idx}`); }
+          catch { /* ya no existe / se quitó con la columna */ }
+        }
+      }
+      // Soltar las columnas duplicadas.
+      for (const col of ["template_seed_id", "owner_person_id", "template_code", "display_name", "description", "template_scope"]) {
+        if (await taColumnExists(col)) {
+          try { await connection.query(`ALTER TABLE template_artifacts DROP COLUMN \`${col}\``); }
+          catch (error) { console.warn(`⚠️  F2-drop: no se pudo soltar columna ${col}:`, error.message); }
+        }
+      }
+      console.log("✅ F2-drop: columnas duplicadas eliminadas de template_artifacts (identidad ahora en deliverables)");
+    }
+
     // Ancestro por tipo de relación en pasos de llenado (organigramas matriciales): NULL = 'org'.
     await addColumnIfMissing(
       connection,
@@ -614,47 +694,42 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "FK fill_flow_steps.relation_type_id"
     );
 
-    await addColumnIfMissing(
-      connection,
-      "template_artifacts",
-      "template_scope",
-      "template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official' AFTER artifact_stage"
-    );
-    try {
-      // Modelo de dos tipos: 'official' (de proceso, creada por gestor) | 'ad_hoc' (de usuario en runtime).
-      // Se elimina 'user_reusable' por completo: las reutilizables previas pasan a 'official'. Backfill por
-      // ruta para filas sin valor válido (las de ruta AdHoc → ad_hoc; el resto → official).
-      await connection.query(
-        "UPDATE template_artifacts SET template_scope = 'official' WHERE template_scope = 'user_reusable'"
-      );
-      await connection.query(
-        `UPDATE template_artifacts
-         SET template_scope = CASE
-           WHEN base_object_prefix LIKE 'Users/%/AdHoc/%' THEN 'ad_hoc'
-           ELSE 'official'
-         END
-         WHERE template_scope IS NULL
-            OR template_scope NOT IN ('official','ad_hoc')`
-      );
-      // Quita 'user_reusable' del ENUM (idempotente: solo si la columna aún lo declara).
-      const [scopeCol] = await connection.query(
-        `SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS
-          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = 'template_scope'`
-      );
-      if (scopeCol?.[0]?.t && /user_reusable/.test(scopeCol[0].t)) {
+    // Normalización histórica de template_scope. SOLO si la columna aún existe en template_artifacts; tras el
+    // F2-drop el scope vive únicamente en `deliverables` y NO se re-crea aquí (no hay addColumnIfMissing).
+    if (await taColumnExists("template_scope")) {
+      try {
+        // Modelo de dos tipos: 'official' | 'ad_hoc' (se eliminó 'user_reusable' → pasa a 'official').
         await connection.query(
-          "ALTER TABLE template_artifacts MODIFY template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official'"
+          "UPDATE template_artifacts SET template_scope = 'official' WHERE template_scope = 'user_reusable'"
         );
+        await connection.query(
+          `UPDATE template_artifacts
+           SET template_scope = CASE
+             WHEN base_object_prefix LIKE 'Users/%/AdHoc/%' THEN 'ad_hoc'
+             ELSE 'official'
+           END
+           WHERE template_scope IS NULL
+              OR template_scope NOT IN ('official','ad_hoc')`
+        );
+        const [scopeCol] = await connection.query(
+          `SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'template_artifacts' AND COLUMN_NAME = 'template_scope'`
+        );
+        if (scopeCol?.[0]?.t && /user_reusable/.test(scopeCol[0].t)) {
+          await connection.query(
+            "ALTER TABLE template_artifacts MODIFY template_scope ENUM('official','ad_hoc') NOT NULL DEFAULT 'official'"
+          );
+        }
+      } catch (error) {
+        console.warn("⚠️  No se pudo migrar template_artifacts.template_scope:", error.message);
       }
-    } catch (error) {
-      console.warn("⚠️  No se pudo migrar template_artifacts.template_scope:", error.message);
+      await addIndexIgnoringDuplicate(
+        connection,
+        "template_artifacts",
+        "INDEX idx_template_artifacts_scope (template_scope)",
+        "índice template_artifacts.template_scope"
+      );
     }
-    await addIndexIgnoringDuplicate(
-      connection,
-      "template_artifacts",
-      "INDEX idx_template_artifacts_scope (template_scope)",
-      "índice template_artifacts.template_scope"
-    );
 
     // Jefatura por puesto (F-C): cabeza de unidad + máximo una por unidad (head_flag + UNIQUE). Para DBs
     // existentes (el CREATE TABLE IF NOT EXISTS no altera columnas).
@@ -1070,6 +1145,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
         `UPDATE task_items ti
          INNER JOIN tasks t ON t.id = ti.task_id
          LEFT JOIN template_artifacts ta ON ta.id = ti.template_artifact_id
+         LEFT JOIN deliverables ta_d ON ta_d.id = ta.deliverable_id
          LEFT JOIN unit_positions item_pos ON item_pos.id = ti.responsible_position_id
          LEFT JOIN unit_positions task_pos ON task_pos.id = t.responsible_position_id
          SET ti.origin_kind = COALESCE(ti.origin_kind, 'process_defined'),
@@ -1077,7 +1153,7 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
              ti.target_person_id = COALESCE(ti.target_person_id, ti.assigned_person_id),
              ti.target_position_id = COALESCE(ti.target_position_id, ti.responsible_position_id, t.responsible_position_id),
              ti.target_unit_id = COALESCE(ti.target_unit_id, item_pos.unit_id, task_pos.unit_id, t.scope_unit_id),
-             ti.title = COALESCE(ti.title, ta.display_name)
+             ti.title = COALESCE(ti.title, ta_d.display_name)
          WHERE ti.origin_kind IS NULL
             OR ti.created_by_person_id IS NULL
             OR ti.target_person_id IS NULL
@@ -1172,10 +1248,11 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
            ti.id,
            ti.assigned_person_id,
            'task_item',
-           COALESCE(tar.display_name, CONCAT('Documento ', ti.id)),
+           COALESCE(tar_d.display_name, CONCAT('Documento ', ti.id)),
            'Inicial'
          FROM task_items ti
          LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+         LEFT JOIN deliverables tar_d ON tar_d.id = tar.deliverable_id
          LEFT JOIN documents d ON d.task_item_id = ti.id
          WHERE d.id IS NULL`
       );

@@ -180,8 +180,8 @@ const getDocumentVersionArtifactContext = async (connection, documentVersionId) 
        dv.status,
        d.owner_person_id,
        d.task_item_id,
-       ta.template_code,
-       ta.display_name,
+       dl.code AS template_code,
+       dl.display_name,
        ta.bucket,
        ta.base_object_prefix,
        ta.available_formats,
@@ -190,6 +190,7 @@ const getDocumentVersionArtifactContext = async (connection, documentVersionId) 
      FROM document_versions dv
      INNER JOIN documents d ON d.id = dv.document_id
      LEFT JOIN template_artifacts ta ON ta.id = dv.template_artifact_id
+     LEFT JOIN deliverables dl ON dl.id = ta.deliverable_id
      WHERE dv.id = ?
      LIMIT 1`,
     [documentVersionId]

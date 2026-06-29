@@ -1794,6 +1794,19 @@ export default class SqlAdminService {
     let groupByClause = "";
     let columnPrefix = "";
     const normalizedFilters = { ...filters };
+    // template_artifacts: estos campos viven en `deliverables` (alias d). Se rutean ahí en select/búsqueda/filtro/orden.
+    const TA_DELIV_COLS = {
+      template_code: "d.code",
+      display_name: "d.display_name",
+      description: "d.description",
+      template_scope: "d.template_scope",
+      template_seed_id: "d.template_seed_id",
+      owner_person_id: "d.owner_person_id"
+    };
+    const qualifyField = (field) => {
+      if (tableName === "template_artifacts" && TA_DELIV_COLS[field]) return TA_DELIV_COLS[field];
+      return columnPrefix ? `${columnPrefix}${field}` : field;
+    };
 
     if (tableName === "processes") {
       joinClause = `LEFT JOIN (
@@ -1842,7 +1855,10 @@ export default class SqlAdminService {
 
     if (tableName === "template_artifacts") {
       columnPrefix = "template_artifacts.";
-      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      joinClause = "LEFT JOIN deliverables d ON d.id = template_artifacts.deliverable_id";
+      const selectFields = physicalFields.map((field) =>
+        TA_DELIV_COLS[field] ? `${TA_DELIV_COLS[field]} AS ${field}` : `template_artifacts.${field}`
+      );
       selectClause = `SELECT ${selectFields.join(", ")}`;
       // Filtro "por proceso al que pertenece": plantillas vinculadas a ese proceso vía process_definition_templates.
       const processFilter = normalizedFilters.process_id;
@@ -1859,7 +1875,7 @@ export default class SqlAdminService {
 
     if (q && config.searchFields?.length) {
       const like = `%${q}%`;
-      const searchClauses = config.searchFields.map((field) => `${columnPrefix}${field} LIKE ?`);
+      const searchClauses = config.searchFields.map((field) => `${qualifyField(field)} LIKE ?`);
       conditions.push(`(${searchClauses.join(" OR ")})`);
       params.push(...config.searchFields.map(() => like));
     }
@@ -1872,7 +1888,7 @@ export default class SqlAdminService {
         continue;
       }
       const fieldMeta = config.fields.find((meta) => meta.name === field);
-      const columnName = columnPrefix ? `${columnPrefix}${field}` : field;
+      const columnName = qualifyField(field);
       if (["text", "email", "textarea"].includes(fieldMeta?.type)) {
         conditions.push(`${columnName} LIKE ?`);
         params.push(`%${value}%`);
@@ -1887,9 +1903,11 @@ export default class SqlAdminService {
     const orderColumn =
       (tableName === "processes" && safeOrderBy === "active_definition_version")
         ? safeOrderBy
-        : joinClause
-          ? `${tableName}.${safeOrderBy}`
-          : safeOrderBy;
+        : tableName === "template_artifacts"
+          ? qualifyField(safeOrderBy)
+          : joinClause
+            ? `${tableName}.${safeOrderBy}`
+            : safeOrderBy;
     const safeOrder = order?.toLowerCase() === "asc" ? "ASC" : "DESC";
     const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : DEFAULT_LIMIT;
     const safeOffset = Number.isFinite(Number(offset)) ? Math.max(0, Number(offset)) : 0;
@@ -1905,6 +1923,23 @@ export default class SqlAdminService {
 
   async getByKeys(tableName, keys) {
     this.ensurePool();
+    // template_artifacts: la identidad/atributos del entregable viven en `deliverables` (modelo "libro/ediciones").
+    // Se resuelven vía JOIN y se exponen con los MISMOS nombres (template_code/display_name/scope/seed/owner_person)
+    // para no romper a los ~muchos llamadores. Funciona antes y después del drop de columnas (lee de `d`).
+    if (tableName === "template_artifacts" && keys?.id !== undefined) {
+      const [rows] = await this.pool.query(
+        `SELECT ta.id, ta.storage_version, ta.lifecycle_state, ta.is_active, ta.base_object_prefix,
+                ta.available_formats, ta.schema_object_key, ta.meta_object_key, ta.content_hash,
+                ta.parent_version_id, ta.deliverable_id, ta.created_at,
+                d.code AS template_code, d.display_name, d.description, d.template_scope,
+                d.template_seed_id, d.owner_person_id
+           FROM template_artifacts ta
+           LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+          WHERE ta.id = ? LIMIT 1`,
+        [Number(keys.id)]
+      );
+      return rows?.[0] ?? null;
+    }
     const config = getConfig(tableName);
     const { where, params } = buildWhere(config.primaryKeys, keys);
     const fields = config.fields.filter((field) => !field.virtual).map((field) => field.name);
@@ -1931,14 +1966,15 @@ export default class SqlAdminService {
     this.ensurePool();
     const [rows] = await connection.query(
       `SELECT
-         id,
-         template_code,
-         display_name,
-         storage_version,
-         template_scope,
-         meta_object_key
-       FROM template_artifacts
-       WHERE id = ?
+         ta.id,
+         d.code AS template_code,
+         d.display_name,
+         ta.storage_version,
+         d.template_scope,
+         ta.meta_object_key
+       FROM template_artifacts ta
+       LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+       WHERE ta.id = ?
        LIMIT 1`,
       [artifactId]
     );
@@ -2434,12 +2470,13 @@ export default class SqlAdminService {
     // es el distintivo que identifica que es el mismo entregable.
     const [templates] = await this.pool.query(
       `SELECT pdt.id, pdt.process_definition_id AS definition_id, pdv.process_id,
-              pdt.template_artifact_id, ta.template_code, ta.display_name, ta.template_scope,
+              pdt.template_artifact_id, d.code AS template_code, d.display_name, d.template_scope,
               ta.storage_version, ta.lifecycle_state,
-              (SELECT COUNT(*) FROM template_artifacts tav WHERE tav.template_code = ta.template_code) AS version_count
+              (SELECT COUNT(*) FROM template_artifacts tav WHERE tav.deliverable_id = ta.deliverable_id) AS version_count
          FROM process_definition_templates pdt
          INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
          INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+         INNER JOIN deliverables d ON d.id = ta.deliverable_id
         ORDER BY pdt.process_definition_id, pdt.sort_order ASC`
     );
     return { nodes, edges, configs, templates };
@@ -2452,11 +2489,12 @@ export default class SqlAdminService {
     const code = String(templateCode || "").trim();
     if (!code) return [];
     const [rows] = await this.pool.query(
-      `SELECT id, template_code, display_name, storage_version, lifecycle_state, is_active,
-              parent_version_id, template_scope, created_at
-         FROM template_artifacts
-        WHERE template_code = ?
-        ORDER BY created_at DESC, id DESC`,
+      `SELECT ta.id, d.code AS template_code, d.display_name, ta.storage_version, ta.lifecycle_state, ta.is_active,
+              ta.parent_version_id, d.template_scope, ta.created_at
+         FROM template_artifacts ta
+         INNER JOIN deliverables d ON d.id = ta.deliverable_id
+        WHERE d.code = ?
+        ORDER BY ta.created_at DESC, ta.id DESC`,
       [code]
     );
     return rows;
@@ -5238,11 +5276,10 @@ export default class SqlAdminService {
   }
 
   // F5 — "una sola publicada por ENTREGABLE": retira las demás versiones publicadas del mismo deliverable_id
-  // (== mismo template_code, 1:1) que la versión dada. Usa deliverable_id (robusto); fallback a template_code si
-  // la fila aún no tiene deliverable (legacy). NO publica la versión dada (eso lo hace quien llama).
+  // (== mismo deliverable_id) que la versión dada. NO publica la versión dada (eso lo hace quien llama).
   async retirePriorPublishedSiblings(connection, artifactId) {
     const [rows] = await connection.query(
-      "SELECT deliverable_id, template_code FROM template_artifacts WHERE id = ? LIMIT 1",
+      "SELECT deliverable_id FROM template_artifacts WHERE id = ? LIMIT 1",
       [Number(artifactId)]
     );
     const delivId = rows?.[0]?.deliverable_id || null;
@@ -5251,12 +5288,6 @@ export default class SqlAdminService {
         `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
           WHERE deliverable_id = ? AND id <> ? AND lifecycle_state = 'published'`,
         [delivId, Number(artifactId)]
-      );
-    } else if (rows?.[0]?.template_code) {
-      await connection.query(
-        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
-          WHERE template_code = ? AND id <> ? AND lifecycle_state = 'published'`,
-        [String(rows[0].template_code), Number(artifactId)]
       );
     }
   }
@@ -5625,8 +5656,9 @@ export default class SqlAdminService {
     const [result] = await connection.query(
       `UPDATE process_definition_templates pdt
          INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+         INNER JOIN deliverables d ON d.id = ta.deliverable_id
           SET pdt.template_artifact_id = ?
-        WHERE pdt.process_definition_id = ? AND ta.template_code = ?`,
+        WHERE pdt.process_definition_id = ? AND d.code = ?`,
       [Number(targetArtifactId), Number(definitionId), String(templateCode)]
     );
     if (result?.affectedRows) {
@@ -5719,9 +5751,10 @@ export default class SqlAdminService {
 
     const loadTemplates = async (id) => {
       const [rows] = await this.pool.query(
-        `SELECT ta.template_code, ta.display_name, ta.storage_version, ta.lifecycle_state
+        `SELECT d.code AS template_code, d.display_name, ta.storage_version, ta.lifecycle_state
            FROM process_definition_templates pdt
            INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+           INNER JOIN deliverables d ON d.id = ta.deliverable_id
           WHERE pdt.process_definition_id = ?`,
         [id]
       );
@@ -5815,20 +5848,14 @@ export default class SqlAdminService {
         entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
       }
     }
+    // Identidad/scope/owner viven en `deliverables`; la versión solo hereda deliverable_id (mismo entregable).
     const [result] = await this.pool.query(
       `INSERT INTO template_artifacts (
-        template_seed_id, owner_person_id, template_code, display_name, description,
-        storage_version, template_scope, lifecycle_state, base_object_prefix,
+        storage_version, lifecycle_state, base_object_prefix,
         available_formats, schema_object_key, meta_object_key, content_hash, parent_version_id, deliverable_id, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
+      ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
-        artifact.template_seed_id,
-        artifact.owner_person_id,
-        templateCode,
-        artifact.display_name,
-        artifact.description,
         nextStorageVersion,
-        artifact.template_scope || "official",
         newPrefix,
         JSON.stringify(remappedFormats || {}),
         newSchemaKey,
@@ -5860,7 +5887,13 @@ export default class SqlAdminService {
     this.ensurePool();
     const srcId = Number(sourceArtifactId);
     const defId = Number(definitionId);
-    const [srcRows] = await this.pool.query("SELECT * FROM template_artifacts WHERE id = ? LIMIT 1", [srcId]);
+    const [srcRows] = await this.pool.query(
+      `SELECT ta.*, d.code AS template_code, d.display_name, d.description, d.template_scope,
+              d.template_seed_id, d.owner_person_id
+         FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+        WHERE ta.id = ? LIMIT 1`,
+      [srcId]
+    );
     const src = srcRows?.[0];
     if (!src) throw new Error("La versión de origen no existe.");
     const [defRows] = await this.pool.query(
@@ -5877,8 +5910,7 @@ export default class SqlAdminService {
     for (let i = 1; ; i += 1) {
       const candidate = i === 1 ? code : `${code}-${i}`;
       const [exists] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [candidate]);
-      const [existsTa] = await this.pool.query("SELECT id FROM template_artifacts WHERE template_code = ? LIMIT 1", [candidate]);
-      if (!exists.length && !existsTa.length) { code = candidate; break; }
+      if (!exists.length) { code = candidate; break; }
     }
 
     // Crear el deliverable propio de la línea destino.
@@ -5912,16 +5944,14 @@ export default class SqlAdminService {
       }
     }
 
-    // Insertar la versión publicada del fork.
+    // Insertar la versión publicada del fork. Identidad/scope/owner viven en el `deliverable` nuevo (newDeliverableId).
     const [taIns] = await this.pool.query(
       `INSERT INTO template_artifacts
-         (template_seed_id, owner_person_id, template_code, display_name, description, storage_version,
-          template_scope, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
+         (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
           meta_object_key, content_hash, deliverable_id, is_active)
-       VALUES (?, ?, ?, ?, ?, '1.0.0', ?, 'published', ?, ?, ?, ?, ?, ?, 1)`,
+       VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, ?, 1)`,
       [
-        src.template_seed_id, src.owner_person_id, code, src.display_name, src.description,
-        src.template_scope || "official", newPrefix, JSON.stringify(remappedFormats || {}),
+        newPrefix, JSON.stringify(remappedFormats || {}),
         `${newPrefix}schema.json`, `${newPrefix}meta.yaml`, src.content_hash, newDeliverableId
       ]
     );
@@ -6097,9 +6127,10 @@ export default class SqlAdminService {
   // alguna, sube desde la mayor por el nivel elegido (patch/minor/major). Garantiza unicidad y monotonía.
   async getNextStorageVersionForTemplateCode(templateCode, level = "minor", connection = this.pool) {
     const [rows] = await connection.query(
-      `SELECT storage_version
-       FROM template_artifacts
-       WHERE template_code = ?`,
+      `SELECT ta.storage_version
+       FROM template_artifacts ta
+       INNER JOIN deliverables d ON d.id = ta.deliverable_id
+       WHERE d.code = ?`,
       [templateCode]
     );
     let maxKey = -1;
@@ -6492,14 +6523,10 @@ export default class SqlAdminService {
       uploadedToMinio = true;
 
       if (isEdit) {
+        // Storage en template_artifacts; identidad/scope/owner/seed/nombre en el `deliverable`.
         await this.pool.query(
           `UPDATE template_artifacts
-           SET template_seed_id = ?,
-               owner_person_id = ?,
-               display_name = ?,
-               description = ?,
-               template_scope = ?,
-               base_object_prefix = ?,
+           SET base_object_prefix = ?,
                available_formats = ?,
                schema_object_key = ?,
                meta_object_key = ?,
@@ -6507,11 +6534,6 @@ export default class SqlAdminService {
                is_active = 1
            WHERE id = ?`,
           [
-            templateSeedId,
-            ownerPersonId,
-            displayName,
-            description,
-            templateScope,
             baseObjectPrefix,
             JSON.stringify(availableFormats),
             schemaObjectKey,
@@ -6520,42 +6542,17 @@ export default class SqlAdminService {
             createdId
           ]
         );
+        if (existingArtifact?.deliverable_id) {
+          await this.pool.query(
+            `UPDATE deliverables
+             SET display_name = ?, description = ?, template_scope = ?, template_seed_id = ?, owner_person_id = ?
+             WHERE id = ?`,
+            [displayName, description, templateScope, templateSeedId, ownerPersonId, existingArtifact.deliverable_id]
+          );
+        }
       } else {
-        const [result] = await this.pool.query(
-          `INSERT INTO template_artifacts (
-            template_seed_id,
-            owner_person_id,
-            template_code,
-            display_name,
-            description,
-            storage_version,
-            template_scope,
-            lifecycle_state,
-            base_object_prefix,
-            available_formats,
-            schema_object_key,
-            meta_object_key,
-            content_hash,
-            is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, 1)`,
-          [
-            templateSeedId,
-            ownerPersonId,
-            templateCode,
-            displayName,
-            description,
-            storageVersion,
-            templateScope,
-            baseObjectPrefix,
-            JSON.stringify(availableFormats),
-            schemaObjectKey,
-            metaObjectKey,
-            contentHash
-          ]
-        );
-        createdId = result.insertId;
-        // Modelo entregable/ediciones: crear (o reusar) el `deliverable` de este código y enlazar la nueva
-        // versión. Dueño = (proceso, variación) de la configuración destino (si se indicó).
+        // Modelo entregable/ediciones: crear (o reusar) el `deliverable` PRIMERO (dueño = (proceso, variación) de
+        // la configuración destino) y luego insertar la versión con su deliverable_id.
         let ownerProcessId = null;
         let ownerVariationKey = null;
         const destDefId = data.process_definition_id ? Number(data.process_definition_id) : null;
@@ -6578,10 +6575,29 @@ export default class SqlAdminService {
           );
           newDeliverableId = delivIns.insertId;
         }
-        await this.pool.query(
-          "UPDATE template_artifacts SET deliverable_id = ? WHERE id = ?",
-          [newDeliverableId, createdId]
+        const [result] = await this.pool.query(
+          `INSERT INTO template_artifacts (
+            storage_version,
+            lifecycle_state,
+            base_object_prefix,
+            available_formats,
+            schema_object_key,
+            meta_object_key,
+            content_hash,
+            deliverable_id,
+            is_active
+          ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 1)`,
+          [
+            storageVersion,
+            baseObjectPrefix,
+            JSON.stringify(availableFormats),
+            schemaObjectKey,
+            metaObjectKey,
+            contentHash,
+            newDeliverableId
+          ]
         );
+        createdId = result.insertId;
       }
 
       // Vínculo a proceso destino. Obligatorio para ejecutores (GestorEjecucionProcesos):

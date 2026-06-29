@@ -464,25 +464,45 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const templateSeedId = Number(seedRow.id);
 
-  // 5. plantilla base instanciada desde el seed. Schema/meta/jinja2 viven en MinIO (publicados abajo).
+  // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: identidad/scope/owner/seed
+  //    viven en `deliverables` (dueño = proceso por defecto + variación); la versión solo guarda el storage MinIO.
+  let deliverable = await fetchOne(
+    connection,
+    "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
+    [DEFAULT_TEMPLATE_CODE]
+  );
+  if (!deliverable) {
+    const [r] = await connection.query(
+      `INSERT INTO deliverables
+        (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
+       VALUES (?, ?, ?, ?, ?, 'official', ?, NULL)`,
+      [
+        DEFAULT_TEMPLATE_CODE,
+        BASE_SEED_DISPLAY,
+        "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
+        processId,
+        DEFAULT_VARIATION,
+        templateSeedId,
+      ]
+    );
+    deliverable = { id: r.insertId };
+  }
+  const deliverableId = Number(deliverable.id);
+
   let artifact = await fetchOne(
     connection,
-    "SELECT id FROM template_artifacts WHERE template_code = ? LIMIT 1",
-    [DEFAULT_TEMPLATE_CODE]
+    "SELECT id FROM template_artifacts WHERE deliverable_id = ? LIMIT 1",
+    [deliverableId]
   );
   if (!artifact) {
     const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
     const [r] = await connection.query(
       `INSERT INTO template_artifacts
-        (template_seed_id, owner_person_id, template_code, display_name, description,
-         storage_version, template_scope, base_object_prefix,
+        (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
          available_formats, schema_object_key, meta_object_key, is_active)
-       VALUES (?, NULL, ?, ?, ?, '1.0.0', 'official', ?, ?, ?, ?, 1)`,
+       VALUES (?, '1.0.0', 'published', ?, ?, ?, ?, 1)`,
       [
-        templateSeedId,
-        DEFAULT_TEMPLATE_CODE,
-        BASE_SEED_DISPLAY,
-        "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
+        deliverableId,
         DEFAULT_TEMPLATE_PREFIX,
         JSON.stringify(availableFormats),
         `${DEFAULT_TEMPLATE_PREFIX}schema.json`,

@@ -97,7 +97,9 @@ export const downloadTemplateArtifactArchive = async (req, res) => {
   }
   try {
     const [rows] = await pool.query(
-      "SELECT id, template_code, display_name, available_formats FROM template_artifacts WHERE id = ? LIMIT 1",
+      `SELECT ta.id, d.code AS template_code, d.display_name, ta.available_formats
+         FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+        WHERE ta.id = ? LIMIT 1`,
       [id]
     );
     const artifact = rows?.[0];
@@ -175,7 +177,9 @@ export const downloadTemplateArtifactSource = async (req, res) => {
   }
   try {
     const [rows] = await pool.query(
-      "SELECT id, template_code, available_formats FROM template_artifacts WHERE id = ? LIMIT 1",
+      `SELECT ta.id, d.code AS template_code, ta.available_formats
+         FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+        WHERE ta.id = ? LIMIT 1`,
       [id]
     );
     const artifact = rows?.[0];
