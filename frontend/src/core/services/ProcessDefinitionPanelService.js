@@ -78,6 +78,28 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async listAddableDeliverables(userId, taskId) {
+    if (!userId || !taskId) {
+      throw new Error("Se requiere usuario y tarea.");
+    }
+    const { data } = await axios.get(
+      API_ROUTES.USERS_ADDABLE_DELIVERABLES(userId),
+      { params: { task_id: taskId }, headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
+  async searchTaskRecipients(userId, query = "") {
+    if (!userId) {
+      throw new Error("Se requiere usuario.");
+    }
+    const { data } = await axios.get(
+      API_ROUTES.USERS_TASK_RECIPIENTS(userId),
+      { params: { q: query }, headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
   async listTaskItemObservations(userId, processDefinitionId, taskItemId) {
     if (!userId || !processDefinitionId || !taskItemId) {
       throw new Error("Se requiere usuario, configuración y entregable.");

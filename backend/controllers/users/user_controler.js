@@ -787,7 +787,7 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.end_date,
        ti.user_started_at,
        ti.status,
-       tar_dl.display_name AS template_artifact_name,
+       COALESCE(NULLIF(ti.title, ''), tar_dl.display_name) AS template_artifact_name,
        rp.title AS responsible_position_title,
        COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
        target_pos.title AS target_position_title
@@ -3764,7 +3764,9 @@ export const createGeneralTask = async (req, res) => {
           sourceTaskId,
           definitionTemplateId,
           templateArtifactId,
-          description ? `${title}\n\n${description}` : title,
+          // Modos configurados: el título es la ETIQUETA limpia (se ve en la tarjeta).
+          // Legacy genérico: conserva el "título + descripción" concatenado.
+          processDefinitionTemplateId ? title : (description ? `${title}\n\n${description}` : title),
           authenticatedUserId,
           sourceTaskItemId || null,
           targetUnitId,

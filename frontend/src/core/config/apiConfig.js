@@ -47,6 +47,8 @@ export const API_ROUTES = {
   USERS_PROCESS_DEFINITION_TASK_ITEM_RESET_WORKFLOW: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/reset-workflow`,
   USERS_GENERAL_TASKS: (userId) => `${API_PREFIX}/users/${userId}/general-tasks`,
+  USERS_ADDABLE_DELIVERABLES: (userId) => `${API_PREFIX}/users/${userId}/addable-deliverables`,
+  USERS_TASK_RECIPIENTS: (userId) => `${API_PREFIX}/users/${userId}/task-recipients`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT: (userId, definitionId, taskItemId, attachmentId) =>

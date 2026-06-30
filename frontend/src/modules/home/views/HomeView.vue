@@ -917,6 +917,29 @@
                     </div>
                   </section>
 
+                  <section v-if="addableDeliverableEntries.length" class="px-2 md:px-3 xl:px-4">
+                    <div class="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 flex flex-col gap-3">
+                      <div class="flex items-center gap-1.5">
+                        <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Agregar entregable</h3>
+                        <IconInfoCircle class="h-4 w-4 text-slate-400" title="Crea réplicas con etiqueta o envíos a un destinatario, según el modo configurado en el proceso." />
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <AppButton
+                          v-for="entry in addableDeliverableEntries"
+                          :key="`add-${entry.task.id}-${entry.template.id}`"
+                          variant="softPrimary"
+                          size="sm"
+                          @click="openAddDeliverableModal(entry.task, entry.template)"
+                        >
+                          <span class="inline-flex items-center gap-1.5">
+                            <IconPlus class="h-4 w-4" />
+                            {{ entry.template.item_mode === 'routed' ? 'Enviar' : 'Agregar' }}: {{ entry.template.name || 'Entregable' }}
+                          </span>
+                        </AppButton>
+                      </div>
+                    </div>
+                  </section>
+
                   <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta configuración.
                   </div>
@@ -1773,29 +1796,59 @@
     <AdminModalShell
       ref="generalTaskModal"
       labelled-by="general-task-modal-title"
-      title="Nueva tarea"
+      :title="generalTaskModalTitle"
       size="lg"
       content-class="rounded-4 shadow border-0"
       body-class="pt-4"
     >
       <div class="flex flex-col gap-4">
         <p class="m-0 text-sm font-medium text-slate-500">
-          {{ generalTaskForm.mode === 'derived'
-            ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
-            : 'Crea una tarea técnica en la configuración default. Podrás adjuntar entregables una vez creada.' }}
+          {{ generalTaskForm.itemMode === 'routed'
+            ? 'Crea un envío de este entregable y elige a la persona que lo recibe y firma.'
+            : (generalTaskForm.itemMode === 'replicated'
+              ? 'Crea una réplica de este entregable. Hereda su flujo de entrega y firmas; solo cambia la etiqueta.'
+              : (generalTaskForm.mode === 'derived'
+                ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
+                : 'Crea una tarea técnica en la configuración default. Podrás adjuntar entregables una vez creada.')) }}
         </p>
+
+        <div v-if="generalTaskForm.templateName" class="flex flex-wrap items-center gap-2">
+          <AppTag :variant="generalTaskForm.itemMode === 'routed' ? 'info' : 'success'">{{ generalTaskForm.templateName }}</AppTag>
+          <AppTag variant="muted">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
+        </div>
 
         <div v-if="generalTaskError" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">{{ generalTaskError }}</div>
 
         <label class="flex flex-col gap-1">
-          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Título *</span>
-          <input v-model="generalTaskForm.title" type="text" maxlength="180" placeholder="Ej. Memorando interno, solicitud de equipo…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
+          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
+          <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
         </label>
 
-        <label class="flex flex-col gap-1">
+        <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-1">
           <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Descripción</span>
-          <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle de la tarea…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
+          <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del entregable…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
         </label>
+
+        <div v-if="generalTaskForm.itemMode === 'routed'" class="flex flex-col gap-1 relative">
+          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Destinatario *</span>
+          <input
+            v-model="recipientQuery"
+            type="text"
+            placeholder="Busca por nombre, cédula o correo…"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
+            @input="generalTaskForm.recipientPersonId = null; searchRecipients()"
+          />
+          <p v-if="generalTaskForm.recipientPersonId" class="m-0 text-xs font-semibold text-emerald-600">Destinatario: {{ generalTaskForm.recipientLabel }}</p>
+          <ul v-if="recipientResults.length && !generalTaskForm.recipientPersonId" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg list-none m-0 p-1">
+            <li v-for="person in recipientResults" :key="`recip-${person.id}`">
+              <button type="button" class="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-sky-50" @click="selectRecipient(person)">
+                {{ person.full_name }}
+                <span class="text-xs text-slate-400">· {{ person.cedula || person.email || '' }}</span>
+              </button>
+            </li>
+          </ul>
+          <p v-else-if="recipientSearching" class="m-0 text-xs text-slate-400">Buscando…</p>
+        </div>
 
         <label v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-1">
           <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Unidad *</span>
@@ -1805,7 +1858,7 @@
           </select>
         </label>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div v-if="generalTaskForm.mode === 'free'" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <label class="flex flex-col gap-1 sm:col-span-1">
             <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Periodo</span>
             <input v-model="generalTaskForm.termName" type="text" maxlength="180" placeholder="Ej. Junio 2026" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400" />
@@ -1823,7 +1876,13 @@
       <template #footer>
         <AppButton variant="secondary" data-modal-dismiss>Cancelar</AppButton>
         <AppButton variant="primary" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="submitGeneralTask">
-          {{ generalTaskSubmitting ? 'Creando…' : (generalTaskForm.mode === 'derived' ? 'Crear entregable' : 'Crear tarea') }}
+          {{ generalTaskSubmitting
+            ? 'Creando…'
+            : (generalTaskForm.itemMode === 'routed'
+              ? 'Enviar'
+              : (generalTaskForm.itemMode === 'replicated'
+                ? 'Agregar réplica'
+                : (generalTaskForm.mode === 'derived' ? 'Crear entregable' : 'Crear tarea'))) }}
         </AppButton>
       </template>
     </AdminModalShell>
@@ -2624,7 +2683,18 @@ const generalTaskForm = ref({
   termName: '',
   startDate: '',
   endDate: '',
+  // Emisión por modo (replicated/routed): plantilla configurada + destinatario.
+  itemMode: '',
+  processDefinitionTemplateId: null,
+  templateName: '',
+  recipientPersonId: null,
+  recipientLabel: '',
 });
+// Búsqueda de destinatarios para entregables 'routed'.
+const recipientQuery = ref('');
+const recipientResults = ref([]);
+const recipientSearching = ref(false);
+let recipientSearchTimer = null;
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -4438,6 +4508,8 @@ const showGeneralTaskInfo = () => {
 const openGeneralTaskModal = (mode = 'free', context = {}) => {
   const today = new Date().toISOString().slice(0, 10);
   generalTaskError.value = '';
+  recipientQuery.value = '';
+  recipientResults.value = [];
   generalTaskForm.value = {
     mode,
     title: '',
@@ -4449,10 +4521,97 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
     termName: '',
     startDate: today,
     endDate: '',
+    itemMode: context.itemMode || '',
+    processDefinitionTemplateId: context.processDefinitionTemplateId || null,
+    templateName: context.templateName || '',
+    recipientPersonId: null,
+    recipientLabel: '',
   };
   generalTaskModalInstance = Modal.getOrCreateInstance(generalTaskModal.value?.el);
   generalTaskModalInstance?.show();
 };
+
+// Abre el modal de alta para una plantilla configurada (replicated/routed) desde el panel de tarea.
+const openAddDeliverableModal = (task, template) => {
+  if (!task?.id || !template?.id) return;
+  openGeneralTaskModal('derived', {
+    sourceTaskId: task.id,
+    unitId: task.scope_unit_id || task.origin_unit_id || selectedProcessContext.value?.unit_id || null,
+    itemMode: String(template.item_mode || ''),
+    processDefinitionTemplateId: template.id,
+    templateName: template.name || '',
+  });
+};
+
+// Búsqueda de destinatarios (debounce simple) para modo routed.
+const searchRecipients = () => {
+  const userId = currentUserId.value;
+  if (recipientSearchTimer) clearTimeout(recipientSearchTimer);
+  recipientSearchTimer = setTimeout(async () => {
+    if (!userId) return;
+    recipientSearching.value = true;
+    try {
+      const data = await processPanelService.searchTaskRecipients(userId, recipientQuery.value.trim());
+      recipientResults.value = Array.isArray(data?.recipients) ? data.recipients : [];
+    } catch {
+      recipientResults.value = [];
+    } finally {
+      recipientSearching.value = false;
+    }
+  }, 250);
+};
+
+const selectRecipient = (person) => {
+  generalTaskForm.value.recipientPersonId = person.id;
+  generalTaskForm.value.recipientLabel = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim();
+  recipientResults.value = [];
+  recipientQuery.value = generalTaskForm.value.recipientLabel;
+};
+
+const generalTaskModalTitle = computed(() => {
+  const f = generalTaskForm.value;
+  if (f.itemMode === 'routed') return 'Enviar entregable';
+  if (f.itemMode === 'replicated') return 'Agregar réplica';
+  if (f.mode === 'derived') return 'Agregar entregable';
+  return 'Nueva tarea';
+});
+
+// Plantillas replicated/routed por tarea (entregables que el usuario puede crear on-demand).
+const addableDeliverablesByTask = ref({});
+const loadAddableDeliverables = async () => {
+  const userId = currentUserId.value;
+  if (!userId) {
+    addableDeliverablesByTask.value = {};
+    return;
+  }
+  const tasks = aggregatedProcessTasks.value || [];
+  const next = {};
+  for (const task of tasks) {
+    if (!task?.id) continue;
+    try {
+      const data = await processPanelService.listAddableDeliverables(userId, task.id);
+      const list = Array.isArray(data?.deliverables) ? data.deliverables : [];
+      if (list.length) next[task.id] = list;
+    } catch {
+      // silencioso: una tarea que falla no rompe el resto
+    }
+  }
+  addableDeliverablesByTask.value = next;
+};
+const addableDeliverableEntries = computed(() => {
+  const map = addableDeliverablesByTask.value || {};
+  const entries = [];
+  for (const task of (filteredProcessTasks.value || [])) {
+    for (const template of (map[task.id] || [])) {
+      entries.push({ task, template });
+    }
+  }
+  return entries;
+});
+watch(
+  () => (aggregatedProcessTasks.value || []).map((task) => task.id).join(','),
+  () => { loadAddableDeliverables(); }
+);
 
 const openDerivedTaskFromWorkspace = () => {
   const subject = deliverableWorkspaceSubject.value ? getDeliverableSubject(deliverableWorkspaceSubject.value) : null;
@@ -4478,6 +4637,10 @@ const submitGeneralTask = async () => {
     generalTaskError.value = 'Debes seleccionar una unidad.';
     return;
   }
+  if (form.itemMode === 'routed' && !form.recipientPersonId) {
+    generalTaskError.value = 'Debes elegir el destinatario del envío.';
+    return;
+  }
   generalTaskSubmitting.value = true;
   generalTaskError.value = '';
   try {
@@ -4487,6 +4650,8 @@ const submitGeneralTask = async () => {
       description: form.description.trim() || null,
       unit_id: form.unitId || null,
       source_task_id: form.sourceTaskId || null,
+      process_definition_template_id: form.processDefinitionTemplateId || null,
+      recipient_person_id: form.itemMode === 'routed' ? (form.recipientPersonId || null) : null,
       custom_term: {
         name: form.termName.trim() || form.title.trim(),
         start_date: form.startDate || null,
@@ -4497,7 +4662,11 @@ const submitGeneralTask = async () => {
     generalTaskModalInstance?.hide();
     await loadUserMenu();
     await refreshActiveProcessPanel();
-    setProcessActionInfo('Tarea creada correctamente.', 'success');
+    await loadAddableDeliverables();
+    const okMsg = form.itemMode === 'routed'
+      ? 'Envío creado correctamente.'
+      : (form.itemMode === 'replicated' ? 'Réplica agregada correctamente.' : 'Tarea creada correctamente.');
+    setProcessActionInfo(okMsg, 'success');
   } catch (error) {
     generalTaskError.value =
       error?.response?.data?.message || error?.message || 'No se pudo crear la tarea.';
