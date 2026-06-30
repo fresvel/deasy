@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { IconInfoCircle } from '@tabler/icons-vue';
 import AppTag from '@/shared/components/data/AppTag.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 
@@ -38,9 +39,9 @@ const onAdd = () => {
 
 <template>
   <section class="rounded-2xl border border-slate-200 bg-white p-4">
-    <div class="flex flex-col gap-0.5">
+    <div class="flex items-center gap-1.5">
       <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">{{ title }}</h3>
-      <p v-if="subtitle" class="m-0 text-xs font-medium text-slate-500">{{ subtitle }}</p>
+      <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-slate-400" :title="subtitle" />
     </div>
 
     <div v-if="loading" class="mt-4 text-sm text-slate-500">Cargando observaciones...</div>

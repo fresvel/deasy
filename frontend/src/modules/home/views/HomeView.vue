@@ -1498,7 +1498,7 @@
                 </div>
 
                 <!-- Contexto -->
-                <dl class="grid gap-x-6 gap-y-3 m-0 sm:grid-cols-2 lg:grid-cols-4">
+                <dl class="grid gap-x-6 gap-y-3 m-0 sm:grid-cols-2 lg:grid-cols-3">
                   <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
                     <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</dt>
                     <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
@@ -1510,110 +1510,46 @@
                   <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
                     <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Periodo</dt>
                     <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverablePeriodLabelFromSubject(deliverableWorkspaceSubject) }}</dd>
-                  </div>
-                  <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
-                    <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Fechas</dt>
-                    <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
+                    <dd class="m-0 text-xs font-medium text-slate-500">{{ getDeliverableDateRangeLabel(deliverableWorkspaceSubject) }}</dd>
                   </div>
                 </dl>
               </div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones</h3>
-                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Todo lo que puedes hacer ahora con este entregable, en un solo lugar.</p>
-                </div>
+              <div class="flex items-center gap-1.5">
+                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones</h3>
+                <IconInfoCircle class="h-4 w-4 text-slate-400" title="Todo lo que puedes hacer ahora con este entregable, en un solo lugar." />
               </div>
-              <div class="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4">
-                <button
-                  v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)"
-                  type="button"
-                  class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)] disabled:cursor-not-allowed disabled:opacity-60"
-                  :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)"
-                  @click="startDeliverableFlow(deliverableWorkspaceSubject)"
-                >
-                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                    <IconPlayerPlayFilled class="h-6 w-6" />
-                  </div>
-                  <div class="flex min-w-0 flex-col">
-                    <span class="text-sm font-bold text-slate-800">{{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}</span>
-                    <span class="text-xs font-medium text-slate-500">Habilita el flujo operativo.</span>
-                  </div>
-                </button>
-                <button
-                  v-else-if="shouldShowUploadDeliverable(deliverableWorkspaceSubject)"
-                  type="button"
-                  class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)] disabled:cursor-not-allowed disabled:opacity-60"
-                  :disabled="!deliverableWorkspaceSubject.actions?.can_upload_deliverable || isUploadingDeliverable"
-                  @click="openDeliverableUploadModal(deliverableWorkspaceSubject)"
-                >
-                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                    <IconUpload class="h-6 w-6" />
-                  </div>
-                  <div class="flex min-w-0 flex-col">
-                    <span class="text-sm font-bold text-slate-800">{{ getUploadActionLabel(deliverableWorkspaceSubject) }}</span>
-                    <span class="text-xs font-medium text-slate-500">Carga o reemplaza el archivo de trabajo.</span>
-                  </div>
-                </button>
-                <button
-                  v-else-if="shouldShowSign(deliverableWorkspaceSubject)"
-                  type="button"
-                  class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-fuchsia-200/90 bg-linear-to-br from-white via-fuchsia-50/35 to-rose-50/45 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-fuchsia-300 hover:from-white hover:to-fuchsia-50/70 hover:shadow-[0_18px_36px_rgba(217,70,239,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
-                  :disabled="!deliverableWorkspaceSubject.actions?.implemented?.sign"
-                  @click="openDocumentSignFlow(deliverableWorkspaceSubject)"
-                >
-                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-fuchsia-100 group-hover:bg-fuchsia-50 group-hover:text-fuchsia-600">
-                    <IconSignature class="h-6 w-6" />
-                  </div>
-                  <div class="flex min-w-0 flex-col">
-                    <span class="text-sm font-bold text-slate-800">Firmar</span>
-                    <span class="text-xs font-medium text-slate-500">Abre el firmador sobre el PDF listo.</span>
-                  </div>
-                </button>
-                <button
-                  v-else-if="shouldShowOpenWorkspacePrimary(deliverableWorkspaceSubject)"
-                  type="button"
-                  class="group relative flex w-full items-center gap-3 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-sky-50/40 px-4 py-3 text-left shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:from-white hover:to-sky-50/70 hover:shadow-[0_18px_36px_rgba(14,165,233,0.14)]"
-                  @click="deliverableWorkspaceState.tab = shouldShowManageFill(deliverableWorkspaceSubject) ? 'fill' : 'signature'"
-                >
-                  <div class="flex h-12 w-12 items-center justify-center rounded-[1rem] border border-white/80 bg-white/85 text-slate-500 shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition-all group-hover:border-sky-100 group-hover:bg-sky-50 group-hover:text-sky-600">
-                    <IconChecklist class="h-6 w-6" />
-                  </div>
-                  <div class="flex min-w-0 flex-col">
-                    <span class="text-sm font-bold text-slate-800">Ir al detalle operativo</span>
-                    <span class="text-xs font-medium text-slate-500">Revisa pasos, reglas y trazabilidad.</span>
-                  </div>
-                </button>
+              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                <!-- Acción principal (destacada) -->
+                <AppButton v-if="shouldShowStartDeliverable(deliverableWorkspaceSubject)" variant="primary" size="sm" :disabled="processingFillItemId === deliverableWorkspaceSubject.itemId || !canStartDeliverableAction(deliverableWorkspaceSubject)" @click="startDeliverableFlow(deliverableWorkspaceSubject)">
+                  <span class="inline-flex items-center gap-1.5"><IconPlayerPlayFilled class="h-4 w-4" /> {{ processingFillItemId === deliverableWorkspaceSubject.itemId ? 'Iniciando...' : 'Iniciar' }}</span>
+                </AppButton>
+                <AppButton v-else-if="shouldShowUploadDeliverable(deliverableWorkspaceSubject)" variant="primary" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_upload_deliverable || isUploadingDeliverable" @click="openDeliverableUploadModal(deliverableWorkspaceSubject)">
+                  <span class="inline-flex items-center gap-1.5"><IconUpload class="h-4 w-4" /> {{ getUploadActionLabel(deliverableWorkspaceSubject) }}</span>
+                </AppButton>
+                <AppButton v-else-if="shouldShowSign(deliverableWorkspaceSubject)" variant="primary" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.implemented?.sign" @click="openDocumentSignFlow(deliverableWorkspaceSubject)">
+                  <span class="inline-flex items-center gap-1.5"><IconSignature class="h-4 w-4" /> Firmar</span>
+                </AppButton>
+                <AppButton v-else-if="shouldShowOpenWorkspacePrimary(deliverableWorkspaceSubject)" variant="primary" size="sm" @click="deliverableWorkspaceState.tab = shouldShowManageFill(deliverableWorkspaceSubject) ? 'fill' : 'signature'">
+                  <span class="inline-flex items-center gap-1.5"><IconChecklist class="h-4 w-4" /> Ir al detalle</span>
+                </AppButton>
 
-                <!-- Menú de acciones (con etiqueta): revisión + utilidades -->
-                <div class="flex flex-wrap gap-2 pt-1">
-                  <AppButton v-if="canApproveFillRequest" variant="softSuccess" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')">
-                    <span class="inline-flex items-center gap-1.5"><IconCircleCheck class="h-4 w-4" /> {{ fillApproveActionLabel }}</span>
-                  </AppButton>
-                  <AppButton v-if="canReturnFillRequest" variant="softWarning" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')">
-                    <span class="inline-flex items-center gap-1.5"><IconArrowBackUp class="h-4 w-4" /> Devolver</span>
-                  </AppButton>
-                  <AppButton v-if="canRejectFillRequest" variant="softDanger" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')">
-                    <span class="inline-flex items-center gap-1.5"><IconX class="h-4 w-4" /> Rechazar</span>
-                  </AppButton>
-                  <AppButton variant="softNeutral" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat" @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)">
-                    <span class="inline-flex items-center gap-1.5"><IconMessages class="h-4 w-4" /> Chat</span>
-                  </AppButton>
-                  <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="softNeutral" size="sm" @click="previewDeliverableFile(deliverableWorkspaceSubject)">
-                    <span class="inline-flex items-center gap-1.5"><IconEye class="h-4 w-4" /> Ver PDF</span>
-                  </AppButton>
-                  <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="softNeutral" size="sm" @click="downloadDeliverableFile(deliverableWorkspaceSubject)">
-                    <span class="inline-flex items-center gap-1.5"><IconDownload class="h-4 w-4" /> Descargar</span>
-                  </AppButton>
-                  <AppButton v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)" variant="softNeutral" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_download_template" @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)">
-                    <span class="inline-flex items-center gap-1.5"><IconFileDescription class="h-4 w-4" /> Plantilla</span>
-                  </AppButton>
-                  <AppButton v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)" variant="softDanger" size="sm" :disabled="deliverableResetState.submitting" @click="openDeliverableResetModal(deliverableWorkspaceSubject)">
-                    <span class="inline-flex items-center gap-1.5"><IconMinus class="h-4 w-4" /> Reiniciar</span>
-                  </AppButton>
-                </div>
+                <!-- Revisión -->
+                <AppButton v-if="canApproveFillRequest" variant="softSuccess" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')"><span class="inline-flex items-center gap-1.5"><IconCircleCheck class="h-4 w-4" /> {{ fillApproveActionLabel }}</span></AppButton>
+                <AppButton v-if="canReturnFillRequest" variant="softWarning" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')"><span class="inline-flex items-center gap-1.5"><IconArrowBackUp class="h-4 w-4" /> Devolver</span></AppButton>
+                <AppButton v-if="canRejectFillRequest" variant="softDanger" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')"><span class="inline-flex items-center gap-1.5"><IconX class="h-4 w-4" /> Rechazar</span></AppButton>
+
+                <!-- Utilidades -->
+                <AppButton variant="softNeutral" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_open_process_chat" @click="handleDeliverableFutureAction('process_chat', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMessages class="h-4 w-4" /> Chat</span></AppButton>
+                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="softNeutral" size="sm" @click="previewDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconEye class="h-4 w-4" /> Ver PDF</span></AppButton>
+                <AppButton v-if="getDeliverableSubject(deliverableWorkspaceSubject).preloadFilePath" variant="softNeutral" size="sm" @click="downloadDeliverableFile(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconDownload class="h-4 w-4" /> Descargar</span></AppButton>
+                <AppButton v-if="shouldShowTemplateDownload(deliverableWorkspaceSubject)" variant="softNeutral" size="sm" :disabled="!deliverableWorkspaceSubject.actions?.can_download_template" @click="handleDeliverableFutureAction('download_template', deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconFileDescription class="h-4 w-4" /> Plantilla</span></AppButton>
+                <AppButton v-if="deliverableWorkspaceSubject" variant="softNeutral" size="sm" @click="openDerivedTaskFromWorkspace"><span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Agregar entregable</span></AppButton>
+
+                <!-- Destructiva -->
+                <AppButton v-if="shouldShowResetWorkflow(deliverableWorkspaceSubject)" variant="softDanger" size="sm" :disabled="deliverableResetState.submitting" @click="openDeliverableResetModal(deliverableWorkspaceSubject)"><span class="inline-flex items-center gap-1.5"><IconMinus class="h-4 w-4" /> Reiniciar</span></AppButton>
               </div>
             </section>
           </div>
@@ -1621,23 +1557,6 @@
 
         <template v-else-if="deliverableWorkspaceState.tab === 'fill'">
           <div v-if="fillWorkflowState.subject" class="flex flex-col gap-5">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <div class="flex flex-col gap-2">
-                <strong class="text-base font-bold text-slate-800">{{ fillWorkflowState.subject.title }}</strong>
-                <div class="flex flex-wrap gap-2">
-                  <AppTag variant="neutral">
-                    Paso {{ fillWorkflowState.request?.step_order || 1 }}
-                  </AppTag>
-                  <AppTag variant="info">
-                    Estado: {{ fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending' }}
-                  </AppTag>
-                  <AppTag :variant="fillWorkflowState.subject.preloadFilePath ? 'success' : 'warning'">
-                    {{ fillWorkflowState.subject.preloadFilePath ? `Archivo: ${getFileNameFromPath(fillWorkflowState.subject.preloadFilePath)}` : 'Sin archivo de trabajo' }}
-                  </AppTag>
-                </div>
-              </div>
-            </div>
-
             <div class="rounded-[1.8rem] border border-slate-200 bg-linear-to-br from-slate-50 via-white to-slate-100/70 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
               <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider m-0">Secuencia del flujo</h3>
@@ -1873,9 +1792,6 @@
         </div>
       </div>
       <template #footer>
-        <AppButton v-if="deliverableWorkspaceSubject" variant="softPrimary" @click="openDerivedTaskFromWorkspace">
-          Agregar entregable
-        </AppButton>
         <AppButton variant="secondary" data-modal-dismiss>
           Cerrar
         </AppButton>
@@ -2607,6 +2523,7 @@ import {
   IconCircleCheck,
   IconFileCheck,
   IconFiles,
+  IconInfoCircle,
   IconMessages,
   IconMinus,
   IconPlayerPlayFilled,
