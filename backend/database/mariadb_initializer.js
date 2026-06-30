@@ -1510,6 +1510,17 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       }
     }
 
+    // Modo de emisión del entregable por plantilla ligada (Fase 0):
+    //   single     = 1 entregable de proceso (conducta actual);
+    //   replicated = el responsable crea N réplicas con etiqueta, heredando la config del original;
+    //   routed     = el usuario crea instancias eligiendo destinatario (memo/oficio), que recibe y firma.
+    await addColumnIfMissing(
+      connection,
+      "process_definition_templates",
+      "item_mode",
+      "item_mode ENUM('single','replicated','routed') NOT NULL DEFAULT 'single' AFTER sort_order"
+    );
+
     // - process_target_rules.include_descendants (2026-06): redundante con unit_scope_type='unit_subtree'
     //   (unit_exact + include_descendants=1 resolvía idéntico al subárbol). Antes de eliminar la columna,
     //   se promueven esas reglas a 'unit_subtree' para no perder su alcance.

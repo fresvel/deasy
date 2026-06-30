@@ -518,6 +518,7 @@ CREATE TABLE IF NOT EXISTS process_definition_templates (
   process_definition_id INT NOT NULL,
   template_artifact_id INT NOT NULL,
   sort_order INT NOT NULL DEFAULT 1,
+  item_mode ENUM('single', 'replicated', 'routed') NOT NULL DEFAULT 'single',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_process_definition_templates (process_definition_id, template_artifact_id),
   CONSTRAINT fk_process_definition_templates_definition
