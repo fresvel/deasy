@@ -3508,6 +3508,97 @@ const resolveUserPositionInUnit = async (conn, personId, unitId) => {
   return rows?.[0]?.id ? Number(rows[0].id) : null;
 };
 
+// Plantillas del proceso de una tarea que admiten alta on-demand (modos replicated/routed).
+// Alimenta las afford. "Agregar réplica" / "Enviar" del frontend.
+export const listAddableDeliverables = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado." });
+  }
+  const taskId = req.query?.task_id ? Number(req.query.task_id) : null;
+  if (!taskId || Number.isNaN(taskId)) {
+    return res.status(400).json({ message: "Se requiere task_id." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  const connection = await pool.getConnection();
+  try {
+    const [taskRows] = await connection.query(
+      `SELECT process_definition_id FROM tasks WHERE id = ? LIMIT 1`,
+      [taskId]
+    );
+    const definitionId = taskRows?.[0]?.process_definition_id
+      ? Number(taskRows[0].process_definition_id)
+      : null;
+    if (!definitionId) {
+      return res.status(404).json({ message: "Tarea no encontrada." });
+    }
+    const [rows] = await connection.query(
+      `SELECT pdt.id,
+              pdt.template_artifact_id,
+              pdt.item_mode,
+              pdt.sort_order,
+              COALESCE(dl.display_name, dl.code) AS name
+       FROM process_definition_templates pdt
+       LEFT JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+       LEFT JOIN deliverables dl ON dl.id = ta.deliverable_id
+       WHERE pdt.process_definition_id = ?
+         AND pdt.item_mode IN ('replicated', 'routed')
+       ORDER BY pdt.sort_order ASC, pdt.id ASC`,
+      [definitionId]
+    );
+    return res.json({ result: "ok", task_id: taskId, deliverables: rows });
+  } catch (error) {
+    console.error("listAddableDeliverables error:", error);
+    return res.status(500).json({ message: "No se pudieron cargar los entregables agregables." });
+  } finally {
+    connection.release();
+  }
+};
+
+// Búsqueda de destinatarios (cualquier persona activa) para entregables ruteados (memo/oficio).
+export const searchTaskRecipients = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado." });
+  }
+  const q = String(req.query?.q || "").trim();
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  const connection = await pool.getConnection();
+  try {
+    const params = [];
+    let where = "p.is_active = 1";
+    if (q) {
+      const like = `%${q}%`;
+      where +=
+        " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.cedula LIKE ? OR p.email LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)";
+      params.push(like, like, like, like, like);
+    }
+    const [rows] = await connection.query(
+      `SELECT p.id, p.cedula, p.first_name, p.last_name, p.email,
+              CONCAT(p.first_name, ' ', p.last_name) AS full_name
+       FROM persons p
+       WHERE ${where}
+       ORDER BY p.first_name ASC, p.last_name ASC
+       LIMIT 25`,
+      params
+    );
+    return res.json({ result: "ok", recipients: rows });
+  } catch (error) {
+    console.error("searchTaskRecipients error:", error);
+    return res.status(500).json({ message: "No se pudieron cargar los destinatarios." });
+  } finally {
+    connection.release();
+  }
+};
+
 export const createGeneralTask = async (req, res) => {
   const authenticatedUserId = getAuthenticatedUserId(req);
   const routeUserId = getNumericUserId(req);
@@ -3524,6 +3615,12 @@ export const createGeneralTask = async (req, res) => {
     : (req.body?.parent_task_id ? Number(req.body.parent_task_id) : null);
   const sourceTaskItemId = req.body?.source_task_item_id ? Number(req.body.source_task_item_id) : null;
   const requestedUnitId = req.body?.unit_id ? Number(req.body.unit_id) : null;
+  // Plantilla ligada a replicar/rutear (modo replicated/routed). Sin ella = alta genérica legacy.
+  const processDefinitionTemplateId = req.body?.process_definition_template_id
+    ? Number(req.body.process_definition_template_id)
+    : null;
+  // Destinatario (solo modo routed: memo/oficio que recibe y firma).
+  const recipientPersonId = req.body?.recipient_person_id ? Number(req.body.recipient_person_id) : null;
 
   if (!title) {
     return res.status(400).json({ message: "Debes indicar un título para la tarea." });
@@ -3573,22 +3670,75 @@ export const createGeneralTask = async (req, res) => {
         throw new Error("No tienes una posición vigente en la unidad de la tarea origen.");
       }
 
-      const [defaultTemplateRows] = await connection.query(
-        `SELECT pdt.id, pdt.template_artifact_id
-         FROM process_definition_templates pdt
-         WHERE pdt.process_definition_id = ?
-         ORDER BY pdt.sort_order ASC, pdt.id ASC
-         LIMIT 1`,
-        [definitionId]
-      );
-      const defaultTemplateArtifactId = defaultTemplateRows?.[0]?.template_artifact_id
-        ? Number(defaultTemplateRows[0].template_artifact_id)
-        : null;
-      const defaultDefinitionTemplateId = defaultTemplateRows?.[0]?.id
-        ? Number(defaultTemplateRows[0].id)
-        : null;
-      if (!defaultTemplateArtifactId || !defaultDefinitionTemplateId) {
-        throw new Error("El proceso default no tiene una plantilla base para entregables agregados.");
+      // Resolver la plantilla a instanciar y su modo de emisión.
+      let definitionTemplateId = null;
+      let templateArtifactId = null;
+      let itemMode = "replicated"; // legacy genérico = réplica auto-asignada
+
+      if (processDefinitionTemplateId) {
+        // Modo configurado: la réplica/instancia hereda la config de la plantilla ligada del proceso origen.
+        const [tplRows] = await connection.query(
+          `SELECT id, template_artifact_id, item_mode, process_definition_id
+           FROM process_definition_templates
+           WHERE id = ?
+           LIMIT 1`,
+          [processDefinitionTemplateId]
+        );
+        const tpl = tplRows?.[0];
+        if (!tpl) {
+          throw new Error("La plantilla del entregable no existe.");
+        }
+        if (Number(tpl.process_definition_id) !== Number(sourceTask.process_definition_id)) {
+          throw new Error("La plantilla no pertenece al proceso de la tarea origen.");
+        }
+        itemMode = String(tpl.item_mode || "single");
+        if (itemMode === "single") {
+          throw new Error("Este entregable es de instancia única: no admite réplicas ni envíos.");
+        }
+        definitionTemplateId = Number(tpl.id);
+        templateArtifactId = Number(tpl.template_artifact_id);
+      } else {
+        // Legacy: entregable genérico del proceso default, auto-asignado al creador.
+        const [defaultTemplateRows] = await connection.query(
+          `SELECT pdt.id, pdt.template_artifact_id
+           FROM process_definition_templates pdt
+           WHERE pdt.process_definition_id = ?
+           ORDER BY pdt.sort_order ASC, pdt.id ASC
+           LIMIT 1`,
+          [definitionId]
+        );
+        templateArtifactId = defaultTemplateRows?.[0]?.template_artifact_id
+          ? Number(defaultTemplateRows[0].template_artifact_id)
+          : null;
+        definitionTemplateId = defaultTemplateRows?.[0]?.id
+          ? Number(defaultTemplateRows[0].id)
+          : null;
+        if (!templateArtifactId || !definitionTemplateId) {
+          throw new Error("El proceso default no tiene una plantilla base para entregables agregados.");
+        }
+      }
+
+      // Destinatario / dueño según modo:
+      //  - replicated: auto-asignado al creador (target = creador → dueño = creador).
+      //  - routed: el destinatario elegido es el dueño/firmante; el creador queda como autor (assignee).
+      let targetPersonId = authenticatedUserId;
+      let targetPositionId = responsiblePositionId;
+      let targetUnitId = sourceUnitId;
+
+      if (itemMode === "routed") {
+        if (!recipientPersonId) {
+          throw new Error("Debes elegir el destinatario del envío.");
+        }
+        const [recipRows] = await connection.query(
+          `SELECT id FROM persons WHERE id = ? AND is_active = 1 LIMIT 1`,
+          [recipientPersonId]
+        );
+        if (!recipRows?.length) {
+          throw new Error("El destinatario no es válido.");
+        }
+        targetPersonId = recipientPersonId; // dueño/firmante = destinatario (resolver de dueño lee target_person_id)
+        targetPositionId = null; // se rutea por persona, no por puesto
+        targetUnitId = null;
       }
 
       const [itemResult] = await connection.query(
@@ -3612,14 +3762,14 @@ export const createGeneralTask = async (req, res) => {
          ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
         [
           sourceTaskId,
-          defaultDefinitionTemplateId,
-          defaultTemplateArtifactId,
+          definitionTemplateId,
+          templateArtifactId,
           description ? `${title}\n\n${description}` : title,
           authenticatedUserId,
           sourceTaskItemId || null,
-          sourceUnitId,
-          responsiblePositionId,
-          authenticatedUserId,
+          targetUnitId,
+          targetPositionId,
+          targetPersonId,
           responsiblePositionId,
           authenticatedUserId,
           sourceTask.start_date,
@@ -3651,6 +3801,8 @@ export const createGeneralTask = async (req, res) => {
       return res.json({
         result: "ok",
         mode,
+        item_mode: itemMode,
+        recipient_person_id: itemMode === "routed" ? targetPersonId : null,
         task_id: sourceTaskId,
         task_item_id: taskItemId,
         definition_id: sourceTask.process_definition_id,

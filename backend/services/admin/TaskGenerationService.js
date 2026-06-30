@@ -81,7 +81,8 @@ const getExecutableTemplatesMap = async (connection) => {
        pdt.id,
        pdt.process_definition_id,
        pdt.template_artifact_id,
-       pdt.sort_order
+       pdt.sort_order,
+       pdt.item_mode
      FROM process_definition_templates pdt
      ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`
   );
@@ -1166,7 +1167,10 @@ export const ensureDocumentsForTask = async (connection, taskId) => {
 };
 
 const ensureTaskItemsForTask = async (connection, taskId, processDefinitionId, executableTemplatesMap, startDate = null, endDate = null) => {
-  const templates = executableTemplatesMap.get(processDefinitionId) || [];
+  // Solo las plantillas en modo `single` auto-generan su entregable de proceso.
+  // `replicated`/`routed` no siembran ítem: el usuario crea réplicas/instancias on-demand.
+  const templates = (executableTemplatesMap.get(processDefinitionId) || [])
+    .filter((template) => String(template.item_mode || "single") === "single");
   if (!templates.length) {
     return { inserted: 0, total: 0 };
   }
@@ -1228,7 +1232,9 @@ const ensureTaskItemsForTaskTargets = async (
   startDate = null,
   endDate = null
 ) => {
-  const templates = executableTemplatesMap.get(processDefinitionId) || [];
+  // Igual que en ensureTaskItemsForTask: solo `single` auto-genera entregable.
+  const templates = (executableTemplatesMap.get(processDefinitionId) || [])
+    .filter((template) => String(template.item_mode || "single") === "single");
   if (!templates.length) {
     return { inserted: 0, total: 0 };
   }

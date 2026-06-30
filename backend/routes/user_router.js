@@ -20,7 +20,9 @@ import {
   uploadDeliverableAttachment,
   deleteDeliverableAttachment,
   downloadDeliverableAttachment,
-  createGeneralTask
+  createGeneralTask,
+  listAddableDeliverables,
+  searchTaskRecipients
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -151,6 +153,20 @@ router.post(
   loadAccessContext,
   requireRouteUserAccess({ resource: "process_execution", action: "create" }),
   createGeneralTask
+);
+router.get(
+  '/:id/addable-deliverables',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "process_execution", action: "create" }),
+  listAddableDeliverables
+);
+router.get(
+  '/:id/task-recipients',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "process_execution", action: "create" }),
+  searchTaskRecipients
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',
