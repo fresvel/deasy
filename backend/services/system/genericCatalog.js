@@ -15,6 +15,17 @@ const docenteSlots = (unitSlug, positionType, count) =>
     slot_no: i + 1
   }));
 
+// Genera N usuarios Docente de ejemplo para una unidad (cédulas correlativas desde baseCedula, uno por slot).
+const docenteUsers = (unitSlug, count, baseCedula) =>
+  Array.from({ length: count }, (_, i) => ({
+    cedula: String(baseCedula + i),
+    first_name: "Docente",
+    last_name: `${unitSlug}${i > 0 ? ` ${i + 1}` : ""}`,
+    unit_slug: unitSlug,
+    cargo_code: "DOCENTE",
+    slot_no: i + 1
+  }));
+
 export const GENERIC_CATALOG = {
   unit_types: ["Prorrectorado", "Coordinación", "Dirección", "Escuela", "Jefatura", "Carrera", "Tecnología", "Sede"],
   relation_unit_types: [
@@ -96,11 +107,43 @@ export const GENERIC_CATALOG = {
     // Tecnologías de la Información: 8 docentes reales; Sistemas de Información: 8 docentes simbólicos.
     ...docenteSlots("E055", "real", 8),
     ...docenteSlots("E140", "simbolico", 8)
+  ],
+  // Usuarios de DEMOSTRACIÓN: uno por puesto del organigrama de ejemplo (contraseña Demo1234!, se aplica al
+  // sembrar). Cada uno ocupa su puesto (por unit_slug + cargo_code + slot_no) y recibe el rol de EJECUCIÓN para
+  // recibir tarjetas; el rol propio del cargo lo deriva la ocupación. cédulas 90xxxxxxxx (no colisionan con las
+  // cuentas demo); editable como las unidades/puestos. Opt-in: requiere e incluye los puestos de ejemplo.
+  example_users: [
+    { cedula: "9000000001", first_name: "Prorrector", last_name: "PREC", unit_slug: "PREC", cargo_code: "PRORRECTOR", slot_no: 1 },
+    { cedula: "9000000002", first_name: "Asistente", last_name: "PREC", unit_slug: "PREC", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000003", first_name: "Director", last_name: "DDE", unit_slug: "DDE", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000004", first_name: "Asistente", last_name: "DDE", unit_slug: "DDE", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000005", first_name: "Director", last_name: "DIVI", unit_slug: "DIVI", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000006", first_name: "Asistente", last_name: "DIVI", unit_slug: "DIVI", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000007", first_name: "Jefe", last_name: "TTHH", unit_slug: "TTHH", cargo_code: "JEFE", slot_no: 1 },
+    { cedula: "9000000008", first_name: "Asistente", last_name: "TTHH", unit_slug: "TTHH", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000009", first_name: "Coordinador", last_name: "CAE", unit_slug: "CAE", cargo_code: "COORDINADOR", slot_no: 1 },
+    { cedula: "9000000010", first_name: "Asistente", last_name: "CAE", unit_slug: "CAE", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000011", first_name: "Director", last_name: "EHIC", unit_slug: "EHIC", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000012", first_name: "Asistente", last_name: "EHIC", unit_slug: "EHIC", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000013", first_name: "Director", last_name: "salud-y-bienestar", unit_slug: "salud-y-bienestar", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000014", first_name: "Asistente", last_name: "salud-y-bienestar", unit_slug: "salud-y-bienestar", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000015", first_name: "Director", last_name: "derecho-educacion-y-sociedad", unit_slug: "derecho-educacion-y-sociedad", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000016", first_name: "Asistente", last_name: "derecho-educacion-y-sociedad", unit_slug: "derecho-educacion-y-sociedad", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000017", first_name: "Director", last_name: "formacion-tecnica-y-tecnologica", unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000018", first_name: "Asistente", last_name: "formacion-tecnica-y-tecnologica", unit_slug: "formacion-tecnica-y-tecnologica", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000019", first_name: "Director", last_name: "negocios-y-empresas", unit_slug: "negocios-y-empresas", cargo_code: "DIRECTOR", slot_no: 1 },
+    { cedula: "9000000020", first_name: "Asistente", last_name: "negocios-y-empresas", unit_slug: "negocios-y-empresas", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000021", first_name: "Coordinador", last_name: "E055", unit_slug: "E055", cargo_code: "COORDINADOR", slot_no: 1 },
+    { cedula: "9000000022", first_name: "Asistente", last_name: "E055", unit_slug: "E055", cargo_code: "ASISTENTE", slot_no: 1 },
+    { cedula: "9000000023", first_name: "Coordinador", last_name: "E140", unit_slug: "E140", cargo_code: "COORDINADOR", slot_no: 1 },
+    { cedula: "9000000024", first_name: "Asistente", last_name: "E140", unit_slug: "E140", cargo_code: "ASISTENTE", slot_no: 1 },
+    ...docenteUsers("E055", 8, 9000000025),
+    ...docenteUsers("E140", 8, 9000000033)
   ]
 };
 
 // Bloques que el wizard puede ofrecer como opcionales (claves de preconfig).
-export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types", "example_units", "example_positions", "example_occupants"];
+export const PRECONFIG_BLOCKS = ["unit_types", "relation_unit_types", "cargos", "term_types", "example_units", "example_positions", "example_users"];
 
 const selectCatalogEntries = (selection, entries, getId) => {
   if (selection === true) {
@@ -233,30 +276,27 @@ const seedExamplePositions = async (connection) => {
   return seededCount;
 };
 
-// Crea un USUARIO genérico por cada puesto de ejemplo (contraseña Demo1234!), lo ocupa (position_assignments)
-// y le asigna el rol EJECUTOR (GestorEjecucionProcesos → recibe/ejecuta tarjetas de trabajo) más el rol mapeado
-// por su cargo si existe (cargo_role_map). Idempotente: omite puestos ya ocupados; reutiliza la persona por
-// cédula/email determinista. Requiere los puestos de ejemplo sembrados antes. cédulas 90xxxxxxxx (10 díg., no
-// colisionan con las cuentas demo); emails puestoN@demo.deasy.local.
-const DEMO_OCCUPANT_PASSWORD = "Demo1234!";
+// Crea los USUARIOS de ejemplo (GENERIC_CATALOG.example_users, contraseña Demo1234!), los ocupa en su puesto
+// (position_assignments) y les asigna el rol EJECUTOR (GestorEjecucionProcesos → recibe/ejecuta tarjetas) salvo
+// que el cargo ya lo derive; el rol propio del cargo lo DERIVA la ocupación (trigger). Idempotente: omite puestos
+// ya ocupados; reutiliza la persona por cédula/email. Requiere unidades+puestos de ejemplo sembrados antes.
+const DEMO_USER_PASSWORD = "Demo1234!";
 const EXECUTOR_ROLE_NAME = "GestorEjecucionProcesos";
 
-const seedExampleOccupants = async (connection, roleIds = new Map()) => {
-  const positions = GENERIC_CATALOG.example_positions || [];
-  if (!positions.length) return 0;
+const seedExampleUsers = async (connection, roleIds = new Map()) => {
+  const users = GENERIC_CATALOG.example_users || [];
+  if (!users.length) return 0;
 
   const cargoNameByCode = new Map(GENERIC_CATALOG.cargos.map((c) => [c.code, c.name]));
   const roleByCargoName = new Map(GENERIC_CATALOG.cargo_role_map.map((m) => [m.cargo, m.role]));
-  const passwordHash = await bcrypt.hash(DEMO_OCCUPANT_PASSWORD, 10);
+  const passwordHash = await bcrypt.hash(DEMO_USER_PASSWORD, 10);
 
   let created = 0;
-  let idx = 0;
-  for (const pos of positions) {
-    idx += 1;
-    const slot = Number(pos.slot_no) || 1;
-    const [uRows] = await connection.query("SELECT id FROM units WHERE slug = ? LIMIT 1", [pos.unit_slug]);
+  for (const u of users) {
+    const slot = Number(u.slot_no) || 1;
+    const [uRows] = await connection.query("SELECT id FROM units WHERE slug = ? LIMIT 1", [u.unit_slug]);
     const unitId = uRows?.[0]?.id;
-    const [cRows] = await connection.query("SELECT id FROM cargos WHERE code = ? LIMIT 1", [pos.cargo_code]);
+    const [cRows] = await connection.query("SELECT id FROM cargos WHERE code = ? LIMIT 1", [u.cargo_code]);
     const cargoId = cRows?.[0]?.id;
     if (!unitId || !cargoId) continue;
 
@@ -267,28 +307,26 @@ const seedExampleOccupants = async (connection, roleIds = new Map()) => {
     const positionId = pRows?.[0]?.id;
     if (!positionId) continue;
 
-    // Idempotencia: si el puesto ya está ocupado, no se crea otro usuario.
+    // Idempotencia: si el puesto ya está ocupado, no se crea/duplica.
     const [occ] = await connection.query(
       "SELECT id FROM position_assignments WHERE position_id = ? AND is_current = 1 LIMIT 1",
       [positionId]
     );
     if (occ.length) continue;
 
-    // Persona genérica (idempotente por cédula/email determinista).
-    const cedula = `90${String(idx).padStart(8, "0")}`;
-    const email = `puesto${idx}@demo.deasy.local`;
+    // Persona (idempotente por cédula/email).
+    const cedula = String(u.cedula);
+    const email = u.email || `${cedula}@demo.deasy.local`;
     const [exP] = await connection.query(
       "SELECT id FROM persons WHERE cedula = ? OR email = ? LIMIT 1",
       [cedula, email]
     );
     let personId = exP?.[0]?.id;
     if (!personId) {
-      const cargoName = cargoNameByCode.get(pos.cargo_code) || pos.cargo_code;
-      const lastName = `${pos.unit_slug}${slot > 1 ? ` ${slot}` : ""}`;
       const [insP] = await connection.query(
         `INSERT INTO persons (cedula, first_name, last_name, email, password_hash, token, status, verify_email, is_active)
          VALUES (?, ?, ?, ?, ?, ?, 'Activo', 1, 1)`,
-        [cedula, cargoName, lastName, email, passwordHash, cedula]
+        [cedula, u.first_name, u.last_name, email, passwordHash, cedula]
       );
       personId = insP.insertId;
     }
@@ -299,11 +337,10 @@ const seedExampleOccupants = async (connection, roleIds = new Map()) => {
       [positionId, personId]
     );
 
-    // El rol mapeado por el cargo (cargo_role_map) se DERIVA automáticamente al ocupar el puesto (trigger sobre
-    // position_assignments), así que NO se asigna a mano (evitamos duplicados). Solo aseguramos a mano el rol
-    // EJECUTOR (GestorEjecucionProcesos → recibe/ejecuta las tarjetas de trabajo) cuando el cargo no lo deriva por
-    // sí mismo (todos salvo Docente, cuyo cargo ya mapea a GestorEjecucionProcesos).
-    const mappedRole = roleByCargoName.get(cargoNameByCode.get(pos.cargo_code));
+    // El rol del cargo (cargo_role_map) lo DERIVA la ocupación (trigger sobre position_assignments), no se asigna a
+    // mano (evita duplicados). Solo se asegura el rol EJECUTOR cuando el cargo no lo deriva por sí mismo (todos
+    // salvo Docente, cuyo cargo ya mapea a GestorEjecucionProcesos).
+    const mappedRole = roleByCargoName.get(cargoNameByCode.get(u.cargo_code));
     if (mappedRole !== EXECUTOR_ROLE_NAME) {
       const execRoleId = roleIds.get(EXECUTOR_ROLE_NAME);
       if (execRoleId) {
@@ -337,7 +374,7 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
   // Dependencia: si se piden los puestos (o los usuarios por puesto) de ejemplo, asegura también SUS cargos
   // (con su mapeo de rol) aunque el bloque "cargos" no los incluya, para que ningún puesto se omita por un
   // cargo faltante.
-  if (preconfig.example_positions || preconfig.example_occupants) {
+  if (preconfig.example_positions || preconfig.example_users) {
     const neededCargoCodes = new Set(GENERIC_CATALOG.example_positions.map((p) => p.cargo_code));
     const selectedCodes = new Set(selectedCargos.map((c) => c.code));
     for (const cargo of GENERIC_CATALOG.cargos) {
@@ -404,18 +441,18 @@ export const seedGenericCatalog = async (connection, preconfig = {}, roleIds = n
   }
 
   // Las unidades de ejemplo se siembran si se piden directamente o si se piden los puestos/usuarios (dependencia).
-  if (preconfig.example_units || preconfig.example_positions || preconfig.example_occupants) {
+  if (preconfig.example_units || preconfig.example_positions || preconfig.example_users) {
     seeded.example_units = await seedExampleUnits(connection);
   }
 
-  // Los puestos se siembran si se piden directamente o si se piden los usuarios por puesto (dependencia).
-  if (preconfig.example_positions || preconfig.example_occupants) {
+  // Los puestos se siembran si se piden directamente o si se piden los usuarios de ejemplo (dependencia).
+  if (preconfig.example_positions || preconfig.example_users) {
     seeded.example_positions = await seedExamplePositions(connection);
   }
 
-  // Usuarios genéricos por puesto (ocupación + roles) para recibir tarjetas de trabajo.
-  if (preconfig.example_occupants) {
-    seeded.example_occupants = await seedExampleOccupants(connection, roleIds);
+  // Usuarios de ejemplo (uno por puesto): persona + ocupación + roles, para recibir tarjetas de trabajo.
+  if (preconfig.example_users) {
+    seeded.example_users = await seedExampleUsers(connection, roleIds);
   }
 
   return seeded;

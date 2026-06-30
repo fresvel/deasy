@@ -225,12 +225,12 @@
             </label>
             <label
               class="flex items-start gap-3 rounded-lg border p-3.5 transition-colors"
-              :class="preconfig.example_occupants ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
+              :class="preconfig.example_users ? 'border-sky-300 bg-sky-50' : 'border-slate-200'"
             >
-              <input v-model="preconfig.example_occupants" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
+              <input v-model="preconfig.example_users" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600" />
               <span>
-                <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo por puesto</span>
-                <span class="block text-xs text-slate-500">Crea un usuario genérico (contraseña Demo1234!) para cada puesto, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
+                <span class="block text-sm font-semibold text-slate-700">Usuarios de ejemplo</span>
+                <span class="block text-xs text-slate-500">Crea un usuario (contraseña Demo1234!) por cada puesto del organigrama de ejemplo, lo asigna a su puesto y le da el rol de ejecución para recibir las tarjetas de trabajo. Requiere e incluye los puestos de ejemplo.</span>
               </span>
             </label>
           </div>
@@ -400,7 +400,7 @@ const catalogGroupMeta = [
   { key: "term_types", label: "Tipos de periodo", hint: "Modalidades de periodos académicos u operativos." }
 ];
 const catalogOptions = reactive({ unit_types: [], cargos: [], term_types: [] });
-const preconfig = reactive({ unit_types: [], relation_unit_types: true, cargos: [], term_types: [], example_units: false, example_positions: false, example_occupants: false });
+const preconfig = reactive({ unit_types: [], relation_unit_types: true, cargos: [], term_types: [], example_units: false, example_positions: false, example_users: false });
 const catalogSelectionInitialized = ref(false);
 
 const selectableCatalogGroups = computed(() =>
@@ -454,10 +454,10 @@ const selectedCatalogSummary = computed(() => {
       value: "Jefaturas y docentes del organigrama"
     });
   }
-  if (preconfig.example_occupants) {
+  if (preconfig.example_users) {
     summary.push({
-      key: "example_occupants",
-      label: "Usuarios por puesto",
+      key: "example_users",
+      label: "Usuarios de ejemplo",
       value: "Un usuario (Demo1234!) por puesto, con rol de ejecución"
     });
   }
