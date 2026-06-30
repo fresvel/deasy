@@ -1454,8 +1454,8 @@
 
         <template v-if="deliverableWorkspaceState.tab === 'summary'">
           <div v-if="deliverableWorkspaceSubject" class="flex flex-col gap-5">
-            <section class="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
-              <div class="flex flex-col gap-4">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-col gap-3">
                 <!-- Estado del entregable -->
                 <div class="flex flex-wrap gap-2">
                   <AppTag
@@ -1467,38 +1467,20 @@
                   </AppTag>
                 </div>
 
-                <!-- Destacados: qué sigue y quién es responsable ahora -->
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/70 px-4 py-3">
-                    <p class="m-0 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Siguiente acción</p>
-                    <p class="m-0 mt-1 text-sm font-semibold text-slate-800">{{ getDeliverablePrimaryActionLabel(deliverableWorkspaceSubject) }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ getDeliverableNextActionText(deliverableWorkspaceSubject) }}</p>
-                  </div>
+                <!-- Datos del entregable (homogéneo) -->
+                <dl class="grid gap-x-6 gap-y-2.5 m-0 sm:grid-cols-2 lg:grid-cols-4">
                   <div
-                    class="rounded-[1.2rem] border px-4 py-3"
-                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject)
-                      ? 'border-[#4BF1A1]/55 bg-linear-to-br from-[#4BF1A1]/14 via-white to-[#4BF1A1]/08'
-                      : 'border-sky-100 bg-linear-to-br from-sky-50 via-white to-cyan-50/70'"
+                    class="flex flex-col gap-0.5 border-l-2 pl-3"
+                    :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'border-[#4BF1A1]' : 'border-sky-300'"
                   >
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                      <p
-                        class="m-0 text-[11px] font-bold uppercase tracking-[0.16em]"
-                        :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-[#118a57]' : 'text-sky-600'"
-                      >
-                        Responsable actual
-                      </p>
-                      <span class="text-xs font-semibold text-slate-500">
-                        {{ getDeliverableProgress(deliverableWorkspaceSubject)?.label || 'Gestión actual' }}
-                      </span>
-                    </div>
-                    <p class="m-0 mt-2 text-sm font-semibold text-slate-800">
-                      {{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}
-                    </p>
+                    <dt
+                      class="text-[11px] font-bold uppercase tracking-[0.16em]"
+                      :class="shouldShowSign(deliverableWorkspaceSubject) || hasSignatureWorkflowActivity(deliverableWorkspaceSubject) ? 'text-[#118a57]' : 'text-sky-600'"
+                    >
+                      Responsable actual
+                    </dt>
+                    <dd class="m-0 text-sm font-semibold text-slate-800">{{ getDeliverableCurrentResponsibility(deliverableWorkspaceSubject).name }}</dd>
                   </div>
-                </div>
-
-                <!-- Contexto -->
-                <dl class="grid gap-x-6 gap-y-3 m-0 sm:grid-cols-2 lg:grid-cols-3">
                   <div class="flex flex-col gap-0.5 border-l-2 border-slate-100 pl-3">
                     <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Proceso</dt>
                     <dd class="m-0 text-sm font-semibold text-slate-700">{{ getDeliverableProcessLabel(null, deliverableWorkspaceSubject) }}</dd>
@@ -1595,17 +1577,13 @@
                       </AppTag>
                     </div>
                   </div>
-                  <div class="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Responsable</p>
-                    <p class="mt-1 text-sm font-semibold text-slate-700 m-0 leading-snug">{{ step.display_label }}</p>
+                  <div class="mt-3 flex flex-col gap-0.5">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Responsable</p>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700 m-0 leading-snug">{{ step.display_label }}</p>
                   </div>
-                  <div class="mt-3 rounded-2xl bg-slate-50/60 px-4 py-3">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Regla</p>
-                    <p class="mt-1 text-xs font-medium text-slate-500 m-0">{{ getFillStepResolverLabel(step) }}</p>
-                  </div>
-                  <div v-if="step.response_note" class="mt-3 rounded-2xl border border-slate-100 bg-white px-4 py-3">
+                  <div v-if="step.response_note" class="mt-2 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2">
                     <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Nota</p>
-                    <p class="mt-1 mb-0 text-xs font-medium text-slate-600">{{ step.response_note }}</p>
+                    <p class="mt-0.5 mb-0 text-xs font-medium text-slate-600">{{ step.response_note }}</p>
                   </div>
                 </div>
               </div>
@@ -1700,16 +1678,10 @@
                       </AppTag>
                     </div>
                   </div>
-                  <div class="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                    <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Firmante</p>
-                    <p class="mt-1 text-sm font-semibold text-slate-700 m-0 leading-snug">
+                  <div class="mt-3 flex flex-col gap-0.5">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Firmante</p>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700 m-0 leading-snug">
                       {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
-                    </p>
-                  </div>
-                  <div class="mt-3 rounded-2xl bg-slate-50/60 px-4 py-3">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400 m-0">Regla</p>
-                    <p class="mt-1 text-xs font-medium text-slate-500 m-0">
-                      {{ getSignatureStepResolverLabel(step) }}
                     </p>
                   </div>
                 </div>

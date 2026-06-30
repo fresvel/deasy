@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue';
 import { IconInfoCircle } from '@tabler/icons-vue';
-import AppTag from '@/shared/components/data/AppTag.vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
 
 const props = defineProps({
@@ -29,6 +28,25 @@ const kindLabel = (kind) => ({
   internal_note: 'Nota interna',
 }[kind] || 'Observación');
 
+// Color del punto del timeline y del texto del tipo, según la clase de observación.
+const dotClass = (observation) => {
+  if (observation.resolved_at) return 'bg-emerald-400';
+  return {
+    return_reason: 'bg-amber-400',
+    rejection_reason: 'bg-rose-400',
+    internal_note: 'bg-slate-300',
+    observation: 'bg-sky-400',
+  }[observation.kind] || 'bg-sky-400';
+};
+const kindTextClass = (kind) => ({
+  return_reason: 'text-amber-600',
+  rejection_reason: 'text-rose-600',
+  internal_note: 'text-slate-400',
+  observation: 'text-sky-600',
+}[kind] || 'text-sky-600');
+
+const formatObsDate = (value) => String(value || '').toString().slice(0, 16).replace('T', ' ');
+
 const onAdd = () => {
   const message = draft.value.trim();
   if (!message || props.submitting) return;
@@ -52,34 +70,30 @@ const onAdd = () => {
       >
         {{ emptyText }}
       </div>
-      <ul v-else class="mt-4 flex flex-col gap-2.5 m-0 p-0 list-none">
+      <ul v-else class="relative mt-4 m-0 flex flex-col gap-4 list-none border-l border-slate-200 pl-4">
         <li
           v-for="observation in observations"
           :key="`obs-${observation.id}`"
-          class="rounded-2xl border px-4 py-3"
-          :class="observation.resolved_at ? 'border-slate-100 bg-slate-50/60' : 'border-slate-200 bg-white'"
+          class="relative"
         >
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <AppTag variant="neutral">{{ kindLabel(observation.kind) }}</AppTag>
-              <span class="text-xs font-medium text-slate-500">{{ observation.author_name || 'Sistema' }} · {{ (observation.created_at || '').toString().slice(0, 16).replace('T', ' ') }}</span>
-            </div>
-            <span v-if="observation.resolved_at" class="text-xs font-semibold text-emerald-600">Resuelta</span>
+          <span class="absolute -left-[1.42rem] top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white" :class="dotClass(observation)"></span>
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span class="text-xs font-bold text-slate-700">{{ observation.author_name || 'Sistema' }}</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wide" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
+            <span class="text-[11px] text-slate-400">{{ formatObsDate(observation.created_at) }}</span>
+            <span v-if="observation.resolved_at" class="text-[11px] font-semibold text-emerald-600">· Resuelta</span>
           </div>
-          <p class="m-0 mt-2 text-sm text-slate-700 whitespace-pre-line">{{ observation.message }}</p>
-          <div v-if="observation.resolved_at" class="mt-1 text-xs text-slate-400">
-            Resuelta por {{ observation.resolved_by_name || '—' }}
-          </div>
-          <div v-else-if="observation.can_resolve" class="mt-2 flex justify-end">
-            <AppButton
-              variant="secondary"
-              size="sm"
-              :disabled="resolvingId === observation.id"
-              @click="emit('resolve', observation)"
-            >
-              {{ resolvingId === observation.id ? 'Resolviendo...' : 'Marcar resuelta' }}
-            </AppButton>
-          </div>
+          <p class="m-0 mt-1 text-sm whitespace-pre-line" :class="observation.resolved_at ? 'text-slate-400' : 'text-slate-700'">{{ observation.message }}</p>
+          <p v-if="observation.resolved_at" class="m-0 mt-0.5 text-[11px] text-slate-400">Resuelta por {{ observation.resolved_by_name || '—' }}</p>
+          <button
+            v-else-if="observation.can_resolve"
+            type="button"
+            class="mt-1 text-xs font-semibold text-sky-600 transition hover:text-sky-700 disabled:opacity-50"
+            :disabled="resolvingId === observation.id"
+            @click="emit('resolve', observation)"
+          >
+            {{ resolvingId === observation.id ? 'Resolviendo...' : 'Marcar resuelta' }}
+          </button>
         </li>
       </ul>
 
