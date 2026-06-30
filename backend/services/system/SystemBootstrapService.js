@@ -824,6 +824,12 @@ export default class SystemBootstrapService {
           roleId: roleIds.get(GESTOR_ROLE_NAME),
           unitId
         });
+        // Rol base "Usuario" además del funcional: permite al gestor gestionar su propio dossier (dossier.*).
+        await ensureAdminRoleAssignment(connection, {
+          personId: gestorPerson.id,
+          roleId: roleIds.get(USUARIO_ROLE_NAME),
+          unitId
+        });
         gestor = {
           id: gestorPerson.id,
           cedula: gestorPayload.cedula,

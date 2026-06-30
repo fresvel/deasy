@@ -282,6 +282,9 @@ const seedExamplePositions = async (connection) => {
 // ya ocupados; reutiliza la persona por cédula/email. Requiere unidades+puestos de ejemplo sembrados antes.
 const DEMO_USER_PASSWORD = "Demo1234!";
 const EXECUTOR_ROLE_NAME = "GestorEjecucionProcesos";
+// Rol base que gobierna el dossier personal (dossier.read/create/update). Toda persona debe tenerlo además de su rol
+// funcional; sin él, un usuario con solo roles Gestor* recibe 403 al cargar su propio dossier en Home.
+const BASE_USER_ROLE_NAME = "Usuario";
 
 const seedExampleUsers = async (connection, roleIds = new Map()) => {
   const users = GENERIC_CATALOG.example_users || [];
@@ -351,6 +354,17 @@ const seedExampleUsers = async (connection, roleIds = new Map()) => {
           [execRoleId, unitId, personId]
         );
       }
+    }
+
+    // Rol base "Usuario": gobierna el dossier personal, independiente del rol funcional del cargo.
+    const baseRoleId = roleIds.get(BASE_USER_ROLE_NAME);
+    if (baseRoleId) {
+      await connection.query(
+        `INSERT IGNORE INTO role_assignments
+           (role_id, unit_id, source, person_id, max_depth, start_date, is_current, assigned_at)
+         VALUES (?, ?, 'manual', ?, 0, CURDATE(), 1, NOW())`,
+        [baseRoleId, unitId, personId]
+      );
     }
     created += 1;
   }

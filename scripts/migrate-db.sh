@@ -24,6 +24,7 @@ EOF
 list_migrations() {
   cat <<'EOF'
 Migraciones disponibles:
+  backfill-base-usuario-role               -> /app/backend/scripts/backfill_base_usuario_role.mjs
   backfill-unit-labels                     -> /app/backend/scripts/backfill_unit_labels.mjs
   drop-legacy-tables                      -> /app/backend/scripts/drop_legacy_tables.mjs
   drop-process-definition-template-creates-task -> /app/backend/scripts/drop_process_definition_template_creates_task.mjs
@@ -43,6 +44,9 @@ EOF
 
 resolve_script_path() {
   case "$1" in
+    backfill-base-usuario-role)
+      echo "/app/backend/scripts/backfill_base_usuario_role.mjs"
+      ;;
     backfill-unit-labels)
       echo "/app/backend/scripts/backfill_unit_labels.mjs"
       ;;
