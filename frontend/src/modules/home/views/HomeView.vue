@@ -1411,7 +1411,7 @@
             :class="getDeliverableWorkspaceTabClass('summary')"
             @click="deliverableWorkspaceState.tab = 'summary'"
           >
-            Resumen
+            General
           </button>
           <button
             v-if="fillWorkflowState.subject && hasFillWorkflowActivity(fillWorkflowState.subject)"
@@ -1423,7 +1423,7 @@
             :class="getDeliverableWorkspaceTabClass('fill')"
             @click="deliverableWorkspaceState.tab = 'fill'"
           >
-            Flujo de entrega
+            Entrega
           </button>
           <button
             v-if="signatureFlowState.subject && shouldShowSignatureFlow(signatureFlowState.subject)"
@@ -1435,19 +1435,7 @@
             :class="getDeliverableWorkspaceTabClass('signature')"
             @click="deliverableWorkspaceState.tab = 'signature'"
           >
-            Flujo de firmas
-          </button>
-          <button
-            v-if="deliverableWorkspaceSubject"
-            type="button"
-            role="tab"
-            :aria-selected="deliverableWorkspaceState.tab === 'history'"
-            :tabindex="deliverableWorkspaceState.tab === 'history' ? 0 : -1"
-            class="rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-            :class="getDeliverableWorkspaceTabClass('history')"
-            @click="deliverableWorkspaceState.tab = 'history'"
-          >
-            Historial
+            Firmas
           </button>
           <button
             v-if="deliverableWorkspaceSubject"
@@ -1542,75 +1530,8 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
               <div class="flex items-center justify-between gap-2">
                 <div>
-                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Observaciones</h3>
-                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Hilo de revisión y firma: devoluciones, rechazos y notas del entregable.</p>
-                </div>
-              </div>
-              <div v-if="observationsLoading" class="mt-4 text-sm text-slate-500">Cargando observaciones...</div>
-              <template v-else>
-                <div
-                  v-if="!deliverableObservations.length"
-                  class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-5 text-sm font-medium text-slate-500"
-                >
-                  Sin observaciones registradas.
-                </div>
-                <ul v-else class="mt-4 flex flex-col gap-2.5 m-0 p-0 list-none">
-                  <li
-                    v-for="observation in deliverableObservations"
-                    :key="`obs-${observation.id}`"
-                    class="rounded-2xl border px-4 py-3"
-                    :class="observation.resolved_at ? 'border-slate-100 bg-slate-50/60' : 'border-slate-200 bg-white'"
-                  >
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <AppTag :variant="observation.phase === 'signature' ? 'warning' : 'info'">{{ observation.phase === 'signature' ? 'Firma' : 'Revisión' }}</AppTag>
-                        <AppTag variant="neutral">{{ observationKindLabel(observation.kind) }}</AppTag>
-                        <span class="text-xs font-medium text-slate-500">{{ observation.author_name || 'Sistema' }} · {{ (observation.created_at || '').toString().slice(0, 16).replace('T', ' ') }}</span>
-                      </div>
-                      <span v-if="observation.resolved_at" class="text-xs font-semibold text-emerald-600">Resuelta</span>
-                    </div>
-                    <p class="m-0 mt-2 text-sm text-slate-700 whitespace-pre-line">{{ observation.message }}</p>
-                    <div v-if="observation.resolved_at" class="mt-1 text-xs text-slate-400">
-                      Resuelta por {{ observation.resolved_by_name || '—' }}
-                    </div>
-                    <div v-else-if="observation.can_resolve" class="mt-2 flex justify-end">
-                      <AppButton
-                        variant="secondary"
-                        size="sm"
-                        :disabled="resolvingObservationId === observation.id"
-                        @click="resolveDeliverableObservation(observation)"
-                      >
-                        {{ resolvingObservationId === observation.id ? 'Resolviendo...' : 'Marcar resuelta' }}
-                      </AppButton>
-                    </div>
-                  </li>
-                </ul>
-                <div v-if="observationsCanAdd" class="mt-4 flex flex-col gap-2">
-                  <textarea
-                    v-model="newObservationMessage"
-                    rows="2"
-                    class="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                    placeholder="Escribe una observación para el hilo..."
-                  ></textarea>
-                  <div class="flex justify-end">
-                    <AppButton
-                      variant="outlinePrimary"
-                      size="sm"
-                      :disabled="!newObservationMessage.trim() || submittingObservation"
-                      @click="submitDeliverableObservation"
-                    >
-                      {{ submittingObservation ? 'Agregando...' : 'Agregar observación' }}
-                    </AppButton>
-                  </div>
-                </div>
-              </template>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
-              <div class="flex items-center justify-between gap-2">
-                <div>
-                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones esenciales</h3>
-                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Las acciones menos frecuentes quedaron movidas a este resumen y al historial.</p>
+                  <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Acciones</h3>
+                  <p class="m-0 mt-1 text-xs font-medium text-slate-500">Todo lo que puedes hacer ahora con este entregable, en un solo lugar.</p>
                 </div>
               </div>
               <div class="relative mt-4 flex flex-col gap-4 border-t border-[#dbe8f4] pt-4 lg:flex-row lg:items-start lg:justify-between before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-[#dbe8f4] before:shadow-[0_-10px_22px_rgba(70,110,150,0.10)]">
@@ -1674,6 +1595,15 @@
                       <span class="text-xs font-medium text-slate-500">Revisa pasos, reglas y trazabilidad.</span>
                     </div>
                   </button>
+                </div>
+
+                <div
+                  v-if="canApproveFillRequest || canReturnFillRequest || canRejectFillRequest"
+                  class="flex flex-wrap items-center gap-2 self-center"
+                >
+                  <AppButton v-if="canApproveFillRequest" variant="softSuccess" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('approve')">{{ fillApproveActionLabel }}</AppButton>
+                  <AppButton v-if="canReturnFillRequest" variant="softWarning" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('return')">Devolver</AppButton>
+                  <AppButton v-if="canRejectFillRequest" variant="softDanger" size="sm" :disabled="fillWorkflowSubmitting" @click="submitFillWorkflowAction('reject')">Rechazar</AppButton>
                 </div>
 
                 <div class="ml-auto flex min-h-14 flex-wrap items-center gap-2.5 rounded-[1.35rem] border border-slate-200/90 bg-linear-to-br from-white via-slate-50/70 to-slate-100/70 px-3 py-2.5 shadow-[0_16px_32px_rgba(15,23,42,0.08)] ring-1 ring-white/70 backdrop-blur-sm">
@@ -1799,55 +1729,19 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Acciones disponibles</h3>
-              <div class="flex flex-wrap gap-2">
-                <AppButton
-                  v-if="canReplaceFillFile"
-                  variant="softNeutral"
-                  size="sm"
-                  :class="isUploadingDeliverable ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
-                  type="button"
-                  :disabled="isUploadingDeliverable"
-                  @click="triggerFillWorkflowFileReplace"
-                >
-                  {{ isUploadingDeliverable ? 'Subiendo archivo...' : getUploadActionLabel(fillWorkflowState.subject) }}
-                </AppButton>
-                <AppButton
-                  v-if="canApproveFillRequest"
-                  variant="softSuccess"
-                  size="sm"
-                  :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
-                  type="button"
-                  :disabled="fillWorkflowSubmitting"
-                  @click="submitFillWorkflowAction('approve')"
-                >
-                  {{ fillApproveActionLabel }}
-                </AppButton>
-                <AppButton
-                  v-if="canReturnFillRequest"
-                  variant="softWarning"
-                  size="sm"
-                  :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
-                  type="button"
-                  :disabled="fillWorkflowSubmitting"
-                  @click="submitFillWorkflowAction('return')"
-                >
-                  Devolver
-                </AppButton>
-                <AppButton
-                  v-if="canRejectFillRequest"
-                  variant="softDanger"
-                  size="sm"
-                  :class="fillWorkflowSubmitting ? 'border-slate-100 bg-slate-100 text-slate-400 cursor-not-allowed' : ''"
-                  type="button"
-                  :disabled="fillWorkflowSubmitting"
-                  @click="submitFillWorkflowAction('reject')"
-                >
-                  Rechazar
-                </AppButton>
-              </div>
-            </div>
+            <DeliverableObservations
+              :observations="fillObservations"
+              :loading="observationsLoading"
+              :can-add="observationsCanAdd"
+              :submitting="submittingObservation"
+              :resolving-id="resolvingObservationId"
+              phase="review"
+              title="Observaciones de entrega"
+              subtitle="Devoluciones, rechazos y notas de revisión del entregable."
+              empty-text="Sin observaciones de entrega."
+              @add="submitDeliverableObservation"
+              @resolve="resolveDeliverableObservation"
+            />
           </div>
         </template>
 
@@ -1939,71 +1833,23 @@
                 </div>
               </div>
             </section>
+
+            <DeliverableObservations
+              :observations="signatureObservations"
+              :loading="observationsLoading"
+              :can-add="observationsCanAdd"
+              :submitting="submittingObservation"
+              :resolving-id="resolvingObservationId"
+              phase="signature"
+              title="Observaciones de firma"
+              subtitle="Notas, devoluciones y rechazos del flujo de firmas."
+              empty-text="Sin observaciones de firma."
+              @add="submitDeliverableObservation"
+              @resolve="resolveDeliverableObservation"
+            />
           </div>
           <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm font-semibold text-slate-600 text-center">
             No hay datos de firmas disponibles para este entregable.
-          </div>
-        </template>
-        <template v-else-if="deliverableWorkspaceState.tab === 'history'">
-          <div class="flex flex-col gap-5">
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
-              <div class="flex items-center justify-between gap-2">
-                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Historial de entrega</h3>
-                <AppTag variant="muted">{{ fillWorkflowNotes.length }} registro{{ fillWorkflowNotes.length === 1 ? '' : 's' }}</AppTag>
-              </div>
-              <div v-if="!fillWorkflowNotes.length" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
-                No hay notas ni respuestas registradas en el flujo de entrega.
-              </div>
-              <div v-else class="mt-4 flex flex-col gap-3">
-                <div
-                  v-for="noteEntry in fillWorkflowNotes"
-                  :key="`workspace-fill-note-${noteEntry.stepId}-${noteEntry.requestId || noteEntry.stepOrder}`"
-                  class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
-                >
-                  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p class="m-0 text-sm font-bold text-slate-800">Paso {{ noteEntry.stepOrder }} · {{ noteEntry.label }}</p>
-                      <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ noteEntry.statusLabel }}</p>
-                    </div>
-                    <span v-if="noteEntry.respondedAtLabel" class="text-xs font-medium text-slate-500">{{ noteEntry.respondedAtLabel }}</span>
-                  </div>
-                  <p class="m-0 mt-3 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700">{{ noteEntry.note }}</p>
-                </div>
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
-              <div class="flex items-center justify-between gap-2">
-                <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Historial de firmas</h3>
-                <AppTag variant="muted">{{ signatureFlowState.snapshot?.signatureRequests?.length || 0 }} registro{{ (signatureFlowState.snapshot?.signatureRequests?.length || 0) === 1 ? '' : 's' }}</AppTag>
-              </div>
-              <div v-if="!(signatureFlowState.snapshot?.signatureRequests?.length)" class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
-                No hay solicitudes de firma registradas para este entregable.
-              </div>
-              <div v-else class="mt-4 flex flex-col gap-3">
-                <div
-                  v-for="request in signatureFlowState.snapshot.signatureRequests"
-                  :key="`workspace-history-signature-${request.id}`"
-                  class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
-                >
-                  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p class="m-0 text-sm font-bold text-slate-800">Paso {{ request.stepOrder }}</p>
-                      <p class="m-0 mt-1 text-xs font-medium text-slate-500">
-                        {{ request.assignedPerson ? `${request.assignedPerson.firstName || ''} ${request.assignedPerson.lastName || ''}`.trim() : 'Firmante no resuelto' }}
-                        <span v-if="request.cargoName"> · {{ request.cargoName }}</span>
-                      </p>
-                    </div>
-                    <AppTag :variant="signatureRequestTagVariant(request.requestStatusCode)">
-                      {{ signatureRequestStatusLabel(request.requestStatusCode) }}
-                    </AppTag>
-                  </div>
-                  <p class="m-0 mt-3 text-xs font-medium text-slate-500">
-                    {{ request.respondedAt ? formatDateTime(request.respondedAt) : formatDateTime(request.requestedAt) }}
-                  </p>
-                </div>
-              </div>
-            </section>
           </div>
         </template>
         <template v-else-if="deliverableWorkspaceState.tab === 'attachments'">
@@ -2770,6 +2616,7 @@ import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
 import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
 import HomeSignatureEntry from '@/modules/home/components/HomeSignatureEntry.vue';
 import DeliverableCard from '@/modules/home/components/DeliverableCard.vue';
+import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
 import SupervisorStuckPanel from '@/modules/home/components/SupervisorStuckPanel.vue';
 import {
   resolveWorkspaceCargoIcon,
@@ -2937,9 +2784,11 @@ const isUploadingDeliverable = ref(false);
 const deliverableObservations = ref([]);
 const observationsLoading = ref(false);
 const observationsCanAdd = ref(false);
-const newObservationMessage = ref('');
 const submittingObservation = ref(false);
 const resolvingObservationId = ref(null);
+// Observaciones contextuales por flujo: entrega (revisión/devolución/rechazo) vs firma.
+const fillObservations = computed(() => deliverableObservations.value.filter((o) => o.phase !== 'signature'));
+const signatureObservations = computed(() => deliverableObservations.value.filter((o) => o.phase === 'signature'));
 const processingFillItemId = ref(null);
 const startedDeliverableIds = ref(new Set());
 const collapsedDeliverableIds = ref(new Set());
@@ -7113,7 +6962,6 @@ const loadDeliverableObservations = async (payload) => {
   const { userId, definitionId, taskItemId } = observationContext(payload);
   deliverableObservations.value = [];
   observationsCanAdd.value = false;
-  newObservationMessage.value = '';
   if (!userId || !definitionId || !taskItemId) {
     return;
   }
@@ -7130,9 +6978,9 @@ const loadDeliverableObservations = async (payload) => {
   }
 };
 
-const submitDeliverableObservation = async () => {
-  const message = newObservationMessage.value.trim();
-  if (!message || submittingObservation.value) {
+const submitDeliverableObservation = async ({ message, phase = 'review' } = {}) => {
+  const text = String(message || '').trim();
+  if (!text || submittingObservation.value) {
     return;
   }
   const { userId, definitionId, taskItemId } = observationContext(deliverableWorkspaceSubject.value);
@@ -7141,8 +6989,7 @@ const submitDeliverableObservation = async () => {
   }
   submittingObservation.value = true;
   try {
-    await processPanelService.addTaskItemObservation(userId, definitionId, taskItemId, { message });
-    newObservationMessage.value = '';
+    await processPanelService.addTaskItemObservation(userId, definitionId, taskItemId, { message: text, phase });
     await loadDeliverableObservations(deliverableWorkspaceSubject.value);
   } catch (error) {
     setProcessActionInfo(error?.response?.data?.message || 'No se pudo agregar la observación.', 'error');
@@ -7169,13 +7016,6 @@ const resolveDeliverableObservation = async (observation) => {
     resolvingObservationId.value = null;
   }
 };
-
-const observationKindLabel = (kind) => ({
-  observation: 'Observación',
-  return_reason: 'Devolución',
-  rejection_reason: 'Rechazo',
-  internal_note: 'Nota interna'
-}[kind] || 'Observación');
 
 const openDeliverableWorkspaceModal = async (payload) => {
   const canManageFill = shouldShowManageFill(payload);
