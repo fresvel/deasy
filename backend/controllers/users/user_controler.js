@@ -2179,7 +2179,11 @@ export const getUserMenu = async (req, res) => {
          ptr.unit_type_id,
          ptr.cargo_id,
          ptr.position_id,
-         ptr.recipient_policy
+         ptr.recipient_policy,
+         EXISTS(
+           SELECT 1 FROM process_definition_templates pdt
+           WHERE pdt.process_definition_id = pdv.id AND pdt.item_mode = 'routed'
+         ) AS is_routed
        FROM processes p
        INNER JOIN process_definition_versions pdv
          ON pdv.process_id = p.id
@@ -2315,6 +2319,7 @@ export const getUserMenu = async (req, res) => {
           process_definition_id: row.process_definition_id,
           variation_key: row.variation_key,
           definition_version: row.definition_version,
+          is_routed: !!row.is_routed,
           access_source: "process"
         };
 

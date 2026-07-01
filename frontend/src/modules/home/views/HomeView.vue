@@ -97,6 +97,7 @@
                     <component :is="processIconMeta(process).icon" class="h-4.5 w-4.5 shrink-0" />
                   </span>
                   <span class="deasy-nav-item__label">{{ process.name }}</span>
+                  <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                 </AppButton>
                 <div v-if="!cargo.processes.length" class="px-4 py-1 text-sm italic text-slate-400">
                   Sin procesos asignados.
@@ -285,6 +286,7 @@
                         <IconCheck v-if="selectedConsolidatedProcessIds.includes(String(process.process_definition_id || process.id))" class="h-3 w-3" />
                       </span>
                       <span class="truncate">{{ process.name }}</span>
+                      <span v-if="process.is_routed" class="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                     </button>
                   </div>
                 </div>
@@ -471,6 +473,7 @@
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                             <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ process.name }}</strong>
                           </span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
                         </button>
                       </div>
@@ -565,6 +568,7 @@
                           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                             <strong class="text-sm font-semibold text-slate-800 leading-tight">{{ process.name }}</strong>
                           </span>
+                          <span v-if="process.is_routed" class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[0.6rem] font-bold text-indigo-600"><IconSend class="h-2.5 w-2.5" />Envíos</span>
                           <IconArrowRight class="h-4 w-4 shrink-0 text-slate-400" />
                         </button>
                       </div>
