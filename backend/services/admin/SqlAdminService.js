@@ -1607,7 +1607,7 @@ export default class SqlAdminService {
     }
   }
 
-  async resolveProcessDefinitionSeries(candidate, { connection = this.pool, allowLegacy = false } = {}) {
+  async resolveProcessDefinitionSeries(candidate, { connection = this.pool } = {}) {
     this.ensurePool();
     const seriesId = Number(candidate?.series_id);
     if (!seriesId) {
@@ -1637,9 +1637,8 @@ export default class SqlAdminService {
     if (!Number(series.is_active)) {
       throw new Error("La serie seleccionada esta inactiva.");
     }
-    if (!allowLegacy && String(series.source_type) === "default") {
-      throw new Error("La serie por defecto no se puede usar para nuevas configuraciones. Crea una serie basada en tipo de unidad o cargo.");
-    }
+    // La serie `default` = "sin variación" (nombre directo) es una opción válida para procesos
+    // sin eje de variación (memos/oficios routed); ya no se bloquea para configuraciones nuevas.
     return series;
   }
 

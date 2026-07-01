@@ -17,12 +17,14 @@ const NEW_SERIES_VALUE = "__new__";
 
 const SERIES_SOURCE_LABELS = {
   unit_type: "Tipo de unidad",
-  cargo: "Cargo"
+  cargo: "Cargo",
+  default: "Sin variación"
 };
 
 const SERIES_OPTION_PREFIXES = {
   unit_type: "Por tipo de unidad",
-  cargo: "Por cargo"
+  cargo: "Por cargo",
+  default: "Sin variación"
 };
 
 const slugify = (value, maxLength = 80) =>
@@ -41,6 +43,9 @@ const buildSeriesCode = ({ sourceType, unitTypeName, cargoName }) => {
   }
   if (sourceType === "cargo") {
     return slugify(cargoName, 120);
+  }
+  if (sourceType === "default") {
+    return "general";
   }
   return "";
 };
@@ -265,10 +270,29 @@ export function useProcessWizard() {
     return String(selectedProcess?.name || "").trim();
   });
 
+  const selectedSeriesSourceType = computed(() => {
+    const form = definitionForm.value;
+    const selectedSeriesId = Number(form.series_id);
+    if (selectedSeriesId) {
+      return seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId)?.source_type || "";
+    }
+    if (form.series_id === NEW_SERIES_VALUE) {
+      return String(form.series_source_type || "");
+    }
+    return "";
+  });
+
   const definitionNamePreview = computed(() => {
     const processName = capitalizeFirst(selectedProcessName.value);
+    if (!processName) {
+      return "";
+    }
+    // Sin variación (default): el nombre es el del proceso (memos/oficios).
+    if (selectedSeriesSourceType.value === "default") {
+      return processName.slice(0, 180);
+    }
     const seriesName = selectedSeriesDisplayName.value;
-    if (!processName || !seriesName) {
+    if (!seriesName) {
       return "";
     }
     return `${processName} por ${seriesName}`.slice(0, 180);
@@ -289,13 +313,14 @@ export function useProcessWizard() {
     }
 
     const sourceType = String(form.series_source_type || "");
-    const validSourceTypes = new Set(["unit_type", "cargo"]);
+    const validSourceTypes = new Set(["unit_type", "cargo", "default"]);
     if (!validSourceTypes.has(sourceType)) {
       throw new Error("Selecciona un origen válido para la serie.");
     }
 
-    const requiresUnitType = sourceType !== "cargo";
-    const requiresCargo = sourceType !== "unit_type";
+    // Sin variación (default) no requiere tipo de unidad ni cargo.
+    const requiresUnitType = sourceType === "unit_type";
+    const requiresCargo = sourceType === "cargo";
     const unitTypeId = requiresUnitType ? Number(form.unit_type_id) : null;
     const cargoId = requiresCargo ? Number(form.cargo_id) : null;
     if (requiresUnitType && !unitTypeId) {

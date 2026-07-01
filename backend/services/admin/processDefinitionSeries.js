@@ -6,7 +6,8 @@ export const PROCESS_SERIES_SOURCE_TYPES = new Set([
 
 export const MANUAL_PROCESS_SERIES_SOURCE_TYPES = new Set([
   "unit_type",
-  "cargo"
+  "cargo",
+  "default"
 ]);
 
 const slugify = (value) => String(value || "")
@@ -44,8 +45,16 @@ export const buildProcessDefinitionSeriesDisplayName = (series = {}) => {
 
 export const buildProcessDefinitionVersionName = ({ processName, series } = {}) => {
   const normalizedProcessName = capitalizeFirst(processName);
+  if (!normalizedProcessName) {
+    return "";
+  }
+  // Sin variación (default): el nombre de la config es el nombre del proceso (lo pone el gestor);
+  // no se añade "por …" porque no hay eje de variación (memos/oficios).
+  if (String(series?.source_type || "").trim() === "default") {
+    return normalizedProcessName.slice(0, 180);
+  }
   const seriesName = buildProcessDefinitionSeriesDisplayName(series);
-  if (!normalizedProcessName || !seriesName) {
+  if (!seriesName) {
     return "";
   }
   return `${normalizedProcessName} por ${seriesName}`.slice(0, 180);
@@ -89,8 +98,11 @@ export const resolveProcessDefinitionSeriesIdentity = async (
   let code = "";
   if (sourceType === "unit_type") {
     code = slugify(unitType.name).slice(0, 120);
-  } else {
+  } else if (sourceType === "cargo") {
     code = slugify(cargo.name).slice(0, 120);
+  } else {
+    // default = sin variación (memos/oficios); código fijo, sin cargo/tipo.
+    code = "general";
   }
 
   return {

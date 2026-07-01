@@ -101,10 +101,11 @@
           <AdminSelectField :model-value="form.series_source_type" :disabled="isDefinitionLocked" @update:model-value="updateForm('series_source_type', $event)">
             <option value="unit_type">Por tipo de unidad</option>
             <option value="cargo">Por cargo</option>
+            <option value="default">Sin variación (nombre directo)</option>
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup
-          v-if="isCreatingSeries && form.series_source_type !== 'cargo'"
+          v-if="isCreatingSeries && form.series_source_type === 'unit_type'"
           label="Tipo de unidad"
           group-class="md:col-span-4"
         >
@@ -118,7 +119,7 @@
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup
-          v-if="isCreatingSeries && form.series_source_type !== 'unit_type'"
+          v-if="isCreatingSeries && form.series_source_type === 'cargo'"
           label="Cargo"
           group-class="md:col-span-4"
         >
