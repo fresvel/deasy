@@ -92,6 +92,17 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
+  async listMySends(userId) {
+    if (!userId) {
+      throw new Error("Se requiere usuario.");
+    }
+    const { data } = await axios.get(
+      API_ROUTES.USERS_MY_SENDS(userId),
+      { headers: { ...this.getAuthHeaders() } }
+    );
+    return data;
+  }
+
   async searchTaskRecipients(userId, query = "") {
     if (!userId) {
       throw new Error("Se requiere usuario.");

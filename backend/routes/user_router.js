@@ -22,7 +22,8 @@ import {
   downloadDeliverableAttachment,
   createGeneralTask,
   listAddableDeliverables,
-  searchTaskRecipients
+  searchTaskRecipients,
+  listMySends
 } from "../controllers/users/user_controler.js";
 import { loginUser } from "../controllers/users/login_user.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
@@ -167,6 +168,13 @@ router.get(
   loadAccessContext,
   requireRouteUserAccess({ resource: "process_execution", action: "create" }),
   searchTaskRecipients
+);
+router.get(
+  '/:id/my-sends',
+  authMiddleware,
+  loadAccessContext,
+  requireRouteUserAccess({ resource: "process_execution", action: "read" }),
+  listMySends
 );
 router.post(
   '/:id/process-definitions/:definitionId/task-items/:taskItemId/upload-file',

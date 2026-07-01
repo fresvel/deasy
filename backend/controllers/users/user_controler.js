@@ -3613,6 +3613,54 @@ export const searchTaskRecipients = async (req, res) => {
   }
 };
 
+// R4: consolidado "Mis envíos" — todo lo que el usuario ha enviado (items routed) entre TODOS los
+// tipos/procesos, con su tipo, destinatario, estado y fecha. Los recibidos viven en firmas/documental.
+export const listMySends = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  const routeUserId = getNumericUserId(req);
+  if (!authenticatedUserId || !routeUserId || authenticatedUserId !== routeUserId) {
+    return res.status(403).json({ message: "No autorizado." });
+  }
+  const pool = getMariaDBPool();
+  if (!pool) {
+    return res.status(500).json({ message: "Conexion MariaDB no disponible" });
+  }
+  const connection = await pool.getConnection();
+  try {
+    const [rows] = await connection.query(
+      `SELECT
+         ti.id,
+         ti.title AS label,
+         ti.status,
+         ti.created_at,
+         ti.target_person_id,
+         NULLIF(TRIM(CONCAT(COALESCE(recip.first_name, ''), ' ', COALESCE(recip.last_name, ''))), '') AS recipient_name,
+         p.id AS process_id,
+         p.name AS process_name,
+         pdv.id AS definition_id,
+         d.status AS document_status
+       FROM task_items ti
+       JOIN process_definition_templates pdt
+         ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
+       JOIN tasks t ON t.id = ti.task_id
+       JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       JOIN processes p ON p.id = pdv.process_id
+       LEFT JOIN persons recip ON recip.id = ti.target_person_id
+       LEFT JOIN documents d ON d.task_item_id = ti.id
+       WHERE ti.created_by_person_id = ?
+       ORDER BY ti.created_at DESC, ti.id DESC
+       LIMIT 200`,
+      [authenticatedUserId]
+    );
+    return res.json({ result: "ok", sends: rows });
+  } catch (error) {
+    console.error("listMySends error:", error);
+    return res.status(500).json({ message: "No se pudieron cargar tus envíos." });
+  } finally {
+    connection.release();
+  }
+};
+
 export const createGeneralTask = async (req, res) => {
   const authenticatedUserId = getAuthenticatedUserId(req);
   const routeUserId = getNumericUserId(req);

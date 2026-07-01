@@ -656,6 +656,21 @@
               <button
                 type="button"
                 class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
+                @click="openMySends"
+              >
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Mis envíos</h3>
+                <div class="flex flex-1 items-center justify-center rounded-xl border border-slate-200/80 bg-white px-6 py-8 shadow-sm">
+                  <div class="flex flex-col items-center justify-center text-center">
+                    <IconSend class="h-10 w-10 text-indigo-400" />
+                    <span class="mt-4 text-sm font-semibold text-slate-700">Documentos que has enviado</span>
+                    <p class="mt-2 max-w-[16rem] text-xs leading-relaxed text-slate-500">Memos, oficios y otros documentos que endosaste, con su estado.</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 hover:shadow-md"
                 @click="navigateToDocumentCenterPage"
               >
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Centro documental</h3>
@@ -1908,6 +1923,51 @@
                 ? 'Agregar réplica'
                 : (generalTaskForm.mode === 'derived' ? 'Crear entregable' : 'Crear tarea'))) }}
         </AppButton>
+      </template>
+    </AdminModalShell>
+
+    <AdminModalShell
+      ref="mySendsModal"
+      labelled-by="my-sends-modal-title"
+      title="Mis envíos"
+      size="xl"
+      content-class="rounded-4 shadow border-0"
+      body-class="pt-4"
+    >
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="m-0 text-sm font-medium text-slate-500">Documentos que has enviado/endosado. Lo que te envían llega a tu Centro de firmas.</p>
+          <label v-if="mySendsTypes.length > 1" class="flex items-center gap-2 text-sm">
+            <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Tipo</span>
+            <select v-model="mySendsTypeFilter" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400">
+              <option value="all">Todos</option>
+              <option v-for="t in mySendsTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div v-if="mySendsLoading" class="text-sm text-slate-500">Cargando envíos…</div>
+        <div v-else-if="!filteredMySends.length" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-sm font-medium text-slate-500">
+          Aún no has enviado ningún documento.
+        </div>
+        <ul v-else class="m-0 flex flex-col gap-2 p-0 list-none">
+          <li v-for="s in filteredMySends" :key="`send-${s.id}`" class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div class="flex min-w-0 flex-col gap-0.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <AppTag variant="info">{{ s.process_name }}</AppTag>
+                <span class="text-sm font-semibold text-slate-800">{{ s.label || `Envío #${s.id}` }}</span>
+              </div>
+              <span class="text-xs font-medium text-indigo-600">Para: {{ s.recipient_name || '—' }}</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-slate-400">
+              <span>{{ String(s.created_at || '').slice(0, 10) }}</span>
+              <AppTag variant="muted">{{ s.status }}</AppTag>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" data-modal-dismiss>Cerrar</AppButton>
       </template>
     </AdminModalShell>
 
@@ -4703,6 +4763,36 @@ const openNewSend = () => {
     return;
   }
   openGeneralTaskModal('free');
+};
+
+// R4: consolidado "Mis envíos" — todo lo que el usuario envió (routed) entre tipos, con filtro por tipo.
+const mySendsModal = ref(null);
+let mySendsModalInstance = null;
+const mySends = ref([]);
+const mySendsLoading = ref(false);
+const mySendsTypeFilter = ref('all');
+const mySendsTypes = computed(() => {
+  const set = new Map();
+  (mySends.value || []).forEach((s) => { if (s.process_name) set.set(String(s.process_id), s.process_name); });
+  return Array.from(set, ([id, name]) => ({ id, name }));
+});
+const filteredMySends = computed(() => {
+  const f = mySendsTypeFilter.value;
+  return (mySends.value || []).filter((s) => f === 'all' || String(s.process_id) === f);
+});
+const openMySends = async () => {
+  mySendsTypeFilter.value = 'all';
+  mySendsLoading.value = true;
+  mySendsModalInstance = Modal.getOrCreateInstance(mySendsModal.value?.el);
+  mySendsModalInstance?.show();
+  try {
+    const data = await processPanelService.listMySends(currentUserId.value);
+    mySends.value = Array.isArray(data?.sends) ? data.sends : [];
+  } catch {
+    mySends.value = [];
+  } finally {
+    mySendsLoading.value = false;
+  }
 };
 
 const openDerivedTaskFromWorkspace = () => {
