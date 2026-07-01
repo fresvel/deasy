@@ -45,6 +45,19 @@
         <template v-if="field.name === 'template_artifact_id'">
           {{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }) }}
         </template>
+        <template v-else-if="field.name === 'item_mode'">
+          <select
+            v-if="canManage"
+            :value="row.item_mode || 'single'"
+            class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400"
+            @change="$emit('set-item-mode', { row, itemMode: $event.target.value })"
+          >
+            <option value="single">Simple (1 entregable)</option>
+            <option value="replicated">Replicado (N con etiqueta)</option>
+            <option value="routed">Ruteado (endosar a alguien)</option>
+          </select>
+          <span v-else class="text-xs font-semibold text-slate-600">{{ itemModeLabel(row.item_mode) }}</span>
+        </template>
         <template v-else>
           {{ row[field.name] ?? "—" }}
         </template>
@@ -87,7 +100,13 @@ const props = defineProps({
   formatCell: { type: Function, required: true }
 });
 
-defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row"]);
+defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "set-item-mode"]);
+
+const itemModeLabel = (mode) => ({
+  single: "Simple",
+  replicated: "Replicado",
+  routed: "Ruteado"
+}[String(mode || "single")] || "Simple");
 
 // El orden (sort_order) es interno y creates_task es siempre "sí"; no se muestran como columnas.
 const HIDDEN_ARTIFACT_COLUMNS = new Set(["creates_task", "sort_order"]);

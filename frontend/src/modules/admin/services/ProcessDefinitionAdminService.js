@@ -177,6 +177,10 @@ export class ProcessDefinitionAdminService {
     if (Number.isFinite(sortOrder) && sortOrder > 0) {
       payload.sort_order = sortOrder;
     }
+    // Modo de emisión del entregable (single/replicated/routed); default lo pone el backend.
+    if (form.item_mode && ["single", "replicated", "routed"].includes(String(form.item_mode))) {
+      payload.item_mode = String(form.item_mode);
+    }
     return payload;
   }
 

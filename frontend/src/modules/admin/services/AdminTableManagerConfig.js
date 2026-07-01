@@ -79,6 +79,7 @@ export const processDefinitionActivationArtifactTableFields = [
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
   { name: "template_artifact_id", label: "Plantilla documental" },
+  { name: "item_mode", label: "Modo de emisión" },
   { name: "sort_order", label: "Orden" }
 ];
 

@@ -444,6 +444,7 @@
       @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
       @edit-row="openDefinitionArtifactTemplateEditor"
       @delete-row="deleteDefinitionArtifact"
+      @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
       @close="handleDefinitionArtifactsManagerClose"
       @accept="handleDefinitionArtifactsManagerAccept"
     />
@@ -552,6 +553,7 @@
           @view-row="handleWizardViewRow($event, allTablesMap.process_definition_templates)"
           @edit-row="openDefinitionArtifactTemplateEditor"
           @delete-row="deleteDefinitionArtifact"
+          @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
         />
       </template>
       <template #rules>
@@ -3043,6 +3045,7 @@ const {
   openDefinitionArtifactFkSearch,
   clearDefinitionArtifactSelection,
   submitDefinitionArtifact,
+  setDefinitionArtifactItemMode,
   deleteDefinitionArtifact
 } = useProcessDefinitionManager({
   props,

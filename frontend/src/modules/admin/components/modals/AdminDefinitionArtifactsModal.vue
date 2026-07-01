@@ -45,7 +45,7 @@ const props = defineProps({
   formatCell: { type: Function, required: true }
 });
 
-const emit = defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "close", "accept"]);
+const emit = defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "set-item-mode", "close", "accept"]);
 const modalRef = ref(null);
 
 const panelBindings = computed(() => ({
@@ -70,7 +70,8 @@ const panelListeners = {
   reset: () => emit("reset"),
   "view-row": (row) => emit("view-row", row),
   "edit-row": (row) => emit("edit-row", row),
-  "delete-row": (row) => emit("delete-row", row)
+  "delete-row": (row) => emit("delete-row", row),
+  "set-item-mode": (payload) => emit("set-item-mode", payload)
 };
 
 defineExpose({

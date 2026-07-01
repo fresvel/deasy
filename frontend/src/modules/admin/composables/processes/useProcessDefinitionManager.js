@@ -771,6 +771,30 @@ export function useProcessDefinitionManager({
     }
   };
 
+  // Cambia el modo de emisión (single/replicated/routed) de una plantilla ligada, en línea desde la tabla.
+  const setDefinitionArtifactItemMode = async (row, itemMode) => {
+    const definitionId = definitionArtifactsContext.value?.id;
+    if (!definitionId || !row?.id) {
+      return;
+    }
+    if (!canManageDefinitionArtifacts.value) {
+      definitionArtifactsError.value = "Solo puedes modificar plantillas mientras la configuracion este en draft.";
+      return;
+    }
+    definitionArtifactsError.value = "";
+    try {
+      const payload = processDefinitionAdminService.buildArtifactPayload(definitionId, {
+        template_artifact_id: row.template_artifact_id,
+        sort_order: row.sort_order,
+        item_mode: itemMode
+      });
+      await processDefinitionAdminService.saveArtifact(String(row.id), payload);
+      await loadDefinitionArtifacts();
+    } catch (error) {
+      definitionArtifactsError.value = error?.response?.data?.message || "No se pudo actualizar el modo de emisión.";
+    }
+  };
+
   const deleteDefinitionArtifact = async (row) => {
     if (!row?.id) {
       return;
@@ -840,6 +864,7 @@ export function useProcessDefinitionManager({
     clearDefinitionArtifactSelection,
     startDefinitionArtifactEdit,
     submitDefinitionArtifact,
+    setDefinitionArtifactItemMode,
     deleteDefinitionArtifact
   };
 }
