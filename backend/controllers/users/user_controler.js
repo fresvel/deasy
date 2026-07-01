@@ -10,7 +10,6 @@ import RbacService from "../../services/auth/RbacService.js";
 import { getMariaDBPool } from "../../config/mariadb.js";
 import {
   ensureDocumentForTaskItem,
-  hydrateGeneralTask,
   launchProcessDefinitionInTerm,
   resolveOriginUnitIdForTaskItem,
   resolveOwnerPersonIdForTaskItem
@@ -3860,16 +3859,62 @@ export const createGeneralTask = async (req, res) => {
     );
     const taskId = Number(taskResult.insertId);
 
-    // Materializa el task_item contenedor + documento + versión (para colgar anexos),
-    // asignando únicamente al creador (sin aplicar target rules de la configuración).
-    const hydrated = await hydrateGeneralTask({
-      connection,
-      taskId,
-      processDefinitionId: definitionId,
-      responsiblePositionId,
-      startDate,
-      endDate,
-    });
+    // Proceso por defecto = routed comodín: se crea UN entregable endosado a la persona
+    // elegida (target_person_id = destinatario, que puede ser uno mismo). El dueño del
+    // documento resuelve al destinatario, que es quien realiza/atiende la tarea (paso de
+    // llenado `document_owner`); el creador queda como autor/delegador.
+    const [freeTplRows] = await connection.query(
+      `SELECT id, template_artifact_id
+       FROM process_definition_templates
+       WHERE process_definition_id = ?
+       ORDER BY sort_order ASC, id ASC
+       LIMIT 1`,
+      [definitionId]
+    );
+    const freeTpl = freeTplRows?.[0];
+    if (!freeTpl) {
+      throw new Error("El proceso por defecto no tiene una plantilla base.");
+    }
+    let freeTargetPersonId = authenticatedUserId;
+    if (recipientPersonId && recipientPersonId !== authenticatedUserId) {
+      const [recipRows] = await connection.query(
+        `SELECT id FROM persons WHERE id = ? AND is_active = 1 LIMIT 1`,
+        [recipientPersonId]
+      );
+      if (!recipRows?.length) {
+        throw new Error("El destinatario no es válido.");
+      }
+      freeTargetPersonId = recipientPersonId;
+    }
+    const [freeItemResult] = await connection.query(
+      `INSERT INTO task_items (
+         task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
+         sort_order, created_by_person_id, target_unit_id, target_position_id, target_person_id,
+         responsible_position_id, assigned_person_id, start_date, end_date, status
+       ) VALUES (?, ?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
+      [
+        taskId,
+        freeTpl.id,
+        freeTpl.template_artifact_id,
+        description ? `${title}\n\n${description}` : title,
+        authenticatedUserId,
+        unitId,
+        null,
+        freeTargetPersonId,
+        responsiblePositionId,
+        authenticatedUserId,
+        startDate,
+        endDate,
+      ]
+    );
+    const freeItemId = Number(freeItemResult.insertId);
+    const [freeItemRows] = await connection.query(
+      `SELECT id, task_id, template_artifact_id, assigned_person_id, target_unit_id,
+              target_person_id, responsible_position_id
+       FROM task_items WHERE id = ? LIMIT 1`,
+      [freeItemId]
+    );
+    await ensureDocumentForTaskItem(connection, freeItemRows[0]);
 
     await connection.commit();
 
@@ -3877,11 +3922,12 @@ export const createGeneralTask = async (req, res) => {
       result: "ok",
       mode,
       task_id: taskId,
+      task_item_id: freeItemId,
       term_id: termId,
       definition_id: definitionId,
       unit_id: unitId,
+      recipient_person_id: freeTargetPersonId,
       responsible_position_id: responsiblePositionId,
-      hydration: hydrated,
     });
   } catch (error) {
     await connection.rollback().catch(() => {});

@@ -1809,7 +1809,7 @@
               ? 'Crea una réplica de este entregable. Hereda su flujo de entrega y firmas; solo cambia la etiqueta.'
               : (generalTaskForm.mode === 'derived'
                 ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
-                : 'Crea una tarea técnica en la configuración default. Podrás adjuntar entregables una vez creada.')) }}
+                : 'Crea una tarea ad-hoc y endósala a una persona (que puede ser tú). Quien la reciba será quien la atienda.')) }}
         </p>
 
         <div v-if="generalTaskForm.templateName" class="flex flex-wrap items-center gap-2">
@@ -1829,8 +1829,8 @@
           <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del entregable…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
         </label>
 
-        <div v-if="generalTaskForm.itemMode === 'routed'" class="flex flex-col gap-1 relative">
-          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Destinatario *</span>
+        <div v-if="generalTaskForm.itemMode === 'routed' || generalTaskForm.mode === 'free'" class="flex flex-col gap-1 relative">
+          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">{{ generalTaskForm.mode === 'free' ? 'Endosar a (opcional; por defecto tú)' : 'Destinatario *' }}</span>
           <input
             v-model="recipientQuery"
             type="text"
@@ -4651,7 +4651,7 @@ const submitGeneralTask = async () => {
       unit_id: form.unitId || null,
       source_task_id: form.sourceTaskId || null,
       process_definition_template_id: form.processDefinitionTemplateId || null,
-      recipient_person_id: form.itemMode === 'routed' ? (form.recipientPersonId || null) : null,
+      recipient_person_id: (form.itemMode === 'routed' || form.mode === 'free') ? (form.recipientPersonId || null) : null,
       custom_term: {
         name: form.termName.trim() || form.title.trim(),
         start_date: form.startDate || null,

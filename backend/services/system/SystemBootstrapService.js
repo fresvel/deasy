@@ -534,13 +534,19 @@ export const ensureDefaultProcess = async (connection) => {
   if (!pdt) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_templates
-        (process_definition_id, template_artifact_id, sort_order)
-       VALUES (?, ?, 1)`,
+        (process_definition_id, template_artifact_id, sort_order, item_mode)
+       VALUES (?, ?, 1, 'routed')`,
       [definitionId, artifactId]
     );
     pdt = { id: r.insertId };
   }
   const pdtId = Number(pdt.id);
+  // Proceso por defecto = routed comodín: cualquiera crea una tarea y la endosa a alguien
+  // (que puede ser uno mismo). Idempotente para instalaciones previas.
+  await connection.query(
+    "UPDATE process_definition_templates SET item_mode = 'routed' WHERE id = ? AND item_mode <> 'routed'",
+    [pdtId]
+  );
 
   // 6. flujo de entrega: 1 paso, el dueño del documento llena (universal).
   let fillTpl = await fetchOne(
