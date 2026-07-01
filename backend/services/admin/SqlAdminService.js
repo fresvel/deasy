@@ -1642,6 +1642,26 @@ export default class SqlAdminService {
     return series;
   }
 
+  // El proceso por defecto (slug 'default') es un routed comodín especial: solo puede tener UNA
+  // variación — la "sin variación" (source_type='default'). Se permite versionarla (N versiones),
+  // pero no crear otra variación por cargo o tipo de unidad.
+  async ensureDefaultProcessSingleVariation(processId, series, { connection = this.pool } = {}) {
+    this.ensurePool();
+    if (!processId) {
+      return;
+    }
+    const [rows] = await connection.query(
+      "SELECT slug FROM processes WHERE id = ? LIMIT 1",
+      [Number(processId)]
+    );
+    if (String(rows?.[0]?.slug || "") !== "default") {
+      return;
+    }
+    if (String(series?.source_type || "") !== "default") {
+      throw new Error("El proceso por defecto solo admite la configuración \"sin variación\". Puedes crear nuevas versiones de ella, pero no otra variación por cargo o tipo de unidad.");
+    }
+  }
+
   async resolveProcessDefinitionVersionName(processId, seriesId, { connection = this.pool } = {}) {
     this.ensurePool();
     const normalizedProcessId = Number(processId);
@@ -3295,6 +3315,10 @@ export default class SqlAdminService {
       }
       const series = await this.resolveProcessDefinitionSeries(payload);
       payload.variation_key = String(series.code || "").trim();
+      // El proceso por defecto es especial: SOLO admite la configuración "sin variación"
+      // (source_type='default'). Puede versionarse (N versiones), pero no tener otra
+      // variación por cargo/tipo de unidad.
+      await this.ensureDefaultProcessSingleVariation(payload.process_id, series);
       payload.name = await this.resolveProcessDefinitionVersionName(payload.process_id, payload.series_id);
       payload.status = "draft";
       await this.ensureProcessDefinitionVersionAvailable(payload);
