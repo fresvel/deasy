@@ -78,13 +78,16 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async listAddableDeliverables(userId, taskId) {
-    if (!userId || !taskId) {
-      throw new Error("Se requiere usuario y tarea.");
+  async listAddableDeliverables(userId, { taskId = null, definitionId = null } = {}) {
+    if (!userId || (!taskId && !definitionId)) {
+      throw new Error("Se requiere usuario y tarea o definición.");
     }
+    const params = {};
+    if (taskId) params.task_id = taskId;
+    if (definitionId) params.definition_id = definitionId;
     const { data } = await axios.get(
       API_ROUTES.USERS_ADDABLE_DELIVERABLES(userId),
-      { params: { task_id: taskId }, headers: { ...this.getAuthHeaders() } }
+      { params, headers: { ...this.getAuthHeaders() } }
     );
     return data;
   }

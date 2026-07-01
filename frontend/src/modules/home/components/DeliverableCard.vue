@@ -92,6 +92,9 @@ const onCardClick = (event) => {
             <p class="m-0 min-w-0 truncate text-[0.78rem] font-medium leading-snug text-slate-400">
               {{ h.getDeliverablePeriodLabel(deliverable.task) }}
             </p>
+            <p v-if="deliverable.item.item_mode === 'routed' && deliverable.item.recipient_name" class="m-0 min-w-0 truncate text-[0.78rem] font-semibold leading-snug text-indigo-600">
+              Para: {{ deliverable.item.recipient_name }}
+            </p>
           </div>
           <AppButton
             variant="plain"

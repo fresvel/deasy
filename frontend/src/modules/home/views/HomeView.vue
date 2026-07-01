@@ -917,7 +917,25 @@
                     </div>
                   </section>
 
-                  <section v-if="addableDeliverableEntries.length" class="px-2 md:px-3 xl:px-4">
+                  <!-- Routed: panel de envíos (crear/endosar). Los recibidos llegan al Centro de firmas. -->
+                  <section v-if="isRoutedProcess" class="px-2 md:px-3 xl:px-4">
+                    <div class="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-4 flex flex-wrap items-center justify-between gap-3">
+                      <div class="flex items-center gap-3">
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-100 bg-white text-indigo-600">
+                          <IconSend class="h-5 w-5" />
+                        </span>
+                        <div class="flex min-w-0 flex-col">
+                          <h3 class="m-0 text-sm font-bold text-slate-800">Mis envíos</h3>
+                          <p class="m-0 text-xs font-medium text-slate-500">Crea y endosa un documento a una persona. Lo que te envían llega a tu Centro de firmas.</p>
+                        </div>
+                      </div>
+                      <AppButton variant="primary" size="sm" @click="openNewSend">
+                        <span class="inline-flex items-center gap-1.5"><IconPlus class="h-4 w-4" /> Nuevo envío</span>
+                      </AppButton>
+                    </div>
+                  </section>
+
+                  <section v-if="addableDeliverableEntries.length && !isRoutedProcess" class="px-2 md:px-3 xl:px-4">
                     <div class="rounded-2xl border border-sky-100 bg-sky-50/40 p-4 flex flex-col gap-3">
                       <div class="flex items-center gap-1.5">
                         <h3 class="m-0 text-sm font-bold uppercase tracking-wider text-slate-700">Agregar entregable</h3>
@@ -940,12 +958,14 @@
                     </div>
                   </section>
 
-                  <div v-if="!selectedProcessPanel.tasks.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
+                  <div v-if="!selectedProcessPanel.tasks.length && !isRoutedProcess" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
                     No tienes tareas activas o históricas para esta configuración.
                   </div>
 
                   <div v-else-if="!filteredProcessDeliverables.length" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-500 bg-slate-50/50 text-center text-sm font-medium">
-                    No hay entregables que coincidan con los filtros actuales.
+                    {{ isRoutedProcess
+                      ? 'Aún no has enviado ningún documento. Usa "Nuevo envío" para crear el primero.'
+                      : 'No hay entregables que coincidan con los filtros actuales.' }}
                   </div>
 
                   <div v-else class="px-2 md:px-3 xl:px-4 flex flex-col gap-5">
@@ -2556,6 +2576,7 @@ import {
   IconFiles,
   IconInfoCircle,
   IconMessages,
+  IconSend,
   IconMinus,
   IconPlayerPlayFilled,
   IconPlus,
@@ -4589,7 +4610,7 @@ const loadAddableDeliverables = async () => {
   for (const task of tasks) {
     if (!task?.id) continue;
     try {
-      const data = await processPanelService.listAddableDeliverables(userId, task.id);
+      const data = await processPanelService.listAddableDeliverables(userId, { taskId: task.id });
       const list = Array.isArray(data?.deliverables) ? data.deliverables : [];
       if (list.length) next[task.id] = list;
     } catch {
@@ -4612,6 +4633,73 @@ watch(
   () => (aggregatedProcessTasks.value || []).map((task) => task.id).join(','),
   () => { loadAddableDeliverables(); }
 );
+
+// R2/R3: detección de "proceso de envíos" (routed) POR DEFINICIÓN (aunque no tenga tarea/lanzamiento).
+// El proceso abierto puede venir del aside (selectedProcessKey) o de la vista consolidada.
+const openDefinitionIds = computed(() => {
+  const ids = new Set();
+  if (selectedProcessKey.value) {
+    const n = Number(selectedProcessKey.value);
+    if (n) ids.add(n);
+  }
+  (selectedConsolidatedProcessIds.value || []).forEach((v) => {
+    const n = Number(v);
+    if (n) ids.add(n);
+  });
+  return Array.from(ids);
+});
+const routedTemplatesByDefinition = ref({});
+const loadRoutedTemplates = async () => {
+  const userId = currentUserId.value;
+  const ids = openDefinitionIds.value;
+  if (!userId || !ids.length) {
+    routedTemplatesByDefinition.value = {};
+    return;
+  }
+  const next = { ...routedTemplatesByDefinition.value };
+  for (const defId of ids) {
+    if (next[defId]) continue;
+    try {
+      const data = await processPanelService.listAddableDeliverables(userId, { definitionId: defId });
+      const list = Array.isArray(data?.deliverables) ? data.deliverables : [];
+      next[defId] = list.filter((t) => String(t.item_mode) === 'routed');
+    } catch {
+      next[defId] = [];
+    }
+  }
+  routedTemplatesByDefinition.value = next;
+};
+watch(
+  () => openDefinitionIds.value.join(','),
+  () => { loadRoutedTemplates(); },
+  { immediate: true }
+);
+// El proceso abierto es "de envíos" cuando TODAS sus definiciones tienen plantilla routed.
+const isRoutedProcess = computed(() => {
+  const ids = openDefinitionIds.value;
+  if (!ids.length) return false;
+  return ids.every((id) => (routedTemplatesByDefinition.value[id] || []).length > 0);
+});
+const routedTemplatesForSelected = computed(() => {
+  const ids = openDefinitionIds.value;
+  const out = [];
+  for (const id of ids) {
+    for (const t of (routedTemplatesByDefinition.value[id] || [])) {
+      out.push({ definitionId: id, template: t });
+    }
+  }
+  return out;
+});
+// Abre el alta de un envío: usa una tarea ancla si existe (routed definido) o el flujo libre (default).
+const openNewSend = () => {
+  const anchorTask = (filteredProcessTasks.value || []).find((t) => t?.id);
+  const entry = routedTemplatesForSelected.value[0] || null;
+  if (anchorTask && entry?.template) {
+    openAddDeliverableModal(anchorTask, entry.template);
+    return;
+  }
+  openGeneralTaskModal('free');
+};
 
 const openDerivedTaskFromWorkspace = () => {
   const subject = deliverableWorkspaceSubject.value ? getDeliverableSubject(deliverableWorkspaceSubject.value) : null;
