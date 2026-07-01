@@ -788,6 +788,8 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
        ti.status,
        COALESCE(NULLIF(ti.title, ''), tar_dl.display_name) AS template_artifact_name,
        rp.title AS responsible_position_title,
+       pdt.item_mode AS item_mode,
+       NULLIF(TRIM(CONCAT(COALESCE(recip.first_name, ''), ' ', COALESCE(recip.last_name, ''))), '') AS recipient_name,
        COALESCE(target_unit.label, target_unit.name) AS target_unit_label,
        target_pos.title AS target_position_title
      FROM task_items ti
@@ -795,6 +797,7 @@ const getTaskItemsForTaskIds = async (pool, taskIds) => {
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
      LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
+     LEFT JOIN persons recip ON recip.id = ti.target_person_id
      LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
      LEFT JOIN unit_positions target_pos ON target_pos.id = ti.target_position_id
      WHERE ti.task_id IN (${placeholders})
@@ -1715,6 +1718,8 @@ const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scope
         unit_label: item.origin_unit_label || null,
         template_artifact_id: taskItem?.template_artifact_id || null,
         template_artifact_name: taskItem?.template_artifact_name || null,
+        item_mode: taskItem?.item_mode || null,
+        recipient_name: taskItem?.recipient_name || null,
         start_date: taskItem?.start_date || null,
         end_date: taskItem?.end_date || null,
         user_started_at: taskItem?.user_started_at || null,
@@ -3516,8 +3521,9 @@ export const listAddableDeliverables = async (req, res) => {
     return res.status(403).json({ message: "No autorizado." });
   }
   const taskId = req.query?.task_id ? Number(req.query.task_id) : null;
-  if (!taskId || Number.isNaN(taskId)) {
-    return res.status(400).json({ message: "Se requiere task_id." });
+  const requestedDefinitionId = req.query?.definition_id ? Number(req.query.definition_id) : null;
+  if ((!taskId || Number.isNaN(taskId)) && (!requestedDefinitionId || Number.isNaN(requestedDefinitionId))) {
+    return res.status(400).json({ message: "Se requiere task_id o definition_id." });
   }
   const pool = getMariaDBPool();
   if (!pool) {
@@ -3525,15 +3531,19 @@ export const listAddableDeliverables = async (req, res) => {
   }
   const connection = await pool.getConnection();
   try {
-    const [taskRows] = await connection.query(
-      `SELECT process_definition_id FROM tasks WHERE id = ? LIMIT 1`,
-      [taskId]
-    );
-    const definitionId = taskRows?.[0]?.process_definition_id
-      ? Number(taskRows[0].process_definition_id)
-      : null;
+    // Por definición (proceso de envíos aunque no tenga tarea) o resuelto desde la tarea.
+    let definitionId = requestedDefinitionId || null;
     if (!definitionId) {
-      return res.status(404).json({ message: "Tarea no encontrada." });
+      const [taskRows] = await connection.query(
+        `SELECT process_definition_id FROM tasks WHERE id = ? LIMIT 1`,
+        [taskId]
+      );
+      definitionId = taskRows?.[0]?.process_definition_id
+        ? Number(taskRows[0].process_definition_id)
+        : null;
+    }
+    if (!definitionId) {
+      return res.status(404).json({ message: "Configuración no encontrada." });
     }
     const [rows] = await connection.query(
       `SELECT pdt.id,
@@ -3549,7 +3559,7 @@ export const listAddableDeliverables = async (req, res) => {
        ORDER BY pdt.sort_order ASC, pdt.id ASC`,
       [definitionId]
     );
-    return res.json({ result: "ok", task_id: taskId, deliverables: rows });
+    return res.json({ result: "ok", task_id: taskId, definition_id: definitionId, deliverables: rows });
   } catch (error) {
     console.error("listAddableDeliverables error:", error);
     return res.status(500).json({ message: "No se pudieron cargar los entregables agregables." });
