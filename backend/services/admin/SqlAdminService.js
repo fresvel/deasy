@@ -2369,25 +2369,31 @@ export default class SqlAdminService {
     const normalizedDefinitionId = Number(definitionId);
     if (!normalizedDefinitionId) return 0;
     const [rows] = await connection.query(
-      `SELECT ta.*
+      `SELECT ta.*, pdt.item_mode AS item_mode, d.display_name AS deliverable_name
          FROM process_definition_templates pdt
          INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+         LEFT JOIN deliverables d ON d.id = ta.deliverable_id
         WHERE pdt.process_definition_id = ? AND ta.lifecycle_state = 'draft'`,
       [normalizedDefinitionId]
     );
     let published = 0;
     for (const artifact of rows) {
-      let fillSteps = 0;
-      try {
-        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-      } catch {
-        fillSteps = 0;
-      }
-      if (!fillSteps) {
-        throw new Error(
-          `No se puede activar: la plantilla "${artifact.display_name || artifact.template_code}" debe definir al menos un paso de flujo de entrega antes de publicarse.`
-        );
+      // routed NO autora flujo (se define al enviar): no se exige paso de entrega para publicarse.
+      // single/replicated sí deben traer su flujo predefinido.
+      if (String(artifact.item_mode) !== "routed") {
+        let fillSteps = 0;
+        try {
+          const meta = await this.loadTemplateArtifactMetaDocument(artifact);
+          fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+        } catch {
+          fillSteps = 0;
+        }
+        if (!fillSteps) {
+          const templateName = artifact.deliverable_name || artifact.display_name || artifact.template_code || `#${artifact.id}`;
+          throw new Error(
+            `No se puede activar: la plantilla "${templateName}" debe definir al menos un paso de flujo de entrega antes de publicarse.`
+          );
+        }
       }
       await this.retirePriorPublishedSiblings(connection, artifact.id);
       await connection.query(
@@ -5278,6 +5284,18 @@ export default class SqlAdminService {
     };
   }
 
+  // True si la plantilla está vinculada a algún proceso y TODOS sus vínculos son 'routed' (que NO autoran
+  // flujo: se define al enviar). Se usa para relajar el readiness "≥1 paso de entrega" en publish/activate
+  // por id (sin contexto de link). Si tiene algún vínculo no-routed, o ninguno, se mantiene el readiness.
+  async isArtifactRoutedOnly(artifactId, connection = this.pool) {
+    const [rows] = await connection.query(
+      "SELECT item_mode FROM process_definition_templates WHERE template_artifact_id = ?",
+      [Number(artifactId)]
+    );
+    if (!rows.length) return false;
+    return rows.every((row) => String(row.item_mode) === "routed");
+  }
+
   // Activa/desactiva una plantilla. is_active es el único estado del ciclo de vida (Activo/Inactivo).
   // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega definido en su meta.yaml
   // (regla: una plantilla de proceso no se usa sin flujo de entrega). La firma puede ser ad-hoc.
@@ -5292,7 +5310,7 @@ export default class SqlAdminService {
     if (current === nextActive) {
       return { artifact_id: Number(artifactId), is_active: nextActive, changed: false };
     }
-    if (nextActive === 1) {
+    if (nextActive === 1 && !(await this.isArtifactRoutedOnly(Number(artifactId)))) {
       let fillSteps = 0;
       try {
         const meta = await this.loadTemplateArtifactMetaDocument(artifact);
@@ -5343,15 +5361,18 @@ export default class SqlAdminService {
     if (String(artifact.lifecycle_state || "") === "published") {
       return { artifact_id: id, lifecycle_state: "published", changed: false };
     }
-    let fillSteps = 0;
-    try {
-      const meta = await this.loadTemplateArtifactMetaDocument(artifact);
-      fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-    } catch {
-      fillSteps = 0;
-    }
-    if (!fillSteps) {
-      throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+    // routed NO autora flujo (se define al enviar): se omite el readiness si la plantilla es routed-only.
+    if (!(await this.isArtifactRoutedOnly(id))) {
+      let fillSteps = 0;
+      try {
+        const meta = await this.loadTemplateArtifactMetaDocument(artifact);
+        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+      } catch {
+        fillSteps = 0;
+      }
+      if (!fillSteps) {
+        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+      }
     }
     const connection = await this.pool.getConnection();
     try {
@@ -5545,7 +5566,7 @@ export default class SqlAdminService {
     }
 
     const [linkRows] = await this.pool.query(
-      "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+      "SELECT id, item_mode FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
       [cfgId, tplId]
     );
     if (!linkRows.length) {
@@ -5553,15 +5574,18 @@ export default class SqlAdminService {
     }
 
     // Readiness de publicación de la plantilla (≥1 paso de entrega) — lectura MinIO antes de la transacción.
-    let fillSteps = 0;
-    try {
-      const meta = await this.loadTemplateArtifactMetaDocument(template);
-      fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
-    } catch {
-      fillSteps = 0;
-    }
-    if (!fillSteps) {
-      throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+    // routed NO autora flujo (se define al enviar): se omite el readiness de entrega.
+    if (String(linkRows[0].item_mode) !== "routed") {
+      let fillSteps = 0;
+      try {
+        const meta = await this.loadTemplateArtifactMetaDocument(template);
+        fillSteps = (Array.isArray(meta?.workflows?.fill?.steps) ? meta.workflows.fill.steps : []).length;
+      } catch {
+        fillSteps = 0;
+      }
+      if (!fillSteps) {
+        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+      }
     }
 
     const connection = await this.pool.getConnection();
