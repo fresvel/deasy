@@ -812,12 +812,18 @@ ON DUPLICATE KEY UPDATE
 CREATE TABLE IF NOT EXISTS fill_flow_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_template_id INT NOT NULL,
+  -- Flujo POR INSTANCIA (routed, definido en runtime): task_item_id != NULL. Flujo de plantilla
+  -- (single/replicated, autorado): task_item_id = NULL.
+  task_item_id INT NULL,
   name VARCHAR(180) NOT NULL,
   description VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_fill_flow_templates_task_item (task_item_id),
   CONSTRAINT fk_fill_flow_templates_definition_template
-    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id)
+    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
+  CONSTRAINT fk_fill_flow_templates_task_item
+    FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS fill_flow_steps (
@@ -1067,12 +1073,17 @@ DELIMITER ;
 CREATE TABLE IF NOT EXISTS signature_flow_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   process_definition_template_id INT NOT NULL,
+  -- Flujo POR INSTANCIA (routed, runtime): task_item_id != NULL; flujo de plantilla: NULL.
+  task_item_id INT NULL,
   name VARCHAR(180) NOT NULL,
   description VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_signature_flow_templates_task_item (task_item_id),
   CONSTRAINT fk_signature_flow_templates_definition_template
-    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id)
+    FOREIGN KEY (process_definition_template_id) REFERENCES process_definition_templates(id),
+  CONSTRAINT fk_signature_flow_templates_task_item
+    FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS signature_flow_steps (

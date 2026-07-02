@@ -1521,6 +1521,30 @@ export const ensureMariaDBSchema = async ({ reset = false } = {}) => {
       "item_mode ENUM('single','replicated','routed') NOT NULL DEFAULT 'single' AFTER sort_order"
     );
 
+    // P1 routed: flujo POR INSTANCIA. task_item_id != NULL = flujo definido en runtime para ese
+    // entregable (routed); NULL = flujo autorado de la plantilla (single/replicated).
+    for (const flowTable of ["fill_flow_templates", "signature_flow_templates"]) {
+      await addColumnIfMissing(
+        connection,
+        flowTable,
+        "task_item_id",
+        "task_item_id INT NULL AFTER process_definition_template_id"
+      );
+      await addIndexIgnoringDuplicate(
+        connection,
+        flowTable,
+        `INDEX idx_${flowTable}_task_item (task_item_id)`,
+        `índice ${flowTable}.task_item_id`
+      );
+      await addForeignKeyIfMissing(
+        connection,
+        flowTable,
+        "task_item_id",
+        `CONSTRAINT fk_${flowTable}_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE CASCADE`,
+        `FK ${flowTable}.task_item_id`
+      );
+    }
+
     // - process_target_rules.include_descendants (2026-06): redundante con unit_scope_type='unit_subtree'
     //   (unit_exact + include_descendants=1 resolvía idéntico al subárbol). Antes de eliminar la columna,
     //   se promueven esas reglas a 'unit_subtree' para no perder su alcance.
