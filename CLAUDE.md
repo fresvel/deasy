@@ -81,6 +81,16 @@ bash scripts/reset-db.sh <env>                      # reset MariaDB
 ### Process engine (core domain)
 Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in MariaDB. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
 
+### Modos de emisión de entregables (single / replicated / routed) — LEER `docs/modelo-emision-entregables.md`
+Cada plantilla ligada declara su modo en `process_definition_templates.item_mode`:
+- **single**: entregable + flujo (entrega/firma) **predefinidos en la plantilla**; 1 instancia al lanzar.
+- **replicated**: flujo **predefinido**; el responsable crea N réplicas etiquetadas que **heredan** ese flujo.
+- **routed**: **sin flujo predefinido** — el usuario **define entrega + firma AL INSTANCIAR** (runtime).
+
+El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenecen a ningún proceso** (cualquier usuario, en cualquier momento; p. ej. "haz el informe de este evento"). **NO es "memorandums".**
+
+Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **DEPRECADOS (no usar):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. **routed no autora flujo** (es de runtime). Estado: single/replicated hechos; **routed está a medias** (hoy solo elige 1 destinatario vía atajo `document_owner` sembrado; falta el editor de flujo en runtime). Ver el doc para detalle y deuda técnica.
+
 ## Environments & ports
 `dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). `qa-local` uses `9088`/`9443`. Direct backend dev port is `3030`. Per-env infra ports (MariaDB/Mongo/RabbitMQ/MinIO/Signer) are listed in `COMANDOS_PROYECTO.md`.
 
