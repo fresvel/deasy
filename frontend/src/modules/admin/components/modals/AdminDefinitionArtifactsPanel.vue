@@ -57,6 +57,9 @@
             <option value="routed">Ruteado (endosar a alguien)</option>
           </select>
           <span v-else class="text-xs font-semibold text-slate-600">{{ itemModeLabel(row.item_mode) }}</span>
+          <p v-if="row.item_mode === 'routed'" class="mt-1 m-0 text-[0.65rem] leading-tight text-amber-600">
+            El flujo (entrega/firma) se define AL ENVIAR, no aquí.
+          </p>
         </template>
         <template v-else>
           {{ row[field.name] ?? "—" }}
