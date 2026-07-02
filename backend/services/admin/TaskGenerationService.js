@@ -788,7 +788,8 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
 
   const fillFlowTemplate = await getActiveFillFlowTemplateForDefinitionTemplate(
     connection,
-    context.process_definition_template_id
+    context.process_definition_template_id,
+    context.task_item_id
   );
 
   if (!fillFlowTemplate?.id) {

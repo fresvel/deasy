@@ -1868,25 +1868,55 @@
           <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del entregable…" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"></textarea>
         </label>
 
-        <div v-if="generalTaskForm.itemMode === 'routed' || generalTaskForm.mode === 'free'" class="flex flex-col gap-1 relative">
-          <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">{{ generalTaskForm.mode === 'free' ? 'Endosar a (opcional; por defecto tú)' : 'Destinatario *' }}</span>
-          <input
-            v-model="recipientQuery"
-            type="text"
-            placeholder="Busca por nombre, cédula o correo…"
-            class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
-            @input="generalTaskForm.recipientPersonId = null; searchRecipients()"
-          />
-          <p v-if="generalTaskForm.recipientPersonId" class="m-0 text-xs font-semibold text-emerald-600">Destinatario: {{ generalTaskForm.recipientLabel }}</p>
-          <ul v-if="recipientResults.length && !generalTaskForm.recipientPersonId" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg list-none m-0 p-1">
-            <li v-for="person in recipientResults" :key="`recip-${person.id}`">
-              <button type="button" class="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-sky-50" @click="selectRecipient(person)">
-                {{ person.full_name }}
-                <span class="text-xs text-slate-400">· {{ person.cedula || person.email || '' }}</span>
-              </button>
-            </li>
-          </ul>
-          <p v-else-if="recipientSearching" class="m-0 text-xs text-slate-400">Buscando…</p>
+        <div v-if="generalTaskForm.itemMode === 'routed' || generalTaskForm.mode === 'free'" class="flex flex-col gap-3">
+          <p class="m-0 text-xs text-slate-400">Define el flujo de este envío: quién lo elabora y quién lo firma.</p>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Elabora (entrega) *</span>
+              <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('entrega')">+ Agregar</button>
+            </div>
+            <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
+              <li v-for="(p, i) in flowEntrega" :key="`e-${p.person_id}-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700">
+                <span class="text-[0.65rem] font-bold text-slate-400">{{ i + 1 }}</span>{{ p.label }}
+                <button type="button" class="text-slate-400 hover:text-rose-500" @click="removeFlowPerson('entrega', i)">×</button>
+              </li>
+              <li v-if="!flowEntrega.length" class="text-xs text-slate-400">Nadie asignado.</li>
+            </ul>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">Firma (en orden)</span>
+              <button type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700" @click="openFlowPicker('firma')">+ Agregar firmante</button>
+            </div>
+            <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
+              <li v-for="(p, i) in flowFirma" :key="`f-${p.person_id}-${i}`" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700">
+                <span class="text-[0.65rem] font-bold text-slate-400">{{ i + 1 }}</span>{{ p.label }}
+                <button type="button" class="text-slate-400 hover:text-rose-500" @click="removeFlowPerson('firma', i)">×</button>
+              </li>
+              <li v-if="!flowFirma.length" class="text-xs text-slate-400">Sin firma.</li>
+            </ul>
+          </div>
+
+          <div v-if="flowPickerTarget" class="relative flex flex-col gap-1">
+            <input
+              v-model="recipientQuery"
+              type="text"
+              :placeholder="flowPickerTarget === 'firma' ? 'Busca al firmante…' : 'Busca a quién elabora…'"
+              class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-indigo-400"
+              @input="searchRecipients"
+            />
+            <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg list-none m-0 p-1">
+              <li v-for="person in recipientResults" :key="`fp-${person.id}`">
+                <button type="button" class="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-sky-50" @click="addFlowPerson(person)">
+                  {{ person.full_name }}
+                  <span class="text-xs text-slate-400">· {{ person.cedula || person.email || '' }}</span>
+                </button>
+              </li>
+            </ul>
+            <p v-else-if="recipientSearching" class="m-0 text-xs text-slate-400">Buscando…</p>
+          </div>
         </div>
 
         <label v-if="generalTaskForm.mode === 'free'" class="flex flex-col gap-1">
@@ -2780,6 +2810,10 @@ const recipientQuery = ref('');
 const recipientResults = ref([]);
 const recipientSearching = ref(false);
 let recipientSearchTimer = null;
+// P1 routed: flujo definido al ENVIAR (personas concretas). entrega = quién elabora; firma = quién firma.
+const flowEntrega = ref([]);
+const flowFirma = ref([]);
+const flowPickerTarget = ref(null); // 'entrega' | 'firma' | null
 const deliverableOperationModal = ref(null);
 const deliverableSignResultModal = ref(null);
 const deliverablePreviewModal = ref(null);
@@ -4612,6 +4646,13 @@ const openGeneralTaskModal = (mode = 'free', context = {}) => {
     recipientPersonId: null,
     recipientLabel: '',
   };
+  // routed / proceso por defecto (free): el usuario define el flujo al enviar. Entrega arranca con "Tú".
+  const usesRuntimeFlow = mode === 'free' || context.itemMode === 'routed';
+  flowEntrega.value = usesRuntimeFlow
+    ? [{ person_id: currentUserId.value, label: 'Tú (autor)' }]
+    : [];
+  flowFirma.value = [];
+  flowPickerTarget.value = null;
   generalTaskModalInstance = Modal.getOrCreateInstance(generalTaskModal.value?.el);
   generalTaskModalInstance?.show();
 };
@@ -4651,6 +4692,35 @@ const selectRecipient = (person) => {
   generalTaskForm.value.recipientLabel = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim();
   recipientResults.value = [];
   recipientQuery.value = generalTaskForm.value.recipientLabel;
+};
+
+// Flow-builder routed: agregar/quitar personas de entrega o firma.
+const openFlowPicker = (target) => {
+  flowPickerTarget.value = flowPickerTarget.value === target ? null : target;
+  recipientQuery.value = '';
+  recipientResults.value = [];
+};
+const addFlowPerson = (person) => {
+  const list = flowPickerTarget.value === 'firma' ? flowFirma : flowEntrega;
+  if (!list.value.some((p) => Number(p.person_id) === Number(person.id))) {
+    list.value.push({
+      person_id: person.id,
+      label: person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim(),
+    });
+  }
+  flowPickerTarget.value = null;
+  recipientQuery.value = '';
+  recipientResults.value = [];
+};
+const removeFlowPerson = (target, idx) => {
+  (target === 'firma' ? flowFirma : flowEntrega).value.splice(idx, 1);
+};
+// Destinatario principal (para "Para:" / owner): 1er firmante, o el 1er responsable de entrega distinto de ti.
+const primaryRecipientFromFlow = () => {
+  const firstFirma = flowFirma.value[0]?.person_id || null;
+  const entregaDelegate = flowEntrega.value
+    .find((p) => Number(p.person_id) !== Number(currentUserId.value))?.person_id || null;
+  return firstFirma || entregaDelegate || null;
 };
 
 const generalTaskModalTitle = computed(() => {
@@ -4819,8 +4889,14 @@ const submitGeneralTask = async () => {
     generalTaskError.value = 'Debes seleccionar una unidad.';
     return;
   }
-  if (form.itemMode === 'routed' && !form.recipientPersonId) {
-    generalTaskError.value = 'Debes elegir el destinatario del envío.';
+  const usesRuntimeFlow = form.itemMode === 'routed' || form.mode === 'free';
+  if (usesRuntimeFlow && !flowEntrega.value.length) {
+    generalTaskError.value = 'Indica al menos quién elabora el entregable.';
+    return;
+  }
+  const primaryRecipient = usesRuntimeFlow ? primaryRecipientFromFlow() : null;
+  if (form.itemMode === 'routed' && !primaryRecipient) {
+    generalTaskError.value = 'Un envío necesita al menos un firmante o un responsable distinto de ti.';
     return;
   }
   generalTaskSubmitting.value = true;
@@ -4833,7 +4909,14 @@ const submitGeneralTask = async () => {
       unit_id: form.unitId || null,
       source_task_id: form.sourceTaskId || null,
       process_definition_template_id: form.processDefinitionTemplateId || null,
-      recipient_person_id: (form.itemMode === 'routed' || form.mode === 'free') ? (form.recipientPersonId || null) : null,
+      // Destinatario principal (owner / "Para:") derivado del flujo; el flujo completo va en `flow`.
+      recipient_person_id: primaryRecipient,
+      flow: usesRuntimeFlow
+        ? {
+            entrega: flowEntrega.value.map((p) => ({ person_id: p.person_id })),
+            firma: flowFirma.value.map((p) => ({ person_id: p.person_id })),
+          }
+        : null,
       custom_term: {
         name: form.termName.trim() || form.title.trim(),
         start_date: form.startDate || null,
