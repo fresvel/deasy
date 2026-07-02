@@ -188,7 +188,17 @@ Commits: `841ba4a` (esquema), `87849ea` (materialización), `6cbe326` (frontend 
   cargos). El destinatario "Para:" pasa a ser opcional (puede ser null si la firma es por
   cargo). Verificado E2E (UI + API).
 
+**Multi‑firmante — CERRADO (`c2555ce`).** (La nota anterior era errónea: el esquema **sí**
+soporta varios firmantes por paso vía `signature_flow_steps.signers JSON`, resuelto por
+`parseStepSigners`/`resolveSignatureStepAssignees`, con quórum por `approval_mode`.) Ahora se
+expone en runtime: la firma se arma por **pasos**, cada paso con **1..N firmantes** (persona
+o cargo) y **aprobación** (todas/cualquiera/mínimo N). Materialización escribe `signers` JSON
++ `approval_mode` + `required_signers_min`. Contrato: `flow.firma = [{ signers:[…],
+approval_mode, required_min }]`. Verificado E2E (API + UI): 2 personas concretas en un paso
+paralelo con quórum.
+
 **Deuda restante (menor):**
-- Firma multi‑firmante **paralela con personas concretas** en un mismo paso: el esquema
-  liga 1 `specific_person` por paso; el paralelismo con quórum solo existe vía **cargo**
-  (un resolutor → N personas + `approval_mode`). Personas concretas = pasos secuenciales.
+- Ciclo humano entrega→firma end‑to‑end no ejercitado (usa la misma maquinaria de `single`).
+- "Para:" cuando el destinatario es un cargo (no muestra 1 persona).
+- Migración de instalaciones previas con `document_owner` sembrado (solo afecta a instalados
+  antes de P1.4; en dev se resuelve con reset).
